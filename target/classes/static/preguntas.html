@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSNLS - Preguntas</title>
+    <script src="js/auth-guard.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Toastify CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">LSNLS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="preguntas.html">Preguntas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="cuestionarios.html">Cuestionarios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="concursantes.html">Concursantes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="programas.html">Programas</a>
+                    </li>
+                    <li class="nav-item" id="nav-admin" style="display:none"><a class="nav-link" href="administracion.html">Administración</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="usuario-menu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="usuario-actual"></span>
+                            <span style="font-size: 1.5em; margin-left: 8px;">
+                                <i class="fas fa-bars"></i>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="usuario-menu">
+                            <li><a class="dropdown-item" href="#" onclick="cerrarSesion()">Cerrar sesión</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="cambiarPassword()">Cambiar contraseña</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="section-header">
+            <h2>Gestión de Preguntas</h2>
+            <button class="btn btn-primary" onclick="mostrarFormularioPregunta()">
+                <i class="fas fa-plus"></i> Nueva Pregunta
+            </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-container">
+            <div class="filter-group">
+                <label>Estado:</label>
+                <select id="filtro-estado" onchange="filtrarPreguntas()">
+                    <option value="">Todos</option>
+                    <option value="borrador">Borrador</option>
+                    <option value="creada">Creada</option>
+                    <option value="verificada">Verificada</option>
+                    <option value="corregir">Corregir</option>
+                    <option value="rechazada">Rechazada</option>
+                    <option value="aprobada">Aprobada</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Nivel:</label>
+                <select id="filtro-nivel" onchange="filtrarPreguntas()">
+                    <option value="">Todos</option>
+                    <option value="_0">0</option>
+                    <option value="_1LS">1LS</option>
+                    <option value="_2NLS">2NLS</option>
+                    <option value="_3LS">3LS</option>
+                    <option value="_4NLS">4NLS</option>
+                    <option value="_5LS">5LS</option>
+                    <option value="_5NLS">5NLS</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Buscar:</label>
+                <input type="text" id="buscar-pregunta" onkeyup="filtrarPreguntas()" placeholder="Pregunta o respuesta...">
+            </div>
+        </div>
+
+        <!-- Tabla de Preguntas -->
+        <div class="table-responsive">
+            <table class="table table-excel table-preguntas">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Autoría</th>
+                        <th>Nivel</th>
+                        <th>Temática</th>
+                        <th>Subtemas</th>
+                        <th>Pregunta</th>
+                        <th>Respuesta</th>
+                        <th>Datos Extra</th>
+                        <th>Fuentes</th>
+                        <th>Verificación</th>
+                        <th>Notas Verificación</th>
+                        <th>Notas Dirección</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-preguntas">
+                    <!-- Las preguntas se cargarán dinámicamente aquí -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal para crear/editar pregunta -->
+        <div class="modal fade" id="modal-pregunta" tabindex="-1" aria-labelledby="modal-pregunta-titulo" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal-pregunta-titulo">Nueva Pregunta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formCrearPregunta">
+                            <div class="mb-3">
+                                <label for="nivel-pregunta" class="form-label">Nivel</label>
+                                <select id="nivel-pregunta" name="nivel" class="form-control" required>
+                                    <option value="_0">Sin nivel (0)</option>
+                                    <option value="_1LS">_1LS</option>
+                                    <option value="_2NLS">_2NLS</option>
+                                    <option value="_3LS">_3LS</option>
+                                    <option value="_4NLS">_4NLS</option>
+                                    <option value="_5LS">_5LS</option>
+                                    <option value="_5NLS">_5NLS</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="tematica-pregunta" class="form-label">Temática</label>
+                                <select id="tematica-pregunta" name="tematica" class="form-control" required>
+                                    <!-- Opciones por JS -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="subtemas-pregunta" class="form-label">Subtemas</label>
+                                <select id="subtemas-pregunta" name="subtema" class="form-control" multiple>
+                                    <!-- Opciones por JS -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="pregunta-pregunta" class="form-label">Pregunta</label>
+                                <input type="text" id="pregunta-pregunta" name="pregunta" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="respuesta-pregunta" class="form-label">Respuesta</label>
+                                <input type="text" id="respuesta-pregunta" name="respuesta" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="datos-extra-pregunta" class="form-label">Datos Extra</label>
+                                <input type="text" id="datos-extra-pregunta" name="datosExtra" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label for="fuentes-pregunta" class="form-label">Fuentes</label>
+                                <input type="text" id="fuentes-pregunta" name="fuentes" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label for="notas-verificacion-pregunta" class="form-label">Notas Verificación</label>
+                                <input type="text" id="notas-verificacion-pregunta" name="notasVerificacion" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label for="notas-direccion-pregunta" class="form-label">Notas Dirección</label>
+                                <input type="text" id="notas-direccion-pregunta" name="notasDireccion" class="form-control">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Cambiar Contraseña -->
+        <div class="modal fade" id="modal-cambiar-password" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Cambiar contraseña</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="form-cambiar-password">
+                            <div class="mb-3">
+                                <label class="form-label">Contraseña actual</label>
+                                <input type="password" class="form-control" id="password-actual" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Nueva contraseña</label>
+                                <input type="password" class="form-control" id="password-nueva" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Repetir nueva contraseña</label>
+                                <input type="password" class="form-control" id="password-nueva2" required>
+                            </div>
+                            <div id="password-help" class="form-text mb-2">
+                                Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery (necesario para Bootstrap) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Toastify JS -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <!-- Custom JS -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/preguntas.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        mostrarBotonAdminNavbar();
+        document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const actual = document.getElementById('password-actual').value;
+            const nueva = document.getElementById('password-nueva').value;
+            const nueva2 = document.getElementById('password-nueva2').value;
+            const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+            if (nueva !== nueva2) {
+                mostrarError('Las contraseñas nuevas no coinciden.');
+                return;
+            }
+            if (!regex.test(nueva)) {
+                mostrarError('La nueva contraseña no cumple los requisitos.');
+                return;
+            }
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuario'));
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/usuarios/${usuario.id}/cambiar-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                    },
+                    body: JSON.stringify({ actual, nueva })
+                });
+                if (response.ok) {
+                    mostrarExito('Contraseña cambiada correctamente.');
+                    bootstrap.Modal.getInstance(document.getElementById('modal-cambiar-password')).hide();
+                } else {
+                    const errorText = await response.text();
+                    mostrarError('Error al cambiar contraseña: ' + errorText);
+                }
+            } catch (err) {
+                mostrarError('Error inesperado: ' + err);
+            }
+        });
+    });
+    </script>
+</body>
+</html> 

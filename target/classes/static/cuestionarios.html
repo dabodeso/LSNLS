@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSNLS - Cuestionarios</title>
+    <script src="js/auth-guard.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Toastify CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">LSNLS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="preguntas.html">Preguntas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="cuestionarios.html">Cuestionarios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="concursantes.html">Concursantes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="programas.html">Programas</a>
+                    </li>
+                    <li class="nav-item" id="nav-admin" style="display:none"><a class="nav-link" href="administracion.html">Administración</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="usuario-menu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="usuario-actual"></span>
+                            <span style="font-size: 1.5em; margin-left: 8px;">
+                                <i class="fas fa-bars"></i>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="usuario-menu">
+                            <li><a class="dropdown-item" href="#" onclick="cerrarSesion()">Cerrar sesión</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="cambiarPassword()">Cambiar contraseña</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="section-header">
+            <h2>Gestión de Cuestionarios</h2>
+            <button class="btn btn-primary" onclick="mostrarFormularioCuestionario()">
+                <i class="fas fa-plus"></i> Nuevo Cuestionario
+            </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-container">
+            <div class="filter-group">
+                <label>Estado:</label>
+                <select id="filtro-estado-cuestionario" onchange="filtrarCuestionarios()">
+                    <option value="">Todos</option>
+                    <option value="BORRADOR">Borrador</option>
+                    <option value="COMPLETADO">Completado</option>
+                    <option value="ASIGNADO">Asignado</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Buscar:</label>
+                <input type="text" id="buscar-cuestionario" onkeyup="filtrarCuestionarios()" placeholder="Número o descripción...">
+            </div>
+        </div>
+
+        <!-- Tabla de Cuestionarios -->
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <!-- <th>Descripción</th> -->
+                        <th>Estado</th>
+                        <th>Preguntas</th>
+                        <th>Fecha Creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-cuestionarios">
+                    <!-- Los cuestionarios se cargarán dinámicamente aquí -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal para Crear/Editar Cuestionario -->
+        <div class="modal fade" id="modal-cuestionario" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal-cuestionario-titulo">Nuevo Cuestionario</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="form-cuestionario">
+                            <input type="hidden" id="cuestionario-id">
+                            <div class="mb-3">
+                                <label class="form-label">Preguntas normales y multiplicadoras:</label>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-12 mb-2">
+                                        <label>P1</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="pregunta-1LS-texto" readonly placeholder="Sin seleccionar">
+                                            <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('1LS')">Elegir</button>
+                                            <input type="hidden" id="pregunta-1LS">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label>P2</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="pregunta-2NLS-texto" readonly placeholder="Sin seleccionar">
+                                            <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('2NLS')">Elegir</button>
+                                            <input type="hidden" id="pregunta-2NLS">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label>P3</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="pregunta-3LS-texto" readonly placeholder="Sin seleccionar">
+                                            <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('3LS')">Elegir</button>
+                                            <input type="hidden" id="pregunta-3LS">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label>P4</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="pregunta-4NLS-texto" readonly placeholder="Sin seleccionar">
+                                            <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('4NLS')">Elegir</button>
+                                            <input type="hidden" id="pregunta-4NLS">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label>PM1</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="pm-PM1-texto" readonly placeholder="Sin seleccionar">
+                                            <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('PM1')">Elegir</button>
+                                            <input type="hidden" id="pm-PM1">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label>PM2</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="pm-PM2-texto" readonly placeholder="Sin seleccionar">
+                                            <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('PM2')">Elegir</button>
+                                            <input type="hidden" id="pm-PM2">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mb-2">
+                                        <label>PM3</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="pm-PM3-texto" readonly placeholder="Sin seleccionar">
+                                            <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('PM3')">Elegir</button>
+                                            <input type="hidden" id="pm-PM3">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarCuestionario()">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Ver Preguntas -->
+        <div class="modal fade" id="modal-ver-preguntas" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Preguntas del Cuestionario</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="lista-preguntas">
+                            <!-- Las preguntas se cargarán dinámicamente aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para seleccionar pregunta -->
+        <div class="modal fade" id="modal-selector-pregunta" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Seleccionar Pregunta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-2">
+                            <div class="col-md-2"><input id="buscador-id" class="form-control form-control-sm" placeholder="ID"></div>
+                            <div class="col-md-3"><input id="buscador-pregunta" class="form-control form-control-sm" placeholder="Buscar en pregunta..."></div>
+                            <div class="col-md-3"><input id="buscador-respuesta" class="form-control form-control-sm" placeholder="Buscar en respuesta..."></div>
+                            <div class="col-md-3"><input id="buscador-tematica" class="form-control form-control-sm" placeholder="Buscar en temática..."></div>
+                            <div class="col-md-1"><button class="btn btn-primary btn-sm w-100" onclick="buscarPreguntasModal(0)">Buscar</button></div>
+                        </div>
+                        <div class="table-responsive" style="max-height: 70vh;">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th style="width:80px;">ID</th>
+                                        <th colspan="4">Pregunta</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-selector-pregunta">
+                                    <!-- Aquí se renderizan las preguntas -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <ul class="pagination justify-content-center" id="paginacion-selector-pregunta"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Cambiar Contraseña -->
+        <div class="modal fade" id="modal-cambiar-password" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Cambiar contraseña</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="form-cambiar-password">
+                            <div class="mb-3">
+                                <label class="form-label">Contraseña actual</label>
+                                <input type="password" class="form-control" id="password-actual" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Nueva contraseña</label>
+                                <input type="password" class="form-control" id="password-nueva" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Repetir nueva contraseña</label>
+                                <input type="password" class="form-control" id="password-nueva2" required>
+                            </div>
+                            <div id="password-help" class="form-text mb-2">
+                                Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Toastify JS -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <!-- Custom JS -->
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/cuestionarios.js"></script>
+    <script>
+        // Inicializar la página cuando se carga
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarCuestionarios();
+            mostrarBotonAdminNavbar();
+        });
+
+        function cambiarPassword() {
+            document.getElementById('form-cambiar-password').reset();
+            const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
+            modal.show();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const actual = document.getElementById('password-actual').value;
+                const nueva = document.getElementById('password-nueva').value;
+                const nueva2 = document.getElementById('password-nueva2').value;
+                const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+                if (nueva !== nueva2) {
+                    mostrarError('Las contraseñas nuevas no coinciden.');
+                    return;
+                }
+                if (!regex.test(nueva)) {
+                    mostrarError('La nueva contraseña no cumple los requisitos.');
+                    return;
+                }
+                try {
+                    const usuario = JSON.parse(localStorage.getItem('usuario'));
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`/api/usuarios/${usuario.id}/cambiar-password`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                        },
+                        body: JSON.stringify({ actual, nueva })
+                    });
+                    if (response.ok) {
+                        mostrarExito('Contraseña cambiada correctamente.');
+                        bootstrap.Modal.getInstance(document.getElementById('modal-cambiar-password')).hide();
+                    } else {
+                        const errorText = await response.text();
+                        mostrarError('Error al cambiar contraseña: ' + errorText);
+                    }
+                } catch (err) {
+                    mostrarError('Error inesperado: ' + err);
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

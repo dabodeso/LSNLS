@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crear Usuario</title>
+</head>
+<body>
+    <h1>Crear Usuario de Prueba</h1>
+    <button onclick="crearUsuario()">Crear Usuario Admin</button>
+    <div id="resultado"></div>
+
+    <script>
+        async function crearUsuario() {
+            try {
+                const response = await fetch('/api/usuarios/crear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nombre: 'admin',
+                        password: 'admin',
+                        rol: 'direccion'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('resultado').innerHTML = 
+                        '<p style="color: green;">Usuario creado: ' + JSON.stringify(data) + '</p>';
+                } else {
+                    document.getElementById('resultado').innerHTML = 
+                        '<p style="color: red;">Error: ' + response.status + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('resultado').innerHTML = 
+                    '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html> 

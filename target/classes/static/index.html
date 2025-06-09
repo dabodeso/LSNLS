@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSNLS - Redirigiendo...</title>
+    <script>
+        // Verificar si el usuario está autenticado
+        function verificarAutenticacion() {
+            const token = localStorage.getItem('token');
+            const usuario = localStorage.getItem('usuario');
+            
+            if (!token || !usuario) {
+                window.location.href = 'login.html';
+            } else {
+                window.location.href = 'preguntas.html';
+            }
+        }
+
+        // Ejecutar la verificación cuando se carga la página
+        window.onload = verificarAutenticacion;
+    </script>
+</head>
+<body>
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <h2>Redirigiendo...</h2>
+    </div>
+</body>
+</html> 

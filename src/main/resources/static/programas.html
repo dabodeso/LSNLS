@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSNLS - Programas</title>
+    <script src="js/auth-guard.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Toastify CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">LSNLS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="preguntas.html">Preguntas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="cuestionarios.html">Cuestionarios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="concursantes.html">Concursantes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="programas.html">Programas</a>
+                    </li>
+                    <li class="nav-item" id="nav-admin" style="display:none"><a class="nav-link" href="administracion.html">Administración</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="usuario-menu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="usuario-actual"></span>
+                            <span style="font-size: 1.5em; margin-left: 8px;">
+                                <i class="fas fa-bars"></i>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="usuario-menu">
+                            <li><a class="dropdown-item" href="#" onclick="cerrarSesion()">Cerrar sesión</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="cambiarPassword()">Cambiar contraseña</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="section-header">
+            <h2>Gestión de Programas</h2>
+            <button class="btn btn-primary" onclick="mostrarFormularioPrograma()">
+                <i class="fas fa-plus"></i> Nuevo Programa
+            </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-container">
+            <div class="filter-group">
+                <label>Estado:</label>
+                <select id="filtro-estado-programa" onchange="filtrarProgramas()">
+                    <option value="">Todos</option>
+                    <option value="PLANIFICADO">Planificado</option>
+                    <option value="EN_PRODUCCION">En Producción</option>
+                    <option value="COMPLETADO">Completado</option>
+                    <option value="EMITIDO">Emitido</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Buscar:</label>
+                <input type="text" id="buscar-programa" onkeyup="filtrarProgramas()" placeholder="Número o descripción...">
+            </div>
+        </div>
+
+        <!-- Tabla de Programas -->
+        <div class="table-responsive">
+            <table class="table table-excel table-preguntas" id="tabla-programas-principal">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha Emisión</th>
+                        <th>Estado</th>
+                        <th>Concursantes</th>
+                        <th>Duración Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-programas">
+                    <!-- Los programas se cargarán dinámicamente aquí -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal para Crear/Editar Programa -->
+        <div class="modal fade" id="modal-programa" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal-programa-titulo">Nuevo Programa</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="form-programa">
+                            <input type="hidden" id="programa-id">
+                            <div class="mb-3">
+                                <label class="form-label">Fecha de Emisión:</label>
+                                <input type="date" class="form-control" id="fecha-emision" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Estado:</label>
+                                <select class="form-control" id="estado-programa" required>
+                                    <option value="">Seleccione un estado...</option>
+                                    <option value="PLANIFICADO">Planificado</option>
+                                    <option value="EN_PRODUCCION">En Producción</option>
+                                    <option value="COMPLETADO">Completado</option>
+                                    <option value="EMITIDO">Emitido</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notas de Producción:</label>
+                                <textarea class="form-control" id="notas-produccion" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notas de Emisión:</label>
+                                <textarea class="form-control" id="notas-emision" rows="3"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarPrograma()">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Ver Concursantes -->
+        <div class="modal fade" id="modal-ver-concursantes" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Concursantes del Programa</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="lista-concursantes">
+                            <!-- Los concursantes se cargarán dinámicamente aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Cambiar Contraseña -->
+        <div class="modal fade" id="modal-cambiar-password" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Cambiar contraseña</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="form-cambiar-password">
+                            <div class="mb-3">
+                                <label class="form-label">Contraseña actual</label>
+                                <input type="password" class="form-control" id="password-actual" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Nueva contraseña</label>
+                                <input type="password" class="form-control" id="password-nueva" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Repetir nueva contraseña</label>
+                                <input type="password" class="form-control" id="password-nueva2" required>
+                            </div>
+                            <div id="password-help" class="form-text mb-2">
+                                Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Toastify JS -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <!-- Custom JS -->
+    <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/programas.js"></script>
+    <script>
+        // Inicializar la página cuando se carga
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarProgramas();
+            mostrarBotonAdminNavbar();
+        });
+
+        function cambiarPassword() {
+            document.getElementById('form-cambiar-password').reset();
+            const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
+            modal.show();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const actual = document.getElementById('password-actual').value;
+                const nueva = document.getElementById('password-nueva').value;
+                const nueva2 = document.getElementById('password-nueva2').value;
+                const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+                if (nueva !== nueva2) {
+                    mostrarError('Las contraseñas nuevas no coinciden.');
+                    return;
+                }
+                if (!regex.test(nueva)) {
+                    mostrarError('La nueva contraseña no cumple los requisitos.');
+                    return;
+                }
+                try {
+                    const usuario = JSON.parse(localStorage.getItem('usuario'));
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`/api/usuarios/${usuario.id}/cambiar-password`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                        },
+                        body: JSON.stringify({ actual, nueva })
+                    });
+                    if (response.ok) {
+                        mostrarExito('Contraseña cambiada correctamente.');
+                        bootstrap.Modal.getInstance(document.getElementById('modal-cambiar-password')).hide();
+                    } else {
+                        const errorText = await response.text();
+                        mostrarError('Error al cambiar contraseña: ' + errorText);
+                    }
+                } catch (err) {
+                    mostrarError('Error inesperado: ' + err);
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
