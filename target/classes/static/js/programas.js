@@ -37,13 +37,27 @@ function mostrarProgramas() {
     const tbody = document.getElementById('tabla-programas');
     tbody.innerHTML = programas.map(programa => {
         const concursantes = concursantesPorPrograma[programa.id] || [];
+        // Sumar duración de concursantes en minutos
+        let totalMin = 0;
+        concursantes.forEach(c => {
+            const val = parseInt(c.duracion);
+            if (!isNaN(val)) totalMin += val;
+        });
+        // Formato horas y minutos
+        const horas = Math.floor(totalMin / 60);
+        const minutos = totalMin % 60;
+        let duracionStr = '';
+        if (horas > 0) duracionStr += horas + 'h ';
+        duracionStr += minutos + 'm';
+        // Formatear fecha
+        const fechaEmision = formatearFecha(programa.fechaEmision);
         return `
             <tr class="table-primary" data-id="${programa.id}">
                 <td>${programa.id}</td>
-                <td>${programa.fechaEmision || '-'}</td>
+                <td>${fechaEmision || '-'}</td>
                 <td>${programa.estado || '-'}</td>
                 <td>${concursantes.length}</td>
-                <td>${programa.duracionAcumulada || '-'}</td>
+                <td>${duracionStr}</td>
                 <td><!-- Acciones futuras --></td>
             </tr>
             <tr><td colspan="6">
@@ -249,4 +263,104 @@ window.cambiarPassword = function() {
     document.getElementById('form-cambiar-password').reset();
     const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
     modal.show();
-}; 
+};
+
+function mostrarFormularioPrograma() {
+    document.getElementById('modal-programa-titulo').textContent = 'Nuevo Programa';
+    document.getElementById('form-programa').reset();
+    document.getElementById('programa-id').value = '';
+    // Eliminar tabla anterior si existe
+    const anterior = document.getElementById('tabla-concursantes-nuevo-programa');
+    if (anterior) anterior.remove();
+    const anteriorSpan = document.getElementById('duracion-total-nuevo-programa');
+    if (anteriorSpan) anteriorSpan.remove();
+    const anteriorInput = document.getElementById('input-duracion-total-programa');
+    if (anteriorInput) anteriorInput.parentElement.remove();
+    // Campo de duración total editable
+    document.getElementById('modal-programa').querySelector('.modal-body').insertAdjacentHTML('afterbegin', `
+        <div class="mb-3" id="bloque-duracion-total-programa">
+            <label class="form-label">Duración total del programa (ej: 1h 5m):</label>
+            <input type="text" class="form-control" id="input-duracion-total-programa" placeholder="Ej: 1h 5m">
+        </div>
+    `);
+    // Tabla de concursantes en blanco
+    document.getElementById('modal-programa').querySelector('.modal-body').insertAdjacentHTML('beforeend', `
+        <div id="tabla-concursantes-nuevo-programa" class="mt-4">
+            <h5>Concursantes</h5>
+            <table class="table table-excel table-preguntas">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Edad</th>
+                        <th>Duración (min)</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-concursantes-nuevo-programa">
+                </tbody>
+            </table>
+            <button class="btn btn-outline-primary" type="button" onclick="agregarFilaConcursanteNuevoPrograma()"><i class="fas fa-plus"></i> Añadir concursante</button>
+        </div>
+    `);
+    // Inicialmente una fila vacía
+    agregarFilaConcursanteNuevoPrograma();
+    // Evento para recalcular diferencia al cambiar la duración total
+    document.getElementById('input-duracion-total-programa').addEventListener('input', calcularDuracionTotalNuevoPrograma);
+    const modal = new bootstrap.Modal(document.getElementById('modal-programa'));
+    modal.show();
+}
+
+function agregarFilaConcursanteNuevoPrograma() {
+    const tbody = document.getElementById('tbody-concursantes-nuevo-programa');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><input type="text" class="form-control" placeholder="Nombre"></td>
+        <td><input type="number" class="form-control" placeholder="Edad"></td>
+        <td><input type="number" class="form-control duracion-concursante" placeholder="Duración (min)"></td>
+        <td><button class="btn btn-danger btn-sm" type="button" onclick="this.closest('tr').remove();calcularDuracionTotalNuevoPrograma()"><i class="fas fa-trash"></i></button></td>
+    `;
+    tbody.appendChild(tr);
+    // Recalcular duración al cambiar cualquier input de duración
+    tr.querySelector('.duracion-concursante').addEventListener('input', calcularDuracionTotalNuevoPrograma);
+    calcularDuracionTotalNuevoPrograma();
+}
+
+function calcularDuracionTotalNuevoPrograma() {
+    const inputs = document.querySelectorAll('.duracion-concursante');
+    let totalMin = 0;
+    inputs.forEach(input => {
+        const val = parseInt(input.value);
+        if (!isNaN(val)) totalMin += val;
+    });
+    // Formato horas y minutos
+    const horas = Math.floor(totalMin / 60);
+    const minutos = totalMin % 60;
+    let texto = '';
+    if (horas > 0) texto += horas + 'h ';
+    texto += minutos + 'm';
+    // Mostrar suma
+    let span = document.getElementById('duracion-total-nuevo-programa');
+    if (!span) return;
+    span.textContent = 'Duración sumada concursantes: ' + texto;
+    // Calcular diferencia con la duración total del programa
+    const inputTotal = document.getElementById('input-duracion-total-programa');
+    let totalProgramaMin = 0;
+    if (inputTotal && inputTotal.value.trim()) {
+        // Parsear formato libre tipo "1h 5m", "90m", "2h"
+        const regex = /(?:(\d+)\s*h)?\s*(\d+)?\s*m?/i;
+        const match = inputTotal.value.trim().match(regex);
+        if (match) {
+            const h = parseInt(match[1]) || 0;
+            const m = parseInt(match[2]) || 0;
+            totalProgramaMin = h * 60 + m;
+        }
+    }
+    let diff = totalMin - totalProgramaMin;
+    let diffTexto = '';
+    if (totalProgramaMin > 0) {
+        if (diff > 0) diffTexto = `(+${diff} min)`;
+        else if (diff < 0) diffTexto = `(${diff} min)`;
+        else diffTexto = '(OK)';
+    }
+    span.textContent += ' ' + diffTexto;
+} 
