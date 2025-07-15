@@ -174,6 +174,45 @@ public class CuestionarioController {
         }
     }
 
+    @GetMapping("/para-asignar")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<List<Map<String, Object>>> obtenerCuestionariosParaAsignar() {
+        try {
+            List<Cuestionario> cuestionarios = cuestionarioService.obtenerPorEstado(Cuestionario.EstadoCuestionario.creado);
+            List<Map<String, Object>> resultado = new ArrayList<>();
+            
+            for (Cuestionario c : cuestionarios) {
+                Map<String, Object> dto = new HashMap<>();
+                dto.put("id", c.getId());
+                dto.put("estado", c.getEstado());
+                dto.put("fechaCreacion", c.getFechaCreacion());
+                dto.put("nivel", c.getNivel());
+                
+                // Obtener preguntas con texto para búsqueda
+                List<Map<String, Object>> preguntasInfo = new ArrayList<>();
+                if (c.getPreguntas() != null) {
+                    for (PreguntaCuestionario pc : c.getPreguntas()) {
+                        if (pc.getPregunta() != null) {
+                            Map<String, Object> preguntaInfo = new HashMap<>();
+                            preguntaInfo.put("id", pc.getPregunta().getId());
+                            preguntaInfo.put("pregunta", pc.getPregunta().getPregunta());
+                            preguntaInfo.put("respuesta", pc.getPregunta().getRespuesta());
+                            preguntaInfo.put("tematica", pc.getPregunta().getTematica());
+                            preguntasInfo.add(preguntaInfo);
+                        }
+                    }
+                }
+                dto.put("preguntas", preguntasInfo);
+                resultado.add(dto);
+            }
+            
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            log.error("Error al obtener cuestionarios para asignar", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @GetMapping("/por-estado/{estado}")
     @PreAuthorize("@authorizationService.canRead()")
     public ResponseEntity<List<Cuestionario>> obtenerPorEstado(@PathVariable Cuestionario.EstadoCuestionario estado) {
@@ -234,12 +273,36 @@ public class CuestionarioController {
             if (exito) {
                 return ResponseEntity.ok(Map.of("message", "Pregunta quitada exitosamente"));
             } else {
-                return ResponseEntity.badRequest().body("Error al quitar pregunta");
+                return ResponseEntity.badRequest().body("Error al quitar pregunta: No se pudo completar la operación");
             }
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("Error al quitar pregunta: " + e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{cuestionarioId}/preguntas/slot/{slot}")
+    @PreAuthorize("@authorizationService.canCreateCuestionario()")
+    public ResponseEntity<?> quitarPreguntaPorSlot(
+            @PathVariable Long cuestionarioId,
+            @PathVariable String slot) {
+        try {
+            if (!authService.canCreateCuestionario()) {
+                return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de cuestionarios");
+            }
+            
+            boolean exito = cuestionarioService.quitarPreguntaPorSlot(cuestionarioId, slot);
+            
+            if (exito) {
+                return ResponseEntity.ok(Map.of("message", "Pregunta quitada exitosamente del slot " + slot));
+            } else {
+                return ResponseEntity.badRequest().body("Error al quitar pregunta: No se encontró pregunta en el slot " + slot);
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Error al quitar pregunta: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
         }
     }
 

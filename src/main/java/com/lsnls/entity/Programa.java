@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -16,6 +15,9 @@ public class Programa {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "temporada", nullable = false)
+    private Integer temporada;
 
     @Column(name = "duracion_acumulada")
     private LocalTime duracionAcumulada;
@@ -36,10 +38,31 @@ public class Programa {
     @Column(nullable = false)
     private EstadoPrograma estado = EstadoPrograma.borrador;
 
-    @OneToMany(mappedBy = "programa")
-    private Set<Concursante> concursantes;
+    @Column(name = "total_premios", precision = 10, scale = 2)
+    private BigDecimal totalPremios;
+
+    @Column(name = "gap")
+    private String gap;
+
+    @Column(name = "total_concursantes")
+    private Integer totalConcursantes;
+
+    @Column(name = "creditos_especiales", columnDefinition = "TEXT")
+    private String creditosEspeciales;
 
     public enum EstadoPrograma {
-        borrador, programado, emitido
+        borrador, grabado, editado, programado, emitido
+    }
+
+    public void actualizarEstado() {
+        if (fechaEmision != null) {
+            this.estado = EstadoPrograma.programado;
+        } else if (duracionAcumulada != null) {
+            this.estado = EstadoPrograma.editado;
+        } else if (resultadoAcumulado != null) {
+            this.estado = EstadoPrograma.grabado;
+        } else {
+            this.estado = EstadoPrograma.borrador;
+        }
     }
 } 

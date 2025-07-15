@@ -42,8 +42,8 @@ const CuestionariosManager = {
             return;
         }
         cuestionarios.forEach(c => {
-            // Determinar si hay huecos usando slot
-            const niveles = ['1LS','2NLS','3LS','4NLS','PM1','PM2','PM3'];
+            // Determinar si hay huecos usando slot - solo niveles 1-4
+            const niveles = ['1LS','2NLS','3LS','4NLS'];
             const preguntasPorSlot = {};
             if (Array.isArray(c.preguntas)) {
                 c.preguntas.forEach(pc => {
@@ -82,13 +82,9 @@ const CuestionariosManager = {
                     <tbody>
                         ${niveles.map(nivel => {
                             const p = preguntasPorSlot[nivel];
-                            let nivelMostrar = nivel;
-                            if (nivel === 'PM1') nivelMostrar = 'PM1 (X2)';
-                            else if (nivel === 'PM2') nivelMostrar = 'PM2 (X3)';
-                            else if (nivel === 'PM3') nivelMostrar = 'PM3 (X)';
                             if (p) {
                                 return `<tr data-id="${p.id}" data-nivel="${nivel}" style="cursor:pointer;">
-                                    <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(p.nivel) : ''}'>${nivelMostrar}</span></td>
+                                    <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(p.nivel) : ''}'>${nivel}</span></td>
                                     <td>${p.pregunta ?? ''}</td>
                                     <td>${p.respuesta ?? ''}</td>
                                     <td>${p.tematica ?? ''}</td>
@@ -96,7 +92,7 @@ const CuestionariosManager = {
                                 </tr>`;
                             } else {
                                 return `<tr data-nivel="${nivel}">
-                                    <td>${nivelMostrar}</td>
+                                    <td>${nivel}</td>
                                     <td colspan="3" class="text-center text-muted">(Vacío)</td>
                                     <td><button class='btn btn-sm btn-success' onclick='event.stopPropagation();anadirPreguntaACuestionario(${c.id}, "${nivel}")'><i class='fas fa-plus'></i> Añadir</button></td>
                                 </tr>`;
@@ -152,13 +148,8 @@ function inicializarCuestionarios() {
 
 document.addEventListener('DOMContentLoaded', inicializarCuestionarios);
 
-// IDs de los campos para las preguntas normales y multiplicadoras
+// IDs de los campos para las preguntas normales (solo niveles 1-4)
 const normales = ['1LS','2NLS','3LS','4NLS'];
-const pms = [
-    {id: 'PM1', factor: 'X2'},
-    {id: 'PM2', factor: 'X3'},
-    {id: 'PM3', factor: 'X'}
-];
 
 let selectorPreguntaContext = { nivel: null, factor: null, inputId: null, textoId: null };
 
@@ -167,13 +158,6 @@ async function mostrarFormularioCuestionario() {
     normales.forEach(nivel => {
         const sel = document.getElementById(`pregunta-${nivel}`);
         const texto = document.getElementById(`pregunta-${nivel}-texto`);
-        if (sel) sel.value = '';
-        if (texto) texto.value = '';
-    });
-    // Limpiar selects y textos multiplicadores
-    pms.forEach(pm => {
-        const sel = document.getElementById(`pm-${pm.id}`);
-        const texto = document.getElementById(`pm-${pm.id}-texto`);
         if (sel) sel.value = '';
         if (texto) texto.value = '';
     });
@@ -197,13 +181,8 @@ function inicializarBuscadorPreguntasModal() {
 function abrirSelectorPregunta(nivel, factor = null) {
     selectorPreguntaContext.nivel = nivel;
     selectorPreguntaContext.factor = factor;
-    if (normales.includes(nivel)) {
-        selectorPreguntaContext.inputId = `pregunta-${nivel}`;
-        selectorPreguntaContext.textoId = `pregunta-${nivel}-texto`;
-    } else {
-        selectorPreguntaContext.inputId = `pm-${nivel}`;
-        selectorPreguntaContext.textoId = `pm-${nivel}-texto`;
-    }
+    selectorPreguntaContext.inputId = `pregunta-${nivel}`;
+    selectorPreguntaContext.textoId = `pregunta-${nivel}-texto`;
     document.getElementById('buscador-id').value = '';
     document.getElementById('buscador-pregunta').value = '';
     document.getElementById('buscador-respuesta').value = '';
@@ -232,28 +211,22 @@ async function buscarPreguntasModal(page = 0) {
     if (respuesta) url += `&respuesta=${encodeURIComponent(respuesta)}`;
     if (tematica) url += `&tematica=${encodeURIComponent(tematica)}`;
     url += `&page=${page}&size=20`;
+    
     try {
         let preguntas = [];
         let totalPages = 1;
-        if (normales.includes(nivel)) {
-            const resp = await fetch(url, { headers: authManager.getAuthHeaders() });
-            if (!resp.ok) throw new Error('Error al buscar preguntas');
-            const data = await resp.json();
-            preguntas = data.content;
-            totalPages = data.totalPages || 1;
-        } else {
-            // Para PM, buscar tanto _5LS como _5NLS y unir resultados y paginación
-            const respLS = await fetch(`/api/preguntas/buscar?nivel=_5LS&page=${page}&size=20&id=${encodeURIComponent(id)}&pregunta=${encodeURIComponent(pregunta)}&respuesta=${encodeURIComponent(respuesta)}&tematica=${encodeURIComponent(tematica)}`, { headers: authManager.getAuthHeaders() });
-            const respNLS = await fetch(`/api/preguntas/buscar?nivel=_5NLS&page=${page}&size=20&id=${encodeURIComponent(id)}&pregunta=${encodeURIComponent(pregunta)}&respuesta=${encodeURIComponent(respuesta)}&tematica=${encodeURIComponent(tematica)}`, { headers: authManager.getAuthHeaders() });
-            const dataLS = await respLS.json();
-            const dataNLS = await respNLS.json();
-            preguntas = [...(dataLS.content || []), ...(dataNLS.content || [])];
-            // Sumar totalPages de ambos
-            totalPages = Math.max(dataLS.totalPages || 1, dataNLS.totalPages || 1);
-        }
+        
+        // Ejecutar la búsqueda siempre, no solo para niveles normales
+        const resp = await fetch(url, { headers: authManager.getAuthHeaders() });
+        if (!resp.ok) throw new Error('Error al buscar preguntas');
+        const data = await resp.json();
+        preguntas = data.content || [];
+        totalPages = data.totalPages || 1;
+        
         renderPreguntasModal(preguntas, page, totalPages);
     } catch (e) {
-        document.getElementById('tbody-selector-pregunta').innerHTML = `<tr><td colspan="6">Error al cargar preguntas</td></tr>`;
+        console.error('Error en buscarPreguntasModal:', e);
+        document.getElementById('tbody-selector-pregunta').innerHTML = `<tr><td colspan="6">Error al cargar preguntas: ${e.message}</td></tr>`;
         document.getElementById('paginacion-selector-pregunta').innerHTML = '';
     }
 }
@@ -382,15 +355,9 @@ async function guardarCuestionario() {
         if (!id) valid = false;
         else preguntasNormales.push(Number(id));
     });
-    let preguntasMultiplicadoras = [];
-    pms.forEach((pm, idx) => {
-        const id = document.getElementById(`pm-${pm.id}`).value;
-        if (!id) valid = false;
-        else preguntasMultiplicadoras.push({ id: Number(id), factor: pm.factor });
-    });
     if (!valid) {
         Toastify({
-            text: 'Debes seleccionar todas las preguntas (normales y multiplicadoras)',
+            text: 'Debes seleccionar todas las preguntas normales (niveles 1-4)',
             duration: 3000,
             close: true,
             gravity: 'top',
@@ -408,14 +375,14 @@ async function guardarCuestionario() {
             resp = await fetch(`/api/cuestionarios/${cuestionarioId}`, {
                 method: 'PUT',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasNormales, preguntasMultiplicadoras })
+                body: JSON.stringify({ preguntasNormales })
             });
         } else {
             // POST para crear
             resp = await fetch('/api/cuestionarios/nuevo', {
                 method: 'POST',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasNormales, preguntasMultiplicadoras })
+                body: JSON.stringify({ preguntasNormales })
             });
         }
         try { data = await resp.json(); } catch (e) { data = null; }
@@ -532,20 +499,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // --- NUEVAS FUNCIONES PARA ELIMINAR Y AÑADIR PREGUNTA EN CUESTIONARIO ---
 window.eliminarPreguntaDeCuestionario = async function(cuestionarioId, slot) {
-    // Buscar el id real de la pregunta en ese slot
-    const cuestionario = CuestionariosManager.ultimoListado?.find(c => c.id === cuestionarioId);
-    let preguntaId = null;
-    if (cuestionario && Array.isArray(cuestionario.preguntas)) {
-        const pc = cuestionario.preguntas.find(pc => pc.slot === slot);
-        if (pc && pc.pregunta && pc.pregunta.id) preguntaId = pc.pregunta.id;
-    }
-    if (!preguntaId) {
-        Toastify({ text: 'No se encontró la pregunta a eliminar', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
-        return;
-    }
     if (!confirm('¿Seguro que quieres quitar esta pregunta del cuestionario?')) return;
     try {
-        const resp = await fetch(`/api/cuestionarios/${cuestionarioId}/preguntas/${preguntaId}`, {
+        const resp = await fetch(`/api/cuestionarios/${cuestionarioId}/preguntas/slot/${slot}`, {
             method: 'DELETE',
             headers: authManager.getAuthHeaders()
         });

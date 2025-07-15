@@ -46,7 +46,7 @@ public class CuestionarioService {
     }
 
     public List<Cuestionario> obtenerTodos() {
-        return cuestionarioRepository.findAll();
+        return cuestionarioRepository.findAllOrderByIdDesc();
     }
 
     public Optional<Cuestionario> obtenerPorId(Long id) {
@@ -130,33 +130,60 @@ public class CuestionarioService {
     }
 
     public boolean agregarPregunta(Long cuestionarioId, Long preguntaId, Integer factorMultiplicacion) {
+        System.out.println("==========================================");
+        System.out.println("AGREGANDO PREGUNTA " + preguntaId + " AL CUESTIONARIO " + cuestionarioId);
+        System.out.println("Factor multiplicación: " + factorMultiplicacion);
+        System.out.println("==========================================");
+        
         Optional<Cuestionario> cuestionarioOpt = cuestionarioRepository.findById(cuestionarioId);
         Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
         
-        if (cuestionarioOpt.isPresent() && preguntaOpt.isPresent()) {
-            Cuestionario cuestionario = cuestionarioOpt.get();
-            Pregunta pregunta = preguntaOpt.get();
-            
-            // Verificar que la pregunta esté aprobada
-            if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
-                throw new RuntimeException("La pregunta debe estar aprobada para ser agregada a un cuestionario");
-            }
-            
-            // Verificar que la pregunta esté disponible o liberada (puede reutilizarse)
-            if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
-                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
-                throw new RuntimeException("La pregunta no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
-            }
-            
-            // Verificar que la pregunta no esté ya en este cuestionario
-            PreguntaCuestionario.PreguntaCuestionarioId checkId = new PreguntaCuestionario.PreguntaCuestionarioId();
-            checkId.setPreguntaId(preguntaId);
-            checkId.setCuestionarioId(cuestionarioId);
-            
-            if (preguntaCuestionarioRepository.existsById(checkId)) {
-                throw new RuntimeException("La pregunta ya está agregada a este cuestionario");
-            }
-            
+        if (cuestionarioOpt.isEmpty()) {
+            System.out.println("❌ CUESTIONARIO NO ENCONTRADO: " + cuestionarioId);
+            throw new RuntimeException("Cuestionario no encontrado: " + cuestionarioId);
+        }
+        
+        if (preguntaOpt.isEmpty()) {
+            System.out.println("❌ PREGUNTA NO ENCONTRADA: " + preguntaId);
+            throw new RuntimeException("Pregunta no encontrada: " + preguntaId);
+        }
+        
+        Cuestionario cuestionario = cuestionarioOpt.get();
+        Pregunta pregunta = preguntaOpt.get();
+        
+        System.out.println("✅ CUESTIONARIO Y PREGUNTA ENCONTRADOS");
+        System.out.println("📋 Pregunta: " + pregunta.getPregunta());
+        System.out.println("📋 Nivel: " + pregunta.getNivel());
+        System.out.println("📋 Estado: " + pregunta.getEstado());
+        System.out.println("📋 Estado disponibilidad: " + pregunta.getEstadoDisponibilidad());
+        
+        // Verificar que la pregunta esté aprobada
+        if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
+            System.out.println("❌ PREGUNTA NO APROBADA - Estado actual: " + pregunta.getEstado());
+            throw new RuntimeException("La pregunta debe estar aprobada para ser agregada a un cuestionario");
+        }
+        
+        // Verificar que la pregunta esté disponible o liberada (puede reutilizarse)
+        if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
+            pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
+            System.out.println("❌ PREGUNTA NO DISPONIBLE - Estado disponibilidad: " + pregunta.getEstadoDisponibilidad());
+            throw new RuntimeException("La pregunta no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
+        }
+        
+        // Verificar que la pregunta no esté ya en este cuestionario
+        PreguntaCuestionario.PreguntaCuestionarioId checkId = new PreguntaCuestionario.PreguntaCuestionarioId();
+        checkId.setPreguntaId(preguntaId);
+        checkId.setCuestionarioId(cuestionarioId);
+        
+        boolean yaExiste = preguntaCuestionarioRepository.existsById(checkId);
+        System.out.println("🔍 ¿Ya existe en cuestionario? " + yaExiste);
+        
+        if (yaExiste) {
+            System.out.println("❌ PREGUNTA YA AGREGADA AL CUESTIONARIO");
+            throw new RuntimeException("La pregunta ya está agregada a este cuestionario");
+        }
+        
+        try {
             // Crear la relación pregunta-cuestionario
             PreguntaCuestionario pc = new PreguntaCuestionario();
             PreguntaCuestionario.PreguntaCuestionarioId id = new PreguntaCuestionario.PreguntaCuestionarioId();
@@ -168,21 +195,35 @@ public class CuestionarioService {
             pc.setCuestionario(cuestionario);
             pc.setFactorMultiplicacion(factorMultiplicacion != null ? factorMultiplicacion : 1);
             
+            System.out.println("💾 Guardando relación pregunta-cuestionario...");
             // Guardar la relación en la base de datos
             preguntaCuestionarioRepository.save(pc);
+            System.out.println("✅ Relación guardada exitosamente");
             
             // Marcar pregunta como usada usando consulta SQL directa para evitar validaciones
+            System.out.println("🔄 Actualizando estado de disponibilidad a 'usada'...");
             int rowsUpdated = entityManager.createNativeQuery(
                 "UPDATE preguntas SET estado_disponibilidad = 'usada' WHERE id = ?")
                 .setParameter(1, preguntaId)
                 .executeUpdate();
+            System.out.println("✅ Filas actualizadas: " + rowsUpdated);
             
+            System.out.println("🎉 PREGUNTA AGREGADA EXITOSAMENTE");
+            System.out.println("==========================================");
             return true;
+            
+        } catch (Exception e) {
+            System.out.println("❌ ERROR AL GUARDAR: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al agregar pregunta: " + e.getMessage());
         }
-        return false;
     }
 
     public boolean quitarPregunta(Long cuestionarioId, Long preguntaId) {
+        System.out.println("==========================================");
+        System.out.println("QUITANDO PREGUNTA " + preguntaId + " DEL CUESTIONARIO " + cuestionarioId);
+        System.out.println("==========================================");
+        
         Optional<Cuestionario> cuestionarioOpt = cuestionarioRepository.findById(cuestionarioId);
         Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
         
@@ -190,24 +231,48 @@ public class CuestionarioService {
             Cuestionario cuestionario = cuestionarioOpt.get();
             Pregunta pregunta = preguntaOpt.get();
             
-            // Buscar y eliminar la relación pregunta-cuestionario
-            PreguntaCuestionario.PreguntaCuestionarioId id = new PreguntaCuestionario.PreguntaCuestionarioId();
-            id.setPreguntaId(preguntaId);
-            id.setCuestionarioId(cuestionarioId);
+            System.out.println("✅ CUESTIONARIO Y PREGUNTA ENCONTRADOS");
+            System.out.println("📋 Pregunta: " + pregunta.getPregunta());
+            System.out.println("📋 Nivel: " + pregunta.getNivel());
             
-            // Eliminar la relación
-            preguntaCuestionarioRepository.deleteById(id);
+            // Verificar si existe la relación antes de eliminar
+            PreguntaCuestionario.PreguntaCuestionarioId checkId = new PreguntaCuestionario.PreguntaCuestionarioId();
+            checkId.setPreguntaId(preguntaId);
+            checkId.setCuestionarioId(cuestionarioId);
             
-            // Liberar la pregunta usando consulta SQL directa para evitar validaciones
+            boolean existeRelacion = preguntaCuestionarioRepository.existsById(checkId);
+            System.out.println("🔍 ¿Existe relación? " + existeRelacion);
+            
+            if (!existeRelacion) {
+                System.out.println("❌ NO EXISTE LA RELACIÓN PREGUNTA-CUESTIONARIO");
+                return false;
+            }
+            
+            // Eliminar la relación usando SQL directo para asegurar que funcione
+            int filasEliminadas = entityManager.createNativeQuery(
+                "DELETE FROM cuestionarios_preguntas WHERE cuestionario_id = ? AND pregunta_id = ?")
+                .setParameter(1, cuestionarioId)
+                .setParameter(2, preguntaId)
+                .executeUpdate();
+            
+            System.out.println("🗑️ Filas eliminadas de cuestionarios_preguntas: " + filasEliminadas);
+            
+            // Liberar la pregunta usando consulta SQL directa
             if (pregunta.getEstadoDisponibilidad() == Pregunta.EstadoDisponibilidad.usada) {
-                entityManager.createNativeQuery(
+                int filasActualizadas = entityManager.createNativeQuery(
                     "UPDATE preguntas SET estado_disponibilidad = 'liberada' WHERE id = ?")
                     .setParameter(1, preguntaId)
                     .executeUpdate();
+                System.out.println("🔄 Filas actualizadas en preguntas: " + filasActualizadas);
             }
             
-            return true;
+            System.out.println("✅ PREGUNTA QUITADA EXITOSAMENTE");
+            System.out.println("==========================================");
+            return filasEliminadas > 0;
         }
+        
+        System.out.println("❌ CUESTIONARIO O PREGUNTA NO ENCONTRADOS");
+        System.out.println("==========================================");
         return false;
     }
 
@@ -252,10 +317,16 @@ public class CuestionarioService {
         cuestionario.setNivel(Cuestionario.NivelCuestionario.NORMAL);
         cuestionario = cuestionarioRepository.save(cuestionario);
 
-        // Asociar preguntas normales (factor 1)
+        // Asociar solo preguntas normales (factor 1) - niveles 1-4
         for (Long idPregunta : dto.getPreguntasNormales()) {
             Pregunta pregunta = preguntaRepository.findById(idPregunta)
                 .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + idPregunta));
+            
+            // Verificar que sea pregunta de nivel 1-4
+            if (pregunta.getNivel().name().startsWith("_5")) {
+                throw new IllegalArgumentException("Las preguntas de nivel 5 deben ir en combos, no en cuestionarios");
+            }
+            
             PreguntaCuestionario pc = new PreguntaCuestionario();
             PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();
             pcid.setPreguntaId(idPregunta);
@@ -264,27 +335,6 @@ public class CuestionarioService {
             pc.setPregunta(pregunta);
             pc.setCuestionario(cuestionario);
             pc.setFactorMultiplicacion(1);
-            preguntaCuestionarioRepository.save(pc);
-            // Marcar pregunta como usada
-            pregunta.setEstadoDisponibilidad(Pregunta.EstadoDisponibilidad.usada);
-            preguntaRepository.save(pregunta);
-        }
-        // Asociar preguntas multiplicadoras
-        for (CrearCuestionarioDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {
-            Pregunta pregunta = preguntaRepository.findById(pm.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Pregunta multiplicadora no encontrada: " + pm.getId()));
-            PreguntaCuestionario pc = new PreguntaCuestionario();
-            PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();
-            pcid.setPreguntaId(pm.getId());
-            pcid.setCuestionarioId(cuestionario.getId());
-            pc.setId(pcid);
-            pc.setPregunta(pregunta);
-            pc.setCuestionario(cuestionario);
-            int factor = 1;
-            if ("X2".equalsIgnoreCase(pm.getFactor())) factor = 2;
-            else if ("X3".equalsIgnoreCase(pm.getFactor())) factor = 3;
-            else if ("X".equalsIgnoreCase(pm.getFactor())) factor = 0;
-            pc.setFactorMultiplicacion(factor);
             preguntaCuestionarioRepository.save(pc);
             // Marcar pregunta como usada
             pregunta.setEstadoDisponibilidad(Pregunta.EstadoDisponibilidad.usada);
@@ -311,10 +361,16 @@ public class CuestionarioService {
         }
         cuestionario.getPreguntas().clear();
 
-        // Asociar nuevas preguntas normales (factor 1)
+        // Asociar nuevas preguntas normales (factor 1) - solo niveles 1-4
         for (Long idPregunta : dto.getPreguntasNormales()) {
             Pregunta pregunta = preguntaRepository.findById(idPregunta)
                 .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + idPregunta));
+            
+            // Verificar que sea pregunta de nivel 1-4
+            if (pregunta.getNivel().name().startsWith("_5")) {
+                throw new IllegalArgumentException("Las preguntas de nivel 5 deben ir en combos, no en cuestionarios");
+            }
+            
             PreguntaCuestionario pc = new PreguntaCuestionario();
             PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();
             pcid.setPreguntaId(idPregunta);
@@ -323,27 +379,6 @@ public class CuestionarioService {
             pc.setPregunta(pregunta);
             pc.setCuestionario(cuestionario);
             pc.setFactorMultiplicacion(1);
-            preguntaCuestionarioRepository.save(pc);
-            // Marcar pregunta como usada
-            pregunta.setEstadoDisponibilidad(Pregunta.EstadoDisponibilidad.usada);
-            preguntaRepository.save(pregunta);
-        }
-        // Asociar nuevas preguntas multiplicadoras
-        for (CrearCuestionarioDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {
-            Pregunta pregunta = preguntaRepository.findById(pm.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Pregunta multiplicadora no encontrada: " + pm.getId()));
-            PreguntaCuestionario pc = new PreguntaCuestionario();
-            PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();
-            pcid.setPreguntaId(pm.getId());
-            pcid.setCuestionarioId(cuestionario.getId());
-            pc.setId(pcid);
-            pc.setPregunta(pregunta);
-            pc.setCuestionario(cuestionario);
-            int factor = 1;
-            if ("X2".equalsIgnoreCase(pm.getFactor())) factor = 2;
-            else if ("X3".equalsIgnoreCase(pm.getFactor())) factor = 3;
-            else if ("X".equalsIgnoreCase(pm.getFactor())) factor = 0;
-            pc.setFactorMultiplicacion(factor);
             preguntaCuestionarioRepository.save(pc);
             // Marcar pregunta como usada
             pregunta.setEstadoDisponibilidad(Pregunta.EstadoDisponibilidad.usada);
@@ -363,40 +398,60 @@ public class CuestionarioService {
         dto.put("id", c.getId());
         dto.put("estado", c.getEstado());
         dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
-        // Mapear preguntas a slots
+        
+        // Mapear preguntas a slots según su nivel real
         java.util.Map<String, PreguntaCuestionarioDTO> mapPorSlot = new java.util.HashMap<>();
-        // Primero, mapear las preguntas existentes a su slot
+        
+        // Mapear cada pregunta a su slot correspondiente según su nivel
         for (PreguntaCuestionario pc : c.getPreguntas()) {
             PreguntaCuestionarioDTO pcdto = new PreguntaCuestionarioDTO();
             Pregunta p = pc.getPregunta();
             pcdto.setPregunta(mapPreguntaToDTO(p));
             pcdto.setFactorMultiplicacion(pc.getFactorMultiplicacion());
-            // Determinar slot
+            
+            // Determinar slot basado en el nivel real de la pregunta
             String slot = null;
             if (pc.getFactorMultiplicacion() == null || pc.getFactorMultiplicacion() == 1) {
-                // Buscar el primer slot normal libre
-                for (String s : new String[]{"1LS","2NLS","3LS","4NLS"}) {
-                    if (!mapPorSlot.containsKey(s)) { slot = s; break; }
+                // Mapear según el nivel real de la pregunta
+                String nivelPregunta = p.getNivel().name();
+                switch (nivelPregunta) {
+                    case "_1LS":
+                        slot = "1LS";
+                        break;
+                    case "_2NLS":
+                        slot = "2NLS";
+                        break;
+                    case "_3LS":
+                        slot = "3LS";
+                        break;
+                    case "_4NLS":
+                        slot = "4NLS";
+                        break;
+                    default:
+                        // Si no es un nivel válido para cuestionarios, no asignar slot
+                        continue;
                 }
-            } else {
-                if (pc.getFactorMultiplicacion() == 2) slot = "PM1";
-                else if (pc.getFactorMultiplicacion() == 3) slot = "PM2";
-                else if (pc.getFactorMultiplicacion() == 0) slot = "PM3";
             }
+            
             pcdto.setSlot(slot);
-            mapPorSlot.put(slot, pcdto);
-        }
-        // Ahora, asegurar los 7 slots
-        java.util.List<PreguntaCuestionarioDTO> preguntasDTO = new java.util.ArrayList<>();
-        for (String slot : new String[]{"1LS","2NLS","3LS","4NLS","PM1","PM2","PM3"}) {
-            PreguntaCuestionarioDTO pcdto = mapPorSlot.getOrDefault(slot, null);
-            if (pcdto == null) {
-                pcdto = new PreguntaCuestionarioDTO();
-                pcdto.setSlot(slot);
-                pcdto.setPregunta(null);
-                pcdto.setFactorMultiplicacion(null);
+            if (slot != null) {
+                mapPorSlot.put(slot, pcdto);
             }
-            preguntasDTO.add(pcdto);
+        }
+        
+        // Asegurar los 4 slots en orden correcto
+        java.util.List<PreguntaCuestionarioDTO> preguntasDTO = new java.util.ArrayList<>();
+        for (String slot : new String[]{"1LS","2NLS","3LS","4NLS"}) {
+            if (mapPorSlot.containsKey(slot)) {
+                preguntasDTO.add(mapPorSlot.get(slot));
+            } else {
+                // Slot vacío
+                PreguntaCuestionarioDTO vacio = new PreguntaCuestionarioDTO();
+                vacio.setSlot(slot);
+                vacio.setPregunta(null);
+                vacio.setFactorMultiplicacion(null);
+                preguntasDTO.add(vacio);
+            }
         }
         dto.put("preguntas", preguntasDTO);
         return dto;
@@ -420,5 +475,57 @@ public class CuestionarioService {
         dto.setFechaCreacion(p.getFechaCreacion() != null ? p.getFechaCreacion().toString() : null);
         dto.setFechaVerificacion(p.getFechaVerificacion() != null ? p.getFechaVerificacion().toString() : null);
         return dto;
+    }
+
+    public boolean quitarPreguntaPorSlot(Long cuestionarioId, String slot) {
+        System.out.println("==========================================");
+        System.out.println("QUITANDO PREGUNTA POR SLOT: " + slot + " DEL CUESTIONARIO " + cuestionarioId);
+        System.out.println("==========================================");
+        
+        Optional<Cuestionario> cuestionarioOpt = obtenerConPreguntas(cuestionarioId);
+        if (cuestionarioOpt.isEmpty()) {
+            System.out.println("❌ CUESTIONARIO NO ENCONTRADO");
+            return false;
+        }
+        
+        Cuestionario cuestionario = cuestionarioOpt.get();
+        System.out.println("✅ CUESTIONARIO ENCONTRADO CON " + cuestionario.getPreguntas().size() + " PREGUNTAS");
+        
+        // Buscar la pregunta en el slot especificado
+        for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {
+            Pregunta p = pc.getPregunta();
+            String nivelPregunta = p.getNivel().name();
+            String slotPregunta = null;
+            
+            // Mapear nivel a slot
+            switch (nivelPregunta) {
+                case "_1LS":
+                    slotPregunta = "1LS";
+                    break;
+                case "_2NLS":
+                    slotPregunta = "2NLS";
+                    break;
+                case "_3LS":
+                    slotPregunta = "3LS";
+                    break;
+                case "_4NLS":
+                    slotPregunta = "4NLS";
+                    break;
+            }
+            
+            System.out.println("🔍 Pregunta ID " + p.getId() + " - Nivel: " + nivelPregunta + " - Slot: " + slotPregunta + " - Buscando: " + slot);
+            
+            if (slot.equals(slotPregunta)) {
+                System.out.println("✅ PREGUNTA ENCONTRADA EN SLOT " + slot + " - ID: " + p.getId());
+                // Encontramos la pregunta en el slot, la eliminamos
+                boolean resultado = quitarPregunta(cuestionarioId, p.getId());
+                System.out.println("🔄 Resultado de quitarPregunta: " + resultado);
+                return resultado;
+            }
+        }
+        
+        System.out.println("❌ NO SE ENCONTRÓ PREGUNTA EN EL SLOT " + slot);
+        System.out.println("==========================================");
+        return false; // No se encontró pregunta en ese slot
     }
 } 

@@ -2,7 +2,9 @@ package com.lsnls.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Data
@@ -13,54 +15,84 @@ public class Concursante {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "numero_concursante")
+    private Integer numeroConcursante;
+
+    private String jornada;
+
+    @Column(name = "dia_grabacion")
+    private LocalDate diaGrabacion;
+
+    private String lugar;
     private String nombre;
     private Integer edad;
+    private String ocupacion;
 
-    @Column(name = "datos_interes", columnDefinition = "TEXT")
-    private String datosInteres;
+    @Column(name = "redes_sociales")
+    private String redesSociales;
 
-    @ManyToOne(optional = true)
+    @ManyToOne
     @JoinColumn(name = "cuestionario_id")
+    @JsonIgnoreProperties({"preguntas", "creacionUsuario"})
     private Cuestionario cuestionario;
 
-    private LocalDate fecha;
-    private String lugar;
-    private String guionista;
+    @ManyToOne
+    @JoinColumn(name = "combo_id")
+    @JsonIgnoreProperties({"preguntas", "creacionUsuario"})
+    private Combo combo;
+
+    @Column(name = "factor_x")
+    private String factorX;
+
     private String resultado;
 
     @Column(name = "notas_grabacion", columnDefinition = "TEXT")
     private String notasGrabacion;
 
-    private String editor;
+    private String guionista;
 
-    @Column(name = "notas_edicion", columnDefinition = "TEXT")
-    private String notasEdicion;
+    @Column(name = "valoracion_guionista", columnDefinition = "TEXT")
+    private String valoracionGuionista;
 
-    private Integer duracion; // en minutos
+    @Column(name = "concursantes_por_jornada")
+    private Integer concursantesPorJornada;
 
-    @ManyToOne
-    @JoinColumn(name = "programa_id")
-    private Programa programa;
+    private String estado;
 
-    @Column(name = "orden_programa")
-    private Integer ordenPrograma;
+    @Column(name = "momentos_destacados", columnDefinition = "TEXT")
+    private String momentosDestacados;
 
-    @Enumerated(EnumType.STRING)
-    private EstadoConcursante estado = EstadoConcursante.BORRADOR;
+    private String duracion; // formato MM:SS
 
-    @Column(name = "imagen", columnDefinition = "MEDIUMTEXT")
-    private String imagen;
+    @Column(name = "valoracion_final", columnDefinition = "TEXT")
+    private String valoracionFinal;
+
+    @Column(name = "numero_programa")
+    private Integer numeroPrograma;
+
+    @Column(name = "orden_escaleta")
+    private Integer ordenEscaleta;
+
+    // Nuevos campos para la vista de programas
+    @Column(name = "premio", precision = 10, scale = 2)
+    private BigDecimal premio; // Premio obtenido por el concursante
+
+    @Column(name = "foto")
+    private String foto; // URL o path de la foto del concursante
+
+    @Column(name = "creditos_especiales", columnDefinition = "TEXT")
+    private String creditosEspeciales; // Créditos especiales del concursante
 
     // Método para actualizar el estado automáticamente
     public void actualizarEstado() {
-        if (programa != null && ordenPrograma != null) {
-            this.estado = EstadoConcursante.PROGRAMADO;
-        } else if (duracion != null) {
-            this.estado = EstadoConcursante.EDITADO;
+        if (numeroPrograma != null && ordenEscaleta != null) {
+            this.estado = "PROGRAMADO";
+        } else if (duracion != null && !duracion.isEmpty()) {
+            this.estado = "EDITADO";
         } else if (resultado != null && !resultado.isEmpty()) {
-            this.estado = EstadoConcursante.GRABADO;
+            this.estado = "GRABADO";
         } else {
-            this.estado = EstadoConcursante.BORRADOR;
+            this.estado = "BORRADOR";
         }
     }
 } 

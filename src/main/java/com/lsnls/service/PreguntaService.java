@@ -6,6 +6,7 @@ import com.lsnls.entity.Pregunta.EstadoDisponibilidad;
 import com.lsnls.entity.Pregunta.NivelPregunta;
 import com.lsnls.entity.Usuario;
 import com.lsnls.repository.PreguntaRepository;
+import com.lsnls.repository.PreguntaComboRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,9 @@ public class PreguntaService {
     
     @Autowired
     private DataTransformationService dataTransformationService;
+    
+    @Autowired
+    private PreguntaComboRepository preguntaComboRepository;
 
     public Pregunta crear(Pregunta pregunta) {
         // Transformar datos automáticamente a mayúsculas y limpiar
@@ -133,6 +137,10 @@ public class PreguntaService {
                     pregunta.setVerificacionUsuario(usuarioActual);
                 }
             }
+            if (nuevoEstado == EstadoPregunta.aprobada) {
+                pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.disponible);
+                System.out.println("✅ Pregunta ID " + id + " aprobada y marcada como DISPONIBLE");
+            }
             return preguntaRepository.save(pregunta);
         }).orElse(null);
     }
@@ -154,6 +162,30 @@ public class PreguntaService {
             pregunta.setEstado(EstadoPregunta.rechazada);
             if (motivo != null && !motivo.trim().isEmpty()) {
                 pregunta.setNotas("RECHAZADA: " + motivo);
+            }
+            return preguntaRepository.save(pregunta);
+        }).orElse(null);
+    }
+
+    public Pregunta marcarParaRevisar(Long id, String notas, Usuario usuario) {
+        return preguntaRepository.findById(id).map(pregunta -> {
+            pregunta.setEstado(EstadoPregunta.revisar);
+            pregunta.setVerificacionUsuario(usuario);
+            pregunta.setFechaVerificacion(LocalDateTime.now());
+            if (notas != null && !notas.trim().isEmpty()) {
+                pregunta.setNotasVerificacion("REVISAR: " + notas);
+            }
+            return preguntaRepository.save(pregunta);
+        }).orElse(null);
+    }
+
+    public Pregunta marcarParaCorregir(Long id, String notas, Usuario usuario) {
+        return preguntaRepository.findById(id).map(pregunta -> {
+            pregunta.setEstado(EstadoPregunta.corregir);
+            pregunta.setVerificacionUsuario(usuario);
+            pregunta.setFechaVerificacion(LocalDateTime.now());
+            if (notas != null && !notas.trim().isEmpty()) {
+                pregunta.setNotasVerificacion("CORREGIR: " + notas);
             }
             return preguntaRepository.save(pregunta);
         }).orElse(null);
@@ -199,6 +231,20 @@ public class PreguntaService {
     public Pregunta actualizarDesdeDTO(Long id, PreguntaDTO dto) {
         Pregunta pregunta = preguntaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada"));
 
+        // Validar cambio de nivel si la pregunta está asignada a un combo
+        if (dto.getNivel() != null && !dto.getNivel().equals(pregunta.getNivel())) {
+            boolean estaAsignadaACombo = preguntaComboRepository.existsByPreguntaId(id);
+            
+            if (estaAsignadaACombo) {
+                // Verificar si el nuevo nivel es de nivel 5
+                boolean esNivel5 = dto.getNivel().name().startsWith("_5");
+                
+                if (!esNivel5) {
+                    throw new IllegalArgumentException("La pregunta está asignada a un combo, solo puede tener nivel 5");
+                }
+            }
+        }
+
         if (dto.getTematica() != null) pregunta.setTematica(dataTransformationService.normalizarTematica(dto.getTematica()));
         if (dto.getPregunta() != null) pregunta.setPregunta(dataTransformationService.normalizarPregunta(dto.getPregunta()));
         if (dto.getRespuesta() != null) pregunta.setRespuesta(dataTransformationService.normalizarRespuesta(dto.getRespuesta()));
@@ -229,7 +275,10 @@ public class PreguntaService {
         try {
             if (factor != null && !factor.isBlank()) factorEnum = Pregunta.FactorPregunta.valueOf(factor);
         } catch (Exception ignored) {}
-        return preguntaRepository.buscarPreguntas(
+        
+        // CAMBIADO: Buscar solo preguntas disponibles o liberadas para crear nuevos cuestionarios
+        // No mostrar preguntas usadas para evitar confusión
+        return preguntaRepository.buscarPreguntasDisponibles(
             nivelEnum,
             factorEnum,
             (id != null && !id.isBlank()) ? id : null,
@@ -237,13 +286,51 @@ public class PreguntaService {
             (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
             (tematica != null && !tematica.isBlank()) ? tematica : null,
             Pregunta.EstadoPregunta.aprobada,
-            Pregunta.EstadoDisponibilidad.disponible,
             pageable
         );
     }
 
     public void eliminarPorId(Long id) {
         preguntaRepository.deleteById(id);
+    }
+
+    public List<PreguntaDTO> filtrarPreguntasCompleto(String nivel, String factor, String estado, 
+                                                     String tematica, String subtema, String pregunta, String respuesta) {
+        // Convertir strings a enums
+        Pregunta.NivelPregunta nivelEnum = null;
+        Pregunta.FactorPregunta factorEnum = null;
+        Pregunta.EstadoPregunta estadoEnum = null;
+        
+        try {
+            if (nivel != null && !nivel.isBlank()) {
+                nivelEnum = Pregunta.NivelPregunta.valueOf(nivel.startsWith("_") ? nivel : ("_"+nivel));
+            }
+        } catch (Exception ignored) {}
+        
+        try {
+            if (factor != null && !factor.isBlank()) {
+                factorEnum = Pregunta.FactorPregunta.valueOf(factor);
+            }
+        } catch (Exception ignored) {}
+        
+        try {
+            if (estado != null && !estado.isBlank()) {
+                estadoEnum = Pregunta.EstadoPregunta.valueOf(estado);
+            }
+        } catch (Exception ignored) {}
+        
+        // Usar el nuevo método del repository
+        List<Pregunta> preguntas = preguntaRepository.filtrarTodas(
+            nivelEnum,
+            factorEnum,
+            estadoEnum,
+            (tematica != null && !tematica.isBlank()) ? tematica : null,
+            (subtema != null && !subtema.isBlank()) ? subtema : null,
+            (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
+            (respuesta != null && !respuesta.isBlank()) ? respuesta : null
+        );
+        
+        return preguntas.stream().map(this::mapPreguntaToDTO).collect(java.util.stream.Collectors.toList());
     }
 
     // --- MÉTODO DE MAPEADO DTO ---

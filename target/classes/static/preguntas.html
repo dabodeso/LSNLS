@@ -30,6 +30,9 @@
                         <a class="nav-link" href="cuestionarios.html">Cuestionarios</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="combos.html">Combos</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="concursantes.html">Concursantes</a>
                     </li>
                     <li class="nav-item">
@@ -55,7 +58,7 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
         <div class="section-header">
             <h2>Gestión de Preguntas</h2>
             <button class="btn btn-primary" onclick="mostrarFormularioPregunta()">
@@ -63,36 +66,77 @@
             </button>
         </div>
 
-        <!-- Filtros -->
-        <div class="filters-container">
-            <div class="filter-group">
-                <label>Estado:</label>
-                <select id="filtro-estado" onchange="filtrarPreguntas()">
-                    <option value="">Todos</option>
-                    <option value="borrador">Borrador</option>
-                    <option value="creada">Creada</option>
-                    <option value="verificada">Verificada</option>
-                    <option value="corregir">Corregir</option>
-                    <option value="rechazada">Rechazada</option>
-                    <option value="aprobada">Aprobada</option>
-                </select>
+        <!-- Filtros Expandidos -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filtros-avanzados" aria-expanded="true">
+                        <i class="fas fa-filter"></i> Filtros de Búsqueda
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="limpiarFiltros()">
+                        <i class="fas fa-eraser"></i> Limpiar
+                    </button>
+                </h5>
             </div>
-            <div class="filter-group">
-                <label>Nivel:</label>
-                <select id="filtro-nivel" onchange="filtrarPreguntas()">
-                    <option value="">Todos</option>
-                    <option value="_0">0</option>
-                    <option value="_1LS">1LS</option>
-                    <option value="_2NLS">2NLS</option>
-                    <option value="_3LS">3LS</option>
-                    <option value="_4NLS">4NLS</option>
-                    <option value="_5LS">5LS</option>
-                    <option value="_5NLS">5NLS</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Buscar:</label>
-                <input type="text" id="buscar-pregunta" onkeyup="filtrarPreguntas()" placeholder="Pregunta o respuesta...">
+            <div id="filtros-avanzados" class="collapse show">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label">Estado:</label>
+                            <select id="filtro-estado" class="form-select form-select-sm" onchange="filtrarPreguntas()">
+                                <option value="">Todos</option>
+                                <option value="borrador">Borrador</option>
+                                <option value="para_verificar">Para verificar</option>
+                                <option value="verificada">Verificada</option>
+                                <option value="revisar">Revisar</option>
+                                <option value="corregir">Corregir</option>
+                                <option value="rechazada">Rechazada</option>
+                                <option value="aprobada">Aprobada</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Nivel:</label>
+                            <select id="filtro-nivel" class="form-select form-select-sm" onchange="filtrarPreguntas()">
+                                <option value="">Todos</option>
+                                <option value="_0">0</option>
+                                <option value="_1LS">1LS</option>
+                                <option value="_2NLS">2NLS</option>
+                                <option value="_3LS">3LS</option>
+                                <option value="_4NLS">4NLS</option>
+                                <option value="_5LS">5LS</option>
+                                <option value="_5NLS">5NLS</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Temática:</label>
+                            <input type="text" id="filtro-tematica" class="form-control form-control-sm" 
+                                   onkeyup="filtrarPreguntas()" placeholder="Buscar tema...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Subtema:</label>
+                            <input type="text" id="filtro-subtema" class="form-control form-control-sm" 
+                                   onkeyup="filtrarPreguntas()" placeholder="Buscar subtema...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Pregunta:</label>
+                            <input type="text" id="filtro-pregunta" class="form-control form-control-sm" 
+                                   onkeyup="filtrarPreguntas()" placeholder="Buscar pregunta...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Respuesta:</label>
+                            <input type="text" id="filtro-respuesta" class="form-control form-control-sm" 
+                                   onkeyup="filtrarPreguntas()" placeholder="Buscar respuesta...">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> 
+                                Los filtros se aplican automáticamente al escribir. Usa múltiples filtros para refinar la búsqueda.
+                            </small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

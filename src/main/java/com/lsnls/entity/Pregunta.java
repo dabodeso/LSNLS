@@ -102,7 +102,7 @@ public class Pregunta {
     }
 
     public enum EstadoPregunta {
-        borrador, creada, verificada, rechazada, aprobada
+        borrador, para_verificar, verificada, revisar, corregir, rechazada, aprobada
     }
 
     public enum EstadoDisponibilidad {

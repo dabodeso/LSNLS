@@ -1,5 +1,6 @@
 package com.lsnls.controller;
 
+import com.lsnls.dto.ProgramaDTO;
 import com.lsnls.entity.Programa;
 import com.lsnls.service.ProgramaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/programas")
@@ -18,27 +20,33 @@ public class ProgramaController {
     private ProgramaService programaService;
 
     @GetMapping
-    public ResponseEntity<List<Programa>> findAll() {
-        return ResponseEntity.ok(programaService.findAll());
+    public ResponseEntity<List<ProgramaDTO>> findAll() {
+        return ResponseEntity.ok(programaService.findAllDTO());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Programa> findById(@PathVariable Long id) {
-        return programaService.findById(id)
+    public ResponseEntity<ProgramaDTO> findById(@PathVariable Long id) {
+        return programaService.findByIdDTO(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
-    public ResponseEntity<Programa> create(@RequestBody Programa programa) {
-        return ResponseEntity.ok(programaService.create(programa));
+    public ResponseEntity<ProgramaDTO> create(@RequestBody ProgramaDTO programaDTO) {
+        return ResponseEntity.ok(programaService.createFromDTO(programaDTO));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
-    public ResponseEntity<Programa> update(@PathVariable Long id, @RequestBody Programa programa) {
-        return ResponseEntity.ok(programaService.update(id, programa));
+    public ResponseEntity<ProgramaDTO> update(@PathVariable Long id, @RequestBody ProgramaDTO programaDTO) {
+        return ResponseEntity.ok(programaService.updateFromDTO(id, programaDTO));
+    }
+
+    @PatchMapping("/{id}/campo")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
+    public ResponseEntity<ProgramaDTO> updateCampo(@PathVariable Long id, @RequestBody Map<String, Object> campo) {
+        return ResponseEntity.ok(programaService.updateCampo(id, campo));
     }
 
     @DeleteMapping("/{id}")

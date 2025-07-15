@@ -55,7 +55,7 @@ const PreguntasManager = {
         }
         tbody.innerHTML = '';
 
-        let preguntasFiltradas = this.filtrarPreguntas();
+        let preguntasFiltradas = this.preguntas;
 
         // Ordenar
         if (this.orden.columna) {
@@ -81,7 +81,7 @@ const PreguntasManager = {
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'nivel', this)"><span class="${this.getNivelColor(pregunta.nivel)}">${pregunta.nivel ?? ''}</span></td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'tematica', this)">${pregunta.tematica ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'subtema', this)">${(pregunta.subtema ?? '').split(',').map(s => s.trim()).filter(Boolean).join(', ')}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'pregunta', this)" style="white-space:pre-line; word-break:break-word; max-width:300px;">${(pregunta.pregunta ?? '').toUpperCase()}</td>
+                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'pregunta', this)" style="white-space:pre-line; word-break:break-word; max-width:300px;">${pregunta.pregunta ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'respuesta', this)">${pregunta.respuesta ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'datosExtra', this)">${pregunta.datosExtra ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'fuentes', this)">${pregunta.fuentes ?? ''}</td>
@@ -95,19 +95,75 @@ const PreguntasManager = {
         });
     },
 
-    filtrarPreguntas() {
-        // Filtros según los IDs del HTML
+    async filtrarPreguntas() {
+        try {
+            // Obtener valores de todos los filtros
+            const estado = document.getElementById('filtro-estado')?.value || '';
+            const nivel = document.getElementById('filtro-nivel')?.value || '';
+            const tematica = document.getElementById('filtro-tematica')?.value || '';
+            const subtema = document.getElementById('filtro-subtema')?.value || '';
+            const pregunta = document.getElementById('filtro-pregunta')?.value || '';
+            const respuesta = document.getElementById('filtro-respuesta')?.value || '';
+
+            // Si no hay filtros, cargar todas las preguntas
+            const hayFiltros = estado || nivel || tematica || subtema || pregunta || respuesta;
+            
+            if (!hayFiltros) {
+                await this.cargarPreguntas();
+                return;
+            }
+
+            // Construir parámetros de consulta
+            const params = new URLSearchParams();
+            if (estado) params.append('estado', estado);
+            if (nivel) params.append('nivel', nivel);
+            if (tematica) params.append('tematica', tematica);
+            if (subtema) params.append('subtema', subtema);
+            if (pregunta) params.append('pregunta', pregunta);
+            if (respuesta) params.append('respuesta', respuesta);
+
+            // Llamar al endpoint de filtrado del backend
+            const response = await fetch(`/api/preguntas/filtrar?${params.toString()}`, {
+                headers: authManager.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al filtrar preguntas');
+            }
+
+            this.preguntas = await response.json();
+            this.mostrarPreguntas();
+
+        } catch (error) {
+            console.error('Error al filtrar preguntas:', error);
+            // En caso de error, usar filtro client-side como fallback
+            this.filtrarPreguntasClientSide();
+        }
+    },
+
+    filtrarPreguntasClientSide() {
         const estado = document.getElementById('filtro-estado')?.value || '';
         const nivel = document.getElementById('filtro-nivel')?.value || '';
-        const busqueda = document.getElementById('buscar-pregunta')?.value.toLowerCase() || '';
-        return this.preguntas.filter(pregunta => {
-            const coincideBusqueda = !busqueda ||
-                (pregunta.pregunta && pregunta.pregunta.toLowerCase().includes(busqueda)) ||
-                (pregunta.respuesta && pregunta.respuesta.toLowerCase().includes(busqueda));
-            const coincideEstado = !estado || pregunta.estado === estado;
-            const coincideNivel = !nivel || pregunta.nivel === nivel;
-            return coincideBusqueda && coincideEstado && coincideNivel;
+        const tematica = document.getElementById('filtro-tematica')?.value.toLowerCase() || '';
+        const subtema = document.getElementById('filtro-subtema')?.value.toLowerCase() || '';
+        const pregunta = document.getElementById('filtro-pregunta')?.value.toLowerCase() || '';
+        const respuesta = document.getElementById('filtro-respuesta')?.value.toLowerCase() || '';
+        
+        const preguntasFiltradas = this.preguntas.filter(p => {
+            const coincideEstado = !estado || p.estado === estado;
+            const coincideNivel = !nivel || p.nivel === nivel;
+            const coincideTematica = !tematica || (p.tematica && p.tematica.toLowerCase().includes(tematica));
+            const coincideSubtema = !subtema || (p.subtema && p.subtema.toLowerCase().includes(subtema));
+            const coincidePregunta = !pregunta || (p.pregunta && p.pregunta.toLowerCase().includes(pregunta));
+            const coincideRespuesta = !respuesta || (p.respuesta && p.respuesta.toLowerCase().includes(respuesta));
+            
+            return coincideEstado && coincideNivel && coincideTematica && 
+                   coincideSubtema && coincidePregunta && coincideRespuesta;
         });
+        
+        // Actualizar preguntas filtradas y mostrar
+        this.preguntas = preguntasFiltradas;
+        this.mostrarPreguntas();
     },
 
     async crearPregunta(event) {
@@ -182,11 +238,14 @@ const PreguntasManager = {
     },
 
     getEstadoColor(estado) {
-        if (estado === 'aprobada') return 'bg-success text-white';
+        if (estado === 'borrador') return 'bg-secondary text-white';
+        if (estado === 'para_verificar') return 'bg-info text-white';
         if (estado === 'verificada') return 'bg-primary text-white';
+        if (estado === 'revisar') return 'bg-warning text-dark';
+        if (estado === 'corregir') return 'bg-warning text-dark';
         if (estado === 'rechazada') return 'bg-danger text-white';
-        if (estado === 'borrador' || estado === 'creada') return 'bg-secondary text-white';
-        return '';
+        if (estado === 'aprobada') return 'bg-success text-white';
+        return 'bg-light text-dark';
     },
 
     async editarCelda(id, campo, td) {
@@ -226,10 +285,10 @@ const PreguntasManager = {
             });
         } else if (campo === 'estado') {
             input = document.createElement('select');
-            ['borrador','creada','verificada','rechazada','aprobada'].forEach(opt => {
+            ['borrador','para_verificar','verificada','revisar','corregir','rechazada','aprobada'].forEach(opt => {
                 const option = document.createElement('option');
                 option.value = opt;
-                option.text = opt.charAt(0).toUpperCase() + opt.slice(1);
+                option.text = opt === 'para_verificar' ? 'Para verificar' : opt.charAt(0).toUpperCase() + opt.slice(1);
                 if (valorOriginal === opt) option.selected = true;
                 input.appendChild(option);
             });
@@ -289,7 +348,6 @@ const PreguntasManager = {
         // Normalizar los campos obligatorios
         if (update["pregunta"]) {
             let p = update["pregunta"];
-            p = p.toUpperCase();
             p = p.replace(/[\r\n]+/g, ' ');
             p = p.replace(/\s+/g, ' ').trim();
             if (p.length > 150) p = p.substring(0, 150).trim();
@@ -297,7 +355,6 @@ const PreguntasManager = {
         }
         if (update["respuesta"]) {
             let r = update["respuesta"];
-            r = r.toUpperCase();
             r = r.replace(/[\r\n]+/g, ' ');
             r = r.replace(/\s+/g, ' ').trim();
             if (r.length > 50) r = r.substring(0, 50).trim();
@@ -305,7 +362,6 @@ const PreguntasManager = {
         }
         if (update["tematica"]) {
             let t = update["tematica"];
-            t = t.toUpperCase();
             t = t.replace(/[\r\n]+/g, ' ');
             t = t.replace(/\s+/g, ' ').trim();
             if (t.length > 100) t = t.substring(0, 100).trim();
@@ -391,6 +447,16 @@ const PreguntasManager = {
                 style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
             }).showToast();
         }
+    },
+
+    limpiarFiltros() {
+        document.getElementById('filtro-estado').value = '';
+        document.getElementById('filtro-nivel').value = '';
+        document.getElementById('filtro-tematica').value = '';
+        document.getElementById('filtro-subtema').value = '';
+        document.getElementById('filtro-pregunta').value = '';
+        document.getElementById('filtro-respuesta').value = '';
+        this.cargarPreguntas();
     }
 };
 
@@ -507,4 +573,12 @@ window.cambiarPassword = function() {
     document.getElementById('form-cambiar-password').reset();
     const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
     modal.show();
+};
+
+window.limpiarFiltros = function() {
+    PreguntasManager.limpiarFiltros();
+};
+
+window.filtrarPreguntas = function() {
+    PreguntasManager.filtrarPreguntas();
 }; 

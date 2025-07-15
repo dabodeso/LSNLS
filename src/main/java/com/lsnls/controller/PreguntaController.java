@@ -266,6 +266,59 @@ public class PreguntaController {
         }
     }
 
+    @PostMapping("/{id}/revisar")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> marcarParaRevisar(@PathVariable Long id, @RequestParam(required = false) String notas) {
+        try {
+            Optional<Usuario> currentUserOpt = authService.getCurrentUser();
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(401).body("Usuario no autenticado");
+            }
+            Usuario currentUser = currentUserOpt.get();
+            
+            // Solo niveles 3 y 4 (VERIFICACION y DIRECCION) pueden marcar para revisar
+            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION && 
+                currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &&
+                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {
+                return ResponseEntity.status(403).body("No tienes permisos para marcar preguntas para revisar");
+            }
+            
+            Pregunta pregunta = preguntaService.marcarParaRevisar(id, notas, currentUser);
+            if (pregunta != null) {
+                return ResponseEntity.ok(pregunta);
+            }
+            return ResponseEntity.badRequest().body("Error al marcar pregunta para revisar");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al marcar pregunta para revisar: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/corregir")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> marcarParaCorregir(@PathVariable Long id, @RequestParam(required = false) String notas) {
+        try {
+            Optional<Usuario> currentUserOpt = authService.getCurrentUser();
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(401).body("Usuario no autenticado");
+            }
+            Usuario currentUser = currentUserOpt.get();
+            
+            // Solo nivel 4 (DIRECCION) puede marcar para corregir
+            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &&
+                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {
+                return ResponseEntity.status(403).body("No tienes permisos para marcar preguntas para corregir");
+            }
+            
+            Pregunta pregunta = preguntaService.marcarParaCorregir(id, notas, currentUser);
+            if (pregunta != null) {
+                return ResponseEntity.ok(pregunta);
+            }
+            return ResponseEntity.badRequest().body("Error al marcar pregunta para corregir");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al marcar pregunta para corregir: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/validar")
     @PreAuthorize("@authorizationService.canRead()")
     public ResponseEntity<?> validarPregunta(@Valid @RequestBody Pregunta pregunta) {
@@ -363,6 +416,27 @@ public class PreguntaController {
             return ResponseEntity.ok(preguntas);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/filtrar")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<List<PreguntaDTO>> filtrarPreguntasCompleto(
+            @RequestParam(required = false) String nivel,
+            @RequestParam(required = false) String factor,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String tematica,
+            @RequestParam(required = false) String subtema,
+            @RequestParam(required = false) String pregunta,
+            @RequestParam(required = false) String respuesta
+    ) {
+        try {
+            List<PreguntaDTO> preguntas = preguntaService.filtrarPreguntasCompleto(
+                nivel, factor, estado, tematica, subtema, pregunta, respuesta);
+            return ResponseEntity.ok(preguntas);
+        } catch (Exception e) {
+            log.error("Error al filtrar preguntas: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 } 

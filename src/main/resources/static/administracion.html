@@ -33,7 +33,6 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="usuario-menu">
                             <li><a class="dropdown-item" href="#" onclick="cerrarSesion()">Cerrar sesión</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="cambiarPassword()">Cambiar contraseña</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -41,8 +40,9 @@
         </div>
     </nav>
     <div class="container mt-4">
+        <!-- Sección de Usuarios -->
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>Administración de Usuarios</h2>
+            <h2>👥 Administración de Usuarios</h2>
             <button class="btn btn-success" onclick="crearUsuario()">➕ Nuevo Usuario</button>
         </div>
         <div class="table-responsive">
@@ -61,40 +61,47 @@
             </table>
         </div>
         <div class="alert alert-info mt-3">
-            <b>Nota:</b> Para cambiar la contraseña, pulsa 💾 y escribe la nueva contraseña cuando se solicite. Para resetearla a <b>123456</b>, pulsa 🔑.
+            <b>Nota:</b> Los cambios en nombre y rol se guardan automáticamente. Para resetear la contraseña a <b>123456</b>, pulsa 🔑. Para eliminar el usuario, pulsa 🗑️.
         </div>
     </div>
-    <!-- Modal Cambiar Contraseña -->
-    <div class="modal fade" id="modal-cambiar-password" tabindex="-1">
+    
+    <!-- Modal para crear usuario -->
+    <div class="modal fade" id="modal-usuario" tabindex="-1" aria-labelledby="modal-usuario-titulo" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Cambiar contraseña</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="modal-usuario-titulo">Nuevo Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="form-cambiar-password">
+                    <form id="formCrearUsuario">
                         <div class="mb-3">
-                            <label class="form-label">Contraseña actual</label>
-                            <input type="password" class="form-control" id="password-actual" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Nueva contraseña</label>
-                            <input type="password" class="form-control" id="password-nueva" required>
+                            <label for="nombre-usuario" class="form-label">Nombre</label>
+                            <input type="text" id="nombre-usuario" name="nombre" class="form-control" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Repetir nueva contraseña</label>
-                            <input type="password" class="form-control" id="password-nueva2" required>
+                            <label for="password-usuario" class="form-label">Contraseña</label>
+                            <input type="text" id="password-usuario" name="password" class="form-control" value="123456" required>
                         </div>
-                        <div id="password-help" class="form-text mb-2">
-                            Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
+                        <div class="mb-3">
+                            <label for="rol-usuario" class="form-label">Rol</label>
+                            <select id="rol-usuario" name="rol" class="form-control" required>
+                                <option value="ROLE_CONSULTA">Consulta</option>
+                                <option value="ROLE_GUION">Guion</option>
+                                <option value="ROLE_VERIFICACION">Verificación</option>
+                                <option value="ROLE_DIRECCION">Dirección</option>
+                                <option value="ROLE_ADMIN">Admin</option>
+                            </select>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/api.js"></script>
     <script src="js/administracion.js"></script>
     <script src="js/auth.js"></script>
@@ -106,51 +113,6 @@
             if (usuario) {
                 document.getElementById('usuario-actual').textContent = usuario.nombre + ' (' + usuario.rol + ')';
             }
-        });
-
-        function cambiarPassword() {
-            document.getElementById('form-cambiar-password').reset();
-            const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
-            modal.show();
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const actual = document.getElementById('password-actual').value;
-                const nueva = document.getElementById('password-nueva').value;
-                const nueva2 = document.getElementById('password-nueva2').value;
-                const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-                if (nueva !== nueva2) {
-                    mostrarError('Las contraseñas nuevas no coinciden.');
-                    return;
-                }
-                if (!regex.test(nueva)) {
-                    mostrarError('La nueva contraseña no cumple los requisitos.');
-                    return;
-                }
-                try {
-                    const usuario = JSON.parse(localStorage.getItem('usuario'));
-                    const token = localStorage.getItem('token');
-                    const response = await fetch(`/api/usuarios/${usuario.id}/cambiar-password`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
-                        },
-                        body: JSON.stringify({ actual, nueva })
-                    });
-                    if (response.ok) {
-                        mostrarExito('Contraseña cambiada correctamente.');
-                        bootstrap.Modal.getInstance(document.getElementById('modal-cambiar-password')).hide();
-                    } else {
-                        const errorText = await response.text();
-                        mostrarError('Error al cambiar contraseña: ' + errorText);
-                    }
-                } catch (err) {
-                    mostrarError('Error inesperado: ' + err);
-                }
-            });
         });
     </script>
 </body>

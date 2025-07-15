@@ -19,4 +19,8 @@ public interface CuestionarioRepository extends JpaRepository<Cuestionario, Long
     
     @Query("SELECT c FROM Cuestionario c WHERE c.estado = :estado AND c.nivel = :nivel")
     List<Cuestionario> findByEstadoAndNivel(EstadoCuestionario estado, NivelCuestionario nivel);
+    
+    // Obtener todos los cuestionarios ordenados por ID descendente (más recientes primero)
+    @Query("SELECT c FROM Cuestionario c ORDER BY c.id DESC")
+    List<Cuestionario> findAllOrderByIdDesc();
 } 

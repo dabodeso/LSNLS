@@ -5,7 +5,6 @@ import com.lsnls.entity.Pregunta;
 import com.lsnls.entity.Cuestionario;
 import com.lsnls.entity.Cuestionario.EstadoCuestionario;
 import com.lsnls.entity.Concursante;
-import com.lsnls.entity.EstadoConcursante;
 import com.lsnls.entity.Programa;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -57,17 +56,22 @@ public class AuthorizationService {
 
                 switch (estado) {
                     case borrador:
-                    case creada:
+                    case para_verificar:
+                        // Niveles 2, 3 y 4 (GUION, VERIFICACION, DIRECCION)
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
                     case verificada:
+                    case revisar:
+                    case corregir:
+                        // Niveles 3 y 4 (VERIFICACION, DIRECCION)
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
                     case rechazada:
                     case aprobada:
+                        // Solo nivel 4 (DIRECCION)
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
                     default:
@@ -88,19 +92,29 @@ public class AuthorizationService {
                     return true;
                 }
 
-                // Solo verificacion y direccion pueden verificar
-                if (nuevoEstado == Pregunta.EstadoPregunta.verificada) {
-                    return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
-                           usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+                switch (nuevoEstado) {
+                    case borrador:
+                    case para_verificar:
+                        // Niveles 2, 3 y 4 pueden establecer estos estados
+                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
+                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
+                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+                        
+                    case verificada:
+                    case revisar:
+                        // Solo niveles 3 y 4 pueden verificar o marcar para revisar
+                        return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
+                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+                        
+                    case corregir:
+                    case rechazada:
+                    case aprobada:
+                        // Solo nivel 4 puede mandar a corregir, rechazar o aprobar
+                        return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+                        
+                    default:
+                        return false;
                 }
-
-                // Solo direccion puede aprobar o rechazar
-                if (nuevoEstado == Pregunta.EstadoPregunta.aprobada || nuevoEstado == Pregunta.EstadoPregunta.rechazada) {
-                    return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
-                }
-
-                // Cambios básicos (borrador, creada)
-                return canEditPregunta(estadoActual);
             })
             .orElse(false);
     }
@@ -155,25 +169,34 @@ public class AuthorizationService {
     /**
      * Verifica si el usuario actual puede editar un concursante según su estado
      */
-    public boolean canEditConcursante(EstadoConcursante estado) {
+    public boolean canEditConcursante(String estado) {
         return getCurrentUser()
             .map(usuario -> {
-                switch (estado) {
-                    case BORRADOR:
+                if (estado == null) {
+                    return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
+                           usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
+                           usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+                }
+                
+                switch (estado.toUpperCase()) {
+                    case "BORRADOR":
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
-                    case GRABADO:
-                    case EDITADO:
+                    case "GRABADO":
+                    case "EDITADO":
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
-                    case PROGRAMADO:
+                    case "PROGRAMADO":
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
                     default:
-                        return false;
+                        // Para estados personalizados, permitir edición según roles básicos
+                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
+                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
+                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                 }
             })
             .orElse(false);

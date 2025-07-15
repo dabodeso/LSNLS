@@ -13,6 +13,171 @@
     <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="css/styles.css" rel="stylesheet">
+    <style>
+        .programa-header {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 15px;
+            margin: 20px 0 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .programa-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .programa-info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+        .programa-info-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        .programa-info-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .editable-field {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 5px 8px;
+            border-radius: 4px;
+            min-width: 80px;
+            text-align: center;
+        }
+        .editable-field:focus {
+            background: rgba(255,255,255,0.2);
+            outline: none;
+            border-color: rgba(255,255,255,0.5);
+        }
+        .programa-info-readonly {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: rgba(255,255,255,0.9);
+        }
+        .concursantes-table {
+            margin-bottom: 30px;
+        }
+        .concursante-row {
+            cursor: pointer;
+        }
+        .concursante-row:hover {
+            background-color: #f8f9fa;
+        }
+        .foto-concursante {
+            max-width: 120px;
+            max-height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .foto-concursante:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+            transition: all 0.2s ease;
+        }
+        .campo-foto-vacio {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            height: 120px;
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #666;
+            font-size: 0.8em;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        .campo-foto-vacio:hover {
+            border-color: #007bff;
+            color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .campo-foto-vacio i {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+        .campo-foto-vacio span {
+            font-size: 0.8em;
+            line-height: 1.2;
+        }
+        
+        /* Estilos específicos para campos editables en programas */
+        .table-excel td input.campo-editable,
+        .table-excel td textarea.campo-editable {
+            width: 100%;
+            font-size: 0.93rem;
+            padding: 4px 6px;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            background: transparent;
+        }
+        .table-excel td input.campo-editable:hover,
+        .table-excel td textarea.campo-editable:hover {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        .table-excel td input.campo-editable:focus,
+        .table-excel td textarea.campo-editable:focus {
+            background-color: white;
+            border-color: #007bff;
+            outline: none;
+        }
+        .table-excel td textarea.campo-editable {
+            resize: vertical;
+            min-height: 30px;
+        }
+        
+        /* Ajustes específicos para la tabla de concursantes */
+        .concursantes-table .table-excel {
+            table-layout: fixed;
+        }
+        .concursantes-table .col-numero { width: 5%; }
+        .concursantes-table .col-lugar { width: 8%; }
+        .concursantes-table .col-nombre { width: 12%; }
+        .concursantes-table .col-edad { width: 4%; }
+        .concursantes-table .col-ocupacion { width: 10%; }
+        .concursantes-table .col-rrss { width: 8%; }
+        .concursantes-table .col-resultado { width: 6%; }
+        .concursantes-table .col-duracion { width: 6%; }
+        .concursantes-table .col-foto { width: 12%; }
+        .concursantes-table .col-momentos { width: 12%; }
+        .concursantes-table .col-factor-x { width: 4%; }
+        .concursantes-table .col-valoracion { width: 8%; }
+        .concursantes-table .col-creditos { width: 12%; }
+        
+        /* Estilo azul para encabezados de tabla de programas (igual que preguntas) */
+        .table-excel thead th {
+            background: linear-gradient(90deg, #e3f0fc 0%, #cbe6fa 100%) !important;
+            color: #1976d2 !important;
+            border-bottom: 1.5px solid #b6d4f7 !important;
+            font-weight: 600 !important;
+            font-size: 0.95rem !important;
+            padding: 7px 4px !important;
+            text-align: center !important;
+            letter-spacing: 0.02em !important;
+        }
+        
+        /* Estilo para celdas de tabla de programas (igual que preguntas) */
+        .table-excel tbody td {
+            white-space: normal !important;
+            word-break: break-word !important;
+            max-width: 400px !important;
+            font-size: 0.93rem !important;
+            padding: 7px 4px !important;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -28,6 +193,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="cuestionarios.html">Cuestionarios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="combos.html">Combos</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="concursantes.html">Concursantes</a>
@@ -55,7 +223,7 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
         <div class="section-header">
             <h2>Gestión de Programas</h2>
             <button class="btn btn-primary" onclick="mostrarFormularioPrograma()">
@@ -63,52 +231,39 @@
             </button>
         </div>
 
-        <!-- Campo de duración total del programa -->
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <label class="form-label">Duración total del programa (ej: 1h 5m):</label>
-                <input type="text" class="form-control" id="input-duracion-total-programa" placeholder="Ej: 1h 5m">
-            </div>
-            <div class="col-md-8 d-flex align-items-end">
-                <span id="duracion-total-nuevo-programa" class="ms-3"></span>
-            </div>
-        </div>
-
         <!-- Filtros -->
-        <div class="filters-container">
+        <div class="filters-container mb-4">
             <div class="filter-group">
                 <label>Estado:</label>
                 <select id="filtro-estado-programa" onchange="filtrarProgramas()">
                     <option value="">Todos</option>
-                    <option value="PLANIFICADO">Planificado</option>
-                    <option value="EN_PRODUCCION">En Producción</option>
-                    <option value="COMPLETADO">Completado</option>
-                    <option value="EMITIDO">Emitido</option>
+                    <option value="borrador">Borrador</option>
+                    <option value="grabado">Grabado</option>
+                    <option value="editado">Editado</option>
+                    <option value="programado">Programado</option>
+                    <option value="emitido">Emitido</option>
                 </select>
             </div>
             <div class="filter-group">
                 <label>Buscar:</label>
-                <input type="text" id="buscar-programa" onkeyup="filtrarProgramas()" placeholder="Número o descripción...">
+                <input type="text" id="buscar-programa" onkeyup="filtrarProgramas()" placeholder="Número o fecha...">
+            </div>
+            <div class="filter-group" id="control-duracion-admin" style="display: none;">
+                <label>Duración objetivo:</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="text" id="duracion-objetivo" placeholder="Ej: 1h 5m" 
+                           style="width: 100px; font-size: 0.9em; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px;"
+                           onblur="actualizarDuracionObjetivo()">
+                    <button onclick="mostrarInfoFormato()" 
+                            style="padding: 4px 8px; font-size: 0.8em; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                            title="Información sobre formato">ℹ️</button>
+                </div>
             </div>
         </div>
 
-        <!-- Tabla de Programas -->
-        <div class="table-responsive">
-            <table class="table table-excel table-preguntas" id="tabla-programas-principal">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Fecha Emisión</th>
-                        <th>Estado</th>
-                        <th>Concursantes</th>
-                        <th>Duración Total</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-programas">
-                    <!-- Los programas se cargarán dinámicamente aquí -->
-                </tbody>
-            </table>
+        <!-- Contenedor de Programas -->
+        <div id="contenedor-programas">
+            <!-- Los programas se cargarán dinámicamente aquí -->
         </div>
 
         <!-- Modal para Crear/Editar Programa -->
@@ -123,49 +278,31 @@
                         <form id="form-programa">
                             <input type="hidden" id="programa-id">
                             <div class="mb-3">
-                                <label class="form-label">Fecha de Emisión:</label>
-                                <input type="date" class="form-control" id="fecha-emision" required>
+                                <label class="form-label">Temporada:</label>
+                                <input type="number" class="form-control" id="temporada-programa" min="1" required>
+                                <small class="form-text text-muted">Número de temporada (obligatorio)</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Fecha de Emisión (opcional):</label>
+                                <input type="date" class="form-control" id="fecha-emision" placeholder="Dejar en blanco para programas futuros">
+                                <small class="form-text text-muted">Puede dejarse en blanco si el programa se emitirá en el futuro</small>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Estado:</label>
-                                <select class="form-control" id="estado-programa" required>
-                                    <option value="">Seleccione un estado...</option>
-                                    <option value="PLANIFICADO">Planificado</option>
-                                    <option value="EN_PRODUCCION">En Producción</option>
-                                    <option value="COMPLETADO">Completado</option>
-                                    <option value="EMITIDO">Emitido</option>
+                                <select class="form-control" id="estado-programa" disabled>
+                                    <option value="borrador">Borrador</option>
+                                    <option value="grabado">Grabado</option>
+                                    <option value="editado">Editado</option>
+                                    <option value="programado">Programado</option>
+                                    <option value="emitido">Emitido</option>
                                 </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Notas de Producción:</label>
-                                <textarea class="form-control" id="notas-produccion" rows="3"></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Notas de Emisión:</label>
-                                <textarea class="form-control" id="notas-emision" rows="3"></textarea>
+                                <small class="form-text text-muted">El estado se actualiza automáticamente según los datos introducidos</small>
                             </div>
                         </form>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-primary" onclick="guardarPrograma()">Guardar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal para Ver Concursantes -->
-        <div class="modal fade" id="modal-ver-concursantes" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Concursantes del Programa</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="lista-concursantes">
-                            <!-- Los concursantes se cargarán dinámicamente aquí -->
-                        </div>
                     </div>
                 </div>
             </div>
@@ -196,74 +333,125 @@
                             <div id="password-help" class="form-text mb-2">
                                 Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
                         </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="procesarCambioPassword()">Cambiar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Añadir Concursantes -->
+        <div class="modal fade" id="modal-añadir-concursantes" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Añadir Concursantes al Programa</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="programa-seleccionado-id">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="buscar-concursante-disponible" placeholder="Buscar por nombre, lugar, ocupación..." onkeyup="filtrarConcursantesDisponibles()">
+                        </div>
+                        <div id="lista-concursantes-disponibles" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Concursantes disponibles se cargarán aquí -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap Bundle with Popper -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Toastify JS -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <!-- Custom JS -->
-    <script src="js/auth.js"></script>
-    <script src="js/utils.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/programas.js"></script>
     <script>
-        // Inicializar la página cuando se carga
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();
-            mostrarBotonAdminNavbar();
+            
+            // Mostrar control de duración objetivo solo para admins
+            const usuario = JSON.parse(localStorage.getItem('usuario'));
+            if (usuario && usuario.rol === 'ROLE_ADMIN') {
+                document.getElementById('control-duracion-admin').style.display = 'block';
+                cargarConfiguracionGlobal();
+            }
         });
-
-        function cambiarPassword() {
-            document.getElementById('form-cambiar-password').reset();
-            const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
-            modal.show();
+        
+        // Funciones para configuración global de duración objetivo
+        async function cargarConfiguracionGlobal() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/configuracion/duracion-objetivo', {
+                    headers: {
+                        'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                    }
+                });
+                
+                if (response.ok) {
+                    const duracion = await response.text();
+                    document.getElementById('duracion-objetivo').value = duracion.replace(/"/g, ''); // Quitar comillas si las hay
+                }
+            } catch (error) {
+                console.error('Error al cargar configuración:', error);
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const actual = document.getElementById('password-actual').value;
-                const nueva = document.getElementById('password-nueva').value;
-                const nueva2 = document.getElementById('password-nueva2').value;
-                const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-                if (nueva !== nueva2) {
-                    mostrarError('Las contraseñas nuevas no coinciden.');
-                    return;
+        async function actualizarDuracionObjetivo() {
+            const duracion = document.getElementById('duracion-objetivo').value.trim();
+            
+            if (!duracion) {
+                return; // No hacer nada si está vacío
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/configuracion/duracion-objetivo', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                    },
+                    body: JSON.stringify({ duracion: duracion })
+                });
+
+                if (response.ok) {
+                    // Actualizar la variable global
+                    duracionObjetivoGlobal = duracion;
+                    // Recargar los programas para mostrar el cambio inmediatamente
+                    await cargarProgramas();
+                } else {
+                    const errorText = await response.text();
+                    alert('Error al actualizar configuración: ' + errorText);
                 }
-                if (!regex.test(nueva)) {
-                    mostrarError('La nueva contraseña no cumple los requisitos.');
-                    return;
-                }
-                try {
-                    const usuario = JSON.parse(localStorage.getItem('usuario'));
-                    const token = localStorage.getItem('token');
-                    const response = await fetch(`/api/usuarios/${usuario.id}/cambiar-password`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
-                        },
-                        body: JSON.stringify({ actual, nueva })
-                    });
-                    if (response.ok) {
-                        mostrarExito('Contraseña cambiada correctamente.');
-                        bootstrap.Modal.getInstance(document.getElementById('modal-cambiar-password')).hide();
-                    } else {
-                        const errorText = await response.text();
-                        mostrarError('Error al cambiar contraseña: ' + errorText);
-                    }
-                } catch (err) {
-                    mostrarError('Error inesperado: ' + err);
-                }
-            });
-        });
+            } catch (error) {
+                alert('Error inesperado: ' + error.message);
+            }
+        }
+        
+        function mostrarInfoFormato() {
+            alert(`Formato de duración:
+
+Ejemplos válidos:
+• 1h 5m (1 hora 5 minutos)
+• 2h (2 horas)
+• 45m (45 minutos)
+• 1h 30m (1 hora 30 minutos)
+
+Formato:
+• Use 'h' para horas
+• Use 'm' para minutos
+• Separe con espacio
+• No use comas ni puntos`);
+        }
     </script>
 </body>
 </html> 

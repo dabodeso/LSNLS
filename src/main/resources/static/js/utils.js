@@ -70,10 +70,11 @@ class Utils {
         const classes = {
             pregunta: {
                 'borrador': 'bg-secondary',
-                'creada': 'bg-primary',
+                'para_verificar': 'bg-primary',
                 'verificada': 'bg-info',
                 'aprobada': 'bg-success',
                 'rechazada': 'bg-danger',
+                'revisar': 'bg-warning',
                 'corregir': 'bg-warning'
             },
             cuestionario: {
@@ -157,6 +158,15 @@ function mostrarBotonAdminNavbar() {
     } else if (navAdmin) {
         navAdmin.style.display = 'none';
     }
+}
+
+// Funciones para mostrar mensajes de error y éxito
+function mostrarError(mensaje) {
+    Utils.showAlert(mensaje, 'danger', 5000);
+}
+
+function mostrarExito(mensaje) {
+    Utils.showAlert(mensaje, 'success', 3000);
 }
 
 console.log('🛠️ Utils cargado y optimizado'); 

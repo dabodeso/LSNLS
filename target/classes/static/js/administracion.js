@@ -8,6 +8,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
     await cargarUsuarios();
+    
+    // Agregar evento al formulario de crear usuario
+    document.getElementById('formCrearUsuario').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await procesarCreacionUsuario();
+    });
 });
 
 async function cargarUsuarios() {
@@ -26,9 +32,9 @@ function renderTablaUsuarios(usuarios) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${usuario.id}</td>
-            <td><input type="text" value="${usuario.nombre}" data-id="${usuario.id}" class="input-nombre form-control form-control-sm"></td>
+            <td><input type="text" value="${usuario.nombre}" data-id="${usuario.id}" class="input-nombre form-control form-control-sm" onchange="guardarUsuario(${usuario.id})"></td>
             <td>
-                <select class="form-select form-select-sm input-rol" data-id="${usuario.id}">
+                <select class="form-select form-select-sm input-rol" data-id="${usuario.id}" onchange="guardarUsuario(${usuario.id})">
                     <option value="ROLE_ADMIN" ${usuario.rol === 'ROLE_ADMIN' ? 'selected' : ''}>Admin</option>
                     <option value="ROLE_CONSULTA" ${usuario.rol === 'ROLE_CONSULTA' ? 'selected' : ''}>Consulta</option>
                     <option value="ROLE_GUION" ${usuario.rol === 'ROLE_GUION' ? 'selected' : ''}>Guion</option>
@@ -37,7 +43,6 @@ function renderTablaUsuarios(usuarios) {
                 </select>
             </td>
             <td>
-                <button class="btn btn-sm btn-primary" onclick="guardarUsuario(${usuario.id})">💾</button>
                 <button class="btn btn-sm btn-warning" onclick="resetearPassword(${usuario.id})">🔑</button>
                 <button class="btn btn-sm btn-danger" onclick="eliminarUsuario(${usuario.id})">🗑️</button>
             </td>
@@ -49,9 +54,8 @@ function renderTablaUsuarios(usuarios) {
 async function guardarUsuario(id) {
     const nombre = document.querySelector(`.input-nombre[data-id='${id}']`).value;
     const rol = document.querySelector(`.input-rol[data-id='${id}']`).value;
-    const password = prompt('Si quieres cambiar la contraseña, introdúcela. Si no, deja vacío.');
     const usuario = { nombre, rol };
-    if (password) usuario.password = password;
+    
     try {
         await apiManager.updateUsuario(id, usuario);
         alert('Usuario actualizado');
@@ -82,17 +86,43 @@ async function resetearPassword(id) {
     }
 }
 
-async function crearUsuario() {
-    const nombre = prompt('Nombre de usuario:');
-    if (!nombre) return;
-    const password = prompt('Contraseña:');
-    if (!password) return;
-    const rol = prompt('Rol (ROLE_ADMIN, ROLE_CONSULTA, ROLE_GUION, ROLE_VERIFICACION, ROLE_DIRECCION):', 'ROLE_CONSULTA');
-    if (!rol) return;
-    const usuario = { nombre, password, rol };
+function crearUsuario() {
+    console.log('crearUsuario() llamada'); // Debug
+    
+    // Verificar que el modal existe
+    const modalElement = document.getElementById('modal-usuario');
+    if (!modalElement) {
+        console.error('Modal no encontrado');
+        alert('Error: Modal no encontrado');
+        return;
+    }
+    
+    // Limpiar formulario
+    document.getElementById('formCrearUsuario').reset();
+    document.getElementById('password-usuario').value = '123456';
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+}
+
+async function procesarCreacionUsuario() {
+    const formData = new FormData(document.getElementById('formCrearUsuario'));
+    const usuario = {
+        nombre: formData.get('nombre'),
+        password: formData.get('password'),
+        rol: formData.get('rol')
+    };
+    
     try {
         await apiManager.createUsuario(usuario);
-        alert('Usuario creado');
+        alert('Usuario creado exitosamente');
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modal-usuario'));
+        modal.hide();
+        
+        // Recargar usuarios
         await cargarUsuarios();
     } catch (e) {
         alert('Error creando usuario: ' + e.message);

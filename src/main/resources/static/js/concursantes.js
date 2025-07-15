@@ -48,8 +48,13 @@ function actualizarSelectProgramas() {
         `<option value="${programa.id}">Programa ${programa.id} - ${programa.fechaEmision || 'Sin fecha'}</option>`
     );
     
-    selectPrograma.innerHTML = '<option value="">Seleccione un programa...</option>' + options.join('');
-    selectFiltro.innerHTML = '<option value="">Todos</option>' + options.join('');
+    // Solo actualizar si el elemento existe (para evitar errores en diferentes páginas)
+    if (selectPrograma) {
+        selectPrograma.innerHTML = '<option value="">Seleccione un programa...</option>' + options.join('');
+    }
+    if (selectFiltro) {
+        selectFiltro.innerHTML = '<option value="">Todos</option>' + options.join('');
+    }
 }
 
 function mostrarConcursantes(concursantesFiltrados = null) {
@@ -57,27 +62,40 @@ function mostrarConcursantes(concursantesFiltrados = null) {
     const tbody = document.getElementById('tabla-concursantes');
     tbody.innerHTML = lista.map(concursante => `
         <tr data-id="${concursante.id}">
-            <td>${concursante.id}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'nombre', this)">${concursante.nombre || ''}</td>
-            <td ondblclick="abrirSelectorImagen(${concursante.id})">${concursante.imagen ? `<img src='${concursante.imagen}' alt='Imagen' style='max-width:100px;max-height:100px;object-fit:cover;cursor:pointer;'/>` : ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'edad', this)">${concursante.edad || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'datosInteres', this)">${concursante.datosInteres || ''}</td>
-            <td>
-                ${concursante.cuestionarioId ? `<a href="cuestionarios.html?id=${concursante.cuestionarioId}">${concursante.cuestionarioId}</a>` : ''}
-            </td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'fecha', this)">${concursante.fecha || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroConcursante', this)">${concursante.numeroConcursante || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'jornada', this)">${concursante.jornada || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'diaGrabacion', this)">${formatearFecha(concursante.diaGrabacion)}</td>
             <td ondblclick="editarCeldaConcursante(${concursante.id}, 'lugar', this)">${concursante.lugar || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'guionista', this)">${concursante.guionista || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'nombre', this)">${concursante.nombre || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'edad', this)">${concursante.edad || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'ocupacion', this)">${concursante.ocupacion || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'redesSociales', this)">${concursante.redesSociales || ''}</td>
+            <td onclick="abrirSelectorCuestionarioParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar cuestionario">
+                ${concursante.cuestionarioId ? `<span class="badge bg-primary">${concursante.cuestionarioId}</span>` : '<em class="text-muted">Sin asignar</em>'}
+            </td>
+            <td onclick="abrirSelectorComboParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar combo">
+                ${concursante.comboId ? `<span class="badge bg-warning">${concursante.comboId}</span>` : '<em class="text-muted">Sin asignar</em>'}
+            </td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'factorX', this)">${concursante.factorX || ''}</td>
             <td ondblclick="editarCeldaConcursante(${concursante.id}, 'resultado', this)">${concursante.resultado || ''}</td>
             <td ondblclick="editarCeldaConcursante(${concursante.id}, 'notasGrabacion', this)">${concursante.notasGrabacion || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'editor', this)">${concursante.editor || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'notasEdicion', this)">${concursante.notasEdicion || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracion', this)">${concursante.duracion || ''}</td>
-            <td>
-                ${concursante.programa && concursante.programa.id ? `<a href="programas.html?id=${concursante.programa.id}">${concursante.programa.id}</a>` : ''}
-            </td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'ordenPrograma', this)">${concursante.ordenPrograma || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'guionista', this)">${concursante.guionista || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoracionGuionista', this)">${concursante.valoracionGuionista || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'concursantesPorJornada', this)">${concursante.concursantesPorJornada || ''}</td>
             <td ondblclick="editarCeldaConcursante(${concursante.id}, 'estado', this)">${concursante.estado || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'momentosDestacados', this)">${concursante.momentosDestacados || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracion', this)">${concursante.duracion || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoracionFinal', this)">${concursante.valoracionFinal || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroPrograma', this)">${concursante.numeroPrograma || ''}</td>
+            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'ordenEscaleta', this)">${concursante.ordenEscaleta || ''}</td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="editarConcursante(${concursante.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="eliminarConcursante(${concursante.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
         </tr>
     `).join('');
     // Resaltado y scroll si hay id en la URL
@@ -118,6 +136,7 @@ function mostrarFormularioConcursante() {
     document.getElementById('form-concursante').reset();
     document.getElementById('concursante-id').value = '';
     document.getElementById('cuestionario-id').value = '';
+    document.getElementById('combo-id').value = '';
     const modal = new bootstrap.Modal(document.getElementById('modal-concursante'));
     modal.show();
 }
@@ -129,20 +148,27 @@ async function editarConcursante(id) {
         const form = document.getElementById('form-concursante');
         form.reset();
         document.getElementById('concursante-id').value = concursanteActual.id;
-        document.getElementById('nombre-concursante').value = concursanteActual.nombre;
-        document.getElementById('edad-concursante').value = concursanteActual.edad || '';
-        document.getElementById('fecha-concursante').value = concursanteActual.fecha || '';
+        document.getElementById('numero-concursante').value = concursanteActual.numeroConcursante || '';
+        document.getElementById('jornada').value = concursanteActual.jornada || '';
+        document.getElementById('dia-grabacion').value = concursanteActual.diaGrabacion || '';
         document.getElementById('lugar-concursante').value = concursanteActual.lugar || '';
-        document.getElementById('datos-interes').value = concursanteActual.datosInteres || '';
-        document.getElementById('cuestionario-id').value = concursanteActual.cuestionarioId || '';
-        document.getElementById('guionista').value = concursanteActual.guionista || '';
+        document.getElementById('nombre-concursante').value = concursanteActual.nombre || '';
+        document.getElementById('edad-concursante').value = concursanteActual.edad || '';
+        document.getElementById('ocupacion').value = concursanteActual.ocupacion || '';
+        document.getElementById('redes-sociales').value = concursanteActual.redesSociales || '';
+        document.getElementById('cuestionario-id').value = concursanteActual.cuestionario ? concursanteActual.cuestionario.id : '';
+        document.getElementById('combo-id').value = concursanteActual.combo ? concursanteActual.combo.id : '';
+        document.getElementById('factor-x').value = concursanteActual.factorX || '';
         document.getElementById('resultado').value = concursanteActual.resultado || '';
         document.getElementById('notas-grabacion').value = concursanteActual.notasGrabacion || '';
-        document.getElementById('editor').value = concursanteActual.editor || '';
+        document.getElementById('guionista').value = concursanteActual.guionista || '';
+        document.getElementById('valoracion-guionista').value = concursanteActual.valoracionGuionista || '';
+        document.getElementById('concursantes-por-jornada').value = concursanteActual.concursantesPorJornada || '';
+        document.getElementById('momentos-destacados').value = concursanteActual.momentosDestacados || '';
         document.getElementById('duracion').value = concursanteActual.duracion || '';
-        document.getElementById('notas-edicion').value = concursanteActual.notasEdicion || '';
-        document.getElementById('programa-id').value = concursanteActual.programa ? concursanteActual.programa.id : '';
-        document.getElementById('orden-programa').value = concursanteActual.ordenPrograma || '';
+        document.getElementById('valoracion-final').value = concursanteActual.valoracionFinal || '';
+        document.getElementById('numero-programa').value = concursanteActual.numeroPrograma || '';
+        document.getElementById('orden-escaleta').value = concursanteActual.ordenEscaleta || '';
         const modal = new bootstrap.Modal(document.getElementById('modal-concursante'));
         modal.show();
     } catch (error) {
@@ -150,90 +176,36 @@ async function editarConcursante(id) {
     }
 }
 
-// Previsualización de imagen en el formulario
-$(document).on('change', '#imagen-concursante', function(e) {
-    const input = e.target;
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            $('#preview-imagen-concursante').attr('src', ev.target.result).show();
-        };
-        reader.readAsDataURL(input.files[0]);
-    } else {
-        $('#preview-imagen-concursante').hide();
-    }
-});
-
-// Drag&Drop sobre la previsualización de imagen
-$(document).ready(function() {
-    const preview = document.getElementById('preview-imagen-concursante');
-    const fileInput = document.getElementById('imagen-concursante');
-    if (preview) {
-        preview.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            preview.style.border = '2px dashed #007bff';
-        });
-        preview.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            preview.style.border = '';
-        });
-        preview.addEventListener('drop', function(e) {
-            e.preventDefault();
-            preview.style.border = '';
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                const file = e.dataTransfer.files[0];
-                if (!file.type.startsWith('image/')) {
-                    alert('Solo se permiten imágenes');
-                    return;
-                }
-                // Asignar archivo al input file
-                fileInput.files = e.dataTransfer.files;
-                // Lanzar evento change para actualizar previsualización
-                const event = new Event('change', { bubbles: true });
-                fileInput.dispatchEvent(event);
-            }
-        });
-    }
-});
-
-// Guardar concursante con imagen en base64 y gestión de errores mejorada
+// Guardar concursante con gestión de errores mejorada
 async function guardarConcursante() {
     const form = document.getElementById('form-concursante');
-    const fileInput = document.getElementById('imagen-concursante');
     // Recoge todos los campos del formulario
     const datosConcursante = {
         id: document.getElementById('concursante-id').value || null,
+        numeroConcursante: document.getElementById('numero-concursante').value || null,
+        jornada: document.getElementById('jornada').value || null,
+        diaGrabacion: document.getElementById('dia-grabacion').value || null,
+        lugar: document.getElementById('lugar-concursante').value || null,
         nombre: document.getElementById('nombre-concursante').value,
         edad: document.getElementById('edad-concursante').value || null,
-        fecha: document.getElementById('fecha-concursante').value || null,
-        lugar: document.getElementById('lugar-concursante').value || null,
-        datosInteres: document.getElementById('datos-interes').value || null,
+        ocupacion: document.getElementById('ocupacion').value || null,
+        redesSociales: document.getElementById('redes-sociales').value || null,
         cuestionarioId: document.getElementById('cuestionario-id').value || null,
-        guionista: document.getElementById('guionista').value || null,
+        comboId: document.getElementById('combo-id').value || null,
+        factorX: document.getElementById('factor-x').value || null,
         resultado: document.getElementById('resultado').value || null,
         notasGrabacion: document.getElementById('notas-grabacion').value || null,
-        editor: document.getElementById('editor').value || null,
+        guionista: document.getElementById('guionista').value || null,
+        valoracionGuionista: document.getElementById('valoracion-guionista').value || null,
+        concursantesPorJornada: document.getElementById('concursantes-por-jornada').value || null,
+        momentosDestacados: document.getElementById('momentos-destacados').value || null,
         duracion: document.getElementById('duracion').value || null,
-        notasEdicion: document.getElementById('notas-edicion').value || null,
-        programaId: document.getElementById('programa-id').value || null,
-        ordenPrograma: document.getElementById('orden-programa').value || null,
-        estado: null, // El estado se gestiona aparte
-        imagen: null
+        valoracionFinal: document.getElementById('valoracion-final').value || null,
+        numeroPrograma: document.getElementById('numero-programa').value || null,
+        ordenEscaleta: document.getElementById('orden-escaleta').value || null,
+        estado: null // El estado se gestiona aparte
     };
-    // Si hay imagen, conviértela a base64
-    if (fileInput && fileInput.files && fileInput.files[0]) {
-        const file = fileInput.files[0];
-        datosConcursante.imagen = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                resolve(ev.target.result);
-            };
-            reader.onerror = function() {
-                reject('Error al leer la imagen');
-            };
-            reader.readAsDataURL(file);
-        });
-    }
+
     // Enviar como JSON usando apiManager o fetch
     try {
         const token = localStorage.getItem('token');
@@ -306,16 +278,35 @@ async function eliminarConcursante(id) {
 async function editarCeldaConcursante(id, campo, td) {
     if (td.querySelector('input,select')) return;
     const valorOriginal = td.innerText;
-    let input = document.createElement('input');
-    input.type = 'text';
-    input.value = valorOriginal;
-    input.className = 'form-control form-control-sm';
+    let input;
+    
+    // Todos los campos usan input de texto (incluyendo estado)
+    {
+        // Input normal para otros campos
+        input = document.createElement('input');
+        input.type = 'text';
+        input.value = valorOriginal;
+        input.className = 'form-control form-control-sm';
+        
+        // Configurar input según el tipo de campo
+        if (campo === 'duracion') {
+            input.placeholder = 'MM:SS (ej: 25:08)';
+            input.type = 'text';
+            input.pattern = '\\d{1,3}:\\d{2}';
+        } else if (['numeroConcursante', 'edad', 'concursantesPorJornada', 'numeroPrograma', 'ordenEscaleta'].includes(campo)) {
+            input.placeholder = 'Ingrese un número';
+            input.type = 'number';
+        }
+    }
+    
     td.innerHTML = '';
     td.appendChild(input);
     input.focus();
+    
     input.addEventListener('blur', async function() {
         await guardarCeldaConcursante(id, campo, input, td, valorOriginal);
     });
+    
     input.addEventListener('keydown', async function(e) {
         if (e.key === 'Enter') {
             await guardarCeldaConcursante(id, campo, input, td, valorOriginal);
@@ -323,25 +314,72 @@ async function editarCeldaConcursante(id, campo, td) {
             td.innerHTML = valorOriginal;
         }
     });
+    
+
 }
 
 async function guardarCeldaConcursante(id, campo, input, td, valorOriginal) {
-    const nuevoValor = input.value;
+    const nuevoValor = input.value.trim();
     if (nuevoValor === valorOriginal) {
         td.innerHTML = valorOriginal;
         return;
     }
+    
     try {
         const concursante = concursantes.find(c => c.id === id);
         if (!concursante) return;
-        concursante[campo] = nuevoValor;
+        
+        // Validar y convertir el valor según el tipo de campo
+        let valorConvertido = nuevoValor;
+        
+        // Campo duracion - validar formato MM:SS
+        if (campo === 'duracion') {
+            if (nuevoValor === '' || nuevoValor === null) {
+                valorConvertido = null;
+            } else {
+                // Validar formato MM:SS
+                const formatoValido = /^\d{1,3}:\d{2}$/.test(nuevoValor);
+                if (!formatoValido) {
+                    throw new Error('La duración debe tener formato MM:SS (ej: 25:08)');
+                }
+                // Validar que los segundos sean válidos (00-59)
+                const [minutos, segundos] = nuevoValor.split(':');
+                if (parseInt(segundos) > 59) {
+                    throw new Error('Los segundos deben estar entre 00 y 59');
+                }
+                valorConvertido = nuevoValor; // Mantener como string
+            }
+        }
+        // Campos numéricos enteros (excluyendo duracion)
+        else if (['numeroConcursante', 'edad', 'concursantesPorJornada', 'numeroPrograma', 'ordenEscaleta'].includes(campo)) {
+            if (nuevoValor === '' || nuevoValor === null) {
+                valorConvertido = null;
+            } else {
+                const numero = parseInt(nuevoValor);
+                if (isNaN(numero)) {
+                    throw new Error(`El valor "${nuevoValor}" no es un número válido para el campo ${campo}`);
+                }
+                valorConvertido = numero;
+            }
+        }
+        
+        // Campo estado - mantener como string libre
+        if (campo === 'estado') {
+            valorConvertido = nuevoValor || null;
+        }
+        
+        // Asignar el valor convertido
+        concursante[campo] = valorConvertido;
+        
         // Si el campo es programa, buscar el objeto programa
         if (campo === 'programa') {
-            const prog = programas.find(p => p.id == nuevoValor);
+            const prog = programas.find(p => p.id == valorConvertido);
             concursante.programa = prog ? { id: prog.id } : null;
         }
+        
         await apiManager.put(`/api/concursantes/${id}`, concursante);
         await cargarConcursantes();
+        mostrarExito('Campo actualizado correctamente');
     } catch (error) {
         mostrarError('Error al guardar el cambio: ' + error.message);
         td.innerHTML = valorOriginal;
@@ -373,49 +411,223 @@ function mostrarExito(mensaje) {
 
 // Modal selector de cuestionario
 function abrirSelectorCuestionario() {
+    concursanteParaAsignar = null; // Limpiar para uso en formulario
     buscarCuestionariosModal();
     const modal = new bootstrap.Modal(document.getElementById('modal-selector-cuestionario'));
     modal.show();
 }
 
 async function buscarCuestionariosModal() {
-    const filtro = document.getElementById('buscador-cuestionario').value.trim();
-    let cuestionarios = [];
+    const filtro = document.getElementById('buscador-cuestionario').value.trim().toLowerCase();
+    const nivelFiltro = document.getElementById('filtro-nivel-cuestionario').value;
+    
     try {
-        cuestionarios = await apiManager.get('/api/cuestionarios/por-estado/creado');
+        let cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar');
+        
+        // Aplicar filtros
+        if (nivelFiltro) {
+            cuestionarios = cuestionarios.filter(c => c.nivel === nivelFiltro);
+        }
+        
+        if (filtro) {
+            cuestionarios = cuestionarios.filter(c => {
+                // Buscar por ID
+                if (c.id.toString().includes(filtro)) return true;
+                
+                // Buscar por nivel
+                if (c.nivel && c.nivel.toLowerCase().includes(filtro)) return true;
+                
+                // Buscar en texto de preguntas
+                if (c.preguntas && c.preguntas.length > 0) {
+                    return c.preguntas.some(p => 
+                        (p.pregunta && p.pregunta.toLowerCase().includes(filtro)) ||
+                        (p.respuesta && p.respuesta.toLowerCase().includes(filtro)) ||
+                        (p.tematica && p.tematica.toLowerCase().includes(filtro))
+                    );
+                }
+                
+                return false;
+            });
+        }
+        
+        const tbody = document.getElementById('tabla-selector-cuestionario');
+        tbody.innerHTML = '';
+        
+        if (!cuestionarios.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay cuestionarios disponibles</td></tr>';
+            return;
+        }
+        
+        cuestionarios.forEach(c => {
+            const tr = document.createElement('tr');
+            
+            // Crear resumen de preguntas
+            let preguntasResumen = '';
+            if (c.preguntas && c.preguntas.length > 0) {
+                preguntasResumen = c.preguntas.map(p => {
+                    const preguntaCorta = p.pregunta ? (p.pregunta.length > 50 ? p.pregunta.substring(0, 50) + '...' : p.pregunta) : '';
+                    const tematica = p.tematica ? `[${p.tematica}]` : '';
+                    return `${tematica} ${preguntaCorta}`;
+                }).join('<br>');
+            } else {
+                preguntasResumen = '<em>Sin preguntas</em>';
+            }
+            
+            tr.innerHTML = `
+                <td><strong>${c.id}</strong></td>
+                <td><span class="badge bg-info">${c.nivel || 'N/A'}</span></td>
+                <td><span class="badge bg-success">${c.estado}</span></td>
+                <td>${c.fechaCreacion ? Utils.formatearFecha(c.fechaCreacion) : ''}</td>
+                <td style="max-width: 300px; font-size: 0.85em;">${preguntasResumen}</td>
+                <td><button class="btn btn-sm btn-success" onclick="seleccionarCuestionarioModal(${c.id})">Seleccionar</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
     } catch (e) {
         mostrarError('Error al buscar cuestionarios: ' + e.message);
-        return;
     }
-    if (filtro) {
-        cuestionarios = cuestionarios.filter(c => c.id.toString().includes(filtro));
-    }
-    const tbody = document.getElementById('tabla-selector-cuestionario');
-    tbody.innerHTML = '';
-    if (!cuestionarios.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay cuestionarios disponibles</td></tr>';
-        return;
-    }
-    cuestionarios.forEach(c => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${c.id}</td>
-            <td>${c.estado}</td>
-            <td>${c.fechaCreacion ? Utils.formatearFecha(c.fechaCreacion) : ''}</td>
-            <td><button class="btn btn-sm btn-success" onclick="seleccionarCuestionarioModal(${c.id})">Seleccionar</button></td>
-        `;
-        tbody.appendChild(tr);
-    });
 }
 
-function seleccionarCuestionarioModal(id) {
-    document.getElementById('cuestionario-id').value = id;
+// Funciones para asignar desde la tabla
+let concursanteParaAsignar = null;
+
+function abrirSelectorCuestionarioParaConcursante(concursanteId) {
+    concursanteParaAsignar = concursanteId;
+    buscarCuestionariosModal();
+    const modal = new bootstrap.Modal(document.getElementById('modal-selector-cuestionario'));
+    modal.show();
+}
+
+function abrirSelectorComboParaConcursante(concursanteId) {
+    concursanteParaAsignar = concursanteId;
+    buscarCombosModal();
+    const modal = new bootstrap.Modal(document.getElementById('modal-selector-combo'));
+    modal.show();
+}
+
+async function seleccionarCuestionarioModal(id) {
+    if (concursanteParaAsignar) {
+        // Asignar directamente al concursante
+        try {
+            const concursante = concursantes.find(c => c.id === concursanteParaAsignar);
+            if (concursante) {
+                concursante.cuestionarioId = id;
+                await apiManager.put(`/api/concursantes/${concursanteParaAsignar}`, concursante);
+                await cargarConcursantes();
+                mostrarExito('Cuestionario asignado correctamente');
+            }
+        } catch (error) {
+            mostrarError('Error al asignar cuestionario: ' + error.message);
+        }
+        concursanteParaAsignar = null;
+    } else {
+        // Asignar al formulario
+        document.getElementById('cuestionario-id').value = id;
+    }
     const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-cuestionario'));
+    modal.hide();
+}
+
+async function seleccionarComboModal(id) {
+    if (concursanteParaAsignar) {
+        // Asignar directamente al concursante
+        try {
+            const concursante = concursantes.find(c => c.id === concursanteParaAsignar);
+            if (concursante) {
+                concursante.comboId = id;
+                await apiManager.put(`/api/concursantes/${concursanteParaAsignar}`, concursante);
+                await cargarConcursantes();
+                mostrarExito('Combo asignado correctamente');
+            }
+        } catch (error) {
+            mostrarError('Error al asignar combo: ' + error.message);
+        }
+        concursanteParaAsignar = null;
+    } else {
+        // Asignar al formulario
+        document.getElementById('combo-id').value = id;
+    }
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-combo'));
     modal.hide();
 }
 
 function limpiarSelectorCuestionario() {
     document.getElementById('cuestionario-id').value = '';
+}
+
+// Funciones para selector de combos
+function abrirSelectorCombo() {
+    concursanteParaAsignar = null; // Limpiar para uso en formulario
+    buscarCombosModal();
+    const modal = new bootstrap.Modal(document.getElementById('modal-selector-combo'));
+    modal.show();
+}
+
+async function buscarCombosModal() {
+    const filtro = document.getElementById('buscador-combo').value.trim().toLowerCase();
+    
+    try {
+        let combos = await apiManager.get('/api/combos/para-asignar');
+        
+        // Aplicar filtro de búsqueda
+        if (filtro) {
+            combos = combos.filter(c => {
+                // Buscar por ID
+                if (c.id.toString().includes(filtro)) return true;
+                
+                // Buscar en texto de preguntas multiplicadoras
+                if (c.preguntas && c.preguntas.length > 0) {
+                    return c.preguntas.some(p => 
+                        (p.pregunta && p.pregunta.toLowerCase().includes(filtro)) ||
+                        (p.respuesta && p.respuesta.toLowerCase().includes(filtro)) ||
+                        (p.tematica && p.tematica.toLowerCase().includes(filtro))
+                    );
+                }
+                
+                return false;
+            });
+        }
+        
+        const tbody = document.getElementById('tabla-selector-combo');
+        tbody.innerHTML = '';
+        
+        if (!combos.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay combos disponibles</td></tr>';
+            return;
+        }
+        
+        combos.forEach(c => {
+            const tr = document.createElement('tr');
+            
+            // Crear resumen de preguntas multiplicadoras
+            let preguntasResumen = '';
+            if (c.preguntas && c.preguntas.length > 0) {
+                preguntasResumen = c.preguntas.map(p => {
+                    const preguntaCorta = p.pregunta ? (p.pregunta.length > 40 ? p.pregunta.substring(0, 40) + '...' : p.pregunta) : '';
+                    const tematica = p.tematica ? `[${p.tematica}]` : '';
+                    const factor = p.factor ? `<span class="badge bg-warning">x${p.factor}</span>` : '';
+                    return `${factor} ${tematica} ${preguntaCorta}`;
+                }).join('<br>');
+            } else {
+                preguntasResumen = '<em>Sin preguntas</em>';
+            }
+            
+            tr.innerHTML = `
+                <td><strong>${c.id}</strong></td>
+                <td><span class="badge bg-success">${c.estado || 'BORRADOR'}</span></td>
+                <td>${c.fechaCreacion ? Utils.formatearFecha(c.fechaCreacion) : ''}</td>
+                <td style="max-width: 350px; font-size: 0.85em;">${preguntasResumen}</td>
+                <td><button class="btn btn-sm btn-success" onclick="seleccionarComboModal(${c.id})">Seleccionar</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        mostrarError('Error al cargar combos: ' + error.message);
+    }
+}
+
+function limpiarSelectorCombo() {
+    document.getElementById('combo-id').value = '';
 }
 
 // --- ORDENACIÓN POR COLUMNA ---
@@ -477,36 +689,46 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Función para abrir el selector de archivos al hacer doble click en la celda de imagen
-function abrirSelectorImagen(id) {
-    // Crear un input file temporal
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.style.display = 'none';
-    document.body.appendChild(input);
-    input.addEventListener('change', async function(e) {
-        if (input.files && input.files[0]) {
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = async function(ev) {
-                // Actualizar la imagen del concursante
-                const concursante = concursantes.find(c => c.id === id);
-                if (concursante) {
-                    concursante.imagen = ev.target.result;
-                    await apiManager.put(`/api/concursantes/${id}`, concursante);
-                    await cargarConcursantes();
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-        document.body.removeChild(input);
-    });
-    input.click();
-}
-
 window.cambiarPassword = function() {
     document.getElementById('form-cambiar-password').reset();
     const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
     modal.show();
-}; 
+};
+
+// Función para formatear fechas al formato DD/MM/YYYY
+function formatearFecha(fecha) {
+    if (!fecha) return '';
+    
+    try {
+        let fechaObj;
+        
+        // Si la fecha viene en formato ISO (YYYY-MM-DD)
+        if (fecha.includes('-')) {
+            const partes = fecha.split('-');
+            if (partes.length === 3) {
+                const año = parseInt(partes[0]);
+                const mes = parseInt(partes[1]) - 1; // Los meses en JavaScript van de 0-11
+                const dia = parseInt(partes[2]);
+                fechaObj = new Date(año, mes, dia);
+            } else {
+                fechaObj = new Date(fecha);
+            }
+        } else {
+            fechaObj = new Date(fecha);
+        }
+        
+        // Verificar si la fecha es válida
+        if (isNaN(fechaObj.getTime())) {
+            return fecha; // Devolver la fecha original si no se puede parsear
+        }
+        
+        const dia = fechaObj.getDate().toString().padStart(2, '0');
+        const mes = (fechaObj.getMonth() + 1).toString().padStart(2, '0');
+        const año = fechaObj.getFullYear();
+        
+        return `${dia}/${mes}/${año}`;
+    } catch (error) {
+        console.error('Error al formatear fecha:', fecha, error);
+        return fecha; // Devolver la fecha original en caso de error
+    }
+} 

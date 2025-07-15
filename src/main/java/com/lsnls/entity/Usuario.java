@@ -39,6 +39,10 @@ public class Usuario {
     @OneToMany(mappedBy = "creacionUsuario")
     private Set<Cuestionario> cuestionariosCreados;
 
+    @JsonManagedReference
+    @OneToMany(mappedBy = "creacionUsuario")
+    private Set<Combo> combosCreados;
+
     public enum RolUsuario {
         ROLE_ADMIN, ROLE_CONSULTA, ROLE_GUION, ROLE_VERIFICACION, ROLE_DIRECCION;
 

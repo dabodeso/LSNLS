@@ -30,6 +30,9 @@
                         <a class="nav-link" href="cuestionarios.html">Cuestionarios</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="combos.html">Combos</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link active" href="concursantes.html">Concursantes</a>
                     </li>
                     <li class="nav-item">
@@ -55,7 +58,7 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
         <div class="section-header">
             <h2>Gestión de Concursantes</h2>
             <button class="btn btn-primary" onclick="mostrarFormularioConcursante()">
@@ -92,23 +95,29 @@
             <table class="table table-excel table-preguntas" id="tabla-concursantes-principal">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Imagen</th>
-                        <th>Edad</th>
-                        <th>Datos de Interés</th>
-                        <th>Nº Cuestionario</th>
-                        <th>Fecha</th>
-                        <th>Lugar</th>
-                        <th>Guionista</th>
-                        <th>Resultado</th>
-                        <th>Notas Grabación</th>
-                        <th>Editor</th>
-                        <th>Notas Edición</th>
-                        <th>Duración</th>
-                        <th>Programa</th>
-                        <th>Orden</th>
-                        <th>Estado</th>
+                        <th>Nº CONCUR</th>
+                        <th>JORNADA</th>
+                        <th>DÍA GRABACIÓN</th>
+                        <th>LUGAR</th>
+                        <th>NOMBRE</th>
+                        <th>EDAD</th>
+                        <th>OCUPACIÓN</th>
+                        <th>RR SS</th>
+                        <th>CUEST</th>
+                        <th>COMBO</th>
+                        <th>X</th>
+                        <th>RESULTADO</th>
+                        <th>NOTAS GRABACIÓN</th>
+                        <th>GUIONISTA</th>
+                        <th>VALORACIÓN GUIONISTA</th>
+                        <th>CONC. X JORNADA</th>
+                        <th>ESTADO</th>
+                        <th>MOMENTOS DESTACADOS</th>
+                        <th>DURACIÓN</th>
+                        <th>VALORACIÓN FINAL</th>
+                        <th>Nº PGM</th>
+                        <th>ORDEN ESCALETA</th>
+                        <th>ACCIONES</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-concursantes">
@@ -129,6 +138,24 @@
                         <form id="form-concursante">
                             <input type="hidden" id="concursante-id">
                             <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nº Concursante:</label>
+                                    <input type="number" class="form-control" id="numero-concursante">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Jornada:</label>
+                                    <input type="text" class="form-control" id="jornada">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Día Grabación:</label>
+                                    <input type="date" class="form-control" id="dia-grabacion">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Lugar:</label>
+                                    <input type="text" class="form-control" id="lugar-concursante">
+                                </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Nombre:</label>
                                     <input type="text" class="form-control" id="nombre-concursante" required>
@@ -140,26 +167,40 @@
                                     <input type="number" class="form-control" id="edad-concursante">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Fecha:</label>
-                                    <input type="date" class="form-control" id="fecha-concursante">
+                                    <label class="form-label">Ocupación:</label>
+                                    <input type="text" class="form-control" id="ocupacion">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Lugar:</label>
-                                    <input type="text" class="form-control" id="lugar-concursante">
+                                    <label class="form-label">Redes Sociales:</label>
+                                    <input type="text" class="form-control" id="redes-sociales">
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Datos de Interés:</label>
-                                <textarea class="form-control" id="datos-interes" rows="3"></textarea>
+                            <div class="row mb-3">
+                                                        <div class="col-md-6">
+                            <label class="form-label">Cuestionario (Niveles 1-4):</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="cuestionario-id" readonly>
+                                <button type="button" class="btn btn-outline-secondary" onclick="abrirSelectorCuestionario()">Seleccionar cuestionario</button>
+                                <button type="button" class="btn btn-outline-danger" onclick="limpiarSelectorCuestionario()">Quitar</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Combo (Preguntas Multiplicadoras):</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="combo-id" readonly>
+                                <button type="button" class="btn btn-outline-secondary" onclick="abrirSelectorCombo()">Seleccionar combo</button>
+                                <button type="button" class="btn btn-outline-danger" onclick="limpiarSelectorCombo()">Quitar</button>
+                            </div>
+                        </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Factor X:</label>
+                                    <input type="text" class="form-control" id="factor-x">
+                                </div>
                             </div>
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Cuestionario:</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="cuestionario-id" readonly>
-                                        <button type="button" class="btn btn-outline-secondary" onclick="abrirSelectorCuestionario()">Seleccionar cuestionario</button>
-                                        <button type="button" class="btn btn-outline-danger" onclick="limpiarSelectorCuestionario()">Quitar</button>
-                                    </div>
+                                    <label class="form-label">Resultado:</label>
+                                    <input type="text" class="form-control" id="resultado">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Guionista:</label>
@@ -167,17 +208,17 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Resultado:</label>
-                                <input type="text" class="form-control" id="resultado">
-                            </div>
-                            <div class="mb-3">
                                 <label class="form-label">Notas de Grabación:</label>
                                 <textarea class="form-control" id="notas-grabacion" rows="3"></textarea>
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label">Valoración Guionista:</label>
+                                <textarea class="form-control" id="valoracion-guionista" rows="3"></textarea>
+                            </div>
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Editor:</label>
-                                    <input type="text" class="form-control" id="editor">
+                                    <label class="form-label">Concursantes por Jornada:</label>
+                                    <input type="number" class="form-control" id="concursantes-por-jornada">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Duración (minutos):</label>
@@ -185,25 +226,22 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Notas de Edición:</label>
-                                <textarea class="form-control" id="notas-edicion" rows="3"></textarea>
+                                <label class="form-label">Momentos Destacados:</label>
+                                <textarea class="form-control" id="momentos-destacados" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Valoración Final:</label>
+                                <textarea class="form-control" id="valoracion-final" rows="3"></textarea>
                             </div>
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Programa:</label>
-                                    <select class="form-control" id="programa-id">
-                                        <option value="">Seleccione un programa...</option>
-                                    </select>
+                                    <label class="form-label">Nº Programa:</label>
+                                    <input type="number" class="form-control" id="numero-programa">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label">Orden en Programa:</label>
-                                    <input type="number" class="form-control" id="orden-programa">
+                                    <label class="form-label">Orden Escaleta:</label>
+                                    <input type="number" class="form-control" id="orden-escaleta">
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Imagen:</label>
-                                <input type="file" class="form-control" id="imagen-concursante" accept="image/*">
-                                <img id="preview-imagen-concursante" src="" style="max-width:100px;max-height:100px;display:none;margin-top:5px;object-fit:cover;"/>
                             </div>
                         </form>
                     </div>
@@ -217,25 +255,73 @@
 
         <!-- Modal selector de cuestionario -->
         <div class="modal fade" id="modal-selector-cuestionario" tabindex="-1">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Seleccionar Cuestionario</h5>
+                        <h5 class="modal-title">Seleccionar Cuestionario (Niveles 1-4)</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <input type="text" id="buscador-cuestionario" class="form-control mb-2" placeholder="Buscar por ID..." onkeyup="buscarCuestionariosModal()">
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <input type="text" id="buscador-cuestionario" class="form-control" placeholder="Buscar por ID, nivel o texto de preguntas..." onkeyup="buscarCuestionariosModal()">
+                            </div>
+                            <div class="col-md-6">
+                                <select id="filtro-nivel-cuestionario" class="form-control" onchange="buscarCuestionariosModal()">
+                                    <option value="">Todos los niveles</option>
+                                    <option value="_1LS">1LS</option>
+                                    <option value="_2NLS">2NLS</option>
+                                    <option value="_3LS">3LS</option>
+                                    <option value="_4NLS">4NLS</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-dark sticky-top">
                                     <tr>
                                         <th>ID</th>
+                                        <th>Nivel</th>
                                         <th>Estado</th>
                                         <th>Fecha</th>
+                                        <th>Preguntas</th>
                                         <th>Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabla-selector-cuestionario"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal selector de combo -->
+        <div class="modal fade" id="modal-selector-combo" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Seleccionar Combo (Preguntas Multiplicadoras)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <input type="text" id="buscador-combo" class="form-control" placeholder="Buscar por ID o texto de preguntas multiplicadoras..." onkeyup="buscarCombosModal()">
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Preguntas Multiplicadoras</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-selector-combo"></tbody>
                             </table>
                         </div>
                     </div>
