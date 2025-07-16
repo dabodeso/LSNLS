@@ -4,6 +4,7 @@ import java.util.List;
 
 public class CrearComboDTO {
     private List<PreguntaMultiplicadoraDTO> preguntasMultiplicadoras;
+    private String tipo;
 
     public List<PreguntaMultiplicadoraDTO> getPreguntasMultiplicadoras() { 
         return preguntasMultiplicadoras; 
@@ -11,6 +12,14 @@ public class CrearComboDTO {
     
     public void setPreguntasMultiplicadoras(List<PreguntaMultiplicadoraDTO> preguntasMultiplicadoras) { 
         this.preguntasMultiplicadoras = preguntasMultiplicadoras; 
+    }
+
+    public String getTipo() { 
+        return tipo; 
+    }
+    
+    public void setTipo(String tipo) { 
+        this.tipo = tipo; 
     }
 
     public static class PreguntaMultiplicadoraDTO {

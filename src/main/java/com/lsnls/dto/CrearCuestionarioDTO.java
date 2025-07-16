@@ -5,11 +5,17 @@ import java.util.List;
 public class CrearCuestionarioDTO {
     private List<Long> preguntasNormales;
     private List<PreguntaMultiplicadoraDTO> preguntasMultiplicadoras;
+    private String tematica;
+    private String notasDireccion;
 
     public List<Long> getPreguntasNormales() { return preguntasNormales; }
     public void setPreguntasNormales(List<Long> preguntasNormales) { this.preguntasNormales = preguntasNormales; }
     public List<PreguntaMultiplicadoraDTO> getPreguntasMultiplicadoras() { return preguntasMultiplicadoras; }
     public void setPreguntasMultiplicadoras(List<PreguntaMultiplicadoraDTO> preguntasMultiplicadoras) { this.preguntasMultiplicadoras = preguntasMultiplicadoras; }
+    public String getTematica() { return tematica; }
+    public void setTematica(String tematica) { this.tematica = tematica; }
+    public String getNotasDireccion() { return notasDireccion; }
+    public void setNotasDireccion(String notasDireccion) { this.notasDireccion = notasDireccion; }
 
     public static class PreguntaMultiplicadoraDTO {
         private Long id;

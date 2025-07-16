@@ -241,6 +241,7 @@ public class ComboService {
         Map<String, Object> dto = new java.util.HashMap<>();
         dto.put("id", c.getId());
         dto.put("estado", c.getEstado());
+        dto.put("tipo", c.getTipo());
         dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
         
         // Mapear preguntas a slots PM1, PM2, PM3

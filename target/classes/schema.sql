@@ -18,9 +18,15 @@ SET character_set_connection = utf8mb4;
 SET collation_connection = utf8mb4_unicode_ci;
 
 -- Eliminar tablas existentes en orden correcto para evitar errores de foreign keys
-DROP TABLE IF EXISTS concursantes;
+-- Primero las tablas de relaciones/junction
+DROP TABLE IF EXISTS jornadas_cuestionarios;
+DROP TABLE IF EXISTS jornadas_combos;
 DROP TABLE IF EXISTS cuestionarios_preguntas;
 DROP TABLE IF EXISTS combos_preguntas;
+-- Luego las tablas que tienen foreign keys
+DROP TABLE IF EXISTS concursantes;
+DROP TABLE IF EXISTS jornadas;
+-- Finalmente las tablas principales
 DROP TABLE IF EXISTS cuestionarios;
 DROP TABLE IF EXISTS combos;
 DROP TABLE IF EXISTS preguntas;
@@ -64,7 +70,9 @@ CREATE TABLE cuestionarios (
     creacion_usuario_id BIGINT NOT NULL,
     fecha_creacion datetime(6),
     estado ENUM('borrador', 'creado', 'adjudicado', 'grabado') NOT NULL,
-    nivel ENUM('_1LS', '_2NLS', '_3LS', '_4NLS', 'PM1', 'PM2', 'PM3', 'NORMAL') NOT NULL
+    nivel ENUM('_1LS', '_2NLS', '_3LS', '_4NLS', 'PM1', 'PM2', 'PM3', 'NORMAL') NOT NULL,
+    tematica VARCHAR(100),
+    notas_direccion TEXT
 );
 
 -- Crear tabla de combos
@@ -73,7 +81,8 @@ CREATE TABLE combos (
     creacion_usuario_id BIGINT NOT NULL,
     fecha_creacion datetime(6),
     estado ENUM('borrador', 'creado', 'adjudicado', 'grabado') NOT NULL,
-    nivel ENUM('_5LS', '_5NLS', 'NORMAL') NOT NULL
+    nivel ENUM('_5LS', '_5NLS', 'NORMAL') NOT NULL,
+    tipo ENUM('P', 'A', 'D')
 );
 
 -- Crear tabla de relación cuestionarios-preguntas
@@ -114,6 +123,32 @@ CREATE TABLE programas (
     gap VARCHAR(255),
     total_concursantes INTEGER,
     creditos_especiales TEXT
+);
+
+-- Crear tabla de jornadas
+CREATE TABLE jornadas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    fecha_jornada DATE,
+    lugar VARCHAR(255),
+    estado ENUM('preparacion', 'lista', 'en_grabacion', 'completada', 'archivada') NOT NULL DEFAULT 'preparacion',
+    creacion_usuario_id BIGINT NOT NULL,
+    fecha_creacion datetime(6),
+    notas TEXT
+);
+
+-- Crear tabla de relación jornadas-cuestionarios
+CREATE TABLE jornadas_cuestionarios (
+    jornada_id BIGINT NOT NULL,
+    cuestionario_id BIGINT NOT NULL,
+    PRIMARY KEY (jornada_id, cuestionario_id)
+);
+
+-- Crear tabla de relación jornadas-combos
+CREATE TABLE jornadas_combos (
+    jornada_id BIGINT NOT NULL,
+    combo_id BIGINT NOT NULL,
+    PRIMARY KEY (jornada_id, combo_id)
 );
 
 -- Crear tabla de concursantes
@@ -189,4 +224,25 @@ ALTER TABLE concursantes
 
 ALTER TABLE concursantes
     ADD CONSTRAINT FKe46vd5w3bblq8doneuo3ibant
-    FOREIGN KEY (cuestionario_id) REFERENCES cuestionarios (id); 
+    FOREIGN KEY (cuestionario_id) REFERENCES cuestionarios (id);
+
+-- Claves foráneas para jornadas
+ALTER TABLE jornadas
+    ADD CONSTRAINT FK_jornada_creacion_usuario
+    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios (id);
+
+ALTER TABLE jornadas_cuestionarios
+    ADD CONSTRAINT FK_jornada_cuestionario_jornada
+    FOREIGN KEY (jornada_id) REFERENCES jornadas (id);
+
+ALTER TABLE jornadas_cuestionarios
+    ADD CONSTRAINT FK_jornada_cuestionario_cuestionario
+    FOREIGN KEY (cuestionario_id) REFERENCES cuestionarios (id);
+
+ALTER TABLE jornadas_combos
+    ADD CONSTRAINT FK_jornada_combo_jornada
+    FOREIGN KEY (jornada_id) REFERENCES jornadas (id);
+
+ALTER TABLE jornadas_combos
+    ADD CONSTRAINT FK_jornada_combo_combo
+    FOREIGN KEY (combo_id) REFERENCES combos (id); 

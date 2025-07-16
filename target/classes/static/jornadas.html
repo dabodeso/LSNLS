@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Jornadas - LSNLS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
+    <style>
+        .jornada-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .jornada-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .estado-badge {
+            font-size: 0.8em;
+            padding: 4px 8px;
+        }
+        .cuestionarios-grid, .combos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .item-slot {
+            border: 2px dashed #dee2e6;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+        }
+        .item-filled {
+            border-style: solid;
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .selector-modal .list-group-item {
+            cursor: pointer;
+        }
+        .selector-modal .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+        .selector-modal .list-group-item.active {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="dashboard.html">
+                <i class="fas fa-tv"></i> LSNLS
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="dashboard.html">Dashboard</a>
+                <a class="nav-link active" href="jornadas.html">Jornadas</a>
+                <button class="btn btn-outline-light btn-sm" onclick="authManager.logout()">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-calendar-day"></i> Gestión de Jornadas</h2>
+                    <button class="btn btn-primary" onclick="JornadasManager.mostrarModalCrear()">
+                        <i class="fas fa-plus"></i> Nueva Jornada
+                    </button>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">Estado:</label>
+                                <select class="form-select" id="filtroEstado" onchange="JornadasManager.aplicarFiltros()">
+                                    <option value="">Todos</option>
+                                    <option value="preparacion">Preparación</option>
+                                    <option value="lista">Lista</option>
+                                    <option value="en_grabacion">En Grabación</option>
+                                    <option value="completada">Completada</option>
+                                    <option value="archivada">Archivada</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha desde:</label>
+                                <input type="date" class="form-control" id="filtroFechaDesde" onchange="JornadasManager.aplicarFiltros()">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha hasta:</label>
+                                <input type="date" class="form-control" id="filtroFechaHasta" onchange="JornadasManager.aplicarFiltros()">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Buscar:</label>
+                                <input type="text" class="form-control" id="filtroBuscar" placeholder="Nombre o lugar..." onkeyup="JornadasManager.aplicarFiltros()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Jornadas -->
+                <div id="listaJornadas">
+                    <div class="text-center py-5">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">Cargando jornadas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Crear/Editar Jornada -->
+    <div class="modal fade" id="modalJornada" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalJornadaTitulo">Nueva Jornada</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formJornada">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre:</label>
+                                <input type="text" class="form-control" id="jornadaNombre" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha:</label>
+                                <input type="date" class="form-control" id="jornadaFecha">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Lugar:</label>
+                                <input type="text" class="form-control" id="jornadaLugar">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <label class="form-label">Notas:</label>
+                                <textarea class="form-control" id="jornadaNotas" rows="3"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Selección de Cuestionarios -->
+                        <div class="mt-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6><i class="fas fa-clipboard-list"></i> Cuestionarios (5 máximo)</h6>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="JornadasManager.seleccionarCuestionarios()">
+                                    <i class="fas fa-plus"></i> Seleccionar
+                                </button>
+                            </div>
+                            <div class="cuestionarios-grid" id="cuestionariosSeleccionados">
+                                <!-- Slots de cuestionarios se llenarán dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Selección de Combos -->
+                        <div class="mt-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6><i class="fas fa-layer-group"></i> Combos (5 máximo)</h6>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="JornadasManager.seleccionarCombos()">
+                                    <i class="fas fa-plus"></i> Seleccionar
+                                </button>
+                            </div>
+                            <div class="combos-grid" id="combosSeleccionados">
+                                <!-- Slots de combos se llenarán dinámicamente -->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="JornadasManager.guardarJornada()">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Selector de Cuestionarios -->
+    <div class="modal fade" id="modalSelectorCuestionarios" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Seleccionar Cuestionarios</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="buscarCuestionarios" placeholder="Buscar por temática o ID...">
+                    </div>
+                    <div class="list-group" id="listaCuestionarios">
+                        <!-- Lista de cuestionarios disponibles -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="JornadasManager.confirmarSeleccionCuestionarios()">
+                        Confirmar Selección
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Selector de Combos -->
+    <div class="modal fade" id="modalSelectorCombos" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Seleccionar Combos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="buscarCombos" placeholder="Buscar por tipo o ID...">
+                    </div>
+                    <div class="list-group" id="listaCombos">
+                        <!-- Lista de combos disponibles -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="JornadasManager.confirmarSeleccionCombos()">
+                        Confirmar Selección
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Preguntas de Cuestionario -->
+    <div class="modal fade" id="modalVerPreguntasCuestionario" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalVerPreguntasCuestionarioTitulo">Preguntas del Cuestionario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nivel</th>
+                                    <th>Pregunta</th>
+                                    <th>Respuesta</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaPreguntasCuestionario">
+                                <!-- Preguntas se cargarán aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Preguntas de Combo -->
+    <div class="modal fade" id="modalVerPreguntasCombo" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalVerPreguntasComboTitulo">Preguntas del Combo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nivel</th>
+                                    <th>Pregunta</th>
+                                    <th>Respuesta</th>
+                                    <th>Multiplicador</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaPreguntasCombo">
+                                <!-- Preguntas se cargarán aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/jornadas.js?v=20250716-4"></script>
+    <script>
+        // Verificar autenticación al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!authManager.isAuthenticated()) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Cargar datos iniciales
+            JornadasManager.init();
+        });
+    </script>
+</body>
+</html> 

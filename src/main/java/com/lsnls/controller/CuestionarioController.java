@@ -97,6 +97,37 @@ public class CuestionarioController {
         }
     }
 
+    @PutMapping("/{id}/notas-direccion")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> actualizarNotasDireccion(@PathVariable Long id, @RequestBody Map<String, String> datos) {
+        try {
+            String notasDireccion = datos.get("notasDireccion");
+            Cuestionario cuestionario = cuestionarioService.actualizarNotasDireccion(id, notasDireccion);
+            return ResponseEntity.ok(cuestionario);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al actualizar notas de dirección: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/filtrar")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<List<Map<String, Object>>> filtrarCuestionarios(
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String tematica
+    ) {
+        try {
+            List<Cuestionario> cuestionarios = cuestionarioService.filtrarCuestionarios(estado, tematica);
+            List<Map<String, Object>> dtos = new java.util.ArrayList<>();
+            for (Cuestionario c : cuestionarios) {
+                Map<String, Object> dto = cuestionarioService.obtenerCuestionarioConSlots(c.getId());
+                if (dto != null) dtos.add(dto);
+            }
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody CrearCuestionarioDTO dto) {
         try {

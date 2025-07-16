@@ -34,6 +34,10 @@ public class Combo {
     @Column(nullable = false)
     private EstadoCombo estado = EstadoCombo.borrador;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 1)
+    private TipoCombo tipo;
+
     @Column(name = "fecha_creacion")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
@@ -49,6 +53,12 @@ public class Combo {
 
     public enum EstadoCombo {
         borrador, creado, adjudicado, grabado
+    }
+
+    public enum TipoCombo {
+        P, // Premio
+        A, // Asequible 
+        D  // Difícil
     }
 
     // Métodos equals y hashCode que evitan el bucle infinito

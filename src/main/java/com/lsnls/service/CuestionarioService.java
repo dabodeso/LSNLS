@@ -293,6 +293,33 @@ public class CuestionarioService {
         cuestionarioRepository.deleteById(id);
     }
 
+    public void eliminarPorId(Long id) {
+        cuestionarioRepository.deleteById(id);
+    }
+
+    public Cuestionario actualizarNotasDireccion(Long id, String notasDireccion) {
+        Optional<Cuestionario> cuestionarioOpt = cuestionarioRepository.findById(id);
+        if (cuestionarioOpt.isPresent()) {
+            Cuestionario cuestionario = cuestionarioOpt.get();
+            cuestionario.setNotasDireccion(notasDireccion);
+            return cuestionarioRepository.save(cuestionario);
+        }
+        throw new RuntimeException("Cuestionario no encontrado con ID: " + id);
+    }
+
+    public List<Cuestionario> filtrarCuestionarios(String estado, String tematica) {
+        if (estado != null && !estado.isEmpty() && tematica != null && !tematica.isEmpty()) {
+            return cuestionarioRepository.findByEstadoAndTematicaContainingIgnoreCaseOrderByIdDesc(
+                EstadoCuestionario.valueOf(estado), tematica);
+        } else if (estado != null && !estado.isEmpty()) {
+            return cuestionarioRepository.findByEstadoOrderByIdDesc(EstadoCuestionario.valueOf(estado));
+        } else if (tematica != null && !tematica.isEmpty()) {
+            return cuestionarioRepository.findByTematicaContainingIgnoreCaseOrderByIdDesc(tematica);
+        } else {
+            return cuestionarioRepository.findAllOrderByIdDesc();
+        }
+    }
+
     // Método auxiliar para debug
     public Optional<Pregunta> obtenerPreguntaPorId(Long id) {
         return preguntaRepository.findById(id);
@@ -315,6 +342,8 @@ public class CuestionarioService {
         cuestionario.setEstado(Cuestionario.EstadoCuestionario.borrador);
         cuestionario.setFechaCreacion(LocalDateTime.now());
         cuestionario.setNivel(Cuestionario.NivelCuestionario.NORMAL);
+        cuestionario.setTematica(dto.getTematica());
+        cuestionario.setNotasDireccion(dto.getNotasDireccion());
         cuestionario = cuestionarioRepository.save(cuestionario);
 
         // Asociar solo preguntas normales (factor 1) - niveles 1-4

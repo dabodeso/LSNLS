@@ -51,11 +51,12 @@ const CuestionariosManager = {
                 });
             }
             const tieneHuecos = niveles.some(nivel => !preguntasPorSlot[nivel]);
-            const estadoMostrar = tieneHuecos ? 'BORRADOR' : (c.estado ?? '');
+            const estadoMostrar = c.estado ?? '';
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', c.id);
             tr.innerHTML = `
-                <td>${c.id ?? ''}</td>
+                <td style="font-weight: bold; font-size: 1.2em; color: #0066cc;">${c.id ?? ''}</td>
+                <td>${c.tematica || 'Genérico'}</td>
                 <td>${estadoMostrar}</td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
@@ -65,41 +66,57 @@ const CuestionariosManager = {
             `;
             tbody.appendChild(tr);
 
-            // Subtabla de preguntas con color y click en fila
+            // Subtabla de preguntas con la estética de la tabla de preguntas
             const subtr = document.createElement('tr');
-            subtr.innerHTML = `<td colspan="5">
-                <div class="table-responsive">
-                <table class="table table-preguntas mb-0">
-                    <thead>
-                        <tr>
-                            <th>Nivel</th>
-                            <th>Pregunta</th>
-                            <th>Respuesta</th>
-                            <th>Temática</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${niveles.map(nivel => {
-                            const p = preguntasPorSlot[nivel];
-                            if (p) {
-                                return `<tr data-id="${p.id}" data-nivel="${nivel}" style="cursor:pointer;">
-                                    <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(p.nivel) : ''}'>${nivel}</span></td>
-                                    <td>${p.pregunta ?? ''}</td>
-                                    <td>${p.respuesta ?? ''}</td>
-                                    <td>${p.tematica ?? ''}</td>
-                                    <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCuestionario(${c.id}, "${nivel}")'><i class='fas fa-trash'></i> Quitar</button></td>
-                                </tr>`;
-                            } else {
-                                return `<tr data-nivel="${nivel}">
-                                    <td>${nivel}</td>
-                                    <td colspan="3" class="text-center text-muted">(Vacío)</td>
-                                    <td><button class='btn btn-sm btn-success' onclick='event.stopPropagation();anadirPreguntaACuestionario(${c.id}, "${nivel}")'><i class='fas fa-plus'></i> Añadir</button></td>
-                                </tr>`;
-                            }
-                        }).join('')}
-                    </tbody>
-                </table>
+            subtr.classList.add('cuestionario-subtabla');
+            const puedeEditarNotas = authManager.hasRole('ROLE_ADMIN') || authManager.hasRole('ROLE_DIRECCION');
+            
+            // Generar exactamente 4 filas para las preguntas del cuestionario
+            let filasPreguntas = '';
+            for (let i = 1; i <= 4; i++) {
+                const slotNivel = niveles[i-1]; // '1LS', '2NLS', '3LS', '4NLS'
+                const p = preguntasPorSlot[slotNivel];
+                
+                if (p) {
+                    // Fila con pregunta
+                    filasPreguntas += `<tr data-id="${p.id}" data-nivel="${slotNivel}" style="cursor:pointer;">
+                        <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(p.nivel) : ''}'>${slotNivel}</span></td>
+                        <td>${p.pregunta ?? ''}</td>
+                        <td>${p.respuesta ?? ''}</td>
+                        <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCuestionario(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
+                    </tr>`;
+                } else {
+                    // Fila vacía con botón añadir
+                    filasPreguntas += `<tr data-nivel="${slotNivel}">
+                        <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(slotNivel) : ''}'>${slotNivel}</span></td>
+                        <td class="text-center text-muted">(Vacío)</td>
+                        <td class="text-center text-muted">-</td>
+                        <td><button class='btn btn-sm btn-success' onclick='event.stopPropagation();anadirPreguntaACuestionario(${c.id}, "${slotNivel}")'><i class='fas fa-plus'></i></button></td>
+                    </tr>`;
+                }
+            }
+            
+            subtr.innerHTML = `<td colspan="6">
+                ${puedeEditarNotas ? `
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Notas de Dirección:</label>
+                    <textarea class="form-control" rows="2" placeholder="Añadir notas para dirección..." 
+                              onblur="actualizarNotasDireccion(${c.id}, this.value)">${c.notasDireccion || ''}</textarea>
+                </div>` : ''}
+                <div>
+                    <table class="table table-preguntas-cuestionario mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nivel</th>
+                                <th>Pregunta</th>
+                                <th>Respuesta</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filasPreguntas}
+                        </tbody>
+                    </table>
                 </div>
             </td>`;
             tbody.appendChild(subtr);
@@ -136,8 +153,8 @@ const CuestionariosManager = {
         }
     },
     getNivelColor(nivel) {
-        if (["_2NLS", "_4NLS", "_5NLS"].includes(nivel)) return 'text-danger fw-bold';
-        if (["_1LS", "_3LS", "_5LS"].includes(nivel)) return 'text-success fw-bold';
+        if (["_2NLS", "_4NLS", "_5NLS", "2NLS", "4NLS"].includes(nivel)) return 'text-danger fw-bold';
+        if (["_1LS", "_3LS", "_5LS", "1LS", "3LS"].includes(nivel)) return 'text-success fw-bold';
         return '';
     },
 };
@@ -161,6 +178,12 @@ async function mostrarFormularioCuestionario() {
         if (sel) sel.value = '';
         if (texto) texto.value = '';
     });
+    
+    // Limpiar campos nuevos
+    document.getElementById('cuestionario-tematica').value = '';
+    document.getElementById('cuestionario-notas').value = '';
+    document.getElementById('cuestionario-id').value = '';
+    
     // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('modal-cuestionario'));
     modal.show();
@@ -366,8 +389,18 @@ async function guardarCuestionario() {
         }).showToast();
         return;
     }
+    
     const cuestionarioId = document.getElementById('cuestionario-id').value;
+    const tematica = document.getElementById('cuestionario-tematica').value;
+    const notasDireccion = document.getElementById('cuestionario-notas').value;
     const esEdicion = !!cuestionarioId;
+    
+    const payload = { 
+        preguntasNormales,
+        tematica,
+        notasDireccion
+    };
+    
     try {
         let resp, data;
         if (esEdicion) {
@@ -375,14 +408,14 @@ async function guardarCuestionario() {
             resp = await fetch(`/api/cuestionarios/${cuestionarioId}`, {
                 method: 'PUT',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasNormales })
+                body: JSON.stringify(payload)
             });
         } else {
             // POST para crear
             resp = await fetch('/api/cuestionarios/nuevo', {
                 method: 'POST',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasNormales })
+                body: JSON.stringify(payload)
             });
         }
         try { data = await resp.json(); } catch (e) { data = null; }
@@ -526,6 +559,99 @@ CuestionariosManager.mostrarCuestionarios = function(cuestionarios) {
     CuestionariosManager.ultimoListado = cuestionarios;
     _oldMostrar.call(this, cuestionarios);
 }
+
+// Funciones de filtrado
+window.filtrarCuestionarios = async function() {
+    try {
+        const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
+        const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
+        const busqueda = document.getElementById('buscar-cuestionario')?.value || '';
+
+        // Si hay filtros de estado o temática, usar backend
+        if (estado || tematica) {
+            const params = new URLSearchParams();
+            if (estado) params.append('estado', estado);
+            if (tematica) params.append('tematica', tematica);
+
+            const response = await fetch(`/api/cuestionarios/filtrar?${params.toString()}`, {
+                headers: authManager.getAuthHeaders()
+            });
+
+            if (!response.ok) throw new Error('Error al filtrar cuestionarios');
+            const cuestionarios = await response.json();
+            
+            // Aplicar filtro de búsqueda por ID si existe
+            let cuestionariosFiltrados = cuestionarios;
+            if (busqueda) {
+                cuestionariosFiltrados = cuestionarios.filter(c => 
+                    c.id.toString().includes(busqueda)
+                );
+            }
+            
+            CuestionariosManager.mostrarCuestionarios(cuestionariosFiltrados);
+        } else if (busqueda) {
+            // Solo filtro de búsqueda, usar datos en memoria
+            const cuestionariosFiltrados = CuestionariosManager.ultimoListado.filter(c => 
+                c.id.toString().includes(busqueda)
+            );
+            CuestionariosManager.mostrarCuestionarios(cuestionariosFiltrados);
+        } else {
+            // Sin filtros, recargar todos
+            await CuestionariosManager.cargarCuestionarios();
+        }
+    } catch (error) {
+        console.error('Error al filtrar cuestionarios:', error);
+        Toastify({
+            text: 'Error al filtrar cuestionarios',
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
+        }).showToast();
+    }
+};
+
+window.limpiarFiltrosCuestionarios = function() {
+    document.getElementById('filtro-estado-cuestionario').value = '';
+    document.getElementById('filtro-tematica-cuestionario').value = '';
+    document.getElementById('buscar-cuestionario').value = '';
+    CuestionariosManager.cargarCuestionarios();
+};
+
+window.actualizarNotasDireccion = async function(cuestionarioId, notas) {
+    try {
+        const response = await fetch(`/api/cuestionarios/${cuestionarioId}/notas-direccion`, {
+            method: 'PUT',
+            headers: {
+                ...authManager.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ notasDireccion: notas })
+        });
+
+        if (!response.ok) throw new Error('Error al actualizar notas');
+        
+        Toastify({
+            text: 'Notas de dirección actualizadas',
+            duration: 2000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            style: { background: "linear-gradient(to right, #00b09b, #96c93d)" }
+        }).showToast();
+    } catch (error) {
+        console.error('Error al actualizar notas:', error);
+        Toastify({
+            text: 'Error al actualizar notas de dirección',
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
+        }).showToast();
+    }
+};
 
 window.cambiarPassword = function() {
     document.getElementById('form-cambiar-password').reset();

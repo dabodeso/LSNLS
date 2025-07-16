@@ -50,12 +50,13 @@ const CombosManager = {
                     if (pc && pc.slot) preguntasPorSlot[pc.slot] = pc.pregunta;
                 });
             }
-            const tieneHuecos = niveles.some(nivel => !preguntasPorSlot[nivel]);
-            const estadoMostrar = tieneHuecos ? 'BORRADOR' : (c.estado ?? '');
+            const estadoMostrar = c.estado ?? '';
+            const tipoMostrar = this.formatearTipo(c.tipo);
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', c.id);
             tr.innerHTML = `
-                <td>${c.id ?? ''}</td>
+                <td style="font-weight: bold; font-size: 1.2em; color: #0066cc;">${c.id ?? ''}</td>
+                <td>${tipoMostrar}</td>
                 <td>${estadoMostrar}</td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
@@ -65,45 +66,66 @@ const CombosManager = {
             `;
             tbody.appendChild(tr);
 
-            // Subtabla de preguntas con color y click en fila
+            // Subtabla de preguntas con la estética de cuestionarios
             const subtr = document.createElement('tr');
-            subtr.innerHTML = `<td colspan="5">
-                <div class="table-responsive">
-                <table class="table table-preguntas mb-0">
-                    <thead>
-                        <tr>
-                            <th>Nivel</th>
-                            <th>Pregunta</th>
-                            <th>Respuesta</th>
-                            <th>Temática</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${niveles.map(nivel => {
-                            const p = preguntasPorSlot[nivel];
-                            let nivelMostrar = nivel;
-                            if (nivel === 'PM1') nivelMostrar = 'PM1 (X2)';
-                            else if (nivel === 'PM2') nivelMostrar = 'PM2 (X3)';
-                            else if (nivel === 'PM3') nivelMostrar = 'PM3 (X)';
-                            if (p) {
-                                return `<tr data-id="${p.id}" data-nivel="${nivel}" style="cursor:pointer;">
-                                    <td><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(p.nivel) : ''}'>${nivelMostrar}</span></td>
-                                    <td>${p.pregunta ?? ''}</td>
-                                    <td>${p.respuesta ?? ''}</td>
-                                    <td>${p.tematica ?? ''}</td>
-                                    <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCombo(${c.id}, "${nivel}")'><i class='fas fa-trash'></i> Quitar</button></td>
-                                </tr>`;
-                            } else {
-                                return `<tr data-nivel="${nivel}">
-                                    <td>${nivelMostrar}</td>
-                                    <td colspan="3" class="text-center text-muted">(Vacío)</td>
-                                    <td><button class='btn btn-sm btn-success' onclick='event.stopPropagation();anadirPreguntaACombo(${c.id}, "${nivel}")'><i class='fas fa-plus'></i> Añadir</button></td>
-                                </tr>`;
-                            }
-                        }).join('')}
-                    </tbody>
-                </table>
+            subtr.classList.add('cuestionario-subtabla');
+            
+            // Generar exactamente 3 filas para las preguntas del combo
+            let filasPreguntas = '';
+            for (let i = 0; i < 3; i++) {
+                const slotNivel = niveles[i]; // 'PM1', 'PM2', 'PM3'
+                const p = preguntasPorSlot[slotNivel];
+                
+                if (p) {
+                    // Fila con pregunta - mostrar nivel real de la pregunta con su multiplicador
+                    let multiplicador = '';
+                    if (slotNivel === 'PM1') multiplicador = ' (X2)';
+                    else if (slotNivel === 'PM2') multiplicador = ' (X3)';
+                    else if (slotNivel === 'PM3') multiplicador = ' (X)';
+                    
+                    const nivelReal = p.nivel ? p.nivel.replace('_', '') : slotNivel;
+                    const nivelMostrar = nivelReal + multiplicador;
+                    
+                    filasPreguntas += `<tr data-id="${p.id}" data-nivel="${slotNivel}" style="cursor:pointer;">
+                        <td><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(p.nivel) : ''}'>${nivelMostrar}</span></td>
+                        <td>${p.pregunta ?? ''}</td>
+                        <td>${p.respuesta ?? ''}</td>
+                        <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCombo(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
+                    </tr>`;
+                } else {
+                    // Fila vacía con botón añadir - mostrar slot con multiplicador
+                    let multiplicador = '';
+                    let tipoSlot = '';
+                    if (slotNivel === 'PM1') { multiplicador = ' (X2)'; tipoSlot = 'PM1'; }
+                    else if (slotNivel === 'PM2') { multiplicador = ' (X3)'; tipoSlot = 'PM2'; }
+                    else if (slotNivel === 'PM3') { multiplicador = ' (X)'; tipoSlot = 'PM3'; }
+                    
+                    const nivelMostrar = tipoSlot + multiplicador;
+                    
+                    filasPreguntas += `<tr data-nivel="${slotNivel}">
+                        <td><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(slotNivel) : ''}'>${nivelMostrar}</span></td>
+                        <td class="text-center text-muted">(Vacío)</td>
+                        <td class="text-center text-muted">-</td>
+                        <td><button class='btn btn-sm btn-success' onclick='event.stopPropagation();anadirPreguntaACombo(${c.id}, "${slotNivel}")'><i class='fas fa-plus'></i></button></td>
+                    </tr>`;
+                }
+            }
+            
+            subtr.innerHTML = `<td colspan="6">
+                <div>
+                    <table class="table table-preguntas-cuestionario mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nivel</th>
+                                <th>Pregunta</th>
+                                <th>Respuesta</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filasPreguntas}
+                        </tbody>
+                    </table>
                 </div>
             </td>`;
             tbody.appendChild(subtr);
@@ -137,7 +159,64 @@ const CombosManager = {
         if (["_5LS"].includes(nivel)) return 'text-success fw-bold';
         return '';
     },
+
+    formatearTipo(tipo) {
+        switch(tipo) {
+            case 'P': return 'Premio (P)';
+            case 'A': return 'Asequible (A)';
+            case 'D': return 'Difícil (D)';
+            default: return '-';
+        }
+    },
 };
+
+// Guardar el último listado de combos para búsquedas rápidas
+CombosManager.ultimoListado = [];
+const _oldMostrarCombos = CombosManager.mostrarCombos;
+CombosManager.mostrarCombos = function(combos) {
+    CombosManager.ultimoListado = combos;
+    _oldMostrarCombos.call(this, combos);
+}
+
+// Funciones de filtrado
+window.filtrarCombos = async function() {
+    try {
+        const estado = document.getElementById('filtro-estado-combo')?.value || '';
+        const tipo = document.getElementById('filtro-tipo-combo')?.value || '';
+        const busqueda = document.getElementById('buscar-combo')?.value || '';
+
+        let combosFiltrados = CombosManager.ultimoListado;
+
+        // Filtrar por estado
+        if (estado) {
+            combosFiltrados = combosFiltrados.filter(c => c.estado === estado);
+        }
+
+        // Filtrar por tipo
+        if (tipo) {
+            combosFiltrados = combosFiltrados.filter(c => c.tipo === tipo);
+        }
+
+        // Filtrar por búsqueda de ID
+        if (busqueda) {
+            combosFiltrados = combosFiltrados.filter(c => 
+                c.id.toString().includes(busqueda)
+            );
+        }
+
+        CombosManager.mostrarCombos(combosFiltrados);
+    } catch (error) {
+        console.error('Error al filtrar combos:', error);
+        await CombosManager.cargarCombos();
+    }
+}
+
+window.limpiarFiltrosCombos = function() {
+    document.getElementById('filtro-estado-combo').value = '';
+    document.getElementById('filtro-tipo-combo').value = '';
+    document.getElementById('buscar-combo').value = '';
+    CombosManager.cargarCombos();
+}
 
 function inicializarCombos() {
     CombosManager.cargarCombos();
@@ -327,6 +406,19 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
 }
 
 async function guardarCombo() {
+    const tipo = document.getElementById('combo-tipo').value;
+    if (!tipo) {
+        Toastify({
+            text: 'Debes seleccionar el tipo de combo',
+            duration: 3000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        return;
+    }
+
     let valid = true;
     let preguntasMultiplicadoras = [];
     pms.forEach((pm, idx) => {
@@ -357,14 +449,14 @@ async function guardarCombo() {
             resp = await fetch(`/api/combos/${comboId}`, {
                 method: 'PUT',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasMultiplicadoras })
+                body: JSON.stringify({ preguntasMultiplicadoras, tipo })
             });
         } else {
             // POST para crear
             resp = await fetch('/api/combos/nuevo', {
                 method: 'POST',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasMultiplicadoras })
+                body: JSON.stringify({ preguntasMultiplicadoras, tipo })
             });
         }
         

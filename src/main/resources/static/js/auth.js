@@ -199,6 +199,13 @@ class AuthManager {
             rol: user.rol
         };
     }
+
+    hasRole(role) {
+        if (!this.currentUser || !this.currentUser.rol) {
+            return false;
+        }
+        return this.currentUser.rol === role;
+    }
 }
 
 // Instancia global

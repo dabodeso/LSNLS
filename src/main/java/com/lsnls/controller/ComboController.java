@@ -89,6 +89,16 @@ public class ComboController {
             combo.setCreacionUsuario(usuarioOpt.get());
             combo.setEstado(EstadoCombo.borrador);
             combo.setNivel(NivelCombo.NORMAL);
+            
+            // Establecer tipo
+            if (dto.getTipo() != null && !dto.getTipo().isEmpty()) {
+                try {
+                    combo.setTipo(Combo.TipoCombo.valueOf(dto.getTipo()));
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body("Tipo de combo inválido: " + dto.getTipo());
+                }
+            }
+            
             combo = comboService.crear(combo);
             
             // Asociar preguntas multiplicadoras

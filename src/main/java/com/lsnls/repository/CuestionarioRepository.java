@@ -23,4 +23,13 @@ public interface CuestionarioRepository extends JpaRepository<Cuestionario, Long
     // Obtener todos los cuestionarios ordenados por ID descendente (más recientes primero)
     @Query("SELECT c FROM Cuestionario c ORDER BY c.id DESC")
     List<Cuestionario> findAllOrderByIdDesc();
+    
+    // Filtros por estado
+    List<Cuestionario> findByEstadoOrderByIdDesc(EstadoCuestionario estado);
+    
+    // Filtros por temática
+    List<Cuestionario> findByTematicaContainingIgnoreCaseOrderByIdDesc(String tematica);
+    
+    // Filtros combinados
+    List<Cuestionario> findByEstadoAndTematicaContainingIgnoreCaseOrderByIdDesc(EstadoCuestionario estado, String tematica);
 } 

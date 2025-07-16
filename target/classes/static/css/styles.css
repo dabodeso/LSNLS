@@ -99,6 +99,85 @@ body {
     max-width: 300px;
 }
 
+/* Tabla de preguntas dentro de cuestionarios - tamaño fijo y compacto */
+.table-preguntas-cuestionario {
+    margin: 0;
+    font-size: 0.9rem;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.table-preguntas-cuestionario thead th {
+    background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+    color: white;
+    border: none;
+    padding: 8px;
+    font-weight: 600;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.table-preguntas-cuestionario tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table-preguntas-cuestionario tbody tr:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.table-preguntas-cuestionario th:nth-child(1),
+.table-preguntas-cuestionario td:nth-child(1) {
+    width: 15%; /* Nivel */
+    text-align: center;
+}
+
+.table-preguntas-cuestionario th:nth-child(2),
+.table-preguntas-cuestionario td:nth-child(2) {
+    width: 40%; /* Pregunta */
+}
+
+.table-preguntas-cuestionario th:nth-child(3),
+.table-preguntas-cuestionario td:nth-child(3) {
+    width: 30%; /* Respuesta */
+}
+
+.table-preguntas-cuestionario th:nth-child(4),
+.table-preguntas-cuestionario td:nth-child(4) {
+    width: 15%; /* Acción */
+    text-align: center;
+}
+
+.table-preguntas-cuestionario td {
+    padding: 8px;
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+/* Separación entre cuestionarios */
+.cuestionario-subtabla {
+    border-bottom: 3px solid #0066cc;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.cuestionario-subtabla:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+/* Espaciado adicional después de cada cuestionario completo */
+.cuestionario-subtabla td {
+    position: relative;
+}
+
+.cuestionario-subtabla td::after {
+    content: '';
+    display: block;
+    height: 15px;
+}
+
 .table-excel tbody td {
     padding: 8px 6px;
     border-bottom: 1px solid #dee2e6;

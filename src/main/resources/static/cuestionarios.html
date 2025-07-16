@@ -36,6 +36,9 @@
                         <a class="nav-link" href="concursantes.html">Concursantes</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="jornadas.html">Jornadas</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="programas.html">Programas</a>
                     </li>
                     <li class="nav-item" id="nav-admin" style="display:none"><a class="nav-link" href="administracion.html">Administración</a></li>
@@ -67,19 +70,48 @@
         </div>
 
         <!-- Filtros -->
-        <div class="filters-container">
-            <div class="filter-group">
-                <label>Estado:</label>
-                <select id="filtro-estado-cuestionario" onchange="filtrarCuestionarios()">
-                    <option value="">Todos</option>
-                    <option value="BORRADOR">Borrador</option>
-                    <option value="COMPLETADO">Completado</option>
-                    <option value="ASIGNADO">Asignado</option>
-                </select>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filtros-cuestionarios" aria-expanded="true">
+                        <i class="fas fa-filter"></i> Filtros de Búsqueda
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="limpiarFiltrosCuestionarios()">
+                        <i class="fas fa-eraser"></i> Limpiar
+                    </button>
+                </h5>
             </div>
-            <div class="filter-group">
-                <label>Buscar:</label>
-                <input type="text" id="buscar-cuestionario" onkeyup="filtrarCuestionarios()" placeholder="Número o descripción...">
+            <div id="filtros-cuestionarios" class="collapse show">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Estado:</label>
+                            <select id="filtro-estado-cuestionario" class="form-select form-select-sm" onchange="filtrarCuestionarios()">
+                                <option value="">Todos</option>
+                                <option value="borrador">Borrador</option>
+                                <option value="creado">Creado</option>
+                                <option value="adjudicado">Adjudicado</option>
+                                <option value="grabado">Grabado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Temática:</label>
+                            <select id="filtro-tematica-cuestionario" class="form-select form-select-sm" onchange="filtrarCuestionarios()">
+                                <option value="">Todas</option>
+                                <option value="">Genérico</option>
+                                <option value="CUESTIONARIO MUSICAL">Cuestionario Musical</option>
+                                <option value="NAVIDAD">Navidad</option>
+                                <option value="ESPACIO">Espacio</option>
+                                <option value="WESTERN">Western</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Buscar por ID:</label>
+                            <input type="text" id="buscar-cuestionario" class="form-control form-control-sm" 
+                                   onkeyup="filtrarCuestionarios()" placeholder="Número de cuestionario...">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -88,8 +120,8 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Número</th>
-                        <!-- <th>Descripción</th> -->
+                        <th style="font-weight: bold; font-size: 1.1em; color: #0066cc;">Número</th>
+                        <th>Temática</th>
                         <th>Estado</th>
                         <th>Preguntas</th>
                         <th>Fecha Creación</th>
@@ -113,6 +145,21 @@
                     <div class="modal-body">
                         <form id="form-cuestionario">
                             <input type="hidden" id="cuestionario-id">
+                            <div class="mb-3">
+                                <label class="form-label">Temática:</label>
+                                <select class="form-select" id="cuestionario-tematica">
+                                    <option value="">Genérico</option>
+                                    <option value="CUESTIONARIO MUSICAL">Cuestionario Musical</option>
+                                    <option value="NAVIDAD">Navidad</option>
+                                    <option value="ESPACIO">Espacio</option>
+                                    <option value="WESTERN">Western</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notas de Dirección:</label>
+                                <textarea class="form-control" id="cuestionario-notas" rows="3" 
+                                          placeholder="Notas específicas para dirección..."></textarea>
+                            </div>
                             <div class="mb-3">
                                 <label class="form-label">Preguntas normales y multiplicadoras:</label>
                                 <div class="row g-2 mb-2">
