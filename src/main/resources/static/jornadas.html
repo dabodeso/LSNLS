@@ -61,17 +61,48 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="dashboard.html">
-                <i class="fas fa-tv"></i> LSNLS
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="dashboard.html">Dashboard</a>
-                <a class="nav-link active" href="jornadas.html">Jornadas</a>
-                <button class="btn btn-outline-light btn-sm" onclick="authManager.logout()">
-                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                </button>
+            <a class="navbar-brand" href="#">LSNLS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="preguntas.html">Preguntas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="cuestionarios.html">Cuestionarios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="combos.html">Combos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="concursantes.html">Concursantes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="jornadas.html">Jornadas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="programas.html">Programas</a>
+                    </li>
+                    <li class="nav-item" id="nav-admin" style="display:none"><a class="nav-link" href="administracion.html">Administración</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="usuario-menu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="usuario-actual"></span>
+                            <span style="font-size: 1.5em; margin-left: 8px;">
+                                <i class="fas fa-bars"></i>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="usuario-menu">
+                            <li><a class="dropdown-item" href="#" onclick="cerrarSesion()">Cerrar sesión</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="cambiarPassword()">Cambiar contraseña</a></li>
+                        </ul>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
@@ -311,6 +342,38 @@
         </div>
     </div>
 
+    <!-- Modal Cambiar Contraseña -->
+    <div class="modal fade" id="modal-cambiar-password" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cambiar contraseña</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-cambiar-password">
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña actual</label>
+                            <input type="password" class="form-control" id="password-actual" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nueva contraseña</label>
+                            <input type="password" class="form-control" id="password-nueva" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Repetir nueva contraseña</label>
+                            <input type="password" class="form-control" id="password-nueva2" required>
+                        </div>
+                        <div id="password-help" class="form-text mb-2">
+                            Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
@@ -324,9 +387,84 @@
                 return;
             }
             
+            // Mostrar botón de administración si es admin
+            mostrarBotonAdminNavbar();
+            
             // Cargar datos iniciales
             JornadasManager.init();
+
+            // Event listener para cambiar contraseña
+            document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const actual = document.getElementById('password-actual').value;
+                const nueva = document.getElementById('password-nueva').value;
+                const nueva2 = document.getElementById('password-nueva2').value;
+                const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+                
+                if (nueva !== nueva2) {
+                    mostrarError('Las contraseñas nuevas no coinciden.');
+                    return;
+                }
+                if (!regex.test(nueva)) {
+                    mostrarError('La nueva contraseña no cumple los requisitos.');
+                    return;
+                }
+                
+                try {
+                    const usuario = JSON.parse(localStorage.getItem('usuario'));
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`/api/usuarios/${usuario.id}/cambiar-password`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                        },
+                        body: JSON.stringify({ actual, nueva })
+                    });
+                    
+                    if (response.ok) {
+                        mostrarExito('Contraseña cambiada correctamente.');
+                        bootstrap.Modal.getInstance(document.getElementById('modal-cambiar-password')).hide();
+                    } else {
+                        const errorText = await response.text();
+                        mostrarError('Error al cambiar contraseña: ' + errorText);
+                    }
+                } catch (err) {
+                    mostrarError('Error inesperado: ' + err);
+                }
+            });
         });
+
+        // Función para mostrar botón admin en navbar
+        function mostrarBotonAdminNavbar() {
+            const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+            const navAdmin = document.getElementById('nav-admin');
+            if (navAdmin) {
+                navAdmin.style.display = usuario.rol === 'ROLE_ADMIN' ? 'block' : 'none';
+            }
+            // Mostrar nombre de usuario
+            const usuarioActual = document.getElementById('usuario-actual');
+            if (usuarioActual && usuario.nombre) {
+                usuarioActual.textContent = usuario.nombre;
+            }
+        }
+
+        // Función para cerrar sesión
+        function cerrarSesion() {
+            if (authManager && authManager.logout) {
+                authManager.logout();
+            } else {
+                localStorage.removeItem('token');
+                localStorage.removeItem('usuario');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Función para cambiar contraseña
+        function cambiarPassword() {
+            const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
+            modal.show();
+        }
     </script>
 </body>
 </html> 

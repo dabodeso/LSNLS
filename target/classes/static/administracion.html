@@ -6,6 +6,7 @@
     <title>Administración de Usuarios</title>
     <script src="js/auth-guard.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link href="css/styles.css" rel="stylesheet">
 </head>
 <body>
@@ -35,6 +36,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="usuario-menu">
                             <li><a class="dropdown-item" href="#" onclick="cerrarSesion()">Cerrar sesión</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="cambiarPassword()">Cambiar contraseña</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -102,6 +104,38 @@
         </div>
     </div>
 
+    <!-- Modal Cambiar Contraseña -->
+    <div class="modal fade" id="modal-cambiar-password" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cambiar contraseña</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-cambiar-password">
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña actual</label>
+                            <input type="password" class="form-control" id="password-actual" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nueva contraseña</label>
+                            <input type="password" class="form-control" id="password-nueva" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Repetir nueva contraseña</label>
+                            <input type="password" class="form-control" id="password-nueva2" required>
+                        </div>
+                        <div id="password-help" class="form-text mb-2">
+                            Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/api.js"></script>
@@ -115,7 +149,61 @@
             if (usuario) {
                 document.getElementById('usuario-actual').textContent = usuario.nombre + ' (' + usuario.rol + ')';
             }
+
+            // Event listener para cambiar contraseña
+            document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const actual = document.getElementById('password-actual').value;
+                const nueva = document.getElementById('password-nueva').value;
+                const nueva2 = document.getElementById('password-nueva2').value;
+                const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+                
+                if (nueva !== nueva2) {
+                    mostrarError('Las contraseñas nuevas no coinciden.');
+                    return;
+                }
+                if (!regex.test(nueva)) {
+                    mostrarError('La nueva contraseña no cumple los requisitos.');
+                    return;
+                }
+                
+                try {
+                    const usuario = JSON.parse(localStorage.getItem('usuario'));
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`/api/usuarios/${usuario.id}/cambiar-password`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                        },
+                        body: JSON.stringify({ actual, nueva })
+                    });
+                    
+                    if (response.ok) {
+                        mostrarExito('Contraseña cambiada correctamente.');
+                        bootstrap.Modal.getInstance(document.getElementById('modal-cambiar-password')).hide();
+                    } else {
+                        const errorText = await response.text();
+                        mostrarError('Error al cambiar contraseña: ' + errorText);
+                    }
+                } catch (err) {
+                    mostrarError('Error inesperado: ' + err);
+                }
+            });
         });
+
+        // Función para cambiar contraseña
+        function cambiarPassword() {
+            const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
+            modal.show();
+        }
+
+        // Función para cerrar sesión
+        function cerrarSesion() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            window.location.href = 'index.html';
+        }
     </script>
 </body>
 </html> 
