@@ -270,6 +270,22 @@ textarea {
 .estado-pendiente { background-color: var(--warning-color); color: #000; }
 .estado-rechazada { background-color: var(--danger-color); }
 
+/* Estados específicos para cuestionarios */
+.estado-borrador { background-color: var(--secondary-color); }
+.estado-creado { background-color: var(--primary-color); }
+.estado-adjudicado { background-color: var(--success-color); }
+.estado-grabado { background-color: var(--info-color); }
+.estado-asignado_jornada { background-color: var(--warning-color); color: #000; }
+.estado-asignado_concursantes { background-color: #212529; }
+
+/* Estados específicos para combos */
+.combo-borrador { background-color: var(--secondary-color); }
+.combo-creado { background-color: var(--primary-color); }
+.combo-adjudicado { background-color: var(--success-color); }
+.combo-grabado { background-color: var(--info-color); }
+.combo-asignado_jornada { background-color: var(--warning-color); color: #000; }
+.combo-asignado_concursantes { background-color: #212529; }
+
 .btn-action {
     background: linear-gradient(135deg, var(--primary-color) 0%, #0b5ed7 100%);
     border: none;
@@ -349,4 +365,43 @@ textarea {
     max-width: 400px;
     font-size: 0.93rem;
     padding: 7px 4px;
+}
+
+/* Estilos para formulario de concursantes reorganizado */
+.modal-xl .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal-body h6.text-primary {
+    font-weight: 600;
+    color: #0d6efd !important;
+    margin-bottom: 0.75rem;
+}
+
+.modal-body h6.text-primary i {
+    color: #0d6efd;
+    opacity: 0.8;
+}
+
+.form-label span.text-danger {
+    font-weight: bold;
+}
+
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #6c757d;
+}
+
+.input-group .btn {
+    border-color: #dee2e6;
+}
+
+.input-group .btn:hover {
+    border-color: #0d6efd;
+}
+
+.modal-body .mb-4:last-child {
+    margin-bottom: 1rem !important;
 } 

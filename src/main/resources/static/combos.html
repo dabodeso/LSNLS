@@ -26,8 +26,14 @@
                     <li class="nav-item">
                         <a class="nav-link" href="preguntas.html">Preguntas</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="cuestionarios.html">Cuestionarios</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="cuestionarios-menu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Cuestionarios
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="cuestionarios-menu">
+                            <li><a class="dropdown-item" href="cuestionarios.html"><i class="fas fa-table"></i> Vista Tabla</a></li>
+                            <li><a class="dropdown-item" href="cuestionarios2.html"><i class="fas fa-th-large"></i> Vista Tarjetas</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="combos.html">Combos</a>
@@ -160,6 +166,7 @@
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="pm-PM1-texto" readonly placeholder="Sin seleccionar">
                                             <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('PM1')">Elegir</button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="limpiarSeleccionPM('PM1')" title="Limpiar selección">✕</button>
                                             <input type="hidden" id="pm-PM1">
                                         </div>
                                     </div>
@@ -168,6 +175,7 @@
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="pm-PM2-texto" readonly placeholder="Sin seleccionar">
                                             <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('PM2')">Elegir</button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="limpiarSeleccionPM('PM2')" title="Limpiar selección">✕</button>
                                             <input type="hidden" id="pm-PM2">
                                         </div>
                                     </div>
@@ -176,6 +184,7 @@
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="pm-PM3-texto" readonly placeholder="Sin seleccionar">
                                             <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('PM3')">Elegir</button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="limpiarSeleccionPM('PM3')" title="Limpiar selección">✕</button>
                                             <input type="hidden" id="pm-PM3">
                                         </div>
                                     </div>

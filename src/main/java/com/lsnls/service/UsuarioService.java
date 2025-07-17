@@ -20,8 +20,8 @@ public class UsuarioService {
     private PasswordEncoder passwordEncoder;
 
     public Usuario crear(Usuario usuario) {
-        // TEMPORAL: Para desarrollo no encriptar contraseñas (usar texto plano)
-        // usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+        // Asignar automáticamente la contraseña por defecto
+        usuario.setPassword("123456");
         return usuarioRepository.save(usuario);
     }
 

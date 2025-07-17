@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.ArrayList;
 import jakarta.persistence.EntityManager;
 import com.lsnls.dto.CrearCuestionarioDTO;
 import com.lsnls.dto.PreguntaCuestionarioDTO;
@@ -127,6 +128,24 @@ public class CuestionarioService {
             cuestionario.setEstado(nuevoEstado);
             return cuestionarioRepository.save(cuestionario);
         }).orElse(null);
+    }
+
+    /**
+     * Obtiene cuestionarios disponibles para asignar a concursantes.
+     * Incluye cuestionarios en estado 'creado' y 'asignado_jornada'.
+     */
+    public List<Cuestionario> obtenerDisponiblesParaConcursantes() {
+        List<Cuestionario> creados = cuestionarioRepository.findByEstado(EstadoCuestionario.creado);
+        List<Cuestionario> asignadosJornada = cuestionarioRepository.findByEstado(EstadoCuestionario.asignado_jornada);
+        
+        List<Cuestionario> disponibles = new ArrayList<>();
+        disponibles.addAll(creados);
+        disponibles.addAll(asignadosJornada);
+        
+        // Ordenar por ID descendente (más recientes primero)
+        disponibles.sort((a, b) -> b.getId().compareTo(a.getId()));
+        
+        return disponibles;
     }
 
     public boolean agregarPregunta(Long cuestionarioId, Long preguntaId, Integer factorMultiplicacion) {

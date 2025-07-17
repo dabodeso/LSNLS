@@ -55,8 +55,23 @@ public class ConcursanteService {
     @Transactional
     public ConcursanteDTO create(ConcursanteDTO concursanteDTO) {
         Concursante concursante = convertToEntity(concursanteDTO);
+        
+        // Generar número de concursante automáticamente
+        if (concursante.getNumeroConcursante() == null) {
+            Integer siguienteNumero = generarSiguienteNumeroConcursante();
+            concursante.setNumeroConcursante(siguienteNumero);
+        }
+        
         concursante = concursanteRepository.save(concursante);
         return convertToDTO(concursante);
+    }
+
+    /**
+     * Genera el siguiente número de concursante automáticamente
+     */
+    private Integer generarSiguienteNumeroConcursante() {
+        Integer maxNumero = concursanteRepository.findMaxNumeroConcursante();
+        return (maxNumero != null) ? maxNumero + 1 : 1;
     }
 
     @Transactional
@@ -64,31 +79,128 @@ public class ConcursanteService {
         Concursante concursante = concursanteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
 
+        // Obtener el cuestionario anterior para comparar
+        Cuestionario cuestionarioAnterior = concursante.getCuestionario();
+        
+        // Obtener el combo anterior para comparar
+        Combo comboAnterior = concursante.getCombo();
+        
         BeanUtils.copyProperties(concursanteDTO, concursante, "id");
         
-        // Manejar cuestionario
+        // Manejar cuestionario con lógica de estados
         if (concursanteDTO.getCuestionarioId() != null) {
-            Cuestionario cuestionario = cuestionarioRepository.findById(concursanteDTO.getCuestionarioId())
-                    .orElse(null);
-            concursante.setCuestionario(cuestionario);
+            Cuestionario cuestionarioNuevo = cuestionarioRepository.findById(concursanteDTO.getCuestionarioId())
+                    .orElseThrow(() -> new RuntimeException("Cuestionario no encontrado: " + concursanteDTO.getCuestionarioId()));
+            
+            // Solo cambiar estado si es un cuestionario diferente al anterior
+            if (cuestionarioAnterior == null || !cuestionarioAnterior.getId().equals(cuestionarioNuevo.getId())) {
+                // Validar que el cuestionario esté en estado válido para asignación
+                if (cuestionarioNuevo.getEstado() != Cuestionario.EstadoCuestionario.creado && 
+                    cuestionarioNuevo.getEstado() != Cuestionario.EstadoCuestionario.asignado_jornada) {
+                    throw new RuntimeException("Solo se pueden asignar cuestionarios en estado 'creado' o 'asignado_jornada'. El cuestionario " + 
+                                             cuestionarioNuevo.getId() + " está en estado: " + cuestionarioNuevo.getEstado());
+                }
+                
+                // Cambiar estado del cuestionario nuevo a "asignado_concursantes"
+                cuestionarioNuevo.setEstado(Cuestionario.EstadoCuestionario.asignado_concursantes);
+                cuestionarioRepository.save(cuestionarioNuevo);
+            }
+            
+            concursante.setCuestionario(cuestionarioNuevo);
         } else {
             concursante.setCuestionario(null);
         }
         
-        // Manejar combo
+        // Si se quitó un cuestionario (había uno antes y ahora es null)
+        if (cuestionarioAnterior != null && concursanteDTO.getCuestionarioId() == null) {
+            // Liberar el cuestionario anterior - volver a estado "creado"
+            if (cuestionarioAnterior.getEstado() == Cuestionario.EstadoCuestionario.asignado_concursantes) {
+                cuestionarioAnterior.setEstado(Cuestionario.EstadoCuestionario.creado);
+                cuestionarioRepository.save(cuestionarioAnterior);
+            }
+        }
+        
+        // Si se cambió de un cuestionario a otro (había uno antes y ahora hay otro diferente)
+        if (cuestionarioAnterior != null && concursanteDTO.getCuestionarioId() != null && 
+            !cuestionarioAnterior.getId().equals(concursanteDTO.getCuestionarioId())) {
+            // Liberar el cuestionario anterior
+            if (cuestionarioAnterior.getEstado() == Cuestionario.EstadoCuestionario.asignado_concursantes) {
+                cuestionarioAnterior.setEstado(Cuestionario.EstadoCuestionario.creado);
+                cuestionarioRepository.save(cuestionarioAnterior);
+            }
+        }
+        
+        // Manejar combo con lógica de estados
         if (concursanteDTO.getComboId() != null) {
-            Combo combo = comboRepository.findById(concursanteDTO.getComboId())
-                    .orElse(null);
-            concursante.setCombo(combo);
+            Combo comboNuevo = comboRepository.findById(concursanteDTO.getComboId())
+                    .orElseThrow(() -> new RuntimeException("Combo no encontrado: " + concursanteDTO.getComboId()));
+            
+            // Solo cambiar estado si es un combo diferente al anterior
+            if (comboAnterior == null || !comboAnterior.getId().equals(comboNuevo.getId())) {
+                // Validar que el combo esté en estado válido para asignación
+                if (comboNuevo.getEstado() != Combo.EstadoCombo.creado && 
+                    comboNuevo.getEstado() != Combo.EstadoCombo.asignado_jornada) {
+                    throw new RuntimeException("Solo se pueden asignar combos en estado 'creado' o 'asignado_jornada'. El combo " + 
+                                             comboNuevo.getId() + " está en estado: " + comboNuevo.getEstado());
+                }
+                
+                // Cambiar estado del combo nuevo a "asignado_concursantes"
+                comboNuevo.setEstado(Combo.EstadoCombo.asignado_concursantes);
+                comboRepository.save(comboNuevo);
+            }
+            
+            concursante.setCombo(comboNuevo);
         } else {
             concursante.setCombo(null);
+        }
+        
+        // Si se quitó un combo (había uno antes y ahora es null)
+        if (comboAnterior != null && concursanteDTO.getComboId() == null) {
+            // Liberar el combo anterior - volver a estado "creado"
+            if (comboAnterior.getEstado() == Combo.EstadoCombo.asignado_concursantes) {
+                comboAnterior.setEstado(Combo.EstadoCombo.creado);
+                comboRepository.save(comboAnterior);
+            }
+        }
+        
+        // Si se cambió de un combo a otro (había uno antes y ahora hay otro diferente)
+        if (comboAnterior != null && concursanteDTO.getComboId() != null && 
+            !comboAnterior.getId().equals(concursanteDTO.getComboId())) {
+            // Liberar el combo anterior
+            if (comboAnterior.getEstado() == Combo.EstadoCombo.asignado_concursantes) {
+                comboAnterior.setEstado(Combo.EstadoCombo.creado);
+                comboRepository.save(comboAnterior);
+            }
         }
         
         concursante = concursanteRepository.save(concursante);
         return convertToDTO(concursante);
     }
 
+    @Transactional
     public void delete(Long id) {
+        // Obtener el concursante antes de eliminarlo para liberar el cuestionario
+        Concursante concursante = concursanteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
+        
+        // Liberar el cuestionario si está asignado
+        if (concursante.getCuestionario() != null) {
+            Cuestionario cuestionario = concursante.getCuestionario();
+            if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.asignado_concursantes) {
+                cuestionario.setEstado(Cuestionario.EstadoCuestionario.creado);
+                cuestionarioRepository.save(cuestionario);
+            }
+        }
+        
+        // Liberar el combo si está asignado
+        if (concursante.getCombo() != null) {
+            Combo combo = concursante.getCombo();
+            if (combo.getEstado() == Combo.EstadoCombo.asignado_concursantes) {
+                combo.setEstado(Combo.EstadoCombo.creado);
+                comboRepository.save(combo);
+            }
+        }
+        
         concursanteRepository.deleteById(id);
     }
 
@@ -197,13 +309,35 @@ public class ConcursanteService {
         
         if (dto.getCuestionarioId() != null) {
             Cuestionario cuestionario = cuestionarioRepository.findById(dto.getCuestionarioId())
-                    .orElse(null);
+                    .orElseThrow(() -> new RuntimeException("Cuestionario no encontrado: " + dto.getCuestionarioId()));
+            
+            // Validar que el cuestionario esté en estado válido para asignación
+            if (cuestionario.getEstado() != Cuestionario.EstadoCuestionario.creado && 
+                cuestionario.getEstado() != Cuestionario.EstadoCuestionario.asignado_jornada) {
+                throw new RuntimeException("Solo se pueden asignar cuestionarios en estado 'creado' o 'asignado_jornada'. El cuestionario " + 
+                                         cuestionario.getId() + " está en estado: " + cuestionario.getEstado());
+            }
+            
+            // Cambiar estado del cuestionario a "asignado_concursantes"
+            cuestionario.setEstado(Cuestionario.EstadoCuestionario.asignado_concursantes);
+            cuestionarioRepository.save(cuestionario);
             concursante.setCuestionario(cuestionario);
         }
         
         if (dto.getComboId() != null) {
             Combo combo = comboRepository.findById(dto.getComboId())
-                    .orElse(null);
+                    .orElseThrow(() -> new RuntimeException("Combo no encontrado: " + dto.getComboId()));
+            
+            // Validar que el combo esté en estado válido para asignación
+            if (combo.getEstado() != Combo.EstadoCombo.creado && 
+                combo.getEstado() != Combo.EstadoCombo.asignado_jornada) {
+                throw new RuntimeException("Solo se pueden asignar combos en estado 'creado' o 'asignado_jornada'. El combo " + 
+                                         combo.getId() + " está en estado: " + combo.getEstado());
+            }
+            
+            // Cambiar estado del combo a "asignado_concursantes"
+            combo.setEstado(Combo.EstadoCombo.asignado_concursantes);
+            comboRepository.save(combo);
             concursante.setCombo(combo);
         }
         

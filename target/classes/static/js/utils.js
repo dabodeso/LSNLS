@@ -81,11 +81,49 @@ class Utils {
                 'borrador': 'bg-secondary',
                 'creado': 'bg-primary',
                 'adjudicado': 'bg-success',
-                'grabado': 'bg-info'
+                'grabado': 'bg-info',
+                'asignado_jornada': 'bg-warning',
+                'asignado_concursantes': 'bg-dark'
+            },
+            combo: {
+                'borrador': 'bg-secondary',
+                'creado': 'bg-primary',
+                'adjudicado': 'bg-success',
+                'grabado': 'bg-info',
+                'asignado_jornada': 'bg-warning',
+                'asignado_concursantes': 'bg-dark'
             }
         };
         
         return classes[tipo]?.[estado] || 'bg-secondary';
+    }
+
+    // Convertir estados de cuestionarios a texto legible en español
+    static formatearEstadoCuestionario(estado) {
+        const estadosEspanol = {
+            'borrador': 'Borrador',
+            'creado': 'Creado',
+            'adjudicado': 'Adjudicado', 
+            'grabado': 'Grabado',
+            'asignado_jornada': 'Asignado a Jornada',
+            'asignado_concursantes': 'Asignado a Concursantes'
+        };
+        
+        return estadosEspanol[estado] || estado.charAt(0).toUpperCase() + estado.slice(1);
+    }
+
+    // Convertir estados de combos a texto legible en español
+    static formatearEstadoCombo(estado) {
+        const estadosEspanol = {
+            'borrador': 'Borrador',
+            'creado': 'Creado',
+            'adjudicado': 'Adjudicado', 
+            'grabado': 'Grabado',
+            'asignado_jornada': 'Asignado a Jornada',
+            'asignado_concursantes': 'Asignado a Concursantes'
+        };
+        
+        return estadosEspanol[estado] || estado.charAt(0).toUpperCase() + estado.slice(1);
     }
 
     // Debounce para optimizar búsquedas

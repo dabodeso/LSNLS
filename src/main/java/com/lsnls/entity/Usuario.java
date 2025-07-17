@@ -27,19 +27,19 @@ public class Usuario {
     @Column(nullable = false)
     private RolUsuario rol;
 
-    @JsonManagedReference
+    @JsonIgnore
     @OneToMany(mappedBy = "creacionUsuario")
     private Set<Pregunta> preguntasCreadas;
 
-    @JsonManagedReference
+    @JsonIgnore
     @OneToMany(mappedBy = "verificacionUsuario")
     private Set<Pregunta> preguntasVerificadas;
 
-    @JsonManagedReference
+    @JsonIgnore
     @OneToMany(mappedBy = "creacionUsuario")
     private Set<Cuestionario> cuestionariosCreados;
 
-    @JsonManagedReference
+    @JsonIgnore
     @OneToMany(mappedBy = "creacionUsuario")
     private Set<Combo> combosCreados;
 

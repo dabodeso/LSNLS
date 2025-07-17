@@ -85,6 +85,15 @@ public class ComboController {
                 return ResponseEntity.badRequest().body("Debes proporcionar exactamente 3 preguntas multiplicadoras");
             }
             
+            // Validar que no se repitan preguntas
+            java.util.HashSet<Long> idsPreguntas = new java.util.HashSet<>();
+            for (CrearComboDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {
+                idsPreguntas.add(pm.getId());
+            }
+            if (idsPreguntas.size() != 3) {
+                return ResponseEntity.badRequest().body("No puedes seleccionar la misma pregunta para diferentes multiplicadores (PM1, PM2, PM3)");
+            }
+            
             Combo combo = new Combo();
             combo.setCreacionUsuario(usuarioOpt.get());
             combo.setEstado(EstadoCombo.borrador);
@@ -149,6 +158,8 @@ public class ComboController {
     @PreAuthorize("@authorizationService.canCreateCuestionario()")
     public ResponseEntity<?> quitarPregunta(@PathVariable Long comboId, @PathVariable Long preguntaId) {
         try {
+            log.info("[QUITAR PREGUNTA] Intentando quitar pregunta {} del combo {}", preguntaId, comboId);
+            
             if (!authService.canCreateCuestionario()) {
                 return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de combos");
             }
@@ -156,11 +167,37 @@ public class ComboController {
             boolean exito = comboService.quitarPregunta(comboId, preguntaId);
             
             if (exito) {
+                log.info("[QUITAR PREGUNTA] Pregunta {} quitada exitosamente del combo {}", preguntaId, comboId);
                 return ResponseEntity.ok(Map.of("message", "Pregunta quitada exitosamente"));
             } else {
+                log.warn("[QUITAR PREGUNTA] No se pudo quitar pregunta {} del combo {}", preguntaId, comboId);
                 return ResponseEntity.badRequest().body("Error al quitar pregunta: No se pudo completar la operación");
             }
         } catch (Exception e) {
+            log.error("[QUITAR PREGUNTA] Error al quitar pregunta {} del combo {}: {}", preguntaId, comboId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{comboId}/limpiar-preguntas-invalidas")
+    @PreAuthorize("@authorizationService.canCreateCuestionario()")
+    public ResponseEntity<?> limpiarPreguntasInvalidas(@PathVariable Long comboId) {
+        try {
+            log.info("[LIMPIAR PREGUNTAS] Limpiando preguntas inválidas del combo {}", comboId);
+            
+            if (!authService.canCreateCuestionario()) {
+                return ResponseEntity.status(403).body("No tienes permisos para limpiar combos");
+            }
+            
+            int preguntasEliminadas = comboService.limpiarPreguntasInvalidas(comboId);
+            
+            log.info("[LIMPIAR PREGUNTAS] {} preguntas inválidas eliminadas del combo {}", preguntasEliminadas, comboId);
+            return ResponseEntity.ok(Map.of(
+                "message", "Preguntas inválidas limpiadas exitosamente",
+                "preguntasEliminadas", preguntasEliminadas
+            ));
+        } catch (Exception e) {
+            log.error("[LIMPIAR PREGUNTAS] Error al limpiar preguntas del combo {}: {}", comboId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
         }
     }
@@ -169,7 +206,7 @@ public class ComboController {
     @PreAuthorize("@authorizationService.canRead()")
     public ResponseEntity<List<Map<String, Object>>> obtenerCombosParaAsignar() {
         try {
-            List<Combo> combos = comboService.obtenerPorEstado(Combo.EstadoCombo.creado);
+            List<Combo> combos = comboService.obtenerDisponiblesParaConcursantes();
             List<Map<String, Object>> resultado = new ArrayList<>();
             
             for (Combo c : combos) {
@@ -224,6 +261,52 @@ public class ComboController {
             return ResponseEntity.ok(combos);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("@authorizationService.canCreateCuestionario()")
+    public ResponseEntity<?> actualizarCombo(@PathVariable Long id, @RequestBody Map<String, Object> datos) {
+        try {
+            if (!authService.canCreateCuestionario()) {
+                return ResponseEntity.status(403).body("No tienes permisos para editar combos");
+            }
+            
+            Optional<Combo> comboOpt = comboService.obtenerPorId(id);
+            if (comboOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body("Combo no encontrado");
+            }
+            
+            Combo combo = comboOpt.get();
+            
+            // Actualizar tipo si se proporciona
+            if (datos.containsKey("tipo") && datos.get("tipo") != null) {
+                String tipoStr = datos.get("tipo").toString();
+                try {
+                    combo.setTipo(Combo.TipoCombo.valueOf(tipoStr));
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body("Tipo de combo inválido: " + tipoStr);
+                }
+            }
+            
+            // Actualizar estado si se proporciona
+            if (datos.containsKey("estado") && datos.get("estado") != null) {
+                String estadoStr = datos.get("estado").toString();
+                try {
+                    combo.setEstado(Combo.EstadoCombo.valueOf(estadoStr));
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body("Estado de combo inválido: " + estadoStr);
+                }
+            }
+            
+            Combo comboActualizado = comboService.actualizar(id, combo);
+            if (comboActualizado != null) {
+                return ResponseEntity.ok(Map.of("message", "Combo actualizado correctamente"));
+            } else {
+                return ResponseEntity.badRequest().body("Error al actualizar combo");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al actualizar combo: " + e.getMessage());
         }
     }
 

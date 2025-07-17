@@ -97,8 +97,9 @@ function crearUsuario() {
         return;
     }
     
-    // Limpiar formulario
+    // Limpiar formulario 
     document.getElementById('formCrearUsuario').reset();
+    // Restaurar valor de contraseña después del reset
     document.getElementById('password-usuario').value = '123456';
     
     // Mostrar modal
@@ -110,13 +111,13 @@ async function procesarCreacionUsuario() {
     const formData = new FormData(document.getElementById('formCrearUsuario'));
     const usuario = {
         nombre: formData.get('nombre'),
-        password: formData.get('password'),
         rol: formData.get('rol')
+        // NO enviamos password - se asigna automáticamente en el backend
     };
     
     try {
         await apiManager.createUsuario(usuario);
-        alert('Usuario creado exitosamente');
+        alert(`Usuario "${usuario.nombre}" creado exitosamente.\n\nCredenciales de acceso:\n• Usuario: ${usuario.nombre}\n• Contraseña: 123456\n\nEl usuario podrá cambiar su contraseña después del primer login.`);
         
         // Cerrar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('modal-usuario'));

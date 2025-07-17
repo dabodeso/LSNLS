@@ -22,7 +22,7 @@ public class UsuarioController {
     @Autowired
     private AuthorizationService authService;
 
-    @PostMapping("/crear")
+    @PostMapping
     @PreAuthorize("@authorizationService.canValidate()")
     public ResponseEntity<?> crear(@RequestBody Usuario usuario) {
         try {

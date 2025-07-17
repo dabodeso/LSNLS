@@ -69,7 +69,7 @@ CREATE TABLE cuestionarios (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     creacion_usuario_id BIGINT NOT NULL,
     fecha_creacion datetime(6),
-    estado ENUM('borrador', 'creado', 'adjudicado', 'grabado') NOT NULL,
+    estado ENUM('borrador', 'creado', 'adjudicado', 'grabado', 'asignado_jornada', 'asignado_concursantes') NOT NULL,
     nivel ENUM('_1LS', '_2NLS', '_3LS', '_4NLS', 'PM1', 'PM2', 'PM3', 'NORMAL') NOT NULL,
     tematica VARCHAR(100),
     notas_direccion TEXT
@@ -80,7 +80,7 @@ CREATE TABLE combos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     creacion_usuario_id BIGINT NOT NULL,
     fecha_creacion datetime(6),
-    estado ENUM('borrador', 'creado', 'adjudicado', 'grabado') NOT NULL,
+    estado ENUM('borrador', 'creado', 'adjudicado', 'grabado', 'asignado_jornada', 'asignado_concursantes') NOT NULL,
     nivel ENUM('_5LS', '_5NLS', 'NORMAL') NOT NULL,
     tipo ENUM('P', 'A', 'D')
 );

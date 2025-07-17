@@ -57,7 +57,7 @@ const CuestionariosManager = {
             tr.innerHTML = `
                 <td style="font-weight: bold; font-size: 1.2em; color: #0066cc;">${c.id ?? ''}</td>
                 <td>${c.tematica || 'Genérico'}</td>
-                <td>${estadoMostrar}</td>
+                <td><span class="badge ${Utils.getEstadoBadgeClass(estadoMostrar, 'cuestionario')}">${Utils.formatearEstadoCuestionario(estadoMostrar)}</span></td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
                 <td>

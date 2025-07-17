@@ -50,14 +50,29 @@ const CombosManager = {
                     if (pc && pc.slot) preguntasPorSlot[pc.slot] = pc.pregunta;
                 });
             }
-            const estadoMostrar = c.estado ?? '';
-            const tipoMostrar = this.formatearTipo(c.tipo);
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', c.id);
             tr.innerHTML = `
                 <td style="font-weight: bold; font-size: 1.2em; color: #0066cc;">${c.id ?? ''}</td>
-                <td>${tipoMostrar}</td>
-                <td>${estadoMostrar}</td>
+                <td>
+                    <select class="form-select form-select-sm" onchange="actualizarCombo(${c.id}, 'tipo', this.value)">
+                        <option value="">Sin tipo</option>
+                        <option value="P" ${c.tipo === 'P' ? 'selected' : ''}>P (Premio)</option>
+                        <option value="A" ${c.tipo === 'A' ? 'selected' : ''}>A (Asequible)</option>
+                        <option value="D" ${c.tipo === 'D' ? 'selected' : ''}>D (Difícil)</option>
+                    </select>
+                </td>
+                <td>
+                    ${c.estado === 'asignado_jornada' || c.estado === 'asignado_concursantes' ? 
+                        `<span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span>` : 
+                        `<select class="form-select form-select-sm" onchange="actualizarCombo(${c.id}, 'estado', this.value)">
+                            <option value="borrador" ${c.estado === 'borrador' ? 'selected' : ''}>Borrador</option>
+                            <option value="creado" ${c.estado === 'creado' ? 'selected' : ''}>Creado</option>
+                            <option value="adjudicado" ${c.estado === 'adjudicado' ? 'selected' : ''}>Adjudicado</option>
+                            <option value="grabado" ${c.estado === 'grabado' ? 'selected' : ''}>Grabado</option>
+                        </select>`
+                    }
+                </td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
                 <td>
@@ -218,6 +233,56 @@ window.limpiarFiltrosCombos = function() {
     CombosManager.cargarCombos();
 }
 
+// Función para actualizar tipo o estado de combo
+window.actualizarCombo = async function(comboId, campo, valor) {
+    try {
+        const datos = {};
+        datos[campo] = valor;
+        
+        const response = await fetch(`/api/combos/${comboId}`, {
+            method: 'PUT',
+            headers: {
+                ...authManager.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(datos)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Error al actualizar combo');
+        }
+        
+        const data = await response.json();
+        
+        Toastify({
+            text: data.message || `${campo === 'tipo' ? 'Tipo' : 'Estado'} actualizado correctamente`,
+            duration: 2000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+        }).showToast();
+        
+        // Recargar la lista para reflejar el cambio
+        await CombosManager.cargarCombos();
+        
+    } catch (error) {
+        console.error('Error al actualizar combo:', error);
+        Toastify({
+            text: 'Error: ' + error.message,
+            duration: 3000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        
+        // Recargar para revertir el cambio visual
+        await CombosManager.cargarCombos();
+    }
+};
+
 function inicializarCombos() {
     CombosManager.cargarCombos();
 }
@@ -274,6 +339,32 @@ function abrirSelectorPregunta(nivel, factor = null) {
     modal.show();
 }
 
+// Función para obtener IDs de preguntas ya seleccionadas en el combo
+function obtenerPreguntasYaSeleccionadas() {
+    const preguntasSeleccionadas = [];
+    const pms = ['PM1', 'PM2', 'PM3'];
+    
+    pms.forEach(pm => {
+        const input = document.getElementById(`pm-${pm}`);
+        if (input && input.value) {
+            preguntasSeleccionadas.push(parseInt(input.value));
+        }
+    });
+    
+    return preguntasSeleccionadas;
+}
+
+// Función para limpiar la selección de un PM específico
+function limpiarSeleccionPM(pm) {
+    const input = document.getElementById(`pm-${pm}`);
+    const texto = document.getElementById(`pm-${pm}-texto`);
+    
+    if (input) input.value = '';
+    if (texto) texto.value = '';
+    
+    console.log(`Limpiada selección de ${pm}`);
+}
+
 async function buscarPreguntasModal(page = 0) {
     const id = document.getElementById('buscador-id').value.trim();
     const pregunta = document.getElementById('buscador-pregunta').value.trim();
@@ -291,6 +382,14 @@ async function buscarPreguntasModal(page = 0) {
         const dataNLS = await respNLS.json();
         preguntas = [...(dataLS.content || []), ...(dataNLS.content || [])];
         totalPages = Math.max(dataLS.totalPages || 1, dataNLS.totalPages || 1);
+        
+        // Filtrar preguntas ya seleccionadas (solo si estamos creando un combo nuevo)
+        if (!window.contextoAnadirPregunta) {
+            const preguntasYaSeleccionadas = obtenerPreguntasYaSeleccionadas();
+            if (preguntasYaSeleccionadas.length > 0) {
+                preguntas = preguntas.filter(p => !preguntasYaSeleccionadas.includes(p.id));
+            }
+        }
         
         renderPreguntasModal(preguntas, page, totalPages);
     } catch (e) {
@@ -439,6 +538,8 @@ async function guardarCombo() {
         return;
     }
     
+
+    
     const comboId = document.getElementById('combo-id').value;
     const esEdicion = !!comboId;
     
@@ -500,27 +601,43 @@ window.eliminarCombo = async function(id) {
 };
 
 window.eliminarPreguntaDeCombo = async function(comboId, slot) {
+    console.log(`[DEBUG] Intentando eliminar pregunta del combo ${comboId}, slot ${slot}`);
+    
     // Buscar el id real de la pregunta en ese slot
     const combo = CombosManager.ultimoListado?.find(c => c.id === comboId);
+    console.log(`[DEBUG] Combo encontrado:`, combo);
+    
     let preguntaId = null;
     if (combo && Array.isArray(combo.preguntas)) {
+        console.log(`[DEBUG] Preguntas del combo:`, combo.preguntas);
         const pc = combo.preguntas.find(pc => pc.slot === slot);
+        console.log(`[DEBUG] Pregunta encontrada para slot ${slot}:`, pc);
         if (pc && pc.pregunta && pc.pregunta.id) preguntaId = pc.pregunta.id;
     }
+    
     if (!preguntaId) {
+        console.log(`[DEBUG] No se encontró pregunta ID para el slot ${slot}`);
         Toastify({ text: 'No se encontró la pregunta a eliminar', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
         return;
     }
+    
+    console.log(`[DEBUG] Eliminando pregunta ${preguntaId} del combo ${comboId}`);
+    
     if (!confirm('¿Seguro que quieres quitar esta pregunta del combo?')) return;
     try {
         const resp = await fetch(`/api/combos/${comboId}/preguntas/${preguntaId}`, {
             method: 'DELETE',
             headers: authManager.getAuthHeaders()
         });
-        if (!resp.ok) throw new Error('No se pudo quitar la pregunta');
+        if (!resp.ok) {
+            const errorText = await resp.text();
+            console.log(`[DEBUG] Error del servidor:`, errorText);
+            throw new Error('No se pudo quitar la pregunta: ' + errorText);
+        }
         Toastify({ text: 'Pregunta eliminada del combo', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
         await CombosManager.cargarCombos();
     } catch (e) {
+        console.error(`[DEBUG] Error al eliminar pregunta:`, e);
         Toastify({ text: 'Error al quitar pregunta: ' + e.message, duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
     }
 }
@@ -529,6 +646,8 @@ window.anadirPreguntaACombo = function(comboId, nivel) {
     abrirSelectorPregunta(nivel);
     window.contextoAnadirPregunta = { comboId, nivel };
 }
+
+
 
 // Guardar el último listado de combos para búsquedas rápidas
 CombosManager.ultimoListado = [];

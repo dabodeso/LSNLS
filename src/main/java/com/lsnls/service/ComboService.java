@@ -108,6 +108,24 @@ public class ComboService {
         return comboRepository.findByNivel(nivel);
     }
 
+    /**
+     * Obtiene combos disponibles para asignar a concursantes.
+     * Incluye combos en estado 'creado' y 'asignado_jornada'.
+     */
+    public List<Combo> obtenerDisponiblesParaConcursantes() {
+        List<Combo> creados = comboRepository.findByEstado(EstadoCombo.creado);
+        List<Combo> asignadosJornada = comboRepository.findByEstado(EstadoCombo.asignado_jornada);
+        
+        List<Combo> disponibles = new java.util.ArrayList<>();
+        disponibles.addAll(creados);
+        disponibles.addAll(asignadosJornada);
+        
+        // Ordenar por ID descendente (más recientes primero)
+        disponibles.sort((a, b) -> b.getId().compareTo(a.getId()));
+        
+        return disponibles;
+    }
+
     public List<Combo> obtenerPorUsuario(Usuario usuario) {
         return comboRepository.findByCreacionUsuario(usuario);
     }
@@ -186,6 +204,10 @@ public class ComboService {
     }
 
     public boolean quitarPregunta(Long comboId, Long preguntaId) {
+        System.out.println("==========================================");
+        System.out.println("QUITANDO PREGUNTA " + preguntaId + " DEL COMBO " + comboId);
+        System.out.println("==========================================");
+        
         Optional<Combo> comboOpt = comboRepository.findById(comboId);
         Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
         
@@ -193,24 +215,40 @@ public class ComboService {
             Combo combo = comboOpt.get();
             Pregunta pregunta = preguntaOpt.get();
             
-            // Buscar y eliminar la relación pregunta-combo
-            PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();
-            id.setPreguntaId(preguntaId);
-            id.setComboId(comboId);
+            System.out.println("✅ COMBO Y PREGUNTA ENCONTRADOS");
             
-            // Eliminar la relación
-            preguntaComboRepository.deleteById(id);
+            // Eliminar la relación directamente con consulta nativa
+            int relacionesEliminadas = entityManager.createNativeQuery(
+                "DELETE FROM combos_preguntas WHERE combo_id = ? AND pregunta_id = ?")
+                .setParameter(1, comboId)
+                .setParameter(2, preguntaId)
+                .executeUpdate();
             
-            // Liberar la pregunta
-            if (pregunta.getEstadoDisponibilidad() == Pregunta.EstadoDisponibilidad.usada) {
-                entityManager.createNativeQuery(
+            System.out.println("🗑️ RELACIONES ELIMINADAS: " + relacionesEliminadas);
+            
+            // Liberar la pregunta solo si no está en otros combos
+            long otrosCombos = entityManager.createQuery(
+                "SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId", Long.class)
+                .setParameter("preguntaId", preguntaId)
+                .getSingleResult();
+                
+            System.out.println("🔍 PREGUNTA " + preguntaId + " ESTÁ EN " + otrosCombos + " OTROS COMBOS");
+            
+            if (otrosCombos == 0 && pregunta.getEstadoDisponibilidad() == Pregunta.EstadoDisponibilidad.usada) {
+                int preguntasLiberadas = entityManager.createNativeQuery(
                     "UPDATE preguntas SET estado_disponibilidad = 'liberada' WHERE id = ?")
                     .setParameter(1, preguntaId)
                     .executeUpdate();
+                System.out.println("🔓 PREGUNTA LIBERADA: " + preguntasLiberadas);
+            } else {
+                System.out.println("ℹ️ PREGUNTA NO LIBERADA (está en otros combos o ya liberada)");
             }
             
-            return true;
+            System.out.println("==========================================");
+            return relacionesEliminadas > 0;
         }
+        System.out.println("❌ COMBO O PREGUNTA NO ENCONTRADOS");
+        System.out.println("==========================================");
         return false;
     }
 
@@ -229,6 +267,23 @@ public class ComboService {
             }
         }
         comboRepository.deleteById(id);
+    }
+
+    public int limpiarPreguntasInvalidas(Long comboId) {
+        System.out.println("==========================================");
+        System.out.println("LIMPIANDO PREGUNTAS INVÁLIDAS DEL COMBO " + comboId);
+        System.out.println("==========================================");
+        
+        // Eliminar preguntas con factores inválidos (que no sean 0, 2, o 3)
+        int preguntasEliminadas = entityManager.createNativeQuery(
+            "DELETE FROM combos_preguntas WHERE combo_id = ? AND factor_multiplicacion NOT IN (0, 2, 3)")
+            .setParameter(1, comboId)
+            .executeUpdate();
+        
+        System.out.println("✅ ELIMINADAS " + preguntasEliminadas + " PREGUNTAS CON FACTORES INVÁLIDOS");
+        System.out.println("==========================================");
+        
+        return preguntasEliminadas;
     }
 
     /**

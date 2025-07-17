@@ -58,15 +58,15 @@ INSERT INTO combos (creacion_usuario_id, fecha_creacion, estado, nivel) VALUES
 -- Relacionar el cuestionario con 4 preguntas (niveles 1-4)
 INSERT INTO cuestionarios_preguntas (cuestionario_id, pregunta_id, factor_multiplicacion) VALUES
 (1, 1, 1),  -- Pregunta nivel 1LS
-(1, 6, 2),  -- Pregunta nivel 2NLS  
-(1, 11, 3), -- Pregunta nivel 3LS
-(1, 16, 4); -- Pregunta nivel 4NLS
+(1, 6, 1),  -- Pregunta nivel 2NLS  
+(1, 11, 1), -- Pregunta nivel 3LS
+(1, 16, 1); -- Pregunta nivel 4NLS
 
 -- Relacionar el combo con 3 preguntas nivel 5
 INSERT INTO combos_preguntas (combo_id, pregunta_id, factor_multiplicacion) VALUES
-(1, 21, 5), -- Pregunta nivel 5LS
-(1, 26, 5), -- Pregunta nivel 5NLS
-(1, 25, 5); -- Pregunta nivel 5LS
+(1, 21, 2), -- Pregunta nivel 5LS para PM1
+(1, 26, 3), -- Pregunta nivel 5NLS para PM2
+(1, 25, 0); -- Pregunta nivel 5LS para PM3
 
 -- Insertar 1 programa de ejemplo
 INSERT INTO programas (temporada, fecha_emision, estado, total_concursantes, creditos_especiales) VALUES

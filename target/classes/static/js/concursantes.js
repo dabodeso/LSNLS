@@ -137,6 +137,9 @@ function mostrarFormularioConcursante() {
     document.getElementById('concursante-id').value = '';
     document.getElementById('cuestionario-id').value = '';
     document.getElementById('combo-id').value = '';
+    // El número de concursante se genera automáticamente
+    document.getElementById('numero-concursante').value = '';
+    document.getElementById('numero-concursante').placeholder = 'Se generará automáticamente';
     const modal = new bootstrap.Modal(document.getElementById('modal-concursante'));
     modal.show();
 }
@@ -148,7 +151,10 @@ async function editarConcursante(id) {
         const form = document.getElementById('form-concursante');
         form.reset();
         document.getElementById('concursante-id').value = concursanteActual.id;
+        // Mostrar el número de concursante existente en modo edición
         document.getElementById('numero-concursante').value = concursanteActual.numeroConcursante || '';
+        document.getElementById('numero-concursante').placeholder = concursanteActual.numeroConcursante ? 
+            'Número asignado: ' + concursanteActual.numeroConcursante : 'Sin número asignado';
         document.getElementById('jornada').value = concursanteActual.jornada || '';
         document.getElementById('dia-grabacion').value = concursanteActual.diaGrabacion || '';
         document.getElementById('lugar-concursante').value = concursanteActual.lugar || '';
@@ -182,7 +188,9 @@ async function guardarConcursante() {
     // Recoge todos los campos del formulario
     const datosConcursante = {
         id: document.getElementById('concursante-id').value || null,
-        numeroConcursante: document.getElementById('numero-concursante').value || null,
+        // Solo incluir numeroConcursante si estamos editando (id existe)
+        numeroConcursante: document.getElementById('concursante-id').value ? 
+            (document.getElementById('numero-concursante').value || null) : null,
         jornada: document.getElementById('jornada').value || null,
         diaGrabacion: document.getElementById('dia-grabacion').value || null,
         lugar: document.getElementById('lugar-concursante').value || null,
@@ -476,7 +484,7 @@ async function buscarCuestionariosModal() {
             tr.innerHTML = `
                 <td><strong>${c.id}</strong></td>
                 <td><span class="badge bg-info">${c.nivel || 'N/A'}</span></td>
-                <td><span class="badge bg-success">${c.estado}</span></td>
+                <td><span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'cuestionario')}">${Utils.formatearEstadoCuestionario(c.estado)}</span></td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(c.fechaCreacion) : ''}</td>
                 <td style="max-width: 300px; font-size: 0.85em;">${preguntasResumen}</td>
                 <td><button class="btn btn-sm btn-success" onclick="seleccionarCuestionarioModal(${c.id})">Seleccionar</button></td>
@@ -614,7 +622,7 @@ async function buscarCombosModal() {
             
             tr.innerHTML = `
                 <td><strong>${c.id}</strong></td>
-                <td><span class="badge bg-success">${c.estado || 'BORRADOR'}</span></td>
+                <td><span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span></td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(c.fechaCreacion) : ''}</td>
                 <td style="max-width: 350px; font-size: 0.85em;">${preguntasResumen}</td>
                 <td><button class="btn btn-sm btn-success" onclick="seleccionarComboModal(${c.id})">Seleccionar</button></td>

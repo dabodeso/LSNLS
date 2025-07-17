@@ -26,8 +26,14 @@
                     <li class="nav-item">
                         <a class="nav-link" href="preguntas.html">Preguntas</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="cuestionarios.html">Cuestionarios</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="cuestionarios-menu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Cuestionarios
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="cuestionarios-menu">
+                            <li><a class="dropdown-item" href="cuestionarios.html"><i class="fas fa-table"></i> Vista Tabla</a></li>
+                            <li><a class="dropdown-item" href="cuestionarios2.html"><i class="fas fa-th-large"></i> Vista Tarjetas</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="combos.html">Combos</a>
@@ -131,7 +137,7 @@
 
         <!-- Modal para Crear/Editar Concursante -->
         <div class="modal fade" id="modal-concursante" tabindex="-1">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modal-concursante-titulo">Nuevo Concursante</h5>
@@ -140,110 +146,158 @@
                     <div class="modal-body">
                         <form id="form-concursante">
                             <input type="hidden" id="concursante-id">
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Nº Concursante:</label>
-                                    <input type="number" class="form-control" id="numero-concursante">
+                            
+                            <!-- Sección 1: Información Básica -->
+                            <div class="mb-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-user me-2"></i>Información Básica
+                                </h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nombre: <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="nombre-concursante" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Edad:</label>
+                                        <input type="number" class="form-control" id="edad-concursante" min="18" max="99">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Nº Concursante:</label>
+                                        <input type="text" class="form-control" id="numero-concursante" readonly placeholder="Auto">
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Jornada:</label>
-                                    <input type="text" class="form-control" id="jornada">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Día Grabación:</label>
-                                    <input type="date" class="form-control" id="dia-grabacion">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Ocupación:</label>
+                                        <input type="text" class="form-control" id="ocupacion" placeholder="Profesión o trabajo">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Redes Sociales:</label>
+                                        <input type="text" class="form-control" id="redes-sociales" placeholder="@usuario o URL">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
+
+                            <!-- Sección 2: Planificación y Grabación -->
+                            <div class="mb-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-calendar me-2"></i>Planificación y Grabación
+                                </h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Jornada:</label>
+                                        <input type="text" class="form-control" id="jornada" placeholder="Nombre de la jornada">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Día Grabación:</label>
+                                        <input type="date" class="form-control" id="dia-grabacion">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Concursantes por Jornada:</label>
+                                        <input type="number" class="form-control" id="concursantes-por-jornada" min="1" max="10">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
                                     <label class="form-label">Lugar:</label>
-                                    <input type="text" class="form-control" id="lugar-concursante">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Nombre:</label>
-                                    <input type="text" class="form-control" id="nombre-concursante" required>
+                                    <input type="text" class="form-control" id="lugar-concursante" placeholder="Lugar de grabación">
                                 </div>
                             </div>
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Edad:</label>
-                                    <input type="number" class="form-control" id="edad-concursante">
+
+                            <!-- Sección 3: Cuestionario y Combo -->
+                            <div class="mb-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-question-circle me-2"></i>Cuestionario y Combo
+                                </h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Cuestionario (Niveles 1-4):</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="cuestionario-id" readonly placeholder="Seleccionar cuestionario">
+                                            <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorCuestionario()">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" onclick="limpiarSelectorCuestionario()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Combo (Preguntas Multiplicadoras):</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="combo-id" readonly placeholder="Seleccionar combo">
+                                            <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorCombo()">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" onclick="limpiarSelectorCombo()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Ocupación:</label>
-                                    <input type="text" class="form-control" id="ocupacion">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Redes Sociales:</label>
-                                    <input type="text" class="form-control" id="redes-sociales">
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                                        <div class="col-md-6">
-                            <label class="form-label">Cuestionario (Niveles 1-4):</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="cuestionario-id" readonly>
-                                <button type="button" class="btn btn-outline-secondary" onclick="abrirSelectorCuestionario()">Seleccionar cuestionario</button>
-                                <button type="button" class="btn btn-outline-danger" onclick="limpiarSelectorCuestionario()">Quitar</button>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Combo (Preguntas Multiplicadoras):</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="combo-id" readonly>
-                                <button type="button" class="btn btn-outline-secondary" onclick="abrirSelectorCombo()">Seleccionar combo</button>
-                                <button type="button" class="btn btn-outline-danger" onclick="limpiarSelectorCombo()">Quitar</button>
-                            </div>
-                        </div>
-                                <div class="col-md-6">
+                                <div class="mb-3">
                                     <label class="form-label">Factor X:</label>
-                                    <input type="text" class="form-control" id="factor-x">
+                                    <input type="text" class="form-control" id="factor-x" placeholder="Factor multiplicador especial">
                                 </div>
                             </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Resultado:</label>
-                                    <input type="text" class="form-control" id="resultado">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Guionista:</label>
-                                    <input type="text" class="form-control" id="guionista">
+
+                            <!-- Sección 4: Resultados y Evaluación -->
+                            <div class="mb-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-trophy me-2"></i>Resultados y Evaluación
+                                </h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Resultado:</label>
+                                        <input type="text" class="form-control" id="resultado" placeholder="Premio obtenido">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Guionista:</label>
+                                        <input type="text" class="form-control" id="guionista" placeholder="Nombre del guionista">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Duración (MM:SS):</label>
+                                        <input type="text" class="form-control" id="duracion" placeholder="25:30" pattern="\d{1,3}:\d{2}">
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- Sección 5: Observaciones -->
+                            <div class="mb-4">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-sticky-note me-2"></i>Observaciones
+                                </h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Notas de Grabación:</label>
+                                    <textarea class="form-control" id="notas-grabacion" rows="3" placeholder="Observaciones durante la grabación..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Valoración Guionista:</label>
+                                    <textarea class="form-control" id="valoracion-guionista" rows="3" placeholder="Evaluación del guionista..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Momentos Destacados:</label>
+                                    <textarea class="form-control" id="momentos-destacados" rows="3" placeholder="Momentos más destacados del concursante..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Valoración Final:</label>
+                                    <textarea class="form-control" id="valoracion-final" rows="3" placeholder="Valoración final del concursante..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Sección 6: Programación -->
                             <div class="mb-3">
-                                <label class="form-label">Notas de Grabación:</label>
-                                <textarea class="form-control" id="notas-grabacion" rows="3"></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Valoración Guionista:</label>
-                                <textarea class="form-control" id="valoracion-guionista" rows="3"></textarea>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Concursantes por Jornada:</label>
-                                    <input type="number" class="form-control" id="concursantes-por-jornada">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Duración (minutos):</label>
-                                    <input type="number" class="form-control" id="duracion">
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Momentos Destacados:</label>
-                                <textarea class="form-control" id="momentos-destacados" rows="3"></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Valoración Final:</label>
-                                <textarea class="form-control" id="valoracion-final" rows="3"></textarea>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Nº Programa:</label>
-                                    <input type="number" class="form-control" id="numero-programa">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Orden Escaleta:</label>
-                                    <input type="number" class="form-control" id="orden-escaleta">
+                                <h6 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="fas fa-tv me-2"></i>Programación
+                                </h6>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nº Programa:</label>
+                                        <input type="number" class="form-control" id="numero-programa" placeholder="Número del programa">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Orden Escaleta:</label>
+                                        <input type="number" class="form-control" id="orden-escaleta" placeholder="Posición en la escaleta">
+                                    </div>
                                 </div>
                             </div>
                         </form>

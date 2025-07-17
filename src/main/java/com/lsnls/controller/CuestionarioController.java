@@ -209,7 +209,7 @@ public class CuestionarioController {
     @PreAuthorize("@authorizationService.canRead()")
     public ResponseEntity<List<Map<String, Object>>> obtenerCuestionariosParaAsignar() {
         try {
-            List<Cuestionario> cuestionarios = cuestionarioService.obtenerPorEstado(Cuestionario.EstadoCuestionario.creado);
+            List<Cuestionario> cuestionarios = cuestionarioService.obtenerDisponiblesParaConcursantes();
             List<Map<String, Object>> resultado = new ArrayList<>();
             
             for (Cuestionario c : cuestionarios) {

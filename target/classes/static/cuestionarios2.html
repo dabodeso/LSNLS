@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSNLS - Cuestionarios Vista 2</title>
+    <script src="js/auth-guard.js"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Toastify CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/styles.css" rel="stylesheet">
+    <style>
+        .cuestionario-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .cuestionario-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .card-header-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1.2rem;
+            position: relative;
+        }
+        .cuestionario-numero {
+            font-size: 2.5rem;
+            font-weight: bold;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            opacity: 0.3;
+        }
+        .estado-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .estado-borrador { background: #ffc107; color: #000; }
+        .estado-creado { background: #28a745; color: white; }
+        .estado-adjudicado { background: #17a2b8; color: white; }
+        .estado-grabado { background: #6f42c1; color: white; }
+        
+        .tematica-title {
+            margin-top: 2rem;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        .preguntas-info {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 0.8rem;
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .fecha-info {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+        .filtros-toolbar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .search-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        .search-input {
+            border-radius: 25px;
+            padding: 12px 50px 12px 20px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .search-btn {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+        }
+        .acciones-card {
+            padding: 1rem;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-accion {
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            margin: 0 2px;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .btn-purple {
+            background-color: #6f42c1;
+            border-color: #6f42c1;
+            color: white;
+        }
+        .btn-purple:hover {
+            background-color: #5a35a0;
+            border-color: #5a35a0;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">LSNLS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="preguntas.html">Preguntas</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle active" href="#" id="cuestionarios-menu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Cuestionarios
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="cuestionarios-menu">
+                            <li><a class="dropdown-item" href="cuestionarios.html"><i class="fas fa-table"></i> Vista Tabla</a></li>
+                            <li><a class="dropdown-item active" href="cuestionarios2.html"><i class="fas fa-th-large"></i> Vista Tarjetas</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="combos.html">Combos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="concursantes.html">Concursantes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="jornadas.html">Jornadas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="programas.html">Programas</a>
+                    </li>
+                    <li class="nav-item" id="nav-admin" style="display:none"><a class="nav-link" href="administracion.html">Administración</a></li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="usuario-menu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="usuario-actual"></span>
+                            <span style="font-size: 1.5em; margin-left: 8px;">
+                                <i class="fas fa-bars"></i>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="usuario-menu">
+                            <li><a class="dropdown-item" href="#" onclick="cerrarSesion()">Cerrar sesión</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="cambiarPassword()">Cambiar contraseña</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2><i class="fas fa-th-large text-primary"></i> Cuestionarios - Vista Tarjetas</h2>
+                        <p class="text-muted">Vista visual mejorada de los cuestionarios</p>
+                    </div>
+                    <button class="btn btn-primary btn-lg" onclick="mostrarFormularioCuestionario()">
+                        <i class="fas fa-plus"></i> Nuevo Cuestionario
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-number" id="total-cuestionarios">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="cuestionarios-borrador">0</div>
+                <div class="stat-label">Borrador</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="cuestionarios-creado">0</div>
+                <div class="stat-label">Creados</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="cuestionarios-adjudicado">0</div>
+                <div class="stat-label">Adjudicados</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="cuestionarios-grabado">0</div>
+                <div class="stat-label">Grabados</div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-toolbar">
+            <h5><i class="fas fa-filter"></i> Filtros de Búsqueda</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="search-container">
+                        <input type="text" id="buscar-cuestionario" class="form-control search-input" 
+                               placeholder="Buscar por número, temática o estado..." onkeyup="filtrarCuestionarios()">
+                        <button class="search-btn" onclick="filtrarCuestionarios()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select id="filtro-estado-cuestionario" class="form-select" onchange="filtrarCuestionarios()">
+                        <option value="">Todos los estados</option>
+                        <option value="borrador">Borrador</option>
+                        <option value="creado">Creado</option>
+                        <option value="adjudicado">Adjudicado</option>
+                        <option value="grabado">Grabado</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="filtro-tematica-cuestionario" class="form-select" onchange="filtrarCuestionarios()">
+                        <option value="">Todas las temáticas</option>
+                        <option value="">Genérico</option>
+                        <option value="CUESTIONARIO MUSICAL">Cuestionario Musical</option>
+                        <option value="NAVIDAD">Navidad</option>
+                        <option value="ESPACIO">Espacio</option>
+                        <option value="WESTERN">Western</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-light w-100" onclick="limpiarFiltrosCuestionarios()">
+                        <i class="fas fa-eraser"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid de Tarjetas -->
+        <div class="card-grid" id="cuestionarios-grid">
+            <!-- Las tarjetas se cargarán dinámicamente aquí -->
+        </div>
+    </div>
+
+    <!-- Modal Cambiar Contraseña -->
+    <div class="modal fade" id="modal-cambiar-password" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cambiar contraseña</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-cambiar-password">
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña actual</label>
+                            <input type="password" class="form-control" id="password-actual" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nueva contraseña</label>
+                            <input type="password" class="form-control" id="password-nueva" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Repetir nueva contraseña</label>
+                            <input type="password" class="form-control" id="password-nueva2" required>
+                        </div>
+                        <div id="password-help" class="form-text mb-2">
+                            Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Toastify JS -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <!-- Custom JS -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cuestionarios2.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            mostrarBotonAdminNavbar();
+            
+            // Event listener para cambiar contraseña
+            document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const actual = document.getElementById('password-actual').value;
+                const nueva = document.getElementById('password-nueva').value;
+                const nueva2 = document.getElementById('password-nueva2').value;
+                const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+                
+                if (nueva !== nueva2) {
+                    mostrarError('Las contraseñas nuevas no coinciden.');
+                    return;
+                }
+                if (!regex.test(nueva)) {
+                    mostrarError('La nueva contraseña no cumple los requisitos.');
+                    return;
+                }
+                
+                try {
+                    const usuario = JSON.parse(localStorage.getItem('usuario'));
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`/api/usuarios/${usuario.id}/cambiar-password`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                        },
+                        body: JSON.stringify({ actual, nueva })
+                    });
+                    
+                    if (response.ok) {
+                        mostrarExito('Contraseña cambiada correctamente.');
+                        bootstrap.Modal.getInstance(document.getElementById('modal-cambiar-password')).hide();
+                    } else {
+                        const errorText = await response.text();
+                        mostrarError('Error al cambiar contraseña: ' + errorText);
+                    }
+                } catch (err) {
+                    mostrarError('Error inesperado: ' + err);
+                }
+            });
+        });
+
+        function mostrarBotonAdminNavbar() {
+            const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+            const navAdmin = document.getElementById('nav-admin');
+            if (navAdmin) {
+                navAdmin.style.display = usuario.rol === 'ROLE_ADMIN' ? 'block' : 'none';
+            }
+            const usuarioActual = document.getElementById('usuario-actual');
+            if (usuarioActual && usuario.nombre) {
+                usuarioActual.textContent = usuario.nombre;
+            }
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            window.location.href = 'index.html';
+        }
+
+        function cambiarPassword() {
+            const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
+            modal.show();
+        }
+    </script>
+</body>
+</html> 

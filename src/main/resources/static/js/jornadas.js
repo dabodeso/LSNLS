@@ -366,7 +366,7 @@ const JornadasManager = {
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">Cuestionario #${cuestionario.id}</h6>
-                            <p class="mb-1">Nivel: ${cuestionario.nivel} | Estado: ${cuestionario.estado}</p>
+                            <p class="mb-1">Nivel: ${cuestionario.nivel} | Estado: <span class="badge ${Utils.getEstadoBadgeClass(cuestionario.estado, 'cuestionario')}">${Utils.formatearEstadoCuestionario(cuestionario.estado)}</span></p>
                             <small>${cuestionario.tematica || 'Sin temática'}</small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
@@ -399,7 +399,7 @@ const JornadasManager = {
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">Combo #${combo.id}</h6>
-                            <p class="mb-1">Nivel: ${combo.nivel} | Estado: ${combo.estado}</p>
+                            <p class="mb-1">Nivel: ${combo.nivel} | Estado: <span class="badge ${Utils.getEstadoBadgeClass(combo.estado, 'combo')}">${Utils.formatearEstadoCombo(combo.estado)}</span></p>
                             <small>Tipo: ${combo.tipo || 'No especificado'}</small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
@@ -619,7 +619,7 @@ const JornadasManager = {
                                 <div class="list-group">
                                     ${jornada.combos ? jornada.combos.map(c => `
                                         <div class="list-group-item">
-                                            <strong>Combo #${c.id}</strong> - ${c.nivel} - ${c.estado}
+                                            <strong>Combo #${c.id}</strong> - ${c.nivel} - <span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span>
                                             ${c.tipo ? `<br><small>Tipo: ${c.tipo}</small>` : ''}
                                         </div>
                                     `).join('') : '<p class="text-muted">No hay combos asignados</p>'}
