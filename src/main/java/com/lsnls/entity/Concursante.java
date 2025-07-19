@@ -15,6 +15,9 @@ public class Concursante {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Long version;
+
     @Column(name = "numero_concursante")
     private Integer numeroConcursante;
 

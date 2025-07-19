@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.lsnls.dto.CrearCuestionarioDTO;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.List;
 import java.util.Map;
@@ -104,6 +105,8 @@ public class CuestionarioController {
             String notasDireccion = datos.get("notasDireccion");
             Cuestionario cuestionario = cuestionarioService.actualizarNotasDireccion(id, notasDireccion);
             return ResponseEntity.ok(cuestionario);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409).body("El cuestionario ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al actualizar notas de dirección: " + e.getMessage());
         }
@@ -131,28 +134,64 @@ public class CuestionarioController {
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody CrearCuestionarioDTO dto) {
         try {
+            // Verificar que el cuestionario existe
             Optional<Cuestionario> cuestionarioExistente = cuestionarioService.obtenerPorId(id);
             if (cuestionarioExistente.isEmpty()) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(404).body("Cuestionario con ID " + id + " no encontrado");
             }
 
             Cuestionario cuestionarioActual = cuestionarioExistente.get();
 
-            if (!authService.canEditCuestionario(cuestionarioActual.getEstado())) {
-                return ResponseEntity.status(403).body("No tienes permisos para editar este cuestionario en su estado actual");
+            // Validaciones específicas de campos
+            if (dto.getPreguntasNormales() == null || dto.getPreguntasNormales().isEmpty()) {
+                return ResponseEntity.badRequest().body("Debe seleccionar al menos una pregunta para el cuestionario");
+            }
+            if (dto.getPreguntasNormales().size() != 4) {
+                return ResponseEntity.badRequest().body("Un cuestionario debe tener exactamente 4 preguntas (niveles 1LS, 2NLS, 3LS, 4NLS)");
             }
 
-            Cuestionario actualizado = cuestionarioService.actualizarDesdeDTO(id, dto);
-            if (actualizado != null) {
-                return ResponseEntity.ok(Map.of(
-                    "id", actualizado.getId(),
-                    "message", "Cuestionario actualizado correctamente"
-                ));
-            } else {
-                return ResponseEntity.badRequest().body("No se pudo actualizar el cuestionario");
+            // Verificar permisos específicos según estado
+            if (!authService.canEditCuestionario(cuestionarioActual.getEstado())) {
+                String estadoDescripcion = getCuestionarioEstadoDescripcion(cuestionarioActual.getEstado());
+                return ResponseEntity.status(403).body("No tienes permisos para editar cuestionarios en estado '" + 
+                    estadoDescripcion + "'. Solo se pueden editar cuestionarios en borrador o creado.");
             }
+
+            // Verificar que no esté asignado a jornadas si está en estado avanzado
+            if (cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.asignado_jornada || 
+                cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.asignado_concursantes) {
+                return ResponseEntity.badRequest().body("No se puede editar un cuestionario que ya está asignado a jornadas o concursantes. Desasígnalo primero.");
+            }
+
+            try {
+                Cuestionario actualizado = cuestionarioService.actualizarDesdeDTO(id, dto);
+                if (actualizado != null) {
+                    return ResponseEntity.ok(Map.of(
+                        "id", actualizado.getId(),
+                        "message", "Cuestionario actualizado correctamente con " + dto.getPreguntasNormales().size() + " preguntas"
+                    ));
+                } else {
+                    return ResponseEntity.status(404).body("Error al actualizar: cuestionario no encontrado");
+                }
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+            }
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409).body("El cuestionario ha sido modificado por otro usuario. Por favor, recarga la página y vuelve a intentarlo.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al actualizar cuestionario: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al actualizar cuestionario: " + e.getMessage());
+        }
+    }
+
+    private String getCuestionarioEstadoDescripcion(Cuestionario.EstadoCuestionario estado) {
+        switch (estado) {
+            case borrador: return "borrador";
+            case creado: return "creado";
+            case adjudicado: return "adjudicado";
+            case grabado: return "grabado";
+            case asignado_jornada: return "asignado a jornada";
+            case asignado_concursantes: return "asignado a concursantes";
+            default: return estado.toString();
         }
     }
 
@@ -454,28 +493,45 @@ public class CuestionarioController {
     public ResponseEntity<?> crearDesdeDTO(@Valid @RequestBody CrearCuestionarioDTO dto) {
         log.info("[CREAR CUESTIONARIO] DTO recibido: {}", dto);
         try {
-            return authService.getCurrentUser()
-                .map(currentUser -> {
-                    log.info("[CREAR CUESTIONARIO] Usuario actual: {} (ID: {})", currentUser.getNombre(), currentUser.getId());
-                    try {
-                        Cuestionario nuevo = cuestionarioService.crearDesdeDTO(dto, currentUser);
-                        log.info("[CREAR CUESTIONARIO] Cuestionario creado con ID: {}", nuevo.getId());
-                        return ResponseEntity.ok(Map.of(
-                            "id", nuevo.getId(),
-                            "message", "Cuestionario creado correctamente"
-                        ));
-                    } catch (Exception e) {
-                        log.error("[CREAR CUESTIONARIO] Error al crear cuestionario: {}", e.getMessage(), e);
-                        return ResponseEntity.badRequest().body("Error al crear cuestionario: " + e.getMessage());
-                    }
-                })
-                .orElseGet(() -> {
-                    log.warn("[CREAR CUESTIONARIO] Usuario no autenticado");
-                    return ResponseEntity.status(401).body("Usuario no autenticado");
-                });
+            // Validaciones específicas de campos
+            if (dto.getPreguntasNormales() == null || dto.getPreguntasNormales().isEmpty()) {
+                return ResponseEntity.badRequest().body("Debe seleccionar al menos una pregunta para el cuestionario");
+            }
+            if (dto.getPreguntasNormales().size() != 4) {
+                return ResponseEntity.badRequest().body("Un cuestionario debe tener exactamente 4 preguntas (niveles 1LS, 2NLS, 3LS, 4NLS)");
+            }
+
+            // Verificar permisos específicos
+            if (!authService.canCreateCuestionario()) {
+                return ResponseEntity.status(403).body("Solo usuarios con rol GUION o DIRECCION pueden crear cuestionarios");
+            }
+
+            // Verificar autenticación
+            Optional<Usuario> currentUserOpt = authService.getCurrentUser();
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(401).body("Usuario no autenticado");
+            }
+
+            Usuario currentUser = currentUserOpt.get();
+            log.info("[CREAR CUESTIONARIO] Usuario actual: {} (ID: {})", currentUser.getNombre(), currentUser.getId());
+
+            try {
+                Cuestionario nuevo = cuestionarioService.crearDesdeDTO(dto, currentUser);
+                log.info("[CREAR CUESTIONARIO] Cuestionario creado con ID: {}", nuevo.getId());
+                return ResponseEntity.ok(Map.of(
+                    "id", nuevo.getId(),
+                    "message", "Cuestionario creado correctamente con " + dto.getPreguntasNormales().size() + " preguntas"
+                ));
+            } catch (IllegalArgumentException e) {
+                log.error("[CREAR CUESTIONARIO] Error de validación: {}", e.getMessage());
+                return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+            } catch (Exception e) {
+                log.error("[CREAR CUESTIONARIO] Error al crear cuestionario: {}", e.getMessage(), e);
+                return ResponseEntity.badRequest().body("Error interno al crear cuestionario: " + e.getMessage());
+            }
         } catch (Exception e) {
             log.error("[CREAR CUESTIONARIO] Error inesperado: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body("Error al crear cuestionario: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al crear cuestionario: " + e.getMessage());
         }
     }
 } 

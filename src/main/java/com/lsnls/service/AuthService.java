@@ -67,22 +67,28 @@ public class AuthService {
 
     /**
      * Maneja el registro de nuevos usuarios
+     * PROTEGIDO CONTRA RACE CONDITIONS con manejo de constraints de BD
      */
     public AuthResponse register(Usuario usuario) {
-        // Validar usuario existente
-        if (usuarioRepository.findByNombre(usuario.getNombre()).isPresent()) {
+        try {
+            // Encriptar contraseña y guardar
+            // La BD manejará la constraint UNIQUE para evitar duplicados
+            usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+            Usuario usuarioGuardado = usuarioRepository.save(usuario);
+            
+            // Generar token
+            UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getNombre());
+            String jwtToken = jwtService.generateToken(userDetails);
+            
+            return new AuthResponse(jwtToken, usuarioGuardado);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // La BD detectó un usuario duplicado
+            log.warn("❌ Intento de registrar usuario duplicado: {}", usuario.getNombre());
             throw new RuntimeException("El usuario ya existe");
+        } catch (Exception e) {
+            log.error("❌ Error en registro de usuario: {} - {}", e.getClass().getSimpleName(), e.getMessage());
+            throw new RuntimeException("Error interno al registrar usuario: " + e.getMessage());
         }
-        
-        // Encriptar contraseña y guardar
-        usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
-        Usuario usuarioGuardado = usuarioRepository.save(usuario);
-        
-        // Generar token
-        UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getNombre());
-        String jwtToken = jwtService.generateToken(userDetails);
-        
-        return new AuthResponse(jwtToken, usuarioGuardado);
     }
 
     /**

@@ -296,19 +296,54 @@ public class CuestionarioService {
     }
 
     public void eliminar(Long id) {
-        // Antes de eliminar, poner las preguntas asociadas como disponibles
+        // Verificar que el cuestionario existe
         Optional<Cuestionario> cuestionarioOpt = cuestionarioRepository.findById(id);
-        if (cuestionarioOpt.isPresent()) {
-            Cuestionario cuestionario = cuestionarioOpt.get();
-            Set<PreguntaCuestionario> preguntas = cuestionario.getPreguntas();
-            for (PreguntaCuestionario pc : preguntas) {
-                // Cambiar a disponible
-                entityManager.createNativeQuery(
-                    "UPDATE preguntas SET estado_disponibilidad = 'disponible' WHERE id = ?")
-                    .setParameter(1, pc.getPregunta().getId())
-                    .executeUpdate();
-            }
+        if (cuestionarioOpt.isEmpty()) {
+            throw new IllegalArgumentException("Cuestionario con ID " + id + " no encontrado");
         }
+
+        Cuestionario cuestionario = cuestionarioOpt.get();
+
+        // Verificar dependencias - no se puede eliminar si está asignado
+        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.asignado_jornada) {
+            throw new IllegalArgumentException("No se puede eliminar el cuestionario porque está asignado a una jornada. Desasígnalo primero.");
+        }
+        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.asignado_concursantes) {
+            throw new IllegalArgumentException("No se puede eliminar el cuestionario porque está asignado a concursantes. Desasígnalo primero.");
+        }
+
+        // Verificar si hay concursantes usando este cuestionario
+        Long concursantesCount = entityManager.createQuery(
+            "SELECT COUNT(c) FROM Concursante c WHERE c.cuestionario.id = :cuestionarioId", Long.class)
+            .setParameter("cuestionarioId", id)
+            .getSingleResult();
+        
+        if (concursantesCount > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el cuestionario porque está siendo usado por " + 
+                concursantesCount + " concursante(s). Desasígnalo primero.");
+        }
+
+        // Verificar si está en alguna jornada
+        Long jornadasCount = entityManager.createQuery(
+            "SELECT COUNT(j) FROM Jornada j JOIN j.cuestionarios c WHERE c.id = :cuestionarioId", Long.class)
+            .setParameter("cuestionarioId", id)
+            .getSingleResult();
+            
+        if (jornadasCount > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el cuestionario porque está asignado a " + 
+                jornadasCount + " jornada(s). Desasígnalo primero.");
+        }
+
+        // Si llegamos aquí, es seguro eliminar - liberar las preguntas asociadas
+        Set<PreguntaCuestionario> preguntas = cuestionario.getPreguntas();
+        for (PreguntaCuestionario pc : preguntas) {
+            // Cambiar a disponible
+            entityManager.createNativeQuery(
+                "UPDATE preguntas SET estado_disponibilidad = 'disponible' WHERE id = ?")
+                .setParameter(1, pc.getPregunta().getId())
+                .executeUpdate();
+        }
+        
         cuestionarioRepository.deleteById(id);
     }
 
@@ -355,7 +390,92 @@ public class CuestionarioService {
         ).setParameter(1, cuestionarioId).getResultList();
     }
 
+    /**
+     * Verifica y reserva múltiples preguntas atómicamente para evitar conflictos de concurrencia
+     * @param preguntaIds Lista de IDs de preguntas a verificar y reservar
+     * @return true si todas las preguntas fueron reservadas exitosamente
+     * @throws IllegalArgumentException si alguna pregunta no está disponible
+     */
+    @Transactional
+    public boolean verificarYReservarPreguntasAtomico(List<Long> preguntaIds) {
+        // PASO 1: Verificar que todas las preguntas existen y están en estado correcto
+        // Usar una sola query para obtener todas las preguntas
+        List<Pregunta> preguntas = preguntaRepository.findAllById(preguntaIds);
+        
+        if (preguntas.size() != preguntaIds.size()) {
+            throw new IllegalArgumentException("Una o más preguntas no fueron encontradas");
+        }
+        
+        // Verificar el estado de cada pregunta
+        for (Pregunta pregunta : preguntas) {
+            if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
+                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está aprobada (estado: " + pregunta.getEstado() + ")");
+            }
+            
+            if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
+                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
+                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
+            }
+            
+            // Verificar que sea pregunta de nivel 1-4 para cuestionarios
+            if (pregunta.getNivel().name().startsWith("_5")) {
+                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " es de nivel 5 y debe ir en combos, no en cuestionarios");
+            }
+        }
+        
+        // PASO 2: Reservar todas las preguntas ATÓMICAMENTE con una sola query
+        // Usar query nativa para update condicional en batch
+        String preguntaIdsStr = preguntaIds.stream()
+            .map(String::valueOf)
+            .reduce((a, b) -> a + "," + b)
+            .orElse("");
+            
+        int preguntasReservadas = entityManager.createNativeQuery(
+            "UPDATE preguntas SET estado_disponibilidad = 'usada' " +
+            "WHERE id IN (" + preguntaIdsStr + ") " +
+            "AND estado_disponibilidad IN ('disponible', 'liberada') " +
+            "AND estado = 'aprobada'"
+        ).executeUpdate();
+        
+        // PASO 3: Verificar que se reservaron TODAS las preguntas
+        if (preguntasReservadas != preguntaIds.size()) {
+            // Rollback - alguna pregunta fue tomada por otro usuario
+            throw new IllegalStateException("Conflicto de concurrencia: " + (preguntaIds.size() - preguntasReservadas) + 
+                " pregunta(s) fueron reservadas por otro usuario. Por favor, verifica la disponibilidad e intenta nuevamente.");
+        }
+        
+        return true;
+    }
+
+    /**
+     * Libera múltiples preguntas atómicamente (rollback en caso de error)
+     */
+    @Transactional
+    public void liberarPreguntasAtomico(List<Long> preguntaIds) {
+        String preguntaIdsStr = preguntaIds.stream()
+            .map(String::valueOf)
+            .reduce((a, b) -> a + "," + b)
+            .orElse("");
+            
+        entityManager.createNativeQuery(
+            "UPDATE preguntas SET estado_disponibilidad = 'liberada' " +
+            "WHERE id IN (" + preguntaIdsStr + ") AND estado_disponibilidad = 'usada'"
+        ).executeUpdate();
+    }
+
     public Cuestionario crearDesdeDTO(CrearCuestionarioDTO dto, Usuario usuario) {
+        // PASO 1: VERIFICACIÓN Y RESERVA ATÓMICA de todas las preguntas
+        try {
+            verificarYReservarPreguntasAtomico(dto.getPreguntasNormales());
+        } catch (IllegalStateException e) {
+            // Error de concurrencia - mensaje específico
+            throw new IllegalArgumentException("Error de concurrencia al reservar preguntas: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            // Error de validación - reenviar tal como está
+            throw e;
+        }
+        
+        // PASO 2: Crear el cuestionario (las preguntas ya están reservadas)
         Cuestionario cuestionario = new Cuestionario();
         cuestionario.setCreacionUsuario(usuario);
         cuestionario.setEstado(Cuestionario.EstadoCuestionario.borrador);
@@ -365,30 +485,31 @@ public class CuestionarioService {
         cuestionario.setNotasDireccion(dto.getNotasDireccion());
         cuestionario = cuestionarioRepository.save(cuestionario);
 
-        // Asociar solo preguntas normales (factor 1) - niveles 1-4
-        for (Long idPregunta : dto.getPreguntasNormales()) {
-            Pregunta pregunta = preguntaRepository.findById(idPregunta)
-                .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + idPregunta));
-            
-            // Verificar que sea pregunta de nivel 1-4
-            if (pregunta.getNivel().name().startsWith("_5")) {
-                throw new IllegalArgumentException("Las preguntas de nivel 5 deben ir en combos, no en cuestionarios");
+        // PASO 3: Crear las relaciones pregunta-cuestionario (preguntas ya reservadas)
+        try {
+            for (Long idPregunta : dto.getPreguntasNormales()) {
+                Pregunta pregunta = preguntaRepository.findById(idPregunta)
+                    .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + idPregunta));
+                
+                PreguntaCuestionario pc = new PreguntaCuestionario();
+                PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();
+                pcid.setPreguntaId(idPregunta);
+                pcid.setCuestionarioId(cuestionario.getId());
+                pc.setId(pcid);
+                pc.setPregunta(pregunta);
+                pc.setCuestionario(cuestionario);
+                pc.setFactorMultiplicacion(1);
+                preguntaCuestionarioRepository.save(pc);
+                // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasAtomico()
             }
-            
-            PreguntaCuestionario pc = new PreguntaCuestionario();
-            PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();
-            pcid.setPreguntaId(idPregunta);
-            pcid.setCuestionarioId(cuestionario.getId());
-            pc.setId(pcid);
-            pc.setPregunta(pregunta);
-            pc.setCuestionario(cuestionario);
-            pc.setFactorMultiplicacion(1);
-            preguntaCuestionarioRepository.save(pc);
-            // Marcar pregunta como usada
-            pregunta.setEstadoDisponibilidad(Pregunta.EstadoDisponibilidad.usada);
-            preguntaRepository.save(pregunta);
+            return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);
+        } catch (Exception e) {
+            // En caso de error, liberar las preguntas reservadas
+            liberarPreguntasAtomico(dto.getPreguntasNormales());
+            // Eliminar el cuestionario creado
+            cuestionarioRepository.deleteById(cuestionario.getId());
+            throw new RuntimeException("Error al crear relaciones pregunta-cuestionario: " + e.getMessage());
         }
-        return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);
     }
 
     public Cuestionario actualizarDesdeDTO(Long id, CrearCuestionarioDTO dto) {
@@ -398,41 +519,54 @@ public class CuestionarioService {
         }
         Cuestionario cuestionario = optCuestionario.get();
 
-        // Eliminar todas las relaciones actuales de preguntas
+        // PASO 1: VERIFICACIÓN Y RESERVA ATÓMICA de las nuevas preguntas
+        try {
+            verificarYReservarPreguntasAtomico(dto.getPreguntasNormales());
+        } catch (IllegalStateException e) {
+            // Error de concurrencia - mensaje específico
+            throw new IllegalArgumentException("Error de concurrencia al reservar preguntas: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            // Error de validación - reenviar tal como está
+            throw e;
+        }
+
+        // PASO 2: Liberar las preguntas actuales
         Set<PreguntaCuestionario> actuales = new HashSet<>(cuestionario.getPreguntas());
+        List<Long> preguntasALiberar = new ArrayList<>();
         for (PreguntaCuestionario pc : actuales) {
-            // Liberar la pregunta
-            Pregunta pregunta = pc.getPregunta();
-            pregunta.setEstadoDisponibilidad(Pregunta.EstadoDisponibilidad.liberada);
-            preguntaRepository.save(pregunta);
+            preguntasALiberar.add(pc.getPregunta().getId());
             preguntaCuestionarioRepository.delete(pc);
         }
         cuestionario.getPreguntas().clear();
-
-        // Asociar nuevas preguntas normales (factor 1) - solo niveles 1-4
-        for (Long idPregunta : dto.getPreguntasNormales()) {
-            Pregunta pregunta = preguntaRepository.findById(idPregunta)
-                .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + idPregunta));
-            
-            // Verificar que sea pregunta de nivel 1-4
-            if (pregunta.getNivel().name().startsWith("_5")) {
-                throw new IllegalArgumentException("Las preguntas de nivel 5 deben ir en combos, no en cuestionarios");
-            }
-            
-            PreguntaCuestionario pc = new PreguntaCuestionario();
-            PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();
-            pcid.setPreguntaId(idPregunta);
-            pcid.setCuestionarioId(cuestionario.getId());
-            pc.setId(pcid);
-            pc.setPregunta(pregunta);
-            pc.setCuestionario(cuestionario);
-            pc.setFactorMultiplicacion(1);
-            preguntaCuestionarioRepository.save(pc);
-            // Marcar pregunta como usada
-            pregunta.setEstadoDisponibilidad(Pregunta.EstadoDisponibilidad.usada);
-            preguntaRepository.save(pregunta);
+        
+        // Liberar preguntas anteriores atómicamente
+        if (!preguntasALiberar.isEmpty()) {
+            liberarPreguntasAtomico(preguntasALiberar);
         }
-        return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);
+
+        // PASO 3: Crear las nuevas relaciones pregunta-cuestionario
+        try {
+            for (Long idPregunta : dto.getPreguntasNormales()) {
+                Pregunta pregunta = preguntaRepository.findById(idPregunta)
+                    .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + idPregunta));
+                
+                PreguntaCuestionario pc = new PreguntaCuestionario();
+                PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();
+                pcid.setPreguntaId(idPregunta);
+                pcid.setCuestionarioId(cuestionario.getId());
+                pc.setId(pcid);
+                pc.setPregunta(pregunta);
+                pc.setCuestionario(cuestionario);
+                pc.setFactorMultiplicacion(1);
+                preguntaCuestionarioRepository.save(pc);
+                // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasAtomico()
+            }
+            return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);
+        } catch (Exception e) {
+            // En caso de error, liberar las preguntas nuevas reservadas
+            liberarPreguntasAtomico(dto.getPreguntasNormales());
+            throw new RuntimeException("Error al actualizar relaciones pregunta-cuestionario: " + e.getMessage());
+        }
     }
 
     /**
@@ -575,5 +709,43 @@ public class CuestionarioService {
         System.out.println("❌ NO SE ENCONTRÓ PREGUNTA EN EL SLOT " + slot);
         System.out.println("==========================================");
         return false; // No se encontró pregunta en ese slot
+    }
+
+    /**
+     * Valida que un cuestionario esté en el estado esperado para prevenir conflictos de concurrencia
+     */
+    private void validarEstadoCuestionarioParaAsignacion(Long cuestionarioId, Cuestionario.EstadoCuestionario estadoEsperado) {
+        Optional<Cuestionario> cuestionarioOpt = cuestionarioRepository.findById(cuestionarioId);
+        if (cuestionarioOpt.isEmpty()) {
+            throw new IllegalArgumentException("Cuestionario con ID " + cuestionarioId + " no encontrado");
+        }
+        
+        Cuestionario cuestionario = cuestionarioOpt.get();
+        if (cuestionario.getEstado() != estadoEsperado) {
+            throw new IllegalStateException("El cuestionario " + cuestionarioId + " no está en estado '" + estadoEsperado + 
+                "'. Estado actual: '" + cuestionario.getEstado() + "'. Otro usuario pudo haberlo modificado.");
+        }
+    }
+
+    /**
+     * Cambia el estado de un cuestionario de forma atómica con validación de concurrencia
+     */
+    @Transactional
+    public boolean cambiarEstadoAtomico(Long cuestionarioId, Cuestionario.EstadoCuestionario estadoActualEsperado, 
+                                       Cuestionario.EstadoCuestionario nuevoEstado) {
+        // Usar query nativa para cambio atómico con verificación de estado
+        int filasActualizadas = entityManager.createNativeQuery(
+            "UPDATE cuestionarios SET estado = ? WHERE id = ? AND estado = ?")
+            .setParameter(1, nuevoEstado.name())
+            .setParameter(2, cuestionarioId)
+            .setParameter(3, estadoActualEsperado.name())
+            .executeUpdate();
+            
+        if (filasActualizadas == 0) {
+            throw new IllegalStateException("No se pudo cambiar el estado del cuestionario " + cuestionarioId + 
+                " porque otro usuario lo modificó simultáneamente. Estado esperado: " + estadoActualEsperado);
+        }
+        
+        return true;
     }
 } 

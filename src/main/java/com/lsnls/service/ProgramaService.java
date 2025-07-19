@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.EntityManager;
+
 @Service
 public class ProgramaService {
 
@@ -20,6 +22,9 @@ public class ProgramaService {
 
     @Autowired
     private ConfiguracionGlobalService configuracionService;
+
+    @Autowired
+    private EntityManager entityManager;
 
     public List<Programa> findAll() {
         return programaRepository.findAll();
@@ -133,6 +138,33 @@ public class ProgramaService {
     }
 
     public void delete(Long id) {
+        // Verificar que el programa existe
+        Optional<Programa> programaOpt = programaRepository.findById(id);
+        if (programaOpt.isEmpty()) {
+            throw new IllegalArgumentException("Programa con ID " + id + " no encontrado");
+        }
+
+        Programa programa = programaOpt.get();
+
+        // Verificar dependencias - no se puede eliminar si hay concursantes asignados
+        Long concursantesCount = entityManager.createQuery(
+            "SELECT COUNT(c) FROM Concursante c WHERE c.programa.id = :programaId", Long.class)
+            .setParameter("programaId", id)
+            .getSingleResult();
+        
+        if (concursantesCount > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el programa temporada " + 
+                programa.getTemporada() + " porque tiene " + concursantesCount + 
+                " concursante(s) asignado(s). Desasigna los concursantes primero.");
+        }
+
+        // Verificar estado del programa - no eliminar si está en grabación o finalizado
+        if (programa.getEstado() == Programa.EstadoPrograma.programado) {
+            throw new IllegalArgumentException("No se puede eliminar un programa que ya está programado. " +
+                "Cambia su estado a 'borrador' primero.");
+        }
+
+        // Si llegamos aquí, es seguro eliminar
         programaRepository.deleteById(id);
     }
 

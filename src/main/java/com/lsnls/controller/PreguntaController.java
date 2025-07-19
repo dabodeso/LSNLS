@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.List;
 import java.util.Map;
@@ -86,56 +87,122 @@ public class PreguntaController {
     @PreAuthorize("@authorizationService.canCreatePregunta()")
     public ResponseEntity<?> crear(@Valid @RequestBody PreguntaCreateDTO dto) {
         try {
-            if (!authService.canCreatePregunta()) {
-                return ResponseEntity.status(403).body("No tienes permisos para crear preguntas");
+            // Validaciones específicas de campos requeridos
+            if (dto.nivel == null || dto.nivel.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El campo 'nivel' es obligatorio");
             }
-            return authService.getCurrentUser()
-                .map(currentUser -> {
-                    Pregunta pregunta = new Pregunta();
-                    pregunta.setNivel(Pregunta.NivelPregunta.valueOf(dto.nivel));
-                    pregunta.setTematica(dto.tematica);
-                    pregunta.setPregunta(dto.pregunta);
-                    pregunta.setRespuesta(dto.respuesta);
-                    pregunta.setDatosExtra(dto.datosExtra);
-                    pregunta.setFuentes(dto.fuentes);
-                    pregunta.setCreacionUsuario(currentUser);
-                    pregunta.setEstado(Pregunta.EstadoPregunta.borrador);
-                    pregunta.setNotasVerificacion(dto.notasVerificacion);
-                    pregunta.setNotasDireccion(dto.notasDireccion);
-                    pregunta.setSubtema(dto.subtema);
-                    try {
-                        Pregunta nuevaPregunta = preguntaService.crear(pregunta);
-                        return ResponseEntity.ok(nuevaPregunta);
-                    } catch (Exception e) {
-                        return ResponseEntity.badRequest().body("Error al crear pregunta: " + e.getMessage());
-                    }
-                })
-                .orElse(ResponseEntity.status(401).build());
+            if (dto.tematica == null || dto.tematica.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El campo 'temática' es obligatorio");
+            }
+            if (dto.pregunta == null || dto.pregunta.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El campo 'pregunta' es obligatorio");
+            }
+            if (dto.respuesta == null || dto.respuesta.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El campo 'respuesta' es obligatorio");
+            }
+
+            // Validar nivel válido
+            try {
+                Pregunta.NivelPregunta.valueOf(dto.nivel);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Nivel '" + dto.nivel + "' no válido. Niveles permitidos: _0, _1LS, _2NLS, _3LS, _4NLS, _5LS, _5NLS");
+            }
+
+            // Verificar permisos específicos
+            if (!authService.canCreatePregunta()) {
+                return ResponseEntity.status(403).body("Solo usuarios con rol GUION, VERIFICACION o DIRECCION pueden crear preguntas");
+            }
+
+            // Verificar autenticación
+            Optional<Usuario> currentUserOpt = authService.getCurrentUser();
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(401).body("Usuario no autenticado");
+            }
+
+            Usuario currentUser = currentUserOpt.get();
+
+            Pregunta pregunta = new Pregunta();
+            pregunta.setNivel(Pregunta.NivelPregunta.valueOf(dto.nivel));
+            pregunta.setTematica(dto.tematica);
+            pregunta.setPregunta(dto.pregunta);
+            pregunta.setRespuesta(dto.respuesta);
+            pregunta.setDatosExtra(dto.datosExtra);
+            pregunta.setFuentes(dto.fuentes);
+            pregunta.setCreacionUsuario(currentUser);
+            pregunta.setEstado(Pregunta.EstadoPregunta.borrador);
+            pregunta.setNotasVerificacion(dto.notasVerificacion);
+            pregunta.setNotasDireccion(dto.notasDireccion);
+            pregunta.setSubtema(dto.subtema);
+
+            try {
+                Pregunta nuevaPregunta = preguntaService.crear(pregunta);
+                return ResponseEntity.ok(nuevaPregunta);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body("Error interno al crear pregunta: " + e.getMessage());
+            }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al crear pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al crear pregunta: " + e.getMessage());
         }
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody PreguntaDTO dto) {
         try {
+            // Verificar que la pregunta existe
             Optional<Pregunta> preguntaExistente = preguntaService.obtenerPorId(id);
             if (preguntaExistente.isEmpty()) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(404).body("Pregunta con ID " + id + " no encontrada");
             }
 
             Pregunta preguntaActual = preguntaExistente.get();
 
+            // Verificar permisos específicos según estado
             if (!authService.canEditPregunta(preguntaActual.getEstado())) {
-                return ResponseEntity.status(403).body("No tienes permisos para editar esta pregunta en su estado actual");
+                String estadoDescripcion = getEstadoDescripcion(preguntaActual.getEstado());
+                return ResponseEntity.status(403).body("No tienes permisos para editar preguntas en estado '" + 
+                    estadoDescripcion + "'. Tu rol actual solo permite editar preguntas en borrador o para verificar.");
             }
 
-            Pregunta preguntaActualizada = preguntaService.actualizarDesdeDTO(id, dto);
-            return preguntaActualizada != null ?
-                    ResponseEntity.ok(preguntaActualizada) :
-                    ResponseEntity.notFound().build();
+            // Validar campos si se proporcionan
+            if (dto.getTematica() != null && dto.getTematica().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El campo 'temática' no puede estar vacío");
+            }
+            if (dto.getPregunta() != null && dto.getPregunta().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El campo 'pregunta' no puede estar vacío");
+            }
+            if (dto.getRespuesta() != null && dto.getRespuesta().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El campo 'respuesta' no puede estar vacío");
+            }
+
+            try {
+                Pregunta preguntaActualizada = preguntaService.actualizarDesdeDTO(id, dto);
+                return preguntaActualizada != null ?
+                        ResponseEntity.ok(preguntaActualizada) :
+                        ResponseEntity.status(404).body("Error al actualizar: pregunta no encontrada");
+            } catch (ObjectOptimisticLockingFailureException e) {
+                return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario. Por favor, recarga la página y vuelve a intentarlo.");
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+            }
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario. Por favor, recarga la página y vuelve a intentarlo.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al actualizar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al actualizar pregunta: " + e.getMessage());
+        }
+    }
+
+    private String getEstadoDescripcion(Pregunta.EstadoPregunta estado) {
+        switch (estado) {
+            case borrador: return "borrador";
+            case para_verificar: return "para verificar";
+            case verificada: return "verificada";
+            case revisar: return "revisar";
+            case corregir: return "corregir";
+            case rechazada: return "rechazada";
+            case aprobada: return "aprobada";
+            default: return estado.toString();
         }
     }
 
@@ -148,16 +215,27 @@ public class PreguntaController {
             }
 
             Pregunta pregunta = preguntaExistente.get();
+            Pregunta.EstadoPregunta estadoActual = pregunta.getEstado();
 
             // Verificar permisos para cambiar estado
-            if (!authService.canChangeEstadoPregunta(pregunta.getEstado(), nuevoEstado)) {
+            if (!authService.canChangeEstadoPregunta(estadoActual, nuevoEstado)) {
                 return ResponseEntity.status(403).body("No tienes permisos para cambiar a este estado");
             }
 
             Optional<Usuario> usuarioActualOpt = authService.getCurrentUser();
             Usuario usuarioActual = usuarioActualOpt.orElse(null);
-            Pregunta preguntaActualizada = preguntaService.cambiarEstado(id, nuevoEstado, usuarioActual);
+            
+            // CAMBIO ATÓMICO DE ESTADO con verificación de concurrencia
+            preguntaService.cambiarEstadoAtomico(id, estadoActual, nuevoEstado, usuarioActual);
+            
+            // Obtener la pregunta actualizada para devolverla
+            Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(pregunta);
             return ResponseEntity.ok(preguntaActualizada);
+        } catch (IllegalStateException e) {
+            // Error de concurrencia específico del método atómico
+            return ResponseEntity.status(409).body("Conflicto de concurrencia: " + e.getMessage());
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario mientras intentabas cambiar su estado. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al cambiar estado: " + e.getMessage());
         }
@@ -240,14 +318,39 @@ public class PreguntaController {
     @PreAuthorize("@authorizationService.canValidate()")
     public ResponseEntity<?> aprobarPregunta(@PathVariable Long id) {
         try {
-            if (!authService.canValidate()) {
-                return ResponseEntity.status(403).body("No tienes permisos para aprobar preguntas");
+            // Verificar que la pregunta existe
+            Optional<Pregunta> preguntaOpt = preguntaService.obtenerPorId(id);
+            if (preguntaOpt.isEmpty()) {
+                return ResponseEntity.status(404).body("Pregunta con ID " + id + " no encontrada");
             }
 
-            Pregunta pregunta = preguntaService.cambiarEstado(id, Pregunta.EstadoPregunta.aprobada);
-            return ResponseEntity.ok(pregunta);
+            Pregunta preguntaActual = preguntaOpt.get();
+
+            // Verificar permisos específicos
+            if (!authService.canValidate()) {
+                return ResponseEntity.status(403).body("Solo usuarios con rol VERIFICACION o DIRECCION pueden aprobar preguntas");
+            }
+
+            // Verificar estado actual
+            if (preguntaActual.getEstado() != Pregunta.EstadoPregunta.verificada && 
+                preguntaActual.getEstado() != Pregunta.EstadoPregunta.revisar) {
+                return ResponseEntity.badRequest().body("Solo se pueden aprobar preguntas en estado 'verificada' o 'revisar'. Estado actual: " + 
+                    getEstadoDescripcion(preguntaActual.getEstado()));
+            }
+
+            // CAMBIO ATÓMICO DE ESTADO para aprobar
+            preguntaService.cambiarEstadoAtomico(id, preguntaActual.getEstado(), Pregunta.EstadoPregunta.aprobada, null);
+            
+            // Obtener la pregunta actualizada
+            Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(preguntaActual);
+            return ResponseEntity.ok(preguntaActualizada);
+        } catch (IllegalStateException e) {
+            // Error de concurrencia específico del método atómico
+            return ResponseEntity.status(409).body("Conflicto de concurrencia: " + e.getMessage());
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario mientras intentabas aprobarla. Por favor, recarga y verifica su estado actual.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al aprobar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al aprobar pregunta: " + e.getMessage());
         }
     }
 
@@ -255,14 +358,42 @@ public class PreguntaController {
     @PreAuthorize("@authorizationService.canValidate()")
     public ResponseEntity<?> rechazarPregunta(@PathVariable Long id, @RequestParam(required = false) String motivo) {
         try {
-            if (!authService.canValidate()) {
-                return ResponseEntity.status(403).body("No tienes permisos para rechazar preguntas");
+            // Verificar que la pregunta existe
+            Optional<Pregunta> preguntaOpt = preguntaService.obtenerPorId(id);
+            if (preguntaOpt.isEmpty()) {
+                return ResponseEntity.status(404).body("Pregunta con ID " + id + " no encontrada");
             }
 
-            Pregunta pregunta = preguntaService.rechazar(id, motivo);
-            return ResponseEntity.ok(pregunta);
+            Pregunta preguntaActual = preguntaOpt.get();
+
+            // Verificar permisos específicos
+            if (!authService.canValidate()) {
+                return ResponseEntity.status(403).body("Solo usuarios con rol VERIFICACION o DIRECCION pueden rechazar preguntas");
+            }
+
+            // Verificar estado actual
+            if (preguntaActual.getEstado() == Pregunta.EstadoPregunta.aprobada) {
+                return ResponseEntity.badRequest().body("No se puede rechazar una pregunta ya aprobada");
+            }
+
+            // Verificar que hay un motivo si es requerido
+            if (motivo == null || motivo.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El motivo del rechazo es obligatorio");
+            }
+
+            // RECHAZO ATÓMICO con verificación de concurrencia
+            preguntaService.rechazarAtomico(id, preguntaActual.getEstado(), motivo);
+            
+            // Obtener la pregunta actualizada
+            Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(preguntaActual);
+            return ResponseEntity.ok(preguntaActualizada);
+        } catch (IllegalStateException e) {
+            // Error de concurrencia específico del método atómico
+            return ResponseEntity.status(409).body("Conflicto de concurrencia: " + e.getMessage());
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario mientras intentabas rechazarla. Por favor, recarga y verifica su estado actual.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al rechazar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al rechazar pregunta: " + e.getMessage());
         }
     }
 

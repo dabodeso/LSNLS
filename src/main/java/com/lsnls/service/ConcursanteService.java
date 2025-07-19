@@ -37,6 +37,12 @@ public class ConcursanteService {
     @Autowired
     private ComboRepository comboRepository;
 
+    @Autowired
+    private CuestionarioService cuestionarioService;
+
+    @Autowired
+    private ComboService comboService;
+
     @Value("${upload.directory}")
     private String uploadDirectory;
 
@@ -68,8 +74,9 @@ public class ConcursanteService {
 
     /**
      * Genera el siguiente número de concursante automáticamente
+     * PROTEGIDO CONTRA RACE CONDITIONS con synchronized
      */
-    private Integer generarSiguienteNumeroConcursante() {
+    private synchronized Integer generarSiguienteNumeroConcursante() {
         Integer maxNumero = concursanteRepository.findMaxNumeroConcursante();
         return (maxNumero != null) ? maxNumero + 1 : 1;
     }
@@ -311,33 +318,71 @@ public class ConcursanteService {
             Cuestionario cuestionario = cuestionarioRepository.findById(dto.getCuestionarioId())
                     .orElseThrow(() -> new RuntimeException("Cuestionario no encontrado: " + dto.getCuestionarioId()));
             
-            // Validar que el cuestionario esté en estado válido para asignación
-            if (cuestionario.getEstado() != Cuestionario.EstadoCuestionario.creado && 
-                cuestionario.getEstado() != Cuestionario.EstadoCuestionario.asignado_jornada) {
-                throw new RuntimeException("Solo se pueden asignar cuestionarios en estado 'creado' o 'asignado_jornada'. El cuestionario " + 
-                                         cuestionario.getId() + " está en estado: " + cuestionario.getEstado());
+            // VALIDACIÓN ATÓMICA: Verificar y cambiar estado en una sola operación
+            try {
+                // Intentar cambio atómico desde 'creado' o 'asignado_jornada' a 'asignado_concursantes'
+                boolean estadoCambiado = false;
+                if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.creado) {
+                    estadoCambiado = cuestionarioService.cambiarEstadoAtomico(
+                        cuestionario.getId(), 
+                        Cuestionario.EstadoCuestionario.creado, 
+                        Cuestionario.EstadoCuestionario.asignado_concursantes
+                    );
+                } else if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.asignado_jornada) {
+                    estadoCambiado = cuestionarioService.cambiarEstadoAtomico(
+                        cuestionario.getId(), 
+                        Cuestionario.EstadoCuestionario.asignado_jornada, 
+                        Cuestionario.EstadoCuestionario.asignado_concursantes
+                    );
+                } else {
+                    throw new RuntimeException("Solo se pueden asignar cuestionarios en estado 'creado' o 'asignado_jornada'. El cuestionario " + 
+                                             cuestionario.getId() + " está en estado: " + cuestionario.getEstado());
+                }
+                
+                if (!estadoCambiado) {
+                    throw new RuntimeException("El cuestionario fue modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+                }
+                
+            } catch (IllegalStateException e) {
+                throw new RuntimeException("Conflicto de concurrencia: " + e.getMessage());
             }
             
-            // Cambiar estado del cuestionario a "asignado_concursantes"
-            cuestionario.setEstado(Cuestionario.EstadoCuestionario.asignado_concursantes);
-            cuestionarioRepository.save(cuestionario);
             concursante.setCuestionario(cuestionario);
         }
-        
+
+        // OPERACIÓN ATÓMICA SIMILAR PARA COMBOS
         if (dto.getComboId() != null) {
             Combo combo = comboRepository.findById(dto.getComboId())
                     .orElseThrow(() -> new RuntimeException("Combo no encontrado: " + dto.getComboId()));
             
-            // Validar que el combo esté en estado válido para asignación
-            if (combo.getEstado() != Combo.EstadoCombo.creado && 
-                combo.getEstado() != Combo.EstadoCombo.asignado_jornada) {
-                throw new RuntimeException("Solo se pueden asignar combos en estado 'creado' o 'asignado_jornada'. El combo " + 
-                                         combo.getId() + " está en estado: " + combo.getEstado());
+            // VALIDACIÓN ATÓMICA: Verificar y cambiar estado en una sola operación
+            try {
+                boolean estadoCambiado = false;
+                if (combo.getEstado() == Combo.EstadoCombo.creado) {
+                    estadoCambiado = comboService.cambiarEstadoAtomico(
+                        combo.getId(), 
+                        Combo.EstadoCombo.creado, 
+                        Combo.EstadoCombo.asignado_concursantes
+                    );
+                } else if (combo.getEstado() == Combo.EstadoCombo.asignado_jornada) {
+                    estadoCambiado = comboService.cambiarEstadoAtomico(
+                        combo.getId(), 
+                        Combo.EstadoCombo.asignado_jornada, 
+                        Combo.EstadoCombo.asignado_concursantes
+                    );
+                } else {
+                    throw new RuntimeException("Solo se pueden asignar combos en estado 'creado' o 'asignado_jornada'. El combo " + 
+                                             combo.getId() + " está en estado: " + combo.getEstado());
+                }
+                
+                if (!estadoCambiado) {
+                    throw new RuntimeException("El combo fue modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+                }
+                
+            } catch (IllegalStateException e) {
+                throw new RuntimeException("Conflicto de concurrencia: " + e.getMessage());
             }
             
-            // Cambiar estado del combo a "asignado_concursantes"
-            combo.setEstado(Combo.EstadoCombo.asignado_concursantes);
-            comboRepository.save(combo);
             concursante.setCombo(combo);
         }
         

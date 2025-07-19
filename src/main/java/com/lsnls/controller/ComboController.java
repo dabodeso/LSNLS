@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.lsnls.dto.CrearComboDTO;
@@ -71,58 +72,79 @@ public class ComboController {
     @PreAuthorize("@authorizationService.canCreateCuestionario()")
     public ResponseEntity<?> crearCombo(@RequestBody CrearComboDTO dto) {
         try {
+            // Verificar permisos específicos
             if (!authService.canCreateCuestionario()) {
-                return ResponseEntity.status(403).body("No tienes permisos para crear combos");
+                return ResponseEntity.status(403).body("Solo usuarios con rol GUION o DIRECCION pueden crear combos");
             }
             
+            // Verificar autenticación
             Optional<Usuario> usuarioOpt = authService.getCurrentUser();
             if (usuarioOpt.isEmpty()) {
                 return ResponseEntity.status(401).body("Usuario no autenticado");
             }
             
-            // Validar que se proporcionen exactamente 3 preguntas multiplicadoras
-            if (dto.getPreguntasMultiplicadoras() == null || dto.getPreguntasMultiplicadoras().size() != 3) {
-                return ResponseEntity.badRequest().body("Debes proporcionar exactamente 3 preguntas multiplicadoras");
+            // Validaciones específicas de campos requeridos
+            if (dto.getPreguntasMultiplicadoras() == null || dto.getPreguntasMultiplicadoras().isEmpty()) {
+                return ResponseEntity.badRequest().body("Debe seleccionar las preguntas multiplicadoras para el combo");
+            }
+            if (dto.getPreguntasMultiplicadoras().size() != 3) {
+                return ResponseEntity.badRequest().body("Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3)");
+            }
+            
+            // Validar tipo de combo
+            if (dto.getTipo() == null || dto.getTipo().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El campo 'tipo' es obligatorio. Tipos permitidos: P (Premio), A (Asequible), D (Difícil)");
             }
             
             // Validar que no se repitan preguntas
             java.util.HashSet<Long> idsPreguntas = new java.util.HashSet<>();
             for (CrearComboDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {
+                if (pm.getId() == null) {
+                    return ResponseEntity.badRequest().body("Todas las preguntas multiplicadoras deben tener un ID válido");
+                }
+                if (pm.getFactor() == null || pm.getFactor().trim().isEmpty()) {
+                    return ResponseEntity.badRequest().body("Todas las preguntas multiplicadoras deben tener un factor asignado (X2, X3, X)");
+                }
                 idsPreguntas.add(pm.getId());
             }
             if (idsPreguntas.size() != 3) {
-                return ResponseEntity.badRequest().body("No puedes seleccionar la misma pregunta para diferentes multiplicadores (PM1, PM2, PM3)");
+                return ResponseEntity.badRequest().body("No se puede usar la misma pregunta para diferentes multiplicadores (PM1, PM2, PM3)");
             }
             
-            Combo combo = new Combo();
-            combo.setCreacionUsuario(usuarioOpt.get());
-            combo.setEstado(EstadoCombo.borrador);
-            combo.setNivel(NivelCombo.NORMAL);
-            
-            // Establecer tipo
-            if (dto.getTipo() != null && !dto.getTipo().isEmpty()) {
-                try {
-                    combo.setTipo(Combo.TipoCombo.valueOf(dto.getTipo()));
-                } catch (IllegalArgumentException e) {
-                    return ResponseEntity.badRequest().body("Tipo de combo inválido: " + dto.getTipo());
+            // Validar factores únicos
+            java.util.HashSet<String> factores = new java.util.HashSet<>();
+            for (CrearComboDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {
+                if (!factores.add(pm.getFactor())) {
+                    return ResponseEntity.badRequest().body("No se puede asignar el mismo factor (" + pm.getFactor() + ") a múltiples preguntas");
                 }
             }
             
-            combo = comboService.crear(combo);
-            
-            // Asociar preguntas multiplicadoras
-            for (CrearComboDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {
-                int factor = 1;
-                if ("X2".equalsIgnoreCase(pm.getFactor())) factor = 2;
-                else if ("X3".equalsIgnoreCase(pm.getFactor())) factor = 3;
-                else if ("X".equalsIgnoreCase(pm.getFactor())) factor = 0;
-                
-                comboService.agregarPregunta(combo.getId(), pm.getId(), factor);
+            // Validar tipo con validación anticipada
+            try {
+                Combo.TipoCombo.valueOf(dto.getTipo());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Tipo de combo '" + dto.getTipo() + "' no válido. Tipos permitidos: P (Premio), A (Asequible), D (Difícil)");
             }
             
-            return ResponseEntity.ok(Map.of("message", "Combo creado correctamente", "id", combo.getId()));
+            // CREAR COMBO DE FORMA ATÓMICA con todas las preguntas
+            Combo combo;
+            try {
+                combo = comboService.crearComboDesdeDTO(dto, usuarioOpt.get());
+            } catch (IllegalArgumentException e) {
+                if (e.getMessage().contains("Error de concurrencia")) {
+                    return ResponseEntity.status(409).body("Conflicto de concurrencia: " + e.getMessage());
+                }
+                return ResponseEntity.badRequest().body(e.getMessage());
+            } catch (RuntimeException e) {
+                return ResponseEntity.badRequest().body("Error al crear combo: " + e.getMessage());
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Combo tipo " + dto.getTipo() + " creado correctamente con 3 preguntas multiplicadoras", 
+                "id", combo.getId()
+            ));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al crear combo: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al crear combo: " + e.getMessage());
         }
     }
 
@@ -305,6 +327,8 @@ public class ComboController {
             } else {
                 return ResponseEntity.badRequest().body("Error al actualizar combo");
             }
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409).body("El combo ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al actualizar combo: " + e.getMessage());
         }
@@ -315,21 +339,46 @@ public class ComboController {
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         log.info("[ELIMINAR COMBO] Solicitud para eliminar combo con id: {}", id);
         try {
+            // Verificar permisos específicos
             if (!authService.canDelete()) {
                 log.warn("[ELIMINAR COMBO] Permiso denegado para eliminar combo id: {}", id);
-                return ResponseEntity.status(403).body("No tienes permisos para eliminar combos");
+                return ResponseEntity.status(403).body("Solo usuarios con rol ADMIN o DIRECCION pueden eliminar combos");
             }
+
+            // Verificar que el combo existe
+            Optional<Combo> comboOpt = comboService.obtenerPorId(id);
+            if (comboOpt.isEmpty()) {
+                return ResponseEntity.status(404).body("Combo con ID " + id + " no encontrado");
+            }
+
+            Combo combo = comboOpt.get();
+            
+            // Verificar estado del combo
+            if (combo.getEstado() == EstadoCombo.asignado_jornada) {
+                return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está asignado a una jornada. Desasígnalo primero.");
+            }
+            if (combo.getEstado() == EstadoCombo.asignado_concursantes) {
+                return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está asignado a concursantes. Desasígnalo primero.");
+            }
+
             authService.getCurrentUser().ifPresent(user -> log.info("[ELIMINAR COMBO] Usuario actual: {} (ID: {})", user.getNombre(), user.getId()));
+            
             comboService.eliminar(id);
             log.info("[ELIMINAR COMBO] Combo {} eliminado correctamente", id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("[ELIMINAR COMBO] Error al eliminar combo {}: {}", id, e.getMessage(), e);
             String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
-            if (msg.contains("foreign key") || msg.contains("constraint fails")) {
-                return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está siendo usado por uno o más concursantes.");
+            if (msg.contains("foreign key") || msg.contains("constraint")) {
+                return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está siendo usado por concursantes o jornadas. Desasígnalo primero.");
             }
-            return ResponseEntity.badRequest().body("Error al eliminar combo: " + e.getMessage());
+            if (msg.contains("jornada")) {
+                return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está asignado a una jornada.");
+            }
+            if (msg.contains("concursante")) {
+                return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está asignado a concursantes.");
+            }
+            return ResponseEntity.badRequest().body("Error interno al eliminar combo: " + e.getMessage());
         }
     }
 } 

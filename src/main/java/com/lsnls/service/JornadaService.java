@@ -29,6 +29,12 @@ public class JornadaService {
     @Autowired
     private ExcelExportService excelExportService;
 
+    @Autowired
+    private CuestionarioService cuestionarioService;
+
+    @Autowired
+    private ComboService comboService;
+
     public List<JornadaDTO> obtenerTodas() {
         List<Jornada> jornadas = jornadaRepository.findAllOrderByFechaCreacionDesc();
         return jornadas.stream().map(this::convertirADTO).collect(Collectors.toList());
@@ -54,47 +60,59 @@ public class JornadaService {
         jornada.setCreacionUsuario(usuario);
         jornada.setEstado(Jornada.EstadoJornada.preparacion);
 
-        // Asignar cuestionarios (máximo 5)
+        // Asignar cuestionarios (máximo 5) - CON PROTECCIÓN ATÓMICA
         if (jornadaDTO.getCuestionarioIds() != null) {
             if (jornadaDTO.getCuestionarioIds().size() > 5) {
                 throw new IllegalArgumentException("Máximo 5 cuestionarios por jornada");
             }
             Set<Cuestionario> cuestionarios = new HashSet<>();
             for (Long cuestionarioId : jornadaDTO.getCuestionarioIds()) {
-                Cuestionario cuestionario = cuestionarioRepository.findById(cuestionarioId)
-                    .orElseThrow(() -> new IllegalArgumentException("Cuestionario no encontrado: " + cuestionarioId));
-                
-                // Validar que el cuestionario esté en estado "creado" y no asignado
-                if (cuestionario.getEstado() != Cuestionario.EstadoCuestionario.creado) {
-                    throw new IllegalArgumentException("Solo se pueden asignar cuestionarios en estado 'creado'. El cuestionario " + cuestionarioId + " está en estado: " + cuestionario.getEstado());
+                // OPERACIÓN ATÓMICA: Cambiar estado solo si está en 'creado'
+                try {
+                    boolean exito = cuestionarioService.cambiarEstadoAtomico(
+                        cuestionarioId, 
+                        Cuestionario.EstadoCuestionario.creado, 
+                        Cuestionario.EstadoCuestionario.asignado_jornada
+                    );
+                    if (!exito) {
+                        throw new IllegalStateException("El cuestionario " + cuestionarioId + " fue modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+                    }
+                } catch (IllegalStateException e) {
+                    throw new IllegalArgumentException("Error de concurrencia al asignar cuestionario " + cuestionarioId + ": " + e.getMessage());
                 }
                 
-                // Cambiar estado a "asignado_jornada"
-                cuestionario.setEstado(Cuestionario.EstadoCuestionario.asignado_jornada);
-                cuestionarioRepository.save(cuestionario);
+                // Cargar el cuestionario actualizado
+                Cuestionario cuestionario = cuestionarioRepository.findById(cuestionarioId)
+                    .orElseThrow(() -> new IllegalArgumentException("Cuestionario no encontrado: " + cuestionarioId));
                 cuestionarios.add(cuestionario);
             }
             jornada.setCuestionarios(cuestionarios);
         }
 
-        // Asignar combos (máximo 5)
+        // Asignar combos (máximo 5) - CON PROTECCIÓN ATÓMICA
         if (jornadaDTO.getComboIds() != null) {
             if (jornadaDTO.getComboIds().size() > 5) {
                 throw new IllegalArgumentException("Máximo 5 combos por jornada");
             }
             Set<Combo> combos = new HashSet<>();
             for (Long comboId : jornadaDTO.getComboIds()) {
-                Combo combo = comboRepository.findById(comboId)
-                    .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado: " + comboId));
-                
-                // Validar que el combo esté en estado "creado" y no asignado
-                if (combo.getEstado() != Combo.EstadoCombo.creado) {
-                    throw new IllegalArgumentException("Solo se pueden asignar combos en estado 'creado'. El combo " + comboId + " está en estado: " + combo.getEstado());
+                // OPERACIÓN ATÓMICA: Cambiar estado solo si está en 'creado'
+                try {
+                    boolean exito = comboService.cambiarEstadoAtomico(
+                        comboId, 
+                        Combo.EstadoCombo.creado, 
+                        Combo.EstadoCombo.asignado_jornada
+                    );
+                    if (!exito) {
+                        throw new IllegalStateException("El combo " + comboId + " fue modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+                    }
+                } catch (IllegalStateException e) {
+                    throw new IllegalArgumentException("Error de concurrencia al asignar combo " + comboId + ": " + e.getMessage());
                 }
                 
-                // Cambiar estado a "asignado_jornada"
-                combo.setEstado(Combo.EstadoCombo.asignado_jornada);
-                comboRepository.save(combo);
+                // Cargar el combo actualizado
+                Combo combo = comboRepository.findById(comboId)
+                    .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado: " + comboId));
                 combos.add(combo);
             }
             jornada.setCombos(combos);
@@ -147,13 +165,23 @@ public class JornadaService {
                 
                 // Si es un cuestionario nuevo (no estaba previamente asignado)
                 if (cuestionariosActuales == null || !cuestionariosActuales.contains(cuestionario)) {
-                    // Validar que esté en estado "creado"
-                    if (cuestionario.getEstado() != Cuestionario.EstadoCuestionario.creado) {
-                        throw new IllegalArgumentException("Solo se pueden asignar cuestionarios en estado 'creado'. El cuestionario " + cuestionarioId + " está en estado: " + cuestionario.getEstado());
+                    // OPERACIÓN ATÓMICA: Cambiar estado solo si está en 'creado'
+                    try {
+                        boolean exito = cuestionarioService.cambiarEstadoAtomico(
+                            cuestionarioId, 
+                            Cuestionario.EstadoCuestionario.creado, 
+                            Cuestionario.EstadoCuestionario.asignado_jornada
+                        );
+                        if (!exito) {
+                            throw new IllegalStateException("El cuestionario " + cuestionarioId + " fue modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+                        }
+                    } catch (IllegalStateException e) {
+                        throw new IllegalArgumentException("Error de concurrencia al asignar cuestionario " + cuestionarioId + ": " + e.getMessage());
                     }
-                    // Cambiar estado a "asignado_jornada"
-                    cuestionario.setEstado(Cuestionario.EstadoCuestionario.asignado_jornada);
-                    cuestionarioRepository.save(cuestionario);
+                    
+                    // Recargar el cuestionario actualizado
+                    cuestionario = cuestionarioRepository.findById(cuestionarioId)
+                        .orElseThrow(() -> new IllegalArgumentException("Cuestionario no encontrado: " + cuestionarioId));
                 }
                 cuestionarios.add(cuestionario);
             }
@@ -187,13 +215,23 @@ public class JornadaService {
                 
                 // Si es un combo nuevo (no estaba previamente asignado)
                 if (combosActuales == null || !combosActuales.contains(combo)) {
-                    // Validar que esté en estado "creado"
-                    if (combo.getEstado() != Combo.EstadoCombo.creado) {
-                        throw new IllegalArgumentException("Solo se pueden asignar combos en estado 'creado'. El combo " + comboId + " está en estado: " + combo.getEstado());
+                    // OPERACIÓN ATÓMICA: Cambiar estado solo si está en 'creado'
+                    try {
+                        boolean exito = comboService.cambiarEstadoAtomico(
+                            comboId, 
+                            Combo.EstadoCombo.creado, 
+                            Combo.EstadoCombo.asignado_jornada
+                        );
+                        if (!exito) {
+                            throw new IllegalStateException("El combo " + comboId + " fue modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+                        }
+                    } catch (IllegalStateException e) {
+                        throw new IllegalArgumentException("Error de concurrencia al asignar combo " + comboId + ": " + e.getMessage());
                     }
-                    // Cambiar estado a "asignado_jornada"
-                    combo.setEstado(Combo.EstadoCombo.asignado_jornada);
-                    comboRepository.save(combo);
+                    
+                    // Recargar el combo actualizado
+                    combo = comboRepository.findById(comboId)
+                        .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado: " + comboId));
                 }
                 combos.add(combo);
             }

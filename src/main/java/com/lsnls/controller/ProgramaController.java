@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.List;
 import java.util.Map;
@@ -33,20 +34,38 @@ public class ProgramaController {
 
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
-    public ResponseEntity<ProgramaDTO> create(@RequestBody ProgramaDTO programaDTO) {
-        return ResponseEntity.ok(programaService.createFromDTO(programaDTO));
+    public ResponseEntity<?> create(@RequestBody ProgramaDTO programaDTO) {
+        try {
+            return ResponseEntity.ok(programaService.createFromDTO(programaDTO));
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409).body("El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al crear programa: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
-    public ResponseEntity<ProgramaDTO> update(@PathVariable Long id, @RequestBody ProgramaDTO programaDTO) {
-        return ResponseEntity.ok(programaService.updateFromDTO(id, programaDTO));
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ProgramaDTO programaDTO) {
+        try {
+            return ResponseEntity.ok(programaService.updateFromDTO(id, programaDTO));
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409).body("El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al actualizar programa: " + e.getMessage());
+        }
     }
 
     @PatchMapping("/{id}/campo")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
-    public ResponseEntity<ProgramaDTO> updateCampo(@PathVariable Long id, @RequestBody Map<String, Object> campo) {
-        return ResponseEntity.ok(programaService.updateCampo(id, campo));
+    public ResponseEntity<?> updateCampo(@PathVariable Long id, @RequestBody Map<String, Object> campo) {
+        try {
+            return ResponseEntity.ok(programaService.updateCampo(id, campo));
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409).body("El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al actualizar campo: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")

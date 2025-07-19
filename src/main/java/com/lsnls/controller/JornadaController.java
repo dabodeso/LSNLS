@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -49,11 +50,12 @@ public class JornadaController {
             if (jornada.isPresent()) {
                 return ResponseEntity.ok(ApiResponse.exitoso("Jornada encontrada", jornada.get()));
             } else {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(404)
+                    .body(ApiResponse.error("Jornada con ID " + id + " no encontrada"));
             }
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al obtener jornada: " + e.getMessage()));
+                .body(ApiResponse.error("Error interno al obtener jornada: " + e.getMessage()));
         }
     }
 
@@ -61,6 +63,23 @@ public class JornadaController {
     @PreAuthorize("@authorizationService.canCreate()")
     public ResponseEntity<ApiResponse<JornadaDTO>> crear(@RequestBody JornadaDTO jornadaDTO) {
         try {
+            // Validaciones específicas de campos requeridos
+            if (jornadaDTO.getNombre() == null || jornadaDTO.getNombre().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("El campo 'nombre' es obligatorio para crear una jornada"));
+            }
+
+            // Validar límites de cuestionarios y combos
+            if (jornadaDTO.getCuestionarioIds() != null && jornadaDTO.getCuestionarioIds().size() > 5) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Una jornada puede tener máximo 5 cuestionarios. Seleccionados: " + jornadaDTO.getCuestionarioIds().size()));
+            }
+            if (jornadaDTO.getComboIds() != null && jornadaDTO.getComboIds().size() > 5) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Una jornada puede tener máximo 5 combos. Seleccionados: " + jornadaDTO.getComboIds().size()));
+            }
+
+            // Verificar autenticación
             Optional<Usuario> currentUserOpt = authService.getCurrentUser();
             if (currentUserOpt.isEmpty()) {
                 return ResponseEntity.status(401)
@@ -69,14 +88,23 @@ public class JornadaController {
             
             Usuario currentUser = currentUserOpt.get();
             JornadaDTO nuevaJornada = jornadaService.crear(jornadaDTO, currentUser.getId());
-            return ResponseEntity.ok(ApiResponse.exitoso("Jornada creada exitosamente", nuevaJornada));
+            
+            String mensaje = "Jornada '" + nuevaJornada.getNombre() + "' creada exitosamente";
+            if (jornadaDTO.getCuestionarioIds() != null && !jornadaDTO.getCuestionarioIds().isEmpty()) {
+                mensaje += " con " + jornadaDTO.getCuestionarioIds().size() + " cuestionarios";
+            }
+            if (jornadaDTO.getComboIds() != null && !jornadaDTO.getComboIds().isEmpty()) {
+                mensaje += " y " + jornadaDTO.getComboIds().size() + " combos";
+            }
+            
+            return ResponseEntity.ok(ApiResponse.exitoso(mensaje, nuevaJornada));
             
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Error de validación: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al crear jornada: " + e.getMessage()));
+                .body(ApiResponse.error("Error interno al crear jornada: " + e.getMessage()));
         }
     }
 
@@ -86,6 +114,9 @@ public class JornadaController {
         try {
             JornadaDTO jornadaActualizada = jornadaService.actualizar(id, jornadaDTO);
             return ResponseEntity.ok(ApiResponse.exitoso("Jornada actualizada exitosamente", jornadaActualizada));
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409)
+                .body(ApiResponse.error("La jornada ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Error de validación: " + e.getMessage()));
@@ -122,6 +153,9 @@ public class JornadaController {
             
             JornadaDTO jornadaActualizada = jornadaService.cambiarEstado(id, nuevoEstado);
             return ResponseEntity.ok(ApiResponse.exitoso("Estado actualizado exitosamente", jornadaActualizada));
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(409)
+                .body(ApiResponse.error("La jornada ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Error de validación: " + e.getMessage()));

@@ -18,6 +18,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import com.lsnls.dto.PreguntaDTO;
+import jakarta.persistence.EntityManager;
+import java.util.ArrayList;
+import com.lsnls.entity.AuditLog;
 
 @Service
 @Transactional
@@ -31,6 +34,9 @@ public class PreguntaService {
     
     @Autowired
     private PreguntaComboRepository preguntaComboRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     public Pregunta crear(Pregunta pregunta) {
         // Transformar datos automáticamente a mayúsculas y limpiar
@@ -145,6 +151,70 @@ public class PreguntaService {
         }).orElse(null);
     }
 
+    /**
+     * Cambia el estado de una pregunta de forma atómica con validación de concurrencia
+     * @param id ID de la pregunta
+     * @param estadoActualEsperado Estado actual esperado
+     * @param nuevoEstado Nuevo estado a asignar
+     * @param usuarioActual Usuario que realiza el cambio (opcional)
+     * @return true si el estado fue cambiado exitosamente
+     * @throws IllegalStateException si otro usuario modificó la pregunta simultáneamente
+     */
+    @Transactional
+    public boolean cambiarEstadoAtomico(Long id, EstadoPregunta estadoActualEsperado, 
+                                       EstadoPregunta nuevoEstado, Usuario usuarioActual) {
+        
+        // Construir query base
+        StringBuilder query = new StringBuilder("UPDATE preguntas SET estado = ?");
+        List<Object> parametros = new ArrayList<>();
+        parametros.add(nuevoEstado.name());
+        
+        int paramIndex = 2;
+        
+        // Agregar campos adicionales según el nuevo estado
+        if (nuevoEstado == EstadoPregunta.verificada) {
+            query.append(", fecha_verificacion = ?");
+            parametros.add(java.sql.Timestamp.valueOf(LocalDateTime.now()));
+            paramIndex++;
+            
+            if (usuarioActual != null) {
+                query.append(", verificacion_usuario_id = ?");
+                parametros.add(usuarioActual.getId());
+                paramIndex++;
+            }
+        }
+        
+        if (nuevoEstado == EstadoPregunta.aprobada) {
+            query.append(", estado_disponibilidad = ?");
+            parametros.add(EstadoDisponibilidad.disponible.name());
+            paramIndex++;
+        }
+        
+        // Agregar condiciones WHERE con verificación de estado
+        query.append(" WHERE id = ? AND estado = ?");
+        parametros.add(id);
+        parametros.add(estadoActualEsperado.name());
+        
+        // Ejecutar query nativa atómica
+        jakarta.persistence.Query nativeQuery = entityManager.createNativeQuery(query.toString());
+        for (int i = 0; i < parametros.size(); i++) {
+            nativeQuery.setParameter(i + 1, parametros.get(i));
+        }
+        
+        int filasActualizadas = nativeQuery.executeUpdate();
+        
+        if (filasActualizadas == 0) {
+            throw new IllegalStateException("No se pudo cambiar el estado de la pregunta " + id + 
+                " porque otro usuario la modificó simultáneamente. Estado esperado: " + estadoActualEsperado);
+        }
+        
+        if (nuevoEstado == EstadoPregunta.aprobada) {
+            System.out.println("✅ Pregunta ID " + id + " aprobada atómicamente y marcada como DISPONIBLE");
+        }
+        
+        return true;
+    }
+
     public Pregunta verificar(Long id, EstadoPregunta nuevoEstado, String notas, Usuario verificador) {
         return preguntaRepository.findById(id).map(pregunta -> {
             pregunta.setEstado(nuevoEstado);
@@ -165,6 +235,37 @@ public class PreguntaService {
             }
             return preguntaRepository.save(pregunta);
         }).orElse(null);
+    }
+
+    /**
+     * Rechaza una pregunta de forma atómica con validación de concurrencia
+     * @param id ID de la pregunta
+     * @param estadoActualEsperado Estado actual esperado
+     * @param motivo Motivo del rechazo
+     * @return true si la pregunta fue rechazada exitosamente
+     * @throws IllegalStateException si otro usuario modificó la pregunta simultáneamente
+     */
+    @Transactional
+    public boolean rechazarAtomico(Long id, EstadoPregunta estadoActualEsperado, String motivo) {
+        // Construir query con estado y notas
+        String query = "UPDATE preguntas SET estado = ?, notas = ? WHERE id = ? AND estado = ?";
+        
+        String notasRechazo = "RECHAZADA: " + (motivo != null && !motivo.trim().isEmpty() ? motivo : "Sin motivo especificado");
+        
+        // Ejecutar query nativa atómica
+        int filasActualizadas = entityManager.createNativeQuery(query)
+            .setParameter(1, EstadoPregunta.rechazada.name())
+            .setParameter(2, notasRechazo)
+            .setParameter(3, id)
+            .setParameter(4, estadoActualEsperado.name())
+            .executeUpdate();
+        
+        if (filasActualizadas == 0) {
+            throw new IllegalStateException("No se pudo rechazar la pregunta " + id + 
+                " porque otro usuario la modificó simultáneamente. Estado esperado: " + estadoActualEsperado);
+        }
+        
+        return true;
     }
 
     public Pregunta marcarParaRevisar(Long id, String notas, Usuario usuario) {
@@ -214,6 +315,27 @@ public class PreguntaService {
     }
 
     public void eliminar(Long id) {
+        // Verificar que la pregunta existe
+        Optional<Pregunta> preguntaOpt = preguntaRepository.findById(id);
+        if (preguntaOpt.isEmpty()) {
+            throw new IllegalArgumentException("Pregunta con ID " + id + " no encontrada");
+        }
+
+        Pregunta pregunta = preguntaOpt.get();
+
+        // Verificar si está siendo usada en cuestionarios (usando EntityManager desde preguntaComboRepository)
+        boolean usadaEnCuestionarios = preguntaComboRepository.existsByPreguntaId(id);
+        if (usadaEnCuestionarios) {
+            throw new IllegalArgumentException("No se puede eliminar la pregunta porque está siendo usada en cuestionarios. Quítala de los cuestionarios primero.");
+        }
+
+        // Verificar si está siendo usada en combos
+        boolean usadaEnCombos = preguntaComboRepository.existsByPreguntaId(id);
+        if (usadaEnCombos) {
+            throw new IllegalArgumentException("No se puede eliminar la pregunta porque está siendo usada en combos. Quítala de los combos primero.");
+        }
+
+        // Si llegamos aquí, es seguro eliminar
         preguntaRepository.deleteById(id);
     }
     

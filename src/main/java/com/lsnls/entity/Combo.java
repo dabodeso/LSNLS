@@ -21,6 +21,9 @@ public class Combo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Long version;
+
     @ManyToOne
     @JoinColumn(name = "creacion_usuario_id", nullable = false)
     @JsonIgnoreProperties({"preguntasCreadas", "preguntasVerificadas", "cuestionariosCreados", "combosCreados"})

@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProgramaRepository extends JpaRepository<Programa, Long> {
     // Métodos personalizados si se necesitan
+    Long countByTemporada(Integer temporada);
 } 

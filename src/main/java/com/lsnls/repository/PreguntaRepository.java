@@ -11,6 +11,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
+import com.lsnls.entity.Usuario;
 
 @Repository
 public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
@@ -111,4 +112,6 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
         @Param("pregunta") String pregunta,
         @Param("respuesta") String respuesta
     );
+
+    Long countByCreacionUsuario(Usuario usuario);
 } 

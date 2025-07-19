@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
+import jakarta.persistence.EntityManager;
 
 @Service
 @Transactional
@@ -18,6 +19,9 @@ public class UsuarioService {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private EntityManager entityManager;
 
     public Usuario crear(Usuario usuario) {
         // Asignar automáticamente la contraseña por defecto
@@ -55,6 +59,65 @@ public class UsuarioService {
     }
 
     public void eliminar(Long id) {
+        // Verificar que el usuario existe
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
+        if (usuarioOpt.isEmpty()) {
+            throw new IllegalArgumentException("Usuario con ID " + id + " no encontrado");
+        }
+
+        Usuario usuario = usuarioOpt.get();
+
+        // Verificar dependencias - contar entidades creadas por este usuario
+        StringBuilder dependencias = new StringBuilder();
+        
+        // Verificar preguntas creadas por este usuario
+        Long preguntasCount = entityManager.createQuery(
+            "SELECT COUNT(p) FROM Pregunta p WHERE p.creacionUsuario.id = :usuarioId", Long.class)
+            .setParameter("usuarioId", id)
+            .getSingleResult();
+        
+        if (preguntasCount > 0) {
+            dependencias.append("- ").append(preguntasCount).append(" pregunta(s)\n");
+        }
+
+        // Verificar cuestionarios creados por este usuario
+        Long cuestionariosCount = entityManager.createQuery(
+            "SELECT COUNT(c) FROM Cuestionario c WHERE c.creacionUsuario.id = :usuarioId", Long.class)
+            .setParameter("usuarioId", id)
+            .getSingleResult();
+        
+        if (cuestionariosCount > 0) {
+            dependencias.append("- ").append(cuestionariosCount).append(" cuestionario(s)\n");
+        }
+
+        // Verificar combos creados por este usuario
+        Long combosCount = entityManager.createQuery(
+            "SELECT COUNT(c) FROM Combo c WHERE c.creacionUsuario.id = :usuarioId", Long.class)
+            .setParameter("usuarioId", id)
+            .getSingleResult();
+        
+        if (combosCount > 0) {
+            dependencias.append("- ").append(combosCount).append(" combo(s)\n");
+        }
+
+        // Verificar verificaciones de preguntas hechas por este usuario
+        Long verificacionesCount = entityManager.createQuery(
+            "SELECT COUNT(p) FROM Pregunta p WHERE p.verificacionUsuario.id = :usuarioId", Long.class)
+            .setParameter("usuarioId", id)
+            .getSingleResult();
+        
+        if (verificacionesCount > 0) {
+            dependencias.append("- ").append(verificacionesCount).append(" verificación(es) de preguntas\n");
+        }
+
+        // Si hay dependencias, no permitir la eliminación
+        if (dependencias.length() > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el usuario '" + usuario.getNombre() + 
+                "' porque tiene las siguientes dependencias:\n" + dependencias.toString() + 
+                "Reasigna estos elementos a otro usuario antes de eliminar.");
+        }
+
+        // Si llegamos aquí, es seguro eliminar
         usuarioRepository.deleteById(id);
     }
 

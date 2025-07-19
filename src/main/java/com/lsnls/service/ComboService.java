@@ -253,19 +253,54 @@ public class ComboService {
     }
 
     public void eliminar(Long id) {
-        // Antes de eliminar, poner las preguntas asociadas como disponibles
+        // Verificar que el combo existe
         Optional<Combo> comboOpt = comboRepository.findById(id);
-        if (comboOpt.isPresent()) {
-            Combo combo = comboOpt.get();
-            Set<PreguntaCombo> preguntas = combo.getPreguntas();
-            for (PreguntaCombo pc : preguntas) {
-                // Cambiar a disponible
-                entityManager.createNativeQuery(
-                    "UPDATE preguntas SET estado_disponibilidad = 'disponible' WHERE id = ?")
-                    .setParameter(1, pc.getPregunta().getId())
-                    .executeUpdate();
-            }
+        if (comboOpt.isEmpty()) {
+            throw new IllegalArgumentException("Combo con ID " + id + " no encontrado");
         }
+
+        Combo combo = comboOpt.get();
+
+        // Verificar dependencias - no se puede eliminar si está asignado
+        if (combo.getEstado() == Combo.EstadoCombo.asignado_jornada) {
+            throw new IllegalArgumentException("No se puede eliminar el combo porque está asignado a una jornada. Desasígnalo primero.");
+        }
+        if (combo.getEstado() == Combo.EstadoCombo.asignado_concursantes) {
+            throw new IllegalArgumentException("No se puede eliminar el combo porque está asignado a concursantes. Desasígnalo primero.");
+        }
+
+        // Verificar si hay concursantes usando este combo
+        Long concursantesCount = entityManager.createQuery(
+            "SELECT COUNT(c) FROM Concursante c WHERE c.combo.id = :comboId", Long.class)
+            .setParameter("comboId", id)
+            .getSingleResult();
+        
+        if (concursantesCount > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el combo porque está siendo usado por " + 
+                concursantesCount + " concursante(s). Desasígnalo primero.");
+        }
+
+        // Verificar si está en alguna jornada
+        Long jornadasCount = entityManager.createQuery(
+            "SELECT COUNT(j) FROM Jornada j JOIN j.combos c WHERE c.id = :comboId", Long.class)
+            .setParameter("comboId", id)
+            .getSingleResult();
+            
+        if (jornadasCount > 0) {
+            throw new IllegalArgumentException("No se puede eliminar el combo porque está asignado a " + 
+                jornadasCount + " jornada(s). Desasígnalo primero.");
+        }
+
+        // Si llegamos aquí, es seguro eliminar - liberar las preguntas asociadas
+        Set<PreguntaCombo> preguntas = combo.getPreguntas();
+        for (PreguntaCombo pc : preguntas) {
+            // Cambiar a disponible
+            entityManager.createNativeQuery(
+                "UPDATE preguntas SET estado_disponibilidad = 'disponible' WHERE id = ?")
+                .setParameter(1, pc.getPregunta().getId())
+                .executeUpdate();
+        }
+        
         comboRepository.deleteById(id);
     }
 
@@ -347,5 +382,188 @@ public class ComboService {
         dto.put("estado", p.getEstado());
         dto.put("fuentes", p.getFuentes());
         return dto;
+    }
+
+    /**
+     * Valida que un combo esté en el estado esperado para prevenir conflictos de concurrencia
+     */
+    private void validarEstadoComboParaAsignacion(Long comboId, Combo.EstadoCombo estadoEsperado) {
+        Optional<Combo> comboOpt = comboRepository.findById(comboId);
+        if (comboOpt.isEmpty()) {
+            throw new IllegalArgumentException("Combo con ID " + comboId + " no encontrado");
+        }
+        
+        Combo combo = comboOpt.get();
+        if (combo.getEstado() != estadoEsperado) {
+            throw new IllegalStateException("El combo " + comboId + " no está en estado '" + estadoEsperado + 
+                "'. Estado actual: '" + combo.getEstado() + "'. Otro usuario pudo haberlo modificado.");
+        }
+    }
+
+    /**
+     * Cambia el estado de un combo de forma atómica con validación de concurrencia
+     */
+    @Transactional
+    public boolean cambiarEstadoAtomico(Long comboId, Combo.EstadoCombo estadoActualEsperado, 
+                                       Combo.EstadoCombo nuevoEstado) {
+        // Usar query nativa para cambio atómico con verificación de estado
+        int filasActualizadas = entityManager.createNativeQuery(
+            "UPDATE combos SET estado = ? WHERE id = ? AND estado = ?")
+            .setParameter(1, nuevoEstado.name())
+            .setParameter(2, comboId)
+            .setParameter(3, estadoActualEsperado.name())
+            .executeUpdate();
+            
+        if (filasActualizadas == 0) {
+            throw new IllegalStateException("No se pudo cambiar el estado del combo " + comboId + 
+                " porque otro usuario lo modificó simultáneamente. Estado esperado: " + estadoActualEsperado);
+        }
+        
+        return true;
+    }
+
+    /**
+     * Verifica y reserva múltiples preguntas nivel 5 atómicamente para combos
+     * @param preguntaIdsConFactores Map de ID de pregunta -> factor multiplicación
+     * @return true si todas las preguntas fueron reservadas exitosamente
+     * @throws IllegalArgumentException si alguna pregunta no está disponible
+     */
+    @Transactional
+    public boolean verificarYReservarPreguntasComboAtomico(Map<Long, Integer> preguntaIdsConFactores) {
+        List<Long> preguntaIds = new java.util.ArrayList<>(preguntaIdsConFactores.keySet());
+        
+        // PASO 1: Verificar que todas las preguntas existen y están en estado correcto
+        List<Pregunta> preguntas = preguntaRepository.findAllById(preguntaIds);
+        
+        if (preguntas.size() != preguntaIds.size()) {
+            throw new IllegalArgumentException("Una o más preguntas no fueron encontradas");
+        }
+        
+        // Verificar el estado de cada pregunta
+        for (Pregunta pregunta : preguntas) {
+            if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
+                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está aprobada (estado: " + pregunta.getEstado() + ")");
+            }
+            
+            if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
+                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
+                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
+            }
+            
+            // Verificar que sea pregunta de nivel 5 para combos
+            if (!pregunta.getNivel().name().startsWith("_5")) {
+                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no es de nivel 5. Solo se pueden usar preguntas de nivel 5 en combos");
+            }
+        }
+        
+        // PASO 2: Reservar todas las preguntas ATÓMICAMENTE con una sola query
+        String preguntaIdsStr = preguntaIds.stream()
+            .map(String::valueOf)
+            .reduce((a, b) -> a + "," + b)
+            .orElse("");
+            
+        int preguntasReservadas = entityManager.createNativeQuery(
+            "UPDATE preguntas SET estado_disponibilidad = 'usada' " +
+            "WHERE id IN (" + preguntaIdsStr + ") " +
+            "AND estado_disponibilidad IN ('disponible', 'liberada') " +
+            "AND estado = 'aprobada' " +
+            "AND nivel LIKE '_5%'"
+        ).executeUpdate();
+        
+        // PASO 3: Verificar que se reservaron TODAS las preguntas
+        if (preguntasReservadas != preguntaIds.size()) {
+            // Rollback - alguna pregunta fue tomada por otro usuario
+            throw new IllegalStateException("Conflicto de concurrencia: " + (preguntaIds.size() - preguntasReservadas) + 
+                " pregunta(s) fueron reservadas por otro usuario. Por favor, verifica la disponibilidad e intenta nuevamente.");
+        }
+        
+        return true;
+    }
+
+    /**
+     * Libera múltiples preguntas de combo atómicamente
+     */
+    @Transactional
+    public void liberarPreguntasComboAtomico(List<Long> preguntaIds) {
+        if (preguntaIds.isEmpty()) return;
+        
+        String preguntaIdsStr = preguntaIds.stream()
+            .map(String::valueOf)
+            .reduce((a, b) -> a + "," + b)
+            .orElse("");
+            
+        entityManager.createNativeQuery(
+            "UPDATE preguntas SET estado_disponibilidad = 'liberada' " +
+            "WHERE id IN (" + preguntaIdsStr + ") AND estado_disponibilidad = 'usada'"
+        ).executeUpdate();
+    }
+
+    /**
+     * Crea un combo con múltiples preguntas de forma atómica
+     */
+    @Transactional
+    public Combo crearComboDesdeDTO(CrearComboDTO dto, Usuario usuario) {
+        // PASO 1: Preparar mapa de preguntas con factores
+        Map<Long, Integer> preguntaIdsConFactores = new java.util.HashMap<>();
+        for (CrearComboDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {
+            int factor = 1;
+            if ("X2".equalsIgnoreCase(pm.getFactor())) factor = 2;
+            else if ("X3".equalsIgnoreCase(pm.getFactor())) factor = 3;
+            else if ("X".equalsIgnoreCase(pm.getFactor())) factor = 0;
+            else {
+                throw new IllegalArgumentException("Factor '" + pm.getFactor() + "' no válido. Factores permitidos: X2, X3, X");
+            }
+            preguntaIdsConFactores.put(pm.getId(), factor);
+        }
+        
+        // PASO 2: VERIFICACIÓN Y RESERVA ATÓMICA de todas las preguntas
+        try {
+            verificarYReservarPreguntasComboAtomico(preguntaIdsConFactores);
+        } catch (IllegalStateException e) {
+            // Error de concurrencia - mensaje específico
+            throw new IllegalArgumentException("Error de concurrencia al reservar preguntas: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            // Error de validación - reenviar tal como está
+            throw e;
+        }
+        
+        // PASO 3: Crear el combo (las preguntas ya están reservadas)
+        Combo combo = new Combo();
+        combo.setCreacionUsuario(usuario);
+        combo.setEstado(EstadoCombo.borrador);
+        combo.setNivel(NivelCombo.NORMAL);
+        combo.setTipo(Combo.TipoCombo.valueOf(dto.getTipo()));
+        combo = comboRepository.save(combo);
+
+        // PASO 4: Crear las relaciones pregunta-combo (preguntas ya reservadas)
+        try {
+            for (Map.Entry<Long, Integer> entry : preguntaIdsConFactores.entrySet()) {
+                Long preguntaId = entry.getKey();
+                Integer factor = entry.getValue();
+                
+                Pregunta pregunta = preguntaRepository.findById(preguntaId)
+                    .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + preguntaId));
+                
+                PreguntaCombo pc = new PreguntaCombo();
+                PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();
+                id.setPreguntaId(preguntaId);
+                id.setComboId(combo.getId());
+                
+                pc.setId(id);
+                pc.setPregunta(pregunta);
+                pc.setCombo(combo);
+                pc.setFactorMultiplicacion(factor);
+                
+                preguntaComboRepository.save(pc);
+                // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasComboAtomico()
+            }
+            return comboRepository.findById(combo.getId()).orElse(combo);
+        } catch (Exception e) {
+            // En caso de error, liberar las preguntas reservadas
+            liberarPreguntasComboAtomico(new java.util.ArrayList<>(preguntaIdsConFactores.keySet()));
+            // Eliminar el combo creado
+            comboRepository.deleteById(combo.getId());
+            throw new RuntimeException("Error al crear relaciones pregunta-combo: " + e.getMessage());
+        }
     }
 } 

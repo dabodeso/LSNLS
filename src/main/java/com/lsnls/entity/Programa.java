@@ -16,6 +16,9 @@ public class Programa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Long version;
+
     @Column(name = "temporada", nullable = false)
     private Integer temporada;
 

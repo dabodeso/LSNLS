@@ -39,7 +39,8 @@ CREATE TABLE usuarios (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    rol ENUM('ROLE_ADMIN', 'ROLE_CONSULTA', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION') NOT NULL
+    rol ENUM('ROLE_ADMIN', 'ROLE_CONSULTA', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION') NOT NULL,
+    version BIGINT DEFAULT 0
 );
 
 -- Crear tabla de preguntas
@@ -61,7 +62,8 @@ CREATE TABLE preguntas (
     estado ENUM('borrador', 'para_verificar', 'verificada', 'revisar', 'corregir', 'rechazada', 'aprobada') NOT NULL,
     estado_disponibilidad ENUM('disponible', 'usada', 'liberada', 'descartada'),
     factor ENUM('X', 'X2', 'X3'),
-    nivel ENUM('_0', '_1LS', '_2NLS', '_3LS', '_4NLS', '_5LS', '_5NLS') NOT NULL
+    nivel ENUM('_0', '_1LS', '_2NLS', '_3LS', '_4NLS', '_5LS', '_5NLS') NOT NULL,
+    version BIGINT DEFAULT 0
 );
 
 -- Crear tabla de cuestionarios
@@ -72,7 +74,8 @@ CREATE TABLE cuestionarios (
     estado ENUM('borrador', 'creado', 'adjudicado', 'grabado', 'asignado_jornada', 'asignado_concursantes') NOT NULL,
     nivel ENUM('_1LS', '_2NLS', '_3LS', '_4NLS', 'PM1', 'PM2', 'PM3', 'NORMAL') NOT NULL,
     tematica VARCHAR(100),
-    notas_direccion TEXT
+    notas_direccion TEXT,
+    version BIGINT DEFAULT 0
 );
 
 -- Crear tabla de combos
@@ -82,7 +85,8 @@ CREATE TABLE combos (
     fecha_creacion datetime(6),
     estado ENUM('borrador', 'creado', 'adjudicado', 'grabado', 'asignado_jornada', 'asignado_concursantes') NOT NULL,
     nivel ENUM('_5LS', '_5NLS', 'NORMAL') NOT NULL,
-    tipo ENUM('P', 'A', 'D')
+    tipo ENUM('P', 'A', 'D'),
+    version BIGINT DEFAULT 0
 );
 
 -- Crear tabla de relación cuestionarios-preguntas
@@ -106,7 +110,8 @@ CREATE TABLE configuracion_global (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     clave VARCHAR(255) NOT NULL,
     descripcion VARCHAR(255),
-    valor VARCHAR(255) NOT NULL
+    valor VARCHAR(255) NOT NULL,
+    version BIGINT DEFAULT 0
 );
 
 -- Crear tabla de programas
@@ -122,7 +127,8 @@ CREATE TABLE programas (
     total_premios DECIMAL(10,2),
     gap VARCHAR(255),
     total_concursantes INTEGER,
-    creditos_especiales TEXT
+    creditos_especiales TEXT,
+    version BIGINT DEFAULT 0
 );
 
 -- Crear tabla de jornadas
@@ -134,7 +140,8 @@ CREATE TABLE jornadas (
     estado ENUM('preparacion', 'lista', 'en_grabacion', 'completada', 'archivada') NOT NULL DEFAULT 'preparacion',
     creacion_usuario_id BIGINT NOT NULL,
     fecha_creacion datetime(6),
-    notas TEXT
+    notas TEXT,
+    version BIGINT DEFAULT 0
 );
 
 -- Crear tabla de relación jornadas-cuestionarios
@@ -178,7 +185,8 @@ CREATE TABLE concursantes (
     orden_escaleta INTEGER,
     premio DECIMAL(10,2),
     foto VARCHAR(255),
-    creditos_especiales TEXT
+    creditos_especiales TEXT,
+    version BIGINT DEFAULT 0
 );
 
 -- Añadir restricción única para configuracion_global
