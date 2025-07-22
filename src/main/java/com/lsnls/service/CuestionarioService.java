@@ -132,15 +132,15 @@ public class CuestionarioService {
 
     /**
      * Obtiene cuestionarios disponibles para asignar a concursantes.
-     * Incluye cuestionarios en estado 'creado' y 'asignado_jornada'.
+     * Incluye cuestionarios en estado 'creado' y 'adjudicado'.
      */
     public List<Cuestionario> obtenerDisponiblesParaConcursantes() {
         List<Cuestionario> creados = cuestionarioRepository.findByEstado(EstadoCuestionario.creado);
-        List<Cuestionario> asignadosJornada = cuestionarioRepository.findByEstado(EstadoCuestionario.asignado_jornada);
+        List<Cuestionario> adjudicados = cuestionarioRepository.findByEstado(EstadoCuestionario.adjudicado);
         
         List<Cuestionario> disponibles = new ArrayList<>();
         disponibles.addAll(creados);
-        disponibles.addAll(asignadosJornada);
+        disponibles.addAll(adjudicados);
         
         // Ordenar por ID descendente (más recientes primero)
         disponibles.sort((a, b) -> b.getId().compareTo(a.getId()));
@@ -304,12 +304,12 @@ public class CuestionarioService {
 
         Cuestionario cuestionario = cuestionarioOpt.get();
 
-        // Verificar dependencias - no se puede eliminar si está asignado
-        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.asignado_jornada) {
-            throw new IllegalArgumentException("No se puede eliminar el cuestionario porque está asignado a una jornada. Desasígnalo primero.");
+        // Verificar dependencias - no se puede eliminar si está adjudicado o grabado
+        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
+            throw new IllegalArgumentException("No se puede eliminar el cuestionario porque está adjudicado a una jornada. Desasígnalo primero.");
         }
-        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.asignado_concursantes) {
-            throw new IllegalArgumentException("No se puede eliminar el cuestionario porque está asignado a concursantes. Desasígnalo primero.");
+        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.grabado) {
+            throw new IllegalArgumentException("No se puede eliminar el cuestionario porque está grabado (asignado a concursantes). Desasígnalo primero.");
         }
 
         // Verificar si hay concursantes usando este cuestionario

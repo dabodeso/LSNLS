@@ -110,15 +110,15 @@ public class ComboService {
 
     /**
      * Obtiene combos disponibles para asignar a concursantes.
-     * Incluye combos en estado 'creado' y 'asignado_jornada'.
+     * Incluye combos en estado 'creado' y 'adjudicado'.
      */
     public List<Combo> obtenerDisponiblesParaConcursantes() {
         List<Combo> creados = comboRepository.findByEstado(EstadoCombo.creado);
-        List<Combo> asignadosJornada = comboRepository.findByEstado(EstadoCombo.asignado_jornada);
+        List<Combo> adjudicados = comboRepository.findByEstado(EstadoCombo.adjudicado);
         
         List<Combo> disponibles = new java.util.ArrayList<>();
         disponibles.addAll(creados);
-        disponibles.addAll(asignadosJornada);
+        disponibles.addAll(adjudicados);
         
         // Ordenar por ID descendente (más recientes primero)
         disponibles.sort((a, b) -> b.getId().compareTo(a.getId()));
@@ -261,12 +261,12 @@ public class ComboService {
 
         Combo combo = comboOpt.get();
 
-        // Verificar dependencias - no se puede eliminar si está asignado
-        if (combo.getEstado() == Combo.EstadoCombo.asignado_jornada) {
-            throw new IllegalArgumentException("No se puede eliminar el combo porque está asignado a una jornada. Desasígnalo primero.");
+        // Verificar dependencias - no se puede eliminar si está adjudicado o grabado
+        if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {
+            throw new IllegalArgumentException("No se puede eliminar el combo porque está adjudicado a una jornada. Desasígnalo primero.");
         }
-        if (combo.getEstado() == Combo.EstadoCombo.asignado_concursantes) {
-            throw new IllegalArgumentException("No se puede eliminar el combo porque está asignado a concursantes. Desasígnalo primero.");
+        if (combo.getEstado() == Combo.EstadoCombo.grabado) {
+            throw new IllegalArgumentException("No se puede eliminar el combo porque está grabado (asignado a concursantes). Desasígnalo primero.");
         }
 
         // Verificar si hay concursantes usando este combo

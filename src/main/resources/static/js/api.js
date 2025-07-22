@@ -59,16 +59,17 @@ class ApiManager {
 
             // Manejar respuesta
             if (!response.ok) {
-                if (response.status === 401) {
-                    // Redirigir a login si no autorizado
-                    window.location.href = 'login.html';
-                    return; // Detener ejecución
-                }
                 const errorText = await response.text();
                 Logger.error(`❌ ${options.method || 'GET'} ${endpoint} - Error ${response.status}:`, {
                     error: errorText,
                     headers: Object.fromEntries(response.headers.entries())
                 });
+                
+                // Para errores 401, lanzar una excepción específica en lugar de redirigir automáticamente
+                if (response.status === 401) {
+                    throw new Error('UNAUTHORIZED: Token expirado o inválido');
+                }
+                
                 throw new Error(`${response.status}: ${errorText}`);
             }
 

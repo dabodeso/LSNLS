@@ -157,10 +157,10 @@ public class CuestionarioController {
                     estadoDescripcion + "'. Solo se pueden editar cuestionarios en borrador o creado.");
             }
 
-            // Verificar que no esté asignado a jornadas si está en estado avanzado
-            if (cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.asignado_jornada || 
-                cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.asignado_concursantes) {
-                return ResponseEntity.badRequest().body("No se puede editar un cuestionario que ya está asignado a jornadas o concursantes. Desasígnalo primero.");
+            // Verificar que no esté adjudicado o grabado si está en estado avanzado
+            if (cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.adjudicado || 
+                cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.grabado) {
+                return ResponseEntity.badRequest().body("No se puede editar un cuestionario que ya está adjudicado o grabado. Desasígnalo primero.");
             }
 
             try {
@@ -189,8 +189,6 @@ public class CuestionarioController {
             case creado: return "creado";
             case adjudicado: return "adjudicado";
             case grabado: return "grabado";
-            case asignado_jornada: return "asignado a jornada";
-            case asignado_concursantes: return "asignado a concursantes";
             default: return estado.toString();
         }
     }
@@ -206,7 +204,8 @@ public class CuestionarioController {
             Cuestionario cuestionario = cuestionarioExistente.get();
 
             if (!authService.canEditCuestionario(cuestionario.getEstado())) {
-                return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado de este cuestionario");
+                String estadoDescripcion = getCuestionarioEstadoDescripcion(cuestionario.getEstado());
+                return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado de este cuestionario. Tu rol actual no permite editar cuestionarios en estado '" + estadoDescripcion + "'.");
             }
 
             Cuestionario cuestionarioActualizado = cuestionarioService.cambiarEstado(id, nuevoEstado);
@@ -223,7 +222,7 @@ public class CuestionarioController {
             @RequestBody Map<String, Object> request) {
         try {
             if (!authService.canCreateCuestionario()) {
-                return ResponseEntity.status(403).body("No tienes permisos para agregar preguntas a cuestionarios");
+                return ResponseEntity.status(403).body("No tienes permisos para agregar preguntas a cuestionarios. Solo usuarios con rol GUION o DIRECCION pueden agregar preguntas a cuestionarios.");
             }
             
             Long preguntaId = Long.valueOf(request.get("preguntaId").toString());
@@ -318,6 +317,10 @@ public class CuestionarioController {
             cuestionarioService.eliminar(id);
             log.info("[ELIMINAR CUESTIONARIO] Cuestionario {} eliminado correctamente", id);
             return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            // Mensajes específicos de validación
+            log.warn("[ELIMINAR CUESTIONARIO] Validación fallida para cuestionario {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("[ELIMINAR CUESTIONARIO] Error al eliminar cuestionario {}: {}", id, e.getMessage(), e);
             String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
@@ -335,7 +338,7 @@ public class CuestionarioController {
             @PathVariable Long preguntaId) {
         try {
             if (!authService.canCreateCuestionario()) {
-                return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de cuestionarios");
+                return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de cuestionarios. Solo usuarios con rol GUION o DIRECCION pueden quitar preguntas de cuestionarios.");
             }
             
             boolean exito = cuestionarioService.quitarPregunta(cuestionarioId, preguntaId);
@@ -359,7 +362,7 @@ public class CuestionarioController {
             @PathVariable String slot) {
         try {
             if (!authService.canCreateCuestionario()) {
-                return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de cuestionarios");
+                return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de cuestionarios. Solo usuarios con rol GUION o DIRECCION pueden quitar preguntas de cuestionarios.");
             }
             
             boolean exito = cuestionarioService.quitarPreguntaPorSlot(cuestionarioId, slot);

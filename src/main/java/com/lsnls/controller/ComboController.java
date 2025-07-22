@@ -7,6 +7,7 @@ import com.lsnls.entity.Usuario;
 import com.lsnls.entity.PreguntaCombo;
 import com.lsnls.service.ComboService;
 import com.lsnls.service.AuthorizationService;
+import com.lsnls.repository.ComboRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,9 @@ public class ComboController {
 
     @Autowired
     private AuthorizationService authService;
+
+    @Autowired
+    private ComboRepository comboRepository;
 
     @GetMapping
     @PreAuthorize("@authorizationService.canRead()")
@@ -74,7 +78,7 @@ public class ComboController {
         try {
             // Verificar permisos específicos
             if (!authService.canCreateCuestionario()) {
-                return ResponseEntity.status(403).body("Solo usuarios con rol GUION o DIRECCION pueden crear combos");
+                return ResponseEntity.status(403).body("No tienes permisos para crear combos. Solo usuarios con rol GUION o DIRECCION pueden crear combos.");
             }
             
             // Verificar autenticación
@@ -155,7 +159,7 @@ public class ComboController {
             @RequestBody Map<String, Object> request) {
         try {
             if (!authService.canCreateCuestionario()) {
-                return ResponseEntity.status(403).body("No tienes permisos para agregar preguntas a combos");
+                return ResponseEntity.status(403).body("No tienes permisos para agregar preguntas a combos. Solo usuarios con rol GUION o DIRECCION pueden agregar preguntas a combos.");
             }
             
             Long preguntaId = Long.valueOf(request.get("preguntaId").toString());
@@ -183,7 +187,7 @@ public class ComboController {
             log.info("[QUITAR PREGUNTA] Intentando quitar pregunta {} del combo {}", preguntaId, comboId);
             
             if (!authService.canCreateCuestionario()) {
-                return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de combos");
+                return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de combos. Solo usuarios con rol GUION o DIRECCION pueden quitar preguntas de combos.");
             }
             
             boolean exito = comboService.quitarPregunta(comboId, preguntaId);
@@ -208,7 +212,7 @@ public class ComboController {
             log.info("[LIMPIAR PREGUNTAS] Limpiando preguntas inválidas del combo {}", comboId);
             
             if (!authService.canCreateCuestionario()) {
-                return ResponseEntity.status(403).body("No tienes permisos para limpiar combos");
+                return ResponseEntity.status(403).body("No tienes permisos para limpiar combos. Solo usuarios con rol GUION o DIRECCION pueden limpiar combos.");
             }
             
             int preguntasEliminadas = comboService.limpiarPreguntasInvalidas(comboId);
@@ -286,12 +290,44 @@ public class ComboController {
         }
     }
 
+    @PutMapping("/{id}/estado")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<?> cambiarEstado(@PathVariable Long id, @RequestParam Combo.EstadoCombo nuevoEstado) {
+        try {
+            Optional<Combo> comboOpt = comboRepository.findById(id);
+            if (comboOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Combo combo = comboOpt.get();
+            
+            // Verificar permisos para cambiar estado
+            if (!authService.canEditCombo(combo.getEstado())) {
+                String estadoDescripcion = combo.getEstado().toString();
+                return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado de este combo. Tu rol actual no permite editar combos en estado '" + estadoDescripcion + "'.");
+            }
+
+            Combo comboActualizado = comboService.cambiarEstado(id, nuevoEstado);
+            if (comboActualizado != null) {
+                return ResponseEntity.ok(Map.of(
+                    "message", "Estado del combo cambiado exitosamente",
+                    "estado", nuevoEstado
+                ));
+            } else {
+                return ResponseEntity.badRequest().body("Error al cambiar el estado del combo");
+            }
+        } catch (Exception e) {
+            log.error("Error al cambiar estado del combo {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Error interno del servidor: " + e.getMessage());
+        }
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("@authorizationService.canCreateCuestionario()")
     public ResponseEntity<?> actualizarCombo(@PathVariable Long id, @RequestBody Map<String, Object> datos) {
         try {
             if (!authService.canCreateCuestionario()) {
-                return ResponseEntity.status(403).body("No tienes permisos para editar combos");
+                return ResponseEntity.status(403).body("No tienes permisos para editar combos. Solo usuarios con rol GUION o DIRECCION pueden editar combos.");
             }
             
             Optional<Combo> comboOpt = comboService.obtenerPorId(id);
@@ -342,7 +378,7 @@ public class ComboController {
             // Verificar permisos específicos
             if (!authService.canDelete()) {
                 log.warn("[ELIMINAR COMBO] Permiso denegado para eliminar combo id: {}", id);
-                return ResponseEntity.status(403).body("Solo usuarios con rol ADMIN o DIRECCION pueden eliminar combos");
+                return ResponseEntity.status(403).body("No tienes permisos para eliminar combos. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar combos.");
             }
 
             // Verificar que el combo existe
@@ -354,11 +390,11 @@ public class ComboController {
             Combo combo = comboOpt.get();
             
             // Verificar estado del combo
-            if (combo.getEstado() == EstadoCombo.asignado_jornada) {
-                return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está asignado a una jornada. Desasígnalo primero.");
+            if (combo.getEstado() == EstadoCombo.adjudicado) {
+                return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está adjudicado. Cámbialo a un estado anterior primero.");
             }
-            if (combo.getEstado() == EstadoCombo.asignado_concursantes) {
-                return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está asignado a concursantes. Desasígnalo primero.");
+            if (combo.getEstado() == EstadoCombo.grabado) {
+                return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está grabado. Cámbialo a un estado anterior primero.");
             }
 
             authService.getCurrentUser().ifPresent(user -> log.info("[ELIMINAR COMBO] Usuario actual: {} (ID: {})", user.getNombre(), user.getId()));
@@ -366,6 +402,10 @@ public class ComboController {
             comboService.eliminar(id);
             log.info("[ELIMINAR COMBO] Combo {} eliminado correctamente", id);
             return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            // Mensajes específicos de validación
+            log.warn("[ELIMINAR COMBO] Validación fallida para combo {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("[ELIMINAR COMBO] Error al eliminar combo {}: {}", id, e.getMessage(), e);
             String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";

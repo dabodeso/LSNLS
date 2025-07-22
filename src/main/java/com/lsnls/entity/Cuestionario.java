@@ -81,7 +81,7 @@ public class Cuestionario {
     }
 
     public enum EstadoCuestionario {
-        borrador, creado, adjudicado, grabado, asignado_jornada, asignado_concursantes
+        borrador, creado, adjudicado, grabado
     }
 
     @PrePersist

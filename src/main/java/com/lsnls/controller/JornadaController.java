@@ -72,11 +72,11 @@ public class JornadaController {
             // Validar límites de cuestionarios y combos
             if (jornadaDTO.getCuestionarioIds() != null && jornadaDTO.getCuestionarioIds().size() > 5) {
                 return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Una jornada puede tener máximo 5 cuestionarios. Seleccionados: " + jornadaDTO.getCuestionarioIds().size()));
+                    .body(ApiResponse.error("Una jornada puede tener máximo 5 cuestionarios. Has seleccionado " + jornadaDTO.getCuestionarioIds().size() + " cuestionarios. Deselecciona " + (jornadaDTO.getCuestionarioIds().size() - 5) + " cuestionarios."));
             }
             if (jornadaDTO.getComboIds() != null && jornadaDTO.getComboIds().size() > 5) {
                 return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Una jornada puede tener máximo 5 combos. Seleccionados: " + jornadaDTO.getComboIds().size()));
+                    .body(ApiResponse.error("Una jornada puede tener máximo 5 combos. Has seleccionado " + jornadaDTO.getComboIds().size() + " combos. Deselecciona " + (jornadaDTO.getComboIds().size() - 5) + " combos."));
             }
 
             // Verificar autenticación

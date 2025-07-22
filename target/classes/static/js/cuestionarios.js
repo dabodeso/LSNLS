@@ -57,11 +57,20 @@ const CuestionariosManager = {
             tr.innerHTML = `
                 <td style="font-weight: bold; font-size: 1.2em; color: #0066cc;">${c.id ?? ''}</td>
                 <td>${c.tematica || 'Genérico'}</td>
-                <td><span class="badge ${Utils.getEstadoBadgeClass(estadoMostrar, 'cuestionario')}">${Utils.formatearEstadoCuestionario(estadoMostrar)}</span></td>
+                <td>
+                    <select class="form-select form-select-sm" onchange="cambiarEstadoCuestionario(${c.id}, this.value)">
+                        <option value="borrador" ${c.estado === 'borrador' ? 'selected' : ''}>Borrador</option>
+                        <option value="creado" ${c.estado === 'creado' ? 'selected' : ''}>Creado</option>
+                        <option value="adjudicado" ${c.estado === 'adjudicado' ? 'selected' : ''}>Adjudicado</option>
+                        <option value="grabado" ${c.estado === 'grabado' ? 'selected' : ''}>Grabado</option>
+                    </select>
+                </td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
                 <td>
-                    <button class="btn btn-sm btn-danger" onclick="eliminarCuestionario(${c.id})"><i class="fas fa-trash"></i> Eliminar</button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarCuestionario(${c.id})">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -657,4 +666,39 @@ window.cambiarPassword = function() {
     document.getElementById('form-cambiar-password').reset();
     const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
     modal.show();
+};
+
+window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
+    try {
+        const response = await fetch(`/api/cuestionarios/${id}/estado?nuevoEstado=${nuevoEstado}`, {
+            method: 'PUT',
+            headers: authManager.getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+
+        const data = await response.json();
+        await CuestionariosManager.cargarCuestionarios();
+        
+        Toastify({
+            text: `Estado cambiado a: ${nuevoEstado}`,
+            duration: 3000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+        }).showToast();
+    } catch (error) {
+        Toastify({
+            text: `Error: ${error.message}`,
+            duration: 4000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+    }
 }; 

@@ -50,9 +50,13 @@ public class ValidationController {
     @GetMapping("/pregunta/{id}")
     public ResponseEntity<?> validarPregunta(@PathVariable Long id) {
         try {
+            if (id == null) {
+                return ResponseEntity.badRequest().body("El ID de la pregunta es requerido");
+            }
+            
             Optional<Pregunta> preguntaOpt = preguntaService.obtenerPorId(id);
             if (preguntaOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.status(404).body("Pregunta con ID " + id + " no encontrada");
             }
             
             ValidationResult result = validationService.validarIntegridadPregunta(preguntaOpt.get());
@@ -67,7 +71,7 @@ public class ValidationController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al validar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al validar pregunta: " + e.getMessage());
         }
     }
 

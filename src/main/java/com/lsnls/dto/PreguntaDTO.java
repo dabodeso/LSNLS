@@ -15,11 +15,13 @@ public class PreguntaDTO {
     private String fuentes;
     private NivelPregunta nivel;
     private Long creacionUsuarioId;
+    private String creacionUsuarioNombre;
     private String subtema;
     private String notas;
     private FactorPregunta factor;
     private String notasVerificacion;
     private String notasDireccion;
+    private String verificacion;
     private String fechaCreacion;
     private String fechaVerificacion;
     private String estado;

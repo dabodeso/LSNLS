@@ -41,20 +41,46 @@ class Utils {
     // Formatear fecha optimizado
     static formatearFecha(fechaString) {
         if (!fechaString) return 'N/A';
+        
         try {
-            const d = new Date(fechaString);
+            let d;
+            
+            // Si la fecha viene en formato ISO (YYYY-MM-DD)
+            if (typeof fechaString === 'string' && fechaString.includes('-')) {
+                const partes = fechaString.split('-');
+                if (partes.length === 3) {
+                    const año = parseInt(partes[0]);
+                    const mes = parseInt(partes[1]) - 1; // Los meses en JavaScript van de 0-11
+                    const dia = parseInt(partes[2]);
+                    d = new Date(año, mes, dia);
+                } else {
+                    d = new Date(fechaString);
+                }
+            } else {
+                d = new Date(fechaString);
+            }
+            
+            // Verificar si la fecha es válida
+            if (isNaN(d.getTime())) {
+                console.warn('⚠️ Fecha inválida:', fechaString);
+                return 'Fecha inválida';
+            }
+            
             const dia = String(d.getDate()).padStart(2, '0');
             const mes = String(d.getMonth() + 1).padStart(2, '0');
             const anio = d.getFullYear();
+            
+            // Solo mostrar hora si no es 00:00
             let hora = d.getHours();
             let min = d.getMinutes();
             let horaStr = '';
             if (!isNaN(hora) && !isNaN(min) && (hora !== 0 || min !== 0)) {
                 horaStr = ' ' + String(hora).padStart(2, '0') + ':' + String(min).padStart(2, '0');
             }
+            
             return `${dia}/${mes}/${anio}${horaStr}`;
         } catch (error) {
-            console.warn('⚠️ Fecha inválida:', fechaString);
+            console.warn('⚠️ Error al formatear fecha:', fechaString, error);
             return 'Fecha inválida';
         }
     }

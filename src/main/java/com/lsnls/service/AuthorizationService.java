@@ -4,6 +4,7 @@ import com.lsnls.entity.Usuario;
 import com.lsnls.entity.Pregunta;
 import com.lsnls.entity.Cuestionario;
 import com.lsnls.entity.Cuestionario.EstadoCuestionario;
+import com.lsnls.entity.Combo;
 import com.lsnls.entity.Concursante;
 import com.lsnls.entity.Programa;
 import lombok.RequiredArgsConstructor;
@@ -137,19 +138,60 @@ public class AuthorizationService {
     public boolean canEditCuestionario(EstadoCuestionario estado) {
         return getCurrentUser()
             .map(usuario -> {
-                // El admin siempre puede editar
+                // El admin siempre puede editar cualquier estado
                 if (usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN) {
                     return true;
                 }
 
-                // Solo se pueden editar cuestionarios en estado borrador o creado
-                if (estado != EstadoCuestionario.borrador && 
-                    estado != EstadoCuestionario.creado) {
-                    return false;
+                // Dirección puede editar en todos los estados
+                if (usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION) {
+                    return true;
                 }
 
-                return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION ||
-                       usuario.getRol() == Usuario.RolUsuario.ROLE_GUION;
+                // Verificación puede editar en todos los estados excepto grabado
+                if (usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION) {
+                    return estado != EstadoCuestionario.grabado;
+                }
+
+                // Guion solo puede editar en estados borrador y creado
+                if (usuario.getRol() == Usuario.RolUsuario.ROLE_GUION) {
+                    return estado == EstadoCuestionario.borrador || 
+                           estado == EstadoCuestionario.creado;
+                }
+
+                return false;
+            })
+            .orElse(false);
+    }
+
+    /**
+     * Verifica si el usuario actual puede editar un combo según su estado
+     */
+    public boolean canEditCombo(Combo.EstadoCombo estado) {
+        return getCurrentUser()
+            .map(usuario -> {
+                // El admin siempre puede editar cualquier estado
+                if (usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN) {
+                    return true;
+                }
+
+                // Dirección puede editar en todos los estados
+                if (usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION) {
+                    return true;
+                }
+
+                // Verificación puede editar en todos los estados excepto grabado
+                if (usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION) {
+                    return estado != Combo.EstadoCombo.grabado;
+                }
+
+                // Guion solo puede editar en estados borrador y creado
+                if (usuario.getRol() == Usuario.RolUsuario.ROLE_GUION) {
+                    return estado == Combo.EstadoCombo.borrador || 
+                           estado == Combo.EstadoCombo.grabado;
+                }
+
+                return false;
             })
             .orElse(false);
     }
@@ -241,6 +283,32 @@ public class AuthorizationService {
         return getCurrentUser()
             .map(usuario -> 
                 usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
+                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
+            .orElse(false);
+    }
+
+    /**
+     * Verifica si el usuario actual puede crear entidades generales
+     */
+    public boolean canCreate() {
+        return getCurrentUser()
+            .map(usuario -> 
+                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
+                usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
+                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
+                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
+            .orElse(false);
+    }
+
+    /**
+     * Verifica si el usuario actual puede editar entidades generales
+     */
+    public boolean canEdit() {
+        return getCurrentUser()
+            .map(usuario -> 
+                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
+                usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
+                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
             .orElse(false);
     }

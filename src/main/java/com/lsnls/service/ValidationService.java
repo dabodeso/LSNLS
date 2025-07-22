@@ -194,7 +194,7 @@ public class ValidationService {
         }
         
         // Validar consistencia de estados
-        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.asignado_jornada) {
+        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
             // Verificar que realmente esté asignado a una jornada
             Long jornadasCount = entityManager.createQuery(
                 "SELECT COUNT(j) FROM Jornada j JOIN j.cuestionarios c WHERE c.id = :cuestionarioId", Long.class)
@@ -202,7 +202,7 @@ public class ValidationService {
                 .getSingleResult();
             
             if (jornadasCount == 0) {
-                result.addError("Cuestionario marcado como 'asignado_jornada' pero no está asignado a ninguna jornada");
+                result.addError("Cuestionario marcado como 'adjudicado' pero no está asignado a ninguna jornada");
             }
         }
         
@@ -303,16 +303,16 @@ public class ValidationService {
         // Validar asignaciones consistentes
         if (concursante.getCuestionario() != null) {
             if (concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.creado &&
-                concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.asignado_jornada &&
-                concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.asignado_concursantes) {
+                concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.adjudicado &&
+                concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.grabado) {
                 result.addError("El cuestionario asignado no está en un estado válido para concursantes");
             }
         }
         
         if (concursante.getCombo() != null) {
             if (concursante.getCombo().getEstado() != Combo.EstadoCombo.creado &&
-                concursante.getCombo().getEstado() != Combo.EstadoCombo.asignado_jornada &&
-                concursante.getCombo().getEstado() != Combo.EstadoCombo.asignado_concursantes) {
+                concursante.getCombo().getEstado() != Combo.EstadoCombo.adjudicado &&
+                concursante.getCombo().getEstado() != Combo.EstadoCombo.grabado) {
                 result.addError("El combo asignado no está en un estado válido para concursantes");
             }
         }
@@ -352,16 +352,16 @@ public class ValidationService {
         // Validar estados de cuestionarios y combos asignados
         if (jornada.getCuestionarios() != null) {
             for (Cuestionario cuestionario : jornada.getCuestionarios()) {
-                if (cuestionario.getEstado() != Cuestionario.EstadoCuestionario.asignado_jornada) {
-                    result.addWarning("Cuestionario " + cuestionario.getId() + " asignado a jornada pero no está en estado 'asignado_jornada'");
+                if (cuestionario.getEstado() != Cuestionario.EstadoCuestionario.adjudicado) {
+                    result.addWarning("Cuestionario " + cuestionario.getId() + " asignado a jornada pero no está en estado 'adjudicado'");
                 }
             }
         }
         
         if (jornada.getCombos() != null) {
             for (Combo combo : jornada.getCombos()) {
-                if (combo.getEstado() != Combo.EstadoCombo.asignado_jornada) {
-                    result.addWarning("Combo " + combo.getId() + " asignado a jornada pero no está en estado 'asignado_jornada'");
+                if (combo.getEstado() != Combo.EstadoCombo.adjudicado) {
+                    result.addWarning("Combo " + combo.getId() + " asignado a jornada pero no está en estado 'adjudicado'");
                 }
             }
         }
@@ -450,11 +450,11 @@ public class ValidationService {
             
             // Validar estados inconsistentes
             Long cuestionariosInconsistentes = entityManager.createQuery(
-                "SELECT COUNT(c) FROM Cuestionario c WHERE c.estado = 'asignado_jornada' AND " +
+                "SELECT COUNT(c) FROM Cuestionario c WHERE c.estado = 'adjudicado' AND " +
                 "c.id NOT IN (SELECT cu.id FROM Jornada j JOIN j.cuestionarios cu)", Long.class)
                 .getSingleResult();
             if (cuestionariosInconsistentes > 0) {
-                result.addError("Existen " + cuestionariosInconsistentes + " cuestionarios marcados como 'asignado_jornada' pero no asignados a ninguna jornada");
+                result.addError("Existen " + cuestionariosInconsistentes + " cuestionarios marcados como 'adjudicado' pero no asignados a ninguna jornada");
             }
             
             result.addWarning("Validación del sistema completada");

@@ -77,7 +77,7 @@ const PreguntasManager = {
             tr.setAttribute('data-id', pregunta.id);
             tr.innerHTML = `
                 <td>${pregunta.id ?? ''}</td>
-                <td>${pregunta.creacionUsuario?.nombre ?? ''}</td>
+                <td style="background-color: #f8f9fa; font-style: italic;">${pregunta.creacionUsuarioNombre ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'nivel', this)"><span class="${this.getNivelColor(pregunta.nivel)}">${pregunta.nivel ?? ''}</span></td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'tematica', this)">${pregunta.tematica ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'subtema', this)">${(pregunta.subtema ?? '').split(',').map(s => s.trim()).filter(Boolean).join(', ')}</td>
@@ -85,7 +85,7 @@ const PreguntasManager = {
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'respuesta', this)">${pregunta.respuesta ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'datosExtra', this)">${pregunta.datosExtra ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'fuentes', this)">${pregunta.fuentes ?? ''}</td>
-                <td>${pregunta.verificacionUsuario?.nombre ?? ''}</td>
+                <td>${pregunta.verificacion ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'notasVerificacion', this)">${pregunta.notasVerificacion ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'notasDireccion', this)">${pregunta.notasDireccion ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'estado', this)"><span class="badge ${this.getEstadoColor(pregunta.estado)}">${pregunta.estado ?? ''}</span></td>
@@ -251,6 +251,11 @@ const PreguntasManager = {
     async editarCelda(id, campo, td) {
         // Evitar múltiples inputs
         if (td.querySelector('input,select')) return;
+        
+        // No permitir editar campos de autoría
+        if (campo === 'creacionUsuario' || campo === 'creacionUsuarioNombre') {
+            return;
+        }
         const valorOriginal = td.innerText;
         let input;
         if (campo === 'nivel') {
@@ -264,7 +269,9 @@ const PreguntasManager = {
             });
         } else if (campo === 'tematica') {
             input = document.createElement('select');
-            ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'].forEach(opt => {
+            // Usar temas dinámicos si están disponibles, sino usar lista estática
+            const temas = TemasManager.temas.length > 0 ? TemasManager.temas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
+            temas.forEach(opt => {
                 const option = document.createElement('option');
                 option.value = opt;
                 option.text = opt;
@@ -274,9 +281,10 @@ const PreguntasManager = {
         } else if (campo === 'subtema') {
             input = document.createElement('select');
             input.multiple = true;
-            const opciones = ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
+            // Usar subtemas dinámicos si están disponibles, sino usar lista estática
+            const subtemas = TemasManager.subtemas.length > 0 ? TemasManager.subtemas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
             const valoresActuales = valorOriginal.split(',').map(v => v.trim());
-            opciones.forEach(opt => {
+            subtemas.forEach(opt => {
                 const option = document.createElement('option');
                 option.value = opt;
                 option.text = opt;
@@ -464,6 +472,10 @@ const PreguntasManager = {
 document.addEventListener('DOMContentLoaded', async () => {
     // Cargar preguntas directamente (la autenticación ya se verifica en auth.js)
     await PreguntasManager.cargarPreguntas();
+    
+    // Cargar temas y subtemas para tenerlos disponibles
+    await TemasManager.cargarTemas();
+    await TemasManager.cargarSubtemas();
 
     // Añadir eventos de ordenación a las cabeceras
     const headers = [
@@ -540,8 +552,8 @@ window.mostrarFormularioPregunta = function() {
     // Si hay un modal de Bootstrap para crear pregunta, mostrarlo
     const modal = document.getElementById('modal-pregunta');
     if (modal && typeof $ !== 'undefined') {
-        // Rellenar select de temática
-        const tematicas = ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
+        // Rellenar select de temática con temas dinámicos
+        const tematicas = TemasManager.temas.length > 0 ? TemasManager.temas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
         const selectTematica = document.getElementById('tematica-pregunta');
         if (selectTematica) {
             selectTematica.innerHTML = '';
@@ -552,11 +564,12 @@ window.mostrarFormularioPregunta = function() {
                 selectTematica.appendChild(opt);
             });
         }
-        // Rellenar select de subtemas (igual que temáticas por ahora)
+        // Rellenar select de subtemas con subtemas dinámicos
+        const subtemas = TemasManager.subtemas.length > 0 ? TemasManager.subtemas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
         const selectSubtemas = document.getElementById('subtemas-pregunta');
         if (selectSubtemas) {
             selectSubtemas.innerHTML = '';
-            tematicas.forEach(t => {
+            subtemas.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t;
                 opt.textContent = t;
@@ -581,4 +594,253 @@ window.limpiarFiltros = function() {
 
 window.filtrarPreguntas = function() {
     PreguntasManager.filtrarPreguntas();
-}; 
+};
+
+// Gestión de Temas y Subtemas
+const TemasManager = {
+    temas: [],
+    subtemas: [],
+
+    async cargarTemas() {
+        try {
+            const response = await fetch('/api/temas', {
+                headers: authManager.getAuthHeaders()
+            });
+            if (!response.ok) throw new Error('Error al cargar temas');
+            this.temas = await response.json();
+            this.mostrarTemas();
+        } catch (error) {
+            console.error('Error al cargar temas:', error);
+            mostrarError('Error al cargar temas: ' + error.message);
+        }
+    },
+
+    async cargarSubtemas() {
+        try {
+            const response = await fetch('/api/temas/subtemas', {
+                headers: authManager.getAuthHeaders()
+            });
+            if (!response.ok) throw new Error('Error al cargar subtemas');
+            this.subtemas = await response.json();
+            this.mostrarSubtemas();
+        } catch (error) {
+            console.error('Error al cargar subtemas:', error);
+            mostrarError('Error al cargar subtemas: ' + error.message);
+        }
+    },
+
+    async cargarEstadisticas() {
+        try {
+            const response = await fetch('/api/temas/estadisticas', {
+                headers: authManager.getAuthHeaders()
+            });
+            if (!response.ok) throw new Error('Error al cargar estadísticas');
+            const stats = await response.json();
+            
+            // Actualizar contadores en ambos modales
+            document.getElementById('total-temas').textContent = stats.totalTemas;
+            document.getElementById('total-subtemas').textContent = stats.totalSubtemas;
+            document.getElementById('total-temas-sub').textContent = stats.totalTemas;
+            document.getElementById('total-subtemas-sub').textContent = stats.totalSubtemas;
+        } catch (error) {
+            console.error('Error al cargar estadísticas:', error);
+        }
+    },
+
+    mostrarTemas() {
+        const tbody = document.getElementById('lista-temas');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        this.temas.forEach((tema, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${tema}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="TemasManager.eliminarTema('${tema}')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    },
+
+    mostrarSubtemas() {
+        const tbody = document.getElementById('lista-subtemas');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        this.subtemas.forEach((subtema, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${subtema}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="TemasManager.eliminarSubtema('${subtema}')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    },
+
+    async añadirTema(nombreTema) {
+        try {
+            const response = await fetch('/api/temas', {
+                method: 'POST',
+                headers: {
+                    ...authManager.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ tema: nombreTema })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+
+            const result = await response.json();
+            mostrarExito(result.mensaje);
+            
+            // Recargar datos
+            await this.cargarTemas();
+            await this.cargarEstadisticas();
+            
+            // Limpiar formulario
+            document.getElementById('nuevo-tema').value = '';
+            
+        } catch (error) {
+            mostrarError('Error al añadir tema: ' + error.message);
+        }
+    },
+
+    async añadirSubtema(nombreSubtema) {
+        try {
+            const response = await fetch('/api/temas/subtemas', {
+                method: 'POST',
+                headers: {
+                    ...authManager.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ subtema: nombreSubtema })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+
+            const result = await response.json();
+            mostrarExito(result.mensaje);
+            
+            // Recargar datos
+            await this.cargarSubtemas();
+            await this.cargarEstadisticas();
+            
+            // Limpiar formulario
+            document.getElementById('nuevo-subtema').value = '';
+            
+        } catch (error) {
+            mostrarError('Error al añadir subtema: ' + error.message);
+        }
+    },
+
+    async eliminarTema(nombreTema) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar el tema "${nombreTema}"?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/temas/${encodeURIComponent(nombreTema)}`, {
+                method: 'DELETE',
+                headers: authManager.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+
+            const result = await response.json();
+            mostrarExito(result.mensaje);
+            
+            // Recargar datos
+            await this.cargarTemas();
+            await this.cargarEstadisticas();
+            
+        } catch (error) {
+            mostrarError('Error al eliminar tema: ' + error.message);
+        }
+    },
+
+    async eliminarSubtema(nombreSubtema) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar el subtema "${nombreSubtema}"?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/temas/subtemas/${encodeURIComponent(nombreSubtema)}`, {
+                method: 'DELETE',
+                headers: authManager.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+
+            const result = await response.json();
+            mostrarExito(result.mensaje);
+            
+            // Recargar datos
+            await this.cargarSubtemas();
+            await this.cargarEstadisticas();
+            
+        } catch (error) {
+            mostrarError('Error al eliminar subtema: ' + error.message);
+        }
+    }
+};
+
+// Funciones globales para los botones
+window.mostrarGestionTemasSubtemas = function() {
+    const modal = new bootstrap.Modal(document.getElementById('modal-gestion-temas-subtemas'));
+    modal.show();
+    TemasManager.cargarTemas();
+    TemasManager.cargarSubtemas();
+    TemasManager.cargarEstadisticas();
+};
+
+// Event listeners para los formularios
+document.addEventListener('DOMContentLoaded', function() {
+    // Formulario añadir tema
+    document.getElementById('form-añadir-tema')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nombreTema = document.getElementById('nuevo-tema').value.trim();
+        if (nombreTema) {
+            TemasManager.añadirTema(nombreTema);
+        }
+    });
+
+    // Formulario añadir subtema
+    document.getElementById('form-añadir-subtema')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nombreSubtema = document.getElementById('nuevo-subtema').value.trim();
+        if (nombreSubtema) {
+            TemasManager.añadirSubtema(nombreSubtema);
+        }
+    });
+
+    // Event listeners para las pestañas
+    document.getElementById('temas-tab')?.addEventListener('shown.bs.tab', function() {
+        TemasManager.cargarTemas();
+    });
+
+    document.getElementById('subtemas-tab')?.addEventListener('shown.bs.tab', function() {
+        TemasManager.cargarSubtemas();
+    });
+}); 

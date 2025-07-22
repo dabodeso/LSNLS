@@ -37,7 +37,7 @@ public class UsuarioController {
 
             // Validación de permisos específica
             if (!authService.canValidate()) {
-                return ResponseEntity.status(403).body("Solo usuarios con rol ADMIN, VERIFICACION o DIRECCION pueden crear usuarios");
+                return ResponseEntity.status(403).body("No tienes permisos para crear usuarios. Solo usuarios con rol ADMIN, VERIFICACION o DIRECCION pueden crear usuarios.");
             }
 
             // Validar que el nombre no esté duplicado
@@ -103,7 +103,7 @@ public class UsuarioController {
 
             // Verificar permisos de edición
             if (currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION && !currentUser.getId().equals(id)) {
-                return ResponseEntity.status(403).body("Solo el usuario DIRECCION puede editar otros usuarios, o puedes editar tu propio perfil");
+                return ResponseEntity.status(403).body("No tienes permisos para editar otros usuarios. Solo usuarios con rol DIRECCION pueden editar otros usuarios, o puedes editar tu propio perfil.");
             }
 
             // Validar duplicación de nombre (excepto si es el mismo usuario)
@@ -116,7 +116,7 @@ public class UsuarioController {
             // Verificar permisos para cambiar roles
             if (!usuario.getRol().equals(usuarioExistente.getRol()) && 
                 currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION) {
-                return ResponseEntity.status(403).body("Solo el usuario DIRECCION puede cambiar roles de otros usuarios");
+                return ResponseEntity.status(403).body("No tienes permisos para cambiar roles de otros usuarios. Solo usuarios con rol DIRECCION pueden cambiar roles de otros usuarios.");
             }
 
             try {
@@ -138,7 +138,7 @@ public class UsuarioController {
         try {
             // Verificar permisos específicos
             if (!authService.canDelete()) {
-                return ResponseEntity.status(403).body("Solo usuarios con rol ADMIN o DIRECCION pueden eliminar usuarios");
+                return ResponseEntity.status(403).body("No tienes permisos para eliminar usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar usuarios.");
             }
 
             // Verificar que el usuario existe

@@ -70,6 +70,9 @@ public class Pregunta {
     @Column(name = "notas_direccion", columnDefinition = "TEXT")
     private String notasDireccion;
 
+    @Column(name = "verificacion", length = 500)
+    private String verificacion;
+
     @ManyToOne
     @JoinColumn(name = "verificacion_usuario_id")
     @JsonIgnoreProperties({"preguntasCreadas", "preguntasVerificadas", "cuestionariosCreados"})

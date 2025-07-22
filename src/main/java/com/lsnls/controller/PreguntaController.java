@@ -219,7 +219,8 @@ public class PreguntaController {
 
             // Verificar permisos para cambiar estado
             if (!authService.canChangeEstadoPregunta(estadoActual, nuevoEstado)) {
-                return ResponseEntity.status(403).body("No tienes permisos para cambiar a este estado");
+                String estadoDescripcion = getEstadoDescripcion(nuevoEstado);
+                return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado a '" + estadoDescripcion + "'. Tu rol actual no permite esta transición de estado.");
             }
 
             Optional<Usuario> usuarioActualOpt = authService.getCurrentUser();
@@ -245,12 +246,28 @@ public class PreguntaController {
     @PreAuthorize("@authorizationService.canDelete()")
     public ResponseEntity<?> eliminarPregunta(@PathVariable Long id) {
         try {
+            // Verificar permisos específicos
+            if (!authService.canDelete()) {
+                return ResponseEntity.status(403).body("No tienes permisos para eliminar preguntas. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar preguntas.");
+            }
+
+            // Verificar que la pregunta existe
+            Optional<Pregunta> preguntaExistente = preguntaService.obtenerPorId(id);
+            if (preguntaExistente.isEmpty()) {
+                return ResponseEntity.status(404).body("Pregunta con ID " + id + " no encontrada");
+            }
+
             preguntaService.eliminarPorId(id);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok().body("Pregunta eliminada exitosamente");
+        } catch (IllegalArgumentException e) {
+            // Mensajes específicos de validación
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            return ResponseEntity.badRequest().body("No se puede borrar la pregunta porque está asociada a un cuestionario.");
+            return ResponseEntity.badRequest().body("No se puede eliminar la pregunta porque está siendo utilizada en uno o más cuestionarios. Desasígnala de los cuestionarios primero.");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            return ResponseEntity.status(403).body("No tienes permisos para eliminar preguntas. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar preguntas.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al borrar la pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al eliminar pregunta: " + e.getMessage());
         }
     }
 
@@ -295,7 +312,7 @@ public class PreguntaController {
                 .map(currentUser -> {
                     if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION && 
                         currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION) {
-                        return ResponseEntity.status(403).body("No tienes permisos para verificar preguntas");
+                        return ResponseEntity.status(403).body("No tienes permisos para verificar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden verificar preguntas.");
                     }
 
                     Pregunta.EstadoPregunta nuevoEstado = aprobada ? 
@@ -328,7 +345,7 @@ public class PreguntaController {
 
             // Verificar permisos específicos
             if (!authService.canValidate()) {
-                return ResponseEntity.status(403).body("Solo usuarios con rol VERIFICACION o DIRECCION pueden aprobar preguntas");
+                return ResponseEntity.status(403).body("No tienes permisos para aprobar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden aprobar preguntas.");
             }
 
             // Verificar estado actual
@@ -368,7 +385,7 @@ public class PreguntaController {
 
             // Verificar permisos específicos
             if (!authService.canValidate()) {
-                return ResponseEntity.status(403).body("Solo usuarios con rol VERIFICACION o DIRECCION pueden rechazar preguntas");
+                return ResponseEntity.status(403).body("No tienes permisos para rechazar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden rechazar preguntas.");
             }
 
             // Verificar estado actual
@@ -411,7 +428,7 @@ public class PreguntaController {
             if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION && 
                 currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &&
                 currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {
-                return ResponseEntity.status(403).body("No tienes permisos para marcar preguntas para revisar");
+                return ResponseEntity.status(403).body("No tienes permisos para marcar preguntas para revisar. Solo usuarios con rol VERIFICACION, DIRECCION o ADMIN pueden marcar preguntas para revisar.");
             }
             
             Pregunta pregunta = preguntaService.marcarParaRevisar(id, notas, currentUser);
@@ -437,7 +454,7 @@ public class PreguntaController {
             // Solo nivel 4 (DIRECCION) puede marcar para corregir
             if (currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &&
                 currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {
-                return ResponseEntity.status(403).body("No tienes permisos para marcar preguntas para corregir");
+                return ResponseEntity.status(403).body("No tienes permisos para marcar preguntas para corregir. Solo usuarios con rol DIRECCION o ADMIN pueden marcar preguntas para corregir.");
             }
             
             Pregunta pregunta = preguntaService.marcarParaCorregir(id, notas, currentUser);

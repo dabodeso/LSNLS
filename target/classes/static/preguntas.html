@@ -26,14 +26,8 @@
                     <li class="nav-item">
                         <a class="nav-link active" href="preguntas.html">Preguntas</a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="cuestionarios-menu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Cuestionarios
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="cuestionarios-menu">
-                            <li><a class="dropdown-item" href="cuestionarios.html"><i class="fas fa-table"></i> Vista Tabla</a></li>
-                            <li><a class="dropdown-item" href="cuestionarios2.html"><i class="fas fa-th-large"></i> Vista Tarjetas</a></li>
-                        </ul>
+                    <li class="nav-item">
+                        <a class="nav-link" href="cuestionarios.html">Cuestionarios</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="combos.html">Combos</a>
@@ -70,9 +64,11 @@
     <div class="container-fluid mt-4">
         <div class="section-header">
             <h2>Gestión de Preguntas</h2>
-            <button class="btn btn-primary" onclick="mostrarFormularioPregunta()">
-                <i class="fas fa-plus"></i> Nueva Pregunta
-            </button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" onclick="mostrarFormularioPregunta()">
+                    <i class="fas fa-plus"></i> Nueva Pregunta
+                </button>
+            </div>
         </div>
 
         <!-- Filtros Expandidos -->
@@ -84,6 +80,9 @@
                     </button>
                     <button class="btn btn-sm btn-outline-secondary ms-2" onclick="limpiarFiltros()">
                         <i class="fas fa-eraser"></i> Limpiar
+                    </button>
+                    <button class="btn btn-sm btn-outline-info ms-2" onclick="mostrarGestionTemasSubtemas()">
+                        <i class="fas fa-tags"></i> Gestionar Temas/Subtemas
                     </button>
                 </h5>
             </div>
@@ -268,6 +267,132 @@
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
                         </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Gestión de Temas y Subtemas -->
+        <div class="modal fade" id="modal-gestion-temas-subtemas" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-tags"></i> Gestión de Temas y Subtemas
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Pestañas -->
+                        <ul class="nav nav-tabs" id="temasSubtemasTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="temas-tab" data-bs-toggle="tab" data-bs-target="#temas-content" type="button" role="tab" aria-controls="temas-content" aria-selected="true">
+                                    <i class="fas fa-tags"></i> Temas
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="subtemas-tab" data-bs-toggle="tab" data-bs-target="#subtemas-content" type="button" role="tab" aria-controls="subtemas-content" aria-selected="false">
+                                    <i class="fas fa-tag"></i> Subtemas
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <!-- Contenido de las pestañas -->
+                        <div class="tab-content" id="temasSubtemasTabsContent">
+                            <!-- Pestaña Temas -->
+                            <div class="tab-pane fade show active" id="temas-content" role="tabpanel" aria-labelledby="temas-tab">
+                                <div class="mt-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Añadir Nuevo Tema</h6>
+                                            <form id="form-añadir-tema">
+                                                <div class="input-group mb-3">
+                                                    <input type="text" class="form-control" id="nuevo-tema" 
+                                                           placeholder="Nombre del tema" required>
+                                                    <button class="btn btn-success" type="submit">
+                                                        <i class="fas fa-plus"></i> Añadir
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Estadísticas</h6>
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <p class="mb-1"><strong>Total de temas:</strong> <span id="total-temas">0</span></p>
+                                                    <p class="mb-0"><strong>Total de subtemas:</strong> <span id="total-subtemas">0</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    <h6>Temas Disponibles</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Tema</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="lista-temas">
+                                                <!-- Los temas se cargarán dinámicamente aquí -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Pestaña Subtemas -->
+                            <div class="tab-pane fade" id="subtemas-content" role="tabpanel" aria-labelledby="subtemas-tab">
+                                <div class="mt-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Añadir Nuevo Subtema</h6>
+                                            <form id="form-añadir-subtema">
+                                                <div class="input-group mb-3">
+                                                    <input type="text" class="form-control" id="nuevo-subtema" 
+                                                           placeholder="Nombre del subtema" required>
+                                                    <button class="btn btn-success" type="submit">
+                                                        <i class="fas fa-plus"></i> Añadir
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Estadísticas</h6>
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <p class="mb-1"><strong>Total de temas:</strong> <span id="total-temas-sub">0</span></p>
+                                                    <p class="mb-0"><strong>Total de subtemas:</strong> <span id="total-subtemas-sub">0</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    <h6>Subtemas Disponibles</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Subtema</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="lista-subtemas">
+                                                <!-- Los subtemas se cargarán dinámicamente aquí -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

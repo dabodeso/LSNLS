@@ -35,12 +35,12 @@ public class AuthController {
             if (request.getNombre() == null || request.getNombre().trim().isEmpty()) {
                 log.warn("❌ Login fallido: nombre de usuario vacío");
                 return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Error de validación", "El nombre de usuario es requerido"));
+                    .body(new ErrorResponse("Error de validación", "El nombre de usuario es obligatorio. Por favor, introduce tu nombre de usuario."));
             }
             if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
                 log.warn("❌ Login fallido: contraseña vacía");
                 return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Error de validación", "La contraseña es requerida"));
+                    .body(new ErrorResponse("Error de validación", "La contraseña es obligatoria. Por favor, introduce tu contraseña."));
             }
 
             log.debug("👉 Intentando autenticar usuario con AuthService");
@@ -52,7 +52,7 @@ public class AuthController {
             String mensaje = e.getMessage();
             if (mensaje != null && mensaje.contains("Bad credentials")) {
                 return ResponseEntity.status(401)
-                    .body(new ErrorResponse("Error de autenticación", "Usuario o contraseña incorrectos"));
+                    .body(new ErrorResponse("Error de autenticación", "Usuario o contraseña incorrectos. Por favor, verifica tus credenciales e intenta nuevamente."));
             }
             return ResponseEntity.status(401)
                 .body(new ErrorResponse("Error de autenticación", "Error al procesar la solicitud: " + e.getMessage()));

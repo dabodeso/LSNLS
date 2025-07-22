@@ -28,13 +28,13 @@ public class BackupController {
      */
     @GetMapping
     @PreAuthorize("@authorizationService.canValidate()")
-    public ResponseEntity<List<BackupService.BackupInfo>> listBackups() {
+    public ResponseEntity<?> listBackups() {
         try {
             List<BackupService.BackupInfo> backups = backupService.listBackups();
             return ResponseEntity.ok(backups);
         } catch (Exception e) {
             log.error("Error al listar backups", e);
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body("Error interno al listar backups: " + e.getMessage());
         }
     }
 
@@ -119,7 +119,7 @@ public class BackupController {
      */
     @GetMapping("/status")
     @PreAuthorize("@authorizationService.canValidate()")
-    public ResponseEntity<Map<String, Object>> getBackupStatus() {
+    public ResponseEntity<?> getBackupStatus() {
         try {
             List<BackupService.BackupInfo> backups = backupService.listBackups();
             
@@ -136,7 +136,7 @@ public class BackupController {
             ));
         } catch (Exception e) {
             log.error("Error al obtener estado de backup", e);
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body("Error interno al obtener estado de backup: " + e.getMessage());
         }
     }
 

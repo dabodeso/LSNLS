@@ -148,8 +148,8 @@ public class ProgramaService {
 
         // Verificar dependencias - no se puede eliminar si hay concursantes asignados
         Long concursantesCount = entityManager.createQuery(
-            "SELECT COUNT(c) FROM Concursante c WHERE c.programa.id = :programaId", Long.class)
-            .setParameter("programaId", id)
+            "SELECT COUNT(c) FROM Concursante c WHERE c.numeroPrograma = :programaId", Long.class)
+            .setParameter("programaId", programa.getTemporada())
             .getSingleResult();
         
         if (concursantesCount > 0) {
@@ -162,6 +162,11 @@ public class ProgramaService {
         if (programa.getEstado() == Programa.EstadoPrograma.programado) {
             throw new IllegalArgumentException("No se puede eliminar un programa que ya está programado. " +
                 "Cambia su estado a 'borrador' primero.");
+        }
+        
+        if (programa.getEstado() == Programa.EstadoPrograma.emitido) {
+            throw new IllegalArgumentException("No se puede eliminar un programa que ya ha sido emitido. " +
+                "Los programas emitidos no pueden ser eliminados.");
         }
 
         // Si llegamos aquí, es seguro eliminar

@@ -474,8 +474,8 @@ async function buscarCuestionariosModal() {
             if (c.preguntas && c.preguntas.length > 0) {
                 preguntasResumen = c.preguntas.map(p => {
                     const preguntaCorta = p.pregunta ? (p.pregunta.length > 50 ? p.pregunta.substring(0, 50) + '...' : p.pregunta) : '';
-                    const tematica = p.tematica ? `[${p.tematica}]` : '';
-                    return `${tematica} ${preguntaCorta}`;
+                    const nivel = p.nivel ? p.nivel.replace('_', '') : '';
+                    return `${nivel} ${preguntaCorta}`;
                 }).join('<br>');
             } else {
                 preguntasResumen = '<em>Sin preguntas</em>';
@@ -612,9 +612,9 @@ async function buscarCombosModal() {
             if (c.preguntas && c.preguntas.length > 0) {
                 preguntasResumen = c.preguntas.map(p => {
                     const preguntaCorta = p.pregunta ? (p.pregunta.length > 40 ? p.pregunta.substring(0, 40) + '...' : p.pregunta) : '';
-                    const tematica = p.tematica ? `[${p.tematica}]` : '';
+                    const nivel = p.nivel ? p.nivel.replace('_', '') : '';
                     const factor = p.factor ? `<span class="badge bg-warning">x${p.factor}</span>` : '';
-                    return `${factor} ${tematica} ${preguntaCorta}`;
+                    return `${factor} ${nivel} ${preguntaCorta}`;
                 }).join('<br>');
             } else {
                 preguntasResumen = '<em>Sin preguntas</em>';

@@ -63,15 +63,12 @@ const CombosManager = {
                     </select>
                 </td>
                 <td>
-                    ${c.estado === 'asignado_jornada' || c.estado === 'asignado_concursantes' ? 
-                        `<span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span>` : 
-                        `<select class="form-select form-select-sm" onchange="actualizarCombo(${c.id}, 'estado', this.value)">
-                            <option value="borrador" ${c.estado === 'borrador' ? 'selected' : ''}>Borrador</option>
-                            <option value="creado" ${c.estado === 'creado' ? 'selected' : ''}>Creado</option>
-                            <option value="adjudicado" ${c.estado === 'adjudicado' ? 'selected' : ''}>Adjudicado</option>
-                            <option value="grabado" ${c.estado === 'grabado' ? 'selected' : ''}>Grabado</option>
-                        </select>`
-                    }
+                    <select class="form-select form-select-sm" onchange="cambiarEstadoCombo(${c.id}, this.value)">
+                        <option value="borrador" ${c.estado === 'borrador' ? 'selected' : ''}>Borrador</option>
+                        <option value="creado" ${c.estado === 'creado' ? 'selected' : ''}>Creado</option>
+                        <option value="adjudicado" ${c.estado === 'adjudicado' ? 'selected' : ''}>Adjudicado</option>
+                        <option value="grabado" ${c.estado === 'grabado' ? 'selected' : ''}>Grabado</option>
+                    </select>
                 </td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
@@ -661,4 +658,39 @@ window.cambiarPassword = function() {
     document.getElementById('form-cambiar-password').reset();
     const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
     modal.show();
+};
+
+window.cambiarEstadoCombo = async function(id, nuevoEstado) {
+    try {
+        const response = await fetch(`/api/combos/${id}/estado?nuevoEstado=${nuevoEstado}`, {
+            method: 'PUT',
+            headers: authManager.getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+
+        const data = await response.json();
+        await CombosManager.cargarCombos();
+        
+        Toastify({
+            text: `Estado cambiado a: ${nuevoEstado}`,
+            duration: 3000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+        }).showToast();
+    } catch (error) {
+        Toastify({
+            text: `Error: ${error.message}`,
+            duration: 4000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+    }
 }; 

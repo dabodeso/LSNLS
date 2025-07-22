@@ -258,6 +258,17 @@ const JornadasManager = {
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al guardar:', error);
+            
+            // Manejar específicamente errores de autenticación
+            if (error.message && error.message.includes('UNAUTHORIZED')) {
+                Utils.showAlert('Sesión expirada. Por favor, inicia sesión nuevamente.', 'error');
+                // Redirigir a login después de un breve delay
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return;
+            }
+            
             Utils.showAlert('Error al guardar la jornada: ' + (error.message || 'Error desconocido'), 'error');
         }
     },
@@ -276,6 +287,16 @@ const JornadasManager = {
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al eliminar:', error);
+            
+            // Manejar específicamente errores de autenticación
+            if (error.message && error.message.includes('UNAUTHORIZED')) {
+                Utils.showAlert('Sesión expirada. Por favor, inicia sesión nuevamente.', 'error');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return;
+            }
+            
             Utils.showAlert('Error al eliminar la jornada: ' + (error.message || 'Error desconocido'), 'error');
         }
     },
@@ -292,6 +313,16 @@ const JornadasManager = {
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al cambiar estado:', error);
+            
+            // Manejar específicamente errores de autenticación
+            if (error.message && error.message.includes('UNAUTHORIZED')) {
+                Utils.showAlert('Sesión expirada. Por favor, inicia sesión nuevamente.', 'error');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return;
+            }
+            
             Utils.showAlert('Error al cambiar el estado: ' + (error.message || 'Error desconocido'), 'error');
         }
     },
@@ -696,56 +727,22 @@ const JornadasManager = {
         
         titulo.textContent = `Preguntas del Cuestionario #${cuestionario.id} (${cuestionario.tematica || 'Sin temática'})`;
         
-        console.log('=== DEBUG CUESTIONARIO ===');
-        console.log('Cuestionario completo:', cuestionario);
-        console.log('Preguntas:', cuestionario.preguntas);
-        
         let html = '';
         if (cuestionario.preguntas && cuestionario.preguntas.length > 0) {
-            // Crear una copia del array antes de ordenar
             const preguntasParaOrdenar = [...cuestionario.preguntas];
-            
-            // Ordenar las preguntas por factor de multiplicación
             const preguntasOrdenadas = preguntasParaOrdenar.sort((a, b) => {
                 const factorA = parseInt(a.factorMultiplicacion) || 0;
                 const factorB = parseInt(b.factorMultiplicacion) || 0;
-                console.log(`Comparando factores: ${factorA} vs ${factorB}`);
                 return factorA - factorB;
             });
-
-            console.log('Preguntas ordenadas:', preguntasOrdenadas);
-
             preguntasOrdenadas.forEach((preguntaCuestionario, index) => {
                 const pregunta = preguntaCuestionario.pregunta;
-                if (!pregunta) {
-                    console.log(`Pregunta ${index} es null o undefined`);
-                    return;
-                }
-                
-                // Usar factorMultiplicacion en lugar de pregunta.nivel
-                const factor = parseInt(preguntaCuestionario.factorMultiplicacion) || 0;
-                console.log(`Procesando pregunta ${index}: factor="${preguntaCuestionario.factorMultiplicacion}" -> parseado=${factor}`);
-                
-                // Determinar tipo LS/NLS y color del texto
-                let tipoTexto = '';
-                let colorTexto = 'text-secondary'; // gris por defecto
-                
-                if (factor === 1 || factor === 3) {
-                    tipoTexto = `${factor}LS`;
-                    colorTexto = 'text-success'; // texto verde para LS
-                    console.log(`✅ Aplicando VERDE (LS) para factor ${factor}`);
-                } else if (factor === 2 || factor === 4) {
-                    tipoTexto = `${factor}NLS`;
-                    colorTexto = 'text-danger'; // texto rojo para NLS
-                    console.log(`❌ Aplicando ROJO (NLS) para factor ${factor}`);
-                } else {
-                    tipoTexto = `${factor}`;
-                    console.log(`⚠️ Factor ${factor} no reconocido, usando gris`);
-                }
-                
+                if (!pregunta) return;
+                // Mostrar solo el nivel real de la pregunta
+                let nivel = pregunta.nivel ? String(pregunta.nivel).replace(/^_/, '') : '';
                 html += `
                     <tr>
-                        <td><span class="badge bg-light ${colorTexto} fw-bold">${tipoTexto}</span></td>
+                        <td><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
                         <td>${pregunta.pregunta || 'Sin texto'}</td>
                         <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
                     </tr>
@@ -754,9 +751,7 @@ const JornadasManager = {
         } else {
             html = '<tr><td colspan="3" class="text-center text-muted">No hay preguntas disponibles</td></tr>';
         }
-        
         tbody.innerHTML = html;
-        
         const modal = new bootstrap.Modal(document.getElementById('modalVerPreguntasCuestionario'));
         modal.show();
     },
@@ -767,82 +762,40 @@ const JornadasManager = {
         
         titulo.textContent = `Preguntas del Combo #${combo.id} (Tipo: ${combo.tipo || 'No especificado'})`;
         
-        console.log('=== DEBUG COMBO ===');
-        console.log('Combo completo:', combo);
-        console.log('Preguntas:', combo.preguntas);
-        
         let html = '';
         if (combo.preguntas && combo.preguntas.length > 0) {
-            // Crear una copia del array antes de ordenar
             const preguntasParaOrdenar = [...combo.preguntas];
-            
-            // Ordenar las preguntas por factorMultiplicacion
             const preguntasOrdenadas = preguntasParaOrdenar.sort((a, b) => {
                 if (a.pregunta && b.pregunta) {
                     const factorA = parseInt(a.factorMultiplicacion) || 0;
                     const factorB = parseInt(b.factorMultiplicacion) || 0;
-                    console.log(`Combo - Comparando factores: ${factorA} vs ${factorB}`);
                     return factorA - factorB;
                 }
                 return 0;
             });
-
-            console.log('Combo - Preguntas ordenadas:', preguntasOrdenadas);
-
             preguntasOrdenadas.forEach((preguntaSlot, index) => {
-                // Manejar la estructura del ComboService donde cada slot tiene: {slot, pregunta, factorMultiplicacion}
                 if (preguntaSlot.pregunta) {
                     const pregunta = preguntaSlot.pregunta;
-                    let multiplicador = '';
-                    
-                    // Determinar el multiplicador según el slot
-                    if (preguntaSlot.slot === 'PM1') {
-                        multiplicador = 'X2';
-                    } else if (preguntaSlot.slot === 'PM2') {
-                        multiplicador = 'X3';
-                    } else if (preguntaSlot.slot === 'PM3') {
-                        multiplicador = 'Variable';
-                    } else {
-                        multiplicador = `Factor ${preguntaSlot.factorMultiplicacion || 'N/A'}`;
-                    }
-                    
-                    // Usar factorMultiplicacion en lugar de pregunta.nivel
-                    const factor = parseInt(preguntaSlot.factorMultiplicacion) || 0;
-                    console.log(`Combo - Procesando pregunta ${index}: factor="${preguntaSlot.factorMultiplicacion}" -> parseado=${factor}`);
-                    
-                    // Determinar tipo LS/NLS y color del texto
-                    let tipoTexto = '';
-                    let colorTexto = 'text-secondary'; // gris por defecto
-                    
-                    if (factor === 1 || factor === 3) {
-                        tipoTexto = `${factor}LS`;
-                        colorTexto = 'text-success'; // texto verde para LS
-                        console.log(`Combo - ✅ Aplicando VERDE (LS) para factor ${factor}`);
-                    } else if (factor === 2 || factor === 4) {
-                        tipoTexto = `${factor}NLS`;
-                        colorTexto = 'text-danger'; // texto rojo para NLS
-                        console.log(`Combo - ❌ Aplicando ROJO (NLS) para factor ${factor}`);
-                    } else {
-                        tipoTexto = `${factor}`;
-                        console.log(`Combo - ⚠️ Factor ${factor} no reconocido, usando gris`);
-                    }
-                    
+                    // Mostrar solo el factor de multiplicación como x2, x3 o x
+                    let factor = parseInt(preguntaSlot.factorMultiplicacion);
+                    let factorStr = '';
+                    if (factor === 2) factorStr = 'x2';
+                    else if (factor === 3) factorStr = 'x3';
+                    else if (factor === 0) factorStr = 'x';
+                    else factorStr = `x${factor}`;
                     html += `
                         <tr>
-                            <td><span class="badge bg-light ${colorTexto} fw-bold">${tipoTexto}</span></td>
+                            <td><span class="badge bg-info">${factorStr}</span></td>
                             <td>${pregunta.pregunta || 'Sin texto'}</td>
                             <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
-                            <td><span class="badge bg-info">${multiplicador}</span></td>
                         </tr>
                     `;
                 }
             });
         } else {
-            html = '<tr><td colspan="4" class="text-center text-muted">No hay preguntas disponibles</td></tr>';
+            html = '<tr><td colspan="3" class="text-center text-muted">No hay preguntas disponibles</td></tr>';
         }
-        
         tbody.innerHTML = html;
-        
         const modal = new bootstrap.Modal(document.getElementById('modalVerPreguntasCombo'));
         modal.show();
     }

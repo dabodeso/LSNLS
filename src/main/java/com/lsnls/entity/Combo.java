@@ -55,7 +55,7 @@ public class Combo {
     }
 
     public enum EstadoCombo {
-        borrador, creado, adjudicado, grabado, asignado_jornada, asignado_concursantes
+        borrador, creado, adjudicado, grabado
     }
 
     public enum TipoCombo {

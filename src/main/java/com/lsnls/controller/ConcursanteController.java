@@ -22,8 +22,13 @@ public class ConcursanteController {
     private ConcursanteService concursanteService;
 
     @GetMapping
-    public ResponseEntity<List<ConcursanteDTO>> findAll() {
-        return ResponseEntity.ok(concursanteService.findAll());
+    public ResponseEntity<?> findAll() {
+        try {
+            List<ConcursanteDTO> concursantes = concursanteService.findAll();
+            return ResponseEntity.ok(concursantes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error interno al obtener concursantes: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")
@@ -40,18 +45,39 @@ public class ConcursanteController {
     }
 
     @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<ConcursanteDTO>> findByEstado(@PathVariable String estado) {
-        return ResponseEntity.ok(concursanteService.findByEstado(estado));
+    public ResponseEntity<?> findByEstado(@PathVariable String estado) {
+        try {
+            if (estado == null || estado.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El estado es requerido");
+            }
+            List<ConcursanteDTO> concursantes = concursanteService.findByEstado(estado);
+            return ResponseEntity.ok(concursantes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error interno al buscar concursantes por estado: " + e.getMessage());
+        }
     }
 
     @GetMapping("/programa/{programaId}")
-    public ResponseEntity<List<ConcursanteDTO>> findByProgramaId(@PathVariable Long programaId) {
-        return ResponseEntity.ok(concursanteService.findByProgramaId(programaId));
+    public ResponseEntity<?> findByProgramaId(@PathVariable Long programaId) {
+        try {
+            if (programaId == null) {
+                return ResponseEntity.badRequest().body("El ID del programa es requerido");
+            }
+            List<ConcursanteDTO> concursantes = concursanteService.findByProgramaId(programaId);
+            return ResponseEntity.ok(concursantes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error interno al buscar concursantes por programa: " + e.getMessage());
+        }
     }
 
     @GetMapping("/disponibles")
-    public ResponseEntity<List<ConcursanteDTO>> findConcursantesDisponibles() {
-        return ResponseEntity.ok(concursanteService.findConcursantesSinPrograma());
+    public ResponseEntity<?> findConcursantesDisponibles() {
+        try {
+            List<ConcursanteDTO> concursantes = concursanteService.findConcursantesSinPrograma();
+            return ResponseEntity.ok(concursantes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error interno al obtener concursantes disponibles: " + e.getMessage());
+        }
     }
 
     @PostMapping
@@ -135,8 +161,19 @@ public class ConcursanteController {
 
     @DeleteMapping("/{concursanteId}/desasignar-programa")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
-    public ResponseEntity<ConcursanteDTO> desasignarDePrograma(@PathVariable Long concursanteId) {
-        return ResponseEntity.ok(concursanteService.desasignarDePrograma(concursanteId));
+    public ResponseEntity<?> desasignarDePrograma(@PathVariable Long concursanteId) {
+        try {
+            ConcursanteDTO concursante = concursanteService.desasignarDePrograma(concursanteId);
+            return ResponseEntity.ok(concursante);
+        } catch (RuntimeException e) {
+            String mensaje = e.getMessage();
+            if (mensaje.contains("no encontrado")) {
+                return ResponseEntity.status(404).body(mensaje);
+            }
+            return ResponseEntity.badRequest().body("Error al desasignar concursante del programa: " + mensaje);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error interno al desasignar concursante del programa: " + e.getMessage());
+        }
     }
 
     @PostMapping("/{id}/foto")
@@ -157,8 +194,23 @@ public class ConcursanteController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        concursanteService.delete(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            // Verificar que el concursante existe
+            ConcursanteDTO concursanteExistente = concursanteService.findById(id);
+            if (concursanteExistente == null) {
+                return ResponseEntity.status(404).body("Concursante con ID " + id + " no encontrado");
+            }
+
+            concursanteService.delete(id);
+            return ResponseEntity.ok().body("Concursante eliminado exitosamente");
+        } catch (IllegalArgumentException e) {
+            // Mensajes específicos de validación
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body("No se puede eliminar el concursante porque tiene datos asociados. Revisa sus asignaciones primero.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error interno al eliminar concursante: " + e.getMessage());
+        }
     }
 } 

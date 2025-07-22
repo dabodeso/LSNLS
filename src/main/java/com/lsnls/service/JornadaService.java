@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import jakarta.persistence.EntityManager;
 
 @Service
 @Transactional
@@ -34,6 +35,9 @@ public class JornadaService {
 
     @Autowired
     private ComboService comboService;
+
+    @Autowired
+    private EntityManager entityManager;
 
     public List<JornadaDTO> obtenerTodas() {
         List<Jornada> jornadas = jornadaRepository.findAllOrderByFechaCreacionDesc();
@@ -67,12 +71,12 @@ public class JornadaService {
             }
             Set<Cuestionario> cuestionarios = new HashSet<>();
             for (Long cuestionarioId : jornadaDTO.getCuestionarioIds()) {
-                // OPERACIÓN ATÓMICA: Cambiar estado solo si está en 'creado'
+                // OPERACIÓN ATÓMICA: Cambiar estado de 'creado' a 'adjudicado'
                 try {
                     boolean exito = cuestionarioService.cambiarEstadoAtomico(
                         cuestionarioId, 
                         Cuestionario.EstadoCuestionario.creado, 
-                        Cuestionario.EstadoCuestionario.asignado_jornada
+                        Cuestionario.EstadoCuestionario.adjudicado
                     );
                     if (!exito) {
                         throw new IllegalStateException("El cuestionario " + cuestionarioId + " fue modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
@@ -96,12 +100,12 @@ public class JornadaService {
             }
             Set<Combo> combos = new HashSet<>();
             for (Long comboId : jornadaDTO.getComboIds()) {
-                // OPERACIÓN ATÓMICA: Cambiar estado solo si está en 'creado'
+                // OPERACIÓN ATÓMICA: Cambiar estado de 'creado' a 'adjudicado'
                 try {
                     boolean exito = comboService.cambiarEstadoAtomico(
                         comboId, 
                         Combo.EstadoCombo.creado, 
-                        Combo.EstadoCombo.asignado_jornada
+                        Combo.EstadoCombo.adjudicado
                     );
                     if (!exito) {
                         throw new IllegalStateException("El combo " + comboId + " fue modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
@@ -150,7 +154,7 @@ public class JornadaService {
                 for (Cuestionario cuestionarioActual : cuestionariosActuales) {
                     if (!jornadaDTO.getCuestionarioIds().contains(cuestionarioActual.getId())) {
                         // Este cuestionario se está quitando de la jornada
-                        if (cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.asignado_jornada) {
+                        if (cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
                             cuestionarioActual.setEstado(Cuestionario.EstadoCuestionario.creado);
                             cuestionarioRepository.save(cuestionarioActual);
                         }
@@ -165,12 +169,12 @@ public class JornadaService {
                 
                 // Si es un cuestionario nuevo (no estaba previamente asignado)
                 if (cuestionariosActuales == null || !cuestionariosActuales.contains(cuestionario)) {
-                    // OPERACIÓN ATÓMICA: Cambiar estado solo si está en 'creado'
+                    // OPERACIÓN ATÓMICA: Cambiar estado de 'creado' a 'adjudicado'
                     try {
                         boolean exito = cuestionarioService.cambiarEstadoAtomico(
                             cuestionarioId, 
                             Cuestionario.EstadoCuestionario.creado, 
-                            Cuestionario.EstadoCuestionario.asignado_jornada
+                            Cuestionario.EstadoCuestionario.adjudicado
                         );
                         if (!exito) {
                             throw new IllegalStateException("El cuestionario " + cuestionarioId + " fue modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
@@ -200,7 +204,7 @@ public class JornadaService {
                 for (Combo comboActual : combosActuales) {
                     if (!jornadaDTO.getComboIds().contains(comboActual.getId())) {
                         // Este combo se está quitando de la jornada
-                        if (comboActual.getEstado() == Combo.EstadoCombo.asignado_jornada) {
+                        if (comboActual.getEstado() == Combo.EstadoCombo.adjudicado) {
                             comboActual.setEstado(Combo.EstadoCombo.creado);
                             comboRepository.save(comboActual);
                         }
@@ -215,12 +219,12 @@ public class JornadaService {
                 
                 // Si es un combo nuevo (no estaba previamente asignado)
                 if (combosActuales == null || !combosActuales.contains(combo)) {
-                    // OPERACIÓN ATÓMICA: Cambiar estado solo si está en 'creado'
+                    // OPERACIÓN ATÓMICA: Cambiar estado de 'creado' a 'adjudicado'
                     try {
                         boolean exito = comboService.cambiarEstadoAtomico(
                             comboId, 
                             Combo.EstadoCombo.creado, 
-                            Combo.EstadoCombo.asignado_jornada
+                            Combo.EstadoCombo.adjudicado
                         );
                         if (!exito) {
                             throw new IllegalStateException("El combo " + comboId + " fue modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
@@ -244,16 +248,34 @@ public class JornadaService {
 
     public void eliminar(Long id) {
         Jornada jornada = jornadaRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada"));
+            .orElseThrow(() -> new IllegalArgumentException("Jornada con ID " + id + " no encontrada"));
 
+        // Verificar estado de la jornada
         if (jornada.getEstado() == Jornada.EstadoJornada.en_grabacion) {
-            throw new IllegalArgumentException("No se puede eliminar una jornada en grabación");
+            throw new IllegalArgumentException("No se puede eliminar una jornada que está en grabación. " +
+                "Finaliza la grabación antes de eliminar la jornada.");
+        }
+        
+        if (jornada.getEstado() == Jornada.EstadoJornada.completada) {
+            throw new IllegalArgumentException("No se puede eliminar una jornada que ya está completada. " +
+                "Las jornadas completadas no pueden ser eliminadas.");
+        }
+
+        // Verificar si hay concursantes asignados a esta jornada
+        Long concursantesCount = entityManager.createQuery(
+            "SELECT COUNT(c) FROM Concursante c WHERE c.jornada.id = :jornadaId", Long.class)
+            .setParameter("jornadaId", id)
+            .getSingleResult();
+        
+        if (concursantesCount > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la jornada porque tiene " + 
+                concursantesCount + " concursante(s) asignado(s). Desasigna los concursantes primero.");
         }
 
         // Liberar todos los cuestionarios asignados a esta jornada
         if (jornada.getCuestionarios() != null) {
             for (Cuestionario cuestionario : jornada.getCuestionarios()) {
-                if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.asignado_jornada) {
+                if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
                     cuestionario.setEstado(Cuestionario.EstadoCuestionario.creado);
                     cuestionarioRepository.save(cuestionario);
                 }
@@ -263,7 +285,7 @@ public class JornadaService {
         // Liberar todos los combos asignados a esta jornada
         if (jornada.getCombos() != null) {
             for (Combo combo : jornada.getCombos()) {
-                if (combo.getEstado() == Combo.EstadoCombo.asignado_jornada) {
+                if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {
                     combo.setEstado(Combo.EstadoCombo.creado);
                     comboRepository.save(combo);
                 }

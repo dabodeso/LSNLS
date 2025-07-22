@@ -21,6 +21,7 @@ import com.lsnls.dto.PreguntaDTO;
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import com.lsnls.entity.AuditLog;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 @Transactional
@@ -37,6 +38,9 @@ public class PreguntaService {
 
     @Autowired
     private EntityManager entityManager;
+    
+    @Autowired
+    private UsuarioService usuarioService;
 
     public Pregunta crear(Pregunta pregunta) {
         // Transformar datos automáticamente a mayúsculas y limpiar
@@ -108,7 +112,7 @@ public class PreguntaService {
                 pregunta.setTematica(dataTransformationService.normalizarTematica(pregunta.getTematica()));
             }
             
-            // Obtener pregunta existente para validación completa
+            // Obtener pregunta existente para validación completa y manejo de verificacion
             Pregunta preguntaExistente = preguntaRepository.findById(id).orElse(null);
             if (preguntaExistente != null) {
                 String preguntaFinal = pregunta.getPregunta() != null ? pregunta.getPregunta() : preguntaExistente.getPregunta();
@@ -121,6 +125,44 @@ public class PreguntaService {
                 
                 if (!validation.isValid()) {
                     throw new IllegalArgumentException("Datos no válidos: " + validation.getErrorsAsString());
+                }
+                
+                // Manejar actualización del campo verificacion cuando se modifica notasVerificacion
+                if (pregunta.getNotasVerificacion() != null && 
+                    !pregunta.getNotasVerificacion().equals(preguntaExistente.getNotasVerificacion())) {
+                    
+                    // Obtener el usuario actual del contexto de seguridad
+                    String nombreUsuario = null;
+                    try {
+                        org.springframework.security.core.Authentication auth = 
+                            SecurityContextHolder.getContext().getAuthentication();
+                        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                            nombreUsuario = auth.getName();
+                        }
+                    } catch (Exception e) {
+                        // Si no se puede obtener el usuario, usar un valor por defecto
+                        nombreUsuario = "Usuario";
+                    }
+                    
+                    if (nombreUsuario != null) {
+                        String verificacionActual = preguntaExistente.getVerificacion();
+                        
+                        if (verificacionActual == null || verificacionActual.trim().isEmpty()) {
+                            // Si no hay verificacion previa, usar solo el nombre del usuario actual
+                            pregunta.setVerificacion(nombreUsuario);
+                        } else {
+                            // Si ya hay verificacion previa, agregar el nuevo usuario si no está ya incluido
+                            if (!verificacionActual.contains(nombreUsuario)) {
+                                pregunta.setVerificacion(verificacionActual + ", " + nombreUsuario);
+                            } else {
+                                // Si ya está incluido, mantener la verificacion actual
+                                pregunta.setVerificacion(verificacionActual);
+                            }
+                        }
+                    } else if (pregunta.getNotasVerificacion() != null) {
+                        // Si se está actualizando notasVerificacion pero no hay usuario, mantener la verificacion existente
+                        pregunta.setVerificacion(preguntaExistente.getVerificacion());
+                    }
                 }
             }
             
@@ -323,16 +365,26 @@ public class PreguntaService {
 
         Pregunta pregunta = preguntaOpt.get();
 
-        // Verificar si está siendo usada en cuestionarios (usando EntityManager desde preguntaComboRepository)
-        boolean usadaEnCuestionarios = preguntaComboRepository.existsByPreguntaId(id);
-        if (usadaEnCuestionarios) {
-            throw new IllegalArgumentException("No se puede eliminar la pregunta porque está siendo usada en cuestionarios. Quítala de los cuestionarios primero.");
+        // Verificar si está siendo usada en cuestionarios
+        Long cuestionariosCount = entityManager.createQuery(
+            "SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta.id = :preguntaId", Long.class)
+            .setParameter("preguntaId", id)
+            .getSingleResult();
+        
+        if (cuestionariosCount > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la pregunta porque está siendo usada en " + 
+                cuestionariosCount + " cuestionario(s). Quítala de los cuestionarios primero.");
         }
 
         // Verificar si está siendo usada en combos
-        boolean usadaEnCombos = preguntaComboRepository.existsByPreguntaId(id);
-        if (usadaEnCombos) {
-            throw new IllegalArgumentException("No se puede eliminar la pregunta porque está siendo usada en combos. Quítala de los combos primero.");
+        Long combosCount = entityManager.createQuery(
+            "SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId", Long.class)
+            .setParameter("preguntaId", id)
+            .getSingleResult();
+        
+        if (combosCount > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la pregunta porque está siendo usada en " + 
+                combosCount + " combo(s). Quítala de los combos primero.");
         }
 
         // Si llegamos aquí, es seguro eliminar
@@ -352,6 +404,11 @@ public class PreguntaService {
 
     public Pregunta actualizarDesdeDTO(Long id, PreguntaDTO dto) {
         Pregunta pregunta = preguntaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada"));
+        
+        // Proteger el campo de autoría - no permitir modificaciones
+        if (dto.getCreacionUsuarioId() != null && !dto.getCreacionUsuarioId().equals(pregunta.getCreacionUsuario().getId())) {
+            throw new IllegalArgumentException("No se puede modificar el campo de autoría de una pregunta");
+        }
 
         // Validar cambio de nivel si la pregunta está asignada a un combo
         if (dto.getNivel() != null && !dto.getNivel().equals(pregunta.getNivel())) {
@@ -367,6 +424,9 @@ public class PreguntaService {
             }
         }
 
+        // Guardar el valor anterior de notasVerificacion para comparar
+        String notasVerificacionAnterior = pregunta.getNotasVerificacion();
+
         if (dto.getTematica() != null) pregunta.setTematica(dataTransformationService.normalizarTematica(dto.getTematica()));
         if (dto.getPregunta() != null) pregunta.setPregunta(dataTransformationService.normalizarPregunta(dto.getPregunta()));
         if (dto.getRespuesta() != null) pregunta.setRespuesta(dataTransformationService.normalizarRespuesta(dto.getRespuesta()));
@@ -378,6 +438,40 @@ public class PreguntaService {
         if (dto.getNotasVerificacion() != null) pregunta.setNotasVerificacion(dto.getNotasVerificacion());
         if (dto.getNotasDireccion() != null) pregunta.setNotasDireccion(dto.getNotasDireccion());
         if (dto.getSubtema() != null) pregunta.setSubtema(dto.getSubtema());
+        
+        // Manejar actualización del campo verificacion cuando se modifica notasVerificacion
+        if (dto.getNotasVerificacion() != null && 
+            !dto.getNotasVerificacion().equals(notasVerificacionAnterior)) {
+            
+            // Obtener el usuario actual del contexto de seguridad
+            String nombreUsuario = null;
+            try {
+                org.springframework.security.core.Authentication auth = 
+                    SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                    nombreUsuario = auth.getName();
+                }
+            } catch (Exception e) {
+                // Si no se puede obtener el usuario, usar un valor por defecto
+                nombreUsuario = "Usuario";
+            }
+            
+            if (nombreUsuario != null) {
+                String verificacionActual = pregunta.getVerificacion();
+                
+                if (verificacionActual == null || verificacionActual.trim().isEmpty()) {
+                    // Si no hay verificacion previa, usar solo el nombre del usuario actual
+                    pregunta.setVerificacion(nombreUsuario);
+                } else {
+                    // Si ya hay verificacion previa, agregar el nuevo usuario si no está ya incluido
+                    if (!verificacionActual.contains(nombreUsuario)) {
+                        pregunta.setVerificacion(verificacionActual + ", " + nombreUsuario);
+                    }
+                    // Si ya está incluido, mantener la verificacion actual (no hacer nada)
+                }
+            }
+        }
+        
         // Validar y guardar
         DataTransformationService.ValidationResult validation = dataTransformationService.validarPreguntaCompleta(
             pregunta.getPregunta(), pregunta.getRespuesta(), pregunta.getTematica()
@@ -466,11 +560,13 @@ public class PreguntaService {
         dto.setFuentes(p.getFuentes());
         dto.setNivel(p.getNivel());
         dto.setCreacionUsuarioId(p.getCreacionUsuario() != null ? p.getCreacionUsuario().getId() : null);
+        dto.setCreacionUsuarioNombre(p.getCreacionUsuario() != null ? p.getCreacionUsuario().getNombre() : null);
         dto.setSubtema(p.getSubtema());
         dto.setNotas(p.getNotas());
         dto.setFactor(p.getFactor());
         dto.setNotasVerificacion(p.getNotasVerificacion());
         dto.setNotasDireccion(p.getNotasDireccion());
+        dto.setVerificacion(p.getVerificacion());
         dto.setFechaCreacion(p.getFechaCreacion() != null ? p.getFechaCreacion().toString() : null);
         dto.setFechaVerificacion(p.getFechaVerificacion() != null ? p.getFechaVerificacion().toString() : null);
         dto.setEstado(p.getEstado() != null ? p.getEstado().name() : null);
