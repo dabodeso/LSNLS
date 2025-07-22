@@ -6,6 +6,7 @@ import javax.persistence.*;
 import lombok.NoArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import java.io.Serializable;
 
 @Getter
 @Setter
@@ -36,7 +37,7 @@ public class PreguntaCombo {
     @Getter
     @Setter
     @NoArgsConstructor
-    public static class PreguntaComboId {
+    public static class PreguntaComboId implements Serializable {
         @Column(name = "pregunta_id")
         private Long preguntaId;
 
