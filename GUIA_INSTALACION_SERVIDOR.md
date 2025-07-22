@@ -12,7 +12,7 @@
 - **RAM**: Mínimo 2GB, recomendado 4GB+
 - **CPU**: 2 cores mínimo, 4+ recomendado
 - **Disco**: 10GB mínimo para aplicación + base de datos
-- **Red**: Puerto 8443 (HTTPS) y 3306 (MySQL)
+- **Red**: Puerto 8080 (HTTP) y 3306 (MySQL)
 
 ---
 
@@ -182,7 +182,7 @@ spring.jpa.show-sql=false
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
 
 # Configuración del servidor
-server.port=8443
+server.port=8080
 server.ssl.enabled=true
 server.ssl.key-store=classpath:ssl/keystore.p12
 server.ssl.key-store-password=tu_keystore_password
@@ -291,13 +291,13 @@ sudo systemctl status lsnls
 ### **Verificar que la Aplicación Funciona:**
 ```bash
 # Verificar que el puerto está abierto
-netstat -tlnp | grep 8443
+netstat -tlnp | grep 8080
 
 # Verificar logs
 tail -f logs/lsnls.log
 
-# Probar conexión HTTPS
-curl -k https://localhost:8443/api/health
+# Probar conexión HTTP
+curl http://localhost:8080/api/health
 ```
 
 ### **Verificar Base de Datos:**
@@ -320,11 +320,11 @@ SELECT COUNT(*) FROM usuarios;
 ### **Configurar Firewall:**
 ```bash
 # Ubuntu/Debian
-sudo ufw allow 8443/tcp
+sudo ufw allow 8080/tcp
 sudo ufw allow 3306/tcp
 
 # CentOS/RHEL
-sudo firewall-cmd --permanent --add-port=8443/tcp
+sudo firewall-cmd --permanent --add-port=8080/tcp
 sudo firewall-cmd --permanent --add-port=3306/tcp
 sudo firewall-cmd --reload
 ```
@@ -386,11 +386,11 @@ mysql -u lsnls_user -p lsnls
 
 #### **2. Error de Puerto en Uso:**
 ```bash
-# Verificar qué está usando el puerto 8443
-sudo netstat -tlnp | grep 8443
+# Verificar qué está usando el puerto 8080
+sudo netstat -tlnp | grep 8080
 
 # Cambiar puerto en application.properties si es necesario
-server.port=8444
+server.port=8081
 ```
 
 #### **3. Error de Memoria:**
@@ -445,10 +445,10 @@ sudo systemctl status lsnls mysql
 - [ ] `application.properties` configurado
 - [ ] Certificado SSL configurado (opcional)
 - [ ] Aplicación compilada con Maven
-- [ ] Aplicación ejecutándose en puerto 8443
+- [ ] Aplicación ejecutándose en puerto 8080
 - [ ] Servicio systemd configurado (opcional)
 - [ ] Firewall configurado
 - [ ] Backup automático configurado
-- [ ] Aplicación accesible vía HTTPS
+- [ ] Aplicación accesible vía HTTP
 
 **¡LSNLS está listo para usar en producción! 🎉** 

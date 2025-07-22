@@ -33,6 +33,7 @@ print_error() {
 APP_DIR="/opt/lsnls/lsnls"
 JAR_NAME="lsnls-1.0-SNAPSHOT.jar"
 SERVICE_NAME="lsnls"
+PORT="8080"
 
 # Función para verificar dependencias
 check_dependencies() {
@@ -153,19 +154,19 @@ verify_application() {
     sleep 10
     
     # Verificar que el puerto está abierto
-    if netstat -tlnp | grep -q ":8443 "; then
-        print_success "Puerto 8443 está abierto"
+    if netstat -tlnp | grep -q ":$PORT "; then
+        print_success "Puerto $PORT está abierto"
     else
-        print_error "Puerto 8443 no está abierto"
+        print_error "Puerto $PORT no está abierto"
         print_error "Revisa los logs: sudo journalctl -u $SERVICE_NAME -f"
         exit 1
     fi
     
     # Probar conexión HTTPS (ignorar certificado autofirmado)
-    if curl -k -s -o /dev/null -w "%{http_code}" https://localhost:8443/api/health | grep -q "200"; then
+    if curl -k -s -o /dev/null -w "%{http_code}" https://localhost:$PORT/api/health | grep -q "200"; then
         print_success "Aplicación responde correctamente"
     else
-        print_warning "No se pudo verificar la respuesta HTTP (puede ser normal si no hay endpoint /health)"
+        print_warning "No se pudo verificar la respuesta HTTPS (puede ser normal si no hay endpoint /health)"
     fi
 }
 
@@ -180,11 +181,11 @@ show_deployment_info() {
     echo "• Aplicación: $JAR_NAME"
     echo "• Directorio: $APP_DIR"
     echo "• Servicio: $SERVICE_NAME"
-    echo "• Puerto: 8443"
+    echo "• Puerto: $PORT"
     echo
     echo "🔗 ACCESO:"
-    echo "• Web: https://localhost:8443"
-    echo "• API: https://localhost:8443/api"
+    echo "• Web: https://localhost:$PORT"
+    echo "• API: https://localhost:$PORT/api"
     echo
     echo "📊 COMANDOS ÚTILES:"
     echo "• Estado del servicio: sudo systemctl status $SERVICE_NAME"
@@ -282,10 +283,10 @@ deploy_check_only() {
         print_error "Servicio $SERVICE_NAME no está ejecutándose"
     fi
     
-    if netstat -tlnp | grep -q ":8443 "; then
-        print_success "Puerto 8443 está abierto"
+    if netstat -tlnp | grep -q ":$PORT "; then
+        print_success "Puerto $PORT está abierto"
     else
-        print_error "Puerto 8443 no está abierto"
+        print_error "Puerto $PORT no está abierto"
     fi
     
     if [[ -f "target/$JAR_NAME" ]]; then

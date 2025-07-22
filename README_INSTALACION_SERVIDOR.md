@@ -8,7 +8,7 @@ Para instalar LSNLS en tu servidor, necesitas:
 - **Sistema**: Linux (Ubuntu/Debian/CentOS)
 - **RAM**: 2GB mínimo, 4GB recomendado
 - **Disco**: 10GB mínimo
-- **Puertos**: 8443 (HTTPS), 3306 (MySQL)
+- **Puertos**: 8080 (HTTPS), 3306 (MySQL)
 
 ### **Dependencias:**
 - Java 17+
@@ -205,13 +205,25 @@ sudo systemctl status mysql
 sudo systemctl status lsnls
 
 # Verificar puertos abiertos
-netstat -tlnp | grep -E "(8443|3306)"
+netstat -tlnp | grep -E "(8080|3306)"
+```
+
+### **Configurar firewall:**
+```bash
+# Ubuntu/Debian
+sudo ufw allow 8080/tcp
+sudo ufw allow 3306/tcp
+
+# CentOS/RHEL
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --permanent --add-port=3306/tcp
+sudo firewall-cmd --reload
 ```
 
 ### **Verificar aplicación:**
 ```bash
 # Probar conexión HTTPS
-curl -k https://localhost:8443
+curl -k https://localhost:8080
 
 # Verificar base de datos
 mysql -u lsnls_user -p lsnls -e "SHOW TABLES;"
@@ -221,13 +233,13 @@ mysql -u lsnls_user -p lsnls -e "SHOW TABLES;"
 
 ## 🚨 **SOLUCIÓN DE PROBLEMAS**
 
-### **Error: Puerto 8443 en uso**
+### **Error: Puerto 8080 en uso**
 ```bash
 # Ver qué está usando el puerto
-sudo netstat -tlnp | grep 8443
+sudo netstat -tlnp | grep 8080
 
 # Cambiar puerto en application.properties
-server.port=8444
+server.port=8081
 ```
 
 ### **Error: Conexión a base de datos**
@@ -306,8 +318,8 @@ free -h
 - [ ] Certificado SSL generado
 - [ ] Aplicación compilada exitosamente
 - [ ] Servicio systemd configurado y ejecutándose
-- [ ] Puerto 8443 abierto y accesible
-- [ ] Aplicación responde en https://localhost:8443
+- [ ] Puerto 8080 abierto y accesible
+- [ ] Aplicación responde en https://localhost:8080
 - [ ] Contraseñas por defecto cambiadas
 - [ ] Backup automático configurado
 
