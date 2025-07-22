@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import com.lsnls.dto.PreguntaDTO;
-import jakarta.persistence.EntityManager;
+import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import com.lsnls.entity.AuditLog;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -238,7 +238,7 @@ public class PreguntaService {
         parametros.add(estadoActualEsperado.name());
         
         // Ejecutar query nativa atómica
-        jakarta.persistence.Query nativeQuery = entityManager.createNativeQuery(query.toString());
+        javax.persistence.Query nativeQuery = entityManager.createNativeQuery(query.toString());
         for (int i = 0; i < parametros.size(); i++) {
             nativeQuery.setParameter(i + 1, parametros.get(i));
         }

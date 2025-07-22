@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
-import jakarta.persistence.EntityManager;
+import javax.persistence.EntityManager;
 import com.lsnls.dto.CrearComboDTO;
 import java.util.Map;
 

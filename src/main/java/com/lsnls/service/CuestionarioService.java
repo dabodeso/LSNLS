@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
-import jakarta.persistence.EntityManager;
+import javax.persistence.EntityManager;
 import com.lsnls.dto.CrearCuestionarioDTO;
 import com.lsnls.dto.PreguntaCuestionarioDTO;
 import com.lsnls.dto.PreguntaDTO;

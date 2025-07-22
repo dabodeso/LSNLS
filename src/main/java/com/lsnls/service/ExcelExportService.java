@@ -54,7 +54,7 @@ public class ExcelExportService {
         filaActual++; // Fila en blanco
         
         // Procesar cada cuestionario
-        List<Cuestionario> cuestionarios = jornada.getCuestionarios().stream().toList();
+        List<Cuestionario> cuestionarios = jornada.getCuestionarios().stream().collect(java.util.stream.Collectors.toList());
         for (int i = 0; i < 5; i++) {
             Cuestionario cuestionario = i < cuestionarios.size() ? cuestionarios.get(i) : null;
             filaActual = crearTablaCuestionario(sheet, cuestionario, i + 1, filaActual, workbook);
@@ -89,7 +89,7 @@ public class ExcelExportService {
         
         // Datos de las preguntas
         if (cuestionario != null && cuestionario.getPreguntas() != null) {
-            List<PreguntaCuestionario> preguntas = cuestionario.getPreguntas().stream().toList();
+            List<PreguntaCuestionario> preguntas = cuestionario.getPreguntas().stream().collect(java.util.stream.Collectors.toList());
             for (PreguntaCuestionario pc : preguntas) {
                 Row filaPregunta = sheet.createRow(filaActual++);
                 Pregunta p = pc.getPregunta();
@@ -167,7 +167,7 @@ public class ExcelExportService {
         filaActual++; // Fila en blanco
         
         // Procesar cada combo
-        List<Combo> combos = jornada.getCombos().stream().toList();
+        List<Combo> combos = jornada.getCombos().stream().collect(java.util.stream.Collectors.toList());
         for (int i = 0; i < 5; i++) {
             Combo combo = i < combos.size() ? combos.get(i) : null;
             filaActual = crearTablaCombo(sheet, combo, i + 1, filaActual, workbook);
@@ -202,7 +202,7 @@ public class ExcelExportService {
         
         // Datos de las preguntas del combo
         if (combo != null && combo.getPreguntas() != null) {
-            List<PreguntaCombo> preguntas = combo.getPreguntas().stream().toList();
+            List<PreguntaCombo> preguntas = combo.getPreguntas().stream().collect(java.util.stream.Collectors.toList());
             for (PreguntaCombo pc : preguntas) {
                 Row filaPregunta = sheet.createRow(filaActual++);
                 Pregunta p = pc.getPregunta();

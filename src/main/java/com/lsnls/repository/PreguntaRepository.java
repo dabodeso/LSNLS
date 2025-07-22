@@ -26,17 +26,15 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
     @Query("SELECT p FROM Pregunta p WHERE p.estado = :estado AND p.nivel = :nivel")
     List<Pregunta> findByEstadoAndNivel(EstadoPregunta estado, NivelPregunta nivel);
 
-    @Query("""
-        SELECT p FROM Pregunta p
-        WHERE (:nivel IS NULL OR p.nivel = :nivel)
-          AND (:factor IS NULL OR p.factor = :factor)
-          AND (:id IS NULL OR CAST(p.id AS string) = :id)
-          AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%')))
-          AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%')))
-          AND (:tematica IS NULL OR LOWER(p.tematica) LIKE LOWER(CONCAT('%', :tematica, '%')))
-          AND p.estado = :estado
-          AND p.estadoDisponibilidad = :estadoDisponibilidad
-    """)
+    @Query("SELECT p FROM Pregunta p " +
+           "WHERE (:nivel IS NULL OR p.nivel = :nivel) " +
+           "  AND (:factor IS NULL OR p.factor = :factor) " +
+           "  AND (:id IS NULL OR CAST(p.id AS string) = :id) " +
+           "  AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%'))) " +
+           "  AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%'))) " +
+           "  AND (:tematica IS NULL OR LOWER(p.tematica) LIKE LOWER(CONCAT('%', :tematica, '%'))) " +
+           "  AND p.estado = :estado " +
+           "  AND p.estadoDisponibilidad = :estadoDisponibilidad")
     Page<Pregunta> buscarPreguntas(
         @Param("nivel") com.lsnls.entity.Pregunta.NivelPregunta nivel,
         @Param("factor") com.lsnls.entity.Pregunta.FactorPregunta factor,
@@ -49,16 +47,14 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
         Pageable pageable
     );
 
-    @Query("""
-        SELECT p FROM Pregunta p
-        WHERE (:nivel IS NULL OR p.nivel = :nivel)
-          AND (:factor IS NULL OR p.factor = :factor)
-          AND (:id IS NULL OR CAST(p.id AS string) = :id)
-          AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%')))
-          AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%')))
-          AND (:tematica IS NULL OR LOWER(p.tematica) LIKE LOWER(CONCAT('%', :tematica, '%')))
-          AND p.estado = :estado
-    """)
+    @Query("SELECT p FROM Pregunta p " +
+           "WHERE (:nivel IS NULL OR p.nivel = :nivel) " +
+           "  AND (:factor IS NULL OR p.factor = :factor) " +
+           "  AND (:id IS NULL OR CAST(p.id AS string) = :id) " +
+           "  AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%'))) " +
+           "  AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%'))) " +
+           "  AND (:tematica IS NULL OR LOWER(p.tematica) LIKE LOWER(CONCAT('%', :tematica, '%'))) " +
+           "  AND p.estado = :estado")
     Page<Pregunta> buscarPreguntasSinFiltroDisponibilidad(
         @Param("nivel") com.lsnls.entity.Pregunta.NivelPregunta nivel,
         @Param("factor") com.lsnls.entity.Pregunta.FactorPregunta factor,
@@ -70,17 +66,15 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
         Pageable pageable
     );
 
-    @Query("""
-        SELECT p FROM Pregunta p
-        WHERE (:nivel IS NULL OR p.nivel = :nivel)
-          AND (:factor IS NULL OR p.factor = :factor)
-          AND (:id IS NULL OR CAST(p.id AS string) = :id)
-          AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%')))
-          AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%')))
-          AND (:tematica IS NULL OR LOWER(p.tematica) LIKE LOWER(CONCAT('%', :tematica, '%')))
-          AND p.estado = :estado
-          AND (p.estadoDisponibilidad = 'disponible' OR p.estadoDisponibilidad = 'liberada')
-    """)
+    @Query("SELECT p FROM Pregunta p " +
+           "WHERE (:nivel IS NULL OR p.nivel = :nivel) " +
+           "  AND (:factor IS NULL OR p.factor = :factor) " +
+           "  AND (:id IS NULL OR CAST(p.id AS string) = :id) " +
+           "  AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%'))) " +
+           "  AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%'))) " +
+           "  AND (:tematica IS NULL OR LOWER(p.tematica) LIKE LOWER(CONCAT('%', :tematica, '%'))) " +
+           "  AND p.estado = :estado " +
+           "  AND (p.estadoDisponibilidad = 'disponible' OR p.estadoDisponibilidad = 'liberada')")
     Page<Pregunta> buscarPreguntasDisponibles(
         @Param("nivel") com.lsnls.entity.Pregunta.NivelPregunta nivel,
         @Param("factor") com.lsnls.entity.Pregunta.FactorPregunta factor,
@@ -92,17 +86,15 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
         Pageable pageable
     );
 
-    @Query("""
-        SELECT p FROM Pregunta p
-        WHERE (:nivel IS NULL OR p.nivel = :nivel)
-          AND (:factor IS NULL OR p.factor = :factor)
-          AND (:estado IS NULL OR p.estado = :estado)
-          AND (:tematica IS NULL OR LOWER(p.tematica) LIKE LOWER(CONCAT('%', :tematica, '%')))
-          AND (:subtema IS NULL OR LOWER(p.subtema) LIKE LOWER(CONCAT('%', :subtema, '%')))
-          AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%')))
-          AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%')))
-        ORDER BY p.id DESC
-    """)
+    @Query("SELECT p FROM Pregunta p " +
+           "WHERE (:nivel IS NULL OR p.nivel = :nivel) " +
+           "  AND (:factor IS NULL OR p.factor = :factor) " +
+           "  AND (:estado IS NULL OR p.estado = :estado) " +
+           "  AND (:tematica IS NULL OR LOWER(p.tematica) LIKE LOWER(CONCAT('%', :tematica, '%'))) " +
+           "  AND (:subtema IS NULL OR LOWER(p.subtema) LIKE LOWER(CONCAT('%', :subtema, '%'))) " +
+           "  AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%'))) " +
+           "  AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%'))) " +
+           "ORDER BY p.id DESC")
     List<Pregunta> filtrarTodas(
         @Param("nivel") com.lsnls.entity.Pregunta.NivelPregunta nivel,
         @Param("factor") com.lsnls.entity.Pregunta.FactorPregunta factor,

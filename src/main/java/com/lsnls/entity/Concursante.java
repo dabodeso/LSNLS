@@ -1,6 +1,6 @@
 package com.lsnls.entity;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import java.time.LocalDate;
 import java.math.BigDecimal;
 import lombok.Data;

@@ -5,7 +5,7 @@ import com.lsnls.entity.Usuario;
 import com.lsnls.service.PreguntaService;
 import com.lsnls.service.AuthorizationService;
 import com.lsnls.service.DataTransformationService;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

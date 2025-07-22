@@ -7,7 +7,7 @@ import com.lsnls.entity.Usuario;
 import com.lsnls.entity.PreguntaCuestionario;
 import com.lsnls.service.CuestionarioService;
 import com.lsnls.service.AuthorizationService;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

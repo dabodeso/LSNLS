@@ -1,7 +1,7 @@
 package com.lsnls.validation;
 
-import jakarta.validation.ConstraintValidator;
-import jakarta.validation.ConstraintValidatorContext;
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
 
 public class NoSpecialCharactersValidator implements ConstraintValidator<NoSpecialCharacters, String> {
 

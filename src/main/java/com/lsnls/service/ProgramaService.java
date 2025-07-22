@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import jakarta.persistence.EntityManager;
+import javax.persistence.EntityManager;
 
 @Service
 public class ProgramaService {

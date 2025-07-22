@@ -5,6 +5,7 @@ com\lsnls\controller\ComboController.class
 com\lsnls\controller\PreguntaController.class
 com\lsnls\entity\Pregunta$EstadoDisponibilidad.class
 com\lsnls\controller\PreguntaController$1.class
+com\lsnls\entity\Jornada.class
 com\lsnls\service\ExcelExportService.class
 com\lsnls\validation\NoSpecialCharactersValidator.class
 com\lsnls\controller\CuestionarioController$1.class

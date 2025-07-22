@@ -4,7 +4,7 @@ import com.lsnls.entity.*;
 import com.lsnls.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import jakarta.persistence.EntityManager;
+import javax.persistence.EntityManager;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

@@ -36,8 +36,8 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(req ->
-                        req.requestMatchers(
+                .authorizeRequests(authz -> authz
+                        .antMatchers(
                                 // Rutas públicas
                                 "/",
                                 "/index.html",
@@ -53,7 +53,7 @@ public class SecurityConfig {
                                 "/error"
                         ).permitAll()
                         // Rutas protegidas solo API
-                        .requestMatchers("/api/**").authenticated()
+                        .antMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

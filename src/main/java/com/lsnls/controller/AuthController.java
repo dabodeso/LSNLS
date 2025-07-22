@@ -6,7 +6,7 @@ import com.lsnls.dto.LoginRequest;
 import com.lsnls.entity.Usuario;
 import com.lsnls.service.AuthService;
 import com.lsnls.service.UsuarioService;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
