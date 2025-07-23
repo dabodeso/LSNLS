@@ -3,9 +3,11 @@ C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\contr
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\validation\NoSpecialCharacters.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\repository\UsuarioRepository.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\entity\Jornada.java
+C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\entity\Tematica.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\controller\ProgramaController.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\service\BackupService.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\service\RateLimitingService.java
+C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\service\TematicaService.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\controller\TemasController.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\service\JornadaService.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\config\EncodingConfig.java
@@ -33,6 +35,7 @@ C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\repos
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\validation\NoSpecialCharactersValidator.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\dto\CrearComboDTO.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\controller\UsuarioController.java
+C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\repository\TematicaRepository.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\repository\PreguntaCuestionarioRepository.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\config\JacksonConfig.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\service\DataTransformationService.java

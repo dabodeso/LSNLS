@@ -32,4 +32,12 @@ public interface CuestionarioRepository extends JpaRepository<Cuestionario, Long
     
     // Filtros combinados
     List<Cuestionario> findByEstadoAndTematicaContainingIgnoreCaseOrderByIdDesc(EstadoCuestionario estado, String tematica);
+    
+    // Métodos para gestión de temáticas
+    @Query("SELECT DISTINCT c.tematica FROM Cuestionario c WHERE c.tematica IS NOT NULL AND c.tematica != '' ORDER BY c.tematica")
+    List<String> findDistinctTematicas();
+    
+    List<Cuestionario> findByTematica(String tematica);
+    
+    long countByTematica(String tematica);
 } 

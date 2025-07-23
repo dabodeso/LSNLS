@@ -4,9 +4,11 @@ import com.lsnls.dto.ConcursanteDTO;
 import com.lsnls.entity.Concursante;
 import com.lsnls.entity.Cuestionario;
 import com.lsnls.entity.Combo;
+import com.lsnls.entity.Jornada;
 import com.lsnls.repository.ConcursanteRepository;
 import com.lsnls.repository.CuestionarioRepository;
 import com.lsnls.repository.ComboRepository;
+import com.lsnls.repository.JornadaRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +38,9 @@ public class ConcursanteService {
 
     @Autowired
     private ComboRepository comboRepository;
+
+    @Autowired
+    private JornadaRepository jornadaRepository;
 
     @Autowired
     private CuestionarioService cuestionarioService;
@@ -242,6 +247,35 @@ public class ConcursanteService {
         return convertToDTO(concursante);
     }
 
+    @Transactional
+    public ConcursanteDTO asignarAJornada(Long concursanteId, Long jornadaId) {
+        Concursante concursante = concursanteRepository.findById(concursanteId)
+                .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
+        
+        // Verificar que la jornada existe
+        Jornada jornada = jornadaRepository.findById(jornadaId)
+                .orElseThrow(() -> new RuntimeException("Jornada no encontrada"));
+        
+        // Si ya tenía una jornada asignada, desasignar primero
+        if (concursante.getJornada() != null) {
+            desasignarDeJornada(concursanteId);
+        }
+        
+        concursante.setJornada(jornada);
+        concursante = concursanteRepository.save(concursante);
+        return convertToDTO(concursante);
+    }
+
+    @Transactional
+    public ConcursanteDTO desasignarDeJornada(Long concursanteId) {
+        Concursante concursante = concursanteRepository.findById(concursanteId)
+                .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
+        
+        concursante.setJornada(null);
+        concursante = concursanteRepository.save(concursante);
+        return convertToDTO(concursante);
+    }
+
     public ConcursanteDTO updateCampo(Long id, Map<String, Object> campo) {
         Concursante concursante = concursanteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado con id: " + id));
@@ -299,12 +333,17 @@ public class ConcursanteService {
             dto.setComboId(concursante.getCombo().getId());
         }
         
+        if (concursante.getJornada() != null) {
+            dto.setJornadaId(concursante.getJornada().getId());
+            dto.setJornadaNombre(concursante.getJornada().getNombre());
+        }
+        
         return dto;
     }
 
     private Concursante convertToEntity(ConcursanteDTO dto) {
         Concursante concursante = new Concursante();
-        BeanUtils.copyProperties(dto, concursante, "id", "cuestionarioId", "comboId");
+        BeanUtils.copyProperties(dto, concursante, "id", "cuestionarioId", "comboId", "jornadaId", "jornadaNombre");
         
         if (dto.getCuestionarioId() != null) {
             Cuestionario cuestionario = cuestionarioRepository.findById(dto.getCuestionarioId())
@@ -316,6 +355,12 @@ public class ConcursanteService {
             Combo combo = comboRepository.findById(dto.getComboId())
                     .orElseThrow(() -> new RuntimeException("Combo no encontrado: " + dto.getComboId()));
             concursante.setCombo(combo);
+        }
+        
+        if (dto.getJornadaId() != null) {
+            Jornada jornada = jornadaRepository.findById(dto.getJornadaId())
+                    .orElseThrow(() -> new RuntimeException("Jornada no encontrada: " + dto.getJornadaId()));
+            concursante.setJornada(jornada);
         }
         
         return concursante;

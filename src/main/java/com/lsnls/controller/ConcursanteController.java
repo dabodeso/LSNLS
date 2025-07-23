@@ -176,6 +176,40 @@ public class ConcursanteController {
         }
     }
 
+    @PostMapping("/{concursanteId}/asignar-jornada/{jornadaId}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> asignarAJornada(@PathVariable Long concursanteId, @PathVariable Long jornadaId) {
+        try {
+            ConcursanteDTO concursante = concursanteService.asignarAJornada(concursanteId, jornadaId);
+            return ResponseEntity.ok(concursante);
+        } catch (RuntimeException e) {
+            String mensaje = e.getMessage();
+            if (mensaje.contains("no encontrado")) {
+                return ResponseEntity.status(404).body(mensaje);
+            }
+            return ResponseEntity.badRequest().body("Error al asignar concursante a jornada: " + mensaje);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error interno al asignar concursante a jornada: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{concursanteId}/desasignar-jornada")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> desasignarDeJornada(@PathVariable Long concursanteId) {
+        try {
+            ConcursanteDTO concursante = concursanteService.desasignarDeJornada(concursanteId);
+            return ResponseEntity.ok(concursante);
+        } catch (RuntimeException e) {
+            String mensaje = e.getMessage();
+            if (mensaje.contains("no encontrado")) {
+                return ResponseEntity.status(404).body(mensaje);
+            }
+            return ResponseEntity.badRequest().body("Error al desasignar concursante de la jornada: " + mensaje);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error interno al desasignar concursante de la jornada: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/{id}/foto")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> subirFoto(@PathVariable Long id, @RequestParam("foto") MultipartFile foto) {

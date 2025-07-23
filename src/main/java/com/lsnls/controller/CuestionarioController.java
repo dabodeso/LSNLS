@@ -6,6 +6,7 @@ import com.lsnls.entity.Cuestionario.NivelCuestionario;
 import com.lsnls.entity.Usuario;
 import com.lsnls.entity.PreguntaCuestionario;
 import com.lsnls.service.CuestionarioService;
+import com.lsnls.service.TematicaService;
 import com.lsnls.service.AuthorizationService;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.HashMap;
 import java.util.ArrayList;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequestMapping("/api/cuestionarios")
@@ -33,9 +36,12 @@ public class CuestionarioController {
 
     @Autowired
     private CuestionarioService cuestionarioService;
-
+    
     @Autowired
-    private AuthorizationService authService;
+    private TematicaService tematicaService;
+    
+    @Autowired
+    private AuthorizationService authorizationService;
 
     @GetMapping
     @PreAuthorize("@authorizationService.canRead()")
@@ -80,7 +86,7 @@ public class CuestionarioController {
     @PreAuthorize("@authorizationService.canCreateCuestionario()")
     public ResponseEntity<?> crear(@Valid @RequestBody Cuestionario cuestionario) {
         try {
-            return authService.getCurrentUser()
+            return authorizationService.getCurrentUser()
                 .map(currentUser -> {
                     cuestionario.setCreacionUsuario(currentUser);
                     cuestionario.setEstado(Cuestionario.EstadoCuestionario.borrador);
@@ -151,7 +157,7 @@ public class CuestionarioController {
             }
 
             // Verificar permisos específicos según estado
-            if (!authService.canEditCuestionario(cuestionarioActual.getEstado())) {
+            if (!authorizationService.canEditCuestionario(cuestionarioActual.getEstado())) {
                 String estadoDescripcion = getCuestionarioEstadoDescripcion(cuestionarioActual.getEstado());
                 return ResponseEntity.status(403).body("No tienes permisos para editar cuestionarios en estado '" + 
                     estadoDescripcion + "'. Solo se pueden editar cuestionarios en borrador o creado.");
@@ -203,7 +209,7 @@ public class CuestionarioController {
 
             Cuestionario cuestionario = cuestionarioExistente.get();
 
-            if (!authService.canEditCuestionario(cuestionario.getEstado())) {
+            if (!authorizationService.canEditCuestionario(cuestionario.getEstado())) {
                 String estadoDescripcion = getCuestionarioEstadoDescripcion(cuestionario.getEstado());
                 return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado de este cuestionario. Tu rol actual no permite editar cuestionarios en estado '" + estadoDescripcion + "'.");
             }
@@ -215,13 +221,36 @@ public class CuestionarioController {
         }
     }
 
+    @PutMapping("/{id}/tematica")
+    public ResponseEntity<?> cambiarTematica(@PathVariable Long id, @RequestBody Map<String, String> datos) {
+        try {
+            Optional<Cuestionario> cuestionarioExistente = cuestionarioService.obtenerPorId(id);
+            if (cuestionarioExistente.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Cuestionario cuestionario = cuestionarioExistente.get();
+
+            if (!authorizationService.canEditCuestionario(cuestionario.getEstado())) {
+                String estadoDescripcion = getCuestionarioEstadoDescripcion(cuestionario.getEstado());
+                return ResponseEntity.status(403).body("No tienes permisos para cambiar la temática de este cuestionario. Tu rol actual no permite editar cuestionarios en estado '" + estadoDescripcion + "'.");
+            }
+
+            String nuevaTematica = datos.get("tematica");
+            Cuestionario cuestionarioActualizado = cuestionarioService.cambiarTematica(id, nuevaTematica);
+            return ResponseEntity.ok(cuestionarioActualizado);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al cambiar temática: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/{cuestionarioId}/preguntas")
     @PreAuthorize("@authorizationService.canCreateCuestionario()")
     public ResponseEntity<?> agregarPregunta(
             @PathVariable Long cuestionarioId,
             @RequestBody Map<String, Object> request) {
         try {
-            if (!authService.canCreateCuestionario()) {
+            if (!authorizationService.canCreateCuestionario()) {
                 return ResponseEntity.status(403).body("No tienes permisos para agregar preguntas a cuestionarios. Solo usuarios con rol GUION o DIRECCION pueden agregar preguntas a cuestionarios.");
             }
             
@@ -309,11 +338,11 @@ public class CuestionarioController {
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         log.info("[ELIMINAR CUESTIONARIO] Solicitud para eliminar cuestionario con id: {}", id);
         try {
-            if (!authService.canDelete()) {
+            if (!authorizationService.canDelete()) {
                 log.warn("[ELIMINAR CUESTIONARIO] Permiso denegado para eliminar cuestionario id: {}", id);
                 return ResponseEntity.status(403).body("No tienes permisos para eliminar cuestionarios");
             }
-            authService.getCurrentUser().ifPresent(user -> log.info("[ELIMINAR CUESTIONARIO] Usuario actual: {} (ID: {})", user.getNombre(), user.getId()));
+            authorizationService.getCurrentUser().ifPresent(user -> log.info("[ELIMINAR CUESTIONARIO] Usuario actual: {} (ID: {})", user.getNombre(), user.getId()));
             cuestionarioService.eliminar(id);
             log.info("[ELIMINAR CUESTIONARIO] Cuestionario {} eliminado correctamente", id);
             return ResponseEntity.ok().build();
@@ -337,7 +366,7 @@ public class CuestionarioController {
             @PathVariable Long cuestionarioId,
             @PathVariable Long preguntaId) {
         try {
-            if (!authService.canCreateCuestionario()) {
+            if (!authorizationService.canCreateCuestionario()) {
                 return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de cuestionarios. Solo usuarios con rol GUION o DIRECCION pueden quitar preguntas de cuestionarios.");
             }
             
@@ -361,7 +390,7 @@ public class CuestionarioController {
             @PathVariable Long cuestionarioId,
             @PathVariable String slot) {
         try {
-            if (!authService.canCreateCuestionario()) {
+            if (!authorizationService.canCreateCuestionario()) {
                 return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de cuestionarios. Solo usuarios con rol GUION o DIRECCION pueden quitar preguntas de cuestionarios.");
             }
             
@@ -383,13 +412,13 @@ public class CuestionarioController {
     public ResponseEntity<Map<String, Object>> debugPermisos() {
         Map<String, Object> debug = new HashMap<>();
         
-        return authService.getCurrentUser()
+        return authorizationService.getCurrentUser()
             .map(currentUser -> {
                 debug.put("currentUser", currentUser.getNombre());
                 debug.put("currentUserRole", currentUser.getRol().toString());
-                debug.put("canCreateCuestionario", authService.canCreateCuestionario());
-                debug.put("canRead", authService.canRead());
-                debug.put("canDelete", authService.canDelete());
+                debug.put("canCreateCuestionario", authorizationService.canCreateCuestionario());
+                debug.put("canRead", authorizationService.canRead());
+                debug.put("canDelete", authorizationService.canDelete());
                 return ResponseEntity.ok(debug);
             })
             .orElse(ResponseEntity.status(401).build());
@@ -505,12 +534,12 @@ public class CuestionarioController {
             }
 
             // Verificar permisos específicos
-            if (!authService.canCreateCuestionario()) {
+            if (!authorizationService.canCreateCuestionario()) {
                 return ResponseEntity.status(403).body("Solo usuarios con rol GUION o DIRECCION pueden crear cuestionarios");
             }
 
             // Verificar autenticación
-            Optional<Usuario> currentUserOpt = authService.getCurrentUser();
+            Optional<Usuario> currentUserOpt = authorizationService.getCurrentUser();
             if (currentUserOpt.isEmpty()) {
                 return ResponseEntity.status(401).body("Usuario no autenticado");
             }
@@ -535,6 +564,65 @@ public class CuestionarioController {
         } catch (Exception e) {
             log.error("[CREAR CUESTIONARIO] Error inesperado: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body("Error interno al crear cuestionario: " + e.getMessage());
+        }
+    }
+
+    // Endpoints para gestión de temáticas de cuestionarios
+    @GetMapping("/tematicas")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<List<String>> obtenerTematicas() {
+        try {
+            List<String> tematicas = tematicaService.obtenerNombresTematicas();
+            return ResponseEntity.ok(tematicas);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/tematicas")
+    @PreAuthorize("@authorizationService.canCreateCuestionario()")
+    public ResponseEntity<?> añadirTematica(@RequestBody Map<String, String> datos) {
+        try {
+            String tematica = datos.get("tematica");
+            if (tematica == null || tematica.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("La temática no puede estar vacía");
+            }
+            
+            // Obtener el usuario actual
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            Optional<Usuario> currentUserOpt = authorizationService.getCurrentUser();
+            
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(401).body("Usuario no autenticado");
+            }
+            
+            tematicaService.añadirTematica(tematica.trim(), currentUserOpt.get());
+            return ResponseEntity.ok(Map.of("mensaje", "Temática añadida correctamente"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al añadir temática: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/tematicas/{tematica}")
+    @PreAuthorize("@authorizationService.canCreateCuestionario()")
+    public ResponseEntity<?> eliminarTematica(@PathVariable String tematica) {
+        try {
+            tematicaService.eliminarTematica(tematica);
+            return ResponseEntity.ok(Map.of("mensaje", "Temática eliminada correctamente"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al eliminar temática: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/tematicas/estadisticas")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticasTematicas() {
+        try {
+            Map<String, Object> stats = tematicaService.obtenerEstadisticas();
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 } 

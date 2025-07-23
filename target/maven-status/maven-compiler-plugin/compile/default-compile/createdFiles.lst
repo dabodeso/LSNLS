@@ -5,6 +5,7 @@ com\lsnls\controller\ComboController.class
 com\lsnls\controller\PreguntaController.class
 com\lsnls\entity\Pregunta$EstadoDisponibilidad.class
 com\lsnls\controller\PreguntaController$1.class
+com\lsnls\service\TematicaService.class
 com\lsnls\entity\Jornada.class
 com\lsnls\service\ExcelExportService.class
 com\lsnls\validation\NoSpecialCharactersValidator.class
@@ -73,11 +74,13 @@ com\lsnls\service\RateLimitingService$RateLimitResult.class
 com\lsnls\entity\Pregunta$EstadoPregunta.class
 com\lsnls\dto\ConcursanteDTO.class
 com\lsnls\entity\Cuestionario$NivelCuestionario.class
+com\lsnls\repository\TematicaRepository.class
 com\lsnls\controller\ConcursanteController.class
 com\lsnls\controller\ValidationController.class
 com\lsnls\service\AuditService.class
 com\lsnls\repository\UsuarioRepository.class
 com\lsnls\entity\Jornada$EstadoJornada.class
+com\lsnls\entity\Tematica.class
 com\lsnls\LsnlsApplication.class
 com\lsnls\service\DataTransformationService$ValidationResult.class
 com\lsnls\validation\UpperCaseValidator.class

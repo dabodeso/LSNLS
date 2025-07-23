@@ -43,6 +43,16 @@ CREATE TABLE usuarios (
     version BIGINT DEFAULT 0
 );
 
+-- Crear tabla de temáticas
+CREATE TABLE tematicas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    fecha_creacion datetime(6),
+    creacion_usuario_id BIGINT,
+    version BIGINT DEFAULT 0,
+    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
+);
+
 -- Crear tabla de preguntas
 CREATE TABLE preguntas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -164,7 +174,7 @@ CREATE TABLE jornadas_combos (
 CREATE TABLE concursantes (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     numero_concursante INTEGER,
-    jornada VARCHAR(255),
+    jornada_id BIGINT,
     dia_grabacion DATE,
     lugar VARCHAR(255),
     nombre VARCHAR(255),
@@ -255,4 +265,9 @@ ALTER TABLE jornadas_combos
 
 ALTER TABLE jornadas_combos
     ADD CONSTRAINT FK_jornada_combo_combo
-    FOREIGN KEY (combo_id) REFERENCES combos (id); 
+    FOREIGN KEY (combo_id) REFERENCES combos (id);
+
+-- Clave foránea para concursantes-jornada
+ALTER TABLE concursantes
+    ADD CONSTRAINT FK_concursante_jornada
+    FOREIGN KEY (jornada_id) REFERENCES jornadas (id); 

@@ -23,6 +23,8 @@ import com.lsnls.dto.CrearCuestionarioDTO;
 import com.lsnls.dto.PreguntaCuestionarioDTO;
 import com.lsnls.dto.PreguntaDTO;
 import java.util.Map;
+import java.util.HashMap;
+import com.lsnls.service.TematicaService;
 
 @Service
 @Transactional
@@ -39,6 +41,9 @@ public class CuestionarioService {
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private TematicaService tematicaService;
 
     public Cuestionario crear(Cuestionario cuestionario) {
         cuestionario.setFechaCreacion(LocalDateTime.now());
@@ -128,6 +133,37 @@ public class CuestionarioService {
             cuestionario.setEstado(nuevoEstado);
             return cuestionarioRepository.save(cuestionario);
         }).orElse(null);
+    }
+
+    public Cuestionario cambiarTematica(Long id, String nuevaTematica) {
+        return cuestionarioRepository.findById(id).map(cuestionario -> {
+            cuestionario.setTematica(nuevaTematica);
+            return cuestionarioRepository.save(cuestionario);
+        }).orElse(null);
+    }
+
+    // Métodos para gestión de temáticas de cuestionarios
+    public List<String> obtenerTematicasDisponibles() {
+        return tematicaService.obtenerNombresTematicas();
+    }
+
+    public void añadirTematica(String tematica) {
+        // Validar que la temática no esté vacía
+        if (tematica == null || tematica.trim().isEmpty()) {
+            throw new IllegalArgumentException("La temática no puede estar vacía");
+        }
+        
+        // Obtener el usuario actual (esto debería venir del contexto de seguridad)
+        // Por ahora, creamos una temática sin usuario específico
+        throw new RuntimeException("Use el endpoint específico de temáticas para añadir nuevas temáticas");
+    }
+
+    public void eliminarTematica(String tematica) {
+        tematicaService.eliminarTematica(tematica);
+    }
+
+    public Map<String, Object> obtenerEstadisticasTematicas() {
+        return tematicaService.obtenerEstadisticas();
     }
 
     /**

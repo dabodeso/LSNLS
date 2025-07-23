@@ -12,6 +12,11 @@ INSERT INTO usuarios (nombre, password, rol, version) VALUES
 ('verificacion', 'verificacion', 'ROLE_VERIFICACION', 0),
 ('direccion', 'direccion', 'ROLE_DIRECCION', 0);
 
+-- Insertar temáticas iniciales
+INSERT INTO tematicas (nombre, fecha_creacion, creacion_usuario_id, version) VALUES 
+('Cuestionario Musical', '2023-01-01', 1, 0),
+('Navidad', '2023-01-01', 1, 0);
+
 -- Insertar 60 preguntas (todas aprobadas, fuentes Wikipedia, autor admin)
 INSERT INTO preguntas (tematica, subtema, pregunta, respuesta, nivel, estado, estado_disponibilidad, fuentes, autor, fecha_creacion, version) VALUES
 -- Preguntas originales (1-30) con autor admin
@@ -105,12 +110,6 @@ INSERT INTO combos_preguntas (combo_id, pregunta_id, factor_multiplicacion) VALU
 INSERT INTO programas (temporada, fecha_emision, estado, total_concursantes, creditos_especiales, version) VALUES
 (1, '2023-03-01', 'emitido', 3, 'Programa piloto de la primera temporada', 0);
 
--- Insertar 3 concursantes de ejemplo
-INSERT INTO concursantes (numero_concursante, jornada, dia_grabacion, lugar, nombre, edad, ocupacion, cuestionario_id, combo_id, factor_x, resultado, estado, numero_programa, orden_escaleta, premio, version) VALUES
-(1, 'Mañana', '2023-02-28', 'Madrid', 'María González', 28, 'Profesora', NULL, NULL, 'No', 'Ganó 15000€', 'grabado', 1, 1, 15000.00, 0),
-(2, 'Mañana', '2023-02-28', 'Madrid', 'Carlos Ruiz', 35, 'Ingeniero', NULL, NULL, 'Sí', 'Perdió en combo', 'grabado', 1, 2, 0.00, 0),
-(3, 'Tarde', '2023-02-28', 'Madrid', 'Ana López', 42, 'Médica', NULL, NULL, 'No', 'Ganó 8000€', 'grabado', 1, 3, 8000.00, 0);
-
 -- Insertar configuración global
 INSERT INTO configuracion_global (clave, valor, descripcion, version) VALUES
 ('programa_nombre', 'La Silla en la Nave de las Letras', 'Nombre del programa de televisión', 0),
@@ -120,7 +119,7 @@ INSERT INTO configuracion_global (clave, valor, descripcion, version) VALUES
 ('jwt_expiration', '86400000', 'Tiempo de expiración del token JWT en milisegundos', 0),
 ('backup_frequency', 'daily', 'Frecuencia de backup de la base de datos', 0);
 
--- Insertar jornadas de ejemplo
+-- Insertar jornadas de ejemplo (DEBE IR ANTES QUE LOS CONCURSANTES)
 INSERT INTO jornadas (nombre, fecha_jornada, lugar, estado, creacion_usuario_id, fecha_creacion, notas, version) VALUES
 ('Jornada de Mañana - Enero 2024', '2024-01-15', 'Madrid - Estudio A', 'completada', 1, '2024-01-10 09:00:00', 'Primera jornada de grabación de la temporada', 0),
 ('Jornada de Tarde - Enero 2024', '2024-01-15', 'Madrid - Estudio A', 'lista', 1, '2024-01-10 10:30:00', 'Segunda jornada del día', 0),
@@ -142,4 +141,10 @@ INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) VALUES
 (2, 3);
 
 INSERT INTO jornadas_combos (jornada_id, combo_id) VALUES
-(2, 1); 
+(2, 1);
+
+-- Insertar 3 concursantes de ejemplo (DEBE IR AL FINAL, DESPUÉS DE LAS JORNADAS)
+INSERT INTO concursantes (numero_concursante, jornada_id, dia_grabacion, lugar, nombre, edad, ocupacion, cuestionario_id, combo_id, factor_x, resultado, estado, numero_programa, orden_escaleta, premio, version) VALUES
+(1, 1, '2023-02-28', 'Madrid', 'María González', 28, 'Profesora', NULL, NULL, 'No', 'Ganó 15000€', 'grabado', 1, 1, 15000.00, 0),
+(2, 1, '2023-02-28', 'Madrid', 'Carlos Ruiz', 35, 'Ingeniero', NULL, NULL, 'Sí', 'Perdió en combo', 'grabado', 1, 2, 0.00, 0),
+(3, 2, '2023-02-28', 'Madrid', 'Ana López', 42, 'Médica', NULL, NULL, 'No', 'Ganó 8000€', 'grabado', 1, 3, 8000.00, 0); 

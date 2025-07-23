@@ -11,7 +11,7 @@ const CuestionariosManager = {
             });
             if (!response.ok) throw new Error('Error al cargar los cuestionarios');
             const cuestionarios = await response.json();
-            this.mostrarCuestionarios(cuestionarios);
+            await this.mostrarCuestionarios(cuestionarios);
         } catch (error) {
             if (error && error.message && error.message.startsWith('401')) {
                 // No mostrar mensaje, la redirección ya ocurre en api.js
@@ -28,12 +28,26 @@ const CuestionariosManager = {
             }).showToast();
         }
     },
-    mostrarCuestionarios(cuestionarios) {
+    async mostrarCuestionarios(cuestionarios) {
         const tbody = document.getElementById('tabla-cuestionarios');
         if (!tbody) {
             console.error('No se encontró el elemento tabla-cuestionarios');
             return;
         }
+        
+        // Cargar temáticas gestionadas del backend
+        let tematicasGestionadas = [];
+        try {
+            const response = await fetch('/api/cuestionarios/tematicas', {
+                headers: authManager.getAuthHeaders()
+            });
+            if (response.ok) {
+                tematicasGestionadas = await response.json();
+            }
+        } catch (error) {
+            console.error('Error al cargar temáticas:', error);
+        }
+        
         tbody.innerHTML = '';
         if (!Array.isArray(cuestionarios) || cuestionarios.length === 0) {
             const tr = document.createElement('tr');
@@ -41,6 +55,7 @@ const CuestionariosManager = {
             tbody.appendChild(tr);
             return;
         }
+        
         cuestionarios.forEach(c => {
             // Determinar si hay huecos usando slot - solo niveles 1-4
             const niveles = ['1LS','2NLS','3LS','4NLS'];
@@ -54,9 +69,27 @@ const CuestionariosManager = {
             const estadoMostrar = c.estado ?? '';
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', c.id);
+            
+            // Crear opciones del dropdown de temáticas dinámicamente
+            let opcionesTematicas = '<option value="" ' + (!c.tematica || c.tematica === '' ? 'selected' : '') + '>Sin temática</option>';
+            
+            // Añadir temáticas gestionadas
+            tematicasGestionadas.forEach(tematica => {
+                opcionesTematicas += `<option value="${tematica}" ${c.tematica === tematica ? 'selected' : ''}>${tematica}</option>`;
+            });
+            
+            // Si la temática actual no está en la lista gestionada, añadirla como opción
+            if (c.tematica && !tematicasGestionadas.includes(c.tematica)) {
+                opcionesTematicas += `<option value="${c.tematica}" selected>${c.tematica} (no gestionada)</option>`;
+            }
+            
             tr.innerHTML = `
                 <td style="font-weight: bold; font-size: 1.2em; color: #0066cc;">${c.id ?? ''}</td>
-                <td>${c.tematica || 'Genérico'}</td>
+                <td>
+                    <select class="form-select form-select-sm" onchange="cambiarTematicaCuestionario(${c.id}, this.value)">
+                        ${opcionesTematicas}
+                    </select>
+                </td>
                 <td>
                     <select class="form-select form-select-sm" onchange="cambiarEstadoCuestionario(${c.id}, this.value)">
                         <option value="borrador" ${c.estado === 'borrador' ? 'selected' : ''}>Borrador</option>
@@ -192,6 +225,28 @@ async function mostrarFormularioCuestionario() {
     document.getElementById('cuestionario-tematica').value = '';
     document.getElementById('cuestionario-notas').value = '';
     document.getElementById('cuestionario-id').value = '';
+    
+    // Cargar temáticas gestionadas para el dropdown
+    try {
+        const response = await fetch('/api/cuestionarios/tematicas', {
+            headers: authManager.getAuthHeaders()
+        });
+        if (response.ok) {
+            const tematicas = await response.json();
+            const tematicaSelect = document.getElementById('cuestionario-tematica');
+            if (tematicaSelect) {
+                tematicaSelect.innerHTML = '<option value="">Sin temática</option>';
+                tematicas.forEach(tematica => {
+                    const option = document.createElement('option');
+                    option.value = tematica;
+                    option.textContent = tematica;
+                    tematicaSelect.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error al cargar temáticas para el formulario:', error);
+    }
     
     // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('modal-cuestionario'));
@@ -403,6 +458,31 @@ async function guardarCuestionario() {
     const tematica = document.getElementById('cuestionario-tematica').value;
     const notasDireccion = document.getElementById('cuestionario-notas').value;
     const esEdicion = !!cuestionarioId;
+    
+    // Validar que la temática esté gestionada si se proporciona
+    if (tematica && tematica.trim() !== '') {
+        try {
+            const response = await fetch('/api/cuestionarios/tematicas', {
+                headers: authManager.getAuthHeaders()
+            });
+            if (response.ok) {
+                const tematicasGestionadas = await response.json();
+                if (!tematicasGestionadas.includes(tematica.trim())) {
+                    Toastify({
+                        text: `La temática "${tematica}" no está gestionada. Debes añadirla desde "Gestionar Temáticas" primero.`,
+                        duration: 5000,
+                        close: true,
+                        gravity: 'top',
+                        position: 'right',
+                        style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+                    }).showToast();
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Error al validar temática:', error);
+        }
+    }
     
     const payload = { 
         preguntasNormales,
@@ -702,3 +782,174 @@ window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
         }).showToast();
     }
 }; 
+
+window.cambiarTematicaCuestionario = async function(id, nuevaTematica) {
+    try {
+        const response = await fetch(`/api/cuestionarios/${id}/tematica`, {
+            method: 'PUT',
+            headers: {
+                ...authManager.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ tematica: nuevaTematica })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+
+        const data = await response.json();
+        await CuestionariosManager.cargarCuestionarios();
+        
+        Toastify({
+            text: `Temática cambiada a: ${nuevaTematica || 'Genérico'}`,
+            duration: 3000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+        }).showToast();
+    } catch (error) {
+        Toastify({
+            text: `Error: ${error.message}`,
+            duration: 4000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+    }
+};
+
+// Gestión de Temáticas de Cuestionarios
+const TematicasManager = {
+    tematicas: [],
+
+    async cargarTematicas() {
+        try {
+            const response = await fetch('/api/cuestionarios/tematicas', {
+                headers: authManager.getAuthHeaders()
+            });
+            if (!response.ok) throw new Error('Error al cargar temáticas');
+            this.tematicas = await response.json();
+            this.mostrarTematicas();
+        } catch (error) {
+            console.error('Error al cargar temáticas:', error);
+            mostrarError('Error al cargar temáticas: ' + error.message);
+        }
+    },
+
+    async cargarEstadisticas() {
+        try {
+            const response = await fetch('/api/cuestionarios/tematicas/estadisticas', {
+                headers: authManager.getAuthHeaders()
+            });
+            if (!response.ok) throw new Error('Error al cargar estadísticas');
+            const stats = await response.json();
+            
+            document.getElementById('total-tematicas').textContent = stats.totalTematicas;
+        } catch (error) {
+            console.error('Error al cargar estadísticas:', error);
+        }
+    },
+
+    mostrarTematicas() {
+        const tbody = document.getElementById('lista-tematicas');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        this.tematicas.forEach((tematica, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${tematica}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="TematicasManager.eliminarTematica('${tematica}')">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    },
+
+    async añadirTematica(nombreTematica) {
+        try {
+            const response = await fetch('/api/cuestionarios/tematicas', {
+                method: 'POST',
+                headers: {
+                    ...authManager.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ tematica: nombreTematica })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+
+            const result = await response.json();
+            mostrarExito(result.mensaje);
+            
+            // Limpiar formulario
+            document.getElementById('nueva-tematica').value = '';
+            
+            // Recargar datos
+            await this.cargarTematicas();
+            await this.cargarEstadisticas();
+            
+        } catch (error) {
+            mostrarError('Error al añadir temática: ' + error.message);
+        }
+    },
+
+    async eliminarTematica(nombreTematica) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar la temática "${nombreTematica}"?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/cuestionarios/tematicas/${encodeURIComponent(nombreTematica)}`, {
+                method: 'DELETE',
+                headers: authManager.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+
+            const result = await response.json();
+            mostrarExito(result.mensaje);
+            
+            // Recargar datos
+            await this.cargarTematicas();
+            await this.cargarEstadisticas();
+            
+        } catch (error) {
+            mostrarError('Error al eliminar temática: ' + error.message);
+        }
+    }
+};
+
+// Funciones globales para los botones
+window.mostrarGestionTematicas = function() {
+    const modal = new bootstrap.Modal(document.getElementById('modal-gestion-temas-subtemas'));
+    modal.show();
+    TematicasManager.cargarTematicas();
+    TematicasManager.cargarEstadisticas();
+};
+
+// Event listeners para los formularios
+document.addEventListener('DOMContentLoaded', function() {
+    // Formulario añadir temática
+    document.getElementById('form-añadir-tematica')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nombreTematica = document.getElementById('nueva-tematica').value.trim();
+        if (nombreTematica) {
+            TematicasManager.añadirTematica(nombreTematica);
+        }
+    });
+}); 

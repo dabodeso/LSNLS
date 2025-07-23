@@ -63,7 +63,9 @@ function mostrarConcursantes(concursantesFiltrados = null) {
     tbody.innerHTML = lista.map(concursante => `
         <tr data-id="${concursante.id}">
             <td ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroConcursante', this)">${concursante.numeroConcursante || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'jornada', this)">${concursante.jornada || ''}</td>
+            <td onclick="abrirSelectorJornadaParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar jornada">
+                ${concursante.jornadaNombre ? `<span class="badge bg-success">${concursante.jornadaNombre}</span>` : '<em class="text-muted">Sin asignar</em>'}
+            </td>
             <td ondblclick="editarCeldaConcursante(${concursante.id}, 'diaGrabacion', this)">${formatearFecha(concursante.diaGrabacion)}</td>
             <td ondblclick="editarCeldaConcursante(${concursante.id}, 'lugar', this)">${concursante.lugar || ''}</td>
             <td ondblclick="editarCeldaConcursante(${concursante.id}, 'nombre', this)">${concursante.nombre || ''}</td>
@@ -739,4 +741,118 @@ function formatearFecha(fecha) {
         console.error('Error al formatear fecha:', fecha, error);
         return fecha; // Devolver la fecha original en caso de error
     }
+}
+
+// Variables para gestión de jornadas
+let jornadas = [];
+let concursanteParaAsignarJornada = null;
+
+async function cargarJornadas() {
+    try {
+        const response = await apiManager.get('/api/jornadas');
+        jornadas = response.datos || [];
+    } catch (error) {
+        console.error('Error al cargar jornadas:', error);
+    }
+}
+
+function abrirSelectorJornadaParaConcursante(concursanteId) {
+    concursanteParaAsignarJornada = concursanteId;
+    mostrarModalSelectorJornada();
+}
+
+function mostrarModalSelectorJornada() {
+    const modal = document.getElementById('modal-selector-jornada');
+    if (!modal) {
+        crearModalSelectorJornada();
+    }
+    
+    cargarJornadas().then(() => {
+        const tbody = document.getElementById('tabla-jornadas-selector');
+        tbody.innerHTML = jornadas.map(jornada => `
+            <tr>
+                <td>${jornada.nombre}</td>
+                <td>${jornada.estado}</td>
+                <td>${jornada.fechaJornada ? new Date(jornada.fechaJornada).toLocaleDateString('es-ES') : 'Sin fecha'}</td>
+                <td>
+                    <button class="btn btn-sm btn-success" onclick="seleccionarJornadaModal(${jornada.id})">
+                        <i class="fas fa-check"></i> Seleccionar
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+        
+        const modalInstance = new bootstrap.Modal(document.getElementById('modal-selector-jornada'));
+        modalInstance.show();
+    });
+}
+
+function crearModalSelectorJornada() {
+    const modalHTML = `
+        <div class="modal fade" id="modal-selector-jornada" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Seleccionar Jornada</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-jornadas-selector">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" onclick="desasignarJornadaModal()">
+                            <i class="fas fa-times"></i> Desasignar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+async function seleccionarJornadaModal(jornadaId) {
+    if (concursanteParaAsignarJornada) {
+        try {
+            await apiManager.post(`/api/concursantes/${concursanteParaAsignarJornada}/asignar-jornada/${jornadaId}`);
+            await cargarConcursantes();
+            mostrarExito('Jornada asignada correctamente');
+        } catch (error) {
+            mostrarError('Error al asignar jornada: ' + error.message);
+        }
+        concursanteParaAsignarJornada = null;
+    }
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-jornada'));
+    modal.hide();
+}
+
+async function desasignarJornadaModal() {
+    if (concursanteParaAsignarJornada) {
+        try {
+            await apiManager.delete(`/api/concursantes/${concursanteParaAsignarJornada}/desasignar-jornada`);
+            await cargarConcursantes();
+            mostrarExito('Jornada desasignada correctamente');
+        } catch (error) {
+            mostrarError('Error al desasignar jornada: ' + error.message);
+        }
+        concursanteParaAsignarJornada = null;
+    }
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-jornada'));
+    modal.hide();
 } 

@@ -21,7 +21,11 @@ public class Concursante {
     @Column(name = "numero_concursante")
     private Integer numeroConcursante;
 
-    private String jornada;
+    // Relación real con Jornada
+    @ManyToOne
+    @JoinColumn(name = "jornada_id")
+    @JsonIgnoreProperties({"cuestionarios", "combos", "creacionUsuario"})
+    private Jornada jornada;
 
     @Column(name = "dia_grabacion")
     private LocalDate diaGrabacion;
@@ -76,26 +80,12 @@ public class Concursante {
     @Column(name = "orden_escaleta")
     private Integer ordenEscaleta;
 
-    // Nuevos campos para la vista de programas
-    @Column(name = "premio", precision = 10, scale = 2)
-    private BigDecimal premio; // Premio obtenido por el concursante
+    @Column(name = "premio")
+    private BigDecimal premio;
 
     @Column(name = "foto")
-    private String foto; // URL o path de la foto del concursante
+    private String foto;
 
     @Column(name = "creditos_especiales", columnDefinition = "TEXT")
-    private String creditosEspeciales; // Créditos especiales del concursante
-
-    // Método para actualizar el estado automáticamente
-    public void actualizarEstado() {
-        if (numeroPrograma != null && ordenEscaleta != null) {
-            this.estado = "PROGRAMADO";
-        } else if (duracion != null && !duracion.isEmpty()) {
-            this.estado = "EDITADO";
-        } else if (resultado != null && !resultado.isEmpty()) {
-            this.estado = "GRABADO";
-        } else {
-            this.estado = "BORRADOR";
-        }
-    }
+    private String creditosEspeciales;
 } 

@@ -8,7 +8,11 @@ import java.math.BigDecimal;
 public class ConcursanteDTO {
     private Long id;
     private Integer numeroConcursante;
-    private String jornada;
+    
+    // Relación con jornada
+    private Long jornadaId;
+    private String jornadaNombre;
+    
     private LocalDate diaGrabacion;
     private String lugar;
     private String nombre;
