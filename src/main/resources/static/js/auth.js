@@ -98,8 +98,10 @@ class AuthManager {
     }
 
     clearAuth() {
+        console.log('🧹 Limpiando autenticación completa...');
         localStorage.removeItem('token');
         localStorage.removeItem('usuario');
+        localStorage.removeItem('rol');
         this.token = null;
         this.currentUser = null;
     }

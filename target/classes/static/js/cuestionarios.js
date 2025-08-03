@@ -101,8 +101,11 @@ const CuestionariosManager = {
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
                 <td>
-                    <button class="btn btn-sm btn-danger" onclick="eliminarCuestionario(${c.id})">
-                        <i class="fas fa-trash"></i> Eliminar
+                    <button class="btn btn-sm btn-primary me-1" onclick="editarCuestionario(${c.id})" title="Editar cuestionario">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarCuestionario(${c.id})" title="Eliminar cuestionario">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </td>
             `;
@@ -435,16 +438,19 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
 // --- FIN NUEVO SISTEMA DE SELECCIÓN ---
 
 async function guardarCuestionario() {
-    let valid = true;
     let preguntasNormales = [];
     normales.forEach(nivel => {
-        const id = document.getElementById(`pregunta-${nivel}`).value;
-        if (!id) valid = false;
-        else preguntasNormales.push(Number(id));
+        const element = document.getElementById(`pregunta-${nivel}`);
+        const id = element ? element.value : '';
+        if (id) preguntasNormales.push(Number(id));
     });
-    if (!valid) {
+    
+    console.log('🔍 [FRONTEND] Preguntas seleccionadas:', preguntasNormales);
+    
+    // Cambiar validación: permitir al menos 1 pregunta en lugar de requerir todas las 4
+    if (preguntasNormales.length === 0) {
         Toastify({
-            text: 'Debes seleccionar todas las preguntas normales (niveles 1-4)',
+            text: 'Debes seleccionar al menos 1 pregunta para crear el cuestionario',
             duration: 3000,
             close: true,
             gravity: 'top',
@@ -454,10 +460,21 @@ async function guardarCuestionario() {
         return;
     }
     
-    const cuestionarioId = document.getElementById('cuestionario-id').value;
-    const tematica = document.getElementById('cuestionario-tematica').value;
-    const notasDireccion = document.getElementById('cuestionario-notas').value;
+    const cuestionarioIdElement = document.getElementById('cuestionario-id');
+    const tematicaElement = document.getElementById('cuestionario-tematica');
+    const notasElement = document.getElementById('cuestionario-notas');
+    
+    const cuestionarioId = cuestionarioIdElement ? cuestionarioIdElement.value : '';
+    const tematica = tematicaElement ? tematicaElement.value : '';
+    const notasDireccion = notasElement ? notasElement.value : '';
     const esEdicion = !!cuestionarioId;
+    
+    console.log('🔍 [FRONTEND] Datos del formulario:', { 
+        cuestionarioId, 
+        tematica, 
+        notasDireccion, 
+        esEdicion 
+    });
     
     // Validar que la temática esté gestionada si se proporciona
     if (tematica && tematica.trim() !== '') {
@@ -490,10 +507,13 @@ async function guardarCuestionario() {
         notasDireccion
     };
     
+    console.log('📤 [FRONTEND] Enviando payload:', payload);
+    
     try {
         let resp, data;
         if (esEdicion) {
             // PUT para editar
+            console.log(`📤 [FRONTEND] Enviando PUT a /api/cuestionarios/${cuestionarioId}`);
             resp = await fetch(`/api/cuestionarios/${cuestionarioId}`, {
                 method: 'PUT',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
@@ -501,14 +521,26 @@ async function guardarCuestionario() {
             });
         } else {
             // POST para crear
+            console.log('📤 [FRONTEND] Enviando POST a /api/cuestionarios/nuevo');
             resp = await fetch('/api/cuestionarios/nuevo', {
                 method: 'POST',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
         }
-        try { data = await resp.json(); } catch (e) { data = null; }
+        
+        console.log(`📥 [FRONTEND] Respuesta recibida: ${resp.status} ${resp.statusText}`);
+        
+        try { 
+            data = await resp.json(); 
+            console.log('📥 [FRONTEND] Datos recibidos:', data);
+        } catch (e) { 
+            console.error('❌ [FRONTEND] Error al parsear JSON:', e);
+            data = null; 
+        }
+        
         if (!resp.ok) throw new Error(data && data.message ? data.message : 'Error al guardar el cuestionario');
+        
         Toastify({
             text: data && data.message ? data.message : (esEdicion ? 'Cuestionario editado correctamente' : 'Cuestionario creado correctamente'),
             duration: 3000,
@@ -517,10 +549,12 @@ async function guardarCuestionario() {
             position: 'right',
             style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
         }).showToast();
+        
         const modal = bootstrap.Modal.getInstance(document.getElementById('modal-cuestionario'));
         modal.hide();
         await CuestionariosManager.cargarCuestionarios();
     } catch (error) {
+        console.error('❌ [FRONTEND] Error al guardar:', error);
         Toastify({
             text: 'Error al guardar cuestionario: ' + error.message,
             duration: 3000,
@@ -538,18 +572,25 @@ window.editarCuestionario = async function(id) {
         const resp = await fetch(`/api/cuestionarios/${id}`, { headers: authManager.getAuthHeaders() });
         if (!resp.ok) throw new Error('No se pudo cargar el cuestionario');
         const cuestionario = await resp.json();
+        
         // Precargar preguntas normales y PM en el modal
         const normalesIds = ['1LS','2NLS','3LS','4NLS'];
         const pmsIds = ['PM1','PM2','PM3'];
-        // Limpiar primero
+        
+        // Limpiar primero - con verificación de existencia
         normalesIds.forEach(nivel => {
-            document.getElementById(`pregunta-${nivel}`).value = '';
-            document.getElementById(`pregunta-${nivel}-texto`).value = '';
+            const preguntaElement = document.getElementById(`pregunta-${nivel}`);
+            const textoElement = document.getElementById(`pregunta-${nivel}-texto`);
+            if (preguntaElement) preguntaElement.value = '';
+            if (textoElement) textoElement.value = '';
         });
         pmsIds.forEach(pm => {
-            document.getElementById(`pm-${pm}`).value = '';
-            document.getElementById(`pm-${pm}-texto`).value = '';
+            const pmElement = document.getElementById(`pm-${pm}`);
+            const pmTextoElement = document.getElementById(`pm-${pm}-texto`);
+            if (pmElement) pmElement.value = '';
+            if (pmTextoElement) pmTextoElement.value = '';
         });
+        
         // Mapear preguntas por nivel
         if (cuestionario.preguntas && Array.isArray(cuestionario.preguntas)) {
             // Ordenar igual que en la tabla
@@ -559,23 +600,46 @@ window.editarCuestionario = async function(id) {
                 const nivel = (p.nivel || '').toUpperCase();
                 if (ordenNivel[nivel]) {
                     if (ordenNivel[nivel].startsWith('P')) {
-                        // PM
-                        document.getElementById(`pm-${ordenNivel[nivel]}`).value = p.id;
-                        document.getElementById(`pm-${ordenNivel[nivel]}-texto`).value = `${p.pregunta} [${p.tematica}] (${p.respuesta})`;
+                        // PM - con verificación de existencia
+                        const pmElement = document.getElementById(`pm-${ordenNivel[nivel]}`);
+                        const pmTextoElement = document.getElementById(`pm-${ordenNivel[nivel]}-texto`);
+                        if (pmElement) pmElement.value = p.id;
+                        if (pmTextoElement) pmTextoElement.value = `${p.pregunta} [${p.tematica}] (${p.respuesta})`;
                     } else {
-                        // Normal
-                        document.getElementById(`pregunta-${ordenNivel[nivel]}`).value = p.id;
-                        document.getElementById(`pregunta-${ordenNivel[nivel]}-texto`).value = `${p.pregunta} [${p.tematica}] (${p.respuesta})`;
+                        // Normal - con verificación de existencia
+                        const preguntaElement = document.getElementById(`pregunta-${ordenNivel[nivel]}`);
+                        const textoElement = document.getElementById(`pregunta-${ordenNivel[nivel]}-texto`);
+                        if (preguntaElement) preguntaElement.value = p.id;
+                        if (textoElement) textoElement.value = `${p.pregunta} [${p.tematica}] (${p.respuesta})`;
                     }
                 }
             });
         }
-        document.getElementById('cuestionario-id').value = cuestionario.id;
-        document.getElementById('modal-cuestionario-titulo').innerText = 'Editar Cuestionario';
-        const modal = new bootstrap.Modal(document.getElementById('modal-cuestionario'));
-        modal.show();
+        
+        // Asignar ID del cuestionario con verificación
+        const cuestionarioIdElement = document.getElementById('cuestionario-id');
+        if (cuestionarioIdElement) cuestionarioIdElement.value = cuestionario.id;
+        
+        // Cambiar título del modal con verificación
+        const tituloElement = document.getElementById('modal-cuestionario-titulo');
+        if (tituloElement) tituloElement.innerText = 'Editar Cuestionario';
+        
+        // Mostrar modal
+        const modalElement = document.getElementById('modal-cuestionario');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
     } catch (e) {
-        Toastify({ text: 'Error al cargar cuestionario: ' + e.message, duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
+        console.error('Error en editarCuestionario:', e);
+        Toastify({ 
+            text: 'Error al cargar cuestionario: ' + e.message, 
+            duration: 3000, 
+            close: true, 
+            gravity: 'top', 
+            position: 'right', 
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } 
+        }).showToast();
     }
 };
 

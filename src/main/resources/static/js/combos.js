@@ -73,7 +73,12 @@ const CombosManager = {
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
                 <td>
-                    <button class="btn btn-sm btn-danger" onclick="eliminarCombo(${c.id})"><i class="fas fa-trash"></i> Eliminar</button>
+                    <button class="btn btn-sm btn-primary me-1" onclick="editarCombo(${c.id})" title="Editar combo">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarCombo(${c.id})" title="Eliminar combo">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -303,9 +308,73 @@ async function mostrarFormularioCombo() {
         if (sel) sel.value = '';
         if (texto) texto.value = '';
     });
+    
+    // Resetear título y formulario para nuevo combo
+    document.getElementById('modal-combo-titulo').textContent = 'Nuevo Combo';
+    document.getElementById('combo-id').value = '';
+    document.getElementById('combo-tipo').value = '';
+    
     // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('modal-combo'));
     modal.show();
+}
+
+async function editarCombo(id) {
+    try {
+        const response = await fetch(`/api/combos/${id}`, {
+            headers: authManager.getAuthHeaders()
+        });
+        if (!response.ok) {
+            throw new Error('Error al cargar el combo');
+        }
+        const combo = await response.json();
+        
+        // Cambiar título del modal
+        document.getElementById('modal-combo-titulo').textContent = 'Editar Combo';
+        
+        // Rellenar datos básicos
+        document.getElementById('combo-id').value = combo.id;
+        document.getElementById('combo-tipo').value = combo.tipo || '';
+        
+        // Limpiar primero todos los campos PM
+        pms.forEach(pm => {
+            const sel = document.getElementById(`pm-${pm.id}`);
+            const texto = document.getElementById(`pm-${pm.id}-texto`);
+            if (sel) sel.value = '';
+            if (texto) texto.value = '';
+        });
+        
+        // Rellenar preguntas multiplicadoras
+        if (combo.preguntas && Array.isArray(combo.preguntas)) {
+            combo.preguntas.forEach(pc => {
+                if (pc.slot && pc.pregunta) {
+                    const selId = `pm-${pc.slot}`;
+                    const textoId = `pm-${pc.slot}-texto`;
+                    const sel = document.getElementById(selId);
+                    const texto = document.getElementById(textoId);
+                    
+                    if (sel && texto) {
+                        sel.value = pc.pregunta.id;
+                        texto.value = `${pc.pregunta.pregunta} → ${pc.pregunta.respuesta}`;
+                    }
+                }
+            });
+        }
+        
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('modal-combo'));
+        modal.show();
+        
+    } catch (error) {
+        Toastify({
+            text: 'Error al cargar combo: ' + error.message,
+            duration: 3000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+    }
 }
 
 // Añadir eventos reactivos a los inputs del modal de búsqueda de preguntas

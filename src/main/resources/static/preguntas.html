@@ -399,6 +399,19 @@
         </div>
     </div>
 
+    <!-- Menú contextual -->
+    <div id="context-menu" class="context-menu">
+        <button class="context-menu-item" onclick="contextMenuEditar()">
+            <i class="fas fa-edit"></i>
+            Editar
+        </button>
+        <div class="context-menu-separator"></div>
+        <button class="context-menu-item danger" onclick="contextMenuBorrar()">
+            <i class="fas fa-trash"></i>
+            Borrar
+        </button>
+    </div>
+
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery (necesario para Bootstrap) -->
@@ -450,6 +463,90 @@
             }
         });
     });
+    </script>
+    <script>
+        // Variables globales para el menú contextual
+        let contextMenuVisible = false;
+        let contextSelectedId = null;
+        let contextSelectedType = null; // 'pregunta' o 'concursante'
+
+        // Función para mostrar menú contextual
+        function showContextMenu(e, id, type) {
+            e.preventDefault();
+            
+            const contextMenu = document.getElementById('context-menu');
+            contextSelectedId = id;
+            contextSelectedType = type;
+            
+            // Posicionar el menú
+            contextMenu.style.left = e.pageX + 'px';
+            contextMenu.style.top = e.pageY + 'px';
+            contextMenu.style.display = 'block';
+            contextMenuVisible = true;
+            
+            // Resaltar la fila seleccionada
+            document.querySelectorAll('.context-selected').forEach(row => {
+                row.classList.remove('context-selected');
+            });
+            
+            const targetRow = e.target.closest('tr');
+            if (targetRow) {
+                targetRow.classList.add('context-selected');
+            }
+        }
+
+        // Función para ocultar menú contextual
+        function hideContextMenu() {
+            const contextMenu = document.getElementById('context-menu');
+            contextMenu.style.display = 'none';
+            contextMenuVisible = false;
+            contextSelectedId = null;
+            contextSelectedType = null;
+            
+            // Quitar resaltado
+            document.querySelectorAll('.context-selected').forEach(row => {
+                row.classList.remove('context-selected');
+            });
+        }
+
+        // Función para editar desde menú contextual
+        function contextMenuEditar() {
+            if (contextSelectedId && contextSelectedType === 'pregunta') {
+                PreguntasManager.editarPregunta(contextSelectedId);
+            }
+            hideContextMenu();
+        }
+
+        // Función para borrar desde menú contextual
+        function contextMenuBorrar() {
+            if (contextSelectedId && contextSelectedType === 'pregunta') {
+                PreguntasManager.eliminarPregunta(contextSelectedId);
+            }
+            hideContextMenu();
+        }
+
+        // Event listeners para el menú contextual
+        document.addEventListener('click', function(e) {
+            if (contextMenuVisible && !e.target.closest('#context-menu')) {
+                hideContextMenu();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && contextMenuVisible) {
+                hideContextMenu();
+            }
+        });
+
+        // Prevenir menú contextual del navegador en la tabla
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabla = document.getElementById('tabla-preguntas');
+            if (tabla) {
+                tabla.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                });
+            }
+        });
     </script>
 </body>
 </html> 

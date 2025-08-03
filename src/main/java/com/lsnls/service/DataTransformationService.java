@@ -6,15 +6,15 @@ import org.springframework.stereotype.Service;
 public class DataTransformationService {
 
     /**
-     * Transforma texto a mayúsculas y limpia caracteres no permitidos
+     * Transforma texto y limpia caracteres no permitidos PERO PRESERVA MAYÚSCULAS/MINÚSCULAS
      */
     public String normalizarTexto(String texto) {
         if (texto == null || texto.trim().isEmpty()) {
             return texto;
         }
         
-        // Convertir a mayúsculas
-        String normalizado = texto.toUpperCase().trim();
+        // YA NO convertir a mayúsculas automáticamente
+        String normalizado = texto.trim();
         
         // Remover saltos de línea
         normalizado = normalizado.replaceAll("[\r\n]+", " ");
@@ -26,7 +26,7 @@ public class DataTransformationService {
     }
 
     /**
-     * Valida que el texto cumple con los requisitos de LSNOLS
+     * Valida que el texto cumple con los requisitos de LSNOLS (SIN EXIGIR MAYÚSCULAS)
      */
     public boolean esTextoValido(String texto, int maxLength) {
         if (texto == null || texto.trim().isEmpty()) {
@@ -38,10 +38,7 @@ public class DataTransformationService {
             return false;
         }
         
-        // Verificar que esté en mayúsculas
-        if (!texto.equals(texto.toUpperCase())) {
-            return false;
-        }
+        // YA NO verificar que esté en mayúsculas - permitir mayúsculas y minúsculas
         
         // Verificar que no tenga saltos de línea
         if (texto.contains("\n") || texto.contains("\r")) {
@@ -94,17 +91,17 @@ public class DataTransformationService {
         
         // Validar pregunta
         if (!esTextoValido(pregunta, 150)) {
-            result.addError("pregunta", "La pregunta no cumple con el formato requerido (máximo 150 caracteres, solo mayúsculas, sin saltos de línea)");
+            result.addError("pregunta", "La pregunta no cumple con el formato requerido (máximo 150 caracteres, sin saltos de línea)");
         }
         
         // Validar respuesta
         if (!esTextoValido(respuesta, 50)) {
-            result.addError("respuesta", "La respuesta no cumple con el formato requerido (máximo 50 caracteres, solo mayúsculas, sin saltos de línea)");
+            result.addError("respuesta", "La respuesta no cumple con el formato requerido (máximo 50 caracteres, sin saltos de línea)");
         }
         
         // Validar temática
         if (!esTextoValido(tematica, 100)) {
-            result.addError("tematica", "La temática no cumple con el formato requerido (máximo 100 caracteres, solo mayúsculas, sin saltos de línea)");
+            result.addError("tematica", "La temática no cumple con el formato requerido (máximo 100 caracteres, sin saltos de línea)");
         }
         
         return result;

@@ -23,15 +23,18 @@ DROP TABLE IF EXISTS jornadas_cuestionarios;
 DROP TABLE IF EXISTS jornadas_combos;
 DROP TABLE IF EXISTS cuestionarios_preguntas;
 DROP TABLE IF EXISTS combos_preguntas;
--- Luego las tablas que tienen foreign keys
+-- Luego las tablas que tienen foreign keys hacia otras entidades principales
 DROP TABLE IF EXISTS concursantes;
+-- Luego las tablas que referencian a usuarios pero también entre sí
 DROP TABLE IF EXISTS jornadas;
--- Finalmente las tablas principales
-DROP TABLE IF EXISTS cuestionarios;
 DROP TABLE IF EXISTS combos;
+DROP TABLE IF EXISTS cuestionarios;
 DROP TABLE IF EXISTS preguntas;
+-- Luego las tablas que solo referencian a usuarios
+DROP TABLE IF EXISTS tematicas;
 DROP TABLE IF EXISTS programas;
 DROP TABLE IF EXISTS configuracion_global;
+-- Finalmente usuarios
 DROP TABLE IF EXISTS usuarios;
 
 -- Crear tabla de usuarios

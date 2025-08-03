@@ -139,52 +139,62 @@ public class CuestionarioController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody CrearCuestionarioDTO dto) {
+        log.info("[ACTUALIZAR CUESTIONARIO] Inicio actualización ID: {} - DTO recibido: {}", id, dto);
         try {
             // Verificar que el cuestionario existe
             Optional<Cuestionario> cuestionarioExistente = cuestionarioService.obtenerPorId(id);
             if (cuestionarioExistente.isEmpty()) {
+                log.warn("[ACTUALIZAR CUESTIONARIO] Cuestionario no encontrado: {}", id);
                 return ResponseEntity.status(404).body("Cuestionario con ID " + id + " no encontrado");
             }
 
             Cuestionario cuestionarioActual = cuestionarioExistente.get();
+            log.info("[ACTUALIZAR CUESTIONARIO] Cuestionario encontrado: {} - Estado: {} - Preguntas actuales: {}", 
+                    cuestionarioActual.getId(), cuestionarioActual.getEstado(), 
+                    cuestionarioActual.getPreguntas() != null ? cuestionarioActual.getPreguntas().size() : 0);
 
             // Validaciones específicas de campos
             if (dto.getPreguntasNormales() == null || dto.getPreguntasNormales().isEmpty()) {
+                log.warn("[ACTUALIZAR CUESTIONARIO] No hay preguntas seleccionadas");
                 return ResponseEntity.badRequest().body("Debe seleccionar al menos una pregunta para el cuestionario");
             }
-            if (dto.getPreguntasNormales().size() != 4) {
-                return ResponseEntity.badRequest().body("Un cuestionario debe tener exactamente 4 preguntas (niveles 1LS, 2NLS, 3LS, 4NLS)");
-            }
+            // REMOVIDO: Validación de exactamente 4 preguntas - ahora permite cualquier cantidad >= 1
+            log.info("[ACTUALIZAR CUESTIONARIO] Preguntas recibidas: {} - IDs: {}", 
+                    dto.getPreguntasNormales().size(), dto.getPreguntasNormales());
 
             // Verificar permisos específicos según estado
             if (!authorizationService.canEditCuestionario(cuestionarioActual.getEstado())) {
                 String estadoDescripcion = getCuestionarioEstadoDescripcion(cuestionarioActual.getEstado());
+                log.warn("[ACTUALIZAR CUESTIONARIO] Sin permisos para editar en estado: {}", estadoDescripcion);
                 return ResponseEntity.status(403).body("No tienes permisos para editar cuestionarios en estado '" + 
                     estadoDescripcion + "'. Solo se pueden editar cuestionarios en borrador o creado.");
             }
 
-            // Verificar que no esté adjudicado o grabado si está en estado avanzado
-            if (cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.adjudicado || 
-                cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.grabado) {
-                return ResponseEntity.badRequest().body("No se puede editar un cuestionario que ya está adjudicado o grabado. Desasígnalo primero.");
-            }
-
+            // ELIMINADO: Validación que impedía editar cuestionarios adjudicados o grabados
+            
             try {
+                log.info("[ACTUALIZAR CUESTIONARIO] Llamando a servicio actualizarDesdeDTO");
                 Cuestionario actualizado = cuestionarioService.actualizarDesdeDTO(id, dto);
                 if (actualizado != null) {
+                    log.info("[ACTUALIZAR CUESTIONARIO] Actualización exitosa - ID: {} - Preguntas: {}", 
+                            actualizado.getId(), actualizado.getPreguntas().size());
                     return ResponseEntity.ok(Map.of(
                         "id", actualizado.getId(),
                         "message", "Cuestionario actualizado correctamente con " + dto.getPreguntasNormales().size() + " preguntas"
                     ));
                 } else {
+                    log.warn("[ACTUALIZAR CUESTIONARIO] Actualización fallida - cuestionario no encontrado");
                     return ResponseEntity.status(404).body("Error al actualizar: cuestionario no encontrado");
                 }
             } catch (IllegalArgumentException e) {
+                log.error("[ACTUALIZAR CUESTIONARIO] Error de validación: {}", e.getMessage());
                 return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
             }
         } catch (ObjectOptimisticLockingFailureException e) {
+            log.error("[ACTUALIZAR CUESTIONARIO] Error de concurrencia: {}", e.getMessage());
             return ResponseEntity.status(409).body("El cuestionario ha sido modificado por otro usuario. Por favor, recarga la página y vuelve a intentarlo.");
         } catch (Exception e) {
+            log.error("[ACTUALIZAR CUESTIONARIO] Error inesperado: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body("Error interno al actualizar cuestionario: " + e.getMessage());
         }
     }
@@ -529,9 +539,7 @@ public class CuestionarioController {
             if (dto.getPreguntasNormales() == null || dto.getPreguntasNormales().isEmpty()) {
                 return ResponseEntity.badRequest().body("Debe seleccionar al menos una pregunta para el cuestionario");
             }
-            if (dto.getPreguntasNormales().size() != 4) {
-                return ResponseEntity.badRequest().body("Un cuestionario debe tener exactamente 4 preguntas (niveles 1LS, 2NLS, 3LS, 4NLS)");
-            }
+            // REMOVIDO: Validación de exactamente 4 preguntas - ahora permite cualquier cantidad >= 1
 
             // Verificar permisos específicos
             if (!authorizationService.canCreateCuestionario()) {

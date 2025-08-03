@@ -405,3 +405,61 @@ textarea {
 .modal-body .mb-4:last-child {
     margin-bottom: 1rem !important;
 } 
+
+/* Menú contextual */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    min-width: 140px;
+    display: none;
+    padding: 4px 0;
+}
+
+.context-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: background-color 0.2s;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    color: #333;
+}
+
+.context-menu-item:hover {
+    background-color: #f8f9fa;
+}
+
+.context-menu-item.danger:hover {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.context-menu-item i {
+    width: 16px;
+    font-size: 12px;
+}
+
+/* Separador en el menú contextual */
+.context-menu-separator {
+    height: 1px;
+    background-color: #e9ecef;
+    margin: 4px 0;
+}
+
+/* Resaltar fila en hover y contexto */
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table tbody tr.context-selected {
+    background-color: #e3f2fd !important;
+} 

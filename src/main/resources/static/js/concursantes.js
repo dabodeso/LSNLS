@@ -61,7 +61,7 @@ function mostrarConcursantes(concursantesFiltrados = null) {
     const lista = concursantesFiltrados || concursantes;
     const tbody = document.getElementById('tabla-concursantes');
     tbody.innerHTML = lista.map(concursante => `
-        <tr data-id="${concursante.id}">
+        <tr data-id="${concursante.id}" oncontextmenu="showContextMenu(event, ${concursante.id}, 'concursante')">
             <td ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroConcursante', this)">${concursante.numeroConcursante || ''}</td>
             <td onclick="abrirSelectorJornadaParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar jornada">
                 ${concursante.jornadaNombre ? `<span class="badge bg-success">${concursante.jornadaNombre}</span>` : '<em class="text-muted">Sin asignar</em>'}
@@ -152,20 +152,45 @@ async function editarConcursante(id) {
         document.getElementById('modal-concursante-titulo').textContent = 'Editar Concursante';
         const form = document.getElementById('form-concursante');
         form.reset();
+        
+        // Campos básicos
         document.getElementById('concursante-id').value = concursanteActual.id;
+        
         // Mostrar el número de concursante existente en modo edición
         document.getElementById('numero-concursante').value = concursanteActual.numeroConcursante || '';
         document.getElementById('numero-concursante').placeholder = concursanteActual.numeroConcursante ? 
             'Número asignado: ' + concursanteActual.numeroConcursante : 'Sin número asignado';
-        document.getElementById('jornada').value = concursanteActual.jornada || '';
-        document.getElementById('dia-grabacion').value = concursanteActual.diaGrabacion || '';
+        
+        // CORREGIR: usar jornadaNombre en lugar de jornada
+        document.getElementById('jornada').value = concursanteActual.jornadaNombre || '';
+        
+        // CORREGIR: formatear fecha correctamente para input type="date"
+        if (concursanteActual.diaGrabacion) {
+            // Si viene como string "YYYY-MM-DD" o como array [año, mes, día]
+            let fechaFormateada = '';
+            if (Array.isArray(concursanteActual.diaGrabacion)) {
+                // Formato array [2024, 1, 15] -> "2024-01-15"
+                const [año, mes, día] = concursanteActual.diaGrabacion;
+                fechaFormateada = `${año}-${mes.toString().padStart(2, '0')}-${día.toString().padStart(2, '0')}`;
+            } else if (typeof concursanteActual.diaGrabacion === 'string') {
+                // Ya viene en formato correcto "YYYY-MM-DD"
+                fechaFormateada = concursanteActual.diaGrabacion;
+            }
+            document.getElementById('dia-grabacion').value = fechaFormateada;
+        }
+        
         document.getElementById('lugar-concursante').value = concursanteActual.lugar || '';
         document.getElementById('nombre-concursante').value = concursanteActual.nombre || '';
         document.getElementById('edad-concursante').value = concursanteActual.edad || '';
         document.getElementById('ocupacion').value = concursanteActual.ocupacion || '';
         document.getElementById('redes-sociales').value = concursanteActual.redesSociales || '';
-        document.getElementById('cuestionario-id').value = concursanteActual.cuestionario ? concursanteActual.cuestionario.id : '';
-        document.getElementById('combo-id').value = concursanteActual.combo ? concursanteActual.combo.id : '';
+        
+        // CORREGIR: usar cuestionarioId en lugar de cuestionario.id
+        document.getElementById('cuestionario-id').value = concursanteActual.cuestionarioId || '';
+        
+        // CORREGIR: usar comboId en lugar de combo.id
+        document.getElementById('combo-id').value = concursanteActual.comboId || '';
+        
         document.getElementById('factor-x').value = concursanteActual.factorX || '';
         document.getElementById('resultado').value = concursanteActual.resultado || '';
         document.getElementById('notas-grabacion').value = concursanteActual.notasGrabacion || '';
@@ -177,6 +202,32 @@ async function editarConcursante(id) {
         document.getElementById('valoracion-final').value = concursanteActual.valoracionFinal || '';
         document.getElementById('numero-programa').value = concursanteActual.numeroPrograma || '';
         document.getElementById('orden-escaleta').value = concursanteActual.ordenEscaleta || '';
+        
+        // AÑADIR: campos faltantes
+        // Estado (si existe el campo en el formulario)
+        const estadoElement = document.getElementById('estado');
+        if (estadoElement) {
+            estadoElement.value = concursanteActual.estado || '';
+        }
+        
+        // Premio (si existe el campo en el formulario)
+        const premioElement = document.getElementById('premio');
+        if (premioElement) {
+            premioElement.value = concursanteActual.premio || '';
+        }
+        
+        // Foto (si existe el campo en el formulario)
+        const fotoElement = document.getElementById('foto');
+        if (fotoElement) {
+            fotoElement.value = concursanteActual.foto || '';
+        }
+        
+        // Créditos especiales (si existe el campo en el formulario)
+        const creditosElement = document.getElementById('creditos-especiales');
+        if (creditosElement) {
+            creditosElement.value = concursanteActual.creditosEspeciales || '';
+        }
+        
         const modal = new bootstrap.Modal(document.getElementById('modal-concursante'));
         modal.show();
     } catch (error) {
@@ -187,13 +238,18 @@ async function editarConcursante(id) {
 // Guardar concursante con gestión de errores mejorada
 async function guardarConcursante() {
     const form = document.getElementById('form-concursante');
+    
+    // Detectar si es edición por la presencia de ID
+    const esEdicion = document.getElementById('concursante-id').value;
+    
     // Recoge todos los campos del formulario
     const datosConcursante = {
         id: document.getElementById('concursante-id').value || null,
         // Solo incluir numeroConcursante si estamos editando (id existe)
         numeroConcursante: document.getElementById('concursante-id').value ? 
             (document.getElementById('numero-concursante').value || null) : null,
-        jornada: document.getElementById('jornada').value || null,
+        // CORREGIR: mantener jornadaId original en edición, null en creación
+        jornadaId: esEdicion && concursanteActual ? concursanteActual.jornadaId : null,
         diaGrabacion: document.getElementById('dia-grabacion').value || null,
         lugar: document.getElementById('lugar-concursante').value || null,
         nombre: document.getElementById('nombre-concursante').value,
@@ -213,22 +269,43 @@ async function guardarConcursante() {
         valoracionFinal: document.getElementById('valoracion-final').value || null,
         numeroPrograma: document.getElementById('numero-programa').value || null,
         ordenEscaleta: document.getElementById('orden-escaleta').value || null,
-        estado: null // El estado se gestiona aparte
+        // CORREGIR: enviar estado del formulario
+        estado: document.getElementById('estado') ? document.getElementById('estado').value || null : null,
+        // AÑADIR: campos faltantes si existen en el formulario
+        premio: document.getElementById('premio') ? document.getElementById('premio').value || null : null,
+        foto: document.getElementById('foto') ? document.getElementById('foto').value || null : null,
+        creditosEspeciales: document.getElementById('creditos-especiales') ? document.getElementById('creditos-especiales').value || null : null
     };
 
     // Enviar como JSON usando apiManager o fetch
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/concursantes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
-            },
-            body: JSON.stringify(datosConcursante)
-        });
+        let response;
+        
+        if (esEdicion) {
+            // Editar concursante existente
+            response = await fetch(`/api/concursantes/${datosConcursante.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                },
+                body: JSON.stringify(datosConcursante)
+            });
+        } else {
+            // Crear nuevo concursante
+            response = await fetch('/api/concursantes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                },
+                body: JSON.stringify(datosConcursante)
+            });
+        }
+        
         if (response.ok) {
-            mostrarExito('Concursante guardado correctamente');
+            mostrarExito(esEdicion ? 'Concursante editado correctamente' : 'Concursante guardado correctamente');
             $('#modal-concursante').modal('hide');
             await cargarConcursantes();
         } else {

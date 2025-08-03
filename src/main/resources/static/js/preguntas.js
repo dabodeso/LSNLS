@@ -75,6 +75,7 @@ const PreguntasManager = {
         preguntasFiltradas.forEach(pregunta => {
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', pregunta.id);
+            tr.setAttribute('oncontextmenu', `showContextMenu(event, ${pregunta.id}, 'pregunta')`);
             tr.innerHTML = `
                 <td>${pregunta.id ?? ''}</td>
                 <td style="background-color: #f8f9fa; font-style: italic;">${pregunta.creacionUsuarioNombre ?? ''}</td>
@@ -89,7 +90,14 @@ const PreguntasManager = {
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'notasVerificacion', this)">${pregunta.notasVerificacion ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'notasDireccion', this)">${pregunta.notasDireccion ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'estado', this)"><span class="badge ${this.getEstadoColor(pregunta.estado)}">${pregunta.estado ?? ''}</span></td>
-                <td><button class="btn btn-sm btn-danger" onclick="PreguntasManager.eliminarPregunta(${pregunta.id})"><i class="fas fa-trash"></i></button></td>
+                <td>
+                    <button class="btn btn-sm btn-primary me-1" onclick="PreguntasManager.editarPregunta(${pregunta.id})" title="Editar pregunta">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="PreguntasManager.eliminarPregunta(${pregunta.id})" title="Eliminar pregunta">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
@@ -170,29 +178,65 @@ const PreguntasManager = {
         event.preventDefault();
         const formData = new FormData(event.target);
         const preguntaData = Object.fromEntries(formData.entries());
+        
+        // Verificar si es edición
+        const editId = event.target.dataset.editId;
+        const esEdicion = !!editId;
+        
+        console.log('💾 [GUARDAR] Iniciando guardado...', esEdicion ? 'EDICION' : 'CREACION');
+        console.log('💾 [GUARDAR] ID de edición:', editId);
+        console.log('💾 [GUARDAR] Datos del formulario inicial:', preguntaData);
+        
         // Obtener subtemas seleccionados como array
         const subtemasSelect = document.getElementById('subtemas-pregunta');
         if (subtemasSelect) {
             const subtemas = Array.from(subtemasSelect.selectedOptions).map(opt => opt.value);
             preguntaData.subtema = subtemas.join(',');
+            console.log('💾 [GUARDAR] Subtemas procesados:', subtemas, '→', preguntaData.subtema);
         }
-        // No enviar campo 'estado', el backend lo pone por defecto
+        
+        console.log('💾 [GUARDAR] Datos finales a enviar:', preguntaData);
+        
         try {
             if (!authManager.isAuthenticated()) {
                 throw new Error('Usuario no autenticado');
             }
-            const response = await fetch('/api/preguntas', {
-                method: 'POST',
-                headers: authManager.getAuthHeaders(),
-                body: JSON.stringify(preguntaData)
-            });
-            if (!response.ok) {
-                throw new Error('Error al crear la pregunta');
+            
+            let response;
+            if (esEdicion) {
+                // Editar pregunta existente
+                console.log('📤 [GUARDAR] Enviando PUT a /api/preguntas/' + editId);
+                response = await fetch(`/api/preguntas/${editId}`, {
+                    method: 'PUT',
+                    headers: authManager.getAuthHeaders(),
+                    body: JSON.stringify(preguntaData)
+                });
+            } else {
+                // Crear nueva pregunta
+                console.log('📤 [GUARDAR] Enviando POST a /api/preguntas');
+                response = await fetch('/api/preguntas', {
+                    method: 'POST',
+                    headers: authManager.getAuthHeaders(),
+                    body: JSON.stringify(preguntaData)
+                });
             }
+            
+            console.log('📥 [GUARDAR] Respuesta del servidor:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ [GUARDAR] Error del servidor:', errorText);
+                throw new Error(esEdicion ? 'Error al editar la pregunta' : 'Error al crear la pregunta');
+            }
+            
+            const resultado = await response.json();
+            console.log('✅ [GUARDAR] Pregunta guardada exitosamente:', resultado);
+            
             await this.cargarPreguntas();
             $('#modal-pregunta').modal('hide');
+            
             Toastify({
-                text: "Pregunta creada exitosamente",
+                text: esEdicion ? "Pregunta editada exitosamente" : "Pregunta creada exitosamente",
                 duration: 3000,
                 close: true,
                 gravity: "top",
@@ -201,8 +245,12 @@ const PreguntasManager = {
                     background: "linear-gradient(to right, #00b09b, #96c93d)",
                 }
             }).showToast();
+            
+            // Limpiar el dataset de edición
+            delete event.target.dataset.editId;
+            
         } catch (error) {
-            console.error('Error al crear pregunta:', error);
+            console.error('Error al procesar pregunta:', error);
             Toastify({
                 text: `Error: ${error.message}`,
                 duration: 3000,
@@ -343,75 +391,181 @@ const PreguntasManager = {
             td.innerHTML = valorOriginal;
             return;
         }
-        // Construir el objeto de actualización
+        
+        // CORRECCIÓN: Solo enviar el campo que se está editando
         const update = {};
         update[campo] = nuevoValor;
-        // Siempre enviar los tres campos obligatorios (pregunta, respuesta, tematica)
-        const preguntaActual = this.preguntas.find(p => p.id == id);
-        if (preguntaActual) {
-            if (campo !== "pregunta") update["pregunta"] = preguntaActual.pregunta ?? "";
-            if (campo !== "respuesta") update["respuesta"] = preguntaActual.respuesta ?? "";
-            if (campo !== "tematica") update["tematica"] = preguntaActual.tematica ?? "";
-        }
-        // Normalizar los campos obligatorios
-        if (update["pregunta"]) {
-            let p = update["pregunta"];
-            p = p.replace(/[\r\n]+/g, ' ');
-            p = p.replace(/\s+/g, ' ').trim();
-            if (p.length > 150) p = p.substring(0, 150).trim();
-            update["pregunta"] = p;
-        }
-        if (update["respuesta"]) {
-            let r = update["respuesta"];
-            r = r.replace(/[\r\n]+/g, ' ');
-            r = r.replace(/\s+/g, ' ').trim();
-            if (r.length > 50) r = r.substring(0, 50).trim();
-            update["respuesta"] = r;
-        }
-        if (update["tematica"]) {
-            let t = update["tematica"];
-            t = t.replace(/[\r\n]+/g, ' ');
-            t = t.replace(/\s+/g, ' ').trim();
-            if (t.length > 100) t = t.substring(0, 100).trim();
-            update["tematica"] = t;
-        }
+        
+        console.log('📤 [FRONTEND] Actualizando campo:', campo, '→', nuevoValor);
+        
         try {
+            let response;
+            
             if (campo === 'estado') {
                 // Usar endpoint especial para cambio de estado
-                const response = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`, {
+                response = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`, {
                     method: 'PUT',
                     headers: authManager.getAuthHeaders()
                 });
-                if (!response.ok) {
-                    let errorMsg = 'Error al actualizar estado';
-                    try {
-                        const data = await response.json();
-                        if (data && data.message) errorMsg = data.message;
-                        else if (typeof data === 'string') errorMsg = data;
-                    } catch {}
-                    throw new Error(errorMsg);
-                }
             } else {
-                const response = await fetch(`/api/preguntas/${id}`, {
+                response = await fetch(`/api/preguntas/${id}`, {
                     method: 'PUT',
                     headers: authManager.getAuthHeaders(),
                     body: JSON.stringify(update)
                 });
-                if (!response.ok) {
-                    let errorMsg = 'Error al actualizar';
-                    try {
-                        const data = await response.json();
-                        if (data && data.message) errorMsg = data.message;
-                        else if (typeof data === 'string') errorMsg = data;
-                    } catch {}
-                    throw new Error(errorMsg);
-                }
             }
+            
+            if (!response.ok) {
+                let errorMsg = 'Error al actualizar';
+                try {
+                    const data = await response.json();
+                    if (data && data.message) errorMsg = data.message;
+                    else if (typeof data === 'string') errorMsg = data;
+                } catch {}
+                throw new Error(errorMsg);
+            }
+            
+            console.log('✅ [FRONTEND] Campo actualizado, recargando tabla...');
+            // CAMBIO: Usar cargarPreguntas() en lugar de aplicarFiltros() para forzar recarga completa
             await this.cargarPreguntas();
+            
         } catch (e) {
+            console.error('❌ [FRONTEND] Error:', e.message);
             td.innerHTML = valorOriginal;
             Toastify({
                 text: 'Error al guardar: ' + e.message,
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+        }
+    },
+
+    async editarPregunta(id) {
+        try {
+            console.log('🔍 [EDITAR] Iniciando edición de pregunta ID:', id);
+            
+            const response = await fetch(`/api/preguntas/${id}`, {
+                headers: authManager.getAuthHeaders()
+            });
+            if (!response.ok) {
+                throw new Error('Error al cargar la pregunta');
+            }
+            const pregunta = await response.json();
+            
+            console.log('📥 [EDITAR] Pregunta cargada:', {
+                id: pregunta.id,
+                tematica: pregunta.tematica,
+                subtema: pregunta.subtema,
+                verificacion: pregunta.verificacion
+            });
+            
+            // Cambiar título del modal
+            document.getElementById('modal-pregunta-titulo').textContent = 'Editar Pregunta';
+            
+            // CARGAR TEMAS Y SUBTEMAS DINÁMICOS ANTES DE RELLENAR
+            // Asegurar que los temas estén cargados
+            if (TemasManager.temas.length === 0) {
+                console.log('🔄 [EDITAR] Cargando temas dinámicos...');
+                await TemasManager.cargarTemas();
+            }
+            if (TemasManager.subtemas.length === 0) {
+                console.log('🔄 [EDITAR] Cargando subtemas dinámicos...');
+                await TemasManager.cargarSubtemas();
+            }
+            
+            console.log('📋 [EDITAR] Temas disponibles:', TemasManager.temas);
+            console.log('📋 [EDITAR] Subtemas disponibles:', TemasManager.subtemas);
+            
+            // Rellenar select de temática con temas dinámicos
+            const tematicas = TemasManager.temas.length > 0 ? TemasManager.temas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
+            const selectTematica = document.getElementById('tematica-pregunta');
+            if (selectTematica) {
+                console.log('🎯 [EDITAR] Llenando select de temática...');
+                selectTematica.innerHTML = '';
+                
+                // Añadir opción vacía por defecto
+                const optionVacia = document.createElement('option');
+                optionVacia.value = '';
+                optionVacia.textContent = 'Seleccionar temática';
+                selectTematica.appendChild(optionVacia);
+                
+                // Añadir todas las temáticas
+                tematicas.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    selectTematica.appendChild(opt);
+                });
+                
+                console.log('📝 [EDITAR] Opciones creadas. Intentando seleccionar:', pregunta.tematica);
+                
+                // DESPUÉS de añadir todas las opciones, seleccionar la correcta
+                if (pregunta.tematica) {
+                    selectTematica.value = pregunta.tematica;
+                    console.log('✅ [EDITAR] Valor asignado. Select.value ahora es:', selectTematica.value);
+                    console.log('🔍 [EDITAR] ¿Coincide?', selectTematica.value === pregunta.tematica);
+                } else {
+                    console.log('⚠️ [EDITAR] pregunta.tematica está vacía o es null');
+                }
+            } else {
+                console.error('❌ [EDITAR] No se encontró el elemento tematica-pregunta');
+            }
+            
+            // Rellenar select de subtemas con subtemas dinámicos
+            const subtemas = TemasManager.subtemas.length > 0 ? TemasManager.subtemas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
+            const selectSubtemas = document.getElementById('subtemas-pregunta');
+            if (selectSubtemas) {
+                console.log('🎯 [EDITAR] Llenando select de subtemas...');
+                selectSubtemas.innerHTML = '';
+                
+                // Obtener subtemas seleccionados de la pregunta
+                const subtemasSeleccionados = pregunta.subtema ? 
+                    pregunta.subtema.split(',').map(s => s.trim()) : [];
+                
+                console.log('📝 [EDITAR] Subtemas a seleccionar:', subtemasSeleccionados);
+                
+                subtemas.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    selectSubtemas.appendChild(opt);
+                });
+                
+                // DESPUÉS de añadir todas las opciones, seleccionar las correctas
+                if (subtemasSeleccionados.length > 0) {
+                    Array.from(selectSubtemas.options).forEach(option => {
+                        option.selected = subtemasSeleccionados.includes(option.value);
+                    });
+                    console.log('✅ [EDITAR] Subtemas seleccionados');
+                }
+            }
+            
+            // Rellenar el resto del formulario con los datos de la pregunta
+            document.getElementById('nivel-pregunta').value = pregunta.nivel || '';
+            document.getElementById('pregunta-pregunta').value = pregunta.pregunta || '';
+            document.getElementById('respuesta-pregunta').value = pregunta.respuesta || '';
+            document.getElementById('datos-extra-pregunta').value = pregunta.datosExtra || '';
+            document.getElementById('fuentes-pregunta').value = pregunta.fuentes || '';
+            document.getElementById('notas-verificacion-pregunta').value = pregunta.notasVerificacion || '';
+            document.getElementById('notas-direccion-pregunta').value = pregunta.notasDireccion || '';
+            
+            console.log('📝 [EDITAR] Formulario rellenado. Verificación original:', pregunta.verificacion);
+            
+            // Guardar el ID para la edición
+            document.getElementById('formCrearPregunta').dataset.editId = id;
+            
+            // Mostrar el modal
+            $('#modal-pregunta').modal('show');
+            
+            console.log('✅ [EDITAR] Modal abierto');
+            
+        } catch (error) {
+            console.error('❌ [EDITAR] Error:', error);
+            Toastify({
+                text: 'Error al cargar pregunta: ' + error.message,
                 duration: 3000,
                 close: true,
                 gravity: 'top',
@@ -552,6 +706,14 @@ window.mostrarFormularioPregunta = function() {
     // Si hay un modal de Bootstrap para crear pregunta, mostrarlo
     const modal = document.getElementById('modal-pregunta');
     if (modal && typeof $ !== 'undefined') {
+        // Resetear título para nueva pregunta
+        document.getElementById('modal-pregunta-titulo').textContent = 'Nueva Pregunta';
+        
+        // Limpiar formulario
+        const form = document.getElementById('formCrearPregunta');
+        form.reset();
+        delete form.dataset.editId;
+        
         // Rellenar select de temática con temas dinámicos
         const tematicas = TemasManager.temas.length > 0 ? TemasManager.temas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
         const selectTematica = document.getElementById('tematica-pregunta');

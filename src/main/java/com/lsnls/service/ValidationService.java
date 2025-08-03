@@ -143,52 +143,19 @@ public class ValidationService {
     public ValidationResult validarIntegridadCuestionario(Cuestionario cuestionario) {
         ValidationResult result = new ValidationResult();
         
-        // Validar que tenga exactamente 4 preguntas
+        // Validar que tenga al menos 1 pregunta (cambio: antes requería exactamente 4)
         if (cuestionario.getPreguntas() != null) {
             int totalPreguntas = cuestionario.getPreguntas().size();
-            if (totalPreguntas != 4) {
-                result.addError("Un cuestionario debe tener exactamente 4 preguntas, actual: " + totalPreguntas);
+            if (totalPreguntas < 1) {
+                result.addError("Un cuestionario debe tener al menos 1 pregunta, actual: " + totalPreguntas);
             }
             
-            // Validar que las preguntas sean de niveles 1-4
-            boolean[] nivelesPresentes = new boolean[4]; // _1LS, _2NLS, _3LS, _4NLS
+            // Validar que las preguntas sean de niveles 1-4 (sin requerir duplicados)
             for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {
                 String nivel = pc.getPregunta().getNivel().name();
-                switch (nivel) {
-                    case "_1LS":
-                        if (nivelesPresentes[0]) {
-                            result.addError("Duplicate nivel _1LS en cuestionario");
-                        }
-                        nivelesPresentes[0] = true;
-                        break;
-                    case "_2NLS":
-                        if (nivelesPresentes[1]) {
-                            result.addError("Duplicate nivel _2NLS en cuestionario");
-                        }
-                        nivelesPresentes[1] = true;
-                        break;
-                    case "_3LS":
-                        if (nivelesPresentes[2]) {
-                            result.addError("Duplicate nivel _3LS en cuestionario");
-                        }
-                        nivelesPresentes[2] = true;
-                        break;
-                    case "_4NLS":
-                        if (nivelesPresentes[3]) {
-                            result.addError("Duplicate nivel _4NLS en cuestionario");
-                        }
-                        nivelesPresentes[3] = true;
-                        break;
-                    default:
-                        result.addError("Nivel inválido para cuestionario: " + nivel + ". Solo se permiten niveles 1-4");
-                }
-            }
-            
-            // Validar que todos los niveles estén presentes
-            String[] nombreNiveles = {"_1LS", "_2NLS", "_3LS", "_4NLS"};
-            for (int i = 0; i < 4; i++) {
-                if (!nivelesPresentes[i]) {
-                    result.addError("Falta pregunta de nivel " + nombreNiveles[i]);
+                if (!nivel.matches("_[1-4](LS|NLS)")) {
+                    result.addError("Pregunta con nivel inválido para cuestionario: " + nivel + 
+                                  ". Solo se permiten niveles _1LS, _2NLS, _3LS, _4NLS");
                 }
             }
         }

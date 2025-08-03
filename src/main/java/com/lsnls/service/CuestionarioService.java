@@ -434,27 +434,39 @@ public class CuestionarioService {
      */
     @Transactional
     public boolean verificarYReservarPreguntasAtomico(List<Long> preguntaIds) {
+        System.out.println("🔍 [SERVICIO] Verificando y reservando preguntas: " + preguntaIds);
+        
+        // Verificar que la lista no sea nula
+        if (preguntaIds == null || preguntaIds.isEmpty()) {
+            System.out.println("⚠️ [SERVICIO] Lista de preguntas vacía o nula");
+            return true; // No hay nada que reservar
+        }
+        
         // PASO 1: Verificar que todas las preguntas existen y están en estado correcto
         // Usar una sola query para obtener todas las preguntas
         List<Pregunta> preguntas = preguntaRepository.findAllById(preguntaIds);
         
         if (preguntas.size() != preguntaIds.size()) {
+            System.out.println("❌ [SERVICIO] No se encontraron todas las preguntas. Solicitadas: " + preguntaIds.size() + ", Encontradas: " + preguntas.size());
             throw new IllegalArgumentException("Una o más preguntas no fueron encontradas");
         }
         
         // Verificar el estado de cada pregunta
         for (Pregunta pregunta : preguntas) {
             if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
+                System.out.println("❌ [SERVICIO] Pregunta no aprobada: " + pregunta.getId() + " - Estado: " + pregunta.getEstado());
                 throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está aprobada (estado: " + pregunta.getEstado() + ")");
             }
             
             if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
+                System.out.println("❌ [SERVICIO] Pregunta no disponible: " + pregunta.getId() + " - Estado: " + pregunta.getEstadoDisponibilidad());
                 throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
             }
             
             // Verificar que sea pregunta de nivel 1-4 para cuestionarios
             if (pregunta.getNivel().name().startsWith("_5")) {
+                System.out.println("❌ [SERVICIO] Pregunta de nivel incorrecto: " + pregunta.getId() + " - Nivel: " + pregunta.getNivel());
                 throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " es de nivel 5 y debe ir en combos, no en cuestionarios");
             }
         }
@@ -466,6 +478,7 @@ public class CuestionarioService {
             .reduce((a, b) -> a + "," + b)
             .orElse("");
             
+        System.out.println("🔄 [SERVICIO] Ejecutando update para reservar preguntas: " + preguntaIdsStr);
         int preguntasReservadas = entityManager.createNativeQuery(
             "UPDATE preguntas SET estado_disponibilidad = 'usada' " +
             "WHERE id IN (" + preguntaIdsStr + ") " +
@@ -475,11 +488,13 @@ public class CuestionarioService {
         
         // PASO 3: Verificar que se reservaron TODAS las preguntas
         if (preguntasReservadas != preguntaIds.size()) {
+            System.out.println("❌ [SERVICIO] No se pudieron reservar todas las preguntas. Solicitadas: " + preguntaIds.size() + ", Reservadas: " + preguntasReservadas);
             // Rollback - alguna pregunta fue tomada por otro usuario
             throw new IllegalStateException("Conflicto de concurrencia: " + (preguntaIds.size() - preguntasReservadas) + 
                 " pregunta(s) fueron reservadas por otro usuario. Por favor, verifica la disponibilidad e intenta nuevamente.");
         }
         
+        System.out.println("✅ [SERVICIO] Preguntas reservadas correctamente: " + preguntasReservadas);
         return true;
     }
 
@@ -549,20 +564,30 @@ public class CuestionarioService {
     }
 
     public Cuestionario actualizarDesdeDTO(Long id, CrearCuestionarioDTO dto) {
+        System.out.println("🔍 [SERVICIO] Inicio actualizarDesdeDTO - ID: " + id);
+        System.out.println("🔍 [SERVICIO] DTO recibido: " + dto);
+        System.out.println("🔍 [SERVICIO] Preguntas recibidas: " + (dto.getPreguntasNormales() != null ? dto.getPreguntasNormales().size() : 0));
+        
         Optional<Cuestionario> optCuestionario = cuestionarioRepository.findById(id);
         if (optCuestionario.isEmpty()) {
+            System.out.println("❌ [SERVICIO] Cuestionario no encontrado: " + id);
             throw new IllegalArgumentException("Cuestionario no encontrado");
         }
         Cuestionario cuestionario = optCuestionario.get();
-
+        System.out.println("✅ [SERVICIO] Cuestionario encontrado: " + cuestionario.getId() + " - Estado: " + cuestionario.getEstado());
+        
         // PASO 1: VERIFICACIÓN Y RESERVA ATÓMICA de las nuevas preguntas
         try {
+            System.out.println("🔄 [SERVICIO] Verificando y reservando preguntas nuevas...");
             verificarYReservarPreguntasAtomico(dto.getPreguntasNormales());
+            System.out.println("✅ [SERVICIO] Preguntas nuevas verificadas y reservadas");
         } catch (IllegalStateException e) {
             // Error de concurrencia - mensaje específico
+            System.out.println("❌ [SERVICIO] Error de concurrencia: " + e.getMessage());
             throw new IllegalArgumentException("Error de concurrencia al reservar preguntas: " + e.getMessage());
         } catch (IllegalArgumentException e) {
             // Error de validación - reenviar tal como está
+            System.out.println("❌ [SERVICIO] Error de validación: " + e.getMessage());
             throw e;
         }
 
@@ -574,14 +599,18 @@ public class CuestionarioService {
             preguntaCuestionarioRepository.delete(pc);
         }
         cuestionario.getPreguntas().clear();
+        System.out.println("🔄 [SERVICIO] Preguntas actuales liberadas: " + preguntasALiberar.size());
         
         // Liberar preguntas anteriores atómicamente
         if (!preguntasALiberar.isEmpty()) {
+            System.out.println("🔄 [SERVICIO] Liberando preguntas anteriores: " + preguntasALiberar);
             liberarPreguntasAtomico(preguntasALiberar);
+            System.out.println("✅ [SERVICIO] Preguntas anteriores liberadas");
         }
 
         // PASO 3: Crear las nuevas relaciones pregunta-cuestionario
         try {
+            System.out.println("🔄 [SERVICIO] Creando nuevas relaciones pregunta-cuestionario...");
             for (Long idPregunta : dto.getPreguntasNormales()) {
                 Pregunta pregunta = preguntaRepository.findById(idPregunta)
                     .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + idPregunta));
@@ -595,11 +624,22 @@ public class CuestionarioService {
                 pc.setCuestionario(cuestionario);
                 pc.setFactorMultiplicacion(1);
                 preguntaCuestionarioRepository.save(pc);
+                System.out.println("✅ [SERVICIO] Relación creada para pregunta: " + idPregunta);
                 // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasAtomico()
             }
-            return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);
+            
+            // Actualizar otros campos del cuestionario
+            cuestionario.setTematica(dto.getTematica());
+            cuestionario.setNotasDireccion(dto.getNotasDireccion());
+            cuestionarioRepository.save(cuestionario);
+            
+            Cuestionario resultado = cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);
+            System.out.println("✅ [SERVICIO] Cuestionario actualizado: " + resultado.getId() + " - Preguntas: " + 
+                (resultado.getPreguntas() != null ? resultado.getPreguntas().size() : 0));
+            return resultado;
         } catch (Exception e) {
             // En caso de error, liberar las preguntas nuevas reservadas
+            System.out.println("❌ [SERVICIO] Error al actualizar relaciones: " + e.getMessage());
             liberarPreguntasAtomico(dto.getPreguntasNormales());
             throw new RuntimeException("Error al actualizar relaciones pregunta-cuestionario: " + e.getMessage());
         }

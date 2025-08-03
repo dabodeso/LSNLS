@@ -100,36 +100,88 @@ public class PreguntaService {
     }
 
     public Pregunta actualizar(Long id, Pregunta pregunta) {
+        System.out.println("🔍 [BACKEND] Iniciando actualización de pregunta ID: " + id);
+        System.out.println("🔍 [BACKEND] Datos recibidos - tematica: " + pregunta.getTematica() + ", verificacion: " + pregunta.getVerificacion());
+        System.out.println("🔍 [BACKEND] notasVerificacion recibidas: '" + pregunta.getNotasVerificacion() + "'");
+        
         if (preguntaRepository.existsById(id)) {
-            // Transformar datos solo si están presentes
-            if (pregunta.getPregunta() != null) {
+            // Obtener pregunta existente PRIMERO
+            Pregunta preguntaExistente = preguntaRepository.findById(id).orElse(null);
+            if (preguntaExistente == null) {
+                return null;
+            }
+            
+            System.out.println("📥 [BACKEND] Pregunta existente - tematica: " + preguntaExistente.getTematica() + ", verificacion: " + preguntaExistente.getVerificacion());
+            System.out.println("📥 [BACKEND] notasVerificacion existentes: '" + preguntaExistente.getNotasVerificacion() + "'");
+            
+            // IMPORTANTE: Solo transformar y actualizar los campos que REALMENTE se enviaron (no son null)
+            // Copiar todos los valores existentes al objeto a guardar
+            pregunta.setId(id);
+            pregunta.setVersion(preguntaExistente.getVersion());
+            pregunta.setCreacionUsuario(preguntaExistente.getCreacionUsuario());
+            pregunta.setFechaCreacion(preguntaExistente.getFechaCreacion());
+            pregunta.setVerificacionUsuario(preguntaExistente.getVerificacionUsuario());
+            pregunta.setFechaVerificacion(preguntaExistente.getFechaVerificacion());
+            pregunta.setEstado(preguntaExistente.getEstado());
+            pregunta.setEstadoDisponibilidad(preguntaExistente.getEstadoDisponibilidad());
+            pregunta.setFactor(preguntaExistente.getFactor());
+            pregunta.setNotas(preguntaExistente.getNotas());
+            
+            // Solo actualizar campos específicos si vienen en la petición
+            if (pregunta.getPregunta() == null) {
+                pregunta.setPregunta(preguntaExistente.getPregunta());
+            } else {
                 pregunta.setPregunta(dataTransformationService.normalizarPregunta(pregunta.getPregunta()));
             }
-            if (pregunta.getRespuesta() != null) {
+            
+            if (pregunta.getRespuesta() == null) {
+                pregunta.setRespuesta(preguntaExistente.getRespuesta());
+            } else {
                 pregunta.setRespuesta(dataTransformationService.normalizarRespuesta(pregunta.getRespuesta()));
             }
-            if (pregunta.getTematica() != null) {
+            
+            if (pregunta.getTematica() == null) {
+                pregunta.setTematica(preguntaExistente.getTematica());
+            } else {
                 pregunta.setTematica(dataTransformationService.normalizarTematica(pregunta.getTematica()));
             }
             
-            // Obtener pregunta existente para validación completa y manejo de verificacion
-            Pregunta preguntaExistente = preguntaRepository.findById(id).orElse(null);
-            if (preguntaExistente != null) {
-                String preguntaFinal = pregunta.getPregunta() != null ? pregunta.getPregunta() : preguntaExistente.getPregunta();
-                String respuestaFinal = pregunta.getRespuesta() != null ? pregunta.getRespuesta() : preguntaExistente.getRespuesta();
-                String tematicaFinal = pregunta.getTematica() != null ? pregunta.getTematica() : preguntaExistente.getTematica();
+            if (pregunta.getSubtema() == null) {
+                pregunta.setSubtema(preguntaExistente.getSubtema());
+            }
+            
+            if (pregunta.getNivel() == null) {
+                pregunta.setNivel(preguntaExistente.getNivel());
+            }
+            
+            if (pregunta.getDatosExtra() == null) {
+                pregunta.setDatosExtra(preguntaExistente.getDatosExtra());
+            }
+            
+            if (pregunta.getFuentes() == null) {
+                pregunta.setFuentes(preguntaExistente.getFuentes());
+            }
+            
+            if (pregunta.getNotasDireccion() == null) {
+                pregunta.setNotasDireccion(preguntaExistente.getNotasDireccion());
+            }
+            
+            // Manejar verificacion SOLO si se modificó notasVerificacion
+            if (pregunta.getNotasVerificacion() != null && 
+                !pregunta.getNotasVerificacion().equals(preguntaExistente.getNotasVerificacion())) {
                 
-                // Validar datos combinados
-                DataTransformationService.ValidationResult validation = 
-                    dataTransformationService.validarPreguntaCompleta(preguntaFinal, respuestaFinal, tematicaFinal);
+                System.out.println("🔄 [BACKEND] notasVerificacion ha cambiado, evaluando si actualizar verificacion...");
                 
-                if (!validation.isValid()) {
-                    throw new IllegalArgumentException("Datos no válidos: " + validation.getErrorsAsString());
-                }
+                String nuevasNotas = pregunta.getNotasVerificacion().trim();
+                String notasExistentes = preguntaExistente.getNotasVerificacion() != null ? 
+                    preguntaExistente.getNotasVerificacion().trim() : "";
                 
-                // Manejar actualización del campo verificacion cuando se modifica notasVerificacion
-                if (pregunta.getNotasVerificacion() != null && 
-                    !pregunta.getNotasVerificacion().equals(preguntaExistente.getNotasVerificacion())) {
+                System.out.println("🔍 [BACKEND] Nuevas notas (trim): '" + nuevasNotas + "'");
+                System.out.println("🔍 [BACKEND] Notas existentes (trim): '" + notasExistentes + "'");
+                
+                // Solo proceder si las nuevas notas no están vacías Y son diferentes de las existentes
+                if (!nuevasNotas.isEmpty() && !nuevasNotas.equals(notasExistentes)) {
+                    System.out.println("✅ [BACKEND] Condiciones cumplidas, actualizando verificacion...");
                     
                     // Obtener el usuario actual del contexto de seguridad
                     String nombreUsuario = null;
@@ -140,7 +192,6 @@ public class PreguntaService {
                             nombreUsuario = auth.getName();
                         }
                     } catch (Exception e) {
-                        // Si no se puede obtener el usuario, usar un valor por defecto
                         nombreUsuario = "Usuario";
                     }
                     
@@ -148,26 +199,42 @@ public class PreguntaService {
                         String verificacionActual = preguntaExistente.getVerificacion();
                         
                         if (verificacionActual == null || verificacionActual.trim().isEmpty()) {
-                            // Si no hay verificacion previa, usar solo el nombre del usuario actual
                             pregunta.setVerificacion(nombreUsuario);
+                            System.out.println("🆕 [BACKEND] Nueva verificacion: " + nombreUsuario);
                         } else {
-                            // Si ya hay verificacion previa, agregar el nuevo usuario si no está ya incluido
                             if (!verificacionActual.contains(nombreUsuario)) {
                                 pregunta.setVerificacion(verificacionActual + ", " + nombreUsuario);
+                                System.out.println("📝 [BACKEND] Verificacion actualizada: " + pregunta.getVerificacion());
                             } else {
-                                // Si ya está incluido, mantener la verificacion actual
                                 pregunta.setVerificacion(verificacionActual);
+                                System.out.println("🔄 [BACKEND] Usuario ya incluido, manteniendo: " + verificacionActual);
                             }
                         }
-                    } else if (pregunta.getNotasVerificacion() != null) {
-                        // Si se está actualizando notasVerificacion pero no hay usuario, mantener la verificacion existente
-                        pregunta.setVerificacion(preguntaExistente.getVerificacion());
                     }
+                } else {
+                    pregunta.setVerificacion(preguntaExistente.getVerificacion());
+                    System.out.println("⏸️ [BACKEND] No se cumplieron condiciones, manteniendo verificacion: " + preguntaExistente.getVerificacion());
                 }
+            } else {
+                // Si notasVerificacion no se está modificando O viene null, mantener verificacion existente
+                if (pregunta.getNotasVerificacion() == null) {
+                    pregunta.setNotasVerificacion(preguntaExistente.getNotasVerificacion());
+                }
+                pregunta.setVerificacion(preguntaExistente.getVerificacion());
+                System.out.println("🔒 [BACKEND] notasVerificacion no cambió, manteniendo verificacion: " + preguntaExistente.getVerificacion());
             }
             
-            pregunta.setId(id);
-            return preguntaRepository.save(pregunta);
+            // Validar datos finales
+            DataTransformationService.ValidationResult validation = 
+                dataTransformationService.validarPreguntaCompleta(pregunta.getPregunta(), pregunta.getRespuesta(), pregunta.getTematica());
+            
+            if (!validation.isValid()) {
+                throw new IllegalArgumentException("Datos no válidos: " + validation.getErrorsAsString());
+            }
+            
+            Pregunta resultado = preguntaRepository.save(pregunta);
+            System.out.println("💾 [BACKEND] Pregunta guardada - ID: " + resultado.getId() + ", tematica: " + resultado.getTematica() + ", verificacion: " + resultado.getVerificacion());
+            return resultado;
         }
         return null;
     }

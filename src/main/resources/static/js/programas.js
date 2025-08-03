@@ -149,6 +149,9 @@ function mostrarProgramas() {
                             </div>
                         </div>
                         <div class="programa-info-item">
+                            <button class="btn btn-sm btn-primary me-1" onclick="editarPrograma(${programa.id})" title="Editar programa">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
                             <button class="btn btn-sm btn-success" onclick="mostrarConcursantesDisponibles(${programa.id})" title="Añadir concursante">
                                 <i class="fas fa-user-plus"></i> Añadir
                             </button>
@@ -778,6 +781,21 @@ async function quitarConcursanteDePrograma(concursanteId, event) {
         mostrarMensaje('Concursante quitado del programa correctamente', 'success');
     } catch (error) {
         mostrarError('Error al quitar concursante: ' + error.message);
+    }
+}
+
+async function editarPrograma(programaId) {
+    try {
+        const programa = await apiManager.get(`/api/programas/${programaId}`);
+        document.getElementById('programa-id').value = programa.id;
+        document.getElementById('temporada-programa').value = programa.temporada;
+        document.getElementById('fecha-emision').value = programa.fechaEmision;
+        document.getElementById('modal-programa-titulo').textContent = 'Editar Programa';
+
+        const modal = new bootstrap.Modal(document.getElementById('modal-programa'));
+        modal.show();
+    } catch (error) {
+        mostrarError('Error al cargar datos del programa para editar: ' + error.message);
     }
 }
 
