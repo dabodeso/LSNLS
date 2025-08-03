@@ -50,9 +50,7 @@ public class PreguntaController {
         try {
             List<PreguntaDTO> preguntas = preguntaService.obtenerTodasDTO();
             log.info("[PREGUNTAS] Total encontradas: {}", preguntas.size());
-            for (PreguntaDTO p : preguntas) {
-                log.info("[PREGUNTA] id={}, tematica={}, subtema={}", p.getId(), p.getTematica(), p.getSubtema());
-            }
+            // Eliminar el log de cada pregunta individual para reducir ruido
             return ResponseEntity.ok(preguntas);
         } catch (Exception e) {
             log.error("[ERROR] Al serializar preguntas: {}", e.getMessage(), e);
@@ -150,46 +148,56 @@ public class PreguntaController {
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody PreguntaDTO dto) {
         try {
-            // Verificar que la pregunta existe
+            log.info("[ACTUALIZAR] Iniciando actualización de pregunta ID: {}", id);
+            log.info("[ACTUALIZAR] Datos recibidos: {}", dto);
+            
             Optional<Pregunta> preguntaExistente = preguntaService.obtenerPorId(id);
             if (preguntaExistente.isEmpty()) {
-                return ResponseEntity.status(404).body("Pregunta con ID " + id + " no encontrada");
+                log.warn("[ACTUALIZAR] Pregunta no encontrada con ID: {}", id);
+                return ResponseEntity.notFound().build();
             }
-
-            Pregunta preguntaActual = preguntaExistente.get();
-
-            // Verificar permisos específicos según estado
-            if (!authService.canEditPregunta(preguntaActual.getEstado())) {
-                String estadoDescripcion = getEstadoDescripcion(preguntaActual.getEstado());
-                return ResponseEntity.status(403).body("No tienes permisos para editar preguntas en estado '" + 
-                    estadoDescripcion + "'. Tu rol actual solo permite editar preguntas en borrador o para verificar.");
+            
+            Pregunta pregunta = preguntaExistente.get();
+            log.info("[ACTUALIZAR] Estado actual: {}, Estado solicitado: {}", pregunta.getEstado(), dto.getEstado());
+            
+            // Verificar permisos para editar según el estado
+            if (!authService.canEditPregunta(pregunta.getEstado())) {
+                log.warn("[ACTUALIZAR] Permiso denegado para editar pregunta en estado: {}", pregunta.getEstado());
+                String estadoDescripcion = getEstadoDescripcion(pregunta.getEstado());
+                return ResponseEntity.status(403).body("No tienes permisos para editar preguntas en estado '" + estadoDescripcion + "'. Tu rol actual no permite esta operación.");
             }
-
-            // Validar campos si se proporcionan
-            if (dto.getTematica() != null && dto.getTematica().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("El campo 'temática' no puede estar vacío");
+            
+            // Si se está cambiando el estado, verificar permisos específicos
+            if (dto.getEstado() != null && !dto.getEstado().equals(pregunta.getEstado().toString())) {
+                log.info("[ACTUALIZAR] Detectado cambio de estado: {} → {}", pregunta.getEstado(), dto.getEstado());
+                
+                try {
+                    Pregunta.EstadoPregunta nuevoEstado = Pregunta.EstadoPregunta.valueOf(dto.getEstado());
+                    if (!authService.canChangeEstadoPregunta(pregunta.getEstado(), nuevoEstado)) {
+                        log.warn("[ACTUALIZAR] Permiso denegado para cambiar estado a: {}", nuevoEstado);
+                        String estadoDescripcion = getEstadoDescripcion(nuevoEstado);
+                        return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado a '" + estadoDescripcion + "'. Tu rol actual no permite esta transición de estado.");
+                    }
+                } catch (IllegalArgumentException e) {
+                    log.error("[ACTUALIZAR] Estado inválido: {}", dto.getEstado());
+                    return ResponseEntity.badRequest().body("Estado inválido: " + dto.getEstado());
+                }
             }
-            if (dto.getPregunta() != null && dto.getPregunta().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("El campo 'pregunta' no puede estar vacío");
-            }
-            if (dto.getRespuesta() != null && dto.getRespuesta().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("El campo 'respuesta' no puede estar vacío");
-            }
-
-            try {
-                Pregunta preguntaActualizada = preguntaService.actualizarDesdeDTO(id, dto);
-                return preguntaActualizada != null ?
-                        ResponseEntity.ok(preguntaActualizada) :
-                        ResponseEntity.status(404).body("Error al actualizar: pregunta no encontrada");
-            } catch (ObjectOptimisticLockingFailureException e) {
-                return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario. Por favor, recarga la página y vuelve a intentarlo.");
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
-            }
+            
+            // Actualizar la pregunta
+            Pregunta preguntaActualizada = preguntaService.actualizarDesdeDTO(id, dto);
+            log.info("[ACTUALIZAR] Pregunta actualizada exitosamente. Nuevo estado: {}", preguntaActualizada.getEstado());
+            
+            return ResponseEntity.ok(preguntaActualizada);
+        } catch (IllegalArgumentException e) {
+            log.error("[ACTUALIZAR] Error de validación: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (ObjectOptimisticLockingFailureException e) {
-            return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario. Por favor, recarga la página y vuelve a intentarlo.");
+            log.error("[ACTUALIZAR] Error de concurrencia: {}", e.getMessage());
+            return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario mientras intentabas editarla. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al actualizar pregunta: " + e.getMessage());
+            log.error("[ACTUALIZAR] Error general: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body("Error al actualizar pregunta: " + e.getMessage());
         }
     }
 
@@ -209,17 +217,23 @@ public class PreguntaController {
     @PutMapping("/{id}/estado")
     public ResponseEntity<?> cambiarEstado(@PathVariable Long id, @RequestParam Pregunta.EstadoPregunta nuevoEstado) {
         try {
+            log.info("[CAMBIO ESTADO] Iniciando cambio de estado para pregunta ID: {}, nuevo estado: {}", id, nuevoEstado);
+            
             Optional<Pregunta> preguntaExistente = preguntaService.obtenerPorId(id);
             if (preguntaExistente.isEmpty()) {
+                log.warn("[CAMBIO ESTADO] Pregunta no encontrada con ID: {}", id);
                 return ResponseEntity.notFound().build();
             }
 
             Pregunta pregunta = preguntaExistente.get();
             Pregunta.EstadoPregunta estadoActual = pregunta.getEstado();
+            log.info("[CAMBIO ESTADO] Estado actual: {}, Estado solicitado: {}", estadoActual, nuevoEstado);
 
             // Verificar permisos para cambiar estado
             if (!authService.canChangeEstadoPregunta(estadoActual, nuevoEstado)) {
                 String estadoDescripcion = getEstadoDescripcion(nuevoEstado);
+                log.warn("[CAMBIO ESTADO] Permiso denegado para cambiar estado a: {} - Usuario: {}", 
+                        estadoDescripcion, authService.getCurrentUser().map(u -> u.getNombre()).orElse("desconocido"));
                 return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado a '" + estadoDescripcion + "'. Tu rol actual no permite esta transición de estado.");
             }
 
@@ -228,16 +242,21 @@ public class PreguntaController {
             
             // CAMBIO ATÓMICO DE ESTADO con verificación de concurrencia
             preguntaService.cambiarEstadoAtomico(id, estadoActual, nuevoEstado, usuarioActual);
+            log.info("[CAMBIO ESTADO] Estado cambiado exitosamente para pregunta ID: {} - {} → {}", 
+                    id, estadoActual, nuevoEstado);
             
             // Obtener la pregunta actualizada para devolverla
             Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(pregunta);
             return ResponseEntity.ok(preguntaActualizada);
         } catch (IllegalStateException e) {
             // Error de concurrencia específico del método atómico
+            log.error("[CAMBIO ESTADO] Conflicto de concurrencia: {}", e.getMessage());
             return ResponseEntity.status(409).body("Conflicto de concurrencia: " + e.getMessage());
         } catch (ObjectOptimisticLockingFailureException e) {
+            log.error("[CAMBIO ESTADO] Error de bloqueo optimista: {}", e.getMessage());
             return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario mientras intentabas cambiar su estado. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
+            log.error("[CAMBIO ESTADO] Error general: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body("Error al cambiar estado: " + e.getMessage());
         }
     }

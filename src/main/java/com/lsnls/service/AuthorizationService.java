@@ -88,34 +88,74 @@ public class AuthorizationService {
     public boolean canChangeEstadoPregunta(Pregunta.EstadoPregunta estadoActual, Pregunta.EstadoPregunta nuevoEstado) {
         return getCurrentUser()
             .map(usuario -> {
-                // El admin siempre puede cambiar estados
-                if (usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN) {
-                    return true;
-                }
-
-                switch (nuevoEstado) {
+                // El admin siempre puede cambiar estados, pero debe seguir el flujo correcto
+                boolean isAdmin = usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN;
+                boolean isGuion = usuario.getRol() == Usuario.RolUsuario.ROLE_GUION;
+                boolean isVerificacion = usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION;
+                boolean isDireccion = usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+                
+                // Verificar la transición válida según el autómata
+                boolean transicionValida = false;
+                
+                switch (estadoActual) {
                     case borrador:
+                        // Borrador -> Para Verificar (por Guion)
+                        transicionValida = nuevoEstado == Pregunta.EstadoPregunta.para_verificar && isGuion;
+                        break;
+                        
                     case para_verificar:
-                        // Niveles 2, 3 y 4 pueden establecer estos estados
-                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
-                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
-                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+                        // Para Verificar -> Verificada o Revisar (por Verificación/Guion)
+                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.verificada || 
+                                           nuevoEstado == Pregunta.EstadoPregunta.revisar) && 
+                                          (isVerificacion || isGuion);
+                        break;
+                        
+                    case revisar:
+                        // Revisar -> Para Verificar o Rechazada (por Guion)
+                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_verificar || 
+                                           nuevoEstado == Pregunta.EstadoPregunta.rechazada) && 
+                                          isGuion;
+                        break;
                         
                     case verificada:
-                    case revisar:
-                        // Solo niveles 3 y 4 pueden verificar o marcar para revisar
-                        return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
-                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+                        // Verificada -> Corregir, Rechazada o Aprobada (por Dirección)
+                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.corregir || 
+                                           nuevoEstado == Pregunta.EstadoPregunta.rechazada || 
+                                           nuevoEstado == Pregunta.EstadoPregunta.aprobada) && 
+                                          isDireccion;
+                        break;
                         
                     case corregir:
-                    case rechazada:
+                        // Corregir -> Para Aprobar o Para Verificar (por Guion)
+                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_aprobar || 
+                                           nuevoEstado == Pregunta.EstadoPregunta.para_verificar) && 
+                                          isGuion;
+                        break;
+                        
+                    case para_aprobar:
+                        // Para Aprobar -> Aprobada, Corregir o Rechazada (por Dirección)
+                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.aprobada || 
+                                           nuevoEstado == Pregunta.EstadoPregunta.corregir || 
+                                           nuevoEstado == Pregunta.EstadoPregunta.rechazada) && 
+                                          isDireccion;
+                        break;
+                        
                     case aprobada:
-                        // Solo nivel 4 puede mandar a corregir, rechazar o aprobar
-                        return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+                        // Aprobada -> Usada (automático al asignar a cuestionario)
+                        transicionValida = nuevoEstado == Pregunta.EstadoPregunta.usada;
+                        break;
+                        
+                    case usada:
+                        // Usada -> Aprobada (automático al quitar del cuestionario)
+                        transicionValida = nuevoEstado == Pregunta.EstadoPregunta.aprobada;
+                        break;
                         
                     default:
-                        return false;
+                        transicionValida = false;
                 }
+                
+                // Si es admin, puede hacer cualquier transición válida
+                return isAdmin || transicionValida;
             })
             .orElse(false);
     }

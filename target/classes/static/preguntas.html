@@ -98,8 +98,10 @@
                                 <option value="verificada">Verificada</option>
                                 <option value="revisar">Revisar</option>
                                 <option value="corregir">Corregir</option>
+                                <option value="para_aprobar">Para aprobar</option>
                                 <option value="rechazada">Rechazada</option>
                                 <option value="aprobada">Aprobada</option>
+                                <option value="usada">Usada</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -232,6 +234,12 @@
                             <div class="mb-3">
                                 <label for="notas-direccion-pregunta" class="form-label">Notas Dirección</label>
                                 <input type="text" id="notas-direccion-pregunta" name="notasDireccion" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label for="estado-pregunta" class="form-label">Estado</label>
+                                <select id="estado-pregunta" name="estado" class="form-control" required>
+                                    <!-- Las opciones se cargarán dinámicamente según el estado actual -->
+                                </select>
                             </div>
                             <button type="submit" class="btn btn-primary">Guardar</button>
                         </form>

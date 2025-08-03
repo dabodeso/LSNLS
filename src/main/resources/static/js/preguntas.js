@@ -195,6 +195,17 @@ const PreguntasManager = {
             console.log('💾 [GUARDAR] Subtemas procesados:', subtemas, '→', preguntaData.subtema);
         }
         
+        // IMPORTANTE: Verificar explícitamente el estado
+        const estadoSelect = document.getElementById('estado-pregunta');
+        if (estadoSelect) {
+            preguntaData.estado = estadoSelect.value;
+            console.log('💾 [GUARDAR] Estado seleccionado del select:', preguntaData.estado);
+        } else if (!preguntaData.estado) {
+            // Si no hay estado seleccionado (aunque debería haberlo), usar borrador por defecto
+            preguntaData.estado = 'borrador';
+            console.log('💾 [GUARDAR] Estado no especificado, usando por defecto:', preguntaData.estado);
+        }
+        
         console.log('💾 [GUARDAR] Datos finales a enviar:', preguntaData);
         
         try {
@@ -206,32 +217,56 @@ const PreguntasManager = {
             if (esEdicion) {
                 // Editar pregunta existente
                 console.log('📤 [GUARDAR] Enviando PUT a /api/preguntas/' + editId);
+                console.log('📤 [GUARDAR] Datos JSON:', JSON.stringify(preguntaData, null, 2));
+                
                 response = await fetch(`/api/preguntas/${editId}`, {
                     method: 'PUT',
-                    headers: authManager.getAuthHeaders(),
+                    headers: {
+                        ...authManager.getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(preguntaData)
                 });
+                
+                // Verificar respuesta específicamente para cambios de estado
+                if (response.ok) {
+                    const preguntaActualizada = await response.json();
+                    console.log('✅ [GUARDAR] Pregunta actualizada exitosamente:', preguntaActualizada);
+                    console.log('✅ [GUARDAR] Estado actualizado:', preguntaActualizada.estado);
+                    
+                    // Actualizar la pregunta en la lista local
+                    const preguntaIndex = this.preguntas.findIndex(p => p.id === parseInt(editId));
+                    if (preguntaIndex !== -1) {
+                        this.preguntas[preguntaIndex] = preguntaActualizada;
+                        console.log('✅ [GUARDAR] Pregunta actualizada en la lista local');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error('❌ [GUARDAR] Error del servidor:', errorText);
+                    throw new Error('Error al editar la pregunta: ' + errorText);
+                }
             } else {
                 // Crear nueva pregunta
                 console.log('📤 [GUARDAR] Enviando POST a /api/preguntas');
                 response = await fetch('/api/preguntas', {
                     method: 'POST',
-                    headers: authManager.getAuthHeaders(),
+                    headers: {
+                        ...authManager.getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(preguntaData)
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ [GUARDAR] Error del servidor:', errorText);
+                    throw new Error('Error al crear la pregunta: ' + errorText);
+                }
             }
             
             console.log('📥 [GUARDAR] Respuesta del servidor:', response.status, response.statusText);
             
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('❌ [GUARDAR] Error del servidor:', errorText);
-                throw new Error(esEdicion ? 'Error al editar la pregunta' : 'Error al crear la pregunta');
-            }
-            
-            const resultado = await response.json();
-            console.log('✅ [GUARDAR] Pregunta guardada exitosamente:', resultado);
-            
+            // Recargar las preguntas para reflejar los cambios
             await this.cargarPreguntas();
             $('#modal-pregunta').modal('hide');
             
@@ -293,7 +328,63 @@ const PreguntasManager = {
         if (estado === 'corregir') return 'bg-warning text-dark';
         if (estado === 'rechazada') return 'bg-danger text-white';
         if (estado === 'aprobada') return 'bg-success text-white';
+        if (estado === 'para_aprobar') return 'bg-info text-white';
+        if (estado === 'usada') return 'bg-dark text-white';
         return 'bg-light text-dark';
+    },
+    
+    // Determina qué estados están permitidos según el estado actual
+    getEstadosPermitidos(estadoActual) {
+        // Siempre incluir el estado actual como primera opción
+        const estados = [estadoActual];
+        
+        // Añadir estados permitidos según el autómata
+        switch (estadoActual) {
+            case 'borrador':
+                estados.push('para_verificar');
+                break;
+                
+            case 'para_verificar':
+                estados.push('verificada', 'revisar');
+                break;
+                
+            case 'revisar':
+                estados.push('para_verificar', 'rechazada');
+                break;
+                
+            case 'verificada':
+                estados.push('corregir', 'rechazada', 'aprobada');
+                break;
+                
+            case 'corregir':
+                estados.push('para_aprobar', 'para_verificar');
+                break;
+                
+            case 'para_aprobar':
+                estados.push('aprobada', 'corregir', 'rechazada');
+                break;
+                
+            case 'aprobada':
+                estados.push('usada');
+                break;
+                
+            case 'usada':
+                estados.push('aprobada');
+                break;
+                
+            case 'rechazada':
+                // Estado final, no hay transiciones salientes
+                break;
+        }
+        
+        // Si el usuario es admin, permitir todos los estados
+        const usuario = JSON.parse(localStorage.getItem('usuario'));
+        if (usuario && usuario.rol === 'ROLE_ADMIN') {
+            return ['borrador', 'para_verificar', 'verificada', 'revisar', 'corregir', 
+                   'rechazada', 'aprobada', 'para_aprobar', 'usada'];
+        }
+        
+        return estados;
     },
 
     async editarCelda(id, campo, td) {
@@ -341,10 +432,21 @@ const PreguntasManager = {
             });
         } else if (campo === 'estado') {
             input = document.createElement('select');
-            ['borrador','para_verificar','verificada','revisar','corregir','rechazada','aprobada'].forEach(opt => {
+            
+            // Obtener la pregunta actual para conocer su estado
+            const pregunta = this.preguntas.find(p => p.id === id);
+            if (!pregunta) return;
+            
+            const estadoActual = pregunta.estado;
+            const estadosPermitidos = this.getEstadosPermitidos(estadoActual);
+            
+            // Añadir solo los estados permitidos al select
+            estadosPermitidos.forEach(opt => {
                 const option = document.createElement('option');
                 option.value = opt;
-                option.text = opt === 'para_verificar' ? 'Para verificar' : opt.charAt(0).toUpperCase() + opt.slice(1);
+                option.text = opt === 'para_verificar' ? 'Para verificar' : 
+                             opt === 'para_aprobar' ? 'Para aprobar' : 
+                             opt.charAt(0).toUpperCase() + opt.slice(1);
                 if (valorOriginal === opt) option.selected = true;
                 input.appendChild(option);
             });
@@ -403,10 +505,31 @@ const PreguntasManager = {
             
             if (campo === 'estado') {
                 // Usar endpoint especial para cambio de estado
+                console.log('📤 [FRONTEND] Enviando cambio de estado a:', `/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`);
                 response = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`, {
                     method: 'PUT',
                     headers: authManager.getAuthHeaders()
                 });
+                
+                // Verificar si se actualizó correctamente
+                if (response.ok) {
+                    const preguntaActualizada = await response.json();
+                    console.log('✅ [FRONTEND] Estado actualizado:', preguntaActualizada.estado);
+                    
+                    // Actualizar el valor en la tabla con el estilo correcto
+                    const estadoActual = preguntaActualizada.estado;
+                    td.innerHTML = `<span class="badge ${this.getEstadoColor(estadoActual)}">${estadoActual}</span>`;
+                    
+                    // Actualizar la pregunta en la lista local
+                    const preguntaIndex = this.preguntas.findIndex(p => p.id === id);
+                    if (preguntaIndex !== -1) {
+                        this.preguntas[preguntaIndex].estado = estadoActual;
+                    }
+                    
+                    // Recargar la tabla completa para asegurar consistencia
+                    await this.cargarPreguntas();
+                    return;
+                }
             } else {
                 response = await fetch(`/api/preguntas/${id}`, {
                     method: 'PUT',
@@ -455,12 +578,8 @@ const PreguntasManager = {
             }
             const pregunta = await response.json();
             
-            console.log('📥 [EDITAR] Pregunta cargada:', {
-                id: pregunta.id,
-                tematica: pregunta.tematica,
-                subtema: pregunta.subtema,
-                verificacion: pregunta.verificacion
-            });
+            console.log('📥 [EDITAR] Pregunta cargada completa:', pregunta);
+            console.log('📥 [EDITAR] Estado actual de la pregunta:', pregunta.estado);
             
             // Cambiar título del modal
             document.getElementById('modal-pregunta-titulo').textContent = 'Editar Pregunta';
@@ -552,10 +671,40 @@ const PreguntasManager = {
             document.getElementById('notas-verificacion-pregunta').value = pregunta.notasVerificacion || '';
             document.getElementById('notas-direccion-pregunta').value = pregunta.notasDireccion || '';
             
+            // Rellenar el select de estado con los estados permitidos
+            const selectEstado = document.getElementById('estado-pregunta');
+            if (selectEstado) {
+                console.log('🎯 [EDITAR] Llenando select de estado. Estado actual:', pregunta.estado);
+                selectEstado.innerHTML = '';
+                const estadosPermitidos = this.getEstadosPermitidos(pregunta.estado);
+                console.log('📝 [EDITAR] Estados permitidos para este estado:', estadosPermitidos);
+                
+                estadosPermitidos.forEach(estado => {
+                    const option = document.createElement('option');
+                    option.value = estado;
+                    option.text = estado === 'para_verificar' ? 'Para verificar' : 
+                                 estado === 'para_aprobar' ? 'Para aprobar' : 
+                                 estado.charAt(0).toUpperCase() + estado.slice(1);
+                    if (pregunta.estado === estado) {
+                        option.selected = true;
+                        console.log('✅ [EDITAR] Opción seleccionada:', estado);
+                    }
+                    selectEstado.appendChild(option);
+                });
+                
+                // Verificar que el estado se seleccionó correctamente
+                console.log('🔍 [EDITAR] Estado seleccionado en el select:', selectEstado.value);
+                console.log('🔍 [EDITAR] ¿Coincide con el estado de la pregunta?', selectEstado.value === pregunta.estado);
+            } else {
+                console.error('❌ [EDITAR] No se encontró el elemento estado-pregunta');
+            }
+            
             console.log('📝 [EDITAR] Formulario rellenado. Verificación original:', pregunta.verificacion);
             
             // Guardar el ID para la edición
-            document.getElementById('formCrearPregunta').dataset.editId = id;
+            const form = document.getElementById('formCrearPregunta');
+            form.dataset.editId = id;
+            console.log('💾 [EDITAR] ID guardado en el formulario:', form.dataset.editId);
             
             // Mostrar el modal
             $('#modal-pregunta').modal('show');
@@ -738,6 +887,25 @@ window.mostrarFormularioPregunta = function() {
                 selectSubtemas.appendChild(opt);
             });
         }
+        
+        // Inicializar el select de estado con "borrador" por defecto
+        const selectEstado = document.getElementById('estado-pregunta');
+        if (selectEstado) {
+            selectEstado.innerHTML = '';
+            // Para una nueva pregunta, solo permitir "borrador" y "para_verificar"
+            const estadosPermitidos = ['borrador', 'para_verificar'];
+            estadosPermitidos.forEach(estado => {
+                const opt = document.createElement('option');
+                opt.value = estado;
+                opt.text = estado === 'para_verificar' ? 'Para verificar' : 
+                          estado.charAt(0).toUpperCase() + estado.slice(1);
+                if (estado === 'borrador') {
+                    opt.selected = true;
+                }
+                selectEstado.appendChild(opt);
+            });
+        }
+        
         $(modal).modal('show');
     } else {
         alert('Funcionalidad de crear pregunta no implementada o modal no encontrado.');

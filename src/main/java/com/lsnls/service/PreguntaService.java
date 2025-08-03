@@ -412,6 +412,11 @@ public class PreguntaService {
     public void marcarComoUsada(Long id) {
         preguntaRepository.findById(id).ifPresent(pregunta -> {
             pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.usada);
+            // Cambiar el estado de la pregunta a 'usada' si estaba en 'aprobada'
+            if (pregunta.getEstado() == EstadoPregunta.aprobada) {
+                pregunta.setEstado(EstadoPregunta.usada);
+                System.out.println("✅ Pregunta ID " + id + " marcada como USADA");
+            }
             preguntaRepository.save(pregunta);
         });
     }
@@ -419,6 +424,11 @@ public class PreguntaService {
     public void liberarPregunta(Long id) {
         preguntaRepository.findById(id).ifPresent(pregunta -> {
             pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.liberada);
+            // Cambiar el estado de la pregunta a 'aprobada' si estaba en 'usada'
+            if (pregunta.getEstado() == EstadoPregunta.usada) {
+                pregunta.setEstado(EstadoPregunta.aprobada);
+                System.out.println("✅ Pregunta ID " + id + " liberada y marcada como APROBADA");
+            }
             preguntaRepository.save(pregunta);
         });
     }
@@ -472,6 +482,9 @@ public class PreguntaService {
     public Pregunta actualizarDesdeDTO(Long id, PreguntaDTO dto) {
         Pregunta pregunta = preguntaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada"));
         
+        System.out.println("✅ [ACTUALIZAR] Iniciando actualización de pregunta ID: " + id);
+        System.out.println("✅ [ACTUALIZAR] Estado actual: " + pregunta.getEstado() + ", Estado solicitado: " + dto.getEstado());
+        
         // Proteger el campo de autoría - no permitir modificaciones
         if (dto.getCreacionUsuarioId() != null && !dto.getCreacionUsuarioId().equals(pregunta.getCreacionUsuario().getId())) {
             throw new IllegalArgumentException("No se puede modificar el campo de autoría de una pregunta");
@@ -493,6 +506,18 @@ public class PreguntaService {
 
         // Guardar el valor anterior de notasVerificacion para comparar
         String notasVerificacionAnterior = pregunta.getNotasVerificacion();
+        
+        // IMPORTANTE: Manejar explícitamente el cambio de estado
+        if (dto.getEstado() != null) {
+            try {
+                EstadoPregunta nuevoEstado = EstadoPregunta.valueOf(dto.getEstado());
+                System.out.println("✅ [ACTUALIZAR] Cambiando estado de " + pregunta.getEstado() + " a " + nuevoEstado);
+                pregunta.setEstado(nuevoEstado);
+            } catch (IllegalArgumentException e) {
+                System.err.println("❌ [ACTUALIZAR] Estado inválido: " + dto.getEstado());
+                throw new IllegalArgumentException("Estado inválido: " + dto.getEstado());
+            }
+        }
 
         if (dto.getTematica() != null) pregunta.setTematica(dataTransformationService.normalizarTematica(dto.getTematica()));
         if (dto.getPregunta() != null) pregunta.setPregunta(dataTransformationService.normalizarPregunta(dto.getPregunta()));
@@ -546,7 +571,10 @@ public class PreguntaService {
         if (!validation.isValid()) {
             throw new IllegalArgumentException("Datos no válidos: " + validation.getErrorsAsString());
         }
-        return preguntaRepository.save(pregunta);
+        
+        Pregunta preguntaGuardada = preguntaRepository.save(pregunta);
+        System.out.println("✅ [ACTUALIZAR] Pregunta guardada con éxito. Estado final: " + preguntaGuardada.getEstado());
+        return preguntaGuardada;
     }
 
     public Page<Pregunta> buscarPreguntasPaginadas(String nivel, String factor, String id, String pregunta, String respuesta, String tematica, Pageable pageable) {
