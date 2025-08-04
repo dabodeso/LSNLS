@@ -606,4 +606,31 @@ public class PreguntaController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @GetMapping("/buscar-apariciones")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<?> buscarApariciones(@RequestParam String texto) {
+        try {
+            if (texto == null || texto.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El texto de búsqueda no puede estar vacío");
+            }
+            
+            log.info("Buscando apariciones del texto: '{}'", texto);
+            
+            // Buscar apariciones en preguntas y respuestas
+            List<PreguntaDTO> apariciones = preguntaService.buscarApariciones(texto);
+            
+            // Crear respuesta con estadísticas
+            Map<String, Object> resultado = new HashMap<>();
+            resultado.put("totalApariciones", apariciones.size());
+            resultado.put("apariciones", apariciones);
+            
+            log.info("Se encontraron {} apariciones para el texto '{}'", apariciones.size(), texto);
+            
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            log.error("Error al buscar apariciones: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Error al buscar apariciones: " + e.getMessage());
+        }
+    }
 } 

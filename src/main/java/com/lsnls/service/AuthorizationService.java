@@ -105,9 +105,10 @@ public class AuthorizationService {
                         
                     case para_verificar:
                         // Para Verificar -> Verificada o Revisar (por Verificación/Guion)
-                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.verificada || 
-                                           nuevoEstado == Pregunta.EstadoPregunta.revisar) && 
-                                          (isVerificacion || isGuion);
+                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.verificada && 
+                                           (isVerificacion || isDireccion)) || 
+                                          (nuevoEstado == Pregunta.EstadoPregunta.revisar && 
+                                           (isVerificacion || isGuion));
                         break;
                         
                     case revisar:

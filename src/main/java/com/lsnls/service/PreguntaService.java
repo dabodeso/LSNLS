@@ -22,6 +22,7 @@ import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import com.lsnls.entity.AuditLog;
 import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.Collections;
 
 @Service
 @Transactional
@@ -122,7 +123,6 @@ public class PreguntaService {
             pregunta.setFechaCreacion(preguntaExistente.getFechaCreacion());
             pregunta.setVerificacionUsuario(preguntaExistente.getVerificacionUsuario());
             pregunta.setFechaVerificacion(preguntaExistente.getFechaVerificacion());
-            pregunta.setEstado(preguntaExistente.getEstado());
             pregunta.setEstadoDisponibilidad(preguntaExistente.getEstadoDisponibilidad());
             pregunta.setFactor(preguntaExistente.getFactor());
             pregunta.setNotas(preguntaExistente.getNotas());
@@ -166,62 +166,50 @@ public class PreguntaService {
                 pregunta.setNotasDireccion(preguntaExistente.getNotasDireccion());
             }
             
-            // Manejar verificacion SOLO si se modificó notasVerificacion
-            if (pregunta.getNotasVerificacion() != null && 
-                !pregunta.getNotasVerificacion().equals(preguntaExistente.getNotasVerificacion())) {
+            // Manejar campo notasVerificacion
+            if (pregunta.getNotasVerificacion() == null) {
+                pregunta.setNotasVerificacion(preguntaExistente.getNotasVerificacion());
+            }
+            
+            // Manejar campo verificacion - SOLO actualizar si el estado cambia a verificada
+            if (pregunta.getEstado() != null && preguntaExistente.getEstado() != null &&
+                pregunta.getEstado() == Pregunta.EstadoPregunta.verificada && 
+                preguntaExistente.getEstado() != Pregunta.EstadoPregunta.verificada) {
                 
-                System.out.println("🔄 [BACKEND] notasVerificacion ha cambiado, evaluando si actualizar verificacion...");
+                System.out.println("🔄 [BACKEND] Estado cambiado a VERIFICADA, actualizando verificacion...");
                 
-                String nuevasNotas = pregunta.getNotasVerificacion().trim();
-                String notasExistentes = preguntaExistente.getNotasVerificacion() != null ? 
-                    preguntaExistente.getNotasVerificacion().trim() : "";
-                
-                System.out.println("🔍 [BACKEND] Nuevas notas (trim): '" + nuevasNotas + "'");
-                System.out.println("🔍 [BACKEND] Notas existentes (trim): '" + notasExistentes + "'");
-                
-                // Solo proceder si las nuevas notas no están vacías Y son diferentes de las existentes
-                if (!nuevasNotas.isEmpty() && !nuevasNotas.equals(notasExistentes)) {
-                    System.out.println("✅ [BACKEND] Condiciones cumplidas, actualizando verificacion...");
-                    
-                    // Obtener el usuario actual del contexto de seguridad
-                    String nombreUsuario = null;
-                    try {
-                        org.springframework.security.core.Authentication auth = 
-                            SecurityContextHolder.getContext().getAuthentication();
-                        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
-                            nombreUsuario = auth.getName();
-                        }
-                    } catch (Exception e) {
-                        nombreUsuario = "Usuario";
+                // Obtener el usuario actual del contexto de seguridad
+                String nombreUsuario = null;
+                try {
+                    org.springframework.security.core.Authentication auth = 
+                        SecurityContextHolder.getContext().getAuthentication();
+                    if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                        nombreUsuario = auth.getName();
                     }
+                } catch (Exception e) {
+                    nombreUsuario = "Usuario";
+                }
+                
+                if (nombreUsuario != null) {
+                    String verificacionActual = preguntaExistente.getVerificacion();
                     
-                    if (nombreUsuario != null) {
-                        String verificacionActual = preguntaExistente.getVerificacion();
-                        
-                        if (verificacionActual == null || verificacionActual.trim().isEmpty()) {
-                            pregunta.setVerificacion(nombreUsuario);
-                            System.out.println("🆕 [BACKEND] Nueva verificacion: " + nombreUsuario);
+                    if (verificacionActual == null || verificacionActual.trim().isEmpty()) {
+                        pregunta.setVerificacion(nombreUsuario);
+                        System.out.println("🆕 [BACKEND] Nueva verificacion: " + nombreUsuario);
+                    } else {
+                        if (!verificacionActual.contains(nombreUsuario)) {
+                            pregunta.setVerificacion(verificacionActual + ", " + nombreUsuario);
+                            System.out.println("📝 [BACKEND] Verificacion actualizada: " + pregunta.getVerificacion());
                         } else {
-                            if (!verificacionActual.contains(nombreUsuario)) {
-                                pregunta.setVerificacion(verificacionActual + ", " + nombreUsuario);
-                                System.out.println("📝 [BACKEND] Verificacion actualizada: " + pregunta.getVerificacion());
-                            } else {
-                                pregunta.setVerificacion(verificacionActual);
-                                System.out.println("🔄 [BACKEND] Usuario ya incluido, manteniendo: " + verificacionActual);
-                            }
+                            pregunta.setVerificacion(verificacionActual);
+                            System.out.println("🔄 [BACKEND] Usuario ya incluido, manteniendo: " + verificacionActual);
                         }
                     }
-                } else {
-                    pregunta.setVerificacion(preguntaExistente.getVerificacion());
-                    System.out.println("⏸️ [BACKEND] No se cumplieron condiciones, manteniendo verificacion: " + preguntaExistente.getVerificacion());
                 }
             } else {
-                // Si notasVerificacion no se está modificando O viene null, mantener verificacion existente
-                if (pregunta.getNotasVerificacion() == null) {
-                    pregunta.setNotasVerificacion(preguntaExistente.getNotasVerificacion());
-                }
+                // Si no cambia a verificada, mantener verificacion existente
                 pregunta.setVerificacion(preguntaExistente.getVerificacion());
-                System.out.println("🔒 [BACKEND] notasVerificacion no cambió, manteniendo verificacion: " + preguntaExistente.getVerificacion());
+                System.out.println("🔒 [BACKEND] Estado no cambia a VERIFICADA, manteniendo verificacion: " + preguntaExistente.getVerificacion());
             }
             
             // Validar datos finales
@@ -290,6 +278,39 @@ public class PreguntaService {
                 query.append(", verificacion_usuario_id = ?");
                 parametros.add(usuarioActual.getId());
                 paramIndex++;
+                
+                // Actualizar también el campo verificacion con el nombre del usuario
+                query.append(", verificacion = ?");
+                
+                // Primero obtener el valor actual del campo verificacion
+                String verificacionActual = null;
+                try {
+                    Object result = entityManager.createNativeQuery("SELECT verificacion FROM preguntas WHERE id = ?")
+                        .setParameter(1, id)
+                        .getSingleResult();
+                    verificacionActual = result != null ? result.toString() : null;
+                } catch (Exception e) {
+                    // Si hay error, dejar verificacionActual como null
+                    System.out.println("No se pudo obtener el valor actual de verificacion: " + e.getMessage());
+                }
+                
+                // Construir el nuevo valor de verificacion
+                String nuevoValorVerificacion;
+                if (verificacionActual == null || verificacionActual.trim().isEmpty()) {
+                    nuevoValorVerificacion = usuarioActual.getNombre();
+                } else {
+                    // Verificar si el usuario ya está incluido
+                    if (!verificacionActual.contains(usuarioActual.getNombre())) {
+                        nuevoValorVerificacion = verificacionActual + ", " + usuarioActual.getNombre();
+                    } else {
+                        nuevoValorVerificacion = verificacionActual;
+                    }
+                }
+                
+                parametros.add(nuevoValorVerificacion);
+                paramIndex++;
+                
+                System.out.println("✅ Actualizando campo verificacion a: " + nuevoValorVerificacion);
             }
         }
         
@@ -504,8 +525,8 @@ public class PreguntaService {
             }
         }
 
-        // Guardar el valor anterior de notasVerificacion para comparar
-        String notasVerificacionAnterior = pregunta.getNotasVerificacion();
+        // Guardar el valor anterior del estado para comparar
+        Pregunta.EstadoPregunta estadoAnterior = pregunta.getEstado();
         
         // IMPORTANTE: Manejar explícitamente el cambio de estado
         if (dto.getEstado() != null) {
@@ -531,9 +552,12 @@ public class PreguntaService {
         if (dto.getNotasDireccion() != null) pregunta.setNotasDireccion(dto.getNotasDireccion());
         if (dto.getSubtema() != null) pregunta.setSubtema(dto.getSubtema());
         
-        // Manejar actualización del campo verificacion cuando se modifica notasVerificacion
-        if (dto.getNotasVerificacion() != null && 
-            !dto.getNotasVerificacion().equals(notasVerificacionAnterior)) {
+        // Manejar actualización del campo verificacion SOLO cuando se cambia a estado verificada
+        if (dto.getEstado() != null && 
+            EstadoPregunta.verificada.name().equals(dto.getEstado()) && 
+            estadoAnterior != EstadoPregunta.verificada) {
+            
+            System.out.println("✅ [ACTUALIZAR] Estado cambiado a VERIFICADA, actualizando verificacion");
             
             // Obtener el usuario actual del contexto de seguridad
             String nombreUsuario = null;
@@ -676,5 +700,39 @@ public class PreguntaService {
     // Modificar obtenerPorId para devolver DTO
     public Optional<PreguntaDTO> obtenerPorIdDTO(Long id) {
         return obtenerPorId(id).map(this::mapPreguntaToDTO);
+    }
+    
+    /**
+     * Busca apariciones de un texto en preguntas y respuestas
+     * @param texto Texto a buscar
+     * @return Lista de preguntas que contienen el texto en pregunta o respuesta
+     */
+    public List<PreguntaDTO> buscarApariciones(String texto) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        String textoLimpio = texto.trim().toLowerCase();
+        System.out.println("🔍 Buscando apariciones para: " + textoLimpio);
+        
+        // Buscar en todas las preguntas (no usar filtro de estado para ser exhaustivo)
+        List<Pregunta> todasLasPreguntas = preguntaRepository.findAll();
+        
+        List<Pregunta> preguntasCoincidentes = todasLasPreguntas.stream()
+            .filter(p -> {
+                boolean coincidePregunta = p.getPregunta() != null && 
+                                         p.getPregunta().toLowerCase().contains(textoLimpio);
+                boolean coincideRespuesta = p.getRespuesta() != null && 
+                                          p.getRespuesta().toLowerCase().contains(textoLimpio);
+                return coincidePregunta || coincideRespuesta;
+            })
+            .collect(Collectors.toList());
+        
+        System.out.println("✅ Encontradas " + preguntasCoincidentes.size() + " coincidencias");
+        
+        // Convertir a DTOs para la respuesta
+        return preguntasCoincidentes.stream()
+            .map(this::mapPreguntaToDTO)
+            .collect(Collectors.toList());
     }
 } 

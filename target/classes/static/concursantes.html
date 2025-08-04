@@ -515,9 +515,36 @@
             contextSelectedId = id;
             contextSelectedType = type;
             
+            // Calcular posición del menú
+            const menuWidth = 150;  // Ancho aproximado del menú
+            const menuHeight = 150; // Alto aproximado del menú
+            
+            // Obtener dimensiones de la ventana
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            // Calcular posición para asegurar que esté dentro de la ventana
+            // Usar clientX/clientY en lugar de pageX/pageY para posicionar relativo a la ventana visible
+            let posX = e.clientX;
+            let posY = e.clientY;
+            
+            // Ajustar horizontalmente si se sale por la derecha
+            if (posX + menuWidth > windowWidth) {
+                posX = posX - menuWidth;
+            }
+            
+            // Ajustar verticalmente si se sale por abajo
+            if (posY + menuHeight > windowHeight) {
+                posY = posY - menuHeight;
+            }
+            
+            // Asegurar que no se posicione fuera de la pantalla
+            posX = Math.max(10, posX);
+            posY = Math.max(10, posY);
+            
             // Posicionar el menú
-            contextMenu.style.left = e.pageX + 'px';
-            contextMenu.style.top = e.pageY + 'px';
+            contextMenu.style.left = posX + 'px';
+            contextMenu.style.top = posY + 'px';
             contextMenu.style.display = 'block';
             contextMenuVisible = true;
             

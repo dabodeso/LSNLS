@@ -94,6 +94,9 @@ const PreguntasManager = {
                     <button class="btn btn-sm btn-primary me-1" onclick="PreguntasManager.editarPregunta(${pregunta.id})" title="Editar pregunta">
                         <i class="fas fa-edit"></i>
                     </button>
+                    <button class="btn btn-sm btn-info me-1" onclick="PreguntasManager.buscarAparicionesDesdeLista(${pregunta.id})" title="Buscar apariciones">
+                        <i class="fas fa-search"></i>
+                    </button>
                     <button class="btn btn-sm btn-danger" onclick="PreguntasManager.eliminarPregunta(${pregunta.id})" title="Eliminar pregunta">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -760,6 +763,100 @@ const PreguntasManager = {
         }
     },
 
+    async comprobarApariciones() {
+        try {
+            // Obtener el texto de la respuesta actual
+            const respuestaInput = document.getElementById('respuesta-pregunta');
+            if (!respuestaInput || !respuestaInput.value.trim()) {
+                Toastify({
+                    text: 'Ingresa una respuesta para buscar apariciones',
+                    duration: 3000,
+                    close: true,
+                    gravity: 'top',
+                    position: 'right',
+                    style: { background: 'linear-gradient(to right, #ff9966, #ff5e62)' }
+                }).showToast();
+                return;
+            }
+            
+            const textoRespuesta = respuestaInput.value.trim();
+            console.log('🔍 [APARICIONES] Buscando apariciones para:', textoRespuesta);
+            
+            // Mostrar modal con indicador de carga
+            const modalApariciones = new bootstrap.Modal(document.getElementById('modal-apariciones'));
+            modalApariciones.show();
+            
+            document.getElementById('apariciones-resumen').innerHTML = `
+                <i class="fas fa-spinner fa-spin"></i> Buscando apariciones para: <strong>${textoRespuesta}</strong>
+            `;
+            document.getElementById('tabla-apariciones').innerHTML = '';
+            
+            // Llamar al endpoint de búsqueda de apariciones
+            const response = await fetch(`/api/preguntas/buscar-apariciones?texto=${encodeURIComponent(textoRespuesta)}`, {
+                headers: authManager.getAuthHeaders()
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error al buscar apariciones');
+            }
+            
+            const resultado = await response.json();
+            console.log('✅ [APARICIONES] Resultado:', resultado);
+            
+            // Actualizar el resumen
+            const totalApariciones = resultado.totalApariciones;
+            document.getElementById('apariciones-resumen').innerHTML = `
+                <i class="fas fa-info-circle"></i> Se encontraron <strong>${totalApariciones}</strong> apariciones para: <strong>${textoRespuesta}</strong>
+            `;
+            
+            // Llenar la tabla con las apariciones
+            const tbody = document.getElementById('tabla-apariciones');
+            tbody.innerHTML = '';
+            
+            if (totalApariciones === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center">No se encontraron apariciones</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            resultado.apariciones.forEach(pregunta => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${pregunta.id}</td>
+                    <td><span class="${this.getNivelColor(pregunta.nivel)}">${pregunta.nivel || ''}</span></td>
+                    <td>${this.resaltarTexto(pregunta.pregunta, textoRespuesta)}</td>
+                    <td>${this.resaltarTexto(pregunta.respuesta, textoRespuesta)}</td>
+                    <td><span class="badge ${this.getEstadoColor(pregunta.estado)}">${pregunta.estado || ''}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="PreguntasManager.editarPregunta(${pregunta.id}); $('#modal-apariciones').modal('hide');">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+        } catch (error) {
+            console.error('Error al buscar apariciones:', error);
+            document.getElementById('apariciones-resumen').innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i> Error al buscar apariciones: ${error.message}
+            `;
+            document.getElementById('apariciones-resumen').className = 'alert alert-danger mb-3';
+        }
+    },
+    
+    // Método auxiliar para resaltar el texto buscado
+    resaltarTexto(texto, busqueda) {
+        if (!texto) return '';
+        if (!busqueda) return texto;
+        
+        const regex = new RegExp(busqueda.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        return texto.replace(regex, match => `<mark class="bg-warning">${match}</mark>`);
+    },
+
     limpiarFiltros() {
         document.getElementById('filtro-estado').value = '';
         document.getElementById('filtro-nivel').value = '';
@@ -768,6 +865,92 @@ const PreguntasManager = {
         document.getElementById('filtro-pregunta').value = '';
         document.getElementById('filtro-respuesta').value = '';
         this.cargarPreguntas();
+    },
+
+    // Método para buscar apariciones desde la lista de preguntas
+    async buscarAparicionesDesdeLista(id) {
+        try {
+            // Obtener la pregunta actual
+            const pregunta = this.preguntas.find(p => p.id === id);
+            if (!pregunta || !pregunta.respuesta) {
+                Toastify({
+                    text: 'No se encontró la respuesta para esta pregunta',
+                    duration: 3000,
+                    close: true,
+                    gravity: 'top',
+                    position: 'right',
+                    style: { background: 'linear-gradient(to right, #ff9966, #ff5e62)' }
+                }).showToast();
+                return;
+            }
+            
+            const textoRespuesta = pregunta.respuesta.trim();
+            console.log('🔍 [APARICIONES] Buscando apariciones para:', textoRespuesta);
+            
+            // Mostrar modal con indicador de carga
+            const modalApariciones = new bootstrap.Modal(document.getElementById('modal-apariciones'));
+            modalApariciones.show();
+            
+            document.getElementById('apariciones-resumen').innerHTML = `
+                <i class="fas fa-spinner fa-spin"></i> Buscando apariciones para: <strong>${textoRespuesta}</strong>
+            `;
+            document.getElementById('tabla-apariciones').innerHTML = '';
+            
+            // Llamar al endpoint de búsqueda de apariciones
+            const response = await fetch(`/api/preguntas/buscar-apariciones?texto=${encodeURIComponent(textoRespuesta)}`, {
+                headers: authManager.getAuthHeaders()
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error al buscar apariciones');
+            }
+            
+            const resultado = await response.json();
+            console.log('✅ [APARICIONES] Resultado:', resultado);
+            
+            // Actualizar el resumen
+            const totalApariciones = resultado.totalApariciones;
+            document.getElementById('apariciones-resumen').innerHTML = `
+                <i class="fas fa-info-circle"></i> Se encontraron <strong>${totalApariciones}</strong> apariciones para: <strong>${textoRespuesta}</strong>
+            `;
+            
+            // Llenar la tabla con las apariciones
+            const tbody = document.getElementById('tabla-apariciones');
+            tbody.innerHTML = '';
+            
+            if (totalApariciones === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center">No se encontraron apariciones</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            resultado.apariciones.forEach(pregunta => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${pregunta.id}</td>
+                    <td><span class="${this.getNivelColor(pregunta.nivel)}">${pregunta.nivel || ''}</span></td>
+                    <td>${this.resaltarTexto(pregunta.pregunta, textoRespuesta)}</td>
+                    <td>${this.resaltarTexto(pregunta.respuesta, textoRespuesta)}</td>
+                    <td><span class="badge ${this.getEstadoColor(pregunta.estado)}">${pregunta.estado || ''}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="PreguntasManager.editarPregunta(${pregunta.id}); $('#modal-apariciones').modal('hide');">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+        } catch (error) {
+            console.error('Error al buscar apariciones:', error);
+            document.getElementById('apariciones-resumen').innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i> Error al buscar apariciones: ${error.message}
+            `;
+            document.getElementById('apariciones-resumen').className = 'alert alert-danger mb-3';
+        }
     }
 };
 

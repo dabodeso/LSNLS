@@ -218,6 +218,11 @@
                             <div class="mb-3">
                                 <label for="respuesta-pregunta" class="form-label">Respuesta</label>
                                 <input type="text" id="respuesta-pregunta" name="respuesta" class="form-control" required>
+                                <div class="d-grid gap-2 mt-2">
+                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="PreguntasManager.comprobarApariciones()">
+                                        <i class="fas fa-search"></i> Comprobar apariciones
+                                    </button>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label for="datos-extra-pregunta" class="form-label">Datos Extra</label>
@@ -407,11 +412,52 @@
         </div>
     </div>
 
+    <!-- Modal para mostrar apariciones -->
+    <div class="modal fade" id="modal-apariciones" tabindex="-1" aria-labelledby="modal-apariciones-titulo" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-apariciones-titulo">Apariciones encontradas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="apariciones-resumen" class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle"></i> Buscando apariciones...
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nivel</th>
+                                    <th>Pregunta</th>
+                                    <th>Respuesta</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-apariciones">
+                                <!-- Las apariciones se cargarán dinámicamente aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Menú contextual -->
     <div id="context-menu" class="context-menu">
         <button class="context-menu-item" onclick="contextMenuEditar()">
             <i class="fas fa-edit"></i>
             Editar
+        </button>
+        <button class="context-menu-item" onclick="contextMenuBuscar()">
+            <i class="fas fa-search"></i>
+            Buscar apariciones
         </button>
         <div class="context-menu-separator"></div>
         <button class="context-menu-item danger" onclick="contextMenuBorrar()">
@@ -486,9 +532,36 @@
             contextSelectedId = id;
             contextSelectedType = type;
             
+            // Calcular posición del menú
+            const menuWidth = 150;  // Ancho aproximado del menú
+            const menuHeight = 150; // Alto aproximado del menú
+            
+            // Obtener dimensiones de la ventana
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            // Calcular posición para asegurar que esté dentro de la ventana
+            // Usar clientX/clientY en lugar de pageX/pageY para posicionar relativo a la ventana visible
+            let posX = e.clientX;
+            let posY = e.clientY;
+            
+            // Ajustar horizontalmente si se sale por la derecha
+            if (posX + menuWidth > windowWidth) {
+                posX = posX - menuWidth;
+            }
+            
+            // Ajustar verticalmente si se sale por abajo
+            if (posY + menuHeight > windowHeight) {
+                posY = posY - menuHeight;
+            }
+            
+            // Asegurar que no se posicione fuera de la pantalla
+            posX = Math.max(10, posX);
+            posY = Math.max(10, posY);
+            
             // Posicionar el menú
-            contextMenu.style.left = e.pageX + 'px';
-            contextMenu.style.top = e.pageY + 'px';
+            contextMenu.style.left = posX + 'px';
+            contextMenu.style.top = posY + 'px';
             contextMenu.style.display = 'block';
             contextMenuVisible = true;
             
@@ -529,6 +602,14 @@
         function contextMenuBorrar() {
             if (contextSelectedId && contextSelectedType === 'pregunta') {
                 PreguntasManager.eliminarPregunta(contextSelectedId);
+            }
+            hideContextMenu();
+        }
+
+        // Función para buscar apariciones desde menú contextual
+        function contextMenuBuscar() {
+            if (contextSelectedId && contextSelectedType === 'pregunta') {
+                PreguntasManager.buscarAparicionesDesdeLista(contextSelectedId);
             }
             hideContextMenu();
         }
