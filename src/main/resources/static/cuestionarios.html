@@ -92,7 +92,9 @@
                             <select id="filtro-estado-cuestionario" class="form-select form-select-sm" onchange="filtrarCuestionarios()">
                                 <option value="">Todos</option>
                                 <option value="borrador">Borrador</option>
-                                <option value="creado">Creado</option>
+                                <option value="revisar">Revisar</option>
+                                <option value="corregir">Corregir</option>
+                                <option value="aprobado">Aprobado</option>
                                 <option value="adjudicado">Adjudicado</option>
                                 <option value="grabado">Grabado</option>
                             </select>
@@ -101,11 +103,7 @@
                             <label class="form-label">Temática:</label>
                             <select id="filtro-tematica-cuestionario" class="form-select form-select-sm" onchange="filtrarCuestionarios()">
                                 <option value="">Todas</option>
-                                <option value="">Genérico</option>
-                                <option value="CUESTIONARIO MUSICAL">Cuestionario Musical</option>
-                                <option value="NAVIDAD">Navidad</option>
-                                <option value="ESPACIO">Espacio</option>
-                                <option value="WESTERN">Western</option>
+                                <!-- Las opciones se cargarán dinámicamente -->
                             </select>
                         </div>
                         <div class="col-md-4">

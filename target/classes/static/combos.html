@@ -84,29 +84,39 @@
             <div id="filtros-combos" class="collapse show">
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">Estado:</label>
                             <select id="filtro-estado-combo" class="form-select form-select-sm" onchange="filtrarCombos()">
                                 <option value="">Todos</option>
                                 <option value="borrador">Borrador</option>
-                                <option value="creado">Creado</option>
+                                <option value="revisar">Revisar</option>
+                                <option value="corregir">Corregir</option>
+                                <option value="aprobado">Aprobado</option>
                                 <option value="adjudicado">Adjudicado</option>
                                 <option value="grabado">Grabado</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">Tipo:</label>
                             <select id="filtro-tipo-combo" class="form-select form-select-sm" onchange="filtrarCombos()">
                                 <option value="">Todos</option>
                                 <option value="P">Premio (P)</option>
                                 <option value="A">Asequible (A)</option>
                                 <option value="D">Difícil (D)</option>
+                                <option value="R">Rescate (R)</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label class="form-label">Temática:</label>
+                            <select id="filtro-tematica-combo" class="form-select form-select-sm" onchange="filtrarCombos()">
+                                <option value="">Todas</option>
+                                <!-- Las opciones se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label class="form-label">Buscar por ID:</label>
                             <input type="text" id="buscar-combo" class="form-control form-control-sm" 
-                                   onkeyup="filtrarCombos()" placeholder="Número de combo...">
+                                   onkeyup="filtrarCombos()" placeholder="Número...">
                         </div>
                     </div>
                 </div>
@@ -150,14 +160,16 @@
                                     <option value="P">Premio (P)</option>
                                     <option value="A">Asequible (A)</option>
                                     <option value="D">Difícil (D)</option>
+                                    <option value="R">Rescate (R)</option>
                                 </select>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Preguntas multiplicadoras:</label>
                                 <div class="row g-2 mb-2">
                                     <div class="col-12 mb-2">
-                                        <label>PM1 (X2)</label>
+                                        <label>Pregunta 1</label>
                                         <div class="input-group">
+                                            <input type="text" class="form-control form-control-sm" style="width:60px; flex: 0 0 60px;" id="factor-PM1" placeholder="X2">
                                             <input type="text" class="form-control" id="pm-PM1-texto" readonly placeholder="Sin seleccionar">
                                             <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('PM1')">Elegir</button>
                                             <button type="button" class="btn btn-outline-secondary" onclick="limpiarSeleccionPM('PM1')" title="Limpiar selección">✕</button>
@@ -165,8 +177,9 @@
                                         </div>
                                     </div>
                                     <div class="col-12 mb-2">
-                                        <label>PM2 (X3)</label>
+                                        <label>Pregunta 2</label>
                                         <div class="input-group">
+                                            <input type="text" class="form-control form-control-sm" style="width:60px; flex: 0 0 60px;" id="factor-PM2" placeholder="X3">
                                             <input type="text" class="form-control" id="pm-PM2-texto" readonly placeholder="Sin seleccionar">
                                             <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('PM2')">Elegir</button>
                                             <button type="button" class="btn btn-outline-secondary" onclick="limpiarSeleccionPM('PM2')" title="Limpiar selección">✕</button>
@@ -174,8 +187,9 @@
                                         </div>
                                     </div>
                                     <div class="col-12 mb-2">
-                                        <label>PM3 (X)</label>
+                                        <label>Pregunta 3</label>
                                         <div class="input-group">
+                                            <input type="text" class="form-control form-control-sm" style="width:60px; flex: 0 0 60px;" id="factor-PM3" placeholder="X">
                                             <input type="text" class="form-control" id="pm-PM3-texto" readonly placeholder="Sin seleccionar">
                                             <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorPregunta('PM3')">Elegir</button>
                                             <button type="button" class="btn btn-outline-secondary" onclick="limpiarSeleccionPM('PM3')" title="Limpiar selección">✕</button>

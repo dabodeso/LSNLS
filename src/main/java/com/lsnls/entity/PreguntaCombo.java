@@ -30,7 +30,7 @@ public class PreguntaCombo {
     private Combo combo;
 
     @Column(name = "factor_multiplicacion")
-    private Integer factorMultiplicacion;
+    private String factorMultiplicacion;
 
     // Clase embebida para la clave compuesta
     @Embeddable

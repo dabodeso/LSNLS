@@ -85,13 +85,13 @@ INSERT INTO preguntas (tematica, subtema, pregunta, respuesta, nivel, estado, es
 
 -- Insertar cuestionarios de ejemplo con temáticas y notas
 INSERT INTO cuestionarios (creacion_usuario_id, fecha_creacion, estado, nivel, tematica, notas_direccion, version) VALUES
-(1, '2023-02-01', 'adjudicado', 'NORMAL', NULL, 'Cuestionario genérico de ejemplo', 0),
-(1, '2023-02-02', 'adjudicado', 'NORMAL', 'CUESTIONARIO MUSICAL', 'Especial música - revisar preguntas de pop', 0),
-(1, '2023-02-03', 'adjudicado', 'NORMAL', 'NAVIDAD', 'Temática navideña para programa especial de diciembre', 0);
+(1, '2023-02-01', 'borrador', 'NORMAL', NULL, 'Cuestionario genérico de ejemplo', 0),
+(1, '2023-02-02', 'borrador', 'NORMAL', 'CUESTIONARIO MUSICAL', 'Especial música - revisar preguntas de pop', 0),
+(1, '2023-02-03', 'borrador', 'NORMAL', 'NAVIDAD', 'Temática navideña para programa especial de diciembre', 0);
 
 -- Insertar 1 combo con 3 preguntas nivel 5
 INSERT INTO combos (creacion_usuario_id, fecha_creacion, estado, nivel, version) VALUES
-(1, '2023-02-02', 'adjudicado', 'NORMAL', 0);
+(1, '2023-02-02', 'borrador', 'NORMAL', 0);
 
 -- Relacionar el cuestionario con 4 preguntas (niveles 1-4)
 INSERT INTO cuestionarios_preguntas (cuestionario_id, pregunta_id, factor_multiplicacion) VALUES
@@ -119,32 +119,4 @@ INSERT INTO configuracion_global (clave, valor, descripcion, version) VALUES
 ('jwt_expiration', '86400000', 'Tiempo de expiración del token JWT en milisegundos', 0),
 ('backup_frequency', 'daily', 'Frecuencia de backup de la base de datos', 0);
 
--- Insertar jornadas de ejemplo (DEBE IR ANTES QUE LOS CONCURSANTES)
-INSERT INTO jornadas (nombre, fecha_jornada, lugar, estado, creacion_usuario_id, fecha_creacion, notas, version) VALUES
-('Jornada de Mañana - Enero 2024', '2024-01-15', 'Madrid - Estudio A', 'completada', 1, '2024-01-10 09:00:00', 'Primera jornada de grabación de la temporada', 0),
-('Jornada de Tarde - Enero 2024', '2024-01-15', 'Madrid - Estudio A', 'lista', 1, '2024-01-10 10:30:00', 'Segunda jornada del día', 0),
-('Jornada Especial - San Valentín', '2024-02-14', 'Madrid - Estudio B', 'preparacion', 1, '2024-01-20 14:00:00', 'Programa especial temático de San Valentín', 0);
-
--- Relacionar jornadas con cuestionarios (primera jornada)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) VALUES
-(1, 1),
-(1, 2),
-(1, 3);
-
--- Relacionar jornadas con combos (primera jornada)
-INSERT INTO jornadas_combos (jornada_id, combo_id) VALUES
-(1, 1);
-
--- Relacionar segunda jornada con algunos elementos
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) VALUES
-(2, 2),
-(2, 3);
-
-INSERT INTO jornadas_combos (jornada_id, combo_id) VALUES
-(2, 1);
-
--- Insertar 3 concursantes de ejemplo (DEBE IR AL FINAL, DESPUÉS DE LAS JORNADAS)
-INSERT INTO concursantes (numero_concursante, jornada_id, dia_grabacion, lugar, nombre, edad, ocupacion, cuestionario_id, combo_id, factor_x, resultado, estado, numero_programa, orden_escaleta, premio, version) VALUES
-(1, 1, '2023-02-28', 'Madrid', 'María González', 28, 'Profesora', NULL, NULL, 'No', 'Ganó 15000€', 'grabado', 1, 1, 15000.00, 0),
-(2, 1, '2023-02-28', 'Madrid', 'Carlos Ruiz', 35, 'Ingeniero', NULL, NULL, 'Sí', 'Perdió en combo', 'grabado', 1, 2, 0.00, 0),
-(3, 2, '2023-02-28', 'Madrid', 'Ana López', 42, 'Médica', NULL, NULL, 'No', 'Ganó 8000€', 'grabado', 1, 3, 8000.00, 0); 
+-- No hay jornadas ni concursantes en esta versión 

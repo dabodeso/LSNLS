@@ -202,7 +202,9 @@ public class CuestionarioController {
     private String getCuestionarioEstadoDescripcion(Cuestionario.EstadoCuestionario estado) {
         switch (estado) {
             case borrador: return "borrador";
-            case creado: return "creado";
+            case revisar: return "revisar";
+            case corregir: return "corregir";
+            case aprobado: return "aprobado";
             case adjudicado: return "adjudicado";
             case grabado: return "grabado";
             default: return estado.toString();

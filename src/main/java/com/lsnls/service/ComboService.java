@@ -110,14 +110,14 @@ public class ComboService {
 
     /**
      * Obtiene combos disponibles para asignar a concursantes.
-     * Incluye combos en estado 'creado' y 'adjudicado'.
+     * Incluye combos en estado 'aprobado' y 'adjudicado'.
      */
     public List<Combo> obtenerDisponiblesParaConcursantes() {
-        List<Combo> creados = comboRepository.findByEstado(EstadoCombo.creado);
+        List<Combo> aprobados = comboRepository.findByEstado(EstadoCombo.aprobado);
         List<Combo> adjudicados = comboRepository.findByEstado(EstadoCombo.adjudicado);
         
         List<Combo> disponibles = new java.util.ArrayList<>();
-        disponibles.addAll(creados);
+        disponibles.addAll(aprobados);
         disponibles.addAll(adjudicados);
         
         // Ordenar por ID descendente (más recientes primero)
@@ -187,7 +187,7 @@ public class ComboService {
             pc.setId(id);
             pc.setPregunta(pregunta);
             pc.setCombo(combo);
-            pc.setFactorMultiplicacion(factorMultiplicacion != null ? factorMultiplicacion : 1);
+            pc.setFactorMultiplicacion(factorMultiplicacion != null ? factorMultiplicacion.toString() : "1");
             
             // Guardar la relación en la base de datos
             preguntaComboRepository.save(pc);
@@ -252,6 +252,65 @@ public class ComboService {
         return false;
     }
 
+    @Transactional
+    public boolean actualizarFactorPregunta(Long comboId, Long preguntaId, String factorMultiplicacion) {
+        try {
+            System.out.println("[ACTUALIZAR FACTOR] Iniciando actualización de factor para combo " + comboId + 
+                              ", pregunta " + preguntaId + ", nuevo factor: " + factorMultiplicacion);
+            
+            // Validar que el factor no esté vacío
+            if (factorMultiplicacion == null || factorMultiplicacion.trim().isEmpty()) {
+                factorMultiplicacion = "X"; // Valor por defecto
+            }
+            
+            // Verificar que el combo existe
+            Optional<Combo> comboOpt = comboRepository.findById(comboId);
+            if (comboOpt.isEmpty()) {
+                System.out.println("[ACTUALIZAR FACTOR] Combo no encontrado: " + comboId);
+                return false;
+            }
+            
+            // Verificar que la pregunta existe
+            Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
+            if (preguntaOpt.isEmpty()) {
+                System.out.println("[ACTUALIZAR FACTOR] Pregunta no encontrada: " + preguntaId);
+                return false;
+            }
+            
+            // Crear la clave primaria compuesta para buscar la relación
+            PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();
+            id.setComboId(comboId);
+            id.setPreguntaId(preguntaId);
+            
+            // Buscar la relación
+            Optional<PreguntaCombo> pcOpt = preguntaComboRepository.findById(id);
+            if (pcOpt.isEmpty()) {
+                System.out.println("[ACTUALIZAR FACTOR] Relación pregunta-combo no encontrada");
+                return false;
+            }
+            
+            PreguntaCombo preguntaCombo = pcOpt.get();
+            
+            // Actualizar el factor
+            System.out.println("[ACTUALIZAR FACTOR] Actualizando factor de " + 
+                               preguntaCombo.getFactorMultiplicacion() + " a " + factorMultiplicacion);
+            preguntaCombo.setFactorMultiplicacion(factorMultiplicacion);
+            
+            // Guardar la relación actualizada
+            preguntaComboRepository.save(preguntaCombo);
+            
+            // Forzar flush para asegurar que se guarde en la base de datos
+            entityManager.flush();
+            
+            System.out.println("[ACTUALIZAR FACTOR] Factor actualizado correctamente");
+            return true;
+        } catch (Exception e) {
+            System.out.println("[ACTUALIZAR FACTOR] Error: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public void eliminar(Long id) {
         // Verificar que el combo existe
         Optional<Combo> comboOpt = comboRepository.findById(id);
@@ -309,11 +368,8 @@ public class ComboService {
         System.out.println("LIMPIANDO PREGUNTAS INVÁLIDAS DEL COMBO " + comboId);
         System.out.println("==========================================");
         
-        // Eliminar preguntas con factores inválidos (que no sean 0, 2, o 3)
-        int preguntasEliminadas = entityManager.createNativeQuery(
-            "DELETE FROM combos_preguntas WHERE combo_id = ? AND factor_multiplicacion NOT IN (0, 2, 3)")
-            .setParameter(1, comboId)
-            .executeUpdate();
+        // Ya no eliminamos preguntas basadas en el factor, ya que ahora es un campo de texto libre
+        int preguntasEliminadas = 0;
         
         System.out.println("✅ ELIMINADAS " + preguntasEliminadas + " PREGUNTAS CON FACTORES INVÁLIDOS");
         System.out.println("==========================================");
@@ -344,21 +400,118 @@ public class ComboService {
             ((Map<String, Object>) pcdto).put("pregunta", mapPreguntaToDTO(p));
             ((Map<String, Object>) pcdto).put("factorMultiplicacion", pc.getFactorMultiplicacion());
             
-            // Determinar slot según factor
+            // Determinar slot según factor - ahora con manejo más flexible para factores personalizados
             String slot = null;
-            if (pc.getFactorMultiplicacion() == 2) slot = "PM1";
-            else if (pc.getFactorMultiplicacion() == 3) slot = "PM2";
-            else if (pc.getFactorMultiplicacion() == 0) slot = "PM3";
+            String factor = pc.getFactorMultiplicacion();
+            
+            // Asignación simplificada basada en la posición
+            if (factor != null) {
+                System.out.println("[DEBUG_SLOT] Analizando pregunta ID=" + pc.getPregunta().getId() + 
+                                  ", texto='" + pc.getPregunta().getPregunta() + "'" +
+                                  ", factor='" + factor + "'");
+                
+                // Determinamos el slot según la posición en la lista
+                int preguntaIndex = 0;
+                for (PreguntaCombo pcTemp : c.getPreguntas()) {
+                    if (pcTemp.getPregunta().getId().equals(pc.getPregunta().getId())) {
+                        break;
+                    }
+                    preguntaIndex++;
+                }
+                
+                // Asignamos slot según su posición (cíclica entre PM1, PM2, PM3)
+                int slotIndex = preguntaIndex % 3;
+                slot = "PM" + (slotIndex + 1);
+                
+                System.out.println("[SLOT_ASIGNADO] Pregunta " + pc.getPregunta().getId() + 
+                                  " con factor '" + factor + "' asignada al slot " + slot);
+            }
             
             ((Map<String, Object>) pcdto).put("slot", slot);
+            
+            // Verificar si el slot ya está ocupado (diagnóstico de problema)
+            if (mapPorSlot.containsKey(slot)) {
+                System.out.println("[ALERTA_SLOT_DUPLICADO] El slot " + slot + " ya está ocupado con otra pregunta!");
+                Object preguntaExistente = mapPorSlot.get(slot);
+                Pregunta pExistente = null;
+                String factorExistente = null;
+                if (preguntaExistente instanceof Map) {
+                    Map<String, Object> mapExistente = (Map<String, Object>)preguntaExistente;
+                    if (mapExistente.get("pregunta") instanceof Map) {
+                        Map<String, Object> preguntaMap = (Map<String, Object>)mapExistente.get("pregunta");
+                        System.out.println("  - Pregunta ya asignada: ID=" + preguntaMap.get("id") + 
+                                         ", texto='" + preguntaMap.get("pregunta") + "'");
+                    }
+                    factorExistente = mapExistente.get("factorMultiplicacion") != null ? 
+                                    mapExistente.get("factorMultiplicacion").toString() : "null";
+                    System.out.println("  - Factor de pregunta existente: " + factorExistente);
+                }
+                System.out.println("  - Nueva pregunta: ID=" + pc.getPregunta().getId() + 
+                                 ", texto='" + pc.getPregunta().getPregunta() + "'" +
+                                 ", factor='" + factor + "'");
+            }
+            
             mapPorSlot.put(slot, pcdto);
+        }
+        
+        // Verificar si hay preguntas sin asignar debido a colisiones
+        boolean pm1Asignado = mapPorSlot.containsKey("PM1");
+        boolean pm2Asignado = mapPorSlot.containsKey("PM2");
+        boolean pm3Asignado = mapPorSlot.containsKey("PM3");
+        
+        System.out.println("[DEBUG_SLOTS] Estado de asignación: PM1=" + pm1Asignado + 
+                         ", PM2=" + pm2Asignado + ", PM3=" + pm3Asignado);
+        
+        // Reorganizar slots si es necesario (asegurar un slot por pregunta)
+        if (c.getPreguntas().size() > 0 && (!pm1Asignado || !pm2Asignado || !pm3Asignado)) {
+            System.out.println("[REORGANIZAR_SLOTS] Se detectaron slots vacíos, reorganizando preguntas");
+            
+            // Crear mapa temporal con todas las preguntas
+            java.util.List<Map<String, Object>> todasLasPreguntas = new java.util.ArrayList<>();
+            for (PreguntaCombo pc : c.getPreguntas()) {
+                Map<String, Object> pregMap = new java.util.HashMap<>();
+                pregMap.put("id", pc.getPregunta().getId());
+                pregMap.put("texto", pc.getPregunta().getPregunta());
+                pregMap.put("factor", pc.getFactorMultiplicacion());
+                pregMap.put("preguntaCombo", pc);
+                todasLasPreguntas.add(pregMap);
+            }
+            
+            // Ordenamos por ID para tener un orden estable y determinista
+            java.util.Collections.sort(todasLasPreguntas, (a, b) -> {
+                Long idA = (Long)a.get("id");
+                Long idB = (Long)b.get("id");
+                return idA.compareTo(idB);
+            });
+            
+            // Resetear el mapa de slots
+            mapPorSlot.clear();
+            
+            // Asignar preguntas a slots en orden
+            java.util.List<String> slots = java.util.Arrays.asList("PM1", "PM2", "PM3");
+            for (int i = 0; i < Math.min(todasLasPreguntas.size(), slots.size()); i++) {
+                Map<String, Object> pregInfo = todasLasPreguntas.get(i);
+                PreguntaCombo pc = (PreguntaCombo)pregInfo.get("preguntaCombo");
+                
+                Object pcdto = new java.util.HashMap<>();
+                ((Map<String, Object>) pcdto).put("pregunta", mapPreguntaToDTO(pc.getPregunta()));
+                ((Map<String, Object>) pcdto).put("factorMultiplicacion", pc.getFactorMultiplicacion());
+                ((Map<String, Object>) pcdto).put("slot", slots.get(i));
+                
+                mapPorSlot.put(slots.get(i), pcdto);
+                
+                System.out.println("[REORGANIZAR_SLOTS] Pregunta ID=" + pc.getPregunta().getId() + 
+                                 " con factor '" + pc.getFactorMultiplicacion() + 
+                                 "' reasignada al slot " + slots.get(i));
+            }
         }
         
         // Asegurar los 3 slots PM
         java.util.List<Object> preguntasDTO = new java.util.ArrayList<>();
-        for (String slot : new String[]{"PM1", "PM2", "PM3"}) {
+        for (String slot : java.util.Arrays.asList("PM1", "PM2", "PM3")) {
             if (mapPorSlot.containsKey(slot)) {
                 preguntasDTO.add(mapPorSlot.get(slot));
+                System.out.println("[SLOTS_FINALES] " + slot + " ocupado");
             } else {
                 // Slot vacío
                 Object vacio = new java.util.HashMap<>();
@@ -366,6 +519,7 @@ public class ComboService {
                 ((Map<String, Object>) vacio).put("pregunta", null);
                 ((Map<String, Object>) vacio).put("factorMultiplicacion", null);
                 preguntasDTO.add(vacio);
+                System.out.println("[SLOTS_FINALES] " + slot + " vacío");
             }
         }
         dto.put("preguntas", preguntasDTO);
@@ -506,14 +660,11 @@ public class ComboService {
         // PASO 1: Preparar mapa de preguntas con factores
         Map<Long, Integer> preguntaIdsConFactores = new java.util.HashMap<>();
         for (CrearComboDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {
-            int factor = 1;
-            if ("X2".equalsIgnoreCase(pm.getFactor())) factor = 2;
-            else if ("X3".equalsIgnoreCase(pm.getFactor())) factor = 3;
-            else if ("X".equalsIgnoreCase(pm.getFactor())) factor = 0;
-            else {
-                throw new IllegalArgumentException("Factor '" + pm.getFactor() + "' no válido. Factores permitidos: X2, X3, X");
+            String factor = pm.getFactor();
+            if (factor == null || factor.trim().isEmpty()) {
+                factor = "1";
             }
-            preguntaIdsConFactores.put(pm.getId(), factor);
+            preguntaIdsConFactores.put(pm.getId(), Integer.valueOf(1)); // Usamos 1 como valor por defecto para el mapa
         }
         
         // PASO 2: VERIFICACIÓN Y RESERVA ATÓMICA de todas las preguntas
@@ -552,7 +703,7 @@ public class ComboService {
                 pc.setId(id);
                 pc.setPregunta(pregunta);
                 pc.setCombo(combo);
-                pc.setFactorMultiplicacion(factor);
+                pc.setFactorMultiplicacion(factor.toString());
                 
                 preguntaComboRepository.save(pc);
                 // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasComboAtomico()

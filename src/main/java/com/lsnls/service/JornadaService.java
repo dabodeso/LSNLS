@@ -75,7 +75,7 @@ public class JornadaService {
                 try {
                     boolean exito = cuestionarioService.cambiarEstadoAtomico(
                         cuestionarioId, 
-                        Cuestionario.EstadoCuestionario.creado, 
+                        Cuestionario.EstadoCuestionario.aprobado, 
                         Cuestionario.EstadoCuestionario.adjudicado
                     );
                     if (!exito) {
@@ -104,7 +104,7 @@ public class JornadaService {
                 try {
                     boolean exito = comboService.cambiarEstadoAtomico(
                         comboId, 
-                        Combo.EstadoCombo.creado, 
+                        Combo.EstadoCombo.aprobado, 
                         Combo.EstadoCombo.adjudicado
                     );
                     if (!exito) {
@@ -155,7 +155,7 @@ public class JornadaService {
                     if (!jornadaDTO.getCuestionarioIds().contains(cuestionarioActual.getId())) {
                         // Este cuestionario se está quitando de la jornada
                         if (cuestionarioActual.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
-                            cuestionarioActual.setEstado(Cuestionario.EstadoCuestionario.creado);
+                            cuestionarioActual.setEstado(Cuestionario.EstadoCuestionario.aprobado);
                             cuestionarioRepository.save(cuestionarioActual);
                         }
                     }
@@ -173,7 +173,7 @@ public class JornadaService {
                     try {
                         boolean exito = cuestionarioService.cambiarEstadoAtomico(
                             cuestionarioId, 
-                            Cuestionario.EstadoCuestionario.creado, 
+                            Cuestionario.EstadoCuestionario.aprobado, 
                             Cuestionario.EstadoCuestionario.adjudicado
                         );
                         if (!exito) {
@@ -205,7 +205,7 @@ public class JornadaService {
                     if (!jornadaDTO.getComboIds().contains(comboActual.getId())) {
                         // Este combo se está quitando de la jornada
                         if (comboActual.getEstado() == Combo.EstadoCombo.adjudicado) {
-                            comboActual.setEstado(Combo.EstadoCombo.creado);
+                            comboActual.setEstado(Combo.EstadoCombo.aprobado);
                             comboRepository.save(comboActual);
                         }
                     }
@@ -223,7 +223,7 @@ public class JornadaService {
                     try {
                         boolean exito = comboService.cambiarEstadoAtomico(
                             comboId, 
-                            Combo.EstadoCombo.creado, 
+                            Combo.EstadoCombo.aprobado, 
                             Combo.EstadoCombo.adjudicado
                         );
                         if (!exito) {
@@ -276,7 +276,7 @@ public class JornadaService {
         if (jornada.getCuestionarios() != null) {
             for (Cuestionario cuestionario : jornada.getCuestionarios()) {
                 if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
-                    cuestionario.setEstado(Cuestionario.EstadoCuestionario.creado);
+                    cuestionario.setEstado(Cuestionario.EstadoCuestionario.aprobado);
                     cuestionarioRepository.save(cuestionario);
                 }
             }
@@ -286,7 +286,7 @@ public class JornadaService {
         if (jornada.getCombos() != null) {
             for (Combo combo : jornada.getCombos()) {
                 if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {
-                    combo.setEstado(Combo.EstadoCombo.creado);
+                    combo.setEstado(Combo.EstadoCombo.aprobado);
                     comboRepository.save(combo);
                 }
             }
@@ -321,7 +321,7 @@ public class JornadaService {
     }
 
     public List<Map<String, Object>> obtenerCuestionariosDisponibles() {
-        List<Cuestionario> cuestionarios = cuestionarioRepository.findByEstado(Cuestionario.EstadoCuestionario.creado);
+        List<Cuestionario> cuestionarios = cuestionarioRepository.findByEstado(Cuestionario.EstadoCuestionario.aprobado);
         return cuestionarios.stream().map(c -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", c.getId());
@@ -336,7 +336,7 @@ public class JornadaService {
     }
 
     public List<Map<String, Object>> obtenerCombosDisponibles() {
-        List<Combo> combos = comboRepository.findByEstado(Combo.EstadoCombo.creado);
+        List<Combo> combos = comboRepository.findByEstado(Combo.EstadoCombo.aprobado);
         return combos.stream().map(c -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", c.getId());

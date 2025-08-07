@@ -168,14 +168,14 @@ public class CuestionarioService {
 
     /**
      * Obtiene cuestionarios disponibles para asignar a concursantes.
-     * Incluye cuestionarios en estado 'creado' y 'adjudicado'.
+     * Incluye cuestionarios en estado 'aprobado' y 'adjudicado'.
      */
     public List<Cuestionario> obtenerDisponiblesParaConcursantes() {
-        List<Cuestionario> creados = cuestionarioRepository.findByEstado(EstadoCuestionario.creado);
+        List<Cuestionario> aprobados = cuestionarioRepository.findByEstado(EstadoCuestionario.aprobado);
         List<Cuestionario> adjudicados = cuestionarioRepository.findByEstado(EstadoCuestionario.adjudicado);
         
         List<Cuestionario> disponibles = new ArrayList<>();
-        disponibles.addAll(creados);
+        disponibles.addAll(aprobados);
         disponibles.addAll(adjudicados);
         
         // Ordenar por ID descendente (más recientes primero)

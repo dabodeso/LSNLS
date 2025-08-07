@@ -370,6 +370,48 @@ public class ComboController {
         }
     }
 
+        @PutMapping("/{comboId}/preguntas/{preguntaId}/factor")
+    @PreAuthorize("@authorizationService.canCreateCuestionario()")
+    public ResponseEntity<?> actualizarFactorPregunta(
+            @PathVariable Long comboId,
+            @PathVariable Long preguntaId,
+            @RequestBody Map<String, Object> request) {
+        try {
+            if (!authService.canCreateCuestionario()) {
+                return ResponseEntity.status(403).body("No tienes permisos para modificar factores de preguntas en combos.");
+            }
+
+            // Verificar que el factor existe en la solicitud
+            if (!request.containsKey("factorMultiplicacion")) {
+                log.warn("[ACTUALIZAR FACTOR] Falta el parámetro factorMultiplicacion en la solicitud");
+                return ResponseEntity.badRequest().body("Error: Falta el parámetro factorMultiplicacion");
+            }
+            
+            // Convertir el factor a String de manera segura
+            Object factorObj = request.get("factorMultiplicacion");
+            String factorMultiplicacion = factorObj != null ? factorObj.toString() : "";
+
+            log.info("[ACTUALIZAR FACTOR] Actualizando factor de pregunta {} en combo {} a: {}",
+                    preguntaId, comboId, factorMultiplicacion);
+
+            boolean exito = comboService.actualizarFactorPregunta(comboId, preguntaId, factorMultiplicacion);
+
+            if (exito) {
+                log.info("[ACTUALIZAR FACTOR] Factor actualizado exitosamente");
+                return ResponseEntity.ok(Map.of("message", "Factor actualizado exitosamente", 
+                                               "comboId", comboId,
+                                               "preguntaId", preguntaId,
+                                               "factor", factorMultiplicacion));
+            } else {
+                log.warn("[ACTUALIZAR FACTOR] No se pudo actualizar el factor");
+                return ResponseEntity.badRequest().body("Error al actualizar factor: No se pudo completar la operación");
+            }
+        } catch (Exception e) {
+            log.error("Error al actualizar factor de pregunta {} en combo {}: {}", preguntaId, comboId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+        }
+    }
+    
     @DeleteMapping("/{id}")
     @PreAuthorize("@authorizationService.canDelete()")
     public ResponseEntity<?> eliminar(@PathVariable Long id) {

@@ -1,5 +1,6 @@
 // Módulo de gestión de combos
 const CombosManager = {
+    ultimoListado: [],
     async cargarCombos() {
         try {
             if (!authManager.isAuthenticated()) {
@@ -11,7 +12,8 @@ const CombosManager = {
             });
             if (!response.ok) throw new Error('Error al cargar los combos');
             const combos = await response.json();
-            this.mostrarCombos(combos);
+            this.ultimoListado = combos;
+            await this.mostrarCombos(combos);
         } catch (error) {
             if (error && error.message && error.message.startsWith('401')) {
                 return;
@@ -28,12 +30,42 @@ const CombosManager = {
         }
     },
 
-    mostrarCombos(combos) {
+    async mostrarCombos(combos) {
         const tbody = document.getElementById('tabla-combos');
         if (!tbody) {
             console.error('No se encontró el elemento tabla-combos');
             return;
         }
+        
+        // Cargar temáticas para el filtro
+        try {
+            const response = await fetch('/api/temas', {
+                headers: authManager.getAuthHeaders()
+            });
+            if (response.ok) {
+                const tematicas = await response.json();
+                
+                // Llenar el filtro de temáticas
+                const filtroTematica = document.getElementById('filtro-tematica-combo');
+                if (filtroTematica) {
+                    // Mantener la primera opción "Todas"
+                    filtroTematica.innerHTML = '<option value="">Todas</option>';
+                    
+                    // Añadir las temáticas
+                    tematicas.forEach(tematica => {
+                        const option = document.createElement('option');
+                        option.value = tematica;
+                        option.textContent = tematica;
+                        filtroTematica.appendChild(option);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error al cargar temáticas:', error);
+        }
+        
+
+        
         tbody.innerHTML = '';
         if (!Array.isArray(combos) || combos.length === 0) {
             const tr = document.createElement('tr');
@@ -45,9 +77,36 @@ const CombosManager = {
             // Determinar si hay huecos usando slot
             const niveles = ['PM1','PM2','PM3'];
             const preguntasPorSlot = {};
+            const preguntasAsignadas = new Set(); // Para controlar qué preguntas ya se han asignado
+            
+            console.log(`[DEBUG] Combo ${c.id} tiene ${c.preguntas ? c.preguntas.length : 0} preguntas`);
+            
+            // Primero, intentar asignar preguntas a slots según la información del backend
             if (Array.isArray(c.preguntas)) {
                 c.preguntas.forEach(pc => {
-                    if (pc && pc.slot) preguntasPorSlot[pc.slot] = pc.pregunta;
+                    if (pc && pc.slot && pc.pregunta) {
+                        preguntasPorSlot[pc.slot] = pc.pregunta;
+                        preguntasAsignadas.add(pc.pregunta.id);
+                        console.log(`[DEBUG] Pregunta ${pc.pregunta.id} asignada al slot ${pc.slot} por el backend`);
+                    }
+                });
+            }
+            
+            // Segundo, asignar cualquier pregunta que no tenga slot a un slot vacío
+            if (Array.isArray(c.preguntas)) {
+                c.preguntas.forEach(pc => {
+                    if (pc && pc.pregunta && !preguntasAsignadas.has(pc.pregunta.id)) {
+                        // Buscar un slot vacío
+                        for (let i = 0; i < niveles.length; i++) {
+                            const slot = niveles[i];
+                            if (!preguntasPorSlot[slot]) {
+                                preguntasPorSlot[slot] = pc.pregunta;
+                                preguntasAsignadas.add(pc.pregunta.id);
+                                console.log(`[DEBUG] Pregunta ${pc.pregunta.id} asignada al slot ${slot} manualmente`);
+                                break;
+                            }
+                        }
+                    }
                 });
             }
             const tr = document.createElement('tr');
@@ -60,14 +119,12 @@ const CombosManager = {
                         <option value="P" ${c.tipo === 'P' ? 'selected' : ''}>P (Premio)</option>
                         <option value="A" ${c.tipo === 'A' ? 'selected' : ''}>A (Asequible)</option>
                         <option value="D" ${c.tipo === 'D' ? 'selected' : ''}>D (Difícil)</option>
+                        <option value="R" ${c.tipo === 'R' ? 'selected' : ''}>R (Rescate)</option>
                     </select>
                 </td>
                 <td>
                     <select class="form-select form-select-sm" onchange="cambiarEstadoCombo(${c.id}, this.value)">
-                        <option value="borrador" ${c.estado === 'borrador' ? 'selected' : ''}>Borrador</option>
-                        <option value="creado" ${c.estado === 'creado' ? 'selected' : ''}>Creado</option>
-                        <option value="adjudicado" ${c.estado === 'adjudicado' ? 'selected' : ''}>Adjudicado</option>
-                        <option value="grabado" ${c.estado === 'grabado' ? 'selected' : ''}>Grabado</option>
+                        ${getOpcionesEstadoCombo(c.estado)}
                     </select>
                 </td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
@@ -94,17 +151,58 @@ const CombosManager = {
                 const p = preguntasPorSlot[slotNivel];
                 
                 if (p) {
-                    // Fila con pregunta - mostrar nivel real de la pregunta con su multiplicador
-                    let multiplicador = '';
-                    if (slotNivel === 'PM1') multiplicador = ' (X2)';
-                    else if (slotNivel === 'PM2') multiplicador = ' (X3)';
-                    else if (slotNivel === 'PM3') multiplicador = ' (X)';
-                    
+                    // Mostrar nivel real de la pregunta y el factor como campos separados
                     const nivelReal = p.nivel ? p.nivel.replace('_', '') : slotNivel;
-                    const nivelMostrar = nivelReal + multiplicador;
+                    
+                    // Obtener el factor multiplicador de la pregunta o usar un valor por defecto basado en el slot
+                    let factorMostrar = '';
+                                // Buscamos el factor en las preguntas del combo
+            // Primero buscamos en el array de preguntas del combo
+            let preguntaCombo = null;
+            if (c.preguntas && Array.isArray(c.preguntas)) {
+                for (let i = 0; i < c.preguntas.length; i++) {
+                    const pCombo = c.preguntas[i];
+                    if (pCombo && pCombo.pregunta && pCombo.pregunta.id === p.id) {
+                        preguntaCombo = pCombo;
+                        break;
+                    }
+                }
+            }
+            
+            if (preguntaCombo && preguntaCombo.factorMultiplicacion) {
+                factorMostrar = preguntaCombo.factorMultiplicacion;
+                console.log(`[DEBUG] Factor encontrado para pregunta ${p.id}: ${factorMostrar}`);
+            } else {
+                // Asignar un factor por defecto según el slot
+                if (slotNivel === 'PM1') factorMostrar = 'X2';
+                else if (slotNivel === 'PM2') factorMostrar = 'X3';
+                else if (slotNivel === 'PM3') factorMostrar = 'X';
+                console.log(`[DEBUG] Factor por defecto para pregunta ${p.id}: ${factorMostrar}`);
+                
+                // Actualizar el factor en el backend para evitar inconsistencias
+                // Usamos un setTimeout para evitar conflictos de actualización
+                setTimeout(() => {
+                    // Solo actualizamos en backend sin recargar la interfaz
+                    fetch(`/api/combos/${c.id}/preguntas/${p.id}/factor`, {
+                        method: 'PUT',
+                        headers: {
+                            ...authManager.getAuthHeaders(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ factorMultiplicacion: factorMostrar })
+                    }).catch(e => console.error('Error al actualizar factor inicial:', e));
+                }, 100);
+            }
                     
                     filasPreguntas += `<tr data-id="${p.id}" data-nivel="${slotNivel}" style="cursor:pointer;">
-                        <td><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(p.nivel) : ''}'>${nivelMostrar}</span></td>
+                        <td style="width:60px; max-width:60px;"><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(p.nivel) : ''}'>${nivelReal}</span></td>
+                        <td style="width:60px; max-width:60px;">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control form-control-sm" value="${factorMostrar}" 
+                                       onchange="actualizarFactorPregunta(${c.id}, ${p.id}, this.value)" 
+                                       onclick="event.stopPropagation();">
+                            </div>
+                        </td>
                         <td>${p.pregunta ?? ''}</td>
                         <td>${p.respuesta ?? ''}</td>
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCombo(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
@@ -120,7 +218,8 @@ const CombosManager = {
                     const nivelMostrar = tipoSlot + multiplicador;
                     
                     filasPreguntas += `<tr data-nivel="${slotNivel}">
-                        <td><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(slotNivel) : ''}'>${nivelMostrar}</span></td>
+                        <td style="width:60px; max-width:60px;"><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(slotNivel) : ''}'>${tipoSlot}</span></td>
+                        <td style="width:60px; max-width:60px;" class="text-center text-muted">${multiplicador}</td>
                         <td class="text-center text-muted">(Vacío)</td>
                         <td class="text-center text-muted">-</td>
                         <td><button class='btn btn-sm btn-success' onclick='event.stopPropagation();anadirPreguntaACombo(${c.id}, "${slotNivel}")'><i class='fas fa-plus'></i></button></td>
@@ -133,10 +232,11 @@ const CombosManager = {
                     <table class="table table-preguntas-cuestionario mb-0">
                         <thead>
                             <tr>
-                                <th>Nivel</th>
-                                <th>Pregunta</th>
-                                <th>Respuesta</th>
-                                <th>Acción</th>
+                                <th style="width:60px; max-width:60px;">Nivel</th>
+                                <th style="width:60px; max-width:60px;">Factor</th>
+                                <th style="width:45%; min-width:200px;">Pregunta</th>
+                                <th style="width:30%; min-width:150px;">Respuesta</th>
+                                <th style="width:60px; max-width:60px;">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -182,6 +282,7 @@ const CombosManager = {
             case 'P': return 'Premio (P)';
             case 'A': return 'Asequible (A)';
             case 'D': return 'Difícil (D)';
+            case 'R': return 'Rescate (R)';
             default: return '-';
         }
     },
@@ -200,8 +301,38 @@ window.filtrarCombos = async function() {
     try {
         const estado = document.getElementById('filtro-estado-combo')?.value || '';
         const tipo = document.getElementById('filtro-tipo-combo')?.value || '';
+        const tematica = document.getElementById('filtro-tematica-combo')?.value || '';
+        const subtema = document.getElementById('filtro-subtema-combo')?.value || '';
         const busqueda = document.getElementById('buscar-combo')?.value || '';
 
+        // Si hay filtros de tematica o subtema, usar backend
+        if (tematica || subtema) {
+            const params = new URLSearchParams();
+            if (estado) params.append('estado', estado);
+            if (tipo) params.append('tipo', tipo);
+            if (tematica) params.append('tematica', tematica);
+            if (subtema) params.append('subtema', subtema);
+            
+            const response = await fetch(`/api/combos/filtrar?${params.toString()}`, {
+                headers: authManager.getAuthHeaders()
+            });
+            
+            if (!response.ok) throw new Error('Error al filtrar combos');
+            const combos = await response.json();
+            
+            // Aplicar filtro de búsqueda por ID si existe
+            let combosFiltrados = combos;
+            if (busqueda) {
+                combosFiltrados = combos.filter(c => 
+                    c.id.toString().includes(busqueda)
+                );
+            }
+            
+            CombosManager.mostrarCombos(combosFiltrados);
+            return;
+        }
+        
+        // Filtrado en memoria para los filtros básicos
         let combosFiltrados = CombosManager.ultimoListado;
 
         // Filtrar por estado
@@ -231,6 +362,7 @@ window.filtrarCombos = async function() {
 window.limpiarFiltrosCombos = function() {
     document.getElementById('filtro-estado-combo').value = '';
     document.getElementById('filtro-tipo-combo').value = '';
+    document.getElementById('filtro-tematica-combo').value = '';
     document.getElementById('buscar-combo').value = '';
     CombosManager.cargarCombos();
 }
@@ -305,8 +437,15 @@ async function mostrarFormularioCombo() {
     pms.forEach(pm => {
         const sel = document.getElementById(`pm-${pm.id}`);
         const texto = document.getElementById(`pm-${pm.id}-texto`);
+        const factor = document.getElementById(`factor-${pm.id}`);
         if (sel) sel.value = '';
         if (texto) texto.value = '';
+        if (factor) {
+            // Establecer valores por defecto para los factores
+            if (pm.id === 'PM1') factor.value = 'X2';
+            else if (pm.id === 'PM2') factor.value = 'X3';
+            else if (pm.id === 'PM3') factor.value = 'X';
+        }
     });
     
     // Resetear título y formulario para nuevo combo
@@ -321,6 +460,7 @@ async function mostrarFormularioCombo() {
 
 async function editarCombo(id) {
     try {
+        console.log(`[DEBUG_EDIT] Iniciando edición del combo ${id}`);
         const response = await fetch(`/api/combos/${id}`, {
             headers: authManager.getAuthHeaders()
         });
@@ -328,6 +468,7 @@ async function editarCombo(id) {
             throw new Error('Error al cargar el combo');
         }
         const combo = await response.json();
+        console.log(`[DEBUG_EDIT] Datos del combo cargados:`, combo);
         
         // Cambiar título del modal
         document.getElementById('modal-combo-titulo').textContent = 'Editar Combo';
@@ -337,28 +478,56 @@ async function editarCombo(id) {
         document.getElementById('combo-tipo').value = combo.tipo || '';
         
         // Limpiar primero todos los campos PM
+        console.log(`[DEBUG_EDIT] Limpiando campos de formulario`);
         pms.forEach(pm => {
             const sel = document.getElementById(`pm-${pm.id}`);
             const texto = document.getElementById(`pm-${pm.id}-texto`);
+            const factor = document.getElementById(`factor-${pm.id}`);
             if (sel) sel.value = '';
             if (texto) texto.value = '';
+            // Valores por defecto para los factores
+            if (factor) {
+                if (pm.id === 'PM1') factor.value = 'X2';
+                else if (pm.id === 'PM2') factor.value = 'X3';
+                else if (pm.id === 'PM3') factor.value = 'X';
+            }
         });
         
         // Rellenar preguntas multiplicadoras
         if (combo.preguntas && Array.isArray(combo.preguntas)) {
+            console.log(`[DEBUG_EDIT] Procesando ${combo.preguntas.length} preguntas del combo`);
+            
             combo.preguntas.forEach(pc => {
+                console.log(`[DEBUG_EDIT] Procesando pregunta:`, pc);
                 if (pc.slot && pc.pregunta) {
                     const selId = `pm-${pc.slot}`;
                     const textoId = `pm-${pc.slot}-texto`;
+                    const factorId = `factor-${pc.slot}`;
+                    console.log(`[DEBUG_EDIT] Asignando pregunta al slot ${pc.slot}, IDs de elementos: selId=${selId}, textoId=${textoId}, factorId=${factorId}`);
+                    
                     const sel = document.getElementById(selId);
                     const texto = document.getElementById(textoId);
+                    const factor = document.getElementById(factorId);
                     
                     if (sel && texto) {
                         sel.value = pc.pregunta.id;
                         texto.value = `${pc.pregunta.pregunta} → ${pc.pregunta.respuesta}`;
+                        console.log(`[DEBUG_EDIT] Pregunta ID=${pc.pregunta.id} asignada al campo ${selId}`);
+                    } else {
+                        console.error(`[DEBUG_EDIT] No se encontraron los elementos para el slot ${pc.slot}`);
                     }
+                    
+                    // Establecer el factor si existe
+                    if (factor && pc.factorMultiplicacion) {
+                        factor.value = pc.factorMultiplicacion;
+                        console.log(`[DEBUG_EDIT] Factor '${pc.factorMultiplicacion}' asignado al campo ${factorId}`);
+                    }
+                } else {
+                    console.warn(`[DEBUG_EDIT] Datos de pregunta incompletos:`, pc);
                 }
             });
+        } else {
+            console.warn(`[DEBUG_EDIT] No hay preguntas en el combo o no es un array`);
         }
         
         // Mostrar el modal
@@ -588,13 +757,16 @@ async function guardarCombo() {
     let preguntasMultiplicadoras = [];
     pms.forEach((pm, idx) => {
         const id = document.getElementById(`pm-${pm.id}`).value;
+        const factorInput = document.getElementById(`factor-${pm.id}`);
+        const factor = factorInput ? factorInput.value : pm.factor;
+        
         if (!id) valid = false;
-        else preguntasMultiplicadoras.push({ id: Number(id), factor: pm.factor });
+        else preguntasMultiplicadoras.push({ id: Number(id), factor: factor });
     });
     
     if (!valid) {
         Toastify({
-            text: 'Debes seleccionar todas las preguntas multiplicadoras (PM1, PM2, PM3)',
+            text: 'Debes seleccionar todas las preguntas multiplicadoras (Pregunta 1, 2, 3)',
             duration: 3000,
             close: true,
             gravity: 'top',
@@ -603,8 +775,6 @@ async function guardarCombo() {
         }).showToast();
         return;
     }
-    
-
     
     const comboId = document.getElementById('combo-id').value;
     const esEdicion = !!comboId;
@@ -713,6 +883,74 @@ window.anadirPreguntaACombo = function(comboId, nivel) {
     window.contextoAnadirPregunta = { comboId, nivel };
 }
 
+window.actualizarFactorPregunta = async function(comboId, preguntaId, nuevoFactor) {
+    try {
+        console.log(`[DEBUG] Actualizando factor para combo ${comboId}, pregunta ${preguntaId}, nuevo factor: ${nuevoFactor}`);
+        
+        // Guardar el valor visual actual de la pregunta para restaurarlo después de la recarga
+        const filaPregunta = document.querySelector(`tr[data-id="${preguntaId}"]`);
+        const textoPregunta = filaPregunta ? filaPregunta.querySelector('td:nth-child(3)').innerHTML : null;
+        const textoRespuesta = filaPregunta ? filaPregunta.querySelector('td:nth-child(4)').innerHTML : null;
+        
+        // Validar que el factor no esté vacío
+        if (!nuevoFactor || nuevoFactor.trim() === '') {
+            nuevoFactor = 'X'; // Valor por defecto
+        }
+        
+        const response = await fetch(`/api/combos/${comboId}/preguntas/${preguntaId}/factor`, {
+            method: 'PUT',
+            headers: {
+                ...authManager.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ factorMultiplicacion: nuevoFactor })
+        });
+        
+        let responseData;
+        try {
+            responseData = await response.json();
+        } catch (e) {
+            responseData = await response.text();
+        }
+        
+        if (!response.ok) {
+            throw new Error(typeof responseData === 'string' ? responseData : 'Error al actualizar el factor');
+        }
+        
+        console.log(`[DEBUG] Factor actualizado correctamente en el servidor:`, responseData);
+        
+        Toastify({
+            text: 'Factor actualizado correctamente',
+            duration: 2000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+        }).showToast();
+        
+        // Actualizar el valor en la UI directamente sin recargar todos los combos
+        // Esto evita que se pierda la pregunta visualmente
+        const inputField = document.querySelector(`tr[data-id="${preguntaId}"] input[type="text"]`);
+        if (inputField) {
+            inputField.value = nuevoFactor;
+        }
+        
+        // NO recargamos todos los combos aquí para evitar perder el contenido de la pregunta
+        // await CombosManager.cargarCombos();
+        
+    } catch (error) {
+        console.error('[DEBUG] Error al actualizar factor:', error);
+        Toastify({
+            text: 'Error: ' + error.message,
+            duration: 3000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+    }
+}
+
 
 
 // Guardar el último listado de combos para búsquedas rápidas
@@ -728,6 +966,41 @@ window.cambiarPassword = function() {
     const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
     modal.show();
 };
+
+function getOpcionesEstadoCombo(estadoActual) {
+    // Definimos las transiciones permitidas para cada estado
+    const transiciones = {
+        'borrador': ['revisar'],
+        'revisar': ['corregir', 'aprobado'],
+        'corregir': ['revisar'],
+        'aprobado': [], // Solo cambia automáticamente a adjudicado al asignarse a una jornada
+        'adjudicado': [], // Solo cambia automáticamente a grabado al asignarse a un concursante
+        'grabado': []
+    };
+    
+    // Obtenemos las opciones disponibles según el estado actual
+    const opcionesDisponibles = transiciones[estadoActual] || [];
+    
+    // Siempre incluimos el estado actual como seleccionado
+    let opciones = `<option value="${estadoActual}" selected>${estadoActual.charAt(0).toUpperCase() + estadoActual.slice(1)}</option>`;
+    
+    // Añadimos las opciones de transición permitidas
+    opcionesDisponibles.forEach(estado => {
+        opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
+    });
+    
+    // Si el usuario es admin, permitimos todas las opciones
+    if (authManager.hasRole('ROLE_ADMIN')) {
+        const todosEstados = ['borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado'];
+        todosEstados.forEach(estado => {
+            if (estado !== estadoActual && !opcionesDisponibles.includes(estado)) {
+                opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
+            }
+        });
+    }
+    
+    return opciones;
+}
 
 window.cambiarEstadoCombo = async function(id, nuevoEstado) {
     try {

@@ -192,7 +192,7 @@ public class ValidationService {
             // Validar factores únicos
             boolean[] factoresPresentes = new boolean[3]; // factor 2, 3, 0
             for (PreguntaCombo pc : combo.getPreguntas()) {
-                Integer factor = pc.getFactorMultiplicacion();
+                String factor = pc.getFactorMultiplicacion();
                 
                 // Validar que la pregunta sea de nivel 5
                 String nivel = pc.getPregunta().getNivel().name();
@@ -201,27 +201,23 @@ public class ValidationService {
                 }
                 
                 // Validar factores únicos
-                switch (factor) {
-                    case 2:
-                        if (factoresPresentes[0]) {
-                            result.addError("Factor multiplicador X2 duplicado en combo");
-                        }
-                        factoresPresentes[0] = true;
-                        break;
-                    case 3:
-                        if (factoresPresentes[1]) {
-                            result.addError("Factor multiplicador X3 duplicado en combo");
-                        }
-                        factoresPresentes[1] = true;
-                        break;
-                    case 0:
-                        if (factoresPresentes[2]) {
-                            result.addError("Factor multiplicador X duplicado en combo");
-                        }
-                        factoresPresentes[2] = true;
-                        break;
-                    default:
-                        result.addError("Factor multiplicador inválido: " + factor + ". Solo se permiten 0, 2, 3");
+                if ("X2".equals(factor) || "2".equals(factor)) {
+                    if (factoresPresentes[0]) {
+                        result.addError("Factor multiplicador X2 duplicado en combo");
+                    }
+                    factoresPresentes[0] = true;
+                } else if ("X3".equals(factor) || "3".equals(factor)) {
+                    if (factoresPresentes[1]) {
+                        result.addError("Factor multiplicador X3 duplicado en combo");
+                    }
+                    factoresPresentes[1] = true;
+                } else if ("X".equals(factor) || "0".equals(factor)) {
+                    if (factoresPresentes[2]) {
+                        result.addError("Factor multiplicador X duplicado en combo");
+                    }
+                    factoresPresentes[2] = true;
+                } else {
+                    // No validamos otros valores ya que ahora el factor es texto libre
                 }
             }
             
@@ -269,7 +265,7 @@ public class ValidationService {
         
         // Validar asignaciones consistentes
         if (concursante.getCuestionario() != null) {
-            if (concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.creado &&
+            if (concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.aprobado &&
                 concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.adjudicado &&
                 concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.grabado) {
                 result.addError("El cuestionario asignado no está en un estado válido para concursantes");
@@ -277,7 +273,7 @@ public class ValidationService {
         }
         
         if (concursante.getCombo() != null) {
-            if (concursante.getCombo().getEstado() != Combo.EstadoCombo.creado &&
+            if (concursante.getCombo().getEstado() != Combo.EstadoCombo.aprobado &&
                 concursante.getCombo().getEstado() != Combo.EstadoCombo.adjudicado &&
                 concursante.getCombo().getEstado() != Combo.EstadoCombo.grabado) {
                 result.addError("El combo asignado no está en un estado válido para concursantes");

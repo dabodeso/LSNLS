@@ -43,10 +43,27 @@ const CuestionariosManager = {
             });
             if (response.ok) {
                 tematicasGestionadas = await response.json();
+                
+                // Llenar el filtro de temáticas
+                const filtroTematica = document.getElementById('filtro-tematica-cuestionario');
+                if (filtroTematica) {
+                    // Mantener la primera opción "Todas"
+                    filtroTematica.innerHTML = '<option value="">Todas</option>';
+                    
+                    // Añadir las temáticas
+                    tematicasGestionadas.forEach(tematica => {
+                        const option = document.createElement('option');
+                        option.value = tematica;
+                        option.textContent = tematica;
+                        filtroTematica.appendChild(option);
+                    });
+                }
             }
         } catch (error) {
             console.error('Error al cargar temáticas:', error);
         }
+        
+
         
         tbody.innerHTML = '';
         if (!Array.isArray(cuestionarios) || cuestionarios.length === 0) {
@@ -92,10 +109,7 @@ const CuestionariosManager = {
                 </td>
                 <td>
                     <select class="form-select form-select-sm" onchange="cambiarEstadoCuestionario(${c.id}, this.value)">
-                        <option value="borrador" ${c.estado === 'borrador' ? 'selected' : ''}>Borrador</option>
-                        <option value="creado" ${c.estado === 'creado' ? 'selected' : ''}>Creado</option>
-                        <option value="adjudicado" ${c.estado === 'adjudicado' ? 'selected' : ''}>Adjudicado</option>
-                        <option value="grabado" ${c.estado === 'grabado' ? 'selected' : ''}>Grabado</option>
+                        ${getOpcionesEstadoCuestionario(c.estado)}
                     </select>
                 </td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
@@ -718,13 +732,15 @@ window.filtrarCuestionarios = async function() {
     try {
         const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
         const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
+        const subtema = document.getElementById('filtro-subtema-cuestionario')?.value || '';
         const busqueda = document.getElementById('buscar-cuestionario')?.value || '';
 
-        // Si hay filtros de estado o temática, usar backend
-        if (estado || tematica) {
+        // Si hay filtros de estado, temática o subtema, usar backend
+        if (estado || tematica || subtema) {
             const params = new URLSearchParams();
             if (estado) params.append('estado', estado);
             if (tematica) params.append('tematica', tematica);
+            if (subtema) params.append('subtema', subtema);
 
             const response = await fetch(`/api/cuestionarios/filtrar?${params.toString()}`, {
                 headers: authManager.getAuthHeaders()
@@ -811,6 +827,41 @@ window.cambiarPassword = function() {
     const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
     modal.show();
 };
+
+function getOpcionesEstadoCuestionario(estadoActual) {
+    // Definimos las transiciones permitidas para cada estado
+    const transiciones = {
+        'borrador': ['revisar'],
+        'revisar': ['corregir', 'aprobado'],
+        'corregir': ['revisar'],
+        'aprobado': [], // Solo cambia automáticamente a adjudicado al asignarse a una jornada
+        'adjudicado': [], // Solo cambia automáticamente a grabado al asignarse a un concursante
+        'grabado': []
+    };
+    
+    // Obtenemos las opciones disponibles según el estado actual
+    const opcionesDisponibles = transiciones[estadoActual] || [];
+    
+    // Siempre incluimos el estado actual como seleccionado
+    let opciones = `<option value="${estadoActual}" selected>${estadoActual.charAt(0).toUpperCase() + estadoActual.slice(1)}</option>`;
+    
+    // Añadimos las opciones de transición permitidas
+    opcionesDisponibles.forEach(estado => {
+        opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
+    });
+    
+    // Si el usuario es admin, permitimos todas las opciones
+    if (authManager.hasRole('ROLE_ADMIN')) {
+        const todosEstados = ['borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado'];
+        todosEstados.forEach(estado => {
+            if (estado !== estadoActual && !opcionesDisponibles.includes(estado)) {
+                opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
+            }
+        });
+    }
+    
+    return opciones;
+}
 
 window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
     try {

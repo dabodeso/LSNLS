@@ -73,6 +73,24 @@ public class ConcursanteService {
             concursante.setNumeroConcursante(siguienteNumero);
         }
         
+        // Si se asignó un cuestionario, cambiar su estado a grabado
+        if (concursante.getCuestionario() != null) {
+            Cuestionario cuestionario = concursante.getCuestionario();
+            if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
+                cuestionario.setEstado(Cuestionario.EstadoCuestionario.grabado);
+                cuestionarioRepository.save(cuestionario);
+            }
+        }
+        
+        // Si se asignó un combo, cambiar su estado a grabado
+        if (concursante.getCombo() != null) {
+            Combo combo = concursante.getCombo();
+            if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {
+                combo.setEstado(Combo.EstadoCombo.grabado);
+                comboRepository.save(combo);
+            }
+        }
+        
         concursante = concursanteRepository.save(concursante);
         return convertToDTO(concursante);
     }
@@ -99,6 +117,26 @@ public class ConcursanteService {
         
         BeanUtils.copyProperties(concursanteDTO, concursante, "id");
         
+        // Si se asignó un cuestionario nuevo, cambiar su estado a grabado
+        if (concursante.getCuestionario() != null && 
+            (cuestionarioAnterior == null || !cuestionarioAnterior.getId().equals(concursante.getCuestionario().getId()))) {
+            Cuestionario cuestionario = concursante.getCuestionario();
+            if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
+                cuestionario.setEstado(Cuestionario.EstadoCuestionario.grabado);
+                cuestionarioRepository.save(cuestionario);
+            }
+        }
+        
+        // Si se asignó un combo nuevo, cambiar su estado a grabado
+        if (concursante.getCombo() != null && 
+            (comboAnterior == null || !comboAnterior.getId().equals(concursante.getCombo().getId()))) {
+            Combo combo = concursante.getCombo();
+            if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {
+                combo.setEstado(Combo.EstadoCombo.grabado);
+                comboRepository.save(combo);
+            }
+        }
+        
         // Manejar cuestionario con lógica de estados
         if (concursanteDTO.getCuestionarioId() != null) {
             Cuestionario cuestionarioNuevo = cuestionarioRepository.findById(concursanteDTO.getCuestionarioId())
@@ -108,14 +146,14 @@ public class ConcursanteService {
             if (cuestionarioAnterior == null || !cuestionarioAnterior.getId().equals(cuestionarioNuevo.getId())) {
                 // Si había un cuestionario anterior, restaurar su estado a 'creado'
                 if (cuestionarioAnterior != null && cuestionarioAnterior.getEstado() == Cuestionario.EstadoCuestionario.grabado) {
-                    cuestionarioAnterior.setEstado(Cuestionario.EstadoCuestionario.creado);
+                    cuestionarioAnterior.setEstado(Cuestionario.EstadoCuestionario.aprobado);
                     cuestionarioRepository.save(cuestionarioAnterior);
                 }
                 
                 // Validar que el cuestionario esté en estado válido para asignación
-                if (cuestionarioNuevo.getEstado() != Cuestionario.EstadoCuestionario.creado && 
+                if (cuestionarioNuevo.getEstado() != Cuestionario.EstadoCuestionario.aprobado && 
                     cuestionarioNuevo.getEstado() != Cuestionario.EstadoCuestionario.adjudicado) {
-                    throw new RuntimeException("Solo se pueden asignar cuestionarios en estado 'creado' o 'adjudicado'. El cuestionario " + 
+                    throw new RuntimeException("Solo se pueden asignar cuestionarios en estado 'aprobado' o 'adjudicado'. El cuestionario " + 
                                              cuestionarioNuevo.getId() + " está en estado: " + cuestionarioNuevo.getEstado());
                 }
                 
@@ -126,9 +164,9 @@ public class ConcursanteService {
             
             concursante.setCuestionario(cuestionarioNuevo);
         } else {
-            // Si se desasigna el cuestionario, restaurar su estado a 'creado'
+            // Si se desasigna el cuestionario, restaurar su estado a 'aprobado'
             if (cuestionarioAnterior != null && cuestionarioAnterior.getEstado() == Cuestionario.EstadoCuestionario.grabado) {
-                cuestionarioAnterior.setEstado(Cuestionario.EstadoCuestionario.creado);
+                cuestionarioAnterior.setEstado(Cuestionario.EstadoCuestionario.aprobado);
                 cuestionarioRepository.save(cuestionarioAnterior);
             }
             concursante.setCuestionario(null);
@@ -143,14 +181,14 @@ public class ConcursanteService {
             if (comboAnterior == null || !comboAnterior.getId().equals(comboNuevo.getId())) {
                 // Si había un combo anterior, restaurar su estado a 'creado'
                 if (comboAnterior != null && comboAnterior.getEstado() == Combo.EstadoCombo.grabado) {
-                    comboAnterior.setEstado(Combo.EstadoCombo.creado);
+                    comboAnterior.setEstado(Combo.EstadoCombo.aprobado);
                     comboRepository.save(comboAnterior);
                 }
                 
                 // Validar que el combo esté en estado válido para asignación
-                if (comboNuevo.getEstado() != Combo.EstadoCombo.creado && 
+                if (comboNuevo.getEstado() != Combo.EstadoCombo.aprobado && 
                     comboNuevo.getEstado() != Combo.EstadoCombo.adjudicado) {
-                    throw new RuntimeException("Solo se pueden asignar combos en estado 'creado' o 'adjudicado'. El combo " + 
+                    throw new RuntimeException("Solo se pueden asignar combos en estado 'aprobado' o 'adjudicado'. El combo " + 
                                              comboNuevo.getId() + " está en estado: " + comboNuevo.getEstado());
                 }
                 
@@ -161,9 +199,9 @@ public class ConcursanteService {
             
             concursante.setCombo(comboNuevo);
         } else {
-            // Si se desasigna el combo, restaurar su estado a 'creado'
+            // Si se desasigna el combo, restaurar su estado a 'aprobado'
             if (comboAnterior != null && comboAnterior.getEstado() == Combo.EstadoCombo.grabado) {
-                comboAnterior.setEstado(Combo.EstadoCombo.creado);
+                comboAnterior.setEstado(Combo.EstadoCombo.aprobado);
                 comboRepository.save(comboAnterior);
             }
             concursante.setCombo(null);
@@ -194,14 +232,14 @@ public class ConcursanteService {
         // Restaurar estado del cuestionario si estaba grabado
         if (concursante.getCuestionario() != null && 
             concursante.getCuestionario().getEstado() == Cuestionario.EstadoCuestionario.grabado) {
-            concursante.getCuestionario().setEstado(Cuestionario.EstadoCuestionario.creado);
+            concursante.getCuestionario().setEstado(Cuestionario.EstadoCuestionario.aprobado);
             cuestionarioRepository.save(concursante.getCuestionario());
         }
         
         // Restaurar estado del combo si estaba grabado
         if (concursante.getCombo() != null && 
             concursante.getCombo().getEstado() == Combo.EstadoCombo.grabado) {
-            concursante.getCombo().setEstado(Combo.EstadoCombo.creado);
+            concursante.getCombo().setEstado(Combo.EstadoCombo.aprobado);
             comboRepository.save(concursante.getCombo());
         }
         

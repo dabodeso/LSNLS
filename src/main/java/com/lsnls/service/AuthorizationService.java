@@ -168,8 +168,7 @@ public class AuthorizationService {
         return getCurrentUser()
             .map(usuario -> 
                 usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
-                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION ||
-                usuario.getRol() == Usuario.RolUsuario.ROLE_GUION)
+                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
             .orElse(false);
     }
 
@@ -187,17 +186,6 @@ public class AuthorizationService {
                 // Dirección puede editar en todos los estados
                 if (usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION) {
                     return true;
-                }
-
-                // Verificación puede editar en todos los estados excepto grabado
-                if (usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION) {
-                    return estado != EstadoCuestionario.grabado;
-                }
-
-                // Guion solo puede editar en estados borrador y creado
-                if (usuario.getRol() == Usuario.RolUsuario.ROLE_GUION) {
-                    return estado == EstadoCuestionario.borrador || 
-                           estado == EstadoCuestionario.creado;
                 }
 
                 return false;
@@ -219,17 +207,6 @@ public class AuthorizationService {
                 // Dirección puede editar en todos los estados
                 if (usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION) {
                     return true;
-                }
-
-                // Verificación puede editar en todos los estados excepto grabado
-                if (usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION) {
-                    return estado != Combo.EstadoCombo.grabado;
-                }
-
-                // Guion solo puede editar en estados borrador y creado
-                if (usuario.getRol() == Usuario.RolUsuario.ROLE_GUION) {
-                    return estado == Combo.EstadoCombo.borrador || 
-                           estado == Combo.EstadoCombo.grabado;
                 }
 
                 return false;

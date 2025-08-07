@@ -55,13 +55,14 @@ public class Combo {
     }
 
     public enum EstadoCombo {
-        borrador, creado, adjudicado, grabado
+        borrador, revisar, corregir, aprobado, adjudicado, grabado
     }
 
     public enum TipoCombo {
         P, // Premio
         A, // Asequible 
-        D  // Difícil
+        D, // Difícil
+        R  // Rescate
     }
 
     // Métodos equals y hashCode que evitan el bucle infinito
