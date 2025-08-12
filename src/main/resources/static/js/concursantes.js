@@ -3,11 +3,99 @@ let concursantes = [];
 let programas = [];
 let concursanteActual = null;
 
+// Configuración de columnas por rol
+let configuracionColumnas = {
+    esDireccion: false,
+    columnasVisibles: {
+        'numero-concur': true,
+        'jornada': true,
+        'dia-grabacion': true,
+        'lugar': true,
+        'nombre': true,
+        'foto': true,
+        'edad': true,
+        'ocupacion': true,
+        'rr-ss': true,
+        'cuest': true,
+        'combo': true,
+        'x': true,
+        'resultado': true,
+        'notas-grabacion': true,
+        'guionista': true,
+        'valoracion-guionista': true,
+        'estado': true,
+        'momentos-destacados': false, // Solo dirección
+        'duracion': true,
+        'duracion-direccion': false, // Solo dirección
+        'duracion-final': false, // Solo dirección
+        'valoracion-final': false, // Solo dirección
+        'numero-pgm': false, // Solo dirección
+        'orden-escaleta': false, // Solo dirección
+        'bonico': false // Solo dirección
+    }
+};
+
 // Funciones de inicialización
 async function inicializarConcursantes() {
+    // Detectar rol del usuario
+    detectarRolUsuario();
+    
     await cargarProgramas();
     await cargarConcursantes();
     setupEventListeners();
+    
+    // Actualizar encabezados de la tabla según la configuración
+    actualizarEncabezadosTabla();
+}
+
+function detectarRolUsuario() {
+    try {
+        const usuario = JSON.parse(localStorage.getItem('usuario'));
+        console.log('🔍 [CONCURSANTES] Usuario detectado:', usuario);
+        
+        if (usuario && usuario.rol === 'ROLE_DIRECCION') {
+            console.log('🔍 [CONCURSANTES] Usuario es DIRECCIÓN - activando columnas avanzadas');
+            configuracionColumnas.esDireccion = true;
+            
+            // Mostrar botón de configuración de columnas
+            const btnConfig = document.getElementById('btn-config-columnas');
+            if (btnConfig) {
+                btnConfig.style.display = 'block';
+            }
+            
+            // Activar columnas de dirección por defecto
+            configuracionColumnas.columnasVisibles['momentos-destacados'] = true;
+            configuracionColumnas.columnasVisibles['duracion-direccion'] = true;
+            configuracionColumnas.columnasVisibles['duracion-final'] = true;
+            configuracionColumnas.columnasVisibles['valoracion-final'] = true;
+            configuracionColumnas.columnasVisibles['numero-pgm'] = true;
+            configuracionColumnas.columnasVisibles['orden-escaleta'] = true;
+            configuracionColumnas.columnasVisibles['bonico'] = true;
+            
+            console.log('🔍 [CONCURSANTES] Configuración de columnas para dirección:', configuracionColumnas.columnasVisibles);
+            
+            // Cargar configuración guardada para dirección (puede sobrescribir los valores por defecto)
+            cargarConfiguracionGuardada();
+        } else {
+            console.log('🔍 [CONCURSANTES] Usuario NO es dirección - aplicando configuración básica');
+            // Usuario no es dirección - aplicar configuración básica
+            aplicarConfiguracionBasica();
+        }
+    } catch (error) {
+        console.error('Error al detectar rol:', error);
+        aplicarConfiguracionBasica();
+    }
+}
+
+function aplicarConfiguracionBasica() {
+    // Para usuarios no dirección, ocultar columnas avanzadas
+    configuracionColumnas.columnasVisibles['momentos-destacados'] = false;
+    configuracionColumnas.columnasVisibles['duracion-direccion'] = false;
+    configuracionColumnas.columnasVisibles['duracion-final'] = false;
+    configuracionColumnas.columnasVisibles['valoracion-final'] = false;
+    configuracionColumnas.columnasVisibles['numero-pgm'] = false;
+    configuracionColumnas.columnasVisibles['orden-escaleta'] = false;
+    configuracionColumnas.columnasVisibles['bonico'] = false;
 }
 
 // Carga de datos
@@ -58,48 +146,168 @@ function actualizarSelectProgramas() {
 }
 
 function mostrarConcursantes(concursantesFiltrados = null) {
+    console.log('🔍 [CONCURSANTES] Mostrando concursantes con configuración:', configuracionColumnas.columnasVisibles);
     const lista = concursantesFiltrados || concursantes;
     const tbody = document.getElementById('tabla-concursantes');
-    tbody.innerHTML = lista.map(concursante => `
-        <tr data-id="${concursante.id}" oncontextmenu="showContextMenu(event, ${concursante.id}, 'concursante')">
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroConcursante', this)">${concursante.numeroConcursante || ''}</td>
-            <td onclick="abrirSelectorJornadaParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar jornada">
+    
+    tbody.innerHTML = lista.map(concursante => {
+        const celdas = [];
+        
+        // Nº CONCUR
+        if (configuracionColumnas.columnasVisibles['numero-concur']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroConcursante', this)">${concursante.numeroConcursante || ''}</td>`);
+        }
+        
+        // JORNADA
+        if (configuracionColumnas.columnasVisibles['jornada']) {
+            celdas.push(`<td onclick="abrirSelectorJornadaParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar jornada">
                 ${concursante.jornadaNombre ? `<span class="badge bg-success">${concursante.jornadaNombre}</span>` : '<em class="text-muted">Sin asignar</em>'}
-            </td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'diaGrabacion', this)">${formatearFecha(concursante.diaGrabacion)}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'lugar', this)">${concursante.lugar || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'nombre', this)">${concursante.nombre || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'edad', this)">${concursante.edad || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'ocupacion', this)">${concursante.ocupacion || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'redesSociales', this)">${concursante.redesSociales || ''}</td>
-            <td onclick="abrirSelectorCuestionarioParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar cuestionario">
+            </td>`);
+        }
+        
+        // DÍA GRABACIÓN
+        if (configuracionColumnas.columnasVisibles['dia-grabacion']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'diaGrabacion', this)">${formatearFecha(concursante.diaGrabacion)}</td>`);
+        }
+        
+        // LUGAR
+        if (configuracionColumnas.columnasVisibles['lugar']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'lugar', this)">${concursante.lugar || ''}</td>`);
+        }
+        
+        // NOMBRE
+        if (configuracionColumnas.columnasVisibles['nombre']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'nombre', this)">${concursante.nombre || ''}</td>`);
+        }
+        
+        // FOTO
+        if (configuracionColumnas.columnasVisibles['foto']) {
+            celdas.push(`<td onclick="abrirExploradorFoto(${concursante.id}, event)" style="cursor: pointer;">
+                ${concursante.foto ? 
+                    `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto del concursante">` : 
+                    `<div class="campo-foto-vacio" onclick="abrirExploradorFoto(${concursante.id}, event)">
+                        <i class="fas fa-camera"></i>
+                        <span>Añadir foto</span>
+                    </div>`
+                }
+            </td>`);
+        }
+        
+        // EDAD
+        if (configuracionColumnas.columnasVisibles['edad']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'edad', this)">${concursante.edad || ''}</td>`);
+        }
+        
+        // OCUPACIÓN
+        if (configuracionColumnas.columnasVisibles['ocupacion']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'ocupacion', this)">${concursante.ocupacion || ''}</td>`);
+        }
+        
+        // RR SS
+        if (configuracionColumnas.columnasVisibles['rr-ss']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'redesSociales', this)">${concursante.redesSociales || ''}</td>`);
+        }
+        
+        // CUEST
+        if (configuracionColumnas.columnasVisibles['cuest']) {
+            celdas.push(`<td onclick="abrirSelectorCuestionarioParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar cuestionario">
                 ${concursante.cuestionarioId ? `<span class="badge bg-primary">${concursante.cuestionarioId}</span>` : '<em class="text-muted">Sin asignar</em>'}
-            </td>
-            <td onclick="abrirSelectorComboParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar combo">
+            </td>`);
+        }
+        
+        // COMBO
+        if (configuracionColumnas.columnasVisibles['combo']) {
+            celdas.push(`<td onclick="abrirSelectorComboParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar combo">
                 ${concursante.comboId ? `<span class="badge bg-warning">${concursante.comboId}</span>` : '<em class="text-muted">Sin asignar</em>'}
-            </td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'factorX', this)">${concursante.factorX || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'resultado', this)">${concursante.resultado || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'notasGrabacion', this)">${concursante.notasGrabacion || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'guionista', this)">${concursante.guionista || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoracionGuionista', this)">${concursante.valoracionGuionista || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'concursantesPorJornada', this)">${concursante.concursantesPorJornada || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'estado', this)">${concursante.estado || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'momentosDestacados', this)">${concursante.momentosDestacados || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracion', this)">${concursante.duracion || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoracionFinal', this)">${concursante.valoracionFinal || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroPrograma', this)">${concursante.numeroPrograma || ''}</td>
-            <td ondblclick="editarCeldaConcursante(${concursante.id}, 'ordenEscaleta', this)">${concursante.ordenEscaleta || ''}</td>
-            <td>
-                <button class="btn btn-sm btn-primary" onclick="editarConcursante(${concursante.id})">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="eliminarConcursante(${concursante.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+            </td>`);
+        }
+        
+        // X
+        if (configuracionColumnas.columnasVisibles['x']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'factorX', this)">${concursante.factorX || ''}</td>`);
+        }
+        
+        // RESULTADO
+        if (configuracionColumnas.columnasVisibles['resultado']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'resultado', this)">${concursante.resultado !== null && concursante.resultado !== undefined ? concursante.resultado : ''}</td>`);
+        }
+        
+        // NOTAS GRABACIÓN
+        if (configuracionColumnas.columnasVisibles['notas-grabacion']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'notasGrabacion', this)">${concursante.notasGrabacion || ''}</td>`);
+        }
+        
+        // GUIONISTA
+        if (configuracionColumnas.columnasVisibles['guionista']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'guionista', this)">${concursante.guionista || ''}</td>`);
+        }
+        
+        // VALORACIÓN GUIONISTA
+        if (configuracionColumnas.columnasVisibles['valoracion-guionista']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoracionGuionista', this)">${concursante.valoracionGuionista || ''}</td>`);
+        }
+        
+        // ESTADO
+        if (configuracionColumnas.columnasVisibles['estado']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'estado', this)">${concursante.estado || ''}</td>`);
+        }
+        
+        // MOMENTOS DESTACADOS
+        if (configuracionColumnas.columnasVisibles['momentos-destacados']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'momentosDestacados', this)">${concursante.momentosDestacados || ''}</td>`);
+        }
+        
+        // DURACIÓN
+        if (configuracionColumnas.columnasVisibles['duracion']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracion', this)">${concursante.duracion || ''}</td>`);
+        }
+        
+        // DUR. DIRECCIÓN
+        if (configuracionColumnas.columnasVisibles['duracion-direccion']) {
+            console.log('🔍 [CONCURSANTES] Renderizando columna DUR. DIRECCIÓN para concursante:', concursante.id);
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracionDireccion', this)">${concursante.duracionDireccion || ''}</td>`);
+        }
+        
+        // DUR. FINAL
+        if (configuracionColumnas.columnasVisibles['duracion-final']) {
+            console.log('🔍 [CONCURSANTES] Renderizando columna DUR. FINAL para concursante:', concursante.id);
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracionFinal', this)">${concursante.duracionFinal || ''}</td>`);
+        }
+        
+        // VALORACIÓN FINAL
+        if (configuracionColumnas.columnasVisibles['valoracion-final']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoracionFinal', this)">${concursante.valoracionFinal || ''}</td>`);
+        }
+        
+        // Nº PGM
+        if (configuracionColumnas.columnasVisibles['numero-pgm']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroPrograma', this)">${concursante.numeroPrograma || ''}</td>`);
+        }
+        
+        // ORDEN ESCALETA
+        if (configuracionColumnas.columnasVisibles['orden-escaleta']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'ordenEscaleta', this)">${concursante.ordenEscaleta || ''}</td>`);
+        }
+        
+        // BONICO
+        if (configuracionColumnas.columnasVisibles['bonico']) {
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'bonico', this)">${concursante.bonico || ''}</td>`);
+        }
+        
+        // ACCIONES (siempre visible)
+        celdas.push(`<td>
+            <button class="btn btn-sm btn-primary" onclick="editarConcursante(${concursante.id})">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="eliminarConcursante(${concursante.id})">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>`);
+        
+        return `<tr data-id="${concursante.id}" oncontextmenu="showContextMenu(event, ${concursante.id}, 'concursante')">
+            ${celdas.join('')}
+        </tr>`;
+    }).join('');
     // Resaltado y scroll si hay id en la URL
     const params = new URLSearchParams(window.location.search);
     const idDestacado = params.get('id');
@@ -139,9 +347,6 @@ function mostrarFormularioConcursante() {
     document.getElementById('concursante-id').value = '';
     document.getElementById('cuestionario-id').value = '';
     document.getElementById('combo-id').value = '';
-    // El número de concursante se genera automáticamente
-    document.getElementById('numero-concursante').value = '';
-    document.getElementById('numero-concursante').placeholder = 'Se generará automáticamente';
     const modal = new bootstrap.Modal(document.getElementById('modal-concursante'));
     modal.show();
 }
@@ -155,11 +360,6 @@ async function editarConcursante(id) {
         
         // Campos básicos
         document.getElementById('concursante-id').value = concursanteActual.id;
-        
-        // Mostrar el número de concursante existente en modo edición
-        document.getElementById('numero-concursante').value = concursanteActual.numeroConcursante || '';
-        document.getElementById('numero-concursante').placeholder = concursanteActual.numeroConcursante ? 
-            'Número asignado: ' + concursanteActual.numeroConcursante : 'Sin número asignado';
         
         // CORREGIR: usar jornadaNombre en lugar de jornada
         document.getElementById('jornada').value = concursanteActual.jornadaNombre || '';
@@ -196,12 +396,14 @@ async function editarConcursante(id) {
         document.getElementById('notas-grabacion').value = concursanteActual.notasGrabacion || '';
         document.getElementById('guionista').value = concursanteActual.guionista || '';
         document.getElementById('valoracion-guionista').value = concursanteActual.valoracionGuionista || '';
-        document.getElementById('concursantes-por-jornada').value = concursanteActual.concursantesPorJornada || '';
         document.getElementById('momentos-destacados').value = concursanteActual.momentosDestacados || '';
         document.getElementById('duracion').value = concursanteActual.duracion || '';
+        document.getElementById('duracion-direccion').value = concursanteActual.duracionDireccion || '';
+        document.getElementById('duracion-final').value = concursanteActual.duracionFinal || '';
         document.getElementById('valoracion-final').value = concursanteActual.valoracionFinal || '';
         document.getElementById('numero-programa').value = concursanteActual.numeroPrograma || '';
         document.getElementById('orden-escaleta').value = concursanteActual.ordenEscaleta || '';
+        document.getElementById('bonico').value = concursanteActual.bonico || '';
         
         // AÑADIR: campos faltantes
         // Estado (si existe el campo en el formulario)
@@ -245,9 +447,6 @@ async function guardarConcursante() {
     // Recoge todos los campos del formulario
     const datosConcursante = {
         id: document.getElementById('concursante-id').value || null,
-        // Solo incluir numeroConcursante si estamos editando (id existe)
-        numeroConcursante: document.getElementById('concursante-id').value ? 
-            (document.getElementById('numero-concursante').value || null) : null,
         // CORREGIR: mantener jornadaId original en edición, null en creación
         jornadaId: esEdicion && concursanteActual ? concursanteActual.jornadaId : null,
         diaGrabacion: document.getElementById('dia-grabacion').value || null,
@@ -263,12 +462,14 @@ async function guardarConcursante() {
         notasGrabacion: document.getElementById('notas-grabacion').value || null,
         guionista: document.getElementById('guionista').value || null,
         valoracionGuionista: document.getElementById('valoracion-guionista').value || null,
-        concursantesPorJornada: document.getElementById('concursantes-por-jornada').value || null,
         momentosDestacados: document.getElementById('momentos-destacados').value || null,
         duracion: document.getElementById('duracion').value || null,
+        duracionDireccion: document.getElementById('duracion-direccion').value || null,
+        duracionFinal: document.getElementById('duracion-final').value || null,
         valoracionFinal: document.getElementById('valoracion-final').value || null,
         numeroPrograma: document.getElementById('numero-programa').value || null,
         ordenEscaleta: document.getElementById('orden-escaleta').value || null,
+        bonico: document.getElementById('bonico').value || null,
         // CORREGIR: enviar estado del formulario
         estado: document.getElementById('estado') ? document.getElementById('estado').value || null : null,
         // AÑADIR: campos faltantes si existen en el formulario
@@ -419,8 +620,8 @@ async function guardarCeldaConcursante(id, campo, input, td, valorOriginal) {
         // Validar y convertir el valor según el tipo de campo
         let valorConvertido = nuevoValor;
         
-        // Campo duracion - validar formato MM:SS
-        if (campo === 'duracion') {
+        // Campos de duración - validar formato MM:SS
+        if (['duracion', 'duracionDireccion', 'duracionFinal'].includes(campo)) {
             if (nuevoValor === '' || nuevoValor === null) {
                 valorConvertido = null;
             } else {
@@ -438,7 +639,7 @@ async function guardarCeldaConcursante(id, campo, input, td, valorOriginal) {
             }
         }
         // Campos numéricos enteros (excluyendo duracion)
-        else if (['numeroConcursante', 'edad', 'concursantesPorJornada', 'numeroPrograma', 'ordenEscaleta'].includes(campo)) {
+        else if (['numeroConcursante', 'edad', 'concursantesPorJornada', 'numeroPrograma', 'ordenEscaleta', 'resultado'].includes(campo)) {
             if (nuevoValor === '' || nuevoValor === null) {
                 valorConvertido = null;
             } else {
@@ -447,6 +648,30 @@ async function guardarCeldaConcursante(id, campo, input, td, valorOriginal) {
                     throw new Error(`El valor "${nuevoValor}" no es un número válido para el campo ${campo}`);
                 }
                 valorConvertido = numero;
+            }
+        }
+        // Campo fecha - validar formato DD/MM/YYYY y convertir a ISO
+        else if (campo === 'diaGrabacion') {
+            if (nuevoValor === '' || nuevoValor === null) {
+                valorConvertido = null;
+            } else {
+                // Validar formato DD/MM/YYYY
+                const formatoValido = /^\d{2}\/\d{2}\/\d{4}$/.test(nuevoValor);
+                if (!formatoValido) {
+                    throw new Error('La fecha debe tener formato DD/MM/YYYY (ej: 11/08/2025)');
+                }
+                
+                // Convertir DD/MM/YYYY a YYYY-MM-DD (formato ISO)
+                const [dia, mes, año] = nuevoValor.split('/');
+                const fechaISO = `${año}-${mes}-${dia}`;
+                
+                // Validar que la fecha sea válida
+                const fechaObj = new Date(fechaISO);
+                if (isNaN(fechaObj.getTime())) {
+                    throw new Error('La fecha ingresada no es válida');
+                }
+                
+                valorConvertido = fechaISO;
             }
         }
         
@@ -932,4 +1157,277 @@ async function desasignarJornadaModal() {
     
     const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-jornada'));
     modal.hide();
-} 
+}
+
+// Funciones para manejo de fotos
+function abrirExploradorFoto(concursanteId, event) {
+    // Detener la propagación del evento para evitar que se active el click del row
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    // Crear input file dinámicamente
+    const inputFile = document.createElement('input');
+    inputFile.type = 'file';
+    inputFile.accept = 'image/*';
+    inputFile.style.display = 'none';
+    
+    inputFile.onchange = function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            subirFotoConcursante(concursanteId, file);
+        }
+        // Limpiar el input después de usar
+        document.body.removeChild(inputFile);
+    };
+    
+    // Añadir al DOM y hacer click
+    document.body.appendChild(inputFile);
+    inputFile.click();
+}
+
+async function subirFotoConcursante(concursanteId, file) {
+    try {
+        // Mostrar indicador de carga
+        mostrarExito('Subiendo foto...');
+        
+        // Crear FormData para enviar el archivo
+        const formData = new FormData();
+        formData.append('foto', file);
+        
+        // Subir la foto
+        const response = await fetch(`/api/concursantes/${concursanteId}/foto`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al subir la foto');
+        }
+        
+        const resultado = await response.json();
+        
+        // Actualizar la vista
+        await cargarConcursantes();
+        mostrarExito('Foto subida correctamente');
+        
+    } catch (error) {
+        console.error('Error al subir foto:', error);
+        mostrarError('Error al subir la foto: ' + error.message);
+    }
+}
+
+// Funciones para el formulario de fotos
+function limpiarFoto() {
+    document.getElementById('foto-concursante').value = '';
+    document.getElementById('foto-nombre').value = '';
+    document.getElementById('foto-preview').style.display = 'none';
+}
+
+// Funciones para configuración de columnas
+function mostrarConfiguracionColumnas() {
+    // Cargar configuración actual en los checkboxes
+    cargarConfiguracionEnModal();
+    const modal = new bootstrap.Modal(document.getElementById('modal-config-columnas'));
+    modal.show();
+}
+
+function cargarConfiguracionEnModal() {
+    // Mapear configuración a IDs de checkboxes
+    const mapeoColumnas = {
+        'numero-concur': 'col-numero-concur',
+        'jornada': 'col-jornada',
+        'dia-grabacion': 'col-dia-grabacion',
+        'lugar': 'col-lugar',
+        'nombre': 'col-nombre',
+        'foto': 'col-foto',
+        'edad': 'col-edad',
+        'ocupacion': 'col-ocupacion',
+        'rr-ss': 'col-rr-ss',
+        'cuest': 'col-cuest',
+        'combo': 'col-combo',
+        'x': 'col-x',
+        'resultado': 'col-resultado',
+        'notas-grabacion': 'col-notas-grabacion',
+        'guionista': 'col-guionista',
+        'valoracion-guionista': 'col-valoracion-guionista',
+        'estado': 'col-estado',
+        'momentos-destacados': 'col-momentos-destacados',
+        'duracion': 'col-duracion',
+        'duracion-direccion': 'col-duracion-direccion',
+        'duracion-final': 'col-duracion-final',
+        'valoracion-final': 'col-valoracion-final',
+        'numero-pgm': 'col-numero-pgm',
+        'orden-escaleta': 'col-orden-escaleta',
+        'bonico': 'col-bonico'
+    };
+    
+    // Aplicar configuración a los checkboxes
+    Object.keys(mapeoColumnas).forEach(columna => {
+        const checkboxId = mapeoColumnas[columna];
+        const checkbox = document.getElementById(checkboxId);
+        if (checkbox) {
+            checkbox.checked = configuracionColumnas.columnasVisibles[columna] || false;
+        }
+    });
+}
+
+function aplicarConfiguracionColumnas() {
+    // Mapear IDs de checkboxes a configuración
+    const mapeoColumnas = {
+        'col-numero-concur': 'numero-concur',
+        'col-jornada': 'jornada',
+        'col-dia-grabacion': 'dia-grabacion',
+        'col-lugar': 'lugar',
+        'col-nombre': 'nombre',
+        'col-foto': 'foto',
+        'col-edad': 'edad',
+        'col-ocupacion': 'ocupacion',
+        'col-rr-ss': 'rr-ss',
+        'col-cuest': 'cuest',
+        'col-combo': 'combo',
+        'col-x': 'x',
+        'col-resultado': 'resultado',
+        'col-notas-grabacion': 'notas-grabacion',
+        'col-guionista': 'guionista',
+        'col-valoracion-guionista': 'valoracion-guionista',
+        'col-estado': 'estado',
+        'col-momentos-destacados': 'momentos-destacados',
+        'col-duracion': 'duracion',
+        'col-duracion-direccion': 'duracion-direccion',
+        'col-duracion-final': 'duracion-final',
+        'col-valoracion-final': 'valoracion-final',
+        'col-numero-pgm': 'numero-pgm',
+        'col-orden-escaleta': 'orden-escaleta',
+        'col-bonico': 'bonico'
+    };
+    
+    // Aplicar configuración desde los checkboxes
+    Object.keys(mapeoColumnas).forEach(checkboxId => {
+        const columna = mapeoColumnas[checkboxId];
+        const checkbox = document.getElementById(checkboxId);
+        if (checkbox) {
+            configuracionColumnas.columnasVisibles[columna] = checkbox.checked;
+        }
+    });
+    
+    // Guardar configuración en localStorage
+    localStorage.setItem('configuracionColumnasConcursantes', JSON.stringify(configuracionColumnas));
+    
+    // Actualizar tabla
+    actualizarEncabezadosTabla();
+    mostrarConcursantes();
+    
+    // Cerrar modal
+    bootstrap.Modal.getInstance(document.getElementById('modal-config-columnas')).hide();
+    
+    mostrarExito('Configuración de columnas aplicada correctamente');
+}
+
+function actualizarEncabezadosTabla() {
+    const thead = document.querySelector('#tabla-concursantes-principal thead tr');
+    if (!thead) return;
+    
+    const encabezados = [];
+    
+    // Mapear columnas a encabezados
+    const mapeoEncabezados = {
+        'numero-concur': 'Nº CONCUR',
+        'jornada': 'JORNADA',
+        'dia-grabacion': 'DÍA GRABACIÓN',
+        'lugar': 'LUGAR',
+        'nombre': 'NOMBRE',
+        'foto': 'FOTO',
+        'edad': 'EDAD',
+        'ocupacion': 'OCUPACIÓN',
+        'rr-ss': 'RR SS',
+        'cuest': 'CUEST',
+        'combo': 'COMBO',
+        'x': 'X',
+        'resultado': 'RESULTADO',
+        'notas-grabacion': 'NOTAS GRABACIÓN',
+        'guionista': 'GUIONISTA',
+        'valoracion-guionista': 'VALORACIÓN GUIONISTA',
+        'estado': 'ESTADO',
+        'momentos-destacados': 'MOMENTOS DESTACADOS',
+        'duracion': 'DURACIÓN',
+        'duracion-direccion': 'DUR. DIRECCIÓN',
+        'duracion-final': 'DUR. FINAL',
+        'valoracion-final': 'VALORACIÓN FINAL',
+        'numero-pgm': 'Nº PGM',
+        'orden-escaleta': 'ORDEN ESCALETA',
+        'bonico': 'BONICO'
+    };
+    
+    // Construir encabezados visibles
+    Object.keys(mapeoEncabezados).forEach(columna => {
+        if (configuracionColumnas.columnasVisibles[columna]) {
+            encabezados.push(`<th>${mapeoEncabezados[columna]}</th>`);
+        }
+    });
+    
+    // Añadir encabezado de acciones
+    encabezados.push('<th>ACCIONES</th>');
+    
+    thead.innerHTML = encabezados.join('');
+}
+
+function seleccionarTodasColumnas() {
+    const checkboxes = document.querySelectorAll('#modal-config-columnas input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+function deseleccionarTodasColumnas() {
+    const checkboxes = document.querySelectorAll('#modal-config-columnas input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+// Cargar configuración guardada al inicializar
+function cargarConfiguracionGuardada() {
+    try {
+        const configGuardada = localStorage.getItem('configuracionColumnasConcursantes');
+        if (configGuardada) {
+            const config = JSON.parse(configGuardada);
+            // Solo cargar si el usuario es dirección y hay configuración válida
+            if (configuracionColumnas.esDireccion && config && config.columnasVisibles) {
+                // Aplicar configuración guardada solo para las columnas que están en la configuración guardada
+                Object.keys(config.columnasVisibles).forEach(columna => {
+                    if (configuracionColumnas.columnasVisibles.hasOwnProperty(columna)) {
+                        configuracionColumnas.columnasVisibles[columna] = config.columnasVisibles[columna];
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error al cargar configuración:', error);
+    }
+}
+
+// Event listener para el input de foto en el formulario
+document.addEventListener('DOMContentLoaded', function() {
+    const fotoInput = document.getElementById('foto-concursante');
+    if (fotoInput) {
+        fotoInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('foto-nombre').value = file.name;
+                
+                // Mostrar preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('foto-preview-img').src = e.target.result;
+                    document.getElementById('foto-preview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}); 

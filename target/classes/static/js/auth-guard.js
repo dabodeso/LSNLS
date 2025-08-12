@@ -3,6 +3,10 @@
     const token = localStorage.getItem('token');
     const usuario = localStorage.getItem('usuario');
 
+    console.log('🔍 [AUTH-GUARD] Verificando autenticación...');
+    console.log('🔍 [AUTH-GUARD] Token existe:', !!token);
+    console.log('🔍 [AUTH-GUARD] Usuario existe:', !!usuario);
+
     // Si no hay token o usuario, redirigir al login
     if (!token || !usuario) {
         console.log('🚪 No hay token o usuario, redirigiendo al login...');
@@ -13,9 +17,24 @@
     // Función para verificar si el token está expirado
     function isTokenExpired(token) {
         try {
+            // Verificar que el token tenga el formato correcto (3 partes separadas por puntos)
+            if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
+                console.log('🔍 Token con formato inválido');
+                return true;
+            }
+            
             const payload = JSON.parse(atob(token.split('.')[1]));
             const now = Date.now() / 1000;
-            return payload.exp < now;
+            
+            // Verificar que el payload tenga la propiedad exp
+            if (!payload || !payload.exp) {
+                console.log('🔍 Token sin fecha de expiración');
+                return true;
+            }
+            
+            const isExpired = payload.exp < now;
+            console.log('🔍 Token expira en:', new Date(payload.exp * 1000), 'Es expirado:', isExpired);
+            return isExpired;
         } catch (error) {
             console.log('🔍 Error al decodificar token, considerando expirado:', error);
             return true;
@@ -55,4 +74,5 @@
     };
 
     console.log('🛡️ Auth guard activado - Token válido para usuario:', usuario);
+    console.log('🔍 [AUTH-GUARD] Token válido, continuando...');
 })(); 

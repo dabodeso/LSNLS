@@ -15,6 +15,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -167,9 +168,38 @@ public class JornadaController {
 
     @GetMapping("/{id}/exportar-excel")
     @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<byte[]> exportarExcel(@PathVariable Long id) {
+    public ResponseEntity<byte[]> exportarExcel(
+            @PathVariable Long id, 
+            @RequestHeader(value = "X-Excel-Cambiar-Columna-ID-PREGUNTA", required = false) String cambiarColumnaID,
+            @RequestHeader(value = "X-Excel-Mostrar-Factor-Multiplicacion", required = false) String mostrarFactor,
+            @RequestHeader(value = "X-Excel-Ordenar-Cuestionarios-Por-Nivel", required = false) String ordenarCuestionarios,
+            @RequestHeader(value = "X-Excel-Ordenar-Combos-Por-Factor", required = false) String ordenarCombos) {
         try {
-            byte[] excelData = jornadaService.exportarExcel(id);
+            // Configurar opciones de exportación basadas en las cabeceras
+            Map<String, Object> opcionesExcel = new HashMap<>();
+            
+            // Si se solicita cambiar la columna ID PREGUNTA por otro valor
+            if (cambiarColumnaID != null && !cambiarColumnaID.isEmpty()) {
+                opcionesExcel.put("cambiarColumnaID", cambiarColumnaID);
+            }
+            
+            // Si se solicita mostrar el factor de multiplicación
+            if ("true".equalsIgnoreCase(mostrarFactor)) {
+                opcionesExcel.put("mostrarFactorMultiplicacion", true);
+            }
+            
+            // Si se solicita ordenar cuestionarios por nivel
+            if ("true".equalsIgnoreCase(ordenarCuestionarios)) {
+                opcionesExcel.put("ordenarCuestionariosPorNivel", true);
+            }
+            
+            // Si se solicita ordenar combos por factor de multiplicación
+            if ("true".equalsIgnoreCase(ordenarCombos)) {
+                opcionesExcel.put("ordenarCombosPorFactor", true);
+            }
+            
+            // Generar el Excel con las opciones especificadas
+            byte[] excelData = jornadaService.exportarExcel(id, opcionesExcel);
             
             // Obtener información de la jornada para el nombre del archivo
             Optional<JornadaDTO> jornada = jornadaService.obtenerPorId(id);

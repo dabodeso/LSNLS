@@ -758,11 +758,15 @@ async function guardarCombo() {
     pms.forEach((pm, idx) => {
         const id = document.getElementById(`pm-${pm.id}`).value;
         const factorInput = document.getElementById(`factor-${pm.id}`);
-        const factor = factorInput ? factorInput.value : pm.factor;
+        const factor = factorInput ? factorInput.value.trim() : pm.factor;
+        
+        console.log(`[DEBUG] PM${idx + 1}: ID=${id}, Factor=${factor}, FactorInput=${factorInput ? factorInput.value : 'null'}`);
         
         if (!id) valid = false;
         else preguntasMultiplicadoras.push({ id: Number(id), factor: factor });
     });
+    
+    console.log('[DEBUG] Preguntas multiplicadoras a enviar:', preguntasMultiplicadoras);
     
     if (!valid) {
         Toastify({

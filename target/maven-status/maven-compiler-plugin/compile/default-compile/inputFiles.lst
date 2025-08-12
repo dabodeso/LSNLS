@@ -36,6 +36,7 @@ C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\valid
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\dto\CrearComboDTO.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\controller\UsuarioController.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\repository\TematicaRepository.java
+C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\config\DatabaseMigrationRunner.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\repository\PreguntaCuestionarioRepository.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\config\JacksonConfig.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\service\DataTransformationService.java

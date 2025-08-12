@@ -324,14 +324,15 @@ public class ConcursanteService {
             
             switch (key) {
                 case "resultado":
-                    concursante.setResultado((String) value);
-                    // También actualizar el campo premio extrayendo el valor numérico
                     if (value != null) {
-                        String resultadoStr = value.toString();
-                        BigDecimal premioTotal = extraerNumerosDelTexto(resultadoStr);
-                        concursante.setPremio(premioTotal);
+                        try {
+                            Integer resultadoInt = Integer.valueOf(value.toString());
+                            concursante.setResultado(resultadoInt);
+                        } catch (NumberFormatException e) {
+                            throw new RuntimeException("El campo resultado debe ser un número entero");
+                        }
                     } else {
-                        concursante.setPremio(null);
+                        concursante.setResultado(null);
                     }
                     break;
                 case "premio":
@@ -434,12 +435,11 @@ public class ConcursanteService {
         // Guardar el archivo
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
         
-        // Actualizar la URL de la foto en el concursante
-        String fotoUrl = "/uploads/" + fileName;
-        concursante.setFoto(fotoUrl);
+        // Actualizar solo el nombre del archivo en el concursante
+        concursante.setFoto(fileName);
         concursanteRepository.save(concursante);
         
-        return fotoUrl;
+        return fileName;
     }
 
     private BigDecimal extraerNumerosDelTexto(String texto) {

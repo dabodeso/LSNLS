@@ -51,7 +51,7 @@ public class Concursante {
     @Column(name = "factor_x")
     private String factorX;
 
-    private String resultado;
+    private Integer resultado;
 
     @Column(name = "notas_grabacion", columnDefinition = "TEXT")
     private String notasGrabacion;
@@ -61,15 +61,18 @@ public class Concursante {
     @Column(name = "valoracion_guionista", columnDefinition = "TEXT")
     private String valoracionGuionista;
 
-    @Column(name = "concursantes_por_jornada")
-    private Integer concursantesPorJornada;
-
     private String estado;
 
     @Column(name = "momentos_destacados", columnDefinition = "TEXT")
     private String momentosDestacados;
 
     private String duracion; // formato MM:SS
+
+    @Column(name = "duracion_direccion")
+    private String duracionDireccion; // formato MM:SS
+
+    @Column(name = "duracion_final")
+    private String duracionFinal; // formato MM:SS
 
     @Column(name = "valoracion_final", columnDefinition = "TEXT")
     private String valoracionFinal;
@@ -79,6 +82,8 @@ public class Concursante {
 
     @Column(name = "orden_escaleta")
     private Integer ordenEscaleta;
+
+    private String bonico;
 
     @Column(name = "premio")
     private BigDecimal premio;

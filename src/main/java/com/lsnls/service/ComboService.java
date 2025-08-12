@@ -664,7 +664,12 @@ public class ComboService {
             if (factor == null || factor.trim().isEmpty()) {
                 factor = "1";
             }
-            preguntaIdsConFactores.put(pm.getId(), Integer.valueOf(1)); // Usamos 1 como valor por defecto para el mapa
+            // Extraer el número del factor (X2 -> 2, X3 -> 3, X -> 1)
+            String numeroFactor = factor.replaceAll("[^0-9]", "");
+            if (numeroFactor.isEmpty()) {
+                numeroFactor = "1"; // Si no hay número, usar 1
+            }
+            preguntaIdsConFactores.put(pm.getId(), Integer.valueOf(numeroFactor));
         }
         
         // PASO 2: VERIFICACIÓN Y RESERVA ATÓMICA de todas las preguntas

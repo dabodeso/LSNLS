@@ -101,7 +101,7 @@ const CuestionariosManager = {
             }
             
             tr.innerHTML = `
-                <td style="font-weight: bold; font-size: 1.2em; color: #0066cc;">${c.id ?? ''}</td>
+                <td style="font-weight: bold; font-size: 1.1em; color: #0066cc; padding-right: 20px;">${c.id ?? ''}</td>
                 <td>
                     <select class="form-select form-select-sm" onchange="cambiarTematicaCuestionario(${c.id}, this.value)">
                         ${opcionesTematicas}

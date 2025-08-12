@@ -19,6 +19,22 @@ const JornadasManager = {
             Utils.showAlert('Error al cargar datos de jornadas', 'error');
         }
     },
+    
+    // Función para seleccionar cuestionarios directamente sin pasar por el editor
+    seleccionarCuestionariosDirecto(jornadaId) {
+        this.jornadaEditando = this.jornadas.find(j => j.id === jornadaId);
+        // Usar los mismos campos que editarJornada para consistencia
+        this.cuestionariosSeleccionados = this.jornadaEditando.cuestionarioIds || [];
+        this.seleccionarCuestionarios();
+    },
+    
+    // Función para seleccionar combos directamente sin pasar por el editor
+    seleccionarCombosDirecto(jornadaId) {
+        this.jornadaEditando = this.jornadas.find(j => j.id === jornadaId);
+        // Usar los mismos campos que editarJornada para consistencia
+        this.combosSeleccionados = this.jornadaEditando.comboIds || [];
+        this.seleccionarCombos();
+    },
 
     async cargarDatos() {
         console.log('📡 [JORNADAS] Cargando datos...');
@@ -68,78 +84,170 @@ const JornadasManager = {
             return;
         }
 
-        let html = '';
+        // No mostramos tabla general, iremos directamente a las tarjetas con la información
+        let html = ``;
+        
+        // Agregar sección de tarjetas con cuestionarios y combos
+        html += `
+            <div class="mt-4">
+        `;
+        
+        // Agregar las cards para cada jornada
         this.jornadas.forEach(jornada => {
             html += this.generarCardJornada(jornada);
         });
-
+        
+        html += `</div>`;
+        
         container.innerHTML = html;
     },
 
     generarCardJornada(jornada) {
-        const estadoBadge = this.getEstadoBadge(jornada.estado);
-        const fecha = jornada.fechaJornada ? new Date(jornada.fechaJornada).toLocaleDateString('es-ES') : 'Sin fecha';
-        const cuestionariosCount = jornada.cuestionarios ? jornada.cuestionarios.length : 0;
-        const combosCount = jornada.combos ? jornada.combos.length : 0;
-
-        return `
-            <div class="jornada-card" data-id="${jornada.id}">
-                <div class="jornada-header">
-                    <div>
-                        <h5 class="mb-1">${jornada.nombre}</h5>
-                        <small class="text-muted">Creada por: ${jornada.creacionUsuarioNombre}</small>
-                    </div>
-                    <div class="d-flex gap-2 align-items-center">
-                        ${estadoBadge}
-                        <div class="btn-group">
-                            <button class="btn btn-outline-primary btn-sm" onclick="JornadasManager.verDetalle(${jornada.id})" title="Ver detalle">
+        // Preparar los cuestionarios y combos (asegurar que existan arrays)
+        const cuestionarios = jornada.cuestionarios || [];
+        const combos = jornada.combos || [];
+        
+        // Generar slots de cuestionarios (5 en total)
+        let cuestionariosHtml = '';
+        for (let i = 0; i < 5; i++) {
+            if (i < cuestionarios.length) {
+                const c = cuestionarios[i];
+                cuestionariosHtml += `
+                    <div class="cuestionario-slot">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="font-weight: bold; color: #0066cc;">Cuestionario ${c.id}</span>
+                            <button class="btn btn-sm btn-outline-info" onclick="JornadasManager.verPreguntasCuestionario(${c.id})">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button class="btn btn-outline-success btn-sm" onclick="JornadasManager.exportarExcel(${jornada.id})" title="Exportar Excel">
-                                <i class="fas fa-file-excel"></i>
-                            </button>
-                            ${this.puedeEditar(jornada) ? `
-                                <button class="btn btn-outline-warning btn-sm" onclick="JornadasManager.editarJornada(${jornada.id})" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            ` : ''}
-                            ${this.puedeEliminar(jornada) ? `
-                                <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarJornada(${jornada.id})" title="Eliminar">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            ` : ''}
                         </div>
+                        <small>${c.tematica || 'Sin temática'}</small>
+                    </div>
+                `;
+            } else {
+                // Slot vacío con botón de añadir
+                cuestionariosHtml += `
+                    <div class="cuestionario-slot empty-slot">
+                        <button class="btn btn-sm btn-success w-100" 
+                                onclick="JornadasManager.seleccionarCuestionariosDirecto(${jornada.id})">
+                            <i class="fas fa-plus"></i> Añadir
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Mapeo de tipos de combo a nombres completos
+        const tipoComboNombres = {
+            'P': 'Premio',
+            'A': 'Asequible',
+            'D': 'Difícil',
+            'R': 'Rescate'
+        };
+        
+        // Generar slots de combos (5 en total)
+        let combosHtml = '';
+        for (let i = 0; i < 5; i++) {
+            if (i < combos.length) {
+                const c = combos[i];
+                // Obtener el nombre completo del tipo o usar el valor original
+                const tipoNombre = tipoComboNombres[c.tipo] || c.tipo || 'Sin tipo';
+                
+                combosHtml += `
+                    <div class="combo-slot">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="font-weight: bold; color: #0066cc;">Combo ${c.id}</span>
+                            <button class="btn btn-sm btn-outline-info" onclick="JornadasManager.verPreguntasCombo(${c.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small>${tipoNombre}</small>
+                    </div>
+                `;
+            } else {
+                // Slot vacío con botón de añadir
+                combosHtml += `
+                    <div class="combo-slot empty-slot">
+                        <button class="btn btn-sm btn-success w-100" 
+                                onclick="JornadasManager.seleccionarCombosDirecto(${jornada.id})">
+                            <i class="fas fa-plus"></i> Añadir
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        const estadoBadge = this.getEstadoBadge(jornada.estado);
+        const fecha = jornada.fechaJornada ? new Date(jornada.fechaJornada).toLocaleDateString('es-ES') : 'Sin fecha';
+        
+        // Selector de estado (solo se muestra si el usuario puede gestionar el estado)
+        const selectorEstado = this.puedeGestionarEstado(jornada) ? `
+            <select class="form-select form-select-sm" style="width: auto; min-width: 120px" 
+                    onchange="JornadasManager.cambiarEstado(${jornada.id}, this.value)">
+                <option value="preparacion" ${jornada.estado === 'preparacion' ? 'selected' : ''}>Preparación</option>
+                <option value="lista" ${jornada.estado === 'lista' ? 'selected' : ''}>Lista</option>
+                <option value="en_grabacion" ${jornada.estado === 'en_grabacion' ? 'selected' : ''}>En Grabación</option>
+                <option value="completada" ${jornada.estado === 'completada' ? 'selected' : ''}>Completada</option>
+                <option value="archivada" ${jornada.estado === 'archivada' ? 'selected' : ''}>Archivada</option>
+            </select>
+        ` : estadoBadge;
+        
+        return `
+            <div class="jornada-card" data-id="${jornada.id}">
+                <div class="mb-3">
+                    <table class="table">
+                        <tr>
+                            <td style="font-weight: bold; font-size: 1.1em; color: #0066cc; padding-right: 20px; width: 10%;">${jornada.id}</td>
+                            <td style="width: 20%;">${jornada.nombre}</td>
+                            <td style="width: 25%;">${selectorEstado}</td>
+                            <td style="width: 15%;">${fecha}</td>
+                            <td style="width: 15%;">${jornada.lugar || 'No especificado'}</td>
+                            <td style="width: 15%;">
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="JornadasManager.verDetalle(${jornada.id})" title="Ver detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm" onclick="JornadasManager.exportarExcel(${jornada.id})" title="Exportar Excel">
+                                        <i class="fas fa-file-excel"></i>
+                                    </button>
+                                    ${this.puedeEditar(jornada) ? `
+                                        <button class="btn btn-outline-warning btn-sm" onclick="JornadasManager.editarJornada(${jornada.id})" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    ` : ''}
+                                    ${this.puedeEliminar(jornada) ? `
+                                        <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarJornada(${jornada.id})" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- Línea divisoria con texto "CUESTIONARIOS" -->
+                <div class="combos-divider">
+                    <span class="combos-text">CUESTIONARIOS</span>
+                </div>
+                
+                <!-- Cuestionarios -->
+                <div class="cuestionarios-container mt-3">
+                    <div class="cuestionarios-grid">
+                        ${cuestionariosHtml}
                     </div>
                 </div>
                 
-                <div class="row">
-                    <div class="col-md-6">
-                        <small class="text-muted"><i class="fas fa-calendar"></i> Fecha:</small> ${fecha}<br>
-                        <small class="text-muted"><i class="fas fa-map-marker-alt"></i> Lugar:</small> ${jornada.lugar || 'No especificado'}<br>
-                        <small class="text-muted"><i class="fas fa-clipboard-list"></i> Cuestionarios:</small> ${cuestionariosCount}/5<br>
-                        <small class="text-muted"><i class="fas fa-layer-group"></i> Combos:</small> ${combosCount}/5
-                    </div>
-                    <div class="col-md-6">
-                        ${jornada.notas ? `
-                            <small class="text-muted"><i class="fas fa-sticky-note"></i> Notas:</small>
-                            <p class="small mb-0">${jornada.notas}</p>
-                        ` : ''}
+                <!-- Línea divisoria con texto "COMBOS" -->
+                <div class="combos-divider">
+                    <span class="combos-text">COMBOS</span>
+                </div>
+                
+                <!-- Combos -->
+                <div class="combos-container mt-2">
+                    <div class="combos-grid">
+                        ${combosHtml}
                     </div>
                 </div>
-
-                ${this.puedeGestionarEstado(jornada) ? `
-                    <div class="mt-3">
-                        <small class="text-muted">Cambiar estado:</small>
-                        <select class="form-select form-select-sm d-inline-block w-auto ms-2" onchange="JornadasManager.cambiarEstado(${jornada.id}, this.value)">
-                            <option value="">-- Seleccionar --</option>
-                            <option value="preparacion" ${jornada.estado === 'preparacion' ? 'selected' : ''}>Preparación</option>
-                            <option value="lista" ${jornada.estado === 'lista' ? 'selected' : ''}>Lista</option>
-                            <option value="en_grabacion" ${jornada.estado === 'en_grabacion' ? 'selected' : ''}>En Grabación</option>
-                            <option value="completada" ${jornada.estado === 'completada' ? 'selected' : ''}>Completada</option>
-                            <option value="archivada" ${jornada.estado === 'archivada' ? 'selected' : ''}>Archivada</option>
-                        </select>
-                    </div>
-                ` : ''}
             </div>
         `;
     },
@@ -185,6 +293,9 @@ const JornadasManager = {
         document.getElementById('modalJornadaTitulo').textContent = 'Nueva Jornada';
         document.getElementById('formJornada').reset();
         
+        // El ID se asigna automáticamente, mostramos el texto apropiado
+        document.getElementById('jornadaId').value = 'Auto';
+        
         this.actualizarSlotsVisual();
         
         const modal = new bootstrap.Modal(document.getElementById('modalJornada'));
@@ -201,6 +312,7 @@ const JornadasManager = {
             this.combosSeleccionados = jornada.comboIds || [];
             
             document.getElementById('modalJornadaTitulo').textContent = 'Editar Jornada';
+            document.getElementById('jornadaId').value = jornada.id;
             document.getElementById('jornadaNombre').value = jornada.nombre;
             document.getElementById('jornadaFecha').value = jornada.fechaJornada || '';
             document.getElementById('jornadaLugar').value = jornada.lugar || '';
@@ -334,7 +446,11 @@ const JornadasManager = {
             const response = await fetch(`/api/jornadas/${id}/exportar-excel`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'X-Excel-Cambiar-Columna-ID-PREGUNTA': 'MULT',     // Cambiar el encabezado ID PREGUNTA a MULT solo en Excel
+                    'X-Excel-Mostrar-Factor-Multiplicacion': 'true',    // Mostrar factor de multiplicación en columna MULT
+                    'X-Excel-Ordenar-Cuestionarios-Por-Nivel': 'true',  // Ordenar preguntas de cuestionarios por nivel (1,2,3,4)
+                    'X-Excel-Ordenar-Combos-Por-Factor': 'true'         // Ordenar preguntas de combos por factor de multiplicación
                 }
             });
 
@@ -481,11 +597,21 @@ const JornadasManager = {
     confirmarSeleccionCuestionarios() {
         this.actualizarSlotsVisual();
         bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios')).hide();
+        
+        // Si estamos editando una jornada existente, guardar los cambios
+        if (this.jornadaEditando) {
+            this.guardarCambiosCuestionarios();
+        }
     },
 
     confirmarSeleccionCombos() {
         this.actualizarSlotsVisual();
         bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos')).hide();
+        
+        // Si estamos editando una jornada existente, guardar los cambios
+        if (this.jornadaEditando) {
+            this.guardarCambiosCombos();
+        }
     },
 
     actualizarSlotsVisual() {
@@ -568,6 +694,42 @@ const JornadasManager = {
         if (index > -1) {
             this.cuestionariosSeleccionados.splice(index, 1);
             this.actualizarSlotsVisual();
+            
+            // Si estamos editando una jornada existente, guardar los cambios
+            if (this.jornadaEditando) {
+                this.guardarCambiosCuestionarios();
+            }
+        }
+    },
+
+    async guardarCambiosCuestionarios() {
+        try {
+            console.log('🔍 [JORNADAS] Guardando cambios de cuestionarios para jornada:', this.jornadaEditando.id);
+            console.log('🔍 [JORNADAS] Cuestionarios seleccionados:', this.cuestionariosSeleccionados);
+            console.log('🔍 [JORNADAS] Jornada editando:', this.jornadaEditando);
+            
+            // Incluir todos los campos de la jornada actual para evitar que se pierdan datos
+            const datos = {
+                nombre: this.jornadaEditando.nombre,
+                fechaJornada: this.jornadaEditando.fechaJornada,
+                lugar: this.jornadaEditando.lugar,
+                notas: this.jornadaEditando.notas,
+                cuestionarioIds: this.cuestionariosSeleccionados,
+                comboIds: this.jornadaEditando.comboIds || []
+            };
+            
+            console.log('🔍 [JORNADAS] Datos a enviar:', datos);
+
+            await apiManager.put(`/api/jornadas/${this.jornadaEditando.id}`, datos);
+            Utils.showAlert('Cuestionarios actualizados exitosamente', 'success');
+            
+            // Recargar datos para mostrar los cambios
+            await this.cargarDatos();
+            this.mostrarJornadas();
+            
+        } catch (error) {
+            console.error('❌ [JORNADAS] Error al guardar cambios de cuestionarios:', error);
+            Utils.showAlert('Error al actualizar cuestionarios: ' + (error.message || 'Error desconocido'), 'error');
         }
     },
 
@@ -576,6 +738,42 @@ const JornadasManager = {
         if (index > -1) {
             this.combosSeleccionados.splice(index, 1);
             this.actualizarSlotsVisual();
+            
+            // Si estamos editando una jornada existente, guardar los cambios
+            if (this.jornadaEditando) {
+                this.guardarCambiosCombos();
+            }
+        }
+    },
+
+    async guardarCambiosCombos() {
+        try {
+            console.log('🔍 [JORNADAS] Guardando cambios de combos para jornada:', this.jornadaEditando.id);
+            console.log('🔍 [JORNADAS] Combos seleccionados:', this.combosSeleccionados);
+            console.log('🔍 [JORNADAS] Jornada editando:', this.jornadaEditando);
+            
+            // Incluir todos los campos de la jornada actual para evitar que se pierdan datos
+            const datos = {
+                nombre: this.jornadaEditando.nombre,
+                fechaJornada: this.jornadaEditando.fechaJornada,
+                lugar: this.jornadaEditando.lugar,
+                notas: this.jornadaEditando.notas,
+                cuestionarioIds: this.jornadaEditando.cuestionarioIds || [],
+                comboIds: this.combosSeleccionados
+            };
+            
+            console.log('🔍 [JORNADAS] Datos a enviar:', datos);
+
+            await apiManager.put(`/api/jornadas/${this.jornadaEditando.id}`, datos);
+            Utils.showAlert('Combos actualizados exitosamente', 'success');
+            
+            // Recargar datos para mostrar los cambios
+            await this.cargarDatos();
+            this.mostrarJornadas();
+            
+        } catch (error) {
+            console.error('❌ [JORNADAS] Error al guardar cambios de combos:', error);
+            Utils.showAlert('Error al actualizar combos: ' + (error.message || 'Error desconocido'), 'error');
         }
     },
 
@@ -623,6 +821,12 @@ const JornadasManager = {
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
+                                <div class="alert alert-secondary">
+                                    <h5 class="d-flex align-items-center">
+                                        <span style="font-weight: bold; font-size: 1.1em; color: #0066cc;" class="me-2">ID: ${jornada.id}</span>
+                                        ${jornada.nombre}
+                                    </h5>
+                                </div>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <p><strong>Fecha:</strong> ${jornada.fechaJornada ? new Date(jornada.fechaJornada).toLocaleDateString('es-ES') : 'Sin fecha'}</p>
@@ -639,9 +843,14 @@ const JornadasManager = {
                                 <h6 class="mt-4">Cuestionarios (${jornada.cuestionarios ? jornada.cuestionarios.length : 0})</h6>
                                 <div class="list-group">
                                     ${jornada.cuestionarios ? jornada.cuestionarios.map(c => `
-                                        <div class="list-group-item">
-                                            <strong>Cuestionario #${c.id}</strong> - ${c.nivel} - ${c.estado}
-                                            ${c.tematica ? `<br><small>Temática: ${c.tematica}</small>` : ''}
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>Cuestionario #${c.id}</strong> - ${c.nivel} - ${c.estado}
+                                                ${c.tematica ? `<br><small>Temática: ${c.tematica}</small>` : ''}
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-info" onclick="JornadasManager.verPreguntasCuestionario(${c.id})">
+                                                <i class="fas fa-eye"></i> Ver preguntas
+                                            </button>
                                         </div>
                                     `).join('') : '<p class="text-muted">No hay cuestionarios asignados</p>'}
                                 </div>
@@ -649,9 +858,14 @@ const JornadasManager = {
                                 <h6 class="mt-4">Combos (${jornada.combos ? jornada.combos.length : 0})</h6>
                                 <div class="list-group">
                                     ${jornada.combos ? jornada.combos.map(c => `
-                                        <div class="list-group-item">
-                                            <strong>Combo #${c.id}</strong> - ${c.nivel} - <span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span>
-                                            ${c.tipo ? `<br><small>Tipo: ${c.tipo}</small>` : ''}
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>Combo #${c.id}</strong> - ${c.nivel} - <span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span>
+                                                ${c.tipo ? `<br><small>Tipo: ${c.tipo}</small>` : ''}
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-info" onclick="JornadasManager.verPreguntasCombo(${c.id})">
+                                                <i class="fas fa-eye"></i> Ver preguntas
+                                            </button>
                                         </div>
                                     `).join('') : '<p class="text-muted">No hay combos asignados</p>'}
                                 </div>
@@ -730,10 +944,15 @@ const JornadasManager = {
         let html = '';
         if (cuestionario.preguntas && cuestionario.preguntas.length > 0) {
             const preguntasParaOrdenar = [...cuestionario.preguntas];
+            // Ordenar por nivel de pregunta (1,2,3,4)
             const preguntasOrdenadas = preguntasParaOrdenar.sort((a, b) => {
-                const factorA = parseInt(a.factorMultiplicacion) || 0;
-                const factorB = parseInt(b.factorMultiplicacion) || 0;
-                return factorA - factorB;
+                if (a.pregunta && b.pregunta) {
+                    // Extraer solo los dígitos del nivel
+                    const nivelA = parseInt(String(a.pregunta.nivel).replace(/\D/g, '')) || 0;
+                    const nivelB = parseInt(String(b.pregunta.nivel).replace(/\D/g, '')) || 0;
+                    return nivelA - nivelB;
+                }
+                return 0;
             });
             preguntasOrdenadas.forEach((preguntaCuestionario, index) => {
                 const pregunta = preguntaCuestionario.pregunta;
@@ -762,13 +981,20 @@ const JornadasManager = {
         
         titulo.textContent = `Preguntas del Combo #${combo.id} (Tipo: ${combo.tipo || 'No especificado'})`;
         
+        // Actualizar las columnas para mostrar MULT en vez de Factor
+        const thFactorElement = document.querySelector('#modalVerPreguntasCombo thead th:first-child');
+        if (thFactorElement) {
+            thFactorElement.textContent = 'MULT';
+        }
+        
         let html = '';
         if (combo.preguntas && combo.preguntas.length > 0) {
             const preguntasParaOrdenar = [...combo.preguntas];
+            // Ordenar por factor de multiplicación
             const preguntasOrdenadas = preguntasParaOrdenar.sort((a, b) => {
                 if (a.pregunta && b.pregunta) {
-                    const factorA = parseInt(a.factorMultiplicacion) || 0;
-                    const factorB = parseInt(b.factorMultiplicacion) || 0;
+                    const factorA = parseInt(String(a.factorMultiplicacion).replace(/\D/g, '')) || 0;
+                    const factorB = parseInt(String(b.factorMultiplicacion).replace(/\D/g, '')) || 0;
                     return factorA - factorB;
                 }
                 return 0;
@@ -776,13 +1002,21 @@ const JornadasManager = {
             preguntasOrdenadas.forEach((preguntaSlot, index) => {
                 if (preguntaSlot.pregunta) {
                     const pregunta = preguntaSlot.pregunta;
-                    // Mostrar solo el factor de multiplicación como x2, x3 o x
-                    let factor = parseInt(preguntaSlot.factorMultiplicacion);
-                    let factorStr = '';
-                    if (factor === 2) factorStr = 'x2';
-                    else if (factor === 3) factorStr = 'x3';
-                    else if (factor === 0) factorStr = 'x';
-                    else factorStr = `x${factor}`;
+                    // Mostrar el factor de multiplicación exactamente como está
+                    let factorStr = preguntaSlot.factorMultiplicacion || '';
+                    
+                    // Intentar formatear para casos comunes
+                    const factorNum = parseInt(factorStr);
+                    if (!isNaN(factorNum)) {
+                        if (factorNum === 2) factorStr = 'x2';
+                        else if (factorNum === 3) factorStr = 'x3';
+                        else if (factorNum === 0) factorStr = 'x';
+                        else factorStr = `x${factorNum}`;
+                    }
+                    
+                    // Mostrar 5LS o 5NLS según el tipo de pregunta
+                    const nivelText = pregunta.nivel?.includes('LS') ? '5LS' : '5NLS';
+                    
                     html += `
                         <tr>
                             <td><span class="badge bg-info">${factorStr}</span></td>

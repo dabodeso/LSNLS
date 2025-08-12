@@ -92,6 +92,22 @@ public class ProgramaController {
         }
     }
 
+    @PatchMapping("/{id}/duracion-objetivo")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> updateDuracionObjetivo(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        try {
+            String duracionObjetivo = request.get("duracionObjetivo");
+            if (duracionObjetivo == null || duracionObjetivo.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("La duración objetivo es obligatoria");
+            }
+            
+            programaService.updateDuracionObjetivo(id, duracionObjetivo);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al actualizar duración objetivo: " + e.getMessage());
+        }
+    }
+
     @PatchMapping("/{id}/campo")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
     public ResponseEntity<?> updateCampo(@PathVariable Long id, @RequestBody Map<String, Object> campo) {

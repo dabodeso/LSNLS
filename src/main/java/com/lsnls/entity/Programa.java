@@ -25,6 +25,9 @@ public class Programa {
     @Column(name = "duracion_acumulada")
     private LocalTime duracionAcumulada;
 
+    @Column(name = "duracion_objetivo")
+    private String duracionObjetivo = "1h 5m";
+
     @Column(name = "resultado_acumulado", precision = 10, scale = 2)
     private BigDecimal resultadoAcumulado;
 

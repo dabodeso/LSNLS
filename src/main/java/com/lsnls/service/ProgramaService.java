@@ -177,11 +177,23 @@ public class ProgramaService {
         return configuracionService.getDuracionObjetivo();
     }
 
+    public void updateDuracionObjetivo(Long id, String duracionObjetivo) {
+        Optional<Programa> optionalPrograma = programaRepository.findById(id);
+        if (optionalPrograma.isPresent()) {
+            Programa programa = optionalPrograma.get();
+            programa.setDuracionObjetivo(duracionObjetivo);
+            programaRepository.save(programa);
+        } else {
+            throw new IllegalArgumentException("Programa con ID " + id + " no encontrado");
+        }
+    }
+
     private ProgramaDTO convertToDTO(Programa programa) {
         ProgramaDTO dto = new ProgramaDTO();
         dto.setId(programa.getId());
         dto.setTemporada(programa.getTemporada());
         dto.setDuracionAcumulada(programa.getDuracionAcumulada());
+        dto.setDuracionObjetivo(programa.getDuracionObjetivo());
         dto.setResultadoAcumulado(programa.getResultadoAcumulado());
         dto.setFechaEmision(programa.getFechaEmision());
         dto.setDatoAudienciaShare(programa.getDatoAudienciaShare());
@@ -199,6 +211,7 @@ public class ProgramaService {
         programa.setId(dto.getId());
         programa.setTemporada(dto.getTemporada());
         programa.setDuracionAcumulada(dto.getDuracionAcumulada());
+        programa.setDuracionObjetivo(dto.getDuracionObjetivo());
         programa.setResultadoAcumulado(dto.getResultadoAcumulado());
         programa.setFechaEmision(dto.getFechaEmision());
         programa.setDatoAudienciaShare(dto.getDatoAudienciaShare());

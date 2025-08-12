@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 import javax.persistence.EntityManager;
 
 @Service
@@ -309,12 +310,29 @@ public class JornadaService {
         }
     }
 
+    /**
+     * Exporta una jornada a formato Excel con opciones de personalización.
+     *
+     * @param id El ID de la jornada a exportar
+     * @return Los bytes del archivo Excel generado
+     */
     public byte[] exportarExcel(Long id) {
+        return exportarExcel(id, null);
+    }
+
+    /**
+     * Exporta una jornada a formato Excel con opciones de personalización.
+     *
+     * @param id El ID de la jornada a exportar
+     * @param opciones Mapa con opciones de configuración para el Excel
+     * @return Los bytes del archivo Excel generado
+     */
+    public byte[] exportarExcel(Long id, Map<String, Object> opciones) {
         try {
             Jornada jornada = jornadaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada"));
             
-            return excelExportService.exportarJornada(jornada);
+            return excelExportService.exportarJornada(jornada, opciones);
         } catch (Exception e) {
             throw new RuntimeException("Error al generar Excel: " + e.getMessage(), e);
         }

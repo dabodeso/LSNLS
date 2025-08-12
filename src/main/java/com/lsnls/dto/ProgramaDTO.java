@@ -10,6 +10,7 @@ public class ProgramaDTO {
     private Long id;
     private Integer temporada;
     private LocalTime duracionAcumulada;
+    private String duracionObjetivo;
     private BigDecimal resultadoAcumulado;
     private LocalDate fechaEmision;
     private BigDecimal datoAudienciaShare;

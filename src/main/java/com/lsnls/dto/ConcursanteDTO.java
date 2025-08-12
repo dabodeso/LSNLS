@@ -22,17 +22,19 @@ public class ConcursanteDTO {
     private Long cuestionarioId;
     private Long comboId;
     private String factorX;
-    private String resultado;
+    private Integer resultado;
     private String notasGrabacion;
     private String guionista;
     private String valoracionGuionista;
-    private Integer concursantesPorJornada;
     private String estado;
     private String momentosDestacados;
     private String duracion; // formato MM:SS
+    private String duracionDireccion; // formato MM:SS
+    private String duracionFinal; // formato MM:SS
     private String valoracionFinal;
     private Integer numeroPrograma;
     private Integer ordenEscaleta;
+    private String bonico;
     
     // Nuevos campos para la vista de programas
     private BigDecimal premio;

@@ -17,28 +17,10 @@ SET character_set_results = utf8mb4;
 SET character_set_connection = utf8mb4;
 SET collation_connection = utf8mb4_unicode_ci;
 
--- Eliminar tablas existentes en orden correcto para evitar errores de foreign keys
--- Primero las tablas de relaciones/junction
-DROP TABLE IF EXISTS jornadas_cuestionarios;
-DROP TABLE IF EXISTS jornadas_combos;
-DROP TABLE IF EXISTS cuestionarios_preguntas;
-DROP TABLE IF EXISTS combos_preguntas;
--- Luego las tablas que tienen foreign keys hacia otras entidades principales
-DROP TABLE IF EXISTS concursantes;
--- Luego las tablas que referencian a usuarios pero también entre sí
-DROP TABLE IF EXISTS jornadas;
-DROP TABLE IF EXISTS combos;
-DROP TABLE IF EXISTS cuestionarios;
-DROP TABLE IF EXISTS preguntas;
--- Luego las tablas que solo referencian a usuarios
-DROP TABLE IF EXISTS tematicas;
-DROP TABLE IF EXISTS programas;
-DROP TABLE IF EXISTS configuracion_global;
--- Finalmente usuarios
-DROP TABLE IF EXISTS usuarios;
+-- Las tablas se crean solo si no existen para mantener los datos entre ejecuciones
 
 -- Crear tabla de usuarios
-CREATE TABLE usuarios (
+CREATE TABLE IF NOT EXISTS usuarios (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL,
@@ -47,7 +29,7 @@ CREATE TABLE usuarios (
 );
 
 -- Crear tabla de temáticas
-CREATE TABLE tematicas (
+CREATE TABLE IF NOT EXISTS tematicas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE,
     fecha_creacion datetime(6),
@@ -57,7 +39,7 @@ CREATE TABLE tematicas (
 );
 
 -- Crear tabla de preguntas
-CREATE TABLE preguntas (
+CREATE TABLE IF NOT EXISTS preguntas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     creacion_usuario_id BIGINT,
     fecha_creacion datetime(6),
@@ -82,7 +64,7 @@ CREATE TABLE preguntas (
 );
 
 -- Crear tabla de cuestionarios
-CREATE TABLE cuestionarios (
+CREATE TABLE IF NOT EXISTS cuestionarios (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     creacion_usuario_id BIGINT NOT NULL,
     fecha_creacion datetime(6),
@@ -94,7 +76,7 @@ CREATE TABLE cuestionarios (
 );
 
 -- Crear tabla de combos
-CREATE TABLE combos (
+CREATE TABLE IF NOT EXISTS combos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     creacion_usuario_id BIGINT NOT NULL,
     fecha_creacion datetime(6),
@@ -105,7 +87,7 @@ CREATE TABLE combos (
 );
 
 -- Crear tabla de relación cuestionarios-preguntas
-CREATE TABLE cuestionarios_preguntas (
+CREATE TABLE IF NOT EXISTS cuestionarios_preguntas (
     cuestionario_id BIGINT NOT NULL,
     pregunta_id BIGINT NOT NULL,
     factor_multiplicacion INTEGER,
@@ -113,7 +95,7 @@ CREATE TABLE cuestionarios_preguntas (
 );
 
 -- Crear tabla de relación combos-preguntas
-CREATE TABLE combos_preguntas (
+CREATE TABLE IF NOT EXISTS combos_preguntas (
     combo_id BIGINT NOT NULL,
     pregunta_id BIGINT NOT NULL,
     factor_multiplicacion VARCHAR(10),
@@ -121,7 +103,7 @@ CREATE TABLE combos_preguntas (
 );
 
 -- Crear tabla de configuración global
-CREATE TABLE configuracion_global (
+CREATE TABLE IF NOT EXISTS configuracion_global (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     clave VARCHAR(255) NOT NULL,
     descripcion VARCHAR(255),
@@ -130,11 +112,12 @@ CREATE TABLE configuracion_global (
 );
 
 -- Crear tabla de programas
-CREATE TABLE programas (
+CREATE TABLE IF NOT EXISTS programas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     temporada INTEGER NOT NULL,
     fecha_emision DATE,
     duracion_acumulada TIME(6),
+    duracion_objetivo VARCHAR(255) DEFAULT '1h 5m',
     resultado_acumulado DECIMAL(10,2),
     dato_audiencia_share DECIMAL(5,2),
     dato_audiencia_target DECIMAL(5,2),
@@ -147,7 +130,7 @@ CREATE TABLE programas (
 );
 
 -- Crear tabla de jornadas
-CREATE TABLE jornadas (
+CREATE TABLE IF NOT EXISTS jornadas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
     fecha_jornada DATE,
@@ -160,21 +143,21 @@ CREATE TABLE jornadas (
 );
 
 -- Crear tabla de relación jornadas-cuestionarios
-CREATE TABLE jornadas_cuestionarios (
+CREATE TABLE IF NOT EXISTS jornadas_cuestionarios (
     jornada_id BIGINT NOT NULL,
     cuestionario_id BIGINT NOT NULL,
     PRIMARY KEY (jornada_id, cuestionario_id)
 );
 
 -- Crear tabla de relación jornadas-combos
-CREATE TABLE jornadas_combos (
+CREATE TABLE IF NOT EXISTS jornadas_combos (
     jornada_id BIGINT NOT NULL,
     combo_id BIGINT NOT NULL,
     PRIMARY KEY (jornada_id, combo_id)
 );
 
 -- Crear tabla de concursantes
-CREATE TABLE concursantes (
+CREATE TABLE IF NOT EXISTS concursantes (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     numero_concursante INTEGER,
     jornada_id BIGINT,
@@ -187,17 +170,19 @@ CREATE TABLE concursantes (
     cuestionario_id BIGINT,
     combo_id BIGINT,
     factor_x VARCHAR(255),
-    resultado VARCHAR(255),
+    resultado INTEGER,
     notas_grabacion TEXT,
     guionista VARCHAR(255),
     valoracion_guionista TEXT,
-    concursantes_por_jornada INTEGER,
     estado VARCHAR(255),
     momentos_destacados TEXT,
     duracion VARCHAR(255),
+    duracion_direccion VARCHAR(255),
+    duracion_final VARCHAR(255),
     valoracion_final TEXT,
     numero_programa INTEGER,
     orden_escaleta INTEGER,
+    bonico VARCHAR(255),
     premio DECIMAL(10,2),
     foto VARCHAR(255),
     creditos_especiales TEXT,

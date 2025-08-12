@@ -1,6 +1,5 @@
 let programas = [];
 let concursantesPorPrograma = {};
-let duracionObjetivoGlobal = '1h 5m'; // Variable global para la duración objetivo
 
 async function inicializarProgramas() {
     // Mostrar enlace de administración solo para admins
@@ -12,18 +11,7 @@ async function inicializarProgramas() {
         }
     }
     
-    await cargarDuracionObjetivo();
     await cargarProgramas();
-}
-
-async function cargarDuracionObjetivo() {
-    try {
-        const duracion = await apiManager.get('/api/configuracion/duracion-objetivo');
-        duracionObjetivoGlobal = duracion || '1h 5m';
-    } catch (error) {
-        console.warn('No se pudo cargar duración objetivo, usando valor por defecto');
-        duracionObjetivoGlobal = '1h 5m';
-    }
 }
 
 async function cargarProgramas() {
@@ -64,7 +52,8 @@ function mostrarProgramas() {
         const fechaFormateada = formatearFechaPrograma(programa.fechaEmision);
         const totalResultados = calcularTotalResultados(concursantes);
         const duracionReal = calcularDuracionReal(concursantes);
-        const gap = calcularGap(duracionObjetivoGlobal, duracionReal);
+        const duracionObjetivo = programa.duracionObjetivo || '1h 5m';
+        const gap = calcularGap(duracionObjetivo, duracionReal);
         
         // Definir colores para estados
         const estadoColores = {
@@ -133,7 +122,11 @@ function mostrarProgramas() {
                         <div class="programa-info-item">
                             <div class="programa-info-label">Duración Objetivo</div>
                             <div class="programa-info-value">
-                                <span class="programa-info-readonly">${duracionObjetivoGlobal}</span>
+                                <input type="text" class="form-control form-control-sm" 
+                                       value="${duracionObjetivo}" 
+                                       onchange="actualizarDuracionObjetivo(${programa.id}, this.value)"
+                                       placeholder="1h 5m"
+                                       style="width: 80px; font-size: 0.9em;">
                             </div>
                         </div>
                         <div class="programa-info-item">
@@ -196,10 +189,10 @@ function mostrarProgramas() {
                                                    onclick="event.stopPropagation()"
                                                    placeholder="0€">
                                         </td>
-                                        <td class="col-duracion">${concursante.duracion || ''}</td>
+                                        <td class="col-duracion">${obtenerDuracionConcursante(concursante)}</td>
                                         <td class="col-foto">
                                             ${concursante.foto ? 
-                                                `<img src="${concursante.foto}" class="foto-concursante" alt="Foto" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para cambiar foto">` : 
+                                                `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para cambiar foto">` : 
                                                 `<div class="campo-foto-vacio" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para añadir foto">
                                                     <i class="fas fa-camera"></i>
                                                     <span>Añadir foto</span>
@@ -299,9 +292,16 @@ function calcularTotalResultados(concursantes) {
         if (c.premio !== null && c.premio !== undefined && c.premio !== '') {
             valor = parseFloat(c.premio) || 0;
         } 
-        // Secundario: extraer números del campo resultado (string)
-        else if (c.resultado && c.resultado.trim() !== '') {
-            valor = extraerNumeroDeString(c.resultado);
+        // Secundario: extraer números del campo resultado (puede ser string o número)
+        else if (c.resultado !== null && c.resultado !== undefined && c.resultado !== '') {
+            // Si es un número, usarlo directamente
+            if (typeof c.resultado === 'number') {
+                valor = c.resultado;
+            } 
+            // Si es un string, extraer números
+            else if (typeof c.resultado === 'string' && c.resultado.trim() !== '') {
+                valor = extraerNumeroDeString(c.resultado);
+            }
         }
         
         return total + valor;
@@ -358,12 +358,31 @@ function probarExtraccionNumeros() {
     });
 }
 
+// Función para obtener la duración prioritaria de un concursante individual
+function obtenerDuracionConcursante(concursante) {
+    // Lógica de prioridad: primero duracionFinal, luego duracionDireccion, finalmente duracion
+    if (concursante.duracionFinal && concursante.duracionFinal.trim() !== '') {
+        console.log(`🔍 [PROGRAMAS] Concursante ${concursante.id}: usando duracionFinal = ${concursante.duracionFinal}`);
+        return concursante.duracionFinal;
+    } else if (concursante.duracionDireccion && concursante.duracionDireccion.trim() !== '') {
+        console.log(`🔍 [PROGRAMAS] Concursante ${concursante.id}: usando duracionDireccion = ${concursante.duracionDireccion}`);
+        return concursante.duracionDireccion;
+    } else if (concursante.duracion && concursante.duracion.trim() !== '') {
+        console.log(`🔍 [PROGRAMAS] Concursante ${concursante.id}: usando duracion = ${concursante.duracion}`);
+        return concursante.duracion;
+    }
+    console.log(`🔍 [PROGRAMAS] Concursante ${concursante.id}: ninguna duración disponible`);
+    return '';
+}
+
 function calcularDuracionReal(concursantes) {
     let totalMinutos = 0;
     
     concursantes.forEach(c => {
-        if (c.duracion) {
-            const partes = c.duracion.split(':');
+        const duracionAUsar = obtenerDuracionConcursante(c);
+        
+        if (duracionAUsar) {
+            const partes = duracionAUsar.split(':');
             if (partes.length === 2) {
                 totalMinutos += parseInt(partes[0]) || 0;
                 totalMinutos += (parseInt(partes[1]) || 0) / 60;
@@ -387,13 +406,34 @@ function calcularGap(duracionObjetivo, duracionReal) {
     
     const diferencia = minutosReal - minutosObjetivo;
     
-    if (diferencia > 0) {
-        return `+${Math.round(diferencia)}m`;
-    } else if (diferencia < 0) {
-        return `${Math.round(diferencia)}m`;
-    } else {
-        return '0m';
+    if (diferencia === 0) {
+        return 'Perfecto';
     }
+    
+    // Convertir la diferencia a minutos y segundos
+    const diferenciaAbsoluta = Math.abs(diferencia);
+    const minutos = Math.floor(diferenciaAbsoluta);
+    const segundos = Math.round((diferenciaAbsoluta - minutos) * 60);
+    
+    let resultado = '';
+    if (diferencia > 0) {
+        resultado = 'Sobran ';
+    } else {
+        resultado = 'Faltan ';
+    }
+    
+    if (minutos > 0) {
+        resultado += `${minutos}m`;
+        if (segundos > 0) {
+            resultado += ` ${segundos}s`;
+        }
+    } else if (segundos > 0) {
+        resultado += `${segundos}s`;
+    } else {
+        resultado += '0s';
+    }
+    
+    return resultado;
 }
 
 function parsearDuracion(duracion) {
@@ -433,13 +473,15 @@ async function actualizarCampoConcursante(concursanteId, campo, valor) {
             }
         }
         
-        // Si se actualiza el resultado o la duración, recalcular valores del programa
-        if (programaId && (campo === 'resultado' || campo === 'duracion')) {
+        // Si se actualiza el resultado o cualquier campo de duración, recalcular valores del programa
+        if (programaId && (campo === 'resultado' || campo === 'duracion' || campo === 'duracionDireccion' || campo === 'duracionFinal')) {
             const programaContainer = document.querySelector(`[data-programa-id="${programaId}"]`);
             if (programaContainer) {
                 const concursantes = concursantesPorPrograma[programaId] || [];
                 const duracionReal = calcularDuracionReal(concursantes);
-                const gap = calcularGap(duracionObjetivoGlobal, duracionReal);
+                const programa = programas.find(p => p.id === programaId);
+                const duracionObjetivo = programa ? (programa.duracionObjetivo || '1h 5m') : '1h 5m';
+                const gap = calcularGap(duracionObjetivo, duracionReal);
                 programaContainer.querySelector('.programa-info-item:nth-child(8) .programa-info-readonly').textContent = gap;
                 
                 // Recalcular total de resultados si se actualiza un resultado
@@ -451,8 +493,23 @@ async function actualizarCampoConcursante(concursanteId, campo, valor) {
                     }
                 }
                 
+                // Si se actualiza un campo de duración, actualizar la celda de duración en la tabla
+                if (campo === 'duracion' || campo === 'duracionDireccion' || campo === 'duracionFinal') {
+                    const concursanteActualizado = concursantes.find(c => c.id === concursanteId);
+                    if (concursanteActualizado) {
+                        const nuevaDuracion = obtenerDuracionConcursante(concursanteActualizado);
+                        const filaConcursante = programaContainer.querySelector(`tr[onclick*="${concursanteId}"]`);
+                        if (filaConcursante) {
+                            const celdaDuracion = filaConcursante.querySelector('.col-duracion');
+                            if (celdaDuracion) {
+                                celdaDuracion.textContent = nuevaDuracion;
+                            }
+                        }
+                    }
+                }
+                
                 // Actualizar estado del programa automáticamente según los datos
-                if (campo === 'resultado' || campo === 'duracion') {
+                if (campo === 'resultado' || campo === 'duracion' || campo === 'duracionDireccion' || campo === 'duracionFinal') {
                     await actualizarEstadoProgramaAutomatico(programaId);
                 }
             }
@@ -460,6 +517,43 @@ async function actualizarCampoConcursante(concursanteId, campo, valor) {
         
     } catch (error) {
         mostrarError('Error al actualizar campo: ' + error.message);
+    }
+}
+
+async function actualizarDuracionObjetivo(programaId, nuevaDuracion) {
+    try {
+        // Validar formato de duración (opcional: 1h 5m, 65m, etc.)
+        if (!nuevaDuracion || nuevaDuracion.trim() === '') {
+            nuevaDuracion = '1h 5m';
+        }
+        
+        // Actualizar en el backend
+        await apiManager.patch(`/api/programas/${programaId}/duracion-objetivo`, { duracionObjetivo: nuevaDuracion });
+        
+        // Actualizar en la lista local
+        const programa = programas.find(p => p.id === programaId);
+        if (programa) {
+            programa.duracionObjetivo = nuevaDuracion;
+        }
+        
+        // Recalcular GAP
+        const concursantes = concursantesPorPrograma[programaId] || [];
+        const duracionReal = calcularDuracionReal(concursantes);
+        const nuevoGap = calcularGap(nuevaDuracion, duracionReal);
+        
+        // Actualizar en la UI
+        const programaContainer = document.querySelector(`[data-programa-id="${programaId}"]`);
+        if (programaContainer) {
+            const gapElement = programaContainer.querySelector('.programa-info-item:nth-child(8) .programa-info-readonly');
+            if (gapElement) {
+                gapElement.textContent = nuevoGap;
+            }
+        }
+        
+        mostrarExito('Duración objetivo actualizada');
+        
+    } catch (error) {
+        mostrarError('Error al actualizar duración objetivo: ' + error.message);
     }
 }
 
