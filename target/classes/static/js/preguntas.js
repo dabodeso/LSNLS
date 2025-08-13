@@ -602,7 +602,7 @@ const PreguntasManager = {
             console.log('📋 [EDITAR] Subtemas disponibles:', TemasManager.subtemas);
             
             // Rellenar select de temática con temas dinámicos
-            const tematicas = TemasManager.temas.length > 0 ? TemasManager.temas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
+            const tematicas = TemasManager.temas.length > 0 ? TemasManager.temas : ['Geografía','Historia','Deportes','Ciencia','Arte'];
             const selectTematica = document.getElementById('tematica-pregunta');
             if (selectTematica) {
                 console.log('🎯 [EDITAR] Llenando select de temática...');
@@ -637,7 +637,7 @@ const PreguntasManager = {
             }
             
             // Rellenar select de subtemas con subtemas dinámicos
-            const subtemas = TemasManager.subtemas.length > 0 ? TemasManager.subtemas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
+            const subtemas = TemasManager.subtemas.length > 0 ? TemasManager.subtemas : ['Geografía','Historia','Deportes','Ciencia','Arte'];
             const selectSubtemas = document.getElementById('subtemas-pregunta');
             if (selectSubtemas) {
                 console.log('🎯 [EDITAR] Llenando select de subtemas...');
@@ -1047,7 +1047,7 @@ window.mostrarFormularioPregunta = function() {
         delete form.dataset.editId;
         
         // Rellenar select de temática con temas dinámicos
-        const tematicas = TemasManager.temas.length > 0 ? TemasManager.temas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
+        const tematicas = TemasManager.temas.length > 0 ? TemasManager.temas : ['Geografía','Historia','Deportes','Ciencia','Arte'];
         const selectTematica = document.getElementById('tematica-pregunta');
         if (selectTematica) {
             selectTematica.innerHTML = '';
@@ -1059,7 +1059,7 @@ window.mostrarFormularioPregunta = function() {
             });
         }
         // Rellenar select de subtemas con subtemas dinámicos
-        const subtemas = TemasManager.subtemas.length > 0 ? TemasManager.subtemas : ['GEOGRAFÍA','HISTORIA','DEPORTES','CIENCIA','ARTE'];
+        const subtemas = TemasManager.subtemas.length > 0 ? TemasManager.subtemas : ['Geografía','Historia','Deportes','Ciencia','Arte'];
         const selectSubtemas = document.getElementById('subtemas-pregunta');
         if (selectSubtemas) {
             selectSubtemas.innerHTML = '';

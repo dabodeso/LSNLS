@@ -75,6 +75,7 @@ public class ProgramaService {
         Optional<Programa> optionalPrograma = programaRepository.findById(id);
         if (optionalPrograma.isPresent()) {
             Programa programa = optionalPrograma.get();
+            boolean estadoActualizadoExplicitamente = false;
             
             for (Map.Entry<String, Object> entry : campo.entrySet()) {
                 String key = entry.getKey();
@@ -121,6 +122,7 @@ public class ProgramaService {
                         if (value != null && !value.toString().isEmpty()) {
                             try {
                                 programa.setEstado(Programa.EstadoPrograma.valueOf(value.toString()));
+                                estadoActualizadoExplicitamente = true;
                             } catch (Exception e) {
                                 // Si el estado no es válido, no cambiar el estado actual
                             }
@@ -129,7 +131,10 @@ public class ProgramaService {
                 }
             }
             
-            programa.actualizarEstado();
+            // Solo recalcular automáticamente si NO se ha actualizado el estado explícitamente
+            if (!estadoActualizadoExplicitamente) {
+                programa.actualizarEstado();
+            }
             
             Programa saved = programaRepository.save(programa);
             return convertToDTO(saved);
@@ -149,12 +154,12 @@ public class ProgramaService {
         // Verificar dependencias - no se puede eliminar si hay concursantes asignados
         Long concursantesCount = entityManager.createQuery(
             "SELECT COUNT(c) FROM Concursante c WHERE c.numeroPrograma = :programaId", Long.class)
-            .setParameter("programaId", programa.getTemporada())
+            .setParameter("programaId", programa.getId() != null ? programa.getId().intValue() : null)
             .getSingleResult();
         
         if (concursantesCount > 0) {
-            throw new IllegalArgumentException("No se puede eliminar el programa temporada " + 
-                programa.getTemporada() + " porque tiene " + concursantesCount + 
+            throw new IllegalArgumentException("No se puede eliminar el programa " + 
+                programa.getId() + " porque tiene " + concursantesCount + 
                 " concursante(s) asignado(s). Desasigna los concursantes primero.");
         }
 

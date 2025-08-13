@@ -110,33 +110,60 @@
                 <button class="btn btn-primary" onclick="mostrarFormularioConcursante()">
                     <i class="fas fa-plus"></i> Nuevo Concursante
                 </button>
-                <button class="btn btn-outline-secondary" id="btn-config-columnas" onclick="mostrarConfiguracionColumnas()" style="display: none;">
-                    <i class="fas fa-cog"></i> Configurar Columnas
+                <button class="btn btn-outline-secondary" id="btn-config-columnas" onclick="mostrarConfiguracionColumnas()">
+                    <i class="fas fa-cog"></i> Editar elementos tabla
                 </button>
             </div>
         </div>
 
-        <!-- Filtros -->
-        <div class="filters-container">
-            <div class="filter-group">
-                <label>Estado:</label>
-                <select id="filtro-estado-concursante" onchange="filtrarConcursantes()">
-                    <option value="">Todos</option>
-                    <option value="BORRADOR">Borrador</option>
-                    <option value="GRABADO">Grabado</option>
-                    <option value="EDITADO">Editado</option>
-                    <option value="PROGRAMADO">Programado</option>
-                </select>
+        <!-- Filtros (estética similar a preguntas) -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filtros-concursantes" aria-expanded="true">
+                        <i class="fas fa-filter"></i> Filtros de Búsqueda
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="limpiarFiltrosConcursantes()">
+                        <i class="fas fa-eraser"></i> Limpiar
+                    </button>
+                </h5>
             </div>
-            <div class="filter-group">
-                <label>Programa:</label>
-                <select id="filtro-programa" onchange="filtrarConcursantes()">
-                    <option value="">Todos</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Buscar:</label>
-                <input type="text" id="buscar-concursante" onkeyup="filtrarConcursantes()" placeholder="Nombre o número...">
+            <div id="filtros-concursantes" class="collapse show">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label">Estado</label>
+                            <select id="filtro-estado-concursante" class="form-select form-select-sm">
+                                <option value="">Todos</option>
+                                <option value="BORRADOR">Borrador</option>
+                                <option value="GRABADO">Grabado</option>
+                                <option value="EDITADO">Editado</option>
+                                <option value="PROGRAMADO">Programado</option>
+                                <option value="EMITIDO">Emitido</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Valoración</label>
+                            <input type="text" id="filtro-valoracion" class="form-control form-control-sm" placeholder="Texto en valoraciones">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Lugar</label>
+                            <input type="text" id="filtro-lugar" class="form-control form-control-sm" placeholder="Lugar de grabación">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Programa</label>
+                            <select id="filtro-programa" class="form-select form-select-sm">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Jornada</label>
+                            <select id="filtro-jornada" class="form-select form-select-sm">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

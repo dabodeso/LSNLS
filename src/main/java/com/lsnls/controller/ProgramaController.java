@@ -41,16 +41,14 @@ public class ProgramaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> create(@RequestBody ProgramaDTO programaDTO) {
         try {
             // Validaciones específicas de campos requeridos
             if (programaDTO.getTemporada() == null) {
                 return ResponseEntity.badRequest().body("El campo 'temporada' es obligatorio para crear un programa");
             }
-            if (programaDTO.getFechaEmision() == null) {
-                return ResponseEntity.badRequest().body("El campo 'fecha de emisión' es obligatorio para crear un programa");
-            }
+            // fechaEmision puede ser null
 
             ProgramaDTO nuevoPrograma = programaService.createFromDTO(programaDTO);
             return ResponseEntity.ok(nuevoPrograma);
@@ -64,7 +62,7 @@ public class ProgramaController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ProgramaDTO programaDTO) {
         try {
             // Verificar que el programa existe
@@ -77,9 +75,7 @@ public class ProgramaController {
             if (programaDTO.getTemporada() == null) {
                 return ResponseEntity.badRequest().body("El campo 'temporada' es obligatorio");
             }
-            if (programaDTO.getFechaEmision() == null) {
-                return ResponseEntity.badRequest().body("El campo 'fecha de emisión' es obligatorio");
-            }
+            // fechaEmision puede ser null
 
             ProgramaDTO programaActualizado = programaService.updateFromDTO(id, programaDTO);
             return ResponseEntity.ok(programaActualizado);
@@ -109,7 +105,7 @@ public class ProgramaController {
     }
 
     @PatchMapping("/{id}/campo")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> updateCampo(@PathVariable Long id, @RequestBody Map<String, Object> campo) {
         try {
             // Verificar que el programa existe
@@ -135,7 +131,7 @@ public class ProgramaController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             // Verificar que el programa existe

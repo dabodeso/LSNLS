@@ -57,7 +57,7 @@ public class Programa {
     private String creditosEspeciales;
 
     public enum EstadoPrograma {
-        borrador, grabado, editado, programado, emitido
+        borrador, programado, emitido, grabado, editado
     }
 
     public void actualizarEstado() {

@@ -5,7 +5,7 @@ let concursanteActual = null;
 
 // Configuración de columnas por rol
 let configuracionColumnas = {
-    esDireccion: false,
+    esDireccion: true,
     columnasVisibles: {
         'numero-concur': true,
         'jornada': true,
@@ -24,14 +24,14 @@ let configuracionColumnas = {
         'guionista': true,
         'valoracion-guionista': true,
         'estado': true,
-        'momentos-destacados': false, // Solo dirección
+        'momentos-destacados': true,
         'duracion': true,
-        'duracion-direccion': false, // Solo dirección
-        'duracion-final': false, // Solo dirección
-        'valoracion-final': false, // Solo dirección
-        'numero-pgm': false, // Solo dirección
-        'orden-escaleta': false, // Solo dirección
-        'bonico': false // Solo dirección
+        'duracion-direccion': true,
+        'duracion-final': true,
+        'valoracion-final': true,
+        'numero-pgm': true,
+        'orden-escaleta': true,
+        'bonico': true
     }
 };
 
@@ -49,54 +49,17 @@ async function inicializarConcursantes() {
 }
 
 function detectarRolUsuario() {
-    try {
-        const usuario = JSON.parse(localStorage.getItem('usuario'));
-        console.log('🔍 [CONCURSANTES] Usuario detectado:', usuario);
-        
-        if (usuario && usuario.rol === 'ROLE_DIRECCION') {
-            console.log('🔍 [CONCURSANTES] Usuario es DIRECCIÓN - activando columnas avanzadas');
-            configuracionColumnas.esDireccion = true;
-            
-            // Mostrar botón de configuración de columnas
-            const btnConfig = document.getElementById('btn-config-columnas');
-            if (btnConfig) {
-                btnConfig.style.display = 'block';
-            }
-            
-            // Activar columnas de dirección por defecto
-            configuracionColumnas.columnasVisibles['momentos-destacados'] = true;
-            configuracionColumnas.columnasVisibles['duracion-direccion'] = true;
-            configuracionColumnas.columnasVisibles['duracion-final'] = true;
-            configuracionColumnas.columnasVisibles['valoracion-final'] = true;
-            configuracionColumnas.columnasVisibles['numero-pgm'] = true;
-            configuracionColumnas.columnasVisibles['orden-escaleta'] = true;
-            configuracionColumnas.columnasVisibles['bonico'] = true;
-            
-            console.log('🔍 [CONCURSANTES] Configuración de columnas para dirección:', configuracionColumnas.columnasVisibles);
-            
-            // Cargar configuración guardada para dirección (puede sobrescribir los valores por defecto)
-            cargarConfiguracionGuardada();
-        } else {
-            console.log('🔍 [CONCURSANTES] Usuario NO es dirección - aplicando configuración básica');
-            // Usuario no es dirección - aplicar configuración básica
-            aplicarConfiguracionBasica();
-        }
-    } catch (error) {
-        console.error('Error al detectar rol:', error);
-        aplicarConfiguracionBasica();
+    // Mostrar siempre el botón de configuración
+    const btnConfig = document.getElementById('btn-config-columnas');
+    if (btnConfig) {
+        btnConfig.style.display = 'block';
+        btnConfig.querySelector('i')?.classList.add('me-1');
     }
+    // Cargar configuración guardada para cualquier usuario
+    cargarConfiguracionGuardada();
 }
 
-function aplicarConfiguracionBasica() {
-    // Para usuarios no dirección, ocultar columnas avanzadas
-    configuracionColumnas.columnasVisibles['momentos-destacados'] = false;
-    configuracionColumnas.columnasVisibles['duracion-direccion'] = false;
-    configuracionColumnas.columnasVisibles['duracion-final'] = false;
-    configuracionColumnas.columnasVisibles['valoracion-final'] = false;
-    configuracionColumnas.columnasVisibles['numero-pgm'] = false;
-    configuracionColumnas.columnasVisibles['orden-escaleta'] = false;
-    configuracionColumnas.columnasVisibles['bonico'] = false;
-}
+function aplicarConfiguracionBasica() { /* sin uso, mantenido por compatibilidad */ }
 
 // Carga de datos
 async function cargarConcursantes() {
@@ -116,6 +79,7 @@ async function cargarProgramas() {
     try {
         programas = await apiManager.get('/api/programas');
         actualizarSelectProgramas();
+        actualizarSelectJornadasFiltro();
     } catch (error) {
         mostrarError('Error al cargar programas: ' + error.message);
     }
@@ -123,9 +87,18 @@ async function cargarProgramas() {
 
 // Funciones de UI
 function setupEventListeners() {
-    document.getElementById('filtro-estado-concursante').addEventListener('change', filtrarConcursantes);
-    document.getElementById('filtro-programa').addEventListener('change', filtrarConcursantes);
-    document.getElementById('buscar-concursante').addEventListener('keyup', filtrarConcursantes);
+    const fe = document.getElementById('filtro-estado-concursante');
+    const fp = document.getElementById('filtro-programa');
+    const fj = document.getElementById('filtro-jornada');
+    const fv = document.getElementById('filtro-valoracion');
+    const fl = document.getElementById('filtro-lugar');
+    const fb = document.getElementById('buscar-concursante');
+    if (fe) fe.addEventListener('change', filtrarConcursantes);
+    if (fp) fp.addEventListener('change', filtrarConcursantes);
+    if (fj) fj.addEventListener('change', filtrarConcursantes);
+    if (fv) fv.addEventListener('keyup', filtrarConcursantes);
+    if (fl) fl.addEventListener('keyup', filtrarConcursantes);
+    if (fb) fb.addEventListener('keyup', filtrarConcursantes);
 }
 
 function actualizarSelectProgramas() {
@@ -142,6 +115,19 @@ function actualizarSelectProgramas() {
     }
     if (selectFiltro) {
         selectFiltro.innerHTML = '<option value="">Todos</option>' + options.join('');
+    }
+}
+
+async function actualizarSelectJornadasFiltro() {
+    const select = document.getElementById('filtro-jornada');
+    if (!select) return;
+    try {
+        const data = await apiManager.get('/api/jornadas');
+        const jornadas = (data && data.datos) ? data.datos : (Array.isArray(data) ? data : []);
+        select.innerHTML = '<option value="">Todas</option>' +
+            jornadas.map(j => `<option value="${j.id}">${j.nombre || ('Jornada ' + j.id)}</option>`).join('');
+    } catch (e) {
+        console.warn('No se pudieron cargar jornadas para el filtro:', e);
     }
 }
 
@@ -323,21 +309,32 @@ function mostrarConcursantes(concursantesFiltrados = null) {
 }
 
 function filtrarConcursantes() {
-    const estado = document.getElementById('filtro-estado-concursante').value;
-    const programaId = document.getElementById('filtro-programa').value;
-    const busqueda = document.getElementById('buscar-concursante').value.toLowerCase();
+    const estado = (document.getElementById('filtro-estado-concursante')?.value || '').toUpperCase();
+    const programaId = document.getElementById('filtro-programa')?.value || '';
+    const jornadaId = document.getElementById('filtro-jornada')?.value || '';
+    const valoracion = (document.getElementById('filtro-valoracion')?.value || '').toLowerCase();
+    const lugar = (document.getElementById('filtro-lugar')?.value || '').toLowerCase();
+    const busqueda = (document.getElementById('buscar-concursante')?.value || '').toLowerCase();
     
     const filtrados = concursantes.filter(concursante => {
-        const cumpleEstado = !estado || concursante.estado === estado;
-        const cumplePrograma = !programaId || (concursante.programa && concursante.programa.id.toString() === programaId);
-        const cumpleBusqueda = !busqueda || 
-            concursante.nombre.toLowerCase().includes(busqueda) ||
-            concursante.numeroConcursante.toLowerCase().includes(busqueda);
-        
-        return cumpleEstado && cumplePrograma && cumpleBusqueda;
+        const cumpleEstado = !estado || (concursante.estado && concursante.estado.toUpperCase() === estado);
+        const cumplePrograma = !programaId || (concursante.numeroPrograma && concursante.numeroPrograma.toString() === programaId);
+        const cumpleJornada = !jornadaId || (concursante.jornadaId && concursante.jornadaId.toString() === jornadaId);
+        const txtValoraciones = `${concursante.valoracionGuionista || ''} ${concursante.valoracionFinal || ''}`.toLowerCase();
+        const cumpleValoracion = !valoracion || txtValoraciones.includes(valoracion);
+        const cumpleLugar = !lugar || (concursante.lugar && concursante.lugar.toLowerCase().includes(lugar));
+        const cumpleBusqueda = !busqueda || (concursante.nombre && concursante.nombre.toLowerCase().includes(busqueda)) ||
+            (concursante.numeroConcursante && concursante.numeroConcursante.toString().includes(busqueda));
+        return cumpleEstado && cumplePrograma && cumpleJornada && cumpleValoracion && cumpleLugar && cumpleBusqueda;
     });
     
     mostrarConcursantes(filtrados);
+}
+
+function limpiarFiltrosConcursantes() {
+    ['filtro-estado-concursante','filtro-programa','filtro-jornada','filtro-valoracion','filtro-lugar','buscar-concursante']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    mostrarConcursantes();
 }
 
 function mostrarFormularioConcursante() {
@@ -1396,8 +1393,8 @@ function cargarConfiguracionGuardada() {
         const configGuardada = localStorage.getItem('configuracionColumnasConcursantes');
         if (configGuardada) {
             const config = JSON.parse(configGuardada);
-            // Solo cargar si el usuario es dirección y hay configuración válida
-            if (configuracionColumnas.esDireccion && config && config.columnasVisibles) {
+            // Cargar configuración guardada si existe
+            if (config && config.columnasVisibles) {
                 // Aplicar configuración guardada solo para las columnas que están en la configuración guardada
                 Object.keys(config.columnasVisibles).forEach(columna => {
                     if (configuracionColumnas.columnasVisibles.hasOwnProperty(columna)) {

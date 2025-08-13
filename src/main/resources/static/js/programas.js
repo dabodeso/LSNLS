@@ -47,7 +47,13 @@ function mostrarProgramas() {
         return;
     }
     
-    contenedor.innerHTML = programas.map(programa => {
+    const visibles = aplicarFiltros(programas);
+    if (visibles.length === 0) {
+        contenedor.innerHTML = '<div class="alert alert-warning">No hay programas que coincidan con los filtros.</div>';
+        return;
+    }
+    
+    contenedor.innerHTML = visibles.map(programa => {
         const concursantes = concursantesPorPrograma[programa.id] || [];
         const fechaFormateada = formatearFechaPrograma(programa.fechaEmision);
         const totalResultados = calcularTotalResultados(concursantes);
@@ -58,10 +64,11 @@ function mostrarProgramas() {
         // Definir colores para estados
         const estadoColores = {
             'borrador': '#6c757d',     // Gris
-            'grabado': '#17a2b8',      // Azul 
-            'editado': '#ffc107',      // Amarillo
-            'programado': '#28a745',   // Verde
-            'emitido': '#dc3545'       // Rojo
+            'programado': '#28a745',   // Verde (Listo)
+            'emitido': '#dc3545',      // Rojo
+            // Estados extra por compatibilidad
+            'grabado': '#17a2b8',
+            'editado': '#ffc107'
         };
         
         const estadoColor = estadoColores[programa.estado] || '#6c757d';
@@ -95,23 +102,34 @@ function mostrarProgramas() {
                     <div class="programa-info">
                         <div class="programa-info-item">
                             <div class="programa-info-label">Temporada</div>
-                            <div class="programa-info-value">T${programa.temporada || '?'}</div>
+                            <div class="programa-info-value">
+                                <input type="number" class="form-control form-control-sm" min="1" value="${programa.temporada || ''}"
+                                       onchange="actualizarTemporadaPrograma(${programa.id}, this.value)" style="width: 80px;">
+                            </div>
                         </div>
-                        <div class="programa-info-item">
+                        <div class="programa-info-item" style="min-width: 80px;">
                             <div class="programa-info-label">Programa</div>
                             <div class="programa-info-value">${programa.id}</div>
                         </div>
                         <div class="programa-info-item">
                             <div class="programa-info-label">Estado</div>
                             <div class="programa-info-value">
-                                <span style="background-color: ${estadoColor}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; text-transform: uppercase;">
-                                    ${programa.estado || 'BORRADOR'}
-                                </span>
+                                <select class="form-select form-select-sm" style="min-width: 140px;"
+                                        onchange="actualizarEstadoPrograma(${programa.id}, this.value)">
+                                    ${renderOpcionEstado(programa.estado, 'borrador', 'Borrador')}
+                                    ${renderOpcionEstado(programa.estado, 'grabado', 'Grabado')}
+                                    ${renderOpcionEstado(programa.estado, 'editado', 'Editado')}
+                                    ${renderOpcionEstado(programa.estado, 'programado', 'Programado')}
+                                    ${renderOpcionEstado(programa.estado, 'emitido', 'Emitido')}
+                                </select>
                             </div>
                         </div>
                         <div class="programa-info-item">
-                            <div class="programa-info-label">Fecha</div>
-                            <div class="programa-info-value">${fechaFormateada}</div>
+                            <div class="programa-info-label">Fecha de emisión</div>
+                            <div class="programa-info-value">
+                                <input type="date" class="form-control form-control-sm" value="${programa.fechaEmision || ''}"
+                                       onchange="actualizarFechaEmision(${programa.id}, this.value)" style="width: 150px;">
+                            </div>
                         </div>
                         <div class="programa-info-item">
                             <div class="programa-info-label">Total Premios</div>
@@ -124,7 +142,7 @@ function mostrarProgramas() {
                             <div class="programa-info-value">
                                 <input type="text" class="form-control form-control-sm" 
                                        value="${duracionObjetivo}" 
-                                       onchange="actualizarDuracionObjetivo(${programa.id}, this.value)"
+                                       onchange="actualizarDuracionObjetivoPrograma(${programa.id}, this.value)"
                                        placeholder="1h 5m"
                                        style="width: 80px; font-size: 0.9em;">
                             </div>
@@ -135,18 +153,12 @@ function mostrarProgramas() {
                                 <span class="programa-info-readonly">${gap}</span>
                             </div>
                         </div>
-                        <div class="programa-info-item">
-                            <div class="programa-info-label">Total Concursantes</div>
-                            <div class="programa-info-value">
-                                <span class="programa-info-readonly">${concursantes.length}</span>
-                            </div>
-                        </div>
-                        <div class="programa-info-item">
-                            <button class="btn btn-sm btn-primary me-1" onclick="editarPrograma(${programa.id})" title="Editar programa">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
+                        <div class="d-flex align-items-center" style="gap: 8px; white-space: nowrap;">
                             <button class="btn btn-sm btn-success" onclick="mostrarConcursantesDisponibles(${programa.id})" title="Añadir concursante">
                                 <i class="fas fa-user-plus"></i> Añadir
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="eliminarPrograma(${programa.id})" title="Borrar programa">
+                                <i class="fas fa-trash"></i> Borrar
                             </button>
                         </div>
                     </div>
@@ -166,11 +178,11 @@ function mostrarProgramas() {
                                     <th class="col-resultado">RESULTADO</th>
                                     <th class="col-duracion">DUR CONC</th>
                                     <th class="col-foto">FOTO</th>
-                                    <th class="col-momentos">MOMENTOS DESTACADOS</th>
+                                    <th class="col-momentos">MOM. DESTACADOS</th>
                                     <th class="col-factor-x">X</th>
                                     <th class="col-valoracion">VAL</th>
                                     <th class="col-creditos">CRÉDITOS ESPECIALES</th>
-                                    <th style="width: 5%;">ACCIONES</th>
+                                    <th style="width: 5%;">ACC</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -242,10 +254,27 @@ function mostrarProgramas() {
             </div>
         `;
     }).join('');
+
+    // Ajustar automáticamente la altura de los textareas para ver todo el contenido sin scroll interno
+    autoResizeTextareasEnProgramas();
+}
+
+function autoResizeTextareasEnProgramas() {
+    const textareas = document.querySelectorAll('.concursantes-table textarea.campo-editable');
+    const autoResize = (el) => {
+        el.style.height = 'auto';
+        el.style.overflow = 'hidden';
+        el.style.height = `${el.scrollHeight}px`;
+    };
+    textareas.forEach((ta) => {
+        autoResize(ta);
+        ta.addEventListener('input', () => autoResize(ta));
+        ta.addEventListener('change', () => autoResize(ta));
+    });
 }
 
 function formatearFechaPrograma(fecha) {
-    if (!fecha) return 'Sin fecha';
+    if (!fecha) return 'N/A';
     
     try {
         // Manejar fecha en formato ISO (YYYY-MM-DD)
@@ -270,14 +299,11 @@ function formatearFechaPrograma(fecha) {
             return 'Fecha inválida';
         }
         
-        const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        const diaSemana = diasSemana[fechaObj.getDay()];
-        
         const dia = fechaObj.getDate().toString().padStart(2, '0');
         const mes = (fechaObj.getMonth() + 1).toString().padStart(2, '0');
         const año = fechaObj.getFullYear();
         
-        return `${diaSemana}, ${dia}/${mes}/${año}`;
+        return `${dia}/${mes}/${año}`;
     } catch (error) {
         console.error('Error al formatear fecha:', fecha, error);
         return 'Error en fecha';
@@ -312,6 +338,24 @@ function calcularTotalResultados(concursantes) {
         minimumFractionDigits: 0, 
         maximumFractionDigits: 0 
     });
+}
+
+// Versión numérica para filtros (sin formateo)
+function calcularTotalPremiosNumero(concursantes) {
+    const total = concursantes.reduce((total, c) => {
+        let valor = 0;
+        if (c.premio !== null && c.premio !== undefined && c.premio !== '') {
+            valor = parseFloat(c.premio) || 0;
+        } else if (c.resultado !== null && c.resultado !== undefined && c.resultado !== '') {
+            if (typeof c.resultado === 'number') {
+                valor = c.resultado;
+            } else if (typeof c.resultado === 'string' && c.resultado.trim() !== '') {
+                valor = extraerNumeroDeString(c.resultado);
+            }
+        }
+        return total + valor;
+    }, 0);
+    return Number(total) || 0;
 }
 
 function extraerNumeroDeString(texto) {
@@ -376,7 +420,7 @@ function obtenerDuracionConcursante(concursante) {
 }
 
 function calcularDuracionReal(concursantes) {
-    let totalMinutos = 0;
+    let totalSegundos = 0;
     
     concursantes.forEach(c => {
         const duracionAUsar = obtenerDuracionConcursante(c);
@@ -384,20 +428,20 @@ function calcularDuracionReal(concursantes) {
         if (duracionAUsar) {
             const partes = duracionAUsar.split(':');
             if (partes.length === 2) {
-                totalMinutos += parseInt(partes[0]) || 0;
-                totalMinutos += (parseInt(partes[1]) || 0) / 60;
+                const minutos = parseInt(partes[0]) || 0;
+                const segundos = parseInt(partes[1]) || 0;
+                totalSegundos += minutos * 60 + segundos;
             }
         }
     });
     
-    const horas = Math.floor(totalMinutos / 60);
-    const minutos = Math.round(totalMinutos % 60);
+    const horas = Math.floor(totalSegundos / 3600);
+    const minutos = Math.floor((totalSegundos % 3600) / 60);
+    const segundos = totalSegundos % 60;
     
-    if (horas > 0) {
-        return `${horas}h ${minutos}m`;
-    } else {
-        return `${minutos}m`;
-    }
+    if (horas > 0) return `${horas}h ${minutos}m ${segundos}s`;
+    if (minutos > 0) return `${minutos}m ${segundos}s`;
+    return `${segundos}s`;
 }
 
 function calcularGap(duracionObjetivo, duracionReal) {
@@ -439,18 +483,23 @@ function calcularGap(duracionObjetivo, duracionReal) {
 function parsearDuracion(duracion) {
     if (!duracion) return 0;
     
-    let minutos = 0;
+    let totalMin = 0;
     const horasMatch = duracion.match(/(\d+)h/);
     const minutosMatch = duracion.match(/(\d+)m/);
+    const segundosMatch = duracion.match(/(\d+)s/);
     
     if (horasMatch) {
-        minutos += parseInt(horasMatch[1]) * 60;
+        totalMin += parseInt(horasMatch[1]) * 60;
     }
     if (minutosMatch) {
-        minutos += parseInt(minutosMatch[1]);
+        totalMin += parseInt(minutosMatch[1]);
+    }
+    // segundos a fracción de minuto
+    if (segundosMatch) {
+        totalMin += (parseInt(segundosMatch[1]) || 0) / 60;
     }
     
-    return minutos;
+    return totalMin;
 }
 
 
@@ -520,7 +569,7 @@ async function actualizarCampoConcursante(concursanteId, campo, valor) {
     }
 }
 
-async function actualizarDuracionObjetivo(programaId, nuevaDuracion) {
+async function actualizarDuracionObjetivoPrograma(programaId, nuevaDuracion) {
     try {
         // Validar formato de duración (opcional: 1h 5m, 65m, etc.)
         if (!nuevaDuracion || nuevaDuracion.trim() === '') {
@@ -544,13 +593,16 @@ async function actualizarDuracionObjetivo(programaId, nuevaDuracion) {
         // Actualizar en la UI
         const programaContainer = document.querySelector(`[data-programa-id="${programaId}"]`);
         if (programaContainer) {
-            const gapElement = programaContainer.querySelector('.programa-info-item:nth-child(8) .programa-info-readonly');
-            if (gapElement) {
-                gapElement.textContent = nuevoGap;
-            }
+            // El GAP está en el bloque con label "GAP" dentro de .programa-info-item
+            const gapWrapper = Array.from(programaContainer.querySelectorAll('.programa-info-item'))
+              .find(item => item.querySelector('.programa-info-label')?.textContent?.trim().toUpperCase() === 'GAP');
+            const gapElement = gapWrapper?.querySelector('.programa-info-readonly');
+            if (gapElement) gapElement.textContent = nuevoGap;
+            // actualizar fecha emisión visible si cambiara por backend (no aplica aquí, pero refrescamos listados)
         }
         
         mostrarExito('Duración objetivo actualizada');
+        await cargarProgramas();
         
     } catch (error) {
         mostrarError('Error al actualizar duración objetivo: ' + error.message);
@@ -562,24 +614,52 @@ function irAConcursante(concursanteId) {
 }
 
 function filtrarProgramas() {
-    const estadoFiltro = document.getElementById('filtro-estado-programa').value.toLowerCase();
-    const busquedaFiltro = document.getElementById('buscar-programa').value.toLowerCase();
-    
-    const programasVisibles = programas.filter(programa => {
-        const cumpleEstado = !estadoFiltro || (programa.estado && programa.estado.toLowerCase() === estadoFiltro);
-        const cumpleBusqueda = !busquedaFiltro || 
-            programa.id.toString().includes(busquedaFiltro) ||
-            (programa.fechaEmision && programa.fechaEmision.includes(busquedaFiltro));
-        
-        return cumpleEstado && cumpleBusqueda;
+    // Re-renderizar con los filtros aplicados
+    mostrarProgramas();
+}
+
+function aplicarFiltros(lista) {
+    const estadoFiltro = (document.getElementById('filtro-estado-programa')?.value || '').toLowerCase();
+    const temporadaFiltro = document.getElementById('filtro-temporada')?.value;
+    const programaIdFiltro = document.getElementById('filtro-programa-id')?.value;
+    const fechaFiltro = document.getElementById('filtro-fecha-emision')?.value; // YYYY-MM-DD
+    const premiosMin = document.getElementById('filtro-premios-min')?.value;
+    const premiosMax = document.getElementById('filtro-premios-max')?.value;
+
+    return lista.filter(programa => {
+        // Estado
+        if (estadoFiltro && (!programa.estado || programa.estado.toLowerCase() !== estadoFiltro)) {
+            return false;
+        }
+        // Temporada
+        if (temporadaFiltro && String(programa.temporada) !== String(temporadaFiltro)) {
+            return false;
+        }
+        // Nº Programa (ID)
+        if (programaIdFiltro && String(programa.id) !== String(programaIdFiltro)) {
+            return false;
+        }
+        // Fecha de emisión exacta (ISO)
+        if (fechaFiltro && (!programa.fechaEmision || programa.fechaEmision !== fechaFiltro)) {
+            return false;
+        }
+        // Total de premios (min/máx)
+        const concursantes = concursantesPorPrograma[programa.id] || [];
+        const totalPremios = calcularTotalPremiosNumero(concursantes);
+        if (premiosMin && totalPremios < Number(premiosMin)) {
+            return false;
+        }
+        if (premiosMax && totalPremios > Number(premiosMax)) {
+            return false;
+        }
+        return true;
     });
-    
-    // Ocultar/mostrar programas según filtros
-    document.querySelectorAll('.programa-container').forEach(container => {
-        const programaId = parseInt(container.getAttribute('data-programa-id'));
-        const esVisible = programasVisibles.some(p => p.id === programaId);
-        container.style.display = esVisible ? 'block' : 'none';
-    });
+}
+
+function limpiarFiltrosProgramas() {
+    ['filtro-estado-programa','filtro-temporada','filtro-programa-id','filtro-fecha-emision','filtro-premios-min','filtro-premios-max']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    mostrarProgramas();
 }
 
 function mostrarFormularioPrograma() {
@@ -604,15 +684,17 @@ async function guardarPrograma() {
     const programaData = {
         temporada: parseInt(temporada),
         fechaEmision
-        // El estado se asignará automáticamente en el backend
     };
     
     try {
         if (programaId) {
+            // Actualizar (PUT) y reforzar campos críticos con PATCH
             await apiManager.put(`/api/programas/${programaId}`, programaData);
+            await apiManager.patch(`/api/programas/${programaId}/campo`, { temporada: parseInt(temporada) });
+            await apiManager.patch(`/api/programas/${programaId}/campo`, { fechaEmision });
             mostrarExito('Programa actualizado correctamente');
         } else {
-            await apiManager.post('/api/programas', programaData);
+            const creado = await apiManager.post('/api/programas', programaData);
             mostrarExito('Programa creado correctamente');
         }
         
@@ -717,9 +799,50 @@ function mostrarMensaje(mensaje, tipo = 'info') {
 async function actualizarEstadoProgramaAutomatico(programaId) {
     try {
         await apiManager.put(`/api/programas/${programaId}/actualizar-estado`);
-        await cargarProgramas(); // Recargar para mostrar el estado actualizado
+        await cargarProgramas();
     } catch (error) {
         console.error('Error al actualizar estado del programa:', error);
+    }
+}
+
+async function actualizarEstadoPrograma(programaId, nuevoEstado) {
+    try {
+        await apiManager.patch(`/api/programas/${programaId}/campo`, { estado: nuevoEstado });
+        await cargarProgramas();
+        mostrarExito('Estado del programa actualizado');
+    } catch (error) {
+        mostrarError('Error al actualizar el estado: ' + error.message);
+    }
+}
+
+function renderOpcionEstado(estadoActual, valor, texto) {
+    const selected = estadoActual === valor ? 'selected' : '';
+    return `<option value="${valor}" ${selected}>${texto}</option>`;
+}
+
+async function actualizarTemporadaPrograma(programaId, nuevaTemporada) {
+    try {
+        const numero = parseInt(nuevaTemporada);
+        if (!numero || numero < 1) {
+            mostrarError('La temporada debe ser un número mayor o igual a 1');
+            return;
+        }
+        await apiManager.patch(`/api/programas/${programaId}/campo`, { temporada: numero });
+        mostrarExito('Temporada actualizada');
+        await cargarProgramas();
+    } catch (error) {
+        mostrarError('No se pudo actualizar la temporada');
+    }
+}
+
+async function actualizarFechaEmision(programaId, fechaISO) {
+    try {
+        const valor = (fechaISO && fechaISO.trim() !== '') ? fechaISO : null;
+        await apiManager.patch(`/api/programas/${programaId}/campo`, { fechaEmision: valor });
+        mostrarExito('Fecha de emisión actualizada');
+        await cargarProgramas();
+    } catch (error) {
+        mostrarError('No se pudo actualizar la fecha de emisión');
     }
 }
 
@@ -883,7 +1006,7 @@ async function editarPrograma(programaId) {
         const programa = await apiManager.get(`/api/programas/${programaId}`);
         document.getElementById('programa-id').value = programa.id;
         document.getElementById('temporada-programa').value = programa.temporada;
-        document.getElementById('fecha-emision').value = programa.fechaEmision;
+        document.getElementById('fecha-emision').value = programa.fechaEmision || '';
         document.getElementById('modal-programa-titulo').textContent = 'Editar Programa';
 
         const modal = new bootstrap.Modal(document.getElementById('modal-programa'));
@@ -894,3 +1017,28 @@ async function editarPrograma(programaId) {
 }
 
 document.addEventListener('DOMContentLoaded', inicializarProgramas); 
+
+async function eliminarPrograma(programaId) {
+    if (!confirm('¿Seguro que deseas borrar este programa? Esta acción no se puede deshacer.')) return;
+    try {
+        await apiManager.delete(`/api/programas/${programaId}`);
+        mostrarExito('Programa eliminado');
+        await cargarProgramas();
+    } catch (error) {
+        // Traducir mensajes técnicos a mensajes entendibles
+        const msg = (error && error.message) ? error.message : '';
+        let amigable = 'No se pudo eliminar el programa.';
+        if (msg.includes('403')) {
+            amigable = 'No tienes permisos para eliminar programas.';
+        } else if (msg.includes('No se puede eliminar el programa') || msg.toLowerCase().includes('concursante')) {
+            amigable = 'No se puede eliminar porque hay concursantes asignados. Desasigna los concursantes primero.';
+        } else if (msg.toLowerCase().includes('programado')) {
+            amigable = 'No se puede eliminar un programa programado. Cambia su estado a Borrador primero.';
+        } else if (msg.toLowerCase().includes('emitido')) {
+            amigable = 'No se puede eliminar un programa emitido.';
+        } else if (msg.includes('400') && msg.toLowerCase().includes('parameter value')) {
+            amigable = 'No se pudo eliminar por un problema interno. Vuelve a intentarlo.';
+        }
+        mostrarError(amigable);
+    }
+}
