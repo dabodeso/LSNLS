@@ -17,6 +17,25 @@ SET character_set_results = utf8mb4;
 SET character_set_connection = utf8mb4;
 SET collation_connection = utf8mb4_unicode_ci;
 
+-- Reinicialización segura del esquema: desactivar FKs y eliminar tablas dependientes
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS combos_preguntas;
+DROP TABLE IF EXISTS cuestionarios_preguntas;
+DROP TABLE IF EXISTS concursantes;
+DROP TABLE IF EXISTS jornadas_combos;
+DROP TABLE IF EXISTS jornadas_cuestionarios;
+DROP TABLE IF EXISTS jornadas;
+DROP TABLE IF EXISTS combos;
+DROP TABLE IF EXISTS cuestionarios;
+DROP TABLE IF EXISTS preguntas;
+DROP TABLE IF EXISTS tematicas;
+DROP TABLE IF EXISTS programas;
+DROP TABLE IF EXISTS configuracion_global;
+DROP TABLE IF EXISTS usuarios;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
 -- Las tablas se crean solo si no existen para mantener los datos entre ejecuciones
 
 -- Crear tabla de usuarios
