@@ -1,5 +1,9 @@
--- Configuración UTF-8 para la base de datos LSNLS
 -- Ejecutar antes de que Spring Boot cree las tablas
+
+-- Reinicio completo de la base de datos (si existe)
+SET FOREIGN_KEY_CHECKS = 0;
+DROP DATABASE IF EXISTS lsnls;
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- Crear la base de datos con UTF-8 si no existe
 CREATE DATABASE IF NOT EXISTS lsnls 
