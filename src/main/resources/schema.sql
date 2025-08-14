@@ -21,9 +21,38 @@ SET character_set_results = utf8mb4;
 SET character_set_connection = utf8mb4;
 SET collation_connection = utf8mb4_unicode_ci;
 
--- Reinicialización segura del esquema: desactivar FKs y eliminar tablas dependientes
+-- Reinicialización segura del esquema: desactivar FKs y eliminar todas las tablas del esquema
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- Aumentar límite de concatenación por si hay muchas FKs
+SET SESSION group_concat_max_len = 100000;
+
+-- Eliminar todas las claves foráneas del esquema (por si FOREIGN_KEY_CHECKS no surtiera efecto)
+SET @db := 'lsnls';
+SET @drop_fks := (
+  SELECT GROUP_CONCAT(
+    CONCAT('ALTER TABLE `', rc.CONSTRAINT_SCHEMA, '`.`', rc.TABLE_NAME, '` DROP FOREIGN KEY `', rc.CONSTRAINT_NAME, '`')
+    SEPARATOR '; ')
+  FROM information_schema.REFERENTIAL_CONSTRAINTS rc
+  WHERE rc.CONSTRAINT_SCHEMA = @db OR rc.REFERENCED_TABLE_SCHEMA = @db
+);
+SET @drop_fks := IFNULL(@drop_fks, 'SELECT 1');
+PREPARE stmt FROM @drop_fks;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Borrado dinámico de todas las tablas existentes en el esquema actual
+SET @tables = NULL;
+SELECT GROUP_CONCAT(CONCAT('`', table_name, '`')) INTO @tables
+FROM information_schema.tables
+WHERE table_schema = 'lsnls';
+SET @tables = IFNULL(@tables, '');
+SET @sql = IF(@tables <> '', CONCAT('DROP TABLE IF EXISTS ', @tables), 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Borrado explícito defensivo por si quedara alguna tabla conocida (no debería)
 DROP TABLE IF EXISTS combos_preguntas;
 DROP TABLE IF EXISTS cuestionarios_preguntas;
 DROP TABLE IF EXISTS concursantes;
