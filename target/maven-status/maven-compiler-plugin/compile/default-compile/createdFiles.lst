@@ -8,6 +8,7 @@ com\lsnls\controller\PreguntaController$1.class
 com\lsnls\service\TematicaService.class
 com\lsnls\entity\Jornada.class
 com\lsnls\service\ExcelExportService.class
+com\lsnls\service\HistorialJornadaService.class
 com\lsnls\validation\NoSpecialCharactersValidator.class
 com\lsnls\controller\CuestionarioController$1.class
 com\lsnls\dto\CrearComboDTO.class
@@ -27,6 +28,7 @@ com\lsnls\config\JacksonConfig.class
 com\lsnls\entity\Combo.class
 com\lsnls\service\TimeoutOperationService$TimeoutResult.class
 com\lsnls\service\DataTransformationService.class
+com\lsnls\dto\MarcarNoUsadoDTO.class
 com\lsnls\controller\ProgramaController.class
 com\lsnls\validation\UpperCase.class
 com\lsnls\service\ProgramaService.class
@@ -35,6 +37,7 @@ com\lsnls\dto\ApiResponse.class
 com\lsnls\repository\ComboRepository.class
 com\lsnls\entity\EstadoConcursante.class
 com\lsnls\dto\ErrorResponse.class
+com\lsnls\dto\ReaprovecharComboDTO.class
 com\lsnls\service\TimeoutOperationService$OperationType.class
 com\lsnls\service\ValidationService.class
 com\lsnls\entity\Pregunta.class
@@ -53,6 +56,7 @@ com\lsnls\service\SessionValidationService$SessionValidationResult.class
 com\lsnls\service\JornadaService.class
 com\lsnls\service\AuthorizationService$1.class
 com\lsnls\service\CuestionarioService.class
+com\lsnls\entity\HistorialJornada.class
 com\lsnls\service\RateLimitingService$RequestCounter.class
 com\lsnls\service\SessionValidationService.class
 com\lsnls\repository\PreguntaComboRepository.class
@@ -65,6 +69,7 @@ com\lsnls\entity\Programa$EstadoPrograma.class
 com\lsnls\config\WebConfig.class
 com\lsnls\dto\PreguntaCuestionarioDTO.class
 com\lsnls\dto\CrearComboDTO$PreguntaMultiplicadoraDTO.class
+com\lsnls\entity\HistorialJornada$TipoAsignacion.class
 com\lsnls\dto\PreguntaDTO.class
 com\lsnls\entity\AuditLog$EntityType.class
 com\lsnls\service\SessionValidationService$SecurityLevel.class
@@ -95,6 +100,8 @@ com\lsnls\entity\Concursante.class
 com\lsnls\service\AuthService.class
 com\lsnls\dto\JornadaDTO.class
 com\lsnls\config\JwtAuthenticationFilter.class
+com\lsnls\controller\HistorialJornadaController.class
+com\lsnls\entity\HistorialJornada$EstadoAsignacion.class
 com\lsnls\entity\Programa.class
 com\lsnls\service\JwtService.class
 com\lsnls\config\EstadoCuestionarioConverter.class
@@ -104,7 +111,9 @@ com\lsnls\controller\TemasController.class
 com\lsnls\service\PreguntaService.class
 com\lsnls\config\SecurityConfig.class
 com\lsnls\entity\Cuestionario.class
+com\lsnls\dto\HistorialJornadaDTO.class
 com\lsnls\config\CacheConfig.class
+com\lsnls\repository\HistorialJornadaRepository.class
 com\lsnls\config\AsyncConfig.class
 com\lsnls\controller\ConfiguracionGlobalController.class
 com\lsnls\entity\PreguntaCombo$PreguntaComboId.class

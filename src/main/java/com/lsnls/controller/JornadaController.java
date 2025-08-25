@@ -251,4 +251,62 @@ public class JornadaController {
                 .body(ApiResponse.error("Error al obtener combos disponibles: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/{jornadaId}/reutilizar-cuestionario/{cuestionarioId}")
+    @PreAuthorize("@authorizationService.canEdit()")
+    public ResponseEntity<ApiResponse<String>> reutilizarCuestionario(
+            @PathVariable Long jornadaId, 
+            @PathVariable Long cuestionarioId) {
+        try {
+            // Verificar autenticación
+            Optional<Usuario> currentUserOpt = authService.getCurrentUser();
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(401)
+                    .body(ApiResponse.error("Usuario no autenticado"));
+            }
+            
+            Usuario currentUser = currentUserOpt.get();
+            jornadaService.reutilizarCuestionario(jornadaId, cuestionarioId, currentUser.getId());
+            
+            return ResponseEntity.ok(ApiResponse.exitoso(
+                "Cuestionario " + cuestionarioId + " reutilizado correctamente. Ahora está disponible para usar en otras jornadas.", 
+                "Cuestionario reutilizado"));
+                
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error al reutilizar cuestionario: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{jornadaId}/reutilizar-combo/{comboId}")
+    @PreAuthorize("@authorizationService.canEdit()")
+    public ResponseEntity<ApiResponse<String>> reutilizarCombo(
+            @PathVariable Long jornadaId, 
+            @PathVariable Long comboId) {
+        try {
+            // Verificar autenticación
+            Optional<Usuario> currentUserOpt = authService.getCurrentUser();
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(401)
+                    .body(ApiResponse.error("Usuario no autenticado"));
+            }
+            
+            Usuario currentUser = currentUserOpt.get();
+            jornadaService.reutilizarCombo(jornadaId, comboId, currentUser.getId());
+            
+            return ResponseEntity.ok(ApiResponse.exitoso(
+                "Combo " + comboId + " reutilizado correctamente. Ahora está disponible para usar en otras jornadas.", 
+                "Combo reutilizado"));
+                
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error al reutilizar combo: " + e.getMessage()));
+        }
+    }
 } 

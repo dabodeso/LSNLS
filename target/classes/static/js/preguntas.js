@@ -1,6 +1,11 @@
 // Módulo de gestión de preguntas
 const PreguntasManager = {
     preguntas: [],
+    paginaActual: 0,
+    tamanioPagina: 25,
+    totalPreguntas: 0,
+    totalPaginas: 0,
+    cargando: false,
     filtros: {
         tematica: '',
         nivel: '',
@@ -11,14 +16,36 @@ const PreguntasManager = {
         asc: true
     },
 
-    async cargarPreguntas() {
+    async cargarPreguntas(resetear = true) {
         try {
+            console.log('🔄 [CARGAR] Iniciando carga de preguntas, resetear:', resetear);
+            console.log('🔄 [CARGAR] Estado actual - paginaActual:', this.paginaActual, 'preguntas.length:', this.preguntas.length);
+            
             if (!authManager.isAuthenticated()) {
                 console.error('Usuario no autenticado');
                 return;
             }
 
-            const response = await fetch('/api/preguntas', {
+            if (resetear) {
+                this.paginaActual = 0;
+                this.preguntas = [];
+                console.log('🔄 [CARGAR] Reset completado - paginaActual:', this.paginaActual, 'preguntas.length:', this.preguntas.length);
+            }
+
+            this.cargando = true;
+            this.mostrarEstadoCarga();
+
+            const params = new URLSearchParams({
+                page: this.paginaActual,
+                size: this.tamanioPagina,
+                sortBy: this.orden.columna || 'id',
+                sortDir: this.orden.asc ? 'asc' : 'desc'
+            });
+
+            console.log('🔄 [CARGAR] Parámetros de consulta:', params.toString());
+            console.log('🔄 [CARGAR] URL:', `/api/preguntas?${params}`);
+
+            const response = await fetch(`/api/preguntas?${params}`, {
                 headers: authManager.getAuthHeaders()
             });
 
@@ -26,7 +53,38 @@ const PreguntasManager = {
                 throw new Error('Error al cargar las preguntas');
             }
 
-            this.preguntas = await response.json();
+            const data = await response.json();
+            console.log('✅ [CARGAR] Respuesta del servidor:', data);
+            console.log('✅ [CARGAR] Elementos recibidos:', data.content.length);
+            console.log('✅ [CARGAR] Total elementos:', data.totalElements);
+            console.log('✅ [CARGAR] Total páginas:', data.totalPages);
+            console.log('✅ [CARGAR] Página actual:', data.number);
+            
+            // Log detallado de la primera pregunta para verificar codificación
+            if (data.content.length > 0) {
+                const primera = data.content[0];
+                console.log('🔍 [CARGAR] Muestra primera pregunta recibida:');
+                console.log('  - ID:', primera.id);
+                console.log('  - Pregunta:', primera.pregunta);
+                console.log('  - Autor:', primera.autor);
+                console.log('  - Bytes de pregunta:', Array.from(primera.pregunta).map(c => c.charCodeAt(0)));
+            }
+            
+            if (resetear) {
+                this.preguntas = data.content;
+                console.log('✅ [CARGAR] Preguntas reseteadas, nueva longitud:', this.preguntas.length);
+            } else {
+                const longitudAnterior = this.preguntas.length;
+                this.preguntas = [...this.preguntas, ...data.content];
+                console.log('✅ [CARGAR] Preguntas añadidas, longitud anterior:', longitudAnterior, 'nueva longitud:', this.preguntas.length);
+            }
+            
+            this.totalPreguntas = data.totalElements;
+            this.totalPaginas = data.totalPages;
+            this.paginaActual = data.number;
+            
+            console.log('✅ [CARGAR] Estado finalizado - totalPreguntas:', this.totalPreguntas, 'totalPaginas:', this.totalPaginas, 'paginaActual:', this.paginaActual);
+            
             this.mostrarPreguntas();
         } catch (error) {
             if (error && error.message && error.message.startsWith('401')) {
@@ -44,6 +102,167 @@ const PreguntasManager = {
                     background: "linear-gradient(to right, #ff0000, #cc0000)",
                 }
             }).showToast();
+        } finally {
+            this.cargando = false;
+            this.ocultarEstadoCarga();
+            // Actualizar paginación DESPUÉS de establecer cargando = false
+            this.actualizarPaginacion();
+        }
+    },
+
+    async cargarMasPreguntas() {
+        console.log('🔄 [CARGAR MÁS] Iniciando carga de más preguntas...');
+        console.log('🔄 [CARGAR MÁS] Estado actual - cargando:', this.cargando, 'paginaActual:', this.paginaActual, 'totalPaginas:', this.totalPaginas);
+        
+        if (this.cargando) {
+            console.log('❌ [CARGAR MÁS] Ya está cargando, abortando...');
+            return;
+        }
+        
+        if (this.paginaActual >= this.totalPaginas - 1) {
+            console.log('❌ [CARGAR MÁS] Ya estamos en la última página, abortando...');
+            return;
+        }
+        
+        // Guardar la posición actual del scroll
+        const scrollPosition = window.scrollY;
+        console.log('📍 [CARGAR MÁS] Posición del scroll guardada:', scrollPosition);
+        
+        this.paginaActual++;
+        console.log('✅ [CARGAR MÁS] Página incrementada a:', this.paginaActual);
+        await this.cargarPreguntas(false);
+        
+        // Restaurar la posición del scroll después de cargar las preguntas
+        setTimeout(() => {
+            window.scrollTo(0, scrollPosition);
+            console.log('📍 [CARGAR MÁS] Posición del scroll restaurada:', scrollPosition);
+        }, 100);
+    },
+
+    mostrarEstadoCarga() {
+        const tbody = document.querySelector('#tabla-preguntas');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="14" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando preguntas...</td></tr>';
+        }
+    },
+
+    ocultarEstadoCarga() {
+        // El estado de carga se oculta automáticamente cuando se muestran las preguntas
+    },
+
+    actualizarPaginacion() {
+        console.log('🔄 [PAGINACION] Actualizando paginación...');
+        console.log('🔄 [PAGINACION] Estado - preguntas.length:', this.preguntas.length, 'totalPreguntas:', this.totalPreguntas, 'paginaActual:', this.paginaActual, 'totalPaginas:', this.totalPaginas);
+        
+        let paginacionContainer = document.getElementById('paginacion-preguntas');
+        if (!paginacionContainer) {
+            console.log('🔄 [PAGINACION] Contenedor no encontrado, creando...');
+            // Crear el contenedor si no existe
+            const tablaContainer = document.querySelector('.table-responsive');
+            if (tablaContainer) {
+                console.log('✅ [PAGINACION] Tabla encontrada, creando contenedor...');
+                const paginacionDiv = document.createElement('div');
+                paginacionDiv.id = 'paginacion-preguntas';
+                paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
+                tablaContainer.parentNode.insertBefore(paginacionDiv, tablaContainer.nextSibling);
+                // Obtener la referencia al contenedor recién creado
+                paginacionContainer = document.getElementById('paginacion-preguntas');
+                console.log('✅ [PAGINACION] Contenedor creado:', paginacionContainer);
+            } else {
+                console.error('❌ [PAGINACION] No se encontró la tabla .table-responsive');
+            }
+        } else {
+            console.log('✅ [PAGINACION] Contenedor existente encontrado');
+        }
+
+        if (paginacionContainer) {
+            const infoPagina = document.createElement('div');
+            infoPagina.innerHTML = `Mostrando ${this.preguntas.length} de ${this.totalPreguntas} preguntas (Página ${this.paginaActual + 1} de ${this.totalPaginas})`;
+
+            // Crear el botón con un enfoque más robusto
+            const botonCargarMas = document.createElement('button');
+            botonCargarMas.className = 'btn btn-primary';
+            botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más preguntas';
+            botonCargarMas.type = 'button';
+            botonCargarMas.id = 'btn-cargar-mas-preguntas';
+            
+            // Estilos inline para asegurar que sea clickeable
+            Object.assign(botonCargarMas.style, {
+                cursor: 'pointer',
+                pointerEvents: 'auto',
+                position: 'relative',
+                zIndex: '1000',
+                display: 'inline-block',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none'
+            });
+            
+            // Verificar si el botón debe estar deshabilitado
+            const botonDeshabilitado = this.cargando || this.paginaActual >= this.totalPaginas - 1;
+            
+            if (botonDeshabilitado) {
+                botonCargarMas.disabled = true;
+                botonCargarMas.style.opacity = '0.6';
+                botonCargarMas.style.cursor = 'not-allowed';
+            } else {
+                botonCargarMas.disabled = false;
+                botonCargarMas.style.opacity = '1';
+                botonCargarMas.style.cursor = 'pointer';
+                
+                // Añadir event listener solo si el botón está habilitado
+                botonCargarMas.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔄 [BOTON] Botón "Cargar más" clickeado');
+                    this.cargarMasPreguntas();
+                });
+                
+                // Añadir eventos adicionales para debug
+                botonCargarMas.addEventListener('mouseenter', () => {
+                    console.log('🔄 [BOTON] Mouse enter en botón');
+                });
+                
+                botonCargarMas.addEventListener('mouseleave', () => {
+                    console.log('🔄 [BOTON] Mouse leave en botón');
+                });
+                
+                botonCargarMas.addEventListener('mousedown', () => {
+                    console.log('🔄 [BOTON] Mouse down en botón');
+                });
+                
+                botonCargarMas.addEventListener('mouseup', () => {
+                    console.log('🔄 [BOTON] Mouse up en botón');
+                });
+            }
+            
+            console.log('✅ [PAGINACION] Botón creado, deshabilitado:', botonDeshabilitado);
+            console.log('✅ [PAGINACION] Estado del botón - cargando:', this.cargando, 'paginaActual >= totalPaginas-1:', this.paginaActual >= this.totalPaginas - 1);
+            console.log('✅ [PAGINACION] Total páginas:', this.totalPaginas, 'Página actual:', this.paginaActual);
+
+            paginacionContainer.innerHTML = '';
+            paginacionContainer.appendChild(infoPagina);
+            paginacionContainer.appendChild(botonCargarMas);
+            
+            console.log('✅ [PAGINACION] Paginación actualizada correctamente');
+            console.log('✅ [PAGINACION] Botón añadido al DOM:', botonCargarMas);
+            console.log('✅ [PAGINACION] Botón visible:', botonCargarMas.offsetParent !== null);
+            console.log('✅ [PAGINACION] Botón habilitado:', !botonCargarMas.disabled);
+            console.log('✅ [PAGINACION] Botón clickeable:', botonCargarMas.style.pointerEvents !== 'none');
+            
+            // Debug adicional: verificar elementos superpuestos
+            const rect = botonCargarMas.getBoundingClientRect();
+            const elementosEnPosicion = document.elementsFromPoint(
+                rect.left + rect.width / 2, 
+                rect.top + rect.height / 2
+            );
+            console.log('🔍 [PAGINACION] Elementos en la posición del botón:', elementosEnPosicion);
+            console.log('🔍 [PAGINACION] ¿El botón está en la parte superior?', elementosEnPosicion[0] === botonCargarMas);
+            
+
+        } else {
+            console.error('❌ [PAGINACION] No se pudo crear o encontrar el contenedor de paginación');
         }
     },
 
@@ -53,32 +272,33 @@ const PreguntasManager = {
             console.error('No se encontró el elemento tabla-preguntas');
             return;
         }
+        
+        // Guardar la posición actual del scroll antes de modificar la tabla
+        const scrollPosition = window.scrollY;
+        const isAddingMore = this.preguntas.length > tbody.children.length;
+        
+        if (isAddingMore) {
+            console.log('📍 [MOSTRAR] Añadiendo más preguntas, posición del scroll guardada:', scrollPosition);
+        }
+        
         tbody.innerHTML = '';
 
-        let preguntasFiltradas = this.preguntas;
-
-        // Ordenar
-        if (this.orden.columna) {
-            preguntasFiltradas = preguntasFiltradas.slice().sort((a, b) => {
-                let valA = a[this.orden.columna];
-                let valB = b[this.orden.columna];
-                if (typeof valA === 'string') valA = valA.toLowerCase();
-                if (typeof valB === 'string') valB = valB.toLowerCase();
-                if (valA === undefined || valA === null) return 1;
-                if (valB === undefined || valB === null) return -1;
-                if (valA < valB) return this.orden.asc ? -1 : 1;
-                if (valA > valB) return this.orden.asc ? 1 : -1;
-                return 0;
-            });
-        }
-
-        preguntasFiltradas.forEach(pregunta => {
+        // Las preguntas ya vienen filtradas y ordenadas del servidor
+        this.preguntas.forEach((pregunta, index) => {
+            // Log para verificar la codificación en el renderizado
+            if (index === 0) {
+                console.log('🎨 [MOSTRAR] Renderizando primera pregunta:');
+                console.log('  - ID:', pregunta.id);
+                console.log('  - Pregunta original:', pregunta.pregunta);
+                console.log('  - Pregunta en HTML:', pregunta.pregunta ?? '');
+                console.log('  - Bytes de pregunta:', Array.from(pregunta.pregunta || '').map(c => c.charCodeAt(0)));
+            }
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', pregunta.id);
             tr.setAttribute('oncontextmenu', `showContextMenu(event, ${pregunta.id}, 'pregunta')`);
             tr.innerHTML = `
                 <td>${pregunta.id ?? ''}</td>
-                <td style="background-color: #f8f9fa; font-style: italic;">${pregunta.creacionUsuarioNombre ?? ''}</td>
+                <td style="background-color: #f8f9fa; font-style: italic;">${pregunta.autor ?? pregunta.creacionUsuarioNombre ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'nivel', this)"><span class="${this.getNivelColor(pregunta.nivel)}">${pregunta.nivel ?? ''}</span></td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'tematica', this)">${pregunta.tematica ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'subtema', this)">${(pregunta.subtema ?? '').split(',').map(s => s.trim()).filter(Boolean).join(', ')}</td>
@@ -104,6 +324,14 @@ const PreguntasManager = {
             `;
             tbody.appendChild(tr);
         });
+        
+        // Si estamos añadiendo más preguntas, restaurar la posición del scroll
+        if (isAddingMore) {
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+                console.log('📍 [MOSTRAR] Posición del scroll restaurada:', scrollPosition);
+            }, 50);
+        }
     },
 
     async filtrarPreguntas() {
@@ -142,7 +370,22 @@ const PreguntasManager = {
                 throw new Error('Error al filtrar preguntas');
             }
 
-            this.preguntas = await response.json();
+            const responseData = await response.json();
+            
+            // El backend devuelve una respuesta paginada, extraer el contenido
+            if (responseData.content && Array.isArray(responseData.content)) {
+                this.preguntas = responseData.content;
+                this.totalPreguntas = responseData.totalElements || responseData.content.length;
+                this.totalPaginas = responseData.totalPages || 1;
+                this.paginaActual = 0; // Resetear a la primera página
+            } else {
+                // Si no es paginado, usar directamente
+                this.preguntas = Array.isArray(responseData) ? responseData : [];
+                this.totalPreguntas = this.preguntas.length;
+                this.totalPaginas = 1;
+                this.paginaActual = 0;
+            }
+            
             this.mostrarPreguntas();
 
         } catch (error) {
@@ -302,18 +545,81 @@ const PreguntasManager = {
         }
     },
 
-    aplicarFiltros() {
-        this.mostrarPreguntas();
+    async aplicarFiltros() {
+        try {
+            if (!authManager.isAuthenticated()) {
+                console.error('Usuario no autenticado');
+                return;
+            }
+
+            // Resetear paginación al aplicar filtros
+            this.paginaActual = 0;
+            this.preguntas = [];
+            this.cargando = true;
+            this.mostrarEstadoCarga();
+
+            // Obtener valores de los filtros
+            const tematica = document.getElementById('filtro-tematica')?.value || '';
+            const nivel = document.getElementById('filtro-nivel')?.value || '';
+            const estado = document.getElementById('filtro-estado')?.value || '';
+            const pregunta = document.getElementById('buscar-pregunta')?.value || '';
+
+            const params = new URLSearchParams({
+                page: this.paginaActual,
+                size: this.tamanioPagina
+            });
+
+            // Añadir filtros solo si tienen valor
+            if (tematica) params.append('tematica', tematica);
+            if (nivel) params.append('nivel', nivel);
+            if (estado) params.append('estado', estado);
+            if (pregunta) params.append('pregunta', pregunta);
+
+            const response = await fetch(`/api/preguntas/filtrar?${params}`, {
+                headers: authManager.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al filtrar las preguntas');
+            }
+
+            const data = await response.json();
+            this.preguntas = data.content;
+            this.totalPreguntas = data.totalElements;
+            this.totalPaginas = data.totalPages;
+            this.paginaActual = data.number;
+
+            this.mostrarPreguntas();
+            this.actualizarPaginacion();
+        } catch (error) {
+            console.error('Error al filtrar preguntas:', error);
+            Toastify({
+                text: `Error al filtrar: ${error.message}`,
+                duration: 3000,
+                close: true,
+                gravity: "top",
+                position: "right",
+                style: {
+                    background: "linear-gradient(to right, #ff0000, #cc0000)",
+                }
+            }).showToast();
+        } finally {
+            this.cargando = false;
+            this.ocultarEstadoCarga();
+        }
     },
 
-    setOrden(columna) {
+    async setOrden(columna) {
         if (this.orden.columna === columna) {
             this.orden.asc = !this.orden.asc;
         } else {
             this.orden.columna = columna;
             this.orden.asc = true;
         }
-        this.mostrarPreguntas();
+        
+        // Recargar preguntas con el nuevo orden desde el servidor
+        this.paginaActual = 0;
+        await this.cargarPreguntas(true);
     },
 
     getNivelColor(nivel) {
@@ -989,7 +1295,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Filtros
     document.getElementById('filtro-estado')?.addEventListener('change', () => PreguntasManager.aplicarFiltros());
     document.getElementById('filtro-nivel')?.addEventListener('change', () => PreguntasManager.aplicarFiltros());
-    document.getElementById('buscar-pregunta')?.addEventListener('keyup', () => PreguntasManager.aplicarFiltros());
+    
+    // Debounce para el campo de búsqueda para evitar múltiples llamadas
+    let searchTimeout;
+    document.getElementById('buscar-pregunta')?.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            PreguntasManager.aplicarFiltros();
+        }, 500); // Esperar 500ms después de que el usuario deje de escribir
+    });
 
     // Event listener para el formulario de crear pregunta (si existe)
     document.querySelector('#formCrearPregunta')?.addEventListener('submit', (e) => PreguntasManager.crearPregunta(e));

@@ -95,6 +95,9 @@ public class Pregunta {
     @Column(name = "subtema", length = 100)
     private String subtema;
 
+    @Column(name = "autor", length = 100)
+    private String autor;
+
     @JsonIgnore
     @OneToMany(mappedBy = "pregunta")
     private Set<PreguntaCuestionario> cuestionarios;

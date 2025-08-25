@@ -17,6 +17,7 @@ public class PreguntaDTO {
     private Long creacionUsuarioId;
     private String creacionUsuarioNombre;
     private String subtema;
+    private String autor;
     private String notas;
     private FactorPregunta factor;
     private String notasVerificacion;

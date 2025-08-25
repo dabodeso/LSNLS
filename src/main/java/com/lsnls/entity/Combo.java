@@ -55,7 +55,7 @@ public class Combo {
     }
 
     public enum EstadoCombo {
-        borrador, revisar, corregir, aprobado, adjudicado, grabado
+        borrador, revisar, corregir, aprobado, adjudicado, grabado, reaprovechado
     }
 
     public enum TipoCombo {

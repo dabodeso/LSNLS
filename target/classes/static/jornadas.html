@@ -82,6 +82,69 @@
             background-color: #007bff;
             color: white;
         }
+        
+        /* Estilos para el historial */
+        .historial-item {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+        }
+        .historial-item.usado {
+            border-left: 4px solid #28a745;
+            background: #d4edda;
+        }
+        .historial-item.no-usado {
+            border-left: 4px solid #ffc107;
+            background: #fff3cd;
+        }
+        .historial-item.reaprovechado {
+            border-left: 4px solid #17a2b8;
+            background: #d1ecf1;
+        }
+        .historial-item.asignado {
+            border-left: 4px solid #007bff;
+            background: #cce7ff;
+        }
+        
+        /* Estilos para elementos no usados */
+        .elemento-no-usado {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        
+        /* Estilos para preguntas de combos */
+        .pregunta-combo {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: #f8f9fa;
+        }
+        .pregunta-usada {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .pregunta-no-usada {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        
+        /* Checkbox personalizado */
+        .checkbox-custom {
+            margin-right: 8px;
+        }
+        
+        /* Badges de estado */
+        .badge-estado {
+            font-size: 0.75em;
+            padding: 4px 8px;
+        }
     </style>
 </head>
 <body>
@@ -177,6 +240,31 @@
                     <div class="text-center py-5">
                         <i class="fas fa-spinner fa-spin fa-2x"></i>
                         <p class="mt-2">Cargando jornadas...</p>
+                    </div>
+                </div>
+
+                <!-- Nueva sección: Gestión de Historial -->
+                <div class="card mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history"></i> Gestión de Historial de Jornadas
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Elementos No Usados</h6>
+                                <button class="btn btn-warning btn-sm" onclick="JornadasManager.mostrarElementosNoUsados()">
+                                    <i class="fas fa-eye"></i> Ver Elementos No Usados
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Reaprovechar Combos</h6>
+                                <button class="btn btn-success btn-sm" onclick="JornadasManager.mostrarModalReaprovechar()">
+                                    <i class="fas fa-recycle"></i> Reaprovechar Combo
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -401,11 +489,175 @@
         </div>
     </div>
 
+    <!-- Modal Elementos No Usados -->
+    <div class="modal fade" id="modalElementosNoUsados" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-eye"></i> Elementos No Usados por Jornada
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Seleccionar Jornada:</label>
+                            <select class="form-select" id="selectJornadaNoUsados" onchange="JornadasManager.cargarElementosNoUsados()">
+                                <option value="">Selecciona una jornada...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="elementosNoUsadosContainer">
+                        <div class="text-center py-3">
+                            <p class="text-muted">Selecciona una jornada para ver los elementos no usados</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Marcar No Usados -->
+    <div class="modal fade" id="modalMarcarNoUsados" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle"></i> Marcar Elementos como No Usados
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formMarcarNoUsados">
+                        <div class="mb-3">
+                            <label class="form-label">Jornada:</label>
+                            <input type="text" class="form-control" id="jornadaNoUsadosNombre" readonly>
+                            <input type="hidden" id="jornadaNoUsadosId">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cuestionarios No Usados:</label>
+                            <div id="cuestionariosNoUsadosList" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <!-- Se llena dinámicamente -->
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Combos No Usados:</label>
+                            <div id="combosNoUsadosList" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <!-- Se llena dinámicamente -->
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Motivo:</label>
+                            <textarea class="form-control" id="motivoNoUsados" rows="3" placeholder="Explica por qué no se usaron estos elementos..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning" onclick="JornadasManager.marcarElementosNoUsados()">
+                        <i class="fas fa-check"></i> Marcar como No Usados
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Reaprovechar Combo -->
+    <div class="modal fade" id="modalReaprovecharCombo" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-recycle"></i> Reaprovechar Combo
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formReaprovecharCombo">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Combo Original</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Seleccionar Combo:</label>
+                                    <select class="form-select" id="selectComboOriginal" onchange="JornadasManager.cargarDetallesCombo()">
+                                        <option value="">Selecciona un combo...</option>
+                                    </select>
+                                </div>
+                                <div id="detallesComboOriginal" class="border rounded p-3" style="display: none;">
+                                    <!-- Se llena dinámicamente -->
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Nuevo Combo</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Pregunta Usada:</label>
+                                    <select class="form-select" id="selectPreguntaUsada" onchange="JornadasManager.actualizarPreguntasNoUsadas()">
+                                        <option value="">Selecciona la pregunta usada...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nueva Pregunta:</label>
+                                    <select class="form-select" id="selectNuevaPregunta">
+                                        <option value="">Selecciona una nueva pregunta...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Factor Multiplicación:</label>
+                                    <select class="form-select" id="selectFactorMultiplicacion">
+                                        <option value="X">X</option>
+                                        <option value="X2">X2</option>
+                                        <option value="X3">X3</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Notas:</label>
+                                    <textarea class="form-control" id="notasReaprovechar" rows="3" placeholder="Notas sobre el reaprovechamiento..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="JornadasManager.reaprovecharCombo()">
+                        <i class="fas fa-recycle"></i> Reaprovechar Combo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Historial de Cuestionario/Combo -->
+    <div class="modal fade" id="modalHistorial" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalHistorialTitulo">
+                        <i class="fas fa-history"></i> Historial
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="historialContainer">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/utils.js"></script>
-    <script src="js/jornadas.js?v=20250716-8"></script>
+    <script src="js/jornadas.js?v=20250716-9"></script>
     <script>
         // Verificar autenticación al cargar la página
         document.addEventListener('DOMContentLoaded', function() {

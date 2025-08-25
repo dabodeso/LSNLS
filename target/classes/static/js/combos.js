@@ -79,7 +79,7 @@ const CombosManager = {
             const preguntasPorSlot = {};
             const preguntasAsignadas = new Set(); // Para controlar qué preguntas ya se han asignado
             
-            console.log(`[DEBUG] Combo ${c.id} tiene ${c.preguntas ? c.preguntas.length : 0} preguntas`);
+
             
             // Primero, intentar asignar preguntas a slots según la información del backend
             if (Array.isArray(c.preguntas)) {
@@ -87,7 +87,7 @@ const CombosManager = {
                     if (pc && pc.slot && pc.pregunta) {
                         preguntasPorSlot[pc.slot] = pc.pregunta;
                         preguntasAsignadas.add(pc.pregunta.id);
-                        console.log(`[DEBUG] Pregunta ${pc.pregunta.id} asignada al slot ${pc.slot} por el backend`);
+
                     }
                 });
             }
@@ -102,7 +102,7 @@ const CombosManager = {
                             if (!preguntasPorSlot[slot]) {
                                 preguntasPorSlot[slot] = pc.pregunta;
                                 preguntasAsignadas.add(pc.pregunta.id);
-                                console.log(`[DEBUG] Pregunta ${pc.pregunta.id} asignada al slot ${slot} manualmente`);
+
                                 break;
                             }
                         }
@@ -644,6 +644,13 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
     
     preguntas.forEach(p => {
         const tr = document.createElement('tr');
+        
+        // Log para debug
+        console.log('[DEBUG] Procesando pregunta ID:', p.id);
+        console.log('[DEBUG] Pregunta texto:', p.pregunta);
+        console.log('[DEBUG] Respuesta texto:', p.respuesta);
+        
+        // Crear el botón de forma más segura usando addEventListener en lugar de onclick
         tr.innerHTML = `
             <td>${p.id}</td>
             <td>${p.pregunta}</td>
@@ -651,11 +658,25 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
             <td>${p.tematica}</td>
             <td><span class="${CombosManager.getNivelColor(p.nivel)}">${p.nivel}</span></td>
             <td>
-                <button class="btn btn-sm btn-success" onclick="seleccionarPreguntaModal(${p.id}, '${p.pregunta.replace(/'/g, "\\'")}', '${p.tematica.replace(/'/g, "\\'")}', '${p.respuesta.replace(/'/g, "\\'")}', '${p.subtema || ''}')">
+                <button class="btn btn-sm btn-success" data-pregunta-id="${p.id}" data-pregunta-texto="${encodeURIComponent(p.pregunta)}" data-tematica="${encodeURIComponent(p.tematica)}" data-respuesta="${encodeURIComponent(p.respuesta)}" data-subtema="${encodeURIComponent(p.subtema || '')}">
                     Seleccionar
                 </button>
             </td>
         `;
+        
+        // Agregar event listener de forma segura
+        const button = tr.querySelector('button');
+        button.addEventListener('click', function() {
+            const preguntaId = this.getAttribute('data-pregunta-id');
+            const preguntaTexto = decodeURIComponent(this.getAttribute('data-pregunta-texto'));
+            const tematica = decodeURIComponent(this.getAttribute('data-tematica'));
+            const respuesta = decodeURIComponent(this.getAttribute('data-respuesta'));
+            const subtema = decodeURIComponent(this.getAttribute('data-subtema'));
+            
+            console.log('[DEBUG] Seleccionando pregunta:', preguntaId, preguntaTexto);
+            seleccionarPreguntaModal(preguntaId, preguntaTexto, tematica, respuesta, subtema);
+        });
+        
         tbody.appendChild(tr);
     });
     

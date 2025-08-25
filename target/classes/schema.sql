@@ -1,18 +1,5 @@
--- Ejecutar antes de que Spring Boot cree las tablas
-
-SET FOREIGN_KEY_CHECKS = 0;
--- Cambiar a una BD neutral para poder eliminar la BD actual sin quedar "en uso"
-USE mysql;
-DROP DATABASE IF EXISTS lsnls;
-SET FOREIGN_KEY_CHECKS = 1;
-
--- Crear la base de datos con UTF-8 si no existe
-CREATE DATABASE IF NOT EXISTS lsnls 
-  CHARACTER SET utf8mb4 
-  COLLATE utf8mb4_unicode_ci;
-
--- Usar la base de datos
-USE lsnls;
+-- Configuración para mantener datos entre ejecuciones
+-- Solo crear tablas si no existen
 
 -- Configurar las variables de sesión para UTF-8
 SET NAMES utf8mb4;
@@ -22,24 +9,8 @@ SET character_set_results = utf8mb4;
 SET character_set_connection = utf8mb4;
 SET collation_connection = utf8mb4_unicode_ci;
 
-SET FOREIGN_KEY_CHECKS = 0;
--- Borrado explícito ordenado (por si la BD existiera tras recreación)
-DROP TABLE IF EXISTS combos_preguntas;
-DROP TABLE IF EXISTS cuestionarios_preguntas;
-DROP TABLE IF EXISTS concursantes;
-DROP TABLE IF EXISTS jornadas_combos;
-DROP TABLE IF EXISTS jornadas_cuestionarios;
-DROP TABLE IF EXISTS jornadas;
-DROP TABLE IF EXISTS combos;
-DROP TABLE IF EXISTS cuestionarios;
-DROP TABLE IF EXISTS preguntas;
-DROP TABLE IF EXISTS tematicas;
-DROP TABLE IF EXISTS programas;
-DROP TABLE IF EXISTS configuracion_global;
-DROP TABLE IF EXISTS usuarios;
-SET FOREIGN_KEY_CHECKS = 1;
-
 -- Las tablas se crean solo si no existen para mantener los datos entre ejecuciones
+-- Los datos se preservan entre reinicios de la aplicación
 
 -- Crear tabla de usuarios
 CREATE TABLE IF NOT EXISTS usuarios (
@@ -67,18 +38,18 @@ CREATE TABLE IF NOT EXISTS preguntas (
     fecha_creacion datetime(6),
     fecha_verificacion datetime(6),
     verificacion_usuario_id BIGINT,
-    respuesta VARCHAR(50) NOT NULL,
+    respuesta VARCHAR(500) NOT NULL,
     tematica VARCHAR(100) NOT NULL,
-    pregunta VARCHAR(150) NOT NULL,
+    pregunta TEXT NOT NULL,
     subtema VARCHAR(100),
-    datos_extra VARCHAR(255),
-    fuentes VARCHAR(255),
+    datos_extra TEXT,
+    fuentes TEXT,
     autor VARCHAR(100),
     notas TEXT,
     notas_verificacion TEXT,
     notas_direccion TEXT,
-    verificacion VARCHAR(500),
-    estado ENUM('borrador', 'para_verificar', 'verificada', 'revisar', 'corregir', 'rechazada', 'aprobada') NOT NULL,
+    verificacion TEXT,
+    estado ENUM('borrador', 'para_verificar', 'verificada', 'revisar', 'corregir', 'rechazada', 'aprobada', 'para_aprobar', 'usada') NOT NULL,
     estado_disponibilidad ENUM('disponible', 'usada', 'liberada', 'descartada'),
     factor ENUM('X', 'X2', 'X3'),
     nivel ENUM('_0', '_1LS', '_2NLS', '_3LS', '_4NLS', '_5LS', '_5NLS') NOT NULL,
@@ -211,73 +182,27 @@ CREATE TABLE IF NOT EXISTS concursantes (
     version BIGINT DEFAULT 0
 );
 
--- Añadir restricción única para configuracion_global
-ALTER TABLE configuracion_global
-    ADD CONSTRAINT UK_n1f89pcjsk127q2qekw84p9wt UNIQUE (clave);
+-- Las claves foráneas ya están definidas en las tablas con FOREIGN KEY
+-- No es necesario añadirlas con ALTER TABLE ya que se crean automáticamente
 
--- Añadir claves foráneas
-ALTER TABLE preguntas
-    ADD CONSTRAINT FK1c30dnbgrcbcia67aeeupir4v
-    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios (id);
+-- Crear tabla de historial de jornadas
+CREATE TABLE IF NOT EXISTS historial_jornadas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    jornada_id BIGINT NOT NULL,
+    cuestionario_id BIGINT,
+    combo_id BIGINT,
+    tipo_asignacion ENUM('CUESTIONARIO', 'COMBO') NOT NULL,
+    estado_asignacion ENUM('asignado', 'usado', 'no_usado', 'reaprovechado') NOT NULL DEFAULT 'asignado',
+    fecha_asignacion datetime(6),
+    fecha_uso datetime(6),
+    pregunta_usada_id BIGINT,
+    notas TEXT,
+    version BIGINT DEFAULT 0,
+    FOREIGN KEY (jornada_id) REFERENCES jornadas (id),
+    FOREIGN KEY (cuestionario_id) REFERENCES cuestionarios (id),
+    FOREIGN KEY (combo_id) REFERENCES combos (id),
+    FOREIGN KEY (pregunta_usada_id) REFERENCES preguntas (id)
+);
 
-ALTER TABLE preguntas
-    ADD CONSTRAINT FKqxd7f8ssnownfdc02lg2vjn9m
-    FOREIGN KEY (verificacion_usuario_id) REFERENCES usuarios (id);
-
-ALTER TABLE cuestionarios
-    ADD CONSTRAINT FK4x1k648y3mm5aamds4j7edjui
-    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios (id);
-
-ALTER TABLE combos
-    ADD CONSTRAINT FK6qmwif52lh67cai38n9tlruw1
-    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios (id);
-
-ALTER TABLE cuestionarios_preguntas
-    ADD CONSTRAINT FKth10ov6gek3qugxd2n14oaeuu
-    FOREIGN KEY (cuestionario_id) REFERENCES cuestionarios (id);
-
-ALTER TABLE cuestionarios_preguntas
-    ADD CONSTRAINT FKdraip2y9m64wkhhspa0twca35
-    FOREIGN KEY (pregunta_id) REFERENCES preguntas (id);
-
-ALTER TABLE combos_preguntas
-    ADD CONSTRAINT FKrl83qy6m69m8tcpxioo3o5ohq
-    FOREIGN KEY (combo_id) REFERENCES combos (id);
-
-ALTER TABLE combos_preguntas
-    ADD CONSTRAINT FKqpwe8mb1twqui4hebcnj1j815
-    FOREIGN KEY (pregunta_id) REFERENCES preguntas (id);
-
-ALTER TABLE concursantes
-    ADD CONSTRAINT FKjfi334ngdgfl0ungoi4mtrvmm
-    FOREIGN KEY (combo_id) REFERENCES combos (id);
-
-ALTER TABLE concursantes
-    ADD CONSTRAINT FKe46vd5w3bblq8doneuo3ibant
-    FOREIGN KEY (cuestionario_id) REFERENCES cuestionarios (id);
-
--- Claves foráneas para jornadas
-ALTER TABLE jornadas
-    ADD CONSTRAINT FK_jornada_creacion_usuario
-    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios (id);
-
-ALTER TABLE jornadas_cuestionarios
-    ADD CONSTRAINT FK_jornada_cuestionario_jornada
-    FOREIGN KEY (jornada_id) REFERENCES jornadas (id);
-
-ALTER TABLE jornadas_cuestionarios
-    ADD CONSTRAINT FK_jornada_cuestionario_cuestionario
-    FOREIGN KEY (cuestionario_id) REFERENCES cuestionarios (id);
-
-ALTER TABLE jornadas_combos
-    ADD CONSTRAINT FK_jornada_combo_jornada
-    FOREIGN KEY (jornada_id) REFERENCES jornadas (id);
-
-ALTER TABLE jornadas_combos
-    ADD CONSTRAINT FK_jornada_combo_combo
-    FOREIGN KEY (combo_id) REFERENCES combos (id);
-
--- Clave foránea para concursantes-jornada
-ALTER TABLE concursantes
-    ADD CONSTRAINT FK_concursante_jornada
-    FOREIGN KEY (jornada_id) REFERENCES jornadas (id); 
+-- Actualizar enum de estados de combos para incluir 'reaprovechado'
+ALTER TABLE combos MODIFY COLUMN estado ENUM('borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado', 'reaprovechado') NOT NULL; 

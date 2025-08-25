@@ -23,10 +23,16 @@ import java.util.ArrayList;
 import com.lsnls.entity.AuditLog;
 import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @Transactional
 public class PreguntaService {
+    
+    private static final Logger log = LoggerFactory.getLogger(PreguntaService.class);
     
     @Autowired
     private PreguntaRepository preguntaRepository;
@@ -611,9 +617,12 @@ public class PreguntaService {
             if (factor != null && !factor.isBlank()) factorEnum = Pregunta.FactorPregunta.valueOf(factor);
         } catch (Exception ignored) {}
         
-        // CAMBIADO: Buscar solo preguntas disponibles o liberadas para crear nuevos cuestionarios
-        // No mostrar preguntas usadas para evitar confusión
-        return preguntaRepository.buscarPreguntasDisponibles(
+        log.info("[BUSCAR] Parámetros de búsqueda - Nivel: {}, Factor: {}, ID: {}, Pregunta: {}, Respuesta: {}, Temática: {}", 
+            nivel, factor, id, pregunta, respuesta, tematica);
+        log.info("[BUSCAR] Enums convertidos - NivelEnum: {}, FactorEnum: {}", nivelEnum, factorEnum);
+        
+        // TEMPORAL: Usar el método sin filtro de disponibilidad para debug
+        Page<Pregunta> resultado = preguntaRepository.buscarPreguntasSinFiltroDisponibilidad(
             nivelEnum,
             factorEnum,
             (id != null && !id.isBlank()) ? id : null,
@@ -623,6 +632,11 @@ public class PreguntaService {
             Pregunta.EstadoPregunta.aprobada,
             pageable
         );
+        
+        log.info("[BUSCAR] Resultado - Total elementos: {}, Total páginas: {}, Elementos en esta página: {}", 
+            resultado.getTotalElements(), resultado.getTotalPages(), resultado.getContent().size());
+        
+        return resultado;
     }
 
     public void eliminarPorId(Long id) {
@@ -668,8 +682,60 @@ public class PreguntaService {
         return preguntas.stream().map(this::mapPreguntaToDTO).collect(java.util.stream.Collectors.toList());
     }
 
+    public Page<PreguntaDTO> filtrarPreguntasCompletoPaginado(String nivel, String factor, String estado, 
+                                                             String tematica, String subtema, String pregunta, String respuesta, 
+                                                             Pageable pageable) {
+        // Convertir strings a enums
+        Pregunta.NivelPregunta nivelEnum = null;
+        Pregunta.FactorPregunta factorEnum = null;
+        Pregunta.EstadoPregunta estadoEnum = null;
+        
+        try {
+            if (nivel != null && !nivel.isBlank()) {
+                nivelEnum = Pregunta.NivelPregunta.valueOf(nivel.startsWith("_") ? nivel : ("_"+nivel));
+            }
+        } catch (Exception ignored) {}
+        
+        try {
+            if (factor != null && !factor.isBlank()) {
+                factorEnum = Pregunta.FactorPregunta.valueOf(factor);
+            }
+        } catch (Exception ignored) {}
+        
+        try {
+            if (estado != null && !estado.isBlank()) {
+                estadoEnum = Pregunta.EstadoPregunta.valueOf(estado);
+            }
+        } catch (Exception ignored) {}
+        
+        // Obtener todas las preguntas filtradas
+        List<Pregunta> todasLasPreguntas = preguntaRepository.filtrarTodas(
+            nivelEnum,
+            factorEnum,
+            estadoEnum,
+            (tematica != null && !tematica.isBlank()) ? tematica : null,
+            (subtema != null && !subtema.isBlank()) ? subtema : null,
+            (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
+            (respuesta != null && !respuesta.isBlank()) ? respuesta : null
+        );
+        
+        // Aplicar paginación manualmente
+        int total = todasLasPreguntas.size();
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), total);
+        
+        if (start > total) {
+            return org.springframework.data.domain.Page.empty(pageable);
+        }
+        
+        List<Pregunta> preguntasPaginadas = todasLasPreguntas.subList(start, end);
+        List<PreguntaDTO> dtos = preguntasPaginadas.stream().map(this::mapPreguntaToDTO).collect(java.util.stream.Collectors.toList());
+        
+        return new org.springframework.data.domain.PageImpl<>(dtos, pageable, total);
+    }
+
     // --- MÉTODO DE MAPEADO DTO ---
-    private PreguntaDTO mapPreguntaToDTO(Pregunta p) {
+    public PreguntaDTO mapPreguntaToDTO(Pregunta p) {
         PreguntaDTO dto = new PreguntaDTO();
         dto.setId(p.getId());
         dto.setTematica(p.getTematica());
@@ -681,6 +747,7 @@ public class PreguntaService {
         dto.setCreacionUsuarioId(p.getCreacionUsuario() != null ? p.getCreacionUsuario().getId() : null);
         dto.setCreacionUsuarioNombre(p.getCreacionUsuario() != null ? p.getCreacionUsuario().getNombre() : null);
         dto.setSubtema(p.getSubtema());
+        dto.setAutor(p.getAutor());
         dto.setNotas(p.getNotas());
         dto.setFactor(p.getFactor());
         dto.setNotasVerificacion(p.getNotasVerificacion());
@@ -689,12 +756,58 @@ public class PreguntaService {
         dto.setFechaCreacion(p.getFechaCreacion() != null ? p.getFechaCreacion().toString() : null);
         dto.setFechaVerificacion(p.getFechaVerificacion() != null ? p.getFechaVerificacion().toString() : null);
         dto.setEstado(p.getEstado() != null ? p.getEstado().name() : null);
+        
         return dto;
     }
 
     // Modificar obtenerTodas para devolver DTOs
     public List<PreguntaDTO> obtenerTodasDTO() {
         return obtenerTodas().stream().map(this::mapPreguntaToDTO).collect(java.util.stream.Collectors.toList());
+    }
+
+    // Método para obtener preguntas paginadas como DTOs
+    public Page<PreguntaDTO> obtenerPaginadasDTO(Pageable pageable) {
+        try {
+            log.info("[PAGINADAS] Iniciando consulta paginada - Page: {}, Size: {}", 
+                pageable.getPageNumber(), pageable.getPageSize());
+            
+            Page<Pregunta> preguntasPage = preguntaRepository.findAll(pageable);
+            
+            log.info("[PAGINADAS] Consulta exitosa - Total elementos: {}, Total páginas: {}", 
+                preguntasPage.getTotalElements(), preguntasPage.getTotalPages());
+            
+            return preguntasPage.map(this::mapPreguntaToDTO);
+        } catch (Exception e) {
+            log.error("[PAGINADAS] Error al obtener preguntas paginadas: {}", e.getMessage(), e);
+            
+            // Log adicional para identificar el problema específico
+            if (e.getCause() != null && e.getCause().getMessage().contains("No enum constant")) {
+                log.error("[PAGINADAS] Error de enum detectado: {}", e.getCause().getMessage());
+                
+                // Intentar identificar qué valores problemáticos hay
+                try {
+                    List<Pregunta> todas = preguntaRepository.findAll();
+                    log.info("[PAGINADAS] Total preguntas en BD: {}", todas.size());
+                    
+                    // Verificar niveles únicos
+                    Set<String> niveles = todas.stream()
+                        .map(p -> p.getNivel() != null ? p.getNivel().name() : "NULL")
+                        .collect(Collectors.toSet());
+                    log.info("[PAGINADAS] Niveles únicos encontrados: {}", niveles);
+                    
+                    // Verificar estados únicos
+                    Set<String> estados = todas.stream()
+                        .map(p -> p.getEstado() != null ? p.getEstado().name() : "NULL")
+                        .collect(Collectors.toSet());
+                    log.info("[PAGINADAS] Estados únicos encontrados: {}", estados);
+                    
+                } catch (Exception ex) {
+                    log.error("[PAGINADAS] Error al verificar datos: {}", ex.getMessage());
+                }
+            }
+            
+            throw e;
+        }
     }
 
     // Modificar obtenerPorId para devolver DTO
@@ -734,5 +847,36 @@ public class PreguntaService {
         return preguntasCoincidentes.stream()
             .map(this::mapPreguntaToDTO)
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene estadísticas de niveles de preguntas para debug
+     * @return Mapa con estadísticas por nivel
+     */
+    public Map<String, Object> obtenerEstadisticasNiveles() {
+        Map<String, Object> estadisticas = new HashMap<>();
+        
+        List<Pregunta> todasLasPreguntas = preguntaRepository.findAll();
+        
+        // Agrupar por nivel
+        Map<Pregunta.NivelPregunta, Long> porNivel = todasLasPreguntas.stream()
+            .collect(Collectors.groupingBy(Pregunta::getNivel, Collectors.counting()));
+        
+        // Agrupar por estado
+        Map<Pregunta.EstadoPregunta, Long> porEstado = todasLasPreguntas.stream()
+            .collect(Collectors.groupingBy(Pregunta::getEstado, Collectors.counting()));
+        
+        // Agrupar por estado de disponibilidad
+        Map<Pregunta.EstadoDisponibilidad, Long> porDisponibilidad = todasLasPreguntas.stream()
+            .collect(Collectors.groupingBy(Pregunta::getEstadoDisponibilidad, Collectors.counting()));
+        
+        estadisticas.put("totalPreguntas", todasLasPreguntas.size());
+        estadisticas.put("porNivel", porNivel);
+        estadisticas.put("porEstado", porEstado);
+        estadisticas.put("porDisponibilidad", porDisponibilidad);
+        
+        log.info("[DEBUG] Estadísticas de niveles: {}", estadisticas);
+        
+        return estadisticas;
     }
 } 

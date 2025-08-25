@@ -53,11 +53,6 @@ public class ComboService {
 
     public Optional<Combo> obtenerConPreguntas(Long id) {
         try {
-            System.out.println("==========================================");
-            System.out.println("CARGANDO COMBO " + id + " CON PREGUNTAS");
-            System.out.println("==========================================");
-            
-            // Usar consulta JPQL que carga todo de una vez
             @SuppressWarnings("unchecked")
             List<Combo> resultados = entityManager.createQuery(
                 "SELECT DISTINCT c FROM Combo c " +
@@ -68,34 +63,13 @@ public class ComboService {
             ).setParameter("comboId", id).getResultList();
             
             if (resultados.isEmpty()) {
-                System.out.println("❌ COMBO " + id + " NO ENCONTRADO");
                 return Optional.empty();
             }
             
-            Combo combo = resultados.get(0);
-            System.out.println("✅ COMBO " + id + " ENCONTRADO");
-            System.out.println("📊 PREGUNTAS CARGADAS: " + combo.getPreguntas().size());
-            
-            // Mostrar detalles de las preguntas
-            if (!combo.getPreguntas().isEmpty()) {
-                System.out.println("📋 LISTADO DE PREGUNTAS:");
-                int i = 1;
-                for (PreguntaCombo pc : combo.getPreguntas()) {
-                    System.out.println("  " + i + ". ID: " + pc.getPregunta().getId() + 
-                                     " | TEXTO: " + pc.getPregunta().getPregunta() + 
-                                     " | FACTOR: " + pc.getFactorMultiplicacion());
-                    i++;
-                }
-            } else {
-                System.out.println("❌ NO SE ENCONTRARON PREGUNTAS PARA EL COMBO " + id);
-            }
-            
-            System.out.println("==========================================");
-            return Optional.of(combo);
+            return Optional.of(resultados.get(0));
             
         } catch (Exception e) {
-            System.out.println("💥 ERROR EN obtenerConPreguntas: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error al obtener combo con preguntas: " + e.getMessage());
             return Optional.empty();
         }
     }
@@ -194,7 +168,7 @@ public class ComboService {
             
             // Marcar pregunta como usada
             int rowsUpdated = entityManager.createNativeQuery(
-                "UPDATE preguntas SET estado_disponibilidad = 'usada' WHERE id = ?")
+                "UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' WHERE id = ?")
                 .setParameter(1, preguntaId)
                 .executeUpdate();
             
@@ -204,18 +178,12 @@ public class ComboService {
     }
 
     public boolean quitarPregunta(Long comboId, Long preguntaId) {
-        System.out.println("==========================================");
-        System.out.println("QUITANDO PREGUNTA " + preguntaId + " DEL COMBO " + comboId);
-        System.out.println("==========================================");
-        
         Optional<Combo> comboOpt = comboRepository.findById(comboId);
         Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
         
         if (comboOpt.isPresent() && preguntaOpt.isPresent()) {
             Combo combo = comboOpt.get();
             Pregunta pregunta = preguntaOpt.get();
-            
-            System.out.println("✅ COMBO Y PREGUNTA ENCONTRADOS");
             
             // Eliminar la relación directamente con consulta nativa
             int relacionesEliminadas = entityManager.createNativeQuery(
@@ -224,40 +192,27 @@ public class ComboService {
                 .setParameter(2, preguntaId)
                 .executeUpdate();
             
-            System.out.println("🗑️ RELACIONES ELIMINADAS: " + relacionesEliminadas);
-            
             // Liberar la pregunta solo si no está en otros combos
             long otrosCombos = entityManager.createQuery(
                 "SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId", Long.class)
                 .setParameter("preguntaId", preguntaId)
                 .getSingleResult();
                 
-            System.out.println("🔍 PREGUNTA " + preguntaId + " ESTÁ EN " + otrosCombos + " OTROS COMBOS");
-            
             if (otrosCombos == 0 && pregunta.getEstadoDisponibilidad() == Pregunta.EstadoDisponibilidad.usada) {
-                int preguntasLiberadas = entityManager.createNativeQuery(
-                    "UPDATE preguntas SET estado_disponibilidad = 'liberada' WHERE id = ?")
+                entityManager.createNativeQuery(
+                    "UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?")
                     .setParameter(1, preguntaId)
                     .executeUpdate();
-                System.out.println("🔓 PREGUNTA LIBERADA: " + preguntasLiberadas);
-            } else {
-                System.out.println("ℹ️ PREGUNTA NO LIBERADA (está en otros combos o ya liberada)");
             }
             
-            System.out.println("==========================================");
             return relacionesEliminadas > 0;
         }
-        System.out.println("❌ COMBO O PREGUNTA NO ENCONTRADOS");
-        System.out.println("==========================================");
         return false;
     }
 
     @Transactional
     public boolean actualizarFactorPregunta(Long comboId, Long preguntaId, String factorMultiplicacion) {
         try {
-            System.out.println("[ACTUALIZAR FACTOR] Iniciando actualización de factor para combo " + comboId + 
-                              ", pregunta " + preguntaId + ", nuevo factor: " + factorMultiplicacion);
-            
             // Validar que el factor no esté vacío
             if (factorMultiplicacion == null || factorMultiplicacion.trim().isEmpty()) {
                 factorMultiplicacion = "X"; // Valor por defecto
@@ -266,14 +221,12 @@ public class ComboService {
             // Verificar que el combo existe
             Optional<Combo> comboOpt = comboRepository.findById(comboId);
             if (comboOpt.isEmpty()) {
-                System.out.println("[ACTUALIZAR FACTOR] Combo no encontrado: " + comboId);
                 return false;
             }
             
             // Verificar que la pregunta existe
             Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
             if (preguntaOpt.isEmpty()) {
-                System.out.println("[ACTUALIZAR FACTOR] Pregunta no encontrada: " + preguntaId);
                 return false;
             }
             
@@ -285,15 +238,12 @@ public class ComboService {
             // Buscar la relación
             Optional<PreguntaCombo> pcOpt = preguntaComboRepository.findById(id);
             if (pcOpt.isEmpty()) {
-                System.out.println("[ACTUALIZAR FACTOR] Relación pregunta-combo no encontrada");
                 return false;
             }
             
             PreguntaCombo preguntaCombo = pcOpt.get();
             
             // Actualizar el factor
-            System.out.println("[ACTUALIZAR FACTOR] Actualizando factor de " + 
-                               preguntaCombo.getFactorMultiplicacion() + " a " + factorMultiplicacion);
             preguntaCombo.setFactorMultiplicacion(factorMultiplicacion);
             
             // Guardar la relación actualizada
@@ -302,11 +252,9 @@ public class ComboService {
             // Forzar flush para asegurar que se guarde en la base de datos
             entityManager.flush();
             
-            System.out.println("[ACTUALIZAR FACTOR] Factor actualizado correctamente");
             return true;
         } catch (Exception e) {
-            System.out.println("[ACTUALIZAR FACTOR] Error: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error al actualizar factor: " + e.getMessage());
             return false;
         }
     }
@@ -364,17 +312,8 @@ public class ComboService {
     }
 
     public int limpiarPreguntasInvalidas(Long comboId) {
-        System.out.println("==========================================");
-        System.out.println("LIMPIANDO PREGUNTAS INVÁLIDAS DEL COMBO " + comboId);
-        System.out.println("==========================================");
-        
         // Ya no eliminamos preguntas basadas en el factor, ya que ahora es un campo de texto libre
-        int preguntasEliminadas = 0;
-        
-        System.out.println("✅ ELIMINADAS " + preguntasEliminadas + " PREGUNTAS CON FACTORES INVÁLIDOS");
-        System.out.println("==========================================");
-        
-        return preguntasEliminadas;
+        return 0;
     }
 
     /**
@@ -406,10 +345,6 @@ public class ComboService {
             
             // Asignación simplificada basada en la posición
             if (factor != null) {
-                System.out.println("[DEBUG_SLOT] Analizando pregunta ID=" + pc.getPregunta().getId() + 
-                                  ", texto='" + pc.getPregunta().getPregunta() + "'" +
-                                  ", factor='" + factor + "'");
-                
                 // Determinamos el slot según la posición en la lista
                 int preguntaIndex = 0;
                 for (PreguntaCombo pcTemp : c.getPreguntas()) {
@@ -422,35 +357,9 @@ public class ComboService {
                 // Asignamos slot según su posición (cíclica entre PM1, PM2, PM3)
                 int slotIndex = preguntaIndex % 3;
                 slot = "PM" + (slotIndex + 1);
-                
-                System.out.println("[SLOT_ASIGNADO] Pregunta " + pc.getPregunta().getId() + 
-                                  " con factor '" + factor + "' asignada al slot " + slot);
             }
             
             ((Map<String, Object>) pcdto).put("slot", slot);
-            
-            // Verificar si el slot ya está ocupado (diagnóstico de problema)
-            if (mapPorSlot.containsKey(slot)) {
-                System.out.println("[ALERTA_SLOT_DUPLICADO] El slot " + slot + " ya está ocupado con otra pregunta!");
-                Object preguntaExistente = mapPorSlot.get(slot);
-                Pregunta pExistente = null;
-                String factorExistente = null;
-                if (preguntaExistente instanceof Map) {
-                    Map<String, Object> mapExistente = (Map<String, Object>)preguntaExistente;
-                    if (mapExistente.get("pregunta") instanceof Map) {
-                        Map<String, Object> preguntaMap = (Map<String, Object>)mapExistente.get("pregunta");
-                        System.out.println("  - Pregunta ya asignada: ID=" + preguntaMap.get("id") + 
-                                         ", texto='" + preguntaMap.get("pregunta") + "'");
-                    }
-                    factorExistente = mapExistente.get("factorMultiplicacion") != null ? 
-                                    mapExistente.get("factorMultiplicacion").toString() : "null";
-                    System.out.println("  - Factor de pregunta existente: " + factorExistente);
-                }
-                System.out.println("  - Nueva pregunta: ID=" + pc.getPregunta().getId() + 
-                                 ", texto='" + pc.getPregunta().getPregunta() + "'" +
-                                 ", factor='" + factor + "'");
-            }
-            
             mapPorSlot.put(slot, pcdto);
         }
         
@@ -459,13 +368,8 @@ public class ComboService {
         boolean pm2Asignado = mapPorSlot.containsKey("PM2");
         boolean pm3Asignado = mapPorSlot.containsKey("PM3");
         
-        System.out.println("[DEBUG_SLOTS] Estado de asignación: PM1=" + pm1Asignado + 
-                         ", PM2=" + pm2Asignado + ", PM3=" + pm3Asignado);
-        
         // Reorganizar slots si es necesario (asegurar un slot por pregunta)
         if (c.getPreguntas().size() > 0 && (!pm1Asignado || !pm2Asignado || !pm3Asignado)) {
-            System.out.println("[REORGANIZAR_SLOTS] Se detectaron slots vacíos, reorganizando preguntas");
-            
             // Crear mapa temporal con todas las preguntas
             java.util.List<Map<String, Object>> todasLasPreguntas = new java.util.ArrayList<>();
             for (PreguntaCombo pc : c.getPreguntas()) {
@@ -499,10 +403,6 @@ public class ComboService {
                 ((Map<String, Object>) pcdto).put("slot", slots.get(i));
                 
                 mapPorSlot.put(slots.get(i), pcdto);
-                
-                System.out.println("[REORGANIZAR_SLOTS] Pregunta ID=" + pc.getPregunta().getId() + 
-                                 " con factor '" + pc.getFactorMultiplicacion() + 
-                                 "' reasignada al slot " + slots.get(i));
             }
         }
         
@@ -511,7 +411,6 @@ public class ComboService {
         for (String slot : java.util.Arrays.asList("PM1", "PM2", "PM3")) {
             if (mapPorSlot.containsKey(slot)) {
                 preguntasDTO.add(mapPorSlot.get(slot));
-                System.out.println("[SLOTS_FINALES] " + slot + " ocupado");
             } else {
                 // Slot vacío
                 Object vacio = new java.util.HashMap<>();
@@ -519,7 +418,6 @@ public class ComboService {
                 ((Map<String, Object>) vacio).put("pregunta", null);
                 ((Map<String, Object>) vacio).put("factorMultiplicacion", null);
                 preguntasDTO.add(vacio);
-                System.out.println("[SLOTS_FINALES] " + slot + " vacío");
             }
         }
         dto.put("preguntas", preguntasDTO);
@@ -617,7 +515,7 @@ public class ComboService {
             .orElse("");
             
         int preguntasReservadas = entityManager.createNativeQuery(
-            "UPDATE preguntas SET estado_disponibilidad = 'usada' " +
+            "UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' " +
             "WHERE id IN (" + preguntaIdsStr + ") " +
             "AND estado_disponibilidad IN ('disponible', 'liberada') " +
             "AND estado = 'aprobada' " +
@@ -647,7 +545,7 @@ public class ComboService {
             .orElse("");
             
         entityManager.createNativeQuery(
-            "UPDATE preguntas SET estado_disponibilidad = 'liberada' " +
+            "UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' " +
             "WHERE id IN (" + preguntaIdsStr + ") AND estado_disponibilidad = 'usada'"
         ).executeUpdate();
     }

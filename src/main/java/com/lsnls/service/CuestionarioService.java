@@ -61,11 +61,6 @@ public class CuestionarioService {
 
     public Optional<Cuestionario> obtenerConPreguntas(Long id) {
         try {
-            System.out.println("==========================================");
-            System.out.println("CARGANDO CUESTIONARIO " + id + " CON PREGUNTAS");
-            System.out.println("==========================================");
-            
-            // Usar consulta JPQL que carga todo de una vez
             @SuppressWarnings("unchecked")
             List<Cuestionario> resultados = entityManager.createQuery(
                 "SELECT DISTINCT c FROM Cuestionario c " +
@@ -76,34 +71,13 @@ public class CuestionarioService {
             ).setParameter("cuestionarioId", id).getResultList();
             
             if (resultados.isEmpty()) {
-                System.out.println("❌ CUESTIONARIO " + id + " NO ENCONTRADO");
                 return Optional.empty();
             }
             
-            Cuestionario cuestionario = resultados.get(0);
-            System.out.println("✅ CUESTIONARIO " + id + " ENCONTRADO");
-            System.out.println("📊 PREGUNTAS CARGADAS: " + cuestionario.getPreguntas().size());
-            
-            // Mostrar detalles de las preguntas
-            if (!cuestionario.getPreguntas().isEmpty()) {
-                System.out.println("📋 LISTADO DE PREGUNTAS:");
-                int i = 1;
-                for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {
-                    System.out.println("  " + i + ". ID: " + pc.getPregunta().getId() + 
-                                     " | TEXTO: " + pc.getPregunta().getPregunta() + 
-                                     " | FACTOR: " + pc.getFactorMultiplicacion());
-                    i++;
-                }
-            } else {
-                System.out.println("❌ NO SE ENCONTRARON PREGUNTAS PARA EL CUESTIONARIO " + id);
-            }
-            
-            System.out.println("==========================================");
-            return Optional.of(cuestionario);
+            return Optional.of(resultados.get(0));
             
         } catch (Exception e) {
-            System.out.println("💥 ERROR EN obtenerConPreguntas: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error al obtener cuestionario con preguntas: " + e.getMessage());
             return Optional.empty();
         }
     }
@@ -185,43 +159,28 @@ public class CuestionarioService {
     }
 
     public boolean agregarPregunta(Long cuestionarioId, Long preguntaId, Integer factorMultiplicacion) {
-        System.out.println("==========================================");
-        System.out.println("AGREGANDO PREGUNTA " + preguntaId + " AL CUESTIONARIO " + cuestionarioId);
-        System.out.println("Factor multiplicación: " + factorMultiplicacion);
-        System.out.println("==========================================");
-        
         Optional<Cuestionario> cuestionarioOpt = cuestionarioRepository.findById(cuestionarioId);
         Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
         
         if (cuestionarioOpt.isEmpty()) {
-            System.out.println("❌ CUESTIONARIO NO ENCONTRADO: " + cuestionarioId);
             throw new RuntimeException("Cuestionario no encontrado: " + cuestionarioId);
         }
         
         if (preguntaOpt.isEmpty()) {
-            System.out.println("❌ PREGUNTA NO ENCONTRADA: " + preguntaId);
             throw new RuntimeException("Pregunta no encontrada: " + preguntaId);
         }
         
         Cuestionario cuestionario = cuestionarioOpt.get();
         Pregunta pregunta = preguntaOpt.get();
         
-        System.out.println("✅ CUESTIONARIO Y PREGUNTA ENCONTRADOS");
-        System.out.println("📋 Pregunta: " + pregunta.getPregunta());
-        System.out.println("📋 Nivel: " + pregunta.getNivel());
-        System.out.println("📋 Estado: " + pregunta.getEstado());
-        System.out.println("📋 Estado disponibilidad: " + pregunta.getEstadoDisponibilidad());
-        
         // Verificar que la pregunta esté aprobada
         if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
-            System.out.println("❌ PREGUNTA NO APROBADA - Estado actual: " + pregunta.getEstado());
             throw new RuntimeException("La pregunta debe estar aprobada para ser agregada a un cuestionario");
         }
         
         // Verificar que la pregunta esté disponible o liberada (puede reutilizarse)
         if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
             pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
-            System.out.println("❌ PREGUNTA NO DISPONIBLE - Estado disponibilidad: " + pregunta.getEstadoDisponibilidad());
             throw new RuntimeException("La pregunta no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
         }
         
@@ -231,10 +190,8 @@ public class CuestionarioService {
         checkId.setCuestionarioId(cuestionarioId);
         
         boolean yaExiste = preguntaCuestionarioRepository.existsById(checkId);
-        System.out.println("🔍 ¿Ya existe en cuestionario? " + yaExiste);
         
         if (yaExiste) {
-            System.out.println("❌ PREGUNTA YA AGREGADA AL CUESTIONARIO");
             throw new RuntimeException("La pregunta ya está agregada a este cuestionario");
         }
         
@@ -250,35 +207,24 @@ public class CuestionarioService {
             pc.setCuestionario(cuestionario);
             pc.setFactorMultiplicacion(factorMultiplicacion != null ? factorMultiplicacion : 1);
             
-            System.out.println("💾 Guardando relación pregunta-cuestionario...");
             // Guardar la relación en la base de datos
             preguntaCuestionarioRepository.save(pc);
-            System.out.println("✅ Relación guardada exitosamente");
             
             // Marcar pregunta como usada usando consulta SQL directa para evitar validaciones
-            System.out.println("🔄 Actualizando estado de disponibilidad a 'usada'...");
-            int rowsUpdated = entityManager.createNativeQuery(
-                "UPDATE preguntas SET estado_disponibilidad = 'usada' WHERE id = ?")
+            entityManager.createNativeQuery(
+                "UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' WHERE id = ?")
                 .setParameter(1, preguntaId)
                 .executeUpdate();
-            System.out.println("✅ Filas actualizadas: " + rowsUpdated);
             
-            System.out.println("🎉 PREGUNTA AGREGADA EXITOSAMENTE");
-            System.out.println("==========================================");
             return true;
             
         } catch (Exception e) {
-            System.out.println("❌ ERROR AL GUARDAR: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error al agregar pregunta: " + e.getMessage());
             throw new RuntimeException("Error al agregar pregunta: " + e.getMessage());
         }
     }
 
     public boolean quitarPregunta(Long cuestionarioId, Long preguntaId) {
-        System.out.println("==========================================");
-        System.out.println("QUITANDO PREGUNTA " + preguntaId + " DEL CUESTIONARIO " + cuestionarioId);
-        System.out.println("==========================================");
-        
         Optional<Cuestionario> cuestionarioOpt = cuestionarioRepository.findById(cuestionarioId);
         Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
         
@@ -286,20 +232,14 @@ public class CuestionarioService {
             Cuestionario cuestionario = cuestionarioOpt.get();
             Pregunta pregunta = preguntaOpt.get();
             
-            System.out.println("✅ CUESTIONARIO Y PREGUNTA ENCONTRADOS");
-            System.out.println("📋 Pregunta: " + pregunta.getPregunta());
-            System.out.println("📋 Nivel: " + pregunta.getNivel());
-            
             // Verificar si existe la relación antes de eliminar
             PreguntaCuestionario.PreguntaCuestionarioId checkId = new PreguntaCuestionario.PreguntaCuestionarioId();
             checkId.setPreguntaId(preguntaId);
             checkId.setCuestionarioId(cuestionarioId);
             
             boolean existeRelacion = preguntaCuestionarioRepository.existsById(checkId);
-            System.out.println("🔍 ¿Existe relación? " + existeRelacion);
             
             if (!existeRelacion) {
-                System.out.println("❌ NO EXISTE LA RELACIÓN PREGUNTA-CUESTIONARIO");
                 return false;
             }
             
@@ -310,24 +250,17 @@ public class CuestionarioService {
                 .setParameter(2, preguntaId)
                 .executeUpdate();
             
-            System.out.println("🗑️ Filas eliminadas de cuestionarios_preguntas: " + filasEliminadas);
-            
             // Liberar la pregunta usando consulta SQL directa
             if (pregunta.getEstadoDisponibilidad() == Pregunta.EstadoDisponibilidad.usada) {
-                int filasActualizadas = entityManager.createNativeQuery(
-                    "UPDATE preguntas SET estado_disponibilidad = 'liberada' WHERE id = ?")
+                entityManager.createNativeQuery(
+                    "UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?")
                     .setParameter(1, preguntaId)
                     .executeUpdate();
-                System.out.println("🔄 Filas actualizadas en preguntas: " + filasActualizadas);
             }
             
-            System.out.println("✅ PREGUNTA QUITADA EXITOSAMENTE");
-            System.out.println("==========================================");
             return filasEliminadas > 0;
         }
         
-        System.out.println("❌ CUESTIONARIO O PREGUNTA NO ENCONTRADOS");
-        System.out.println("==========================================");
         return false;
     }
 
@@ -434,53 +367,43 @@ public class CuestionarioService {
      */
     @Transactional
     public boolean verificarYReservarPreguntasAtomico(List<Long> preguntaIds) {
-        System.out.println("🔍 [SERVICIO] Verificando y reservando preguntas: " + preguntaIds);
-        
         // Verificar que la lista no sea nula
         if (preguntaIds == null || preguntaIds.isEmpty()) {
-            System.out.println("⚠️ [SERVICIO] Lista de preguntas vacía o nula");
             return true; // No hay nada que reservar
         }
         
         // PASO 1: Verificar que todas las preguntas existen y están en estado correcto
-        // Usar una sola query para obtener todas las preguntas
         List<Pregunta> preguntas = preguntaRepository.findAllById(preguntaIds);
         
         if (preguntas.size() != preguntaIds.size()) {
-            System.out.println("❌ [SERVICIO] No se encontraron todas las preguntas. Solicitadas: " + preguntaIds.size() + ", Encontradas: " + preguntas.size());
             throw new IllegalArgumentException("Una o más preguntas no fueron encontradas");
         }
         
         // Verificar el estado de cada pregunta
         for (Pregunta pregunta : preguntas) {
             if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
-                System.out.println("❌ [SERVICIO] Pregunta no aprobada: " + pregunta.getId() + " - Estado: " + pregunta.getEstado());
                 throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está aprobada (estado: " + pregunta.getEstado() + ")");
             }
             
             if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
-                System.out.println("❌ [SERVICIO] Pregunta no disponible: " + pregunta.getId() + " - Estado: " + pregunta.getEstadoDisponibilidad());
                 throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
             }
             
             // Verificar que sea pregunta de nivel 1-4 para cuestionarios
             if (pregunta.getNivel().name().startsWith("_5")) {
-                System.out.println("❌ [SERVICIO] Pregunta de nivel incorrecto: " + pregunta.getId() + " - Nivel: " + pregunta.getNivel());
                 throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " es de nivel 5 y debe ir en combos, no en cuestionarios");
             }
         }
         
         // PASO 2: Reservar todas las preguntas ATÓMICAMENTE con una sola query
-        // Usar query nativa para update condicional en batch
         String preguntaIdsStr = preguntaIds.stream()
             .map(String::valueOf)
             .reduce((a, b) -> a + "," + b)
             .orElse("");
             
-        System.out.println("🔄 [SERVICIO] Ejecutando update para reservar preguntas: " + preguntaIdsStr);
         int preguntasReservadas = entityManager.createNativeQuery(
-            "UPDATE preguntas SET estado_disponibilidad = 'usada' " +
+            "UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' " +
             "WHERE id IN (" + preguntaIdsStr + ") " +
             "AND estado_disponibilidad IN ('disponible', 'liberada') " +
             "AND estado = 'aprobada'"
@@ -488,13 +411,11 @@ public class CuestionarioService {
         
         // PASO 3: Verificar que se reservaron TODAS las preguntas
         if (preguntasReservadas != preguntaIds.size()) {
-            System.out.println("❌ [SERVICIO] No se pudieron reservar todas las preguntas. Solicitadas: " + preguntaIds.size() + ", Reservadas: " + preguntasReservadas);
             // Rollback - alguna pregunta fue tomada por otro usuario
             throw new IllegalStateException("Conflicto de concurrencia: " + (preguntaIds.size() - preguntasReservadas) + 
                 " pregunta(s) fueron reservadas por otro usuario. Por favor, verifica la disponibilidad e intenta nuevamente.");
         }
         
-        System.out.println("✅ [SERVICIO] Preguntas reservadas correctamente: " + preguntasReservadas);
         return true;
     }
 
@@ -509,7 +430,7 @@ public class CuestionarioService {
             .orElse("");
             
         entityManager.createNativeQuery(
-            "UPDATE preguntas SET estado_disponibilidad = 'liberada' " +
+            "UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' " +
             "WHERE id IN (" + preguntaIdsStr + ") AND estado_disponibilidad = 'usada'"
         ).executeUpdate();
     }
@@ -564,30 +485,20 @@ public class CuestionarioService {
     }
 
     public Cuestionario actualizarDesdeDTO(Long id, CrearCuestionarioDTO dto) {
-        System.out.println("🔍 [SERVICIO] Inicio actualizarDesdeDTO - ID: " + id);
-        System.out.println("🔍 [SERVICIO] DTO recibido: " + dto);
-        System.out.println("🔍 [SERVICIO] Preguntas recibidas: " + (dto.getPreguntasNormales() != null ? dto.getPreguntasNormales().size() : 0));
-        
         Optional<Cuestionario> optCuestionario = cuestionarioRepository.findById(id);
         if (optCuestionario.isEmpty()) {
-            System.out.println("❌ [SERVICIO] Cuestionario no encontrado: " + id);
             throw new IllegalArgumentException("Cuestionario no encontrado");
         }
         Cuestionario cuestionario = optCuestionario.get();
-        System.out.println("✅ [SERVICIO] Cuestionario encontrado: " + cuestionario.getId() + " - Estado: " + cuestionario.getEstado());
         
         // PASO 1: VERIFICACIÓN Y RESERVA ATÓMICA de las nuevas preguntas
         try {
-            System.out.println("🔄 [SERVICIO] Verificando y reservando preguntas nuevas...");
             verificarYReservarPreguntasAtomico(dto.getPreguntasNormales());
-            System.out.println("✅ [SERVICIO] Preguntas nuevas verificadas y reservadas");
         } catch (IllegalStateException e) {
             // Error de concurrencia - mensaje específico
-            System.out.println("❌ [SERVICIO] Error de concurrencia: " + e.getMessage());
             throw new IllegalArgumentException("Error de concurrencia al reservar preguntas: " + e.getMessage());
         } catch (IllegalArgumentException e) {
             // Error de validación - reenviar tal como está
-            System.out.println("❌ [SERVICIO] Error de validación: " + e.getMessage());
             throw e;
         }
 
@@ -599,18 +510,14 @@ public class CuestionarioService {
             preguntaCuestionarioRepository.delete(pc);
         }
         cuestionario.getPreguntas().clear();
-        System.out.println("🔄 [SERVICIO] Preguntas actuales liberadas: " + preguntasALiberar.size());
         
         // Liberar preguntas anteriores atómicamente
         if (!preguntasALiberar.isEmpty()) {
-            System.out.println("🔄 [SERVICIO] Liberando preguntas anteriores: " + preguntasALiberar);
             liberarPreguntasAtomico(preguntasALiberar);
-            System.out.println("✅ [SERVICIO] Preguntas anteriores liberadas");
         }
 
         // PASO 3: Crear las nuevas relaciones pregunta-cuestionario
         try {
-            System.out.println("🔄 [SERVICIO] Creando nuevas relaciones pregunta-cuestionario...");
             for (Long idPregunta : dto.getPreguntasNormales()) {
                 Pregunta pregunta = preguntaRepository.findById(idPregunta)
                     .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + idPregunta));
@@ -624,7 +531,6 @@ public class CuestionarioService {
                 pc.setCuestionario(cuestionario);
                 pc.setFactorMultiplicacion(1);
                 preguntaCuestionarioRepository.save(pc);
-                System.out.println("✅ [SERVICIO] Relación creada para pregunta: " + idPregunta);
                 // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasAtomico()
             }
             
@@ -634,12 +540,9 @@ public class CuestionarioService {
             cuestionarioRepository.save(cuestionario);
             
             Cuestionario resultado = cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);
-            System.out.println("✅ [SERVICIO] Cuestionario actualizado: " + resultado.getId() + " - Preguntas: " + 
-                (resultado.getPreguntas() != null ? resultado.getPreguntas().size() : 0));
             return resultado;
         } catch (Exception e) {
             // En caso de error, liberar las preguntas nuevas reservadas
-            System.out.println("❌ [SERVICIO] Error al actualizar relaciones: " + e.getMessage());
             liberarPreguntasAtomico(dto.getPreguntasNormales());
             throw new RuntimeException("Error al actualizar relaciones pregunta-cuestionario: " + e.getMessage());
         }
@@ -736,18 +639,12 @@ public class CuestionarioService {
     }
 
     public boolean quitarPreguntaPorSlot(Long cuestionarioId, String slot) {
-        System.out.println("==========================================");
-        System.out.println("QUITANDO PREGUNTA POR SLOT: " + slot + " DEL CUESTIONARIO " + cuestionarioId);
-        System.out.println("==========================================");
-        
         Optional<Cuestionario> cuestionarioOpt = obtenerConPreguntas(cuestionarioId);
         if (cuestionarioOpt.isEmpty()) {
-            System.out.println("❌ CUESTIONARIO NO ENCONTRADO");
             return false;
         }
         
         Cuestionario cuestionario = cuestionarioOpt.get();
-        System.out.println("✅ CUESTIONARIO ENCONTRADO CON " + cuestionario.getPreguntas().size() + " PREGUNTAS");
         
         // Buscar la pregunta en el slot especificado
         for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {
@@ -771,19 +668,12 @@ public class CuestionarioService {
                     break;
             }
             
-            System.out.println("🔍 Pregunta ID " + p.getId() + " - Nivel: " + nivelPregunta + " - Slot: " + slotPregunta + " - Buscando: " + slot);
-            
             if (slot.equals(slotPregunta)) {
-                System.out.println("✅ PREGUNTA ENCONTRADA EN SLOT " + slot + " - ID: " + p.getId());
                 // Encontramos la pregunta en el slot, la eliminamos
-                boolean resultado = quitarPregunta(cuestionarioId, p.getId());
-                System.out.println("🔄 Resultado de quitarPregunta: " + resultado);
-                return resultado;
+                return quitarPregunta(cuestionarioId, p.getId());
             }
         }
         
-        System.out.println("❌ NO SE ENCONTRÓ PREGUNTA EN EL SLOT " + slot);
-        System.out.println("==========================================");
         return false; // No se encontró pregunta en ese slot
     }
 

@@ -316,16 +316,26 @@ async function buscarPreguntasModal(page = 0) {
     if (tematica) url += `&tematica=${encodeURIComponent(tematica)}`;
     url += `&page=${page}&size=20`;
     
+    console.log('[FRONT] URL de búsqueda:', url);
+    console.log('[FRONT] Contexto:', selectorPreguntaContext);
+    
     try {
         let preguntas = [];
         let totalPages = 1;
         
         // Ejecutar la búsqueda siempre, no solo para niveles normales
         const resp = await fetch(url, { headers: authManager.getAuthHeaders() });
+        console.log('[FRONT] Respuesta del servidor:', resp.status, resp.statusText);
+        
         if (!resp.ok) throw new Error('Error al buscar preguntas');
         const data = await resp.json();
+        console.log('[FRONT] Datos recibidos:', data);
+        
         preguntas = data.content || [];
         totalPages = data.totalPages || 1;
+        
+        console.log('[FRONT] Preguntas encontradas:', preguntas.length);
+        console.log('[FRONT] Total páginas:', totalPages);
         
         renderPreguntasModal(preguntas, page, totalPages);
     } catch (e) {

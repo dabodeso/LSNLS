@@ -1,0 +1,54 @@
+/* Estilos específicos para el botón de paginación */
+#paginacion-preguntas {
+    position: relative;
+    z-index: 1000;
+    pointer-events: auto;
+}
+
+#paginacion-preguntas button,
+#btn-cargar-mas-preguntas {
+    position: relative;
+    z-index: 1001;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    display: inline-block !important;
+    min-width: 150px;
+    min-height: 38px;
+}
+
+#paginacion-preguntas button:disabled,
+#btn-cargar-mas-preguntas:disabled {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+}
+
+#paginacion-preguntas button:not(:disabled):hover,
+#btn-cargar-mas-preguntas:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+#paginacion-preguntas button:not(:disabled):active,
+#btn-cargar-mas-preguntas:not(:disabled):active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Asegurar que no haya elementos superpuestos */
+#paginacion-preguntas * {
+    pointer-events: auto;
+}
+
+/* Debug: mostrar bordes para identificar problemas de layout */
+#paginacion-preguntas {
+    border: 1px solid transparent;
+}
+
+#paginacion-preguntas button {
+    border: 1px solid transparent;
+}

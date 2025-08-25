@@ -46,14 +46,36 @@ public class PreguntaController {
 
     @GetMapping
     @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<List<PreguntaDTO>> obtenerTodas() {
+    public ResponseEntity<Page<PreguntaDTO>> obtenerPaginadas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
         try {
-            List<PreguntaDTO> preguntas = preguntaService.obtenerTodasDTO();
-            log.info("[PREGUNTAS] Total encontradas: {}", preguntas.size());
-            // Eliminar el log de cada pregunta individual para reducir ruido
+            Pageable pageable = PageRequest.of(page, size, 
+                sortDir.equalsIgnoreCase("desc") ? 
+                org.springframework.data.domain.Sort.by(sortBy).descending() :
+                org.springframework.data.domain.Sort.by(sortBy).ascending());
+            
+            Page<PreguntaDTO> preguntas = preguntaService.obtenerPaginadasDTO(pageable);
+            
+            // Log para verificar los IDs que se están enviando
+            if (preguntas.getContent().size() > 0) {
+                log.info("[PREGUNTAS] IDs en esta página: {} - {}", 
+                    preguntas.getContent().get(0).getId(), 
+                    preguntas.getContent().get(preguntas.getContent().size() - 1).getId());
+                
+                // Log de muestra de la primera pregunta para verificar codificación
+                PreguntaDTO primera = preguntas.getContent().get(0);
+                log.info("[PREGUNTAS] Muestra primera pregunta - ID: {}, Pregunta: '{}', Autor: '{}'", 
+                    primera.getId(), primera.getPregunta(), primera.getAutor());
+            }
+            
+            log.info("[PREGUNTAS] Página {} de {}, total elementos: {}", 
+                page, preguntas.getTotalPages(), preguntas.getTotalElements());
             return ResponseEntity.ok(preguntas);
         } catch (Exception e) {
-            log.error("[ERROR] Al serializar preguntas: {}", e.getMessage(), e);
+            log.error("[ERROR] Al obtener preguntas paginadas: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -65,6 +87,25 @@ public class PreguntaController {
             Page<Pregunta> preguntas = preguntaService.obtenerPaginadas(pageable);
             return ResponseEntity.ok(preguntas);
         } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/cargar-mas")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<Page<PreguntaDTO>> cargarMasPreguntas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, 
+                org.springframework.data.domain.Sort.by("id").descending());
+            
+            Page<PreguntaDTO> preguntas = preguntaService.obtenerPaginadasDTO(pageable);
+            log.info("[CARGAR MÁS] Página {} de {}, elementos en esta página: {}", 
+                page, preguntas.getTotalPages(), preguntas.getContent().size());
+            return ResponseEntity.ok(preguntas);
+        } catch (Exception e) {
+            log.error("[ERROR] Al cargar más preguntas: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -567,7 +608,7 @@ public class PreguntaController {
 
     @GetMapping("/buscar")
     @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<Page<Pregunta>> buscarPreguntas(
+    public ResponseEntity<Page<PreguntaDTO>> buscarPreguntas(
             @RequestParam(required = false) String nivel,
             @RequestParam(required = false) String factor,
             @RequestParam(required = false) String id,
@@ -580,26 +621,47 @@ public class PreguntaController {
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<Pregunta> preguntas = preguntaService.buscarPreguntasPaginadas(nivel, factor, id, pregunta, respuesta, tematica, pageable);
-            return ResponseEntity.ok(preguntas);
+            
+            // Log para debug de preguntas problemáticas
+            if (preguntas.getContent().size() > 0) {
+                log.info("[BUSCAR] Encontradas {} preguntas", preguntas.getContent().size());
+                // Log de las primeras 3 preguntas para verificar codificación
+                for (int i = 0; i < Math.min(3, preguntas.getContent().size()); i++) {
+                    Pregunta p = preguntas.getContent().get(i);
+                    log.info("[BUSCAR] Pregunta {} - ID: {}, Pregunta: '{}', Respuesta: '{}'", 
+                        i+1, p.getId(), p.getPregunta(), p.getRespuesta());
+                }
+            }
+            
+            // Convertir a DTOs
+            Page<PreguntaDTO> preguntasDTO = preguntas.map(p -> preguntaService.mapPreguntaToDTO(p));
+            
+            return ResponseEntity.ok(preguntasDTO);
         } catch (Exception e) {
+            log.error("Error al buscar preguntas: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
     }
 
     @GetMapping("/filtrar")
     @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<List<PreguntaDTO>> filtrarPreguntasCompleto(
+    public ResponseEntity<Page<PreguntaDTO>> filtrarPreguntasCompleto(
             @RequestParam(required = false) String nivel,
             @RequestParam(required = false) String factor,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String tematica,
             @RequestParam(required = false) String subtema,
             @RequestParam(required = false) String pregunta,
-            @RequestParam(required = false) String respuesta
+            @RequestParam(required = false) String respuesta,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size
     ) {
         try {
-            List<PreguntaDTO> preguntas = preguntaService.filtrarPreguntasCompleto(
-                nivel, factor, estado, tematica, subtema, pregunta, respuesta);
+            Pageable pageable = PageRequest.of(page, size, 
+                org.springframework.data.domain.Sort.by("id").descending());
+            
+            Page<PreguntaDTO> preguntas = preguntaService.filtrarPreguntasCompletoPaginado(
+                nivel, factor, estado, tematica, subtema, pregunta, respuesta, pageable);
             return ResponseEntity.ok(preguntas);
         } catch (Exception e) {
             log.error("Error al filtrar preguntas: {}", e.getMessage(), e);
@@ -633,4 +695,61 @@ public class PreguntaController {
             return ResponseEntity.internalServerError().body("Error al buscar apariciones: " + e.getMessage());
         }
     }
+
+    @GetMapping("/debug/niveles")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<?> debugNiveles() {
+        try {
+            Map<String, Object> resultado = new HashMap<>();
+            resultado.put("niveles", preguntaService.obtenerEstadisticasNiveles());
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            log.error("Error al obtener estadísticas de niveles: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/debug/pregunta/{id}")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<?> debugPregunta(@PathVariable Long id) {
+        try {
+            Optional<Pregunta> preguntaOpt = preguntaService.obtenerPorId(id);
+            if (preguntaOpt.isPresent()) {
+                Pregunta pregunta = preguntaOpt.get();
+                Map<String, Object> resultado = new HashMap<>();
+                resultado.put("id", pregunta.getId());
+                resultado.put("estado", pregunta.getEstado());
+                resultado.put("estadoDisponibilidad", pregunta.getEstadoDisponibilidad());
+                resultado.put("nivel", pregunta.getNivel());
+                resultado.put("pregunta", pregunta.getPregunta());
+                resultado.put("respuesta", pregunta.getRespuesta());
+                
+                // Log detallado para debug de caracteres especiales
+                log.info("[DEBUG PREGUNTA {}] Pregunta original: '{}'", id, pregunta.getPregunta());
+                log.info("[DEBUG PREGUNTA {}] Respuesta original: '{}'", id, pregunta.getRespuesta());
+                
+                // Verificar codificación de caracteres
+                if (pregunta.getPregunta() != null) {
+                    byte[] preguntaBytes = pregunta.getPregunta().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                    log.info("[DEBUG PREGUNTA {}] Bytes de pregunta: {}", id, java.util.Arrays.toString(preguntaBytes));
+                }
+                
+                if (pregunta.getRespuesta() != null) {
+                    byte[] respuestaBytes = pregunta.getRespuesta().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                    log.info("[DEBUG PREGUNTA {}] Bytes de respuesta: {}", id, java.util.Arrays.toString(respuestaBytes));
+                }
+                
+                return ResponseEntity.ok(resultado);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            log.error("Error al obtener pregunta {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+        }
+    }
+
+
+
+
 } 
