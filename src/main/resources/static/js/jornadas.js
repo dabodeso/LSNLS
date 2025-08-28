@@ -1544,34 +1544,166 @@ const JornadasManager = {
         }
     },
 
-    // Función para reutilizar un combo
+    // Variables para el reciclaje de combos
+    comboReciclajeActual: null,
+    jornadaReciclajeActual: null,
+    preguntaSeleccionada: null,
+
+    // Función para reutilizar un combo (ahora abre el modal de reciclaje)
     async reutilizarCombo(comboId, jornadaId) {
         try {
-            console.log(`🔄 [JORNADAS] Reutilizando combo ${comboId} de jornada ${jornadaId}`);
+            console.log(`🔄 [JORNADAS] Abriendo modal de reciclaje para combo ${comboId} de jornada ${jornadaId}`);
+            
+            // Guardar información del combo actual
+            this.comboReciclajeActual = comboId;
+            this.jornadaReciclajeActual = jornadaId;
+            this.preguntaSeleccionada = null;
+            
+            // Mostrar el modal de reciclaje
+            const modal = new bootstrap.Modal(document.getElementById('modalReciclajeCombo'));
+            modal.show();
+            
+        } catch (error) {
+            console.error('❌ [JORNADAS] Error al abrir modal de reciclaje:', error);
+            Utils.showAlert('Error al abrir modal de reciclaje', 'error');
+        }
+    },
+
+    // Reciclar combo entero (marcar como liberado)
+    async reciclarComboEntero() {
+        try {
+            console.log(`🔄 [JORNADAS] Reciclando combo entero ${this.comboReciclajeActual} de jornada ${this.jornadaReciclajeActual}`);
             
             // Confirmar la acción
-            const confirmacion = confirm(`¿Estás seguro de que quieres reutilizar el combo ${comboId}?\n\nEsto hará que:\n- El combo vuelva a estar disponible\n- Se actualice el historial\n- Se pueda usar en otras jornadas`);
+            const confirmacion = confirm(`¿Estás seguro de que quieres reciclar el combo ${this.comboReciclajeActual} completo?\n\nEsto marcará el combo como liberado.`);
             
             if (!confirmacion) {
                 return;
             }
 
-            // Llamar al endpoint para reutilizar el combo
-            const response = await apiManager.post(`/api/jornadas/${jornadaId}/reutilizar-combo/${comboId}`);
+            // Llamar al endpoint para reciclar el combo entero
+            const response = await apiManager.post(`/api/jornadas/${this.jornadaReciclajeActual}/reciclar-combo-entero/${this.comboReciclajeActual}`);
             
             if (response.exito) {
-                Utils.showAlert(`Combo ${comboId} reutilizado correctamente. Ahora está disponible para usar en otras jornadas.`, 'success');
+                Utils.showAlert(`Combo ${this.comboReciclajeActual} reciclado completamente. Marcado como liberado.`, 'success');
                 
-                // Recargar datos y actualizar vista
+                // Cerrar modal y recargar datos
+                bootstrap.Modal.getInstance(document.getElementById('modalReciclajeCombo')).hide();
                 await this.cargarDatos();
                 this.mostrarJornadas();
             } else {
-                Utils.showAlert(`Error al reutilizar combo: ${response.mensaje}`, 'error');
+                Utils.showAlert(`Error al reciclar combo: ${response.mensaje}`, 'error');
             }
             
         } catch (error) {
-            console.error('❌ [JORNADAS] Error al reutilizar combo:', error);
-            Utils.showAlert('Error al reutilizar combo', 'error');
+            console.error('❌ [JORNADAS] Error al reciclar combo entero:', error);
+            Utils.showAlert('Error al reciclar combo entero', 'error');
+        }
+    },
+
+    // Reciclar combo parcial (seleccionar pregunta usada)
+    async reciclarComboParcial() {
+        try {
+            console.log(`🔄 [JORNADAS] Cargando preguntas del combo ${this.comboReciclajeActual} para reciclaje parcial`);
+            
+            // Obtener las preguntas del combo
+            const response = await apiManager.get(`/api/combos/${this.comboReciclajeActual}/preguntas`);
+            
+            if (response.exito && response.datos) {
+                const preguntas = response.datos;
+                
+                if (preguntas.length !== 3) {
+                    Utils.showAlert('El combo debe tener exactamente 3 preguntas para reciclaje parcial', 'error');
+                    return;
+                }
+                
+                // Mostrar las preguntas para selección
+                this.mostrarPreguntasParaSeleccion(preguntas);
+                
+            } else {
+                Utils.showAlert(`Error al cargar preguntas del combo: ${response.mensaje}`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('❌ [JORNADAS] Error al cargar preguntas del combo:', error);
+            Utils.showAlert('Error al cargar preguntas del combo', 'error');
+        }
+    },
+
+    // Mostrar preguntas para selección
+    mostrarPreguntasParaSeleccion(preguntas) {
+        // Ocultar paso 1 y mostrar paso 2
+        document.getElementById('pasoReciclaje').style.display = 'none';
+        document.getElementById('pasoSeleccionPregunta').style.display = 'block';
+        document.getElementById('btnConfirmarReciclaje').style.display = 'block';
+        
+        // Generar HTML para las preguntas
+        const container = document.getElementById('preguntasCombo');
+        let html = '';
+        
+        preguntas.forEach((pregunta, index) => {
+            html += `
+                <div class="col-md-4 mb-3">
+                    <div class="card pregunta-card" onclick="JornadasManager.seleccionarPregunta(${pregunta.id}, this)">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Pregunta ${index + 1}</h6>
+                            <p class="card-text">${pregunta.pregunta}</p>
+                            <div class="mt-2">
+                                <span class="badge bg-primary">${pregunta.nivel}</span>
+                                <span class="badge bg-secondary">${pregunta.tematica}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    },
+
+    // Seleccionar una pregunta
+    seleccionarPregunta(preguntaId, elemento) {
+        // Remover selección anterior
+        document.querySelectorAll('.pregunta-card').forEach(card => {
+            card.classList.remove('border-primary', 'border-3');
+        });
+        
+        // Seleccionar nueva pregunta
+        elemento.classList.add('border-primary', 'border-3');
+        this.preguntaSeleccionada = preguntaId;
+        
+        console.log(`✅ [JORNADAS] Pregunta seleccionada: ${preguntaId}`);
+    },
+
+    // Confirmar reciclaje parcial
+    async confirmarReciclajeParcial() {
+        if (!this.preguntaSeleccionada) {
+            Utils.showAlert('Debes seleccionar una pregunta antes de continuar', 'warning');
+            return;
+        }
+        
+        try {
+            console.log(`🔄 [JORNADAS] Confirmando reciclaje parcial del combo ${this.comboReciclajeActual} con pregunta usada ${this.preguntaSeleccionada}`);
+            
+            // Llamar al endpoint para reciclar el combo parcialmente
+            const response = await apiManager.post(`/api/jornadas/${this.jornadaReciclajeActual}/reciclar-combo-parcial/${this.comboReciclajeActual}`, {
+                preguntaUsadaId: this.preguntaSeleccionada
+            });
+            
+            if (response.exito) {
+                Utils.showAlert(`Combo reciclado parcialmente. Se creó un nuevo combo con las 2 preguntas restantes.`, 'success');
+                
+                // Cerrar modal y recargar datos
+                bootstrap.Modal.getInstance(document.getElementById('modalReciclajeCombo')).hide();
+                await this.cargarDatos();
+                this.mostrarJornadas();
+            } else {
+                Utils.showAlert(`Error al reciclar combo parcialmente: ${response.mensaje}`, 'error');
+            }
+            
+        } catch (error) {
+            console.error('❌ [JORNADAS] Error al confirmar reciclaje parcial:', error);
+            Utils.showAlert('Error al confirmar reciclaje parcial', 'error');
         }
     }
 

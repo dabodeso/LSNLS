@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.HashMap;
 import java.util.ArrayList;
+import com.lsnls.dto.ApiResponse;
 
 @RestController
 @RequestMapping("/api/combos")
@@ -69,6 +70,21 @@ public class ComboController {
             }
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/{id}/preguntas")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> obtenerPreguntas(@PathVariable Long id) {
+        try {
+            List<Map<String, Object>> preguntas = comboService.obtenerPreguntasCombo(id);
+            return ResponseEntity.ok(ApiResponse.exitoso("Preguntas obtenidas correctamente", preguntas));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error al obtener preguntas del combo: " + e.getMessage()));
         }
     }
 

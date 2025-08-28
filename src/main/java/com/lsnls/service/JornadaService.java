@@ -3,6 +3,7 @@ package com.lsnls.service;
 import com.lsnls.dto.JornadaDTO;
 import com.lsnls.entity.*;
 import com.lsnls.repository.*;
+import com.lsnls.entity.PreguntaCombo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,9 @@ public class JornadaService {
 
     @Autowired
     private ComboService comboService;
+
+    @Autowired
+    private PreguntaComboRepository preguntaComboRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -542,6 +546,152 @@ public class JornadaService {
                 
         } catch (Exception e) {
             System.err.println("⚠️ [JORNADA] Error al registrar historial de reutilización: " + e.getMessage());
+            // No lanzar excepción para no afectar la operación principal
+        }
+    }
+
+    /**
+     * Recicla un combo completamente, marcándolo como liberado.
+     * 
+     * @param jornadaId ID de la jornada
+     * @param comboId ID del combo a reciclar
+     * @param usuarioId ID del usuario que realiza la acción
+     */
+    public void reciclarComboEntero(Long jornadaId, Long comboId, Long usuarioId) {
+        // Verificar que la jornada existe
+        Jornada jornada = jornadaRepository.findById(jornadaId)
+            .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada con ID: " + jornadaId));
+        
+        // Verificar que el combo existe y está asignado a esta jornada
+        Combo combo = comboRepository.findById(comboId)
+            .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado con ID: " + comboId));
+        
+        if (jornada.getCombos() == null || !jornada.getCombos().contains(combo)) {
+            throw new IllegalArgumentException("El combo " + comboId + " no está asignado a la jornada " + jornadaId);
+        }
+        
+        // Verificar que el combo está en estado adjudicado
+        if (combo.getEstado() != Combo.EstadoCombo.adjudicado) {
+            throw new IllegalArgumentException("El combo " + comboId + " no está en estado adjudicado. Estado actual: " + combo.getEstado());
+        }
+        
+        // Cambiar estado del combo a liberado
+        combo.setEstado(Combo.EstadoCombo.liberado);
+        comboRepository.save(combo);
+        
+        // Remover el combo de la jornada
+        jornada.getCombos().remove(combo);
+        jornadaRepository.save(jornada);
+        
+        // Registrar en el historial
+        registrarHistorialReutilizacion(jornada, combo, "combo", usuarioId);
+        
+        System.out.println("✅ [JORNADA] Combo " + comboId + " reciclado completamente de jornada " + jornadaId);
+    }
+
+    /**
+     * Recicla un combo parcialmente, creando un nuevo combo con las preguntas no usadas.
+     * 
+     * @param jornadaId ID de la jornada
+     * @param comboId ID del combo a reciclar
+     * @param preguntaUsadaId ID de la pregunta que se usó
+     * @param usuarioId ID del usuario que realiza la acción
+     */
+    public void reciclarComboParcial(Long jornadaId, Long comboId, Long preguntaUsadaId, Long usuarioId) {
+        // Verificar que la jornada existe
+        Jornada jornada = jornadaRepository.findById(jornadaId)
+            .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada con ID: " + jornadaId));
+        
+        // Verificar que el combo existe y está asignado a esta jornada
+        Combo combo = comboRepository.findById(comboId)
+            .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado con ID: " + comboId));
+        
+        if (jornada.getCombos() == null || !jornada.getCombos().contains(combo)) {
+            throw new IllegalArgumentException("El combo " + comboId + " no está asignado a la jornada " + jornadaId);
+        }
+        
+        // Verificar que el combo está en estado adjudicado
+        if (combo.getEstado() != Combo.EstadoCombo.adjudicado) {
+            throw new IllegalArgumentException("El combo " + comboId + " no está en estado adjudicado. Estado actual: " + combo.getEstado());
+        }
+        
+        // Verificar que el combo tiene exactamente 3 preguntas
+        if (combo.getPreguntas() == null || combo.getPreguntas().size() != 3) {
+            throw new IllegalArgumentException("El combo debe tener exactamente 3 preguntas para reciclaje parcial");
+        }
+        
+        // Verificar que la pregunta usada existe en el combo
+        boolean preguntaEncontrada = false;
+        for (PreguntaCombo pc : combo.getPreguntas()) {
+            if (pc.getPregunta().getId().equals(preguntaUsadaId)) {
+                preguntaEncontrada = true;
+                break;
+            }
+        }
+        
+        if (!preguntaEncontrada) {
+            throw new IllegalArgumentException("La pregunta " + preguntaUsadaId + " no pertenece al combo " + comboId);
+        }
+        
+        // Crear nuevo combo con las 2 preguntas restantes
+        Combo nuevoCombo = new Combo();
+        nuevoCombo.setCreacionUsuario(usuarioRepository.findById(usuarioId)
+            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado")));
+        nuevoCombo.setEstado(Combo.EstadoCombo.aprobado);
+        nuevoCombo.setNivel(combo.getNivel());
+        nuevoCombo.setTipo(combo.getTipo());
+        nuevoCombo = comboRepository.save(nuevoCombo);
+        
+        // Copiar las 2 preguntas no usadas al nuevo combo
+        for (PreguntaCombo pc : combo.getPreguntas()) {
+            if (!pc.getPregunta().getId().equals(preguntaUsadaId)) {
+                PreguntaCombo nuevaPc = new PreguntaCombo();
+                PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();
+                id.setPreguntaId(pc.getPregunta().getId());
+                id.setComboId(nuevoCombo.getId());
+                
+                nuevaPc.setId(id);
+                nuevaPc.setPregunta(pc.getPregunta());
+                nuevaPc.setCombo(nuevoCombo);
+                nuevaPc.setFactorMultiplicacion(pc.getFactorMultiplicacion());
+                
+                preguntaComboRepository.save(nuevaPc);
+            }
+        }
+        
+        // Marcar el combo original como liberado
+        combo.setEstado(Combo.EstadoCombo.liberado);
+        comboRepository.save(combo);
+        
+        // Remover el combo original de la jornada
+        jornada.getCombos().remove(combo);
+        jornadaRepository.save(jornada);
+        
+        // Registrar en el historial
+        registrarHistorialReutilizacion(jornada, combo, "combo", usuarioId);
+        
+        // Registrar el nuevo combo en el historial como hijo
+        registrarHistorialComboHijo(jornada, nuevoCombo, comboId, usuarioId);
+        
+        System.out.println("✅ [JORNADA] Combo " + comboId + " reciclado parcialmente. Nuevo combo creado: " + nuevoCombo.getId());
+    }
+
+    /**
+     * Registra un combo hijo en el historial.
+     */
+    private void registrarHistorialComboHijo(Jornada jornada, Combo comboHijo, Long comboPadreId, Long usuarioId) {
+        try {
+            String sql = "INSERT INTO historial_jornadas (jornada_id, combo_id, tipo_asignacion, estado_asignacion, fecha_asignacion, notas) VALUES (?, ?, ?, ?, NOW(), ?)";
+            entityManager.createNativeQuery(sql)
+                .setParameter(1, jornada.getId())
+                .setParameter(2, comboHijo.getId())
+                .setParameter(3, "COMBO")
+                .setParameter(4, "asignado")
+                .setParameter(5, "Combo hijo creado desde combo padre " + comboPadreId + " - contiene 2 preguntas no usadas")
+                .executeUpdate();
+                
+        } catch (Exception e) {
+            System.err.println("⚠️ [JORNADA] Error al registrar historial de combo hijo: " + e.getMessage());
             // No lanzar excepción para no afectar la operación principal
         }
     }

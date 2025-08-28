@@ -204,5 +204,5 @@ CREATE TABLE IF NOT EXISTS historial_jornadas (
     FOREIGN KEY (pregunta_usada_id) REFERENCES preguntas (id)
 );
 
--- Actualizar enum de estados de combos para incluir 'reaprovechado'
-ALTER TABLE combos MODIFY COLUMN estado ENUM('borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado', 'reaprovechado') NOT NULL; 
+-- Actualizar enum de estados de combos para incluir 'reaprovechado' y 'liberado'
+ALTER TABLE combos MODIFY COLUMN estado ENUM('borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado', 'reaprovechado', 'liberado') NOT NULL; 

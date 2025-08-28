@@ -303,6 +303,17 @@ public class CuestionarioService {
                 jornadasCount + " jornada(s). Desasígnalo primero.");
         }
 
+        // Eliminar registros del historial que referencian este cuestionario
+        try {
+            entityManager.createNativeQuery(
+                "DELETE FROM historial_jornadas WHERE cuestionario_id = ?")
+                .setParameter(1, id)
+                .executeUpdate();
+        } catch (Exception e) {
+            // Si hay error al eliminar el historial, continuamos de todas formas
+            System.err.println("Advertencia: No se pudieron eliminar algunos registros del historial para el cuestionario " + id + ": " + e.getMessage());
+        }
+
         // Si llegamos aquí, es seguro eliminar - liberar las preguntas asociadas
         Set<PreguntaCuestionario> preguntas = cuestionario.getPreguntas();
         for (PreguntaCuestionario pc : preguntas) {

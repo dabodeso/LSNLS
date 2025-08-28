@@ -309,4 +309,79 @@ public class JornadaController {
                 .body(ApiResponse.error("Error al reutilizar combo: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/{jornadaId}/reciclar-combo-entero/{comboId}")
+    @PreAuthorize("@authorizationService.canEdit()")
+    public ResponseEntity<ApiResponse<String>> reciclarComboEntero(
+            @PathVariable Long jornadaId, 
+            @PathVariable Long comboId) {
+        try {
+            // Verificar autenticación
+            Optional<Usuario> currentUserOpt = authService.getCurrentUser();
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(401)
+                    .body(ApiResponse.error("Usuario no autenticado"));
+            }
+            
+            Usuario currentUser = currentUserOpt.get();
+            jornadaService.reciclarComboEntero(jornadaId, comboId, currentUser.getId());
+            
+            return ResponseEntity.ok(ApiResponse.exitoso(
+                "Combo " + comboId + " reciclado completamente. Marcado como liberado.", 
+                "Combo reciclado"));
+                
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error al reciclar combo: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{jornadaId}/reciclar-combo-parcial/{comboId}")
+    @PreAuthorize("@authorizationService.canEdit()")
+    public ResponseEntity<ApiResponse<String>> reciclarComboParcial(
+            @PathVariable Long jornadaId, 
+            @PathVariable Long comboId,
+            @RequestBody Map<String, Object> request) {
+        try {
+            // Verificar autenticación
+            Optional<Usuario> currentUserOpt = authService.getCurrentUser();
+            if (currentUserOpt.isEmpty()) {
+                return ResponseEntity.status(401)
+                    .body(ApiResponse.error("Usuario no autenticado"));
+            }
+            
+            // Obtener la pregunta usada del request
+            Long preguntaUsadaId = null;
+            if (request.containsKey("preguntaUsadaId")) {
+                Object preguntaIdObj = request.get("preguntaUsadaId");
+                if (preguntaIdObj instanceof Number) {
+                    preguntaUsadaId = ((Number) preguntaIdObj).longValue();
+                } else if (preguntaIdObj instanceof String) {
+                    preguntaUsadaId = Long.valueOf((String) preguntaIdObj);
+                }
+            }
+            
+            if (preguntaUsadaId == null) {
+                return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Se debe especificar la pregunta usada"));
+            }
+            
+            Usuario currentUser = currentUserOpt.get();
+            jornadaService.reciclarComboParcial(jornadaId, comboId, preguntaUsadaId, currentUser.getId());
+            
+            return ResponseEntity.ok(ApiResponse.exitoso(
+                "Combo reciclado parcialmente. Se creó un nuevo combo con las preguntas restantes.", 
+                "Combo reciclado parcialmente"));
+                
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error al reciclar combo parcialmente: " + e.getMessage()));
+        }
+    }
 } 

@@ -298,6 +298,17 @@ public class ComboService {
                 jornadasCount + " jornada(s). Desasígnalo primero.");
         }
 
+        // Eliminar registros del historial que referencian este combo
+        try {
+            entityManager.createNativeQuery(
+                "DELETE FROM historial_jornadas WHERE combo_id = ?")
+                .setParameter(1, id)
+                .executeUpdate();
+        } catch (Exception e) {
+            // Si hay error al eliminar el historial, continuamos de todas formas
+            System.err.println("Advertencia: No se pudieron eliminar algunos registros del historial para el combo " + id + ": " + e.getMessage());
+        }
+
         // Si llegamos aquí, es seguro eliminar - liberar las preguntas asociadas
         Set<PreguntaCombo> preguntas = combo.getPreguntas();
         for (PreguntaCombo pc : preguntas) {
@@ -619,5 +630,31 @@ public class ComboService {
             comboRepository.deleteById(combo.getId());
             throw new RuntimeException("Error al crear relaciones pregunta-combo: " + e.getMessage());
         }
+    }
+
+    /**
+     * Obtiene las preguntas de un combo específico
+     */
+    public List<Map<String, Object>> obtenerPreguntasCombo(Long comboId) {
+        Combo combo = comboRepository.findById(comboId)
+            .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado con ID: " + comboId));
+        
+        List<Map<String, Object>> preguntas = new java.util.ArrayList<>();
+        
+        if (combo.getPreguntas() != null) {
+            for (PreguntaCombo pc : combo.getPreguntas()) {
+                Pregunta pregunta = pc.getPregunta();
+                Map<String, Object> preguntaMap = new java.util.HashMap<>();
+                preguntaMap.put("id", pregunta.getId());
+                preguntaMap.put("pregunta", pregunta.getPregunta());
+                preguntaMap.put("respuesta", pregunta.getRespuesta());
+                preguntaMap.put("tematica", pregunta.getTematica());
+                preguntaMap.put("nivel", pregunta.getNivel().name());
+                preguntaMap.put("factor", pc.getFactorMultiplicacion());
+                preguntas.add(preguntaMap);
+            }
+        }
+        
+        return preguntas;
     }
 } 

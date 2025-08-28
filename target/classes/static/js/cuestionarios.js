@@ -671,11 +671,39 @@ window.eliminarCuestionario = async function(id) {
     if (!confirm('¿Seguro que quieres eliminar este cuestionario? Esta acción no se puede deshacer.')) return;
     try {
         const resp = await fetch(`/api/cuestionarios/${id}`, { method: 'DELETE', headers: authManager.getAuthHeaders() });
-        if (!resp.ok) throw new Error('No se pudo eliminar el cuestionario');
+        
+        if (!resp.ok) {
+            let errorMessage = 'No se pudo eliminar el cuestionario';
+            
+            // Intentar obtener el mensaje de error específico del servidor
+            try {
+                const errorData = await resp.json();
+                if (errorData && errorData.mensaje) {
+                    errorMessage = errorData.mensaje;
+                } else if (errorData && errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (parseError) {
+                // Si no se puede parsear como JSON, intentar obtener el texto
+                try {
+                    const errorText = await resp.text();
+                    if (errorText) {
+                        errorMessage = errorText;
+                    }
+                } catch (textError) {
+                    // Si todo falla, usar el mensaje por defecto
+                    console.error('Error al parsear respuesta del servidor:', textError);
+                }
+            }
+            
+            throw new Error(errorMessage);
+        }
+        
         Toastify({ text: 'Cuestionario eliminado', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
         await CuestionariosManager.cargarCuestionarios();
     } catch (e) {
-        Toastify({ text: 'Error al eliminar cuestionario: ' + e.message, duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
+        console.error('Error al eliminar cuestionario:', e);
+        Toastify({ text: 'Error al eliminar cuestionario: ' + e.message, duration: 5000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
     }
 };
 
