@@ -25,6 +25,9 @@ import com.lsnls.dto.PreguntaDTO;
 import java.util.Map;
 import java.util.HashMap;
 import com.lsnls.service.TematicaService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @Service
 @Transactional
@@ -53,6 +56,33 @@ public class CuestionarioService {
 
     public List<Cuestionario> obtenerTodos() {
         return cuestionarioRepository.findAllOrderByIdDesc();
+    }
+    
+    public Map<String, Object> obtenerTodosPaginados(int page, int size) {
+        // Crear objeto Pageable para paginación
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        
+        // Obtener el total de cuestionarios
+        long totalCuestionarios = cuestionarioRepository.count();
+        
+        // Obtener cuestionarios paginados
+        List<Cuestionario> cuestionariosPaginados = cuestionarioRepository.findAllPaginados(pageable);
+        
+        // Convertir a DTOs
+        List<Map<String, Object>> dtos = new ArrayList<>();
+        for (Cuestionario c : cuestionariosPaginados) {
+            Map<String, Object> dto = obtenerCuestionarioConSlots(c.getId());
+            if (dto != null) dtos.add(dto);
+        }
+        
+        // Construir respuesta
+        Map<String, Object> response = new HashMap<>();
+        response.put("cuestionarios", dtos);
+        response.put("currentPage", page);
+        response.put("totalItems", totalCuestionarios);
+        response.put("totalPages", Math.ceil((double) totalCuestionarios / size));
+        
+        return response;
     }
 
     public Optional<Cuestionario> obtenerPorId(Long id) {
@@ -352,6 +382,25 @@ public class CuestionarioService {
         } else {
             return cuestionarioRepository.findAllOrderByIdDesc();
         }
+    }
+    
+    public List<Cuestionario> filtrarCuestionariosPorId(String idStr) {
+        List<Cuestionario> resultado = new ArrayList<>();
+        
+        try {
+            // Intentar buscar por ID exacto
+            Long id = Long.parseLong(idStr);
+            Optional<Cuestionario> cuestionario = cuestionarioRepository.findById(id);
+            if (cuestionario.isPresent()) {
+                resultado.add(cuestionario.get());
+                return resultado;
+            }
+        } catch (NumberFormatException e) {
+            // Si no es un número, buscar por coincidencia parcial
+        }
+        
+        // Buscar por coincidencia parcial en el ID
+        return cuestionarioRepository.findByIdContaining(idStr);
     }
 
     // Método auxiliar para debug

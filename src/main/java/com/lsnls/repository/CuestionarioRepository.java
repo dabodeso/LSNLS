@@ -7,6 +7,7 @@ import com.lsnls.entity.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @Repository
@@ -24,6 +25,10 @@ public interface CuestionarioRepository extends JpaRepository<Cuestionario, Long
     @Query("SELECT c FROM Cuestionario c ORDER BY c.id DESC")
     List<Cuestionario> findAllOrderByIdDesc();
     
+    // Obtener cuestionarios paginados usando JPQL con paginación manual
+    @Query("SELECT c FROM Cuestionario c ORDER BY c.id DESC")
+    List<Cuestionario> findAllPaginados(Pageable pageable);
+    
     // Filtros por estado
     List<Cuestionario> findByEstadoOrderByIdDesc(EstadoCuestionario estado);
     
@@ -40,4 +45,8 @@ public interface CuestionarioRepository extends JpaRepository<Cuestionario, Long
     List<Cuestionario> findByTematica(String tematica);
     
     long countByTematica(String tematica);
+    
+    // Método para buscar por ID que contenga una cadena
+    @Query("SELECT c FROM Cuestionario c WHERE CAST(c.id AS string) LIKE %:idStr%")
+    List<Cuestionario> findByIdContaining(String idStr);
 } 

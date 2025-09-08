@@ -1,17 +1,53 @@
 // Módulo de gestión de cuestionarios
 const CuestionariosManager = {
-    async cargarCuestionarios() {
+    cuestionarios: [],
+    paginaActual: 0,
+    tamanioPagina: 25,
+    totalCuestionarios: 0,
+    totalPaginas: 0,
+    cargando: false,
+    
+    async cargarCuestionarios(resetear = true) {
         try {
             if (!authManager.isAuthenticated()) {
                 console.error('Usuario no autenticado');
                 return;
             }
-            const response = await fetch('/api/cuestionarios', {
+            
+            if (resetear) {
+                this.paginaActual = 0;
+                this.cuestionarios = [];
+            }
+            
+            this.cargando = true;
+            this.mostrarEstadoCarga();
+            
+            const params = new URLSearchParams({
+                page: this.paginaActual,
+                size: this.tamanioPagina
+            });
+            
+            const response = await fetch(`/api/cuestionarios?${params}`, {
                 headers: authManager.getAuthHeaders()
             });
+            
             if (!response.ok) throw new Error('Error al cargar los cuestionarios');
-            const cuestionarios = await response.json();
-            await this.mostrarCuestionarios(cuestionarios);
+            
+            const data = await response.json();
+            
+            if (resetear) {
+                this.cuestionarios = data.cuestionarios;
+            } else {
+                this.cuestionarios = [...this.cuestionarios, ...data.cuestionarios];
+            }
+            
+            this.totalCuestionarios = data.totalItems;
+            this.totalPaginas = data.totalPages;
+            this.paginaActual = data.currentPage;
+            
+            await this.mostrarCuestionarios(this.cuestionarios);
+            this.actualizarPaginacion();
+            this.cargando = false;
         } catch (error) {
             if (error && error.message && error.message.startsWith('401')) {
                 // No mostrar mensaje, la redirección ya ocurre en api.js
@@ -26,6 +62,72 @@ const CuestionariosManager = {
                 position: "right",
                 style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
             }).showToast();
+            this.cargando = false;
+        }
+    },
+    
+    async cargarMasCuestionarios() {
+        if (this.cargando) return;
+        if (this.paginaActual >= this.totalPaginas - 1) return;
+        
+        this.paginaActual++;
+        await this.cargarCuestionarios(false);
+    },
+    
+    mostrarEstadoCarga() {
+        const tbody = document.getElementById('tabla-cuestionarios');
+        if (!tbody) return;
+        
+        if (this.cargando && this.cuestionarios.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Cargando cuestionarios...</p></td></tr>';
+        }
+    },
+    
+    actualizarPaginacion() {
+        let paginacionContainer = document.getElementById('paginacion-cuestionarios');
+        if (!paginacionContainer) {
+            // Crear el contenedor si no existe
+            const tablaContainer = document.querySelector('.table-responsive');
+            if (tablaContainer) {
+                const paginacionDiv = document.createElement('div');
+                paginacionDiv.id = 'paginacion-cuestionarios';
+                paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
+                tablaContainer.parentNode.insertBefore(paginacionDiv, tablaContainer.nextSibling);
+                paginacionContainer = document.getElementById('paginacion-cuestionarios');
+            }
+        }
+        
+        if (paginacionContainer) {
+            const infoPagina = document.createElement('div');
+            infoPagina.innerHTML = `Mostrando ${this.cuestionarios.length} de ${this.totalCuestionarios} cuestionarios (Página ${this.paginaActual + 1} de ${this.totalPaginas})`;
+            
+            const botonCargarMas = document.createElement('button');
+            botonCargarMas.className = 'btn btn-primary';
+            botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más cuestionarios';
+            botonCargarMas.type = 'button';
+            botonCargarMas.id = 'btn-cargar-mas-cuestionarios';
+            
+            const botonDeshabilitado = this.cargando || this.paginaActual >= this.totalPaginas - 1;
+            
+            if (botonDeshabilitado) {
+                botonCargarMas.disabled = true;
+                botonCargarMas.style.opacity = '0.6';
+                botonCargarMas.style.cursor = 'not-allowed';
+            } else {
+                botonCargarMas.disabled = false;
+                botonCargarMas.style.opacity = '1';
+                botonCargarMas.style.cursor = 'pointer';
+                
+                botonCargarMas.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.cargarMasCuestionarios();
+                });
+            }
+            
+            paginacionContainer.innerHTML = '';
+            paginacionContainer.appendChild(infoPagina);
+            paginacionContainer.appendChild(botonCargarMas);
         }
     },
     async mostrarCuestionarios(cuestionarios) {
@@ -797,11 +899,45 @@ window.filtrarCuestionarios = async function() {
             
             CuestionariosManager.mostrarCuestionarios(cuestionariosFiltrados);
         } else if (busqueda) {
-            // Solo filtro de búsqueda, usar datos en memoria
-            const cuestionariosFiltrados = CuestionariosManager.ultimoListado.filter(c => 
-                c.id.toString().includes(busqueda)
-            );
-            CuestionariosManager.mostrarCuestionarios(cuestionariosFiltrados);
+            // Buscar por ID directamente en el backend
+            try {
+                // Intentar buscar por ID exacto primero
+                if (!isNaN(parseInt(busqueda))) {
+                    const idBusqueda = parseInt(busqueda);
+                    const response = await fetch(`/api/cuestionarios/${idBusqueda}`, {
+                        headers: authManager.getAuthHeaders()
+                    });
+                    
+                    if (response.ok) {
+                        // Si se encuentra el cuestionario por ID exacto
+                        const cuestionario = await response.json();
+                        CuestionariosManager.mostrarCuestionarios([cuestionario]);
+                        return;
+                    }
+                }
+                
+                // Si no se encuentra por ID exacto o no es un número, buscar por coincidencia parcial
+                const params = new URLSearchParams();
+                params.append('id', busqueda);
+                
+                const response = await fetch(`/api/cuestionarios/filtrar?${params.toString()}`, {
+                    headers: authManager.getAuthHeaders()
+                });
+                
+                if (!response.ok) throw new Error('Error al buscar cuestionarios por ID');
+                const cuestionarios = await response.json();
+                CuestionariosManager.mostrarCuestionarios(cuestionarios);
+            } catch (error) {
+                console.error('Error al buscar cuestionario por ID:', error);
+                Toastify({
+                    text: 'Error al buscar cuestionario por ID',
+                    duration: 3000,
+                    close: true,
+                    gravity: "top",
+                    position: "right",
+                    style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
+                }).showToast();
+            }
         } else {
             // Sin filtros, recargar todos
             await CuestionariosManager.cargarCuestionarios();

@@ -45,16 +45,14 @@ public class CuestionarioController {
 
     @GetMapping
     @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<List<Map<String, Object>>> obtenerTodos() {
+    public ResponseEntity<Map<String, Object>> obtenerTodos(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size) {
         try {
-            List<Cuestionario> cuestionarios = cuestionarioService.obtenerTodos();
-            List<Map<String, Object>> dtos = new java.util.ArrayList<>();
-            for (Cuestionario c : cuestionarios) {
-                Map<String, Object> dto = cuestionarioService.obtenerCuestionarioConSlots(c.getId());
-                if (dto != null) dtos.add(dto);
-            }
-            return ResponseEntity.ok(dtos);
+            Map<String, Object> response = cuestionarioService.obtenerTodosPaginados(page, size);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
+            log.error("Error al obtener cuestionarios paginados: ", e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -122,10 +120,18 @@ public class CuestionarioController {
     @PreAuthorize("@authorizationService.canRead()")
     public ResponseEntity<List<Map<String, Object>>> filtrarCuestionarios(
             @RequestParam(required = false) String estado,
-            @RequestParam(required = false) String tematica
+            @RequestParam(required = false) String tematica,
+            @RequestParam(required = false) String id
     ) {
         try {
-            List<Cuestionario> cuestionarios = cuestionarioService.filtrarCuestionarios(estado, tematica);
+            List<Cuestionario> cuestionarios;
+            
+            // Si se proporciona un ID, buscar por ID
+            if (id != null && !id.isEmpty()) {
+                cuestionarios = cuestionarioService.filtrarCuestionariosPorId(id);
+            } else {
+                cuestionarios = cuestionarioService.filtrarCuestionarios(estado, tematica);
+            }
             List<Map<String, Object>> dtos = new java.util.ArrayList<>();
             for (Cuestionario c : cuestionarios) {
                 Map<String, Object> dto = cuestionarioService.obtenerCuestionarioConSlots(c.getId());

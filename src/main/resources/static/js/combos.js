@@ -1,19 +1,55 @@
 // Módulo de gestión de combos
 const CombosManager = {
     ultimoListado: [],
-    async cargarCombos() {
+    combos: [],
+    paginaActual: 0,
+    tamanioPagina: 25,
+    totalCombos: 0,
+    totalPaginas: 0,
+    cargando: false,
+    
+    async cargarCombos(resetear = true) {
         try {
             if (!authManager.isAuthenticated()) {
                 console.error('Usuario no autenticado');
                 return;
             }
-            const response = await fetch('/api/combos', {
+            
+            if (resetear) {
+                this.paginaActual = 0;
+                this.combos = [];
+            }
+            
+            this.cargando = true;
+            this.mostrarEstadoCarga();
+            
+            const params = new URLSearchParams({
+                page: this.paginaActual,
+                size: this.tamanioPagina
+            });
+            
+            const response = await fetch(`/api/combos?${params}`, {
                 headers: authManager.getAuthHeaders()
             });
+            
             if (!response.ok) throw new Error('Error al cargar los combos');
-            const combos = await response.json();
-            this.ultimoListado = combos;
-            await this.mostrarCombos(combos);
+            
+            const data = await response.json();
+            
+            if (resetear) {
+                this.combos = data.combos;
+            } else {
+                this.combos = [...this.combos, ...data.combos];
+            }
+            
+            this.ultimoListado = this.combos;
+            this.totalCombos = data.totalItems;
+            this.totalPaginas = data.totalPages;
+            this.paginaActual = data.currentPage;
+            
+            await this.mostrarCombos(this.combos);
+            this.actualizarPaginacion();
+            this.cargando = false;
         } catch (error) {
             if (error && error.message && error.message.startsWith('401')) {
                 return;
@@ -27,6 +63,72 @@ const CombosManager = {
                 position: "right",
                 style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
             }).showToast();
+            this.cargando = false;
+        }
+    },
+    
+    async cargarMasCombos() {
+        if (this.cargando) return;
+        if (this.paginaActual >= this.totalPaginas - 1) return;
+        
+        this.paginaActual++;
+        await this.cargarCombos(false);
+    },
+    
+    mostrarEstadoCarga() {
+        const tbody = document.getElementById('tabla-combos');
+        if (!tbody) return;
+        
+        if (this.cargando && this.combos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Cargando combos...</p></td></tr>';
+        }
+    },
+    
+    actualizarPaginacion() {
+        let paginacionContainer = document.getElementById('paginacion-combos');
+        if (!paginacionContainer) {
+            // Crear el contenedor si no existe
+            const tablaContainer = document.querySelector('.table-responsive');
+            if (tablaContainer) {
+                const paginacionDiv = document.createElement('div');
+                paginacionDiv.id = 'paginacion-combos';
+                paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
+                tablaContainer.parentNode.insertBefore(paginacionDiv, tablaContainer.nextSibling);
+                paginacionContainer = document.getElementById('paginacion-combos');
+            }
+        }
+        
+        if (paginacionContainer) {
+            const infoPagina = document.createElement('div');
+            infoPagina.innerHTML = `Mostrando ${this.combos.length} de ${this.totalCombos} combos (Página ${this.paginaActual + 1} de ${this.totalPaginas})`;
+            
+            const botonCargarMas = document.createElement('button');
+            botonCargarMas.className = 'btn btn-primary';
+            botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más combos';
+            botonCargarMas.type = 'button';
+            botonCargarMas.id = 'btn-cargar-mas-combos';
+            
+            const botonDeshabilitado = this.cargando || this.paginaActual >= this.totalPaginas - 1;
+            
+            if (botonDeshabilitado) {
+                botonCargarMas.disabled = true;
+                botonCargarMas.style.opacity = '0.6';
+                botonCargarMas.style.cursor = 'not-allowed';
+            } else {
+                botonCargarMas.disabled = false;
+                botonCargarMas.style.opacity = '1';
+                botonCargarMas.style.cursor = 'pointer';
+                
+                botonCargarMas.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.cargarMasCombos();
+                });
+            }
+            
+            paginacionContainer.innerHTML = '';
+            paginacionContainer.appendChild(infoPagina);
+            paginacionContainer.appendChild(botonCargarMas);
         }
     },
 
@@ -347,11 +449,49 @@ window.filtrarCombos = async function() {
 
         // Filtrar por búsqueda de ID
         if (busqueda) {
-            combosFiltrados = combosFiltrados.filter(c => 
-                c.id.toString().includes(busqueda)
-            );
+            // Buscar por ID directamente en el backend
+            try {
+                // Intentar buscar por ID exacto primero
+                if (!isNaN(parseInt(busqueda))) {
+                    const idBusqueda = parseInt(busqueda);
+                    const response = await fetch(`/api/combos/${idBusqueda}`, {
+                        headers: authManager.getAuthHeaders()
+                    });
+                    
+                    if (response.ok) {
+                        // Si se encuentra el combo por ID exacto
+                        const combo = await response.json();
+                        CombosManager.mostrarCombos([combo]);
+                        return;
+                    }
+                }
+                
+                // Si no se encuentra por ID exacto o no es un número, buscar por coincidencia parcial
+                const params = new URLSearchParams();
+                params.append('id', busqueda);
+                
+                const response = await fetch(`/api/combos/filtrar?${params.toString()}`, {
+                    headers: authManager.getAuthHeaders()
+                });
+                
+                if (!response.ok) throw new Error('Error al buscar combos por ID');
+                const combos = await response.json();
+                CombosManager.mostrarCombos(combos);
+                return;
+            } catch (error) {
+                console.error('Error al buscar combo por ID:', error);
+                Toastify({
+                    text: 'Error al buscar combo por ID',
+                    duration: 3000,
+                    close: true,
+                    gravity: "top",
+                    position: "right",
+                    style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
+                }).showToast();
+            }
         }
 
+        // Solo si no hay búsqueda por ID, mostrar los filtrados en memoria
         CombosManager.mostrarCombos(combosFiltrados);
     } catch (error) {
         console.error('Error al filtrar combos:', error);

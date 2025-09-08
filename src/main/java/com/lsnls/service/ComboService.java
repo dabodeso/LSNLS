@@ -20,6 +20,9 @@ import java.util.HashSet;
 import javax.persistence.EntityManager;
 import com.lsnls.dto.CrearComboDTO;
 import java.util.Map;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @Service
 @Transactional
@@ -45,6 +48,33 @@ public class ComboService {
 
     public List<Combo> obtenerTodos() {
         return comboRepository.findAll();
+    }
+    
+    public Map<String, Object> obtenerTodosPaginados(int page, int size) {
+        // Crear objeto Pageable para paginación
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        
+        // Obtener el total de combos
+        long totalCombos = comboRepository.count();
+        
+        // Obtener combos paginados
+        List<Combo> combosPaginados = comboRepository.findAllPaginados(pageable);
+        
+        // Convertir a DTOs
+        List<Map<String, Object>> dtos = new java.util.ArrayList<>();
+        for (Combo c : combosPaginados) {
+            Map<String, Object> dto = obtenerComboConSlots(c.getId());
+            if (dto != null) dtos.add(dto);
+        }
+        
+        // Construir respuesta
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("combos", dtos);
+        response.put("currentPage", page);
+        response.put("totalItems", totalCombos);
+        response.put("totalPages", Math.ceil((double) totalCombos / size));
+        
+        return response;
     }
 
     public Optional<Combo> obtenerPorId(Long id) {
@@ -80,6 +110,46 @@ public class ComboService {
 
     public List<Combo> obtenerPorNivel(NivelCombo nivel) {
         return comboRepository.findByNivel(nivel);
+    }
+    
+    public List<Combo> filtrarCombos(String estado, String tipo, String tematica) {
+        // Implementar filtrado según los parámetros proporcionados
+        // Este método se llamará cuando no se busque por ID
+        
+        if (estado != null && !estado.isEmpty() && tipo != null && !tipo.isEmpty()) {
+            // Filtrar por estado y tipo
+            return comboRepository.findByEstadoAndTipo(
+                EstadoCombo.valueOf(estado), 
+                Combo.TipoCombo.valueOf(tipo));
+        } else if (estado != null && !estado.isEmpty()) {
+            // Filtrar solo por estado
+            return comboRepository.findByEstado(EstadoCombo.valueOf(estado));
+        } else if (tipo != null && !tipo.isEmpty()) {
+            // Filtrar solo por tipo
+            return comboRepository.findByTipo(Combo.TipoCombo.valueOf(tipo));
+        } else {
+            // Sin filtros, devolver todos ordenados por ID descendente
+            return comboRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
+        }
+    }
+    
+    public List<Combo> filtrarCombosPorId(String idStr) {
+        List<Combo> resultado = new java.util.ArrayList<>();
+        
+        try {
+            // Intentar buscar por ID exacto
+            Long id = Long.parseLong(idStr);
+            Optional<Combo> combo = comboRepository.findById(id);
+            if (combo.isPresent()) {
+                resultado.add(combo.get());
+                return resultado;
+            }
+        } catch (NumberFormatException e) {
+            // Si no es un número, buscar por coincidencia parcial
+        }
+        
+        // Buscar por coincidencia parcial en el ID
+        return comboRepository.findByIdContaining(idStr);
     }
 
     /**

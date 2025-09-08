@@ -44,16 +44,14 @@ public class ComboController {
 
     @GetMapping
     @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<List<Map<String, Object>>> obtenerTodos() {
+    public ResponseEntity<Map<String, Object>> obtenerTodos(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size) {
         try {
-            List<Combo> combos = comboService.obtenerTodos();
-            List<Map<String, Object>> dtos = new java.util.ArrayList<>();
-            for (Combo c : combos) {
-                Map<String, Object> dto = comboService.obtenerComboConSlots(c.getId());
-                if (dto != null) dtos.add(dto);
-            }
-            return ResponseEntity.ok(dtos);
+            Map<String, Object> response = comboService.obtenerTodosPaginados(page, size);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
+            log.error("Error al obtener combos paginados: ", e);
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -302,6 +300,36 @@ public class ComboController {
             List<Combo> combos = comboService.obtenerPorNivel(nivel);
             return ResponseEntity.ok(combos);
         } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    @GetMapping("/filtrar")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<List<Map<String, Object>>> filtrarCombos(
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String tematica,
+            @RequestParam(required = false) String id
+    ) {
+        try {
+            List<Combo> combos;
+            
+            // Si se proporciona un ID, buscar por ID
+            if (id != null && !id.isEmpty()) {
+                combos = comboService.filtrarCombosPorId(id);
+            } else {
+                combos = comboService.filtrarCombos(estado, tipo, tematica);
+            }
+            
+            List<Map<String, Object>> dtos = new java.util.ArrayList<>();
+            for (Combo c : combos) {
+                Map<String, Object> dto = comboService.obtenerComboConSlots(c.getId());
+                if (dto != null) dtos.add(dto);
+            }
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            log.error("Error al filtrar combos: ", e);
             return ResponseEntity.internalServerError().build();
         }
     }
