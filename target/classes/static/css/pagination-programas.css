@@ -1,0 +1,50 @@
+/* Estilos específicos para el botón de paginación en programas */
+#paginacion-programas {
+    position: relative;
+    z-index: 1000;
+    pointer-events: auto;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+#paginacion-programas button {
+    position: relative;
+    z-index: 1001;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    display: inline-block !important;
+    min-width: 120px;
+    min-height: 38px;
+    margin: 0 5px;
+}
+
+#paginacion-programas button:disabled {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+}
+
+#paginacion-programas button:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+#paginacion-programas button:not(:disabled):active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Asegurar que no haya elementos superpuestos */
+#paginacion-programas * {
+    pointer-events: auto;
+}
+
+/* Estilo para la información de paginación */
+.pagination-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+}

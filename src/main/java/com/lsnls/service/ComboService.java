@@ -9,6 +9,7 @@ import com.lsnls.entity.Usuario;
 import com.lsnls.repository.ComboRepository;
 import com.lsnls.repository.PreguntaRepository;
 import com.lsnls.repository.PreguntaComboRepository;
+import com.lsnls.repository.TematicaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,12 +18,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
-import javax.persistence.EntityManager;
-import com.lsnls.dto.CrearComboDTO;
 import java.util.Map;
-import org.springframework.data.domain.Pageable;
+import java.util.HashMap;
+import java.util.ArrayList;
+import javax.persistence.EntityManager;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import com.lsnls.dto.CrearComboDTO;
 
 @Service
 @Transactional
@@ -36,6 +40,9 @@ public class ComboService {
 
     @Autowired
     private PreguntaComboRepository preguntaComboRepository;
+    
+    @Autowired
+    private TematicaRepository tematicaRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -112,44 +119,111 @@ public class ComboService {
         return comboRepository.findByNivel(nivel);
     }
     
-    public List<Combo> filtrarCombos(String estado, String tipo, String tematica) {
-        // Implementar filtrado según los parámetros proporcionados
-        // Este método se llamará cuando no se busque por ID
-        
-        if (estado != null && !estado.isEmpty() && tipo != null && !tipo.isEmpty()) {
+    
+    public Map<String, Object> filtrarCombos(String estado, String tipo, String tematica, String subtema, int page, int size) {
+        // Crear objeto Pageable para paginación
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+        Page<Combo> paginaCombos;
+
+        // Aplicar filtros y paginación directamente en la consulta a la base de datos
+        if (estado != null && !estado.isEmpty() && tipo != null && !tipo.isEmpty() && tematica != null && !tematica.isEmpty()) {
+            // Filtrar por estado, tipo y temática
+            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);
+            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);
+            paginaCombos = comboRepository.findByEstadoAndTipoAndTematica(estadoEnum, tipoEnum, tematica, pageable);
+        } else if (estado != null && !estado.isEmpty() && tipo != null && !tipo.isEmpty()) {
             // Filtrar por estado y tipo
-            return comboRepository.findByEstadoAndTipo(
-                EstadoCombo.valueOf(estado), 
-                Combo.TipoCombo.valueOf(tipo));
+            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);
+            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);
+            paginaCombos = comboRepository.findByEstadoAndTipo(estadoEnum, tipoEnum, pageable);
+        } else if (estado != null && !estado.isEmpty() && tematica != null && !tematica.isEmpty()) {
+            // Filtrar por estado y temática
+            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);
+            paginaCombos = comboRepository.findByEstadoAndTematica(estadoEnum, tematica, pageable);
+        } else if (tipo != null && !tipo.isEmpty() && tematica != null && !tematica.isEmpty()) {
+            // Filtrar por tipo y temática
+            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);
+            paginaCombos = comboRepository.findByTipoAndTematica(tipoEnum, tematica, pageable);
         } else if (estado != null && !estado.isEmpty()) {
             // Filtrar solo por estado
-            return comboRepository.findByEstado(EstadoCombo.valueOf(estado));
+            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);
+            paginaCombos = comboRepository.findByEstado(estadoEnum, pageable);
         } else if (tipo != null && !tipo.isEmpty()) {
             // Filtrar solo por tipo
-            return comboRepository.findByTipo(Combo.TipoCombo.valueOf(tipo));
+            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);
+            paginaCombos = comboRepository.findByTipo(tipoEnum, pageable);
+        } else if (tematica != null && !tematica.isEmpty()) {
+            // Filtrar solo por temática
+            paginaCombos = comboRepository.findByTematica(tematica, pageable);
         } else {
-            // Sin filtros, devolver todos ordenados por ID descendente
-            return comboRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
+            // Si no hay filtros, usar la paginación existente
+            return obtenerTodosPaginados(page, size);
         }
+
+        // Convertir a DTOs
+        List<Map<String, Object>> dtos = new ArrayList<>();
+        for (Combo c : paginaCombos.getContent()) {
+            Map<String, Object> dto = obtenerComboConSlots(c.getId());
+            if (dto != null) dtos.add(dto);
+        }
+
+        // Construir respuesta
+        Map<String, Object> response = new HashMap<>();
+        response.put("combos", dtos);
+        response.put("currentPage", paginaCombos.getNumber());
+        response.put("totalItems", paginaCombos.getTotalElements());
+        response.put("totalPages", paginaCombos.getTotalPages());
+
+        System.out.println("Filtrado de combos con paginación optimizada - Página: " + page + ", Tamaño: " + size +
+                          ", Total: " + paginaCombos.getTotalElements() +
+                          ", Combos en esta página: " + dtos.size());
+
+        return response;
     }
     
-    public List<Combo> filtrarCombosPorId(String idStr) {
-        List<Combo> resultado = new java.util.ArrayList<>();
+    public Map<String, Object> filtrarCombosPorId(String idStr, int page, int size) {
+        // Crear objeto Pageable para paginación
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
         try {
             // Intentar buscar por ID exacto
             Long id = Long.parseLong(idStr);
             Optional<Combo> combo = comboRepository.findById(id);
             if (combo.isPresent()) {
-                resultado.add(combo.get());
-                return resultado;
+                // Si se encuentra el combo exacto, devolverlo
+                Map<String, Object> dto = obtenerComboConSlots(combo.get().getId());
+                if (dto != null) {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("combos", List.of(dto));
+                    response.put("currentPage", 0);
+                    response.put("totalItems", 1);
+                    response.put("totalPages", 1);
+                    return response;
+                }
             }
         } catch (NumberFormatException e) {
             // Si no es un número, buscar por coincidencia parcial
         }
         
         // Buscar por coincidencia parcial en el ID
-        return comboRepository.findByIdContaining(idStr);
+        Page<Combo> paginaCombos = comboRepository.findByIdContaining(idStr, pageable);
+        
+        // Convertir a DTOs
+        List<Map<String, Object>> dtos = new ArrayList<>();
+        for (Combo c : paginaCombos.getContent()) {
+            Map<String, Object> dto = obtenerComboConSlots(c.getId());
+            if (dto != null) dtos.add(dto);
+        }
+
+        // Construir respuesta
+        Map<String, Object> response = new HashMap<>();
+        response.put("combos", dtos);
+        response.put("currentPage", paginaCombos.getNumber());
+        response.put("totalItems", paginaCombos.getTotalElements());
+        response.put("totalPages", paginaCombos.getTotalPages());
+
+        return response;
     }
 
     /**
@@ -408,6 +482,7 @@ public class ComboService {
         dto.put("id", c.getId());
         dto.put("estado", c.getEstado());
         dto.put("tipo", c.getTipo());
+        dto.put("tematica", c.getTematica());
         dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
         
         // Mapear preguntas a slots PM1, PM2, PM3
@@ -668,6 +743,7 @@ public class ComboService {
         combo.setEstado(EstadoCombo.borrador);
         combo.setNivel(NivelCombo.NORMAL);
         combo.setTipo(Combo.TipoCombo.valueOf(dto.getTipo()));
+        combo.setTematica(dto.getTematica());
         combo = comboRepository.save(combo);
 
         // PASO 4: Crear las relaciones pregunta-combo (preguntas ya reservadas)

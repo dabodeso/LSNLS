@@ -25,6 +25,7 @@ import com.lsnls.dto.PreguntaDTO;
 import java.util.Map;
 import java.util.HashMap;
 import com.lsnls.service.TematicaService;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -371,36 +372,116 @@ public class CuestionarioService {
         throw new RuntimeException("Cuestionario no encontrado con ID: " + id);
     }
 
-    public List<Cuestionario> filtrarCuestionarios(String estado, String tematica) {
+    public Map<String, Object> filtrarCuestionarios(String estado, String tematica, int page, int size) {
+        // Crear objeto Pageable para paginación
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        
+        Page<Cuestionario> paginaCuestionarios;
+        
+        // Aplicar filtros y paginación directamente en la consulta a la base de datos
         if (estado != null && !estado.isEmpty() && tematica != null && !tematica.isEmpty()) {
-            return cuestionarioRepository.findByEstadoAndTematicaContainingIgnoreCaseOrderByIdDesc(
-                EstadoCuestionario.valueOf(estado), tematica);
+            // Filtrar por estado y temática
+            EstadoCuestionario estadoEnum = EstadoCuestionario.valueOf(estado);
+            paginaCuestionarios = cuestionarioRepository.findByEstadoAndTematicaContainingIgnoreCase(
+                estadoEnum, tematica, pageable);
         } else if (estado != null && !estado.isEmpty()) {
-            return cuestionarioRepository.findByEstadoOrderByIdDesc(EstadoCuestionario.valueOf(estado));
+            // Filtrar solo por estado
+            EstadoCuestionario estadoEnum = EstadoCuestionario.valueOf(estado);
+            paginaCuestionarios = cuestionarioRepository.findByEstado(estadoEnum, pageable);
         } else if (tematica != null && !tematica.isEmpty()) {
-            return cuestionarioRepository.findByTematicaContainingIgnoreCaseOrderByIdDesc(tematica);
+            // Filtrar solo por temática
+            paginaCuestionarios = cuestionarioRepository.findByTematicaContainingIgnoreCase(tematica, pageable);
         } else {
-            return cuestionarioRepository.findAllOrderByIdDesc();
+            // Si no hay filtros, usar la paginación existente
+            return obtenerTodosPaginados(page, size);
         }
+        
+        // Convertir a DTOs
+        List<Map<String, Object>> dtos = new ArrayList<>();
+        for (Cuestionario c : paginaCuestionarios.getContent()) {
+            Map<String, Object> dto = obtenerCuestionarioConSlots(c.getId());
+            if (dto != null) dtos.add(dto);
+        }
+        
+        // Construir respuesta
+        Map<String, Object> response = new HashMap<>();
+        response.put("cuestionarios", dtos);
+        response.put("currentPage", paginaCuestionarios.getNumber());
+        response.put("totalItems", paginaCuestionarios.getTotalElements());
+        response.put("totalPages", paginaCuestionarios.getTotalPages());
+        
+        System.out.println("Filtrado con paginación optimizada - Página: " + page + ", Tamaño: " + size + 
+                          ", Total: " + paginaCuestionarios.getTotalElements() + 
+                          ", Cuestionarios en esta página: " + dtos.size());
+        
+        return response;
     }
     
-    public List<Cuestionario> filtrarCuestionariosPorId(String idStr) {
-        List<Cuestionario> resultado = new ArrayList<>();
+    public Map<String, Object> filtrarCuestionariosPorId(String idStr, int page, int size) {
+        // Crear objeto Pageable para paginación
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
         try {
             // Intentar buscar por ID exacto
             Long id = Long.parseLong(idStr);
             Optional<Cuestionario> cuestionario = cuestionarioRepository.findById(id);
+            
             if (cuestionario.isPresent()) {
-                resultado.add(cuestionario.get());
-                return resultado;
+                // Para búsqueda exacta por ID, creamos una respuesta con un solo elemento
+                List<Map<String, Object>> dtos = new ArrayList<>();
+                Map<String, Object> dto = obtenerCuestionarioConSlots(id);
+                if (dto != null) {
+                    dtos.add(dto);
+                }
+                
+                // Construir respuesta para un solo elemento
+                Map<String, Object> response = new HashMap<>();
+                response.put("cuestionarios", dtos);
+                response.put("currentPage", 0);
+                response.put("totalItems", 1);
+                response.put("totalPages", 1);
+                
+                System.out.println("Búsqueda exacta por ID - ID: " + id + ", Encontrado: " + (dto != null));
+                
+                return response;
+            } else {
+                // No se encontró el cuestionario con el ID exacto
+                Map<String, Object> response = new HashMap<>();
+                response.put("cuestionarios", new ArrayList<>());
+                response.put("currentPage", 0);
+                response.put("totalItems", 0);
+                response.put("totalPages", 0);
+                
+                System.out.println("Búsqueda exacta por ID - ID: " + id + ", No encontrado");
+                
+                return response;
             }
         } catch (NumberFormatException e) {
-            // Si no es un número, buscar por coincidencia parcial
+            // Si no es un número, buscar por coincidencia parcial usando paginación nativa
+            // Implementar método en el repositorio para buscar por ID con paginación
+            Page<Cuestionario> paginaCuestionarios = cuestionarioRepository.findByIdContaining(idStr, pageable);
+            
+            // Convertir a DTOs
+            List<Map<String, Object>> dtos = new ArrayList<>();
+            for (Cuestionario c : paginaCuestionarios.getContent()) {
+                Map<String, Object> dto = obtenerCuestionarioConSlots(c.getId());
+                if (dto != null) dtos.add(dto);
+            }
+            
+            // Construir respuesta
+            Map<String, Object> response = new HashMap<>();
+            response.put("cuestionarios", dtos);
+            response.put("currentPage", paginaCuestionarios.getNumber());
+            response.put("totalItems", paginaCuestionarios.getTotalElements());
+            response.put("totalPages", paginaCuestionarios.getTotalPages());
+            
+            System.out.println("Búsqueda parcial por ID - Término: " + idStr + 
+                              ", Página: " + page + ", Tamaño: " + size + 
+                              ", Total: " + paginaCuestionarios.getTotalElements() + 
+                              ", Cuestionarios en esta página: " + dtos.size());
+            
+            return response;
         }
-        
-        // Buscar por coincidencia parcial en el ID
-        return cuestionarioRepository.findByIdContaining(idStr);
     }
 
     // Método auxiliar para debug

@@ -7,6 +7,31 @@ const CombosManager = {
     totalCombos: 0,
     totalPaginas: 0,
     cargando: false,
+    tematicas: [],
+    
+    async cargarTematicas() {
+        try {
+            console.log('🔄 [COMBOS] Cargando temáticas...');
+            const response = await fetch('/api/tematicas', {
+                headers: authManager.getAuthHeaders()
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error al cargar temáticas: ${response.status} ${response.statusText}`);
+            }
+            
+            const tematicasData = await response.json();
+            // Extraer solo los nombres de las temáticas
+            this.tematicas = tematicasData.map(tematica => tematica.nombre);
+            console.log('✅ [COMBOS] Temáticas cargadas:', this.tematicas);
+            return this.tematicas;
+        } catch (error) {
+            console.error('❌ [COMBOS] Error al cargar temáticas:', error);
+            // Usar temáticas por defecto si falla la carga
+            this.tematicas = ['GEOGRAFÍA', 'HISTORIA', 'DEPORTES', 'CIENCIA', 'ARTE', 'MÚSICA', 'CINE', 'LITERATURA', 'TECNOLOGÍA', 'GENERAL'];
+            return this.tematicas;
+        }
+    },
     
     async cargarCombos(resetear = true) {
         try {
@@ -47,6 +72,8 @@ const CombosManager = {
             this.totalPaginas = data.totalPages;
             this.paginaActual = data.currentPage;
             
+            console.log('📥 [CARGAR COMBOS] Combos recibidos del servidor:', this.combos);
+            
             await this.mostrarCombos(this.combos);
             this.actualizarPaginacion();
             this.cargando = false;
@@ -68,11 +95,109 @@ const CombosManager = {
     },
     
     async cargarMasCombos() {
-        if (this.cargando) return;
-        if (this.paginaActual >= this.totalPaginas - 1) return;
+        console.log('🔄 [CARGAR MÁS COMBOS] Iniciando cargarMasCombos...');
+        console.log(`🔄 [CARGAR MÁS COMBOS] Estado actual: cargando=${this.cargando}, paginaActual=${this.paginaActual}, totalPaginas=${this.totalPaginas}`);
         
-        this.paginaActual++;
-        await this.cargarCombos(false);
+        // Evitar cargar más si ya está cargando o si no hay más páginas
+        if (this.cargando) {
+            console.log('⚠️ [CARGAR MÁS COMBOS] Ya está cargando, saliendo...');
+            return;
+        }
+        if (this.paginaActual >= this.totalPaginas - 1) {
+            console.log('⚠️ [CARGAR MÁS COMBOS] No hay más páginas, saliendo...');
+            return;
+        }
+        
+        try {
+            // Incrementar la página ANTES de marcar como cargando
+            this.paginaActual++;
+            console.log(`🔄 [CARGAR MÁS COMBOS] Incrementada paginaActual a ${this.paginaActual}`);
+            
+            // Marcar como cargando y actualizar la UI
+            console.log('🔄 [CARGAR MÁS COMBOS] Marcando como cargando y actualizando UI...');
+            this.cargando = true;
+            this.actualizarPaginacion();
+            
+            // Verificar si hay filtros activos
+            const estado = document.getElementById('filtro-estado-combo')?.value || '';
+            const tipo = document.getElementById('filtro-tipo-combo')?.value || '';
+            const tematica = document.getElementById('filtro-tematica-combo')?.value || '';
+            const subtema = document.getElementById('filtro-subtema-combo')?.value || '';
+            const busqueda = document.getElementById('buscar-combo')?.value || '';
+            
+            console.log(`🔍 [CARGAR MÁS COMBOS] Filtros activos: estado=${estado}, tipo=${tipo}, tematica=${tematica}, subtema=${subtema}, busqueda=${busqueda}`);
+            
+            // Si hay filtros activos, realizar solicitud con filtros
+            if (estado || tipo || tematica || subtema || busqueda) {
+                console.log('🔄 [CARGAR MÁS COMBOS] Realizando solicitud con filtros para página ' + this.paginaActual);
+                
+                // Construir parámetros de búsqueda
+                const params = new URLSearchParams({
+                    page: this.paginaActual,
+                    size: this.tamanioPagina
+                });
+                
+                // Añadir filtros si existen
+                if (estado) params.append('estado', estado);
+                if (tipo) params.append('tipo', tipo);
+                if (tematica) params.append('tematica', tematica);
+                if (subtema) params.append('subtema', subtema);
+                if (busqueda) params.append('id', busqueda);
+                
+                console.log('🔄 [CARGAR MÁS COMBOS] Parámetros:', params.toString());
+                
+                // Realizar la solicitud
+                const response = await fetch(`/api/combos/filtrar?${params.toString()}`, {
+                    headers: authManager.getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error al cargar más combos: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('🔄 [CARGAR MÁS COMBOS] Respuesta recibida:', data);
+                
+                // Añadir los nuevos combos a los existentes
+                if (data.combos && data.combos.length > 0) {
+                    console.log(`🔄 [CARGAR MÁS COMBOS] Añadiendo ${data.combos.length} combos a los ${this.combos.length} existentes`);
+                    this.combos = [...this.combos, ...data.combos];
+                    
+                    // Actualizar datos de paginación
+                    this.totalCombos = data.totalItems || this.totalCombos;
+                    this.totalPaginas = data.totalPages || this.totalPaginas;
+                    
+                    // Mostrar los combos
+                    await this.mostrarCombos(this.combos);
+                } else {
+                    console.log('⚠️ [CARGAR MÁS COMBOS] No se recibieron nuevos combos');
+                }
+            } else {
+                console.log('🔄 [CARGAR MÁS COMBOS] Usando cargarCombos con resetear=false');
+                // Si no hay filtros, usar la carga normal
+                await this.cargarCombos(false);
+            }
+            
+            console.log(`✅ [CARGAR MÁS COMBOS] Completado. Combos cargados: ${this.combos.length}`);
+        } catch (error) {
+            console.error('❌ [CARGAR MÁS COMBOS] Error:', error);
+            Toastify({
+                text: 'Error al cargar más combos: ' + error.message,
+                duration: 3000,
+                close: true,
+                gravity: "top",
+                position: "right",
+                style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
+            }).showToast();
+            
+            // Revertir el incremento de página si hay error
+            this.paginaActual = Math.max(0, this.paginaActual - 1);
+        } finally {
+            // Asegurar que siempre se marque como no cargando
+            console.log('🔄 [CARGAR MÁS COMBOS] Finalizando, marcando como no cargando...');
+            this.cargando = false;
+            this.actualizarPaginacion();
+        }
     },
     
     mostrarEstadoCarga() {
@@ -85,8 +210,12 @@ const CombosManager = {
     },
     
     actualizarPaginacion() {
+        console.log('📊 [PAGINACIÓN COMBOS] Iniciando actualizarPaginacion...');
+        console.log(`📊 [PAGINACIÓN COMBOS] Estado actual: cargando=${this.cargando}, paginaActual=${this.paginaActual}, totalPaginas=${this.totalPaginas}, totalCombos=${this.totalCombos}, combos.length=${this.combos.length}`);
+        
         let paginacionContainer = document.getElementById('paginacion-combos');
         if (!paginacionContainer) {
+            console.log('📊 [PAGINACIÓN COMBOS] Contenedor no existe, creando uno nuevo...');
             // Crear el contenedor si no existe
             const tablaContainer = document.querySelector('.table-responsive');
             if (tablaContainer) {
@@ -95,41 +224,89 @@ const CombosManager = {
                 paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
                 tablaContainer.parentNode.insertBefore(paginacionDiv, tablaContainer.nextSibling);
                 paginacionContainer = document.getElementById('paginacion-combos');
+                console.log('📊 [PAGINACIÓN COMBOS] Contenedor creado correctamente');
+            } else {
+                console.log('⚠️ [PAGINACIÓN COMBOS] No se encontró el contenedor .table-responsive');
             }
+        } else {
+            console.log('📊 [PAGINACIÓN COMBOS] Contenedor encontrado');
         }
         
         if (paginacionContainer) {
+            // Limpiar el contenedor antes de añadir nuevos elementos
+            console.log('📊 [PAGINACIÓN COMBOS] Limpiando contenedor...');
+            paginacionContainer.innerHTML = '';
+            
             const infoPagina = document.createElement('div');
-            infoPagina.innerHTML = `Mostrando ${this.combos.length} de ${this.totalCombos} combos (Página ${this.paginaActual + 1} de ${this.totalPaginas})`;
+            const paginaActual = this.paginaActual + 1;
+            const totalPaginas = Math.max(1, Math.ceil(this.totalPaginas));
+            infoPagina.innerHTML = `Mostrando ${this.combos.length} de ${this.totalCombos} combos (Página ${paginaActual} de ${totalPaginas})`;
+            paginacionContainer.appendChild(infoPagina);
+            console.log(`📊 [PAGINACIÓN COMBOS] Información de página añadida: Página ${paginaActual} de ${totalPaginas}`);
             
-            const botonCargarMas = document.createElement('button');
-            botonCargarMas.className = 'btn btn-primary';
-            botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más combos';
-            botonCargarMas.type = 'button';
-            botonCargarMas.id = 'btn-cargar-mas-combos';
+            // Verificar si hay más páginas para cargar
+            const hayMasPaginas = this.paginaActual < this.totalPaginas - 1;
+            console.log(`📊 [PAGINACIÓN COMBOS] ¿Hay más páginas? ${hayMasPaginas} (paginaActual=${this.paginaActual}, totalPaginas=${this.totalPaginas})`);
             
-            const botonDeshabilitado = this.cargando || this.paginaActual >= this.totalPaginas - 1;
-            
-            if (botonDeshabilitado) {
-                botonCargarMas.disabled = true;
-                botonCargarMas.style.opacity = '0.6';
-                botonCargarMas.style.cursor = 'not-allowed';
-            } else {
-                botonCargarMas.disabled = false;
-                botonCargarMas.style.opacity = '1';
-                botonCargarMas.style.cursor = 'pointer';
+            if (hayMasPaginas) {
+                console.log('📊 [PAGINACIÓN COMBOS] Creando botón "Cargar más"...');
+                const botonCargarMas = document.createElement('button');
+                botonCargarMas.className = 'btn btn-primary';
+                botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más combos';
+                botonCargarMas.type = 'button';
+                botonCargarMas.id = 'btn-cargar-mas-combos';
                 
-                botonCargarMas.addEventListener('click', (e) => {
+                // Deshabilitar el botón mientras se está cargando
+                if (this.cargando) {
+                    console.log('📊 [PAGINACIÓN COMBOS] Deshabilitando botón (cargando=true)');
+                    botonCargarMas.disabled = true;
+                    botonCargarMas.style.opacity = '0.6';
+                    botonCargarMas.style.cursor = 'not-allowed';
+                    botonCargarMas.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+                } else {
+                    console.log('📊 [PAGINACIÓN COMBOS] Habilitando botón (cargando=false)');
+                    botonCargarMas.disabled = false;
+                }
+                
+                // Usar onclick en lugar de addEventListener para evitar duplicación de eventos
+                botonCargarMas.onclick = (e) => {
+                    console.log('🖱️ [PAGINACIÓN COMBOS] Botón "Cargar más" clickeado');
                     e.preventDefault();
                     e.stopPropagation();
-                    this.cargarMasCombos();
-                });
+                    // Usar una referencia explícita al objeto CombosManager
+                    CombosManager.cargarMasCombos();
+                };
+                
+                paginacionContainer.appendChild(botonCargarMas);
+                console.log('📊 [PAGINACIÓN COMBOS] Botón "Cargar más" añadido al DOM');
+                
+                // Verificar que el botón esté correctamente añadido y tenga el evento onclick
+                setTimeout(() => {
+                    const botonEnDOM = document.getElementById('btn-cargar-mas-combos');
+                    if (botonEnDOM) {
+                        console.log('✅ [PAGINACIÓN COMBOS] Botón verificado en el DOM');
+                        if (typeof botonEnDOM.onclick === 'function') {
+                            console.log('✅ [PAGINACIÓN COMBOS] El botón tiene un manejador de eventos onclick');
+                        } else {
+                            console.error('❌ [PAGINACIÓN COMBOS] El botón NO tiene un manejador de eventos onclick');
+                        }
+                    } else {
+                        console.error('❌ [PAGINACIÓN COMBOS] No se pudo encontrar el botón en el DOM después de añadirlo');
+                    }
+                }, 100);
+            } else if (this.combos.length > 0) {
+                // Si no hay más páginas pero hay resultados, mostrar un mensaje
+                console.log('📊 [PAGINACIÓN COMBOS] No hay más páginas, mostrando mensaje de "No hay más resultados"');
+                const noMasResultados = document.createElement('div');
+                noMasResultados.className = 'text-muted';
+                noMasResultados.textContent = 'No hay más resultados para mostrar';
+                paginacionContainer.appendChild(noMasResultados);
             }
-            
-            paginacionContainer.innerHTML = '';
-            paginacionContainer.appendChild(infoPagina);
-            paginacionContainer.appendChild(botonCargarMas);
+        } else {
+            console.error('❌ [PAGINACIÓN COMBOS] No se pudo encontrar ni crear el contenedor de paginación');
         }
+        
+        console.log('📊 [PAGINACIÓN COMBOS] actualizarPaginacion completado');
     },
 
     async mostrarCombos(combos) {
@@ -140,31 +317,7 @@ const CombosManager = {
         }
         
         // Cargar temáticas para el filtro
-        try {
-            const response = await fetch('/api/temas', {
-                headers: authManager.getAuthHeaders()
-            });
-            if (response.ok) {
-                const tematicas = await response.json();
-                
-                // Llenar el filtro de temáticas
-                const filtroTematica = document.getElementById('filtro-tematica-combo');
-                if (filtroTematica) {
-                    // Mantener la primera opción "Todas"
-                    filtroTematica.innerHTML = '<option value="">Todas</option>';
-                    
-                    // Añadir las temáticas
-                    tematicas.forEach(tematica => {
-                        const option = document.createElement('option');
-                        option.value = tematica;
-                        option.textContent = tematica;
-                        filtroTematica.appendChild(option);
-                    });
-                }
-            }
-        } catch (error) {
-            console.error('Error al cargar temáticas:', error);
-        }
+        await cargarOpcionesTematicas();
         
 
         
@@ -176,6 +329,8 @@ const CombosManager = {
             return;
         }
         combos.forEach(c => {
+            console.log(`🔍 [MOSTRAR COMBOS] Procesando combo ${c.id}, temática: "${c.tematica}"`);
+            
             // Determinar si hay huecos usando slot
             const niveles = ['PM1','PM2','PM3'];
             const preguntasPorSlot = {};
@@ -222,6 +377,12 @@ const CombosManager = {
                         <option value="A" ${c.tipo === 'A' ? 'selected' : ''}>A (Asequible)</option>
                         <option value="D" ${c.tipo === 'D' ? 'selected' : ''}>D (Difícil)</option>
                         <option value="R" ${c.tipo === 'R' ? 'selected' : ''}>R (Rescate)</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="form-select form-select-sm" onchange="actualizarCombo(${c.id}, 'tematica', this.value)">
+                        <option value="">Sin temática</option>
+                        ${getOpcionesTematicaCombo(c.tematica)}
                     </select>
                 </td>
                 <td>
@@ -399,112 +560,103 @@ CombosManager.mostrarCombos = function(combos) {
 }
 
 // Funciones de filtrado
-window.filtrarCombos = async function() {
+window.filtrarCombos = async function(resetear = true) {
+    console.log(`🔍 [FILTRAR COMBOS] Iniciando filtrarCombos con resetear=${resetear}`);
+    console.log(`🔍 [FILTRAR COMBOS] Estado actual: cargando=${CombosManager.cargando}, paginaActual=${CombosManager.paginaActual}, totalPaginas=${CombosManager.totalPaginas}`);
     try {
         const estado = document.getElementById('filtro-estado-combo')?.value || '';
         const tipo = document.getElementById('filtro-tipo-combo')?.value || '';
         const tematica = document.getElementById('filtro-tematica-combo')?.value || '';
         const subtema = document.getElementById('filtro-subtema-combo')?.value || '';
         const busqueda = document.getElementById('buscar-combo')?.value || '';
+        
+        console.log(`🔍 [FILTRAR COMBOS] Filtros: estado=${estado}, tipo=${tipo}, tematica=${tematica}, subtema=${subtema}, busqueda=${busqueda}`);
 
-        // Si hay filtros de tematica o subtema, usar backend
-        if (tematica || subtema) {
-            const params = new URLSearchParams();
-            if (estado) params.append('estado', estado);
-            if (tipo) params.append('tipo', tipo);
-            if (tematica) params.append('tematica', tematica);
-            if (subtema) params.append('subtema', subtema);
-            
-            const response = await fetch(`/api/combos/filtrar?${params.toString()}`, {
-                headers: authManager.getAuthHeaders()
-            });
-            
-            if (!response.ok) throw new Error('Error al filtrar combos');
-            const combos = await response.json();
-            
-            // Aplicar filtro de búsqueda por ID si existe
-            let combosFiltrados = combos;
-            if (busqueda) {
-                combosFiltrados = combos.filter(c => 
-                    c.id.toString().includes(busqueda)
-                );
-            }
-            
-            CombosManager.mostrarCombos(combosFiltrados);
-            return;
+        // Resetear paginación si es una nueva búsqueda
+        if (resetear) {
+            console.log('🔍 [FILTRAR COMBOS] Reseteando paginación y combos');
+            CombosManager.paginaActual = 0;
+            CombosManager.combos = [];
         }
         
-        // Filtrado en memoria para los filtros básicos
-        let combosFiltrados = CombosManager.ultimoListado;
+        // Marcar como cargando y actualizar la UI
+        console.log('🔍 [FILTRAR COMBOS] Marcando como cargando y actualizando UI');
+        CombosManager.cargando = true;
+        CombosManager.mostrarEstadoCarga();
+        CombosManager.actualizarPaginacion();
+        
+        // Construir parámetros de búsqueda con paginación
+        const params = new URLSearchParams({
+            page: CombosManager.paginaActual,
+            size: CombosManager.tamanioPagina
+        });
+        
+        // Añadir filtros si existen
+        if (estado) params.append('estado', estado);
+        if (tipo) params.append('tipo', tipo);
+        if (tematica) params.append('tematica', tematica);
+        if (subtema) params.append('subtema', subtema);
+        if (busqueda) params.append('id', busqueda);
 
-        // Filtrar por estado
-        if (estado) {
-            combosFiltrados = combosFiltrados.filter(c => c.estado === estado);
+        console.log('🔍 [FILTRAR COMBOS] Parámetros de búsqueda:', params.toString());
+
+        // Realizar la búsqueda con filtros y paginación
+        console.log(`🔍 [FILTRAR COMBOS] Enviando solicitud a /api/combos/filtrar?${params.toString()}`);
+        const response = await fetch(`/api/combos/filtrar?${params.toString()}`, {
+            headers: authManager.getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            console.error(`❌ [FILTRAR COMBOS] Error en respuesta: ${response.status} ${response.statusText}`);
+            throw new Error(`Error al filtrar combos: ${response.status} ${response.statusText}`);
         }
-
-        // Filtrar por tipo
-        if (tipo) {
-            combosFiltrados = combosFiltrados.filter(c => c.tipo === tipo);
+        
+        const data = await response.json();
+        console.log('🔍 [FILTRAR COMBOS] Respuesta recibida:', data);
+        
+        // Actualizar datos de paginación
+        if (resetear) {
+            console.log('🔍 [FILTRAR COMBOS] Reemplazando combos existentes');
+            CombosManager.combos = data.combos || [];
+        } else {
+            console.log(`🔍 [FILTRAR COMBOS] Añadiendo ${data.combos ? data.combos.length : 0} combos a los ${CombosManager.combos.length} existentes`);
+            CombosManager.combos = [...CombosManager.combos, ...(data.combos || [])];
         }
-
-        // Filtrar por búsqueda de ID
-        if (busqueda) {
-            // Buscar por ID directamente en el backend
-            try {
-                // Intentar buscar por ID exacto primero
-                if (!isNaN(parseInt(busqueda))) {
-                    const idBusqueda = parseInt(busqueda);
-                    const response = await fetch(`/api/combos/${idBusqueda}`, {
-                        headers: authManager.getAuthHeaders()
-                    });
-                    
-                    if (response.ok) {
-                        // Si se encuentra el combo por ID exacto
-                        const combo = await response.json();
-                        CombosManager.mostrarCombos([combo]);
-                        return;
-                    }
-                }
-                
-                // Si no se encuentra por ID exacto o no es un número, buscar por coincidencia parcial
-                const params = new URLSearchParams();
-                params.append('id', busqueda);
-                
-                const response = await fetch(`/api/combos/filtrar?${params.toString()}`, {
-                    headers: authManager.getAuthHeaders()
-                });
-                
-                if (!response.ok) throw new Error('Error al buscar combos por ID');
-                const combos = await response.json();
-                CombosManager.mostrarCombos(combos);
-                return;
-            } catch (error) {
-                console.error('Error al buscar combo por ID:', error);
-                Toastify({
-                    text: 'Error al buscar combo por ID',
-                    duration: 3000,
-                    close: true,
-                    gravity: "top",
-                    position: "right",
-                    style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
-                }).showToast();
-            }
-        }
-
-        // Solo si no hay búsqueda por ID, mostrar los filtrados en memoria
-        CombosManager.mostrarCombos(combosFiltrados);
+        
+        CombosManager.totalCombos = data.totalItems || 0;
+        CombosManager.totalPaginas = data.totalPages || 0;
+        CombosManager.paginaActual = data.currentPage || 0;
+        
+        console.log(`🔍 [FILTRAR COMBOS] Estado actualizado: totalCombos=${CombosManager.totalCombos}, totalPaginas=${CombosManager.totalPaginas}, paginaActual=${CombosManager.paginaActual}`);
+        
+        // Mostrar combos y actualizar paginación
+        console.log(`🔍 [FILTRAR COMBOS] Mostrando ${CombosManager.combos.length} combos`);
+        await CombosManager.mostrarCombos(CombosManager.combos);
+        console.log('✅ [FILTRAR COMBOS] Combos mostrados correctamente');
     } catch (error) {
-        console.error('Error al filtrar combos:', error);
-        await CombosManager.cargarCombos();
+        console.error('❌ [FILTRAR COMBOS] Error:', error);
+        Toastify({
+            text: 'Error al filtrar combos: ' + error.message,
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
+        }).showToast();
+    } finally {
+        // Asegurar que siempre se marque como no cargando y se actualice la UI
+        console.log('🔍 [FILTRAR COMBOS] Finalizando, marcando como no cargando');
+        CombosManager.cargando = false;
+        CombosManager.actualizarPaginacion();
     }
 }
 
-window.limpiarFiltrosCombos = function() {
+window.limpiarFiltrosCombos = async function() {
     document.getElementById('filtro-estado-combo').value = '';
     document.getElementById('filtro-tipo-combo').value = '';
     document.getElementById('filtro-tematica-combo').value = '';
     document.getElementById('buscar-combo').value = '';
-    CombosManager.cargarCombos();
+    await CombosManager.cargarCombos();
 }
 
 // Función para actualizar tipo o estado de combo
@@ -512,6 +664,9 @@ window.actualizarCombo = async function(comboId, campo, valor) {
     try {
         const datos = {};
         datos[campo] = valor;
+        
+        console.log(`🔄 [ACTUALIZAR COMBO] Actualizando combo ${comboId}, campo: ${campo}, valor: ${valor}`);
+        console.log('📤 [ACTUALIZAR COMBO] Datos a enviar:', datos);
         
         const response = await fetch(`/api/combos/${comboId}`, {
             method: 'PUT',
@@ -524,13 +679,20 @@ window.actualizarCombo = async function(comboId, campo, valor) {
         
         if (!response.ok) {
             const errorData = await response.text();
+            console.error('❌ [ACTUALIZAR COMBO] Error en respuesta:', response.status, errorData);
             throw new Error(errorData || 'Error al actualizar combo');
         }
         
         const data = await response.json();
+        console.log('✅ [ACTUALIZAR COMBO] Respuesta del servidor:', data);
+        
+        const mensaje = data.message || 
+            (campo === 'tipo' ? 'Tipo actualizado correctamente' :
+             campo === 'tematica' ? 'Temática actualizada correctamente' :
+             'Campo actualizado correctamente');
         
         Toastify({
-            text: data.message || `${campo === 'tipo' ? 'Tipo' : 'Estado'} actualizado correctamente`,
+            text: mensaje,
             duration: 2000,
             close: true,
             gravity: 'top',
@@ -539,7 +701,9 @@ window.actualizarCombo = async function(comboId, campo, valor) {
         }).showToast();
         
         // Recargar la lista para reflejar el cambio
+        console.log('🔄 [ACTUALIZAR COMBO] Recargando lista de combos...');
         await CombosManager.cargarCombos();
+        console.log('✅ [ACTUALIZAR COMBO] Lista de combos recargada');
         
     } catch (error) {
         console.error('Error al actualizar combo:', error);
@@ -557,8 +721,46 @@ window.actualizarCombo = async function(comboId, campo, valor) {
     }
 };
 
-function inicializarCombos() {
-    CombosManager.cargarCombos();
+async function inicializarCombos() {
+    // Cargar temáticas primero
+    await CombosManager.cargarTematicas();
+    cargarOpcionesTematicas();
+    
+    // Luego cargar combos
+    await CombosManager.cargarCombos();
+}
+
+async function cargarOpcionesTematicas() {
+    const selectTematica = document.getElementById('filtro-tematica-combo');
+    if (!selectTematica) return;
+    
+    try {
+        // Cargar temáticas desde la tabla tematicas
+        const response = await fetch('/api/tematicas', {
+            headers: authManager.getAuthHeaders()
+        });
+        
+        if (response.ok) {
+            const tematicasData = await response.json();
+            
+            // Limpiar opciones existentes (excepto "Todas")
+            selectTematica.innerHTML = '<option value="">Todas</option>';
+            
+            // Añadir las temáticas de la tabla tematicas
+            tematicasData.forEach(tematica => {
+                const option = document.createElement('option');
+                option.value = tematica.nombre;
+                option.textContent = tematica.nombre;
+                selectTematica.appendChild(option);
+            });
+            
+            console.log('✅ [COMBOS] Opciones de temática cargadas desde /api/tematicas:', tematicasData.map(t => t.nombre));
+        } else {
+            console.error('Error al cargar temáticas:', response.status);
+        }
+    } catch (error) {
+        console.error('Error al cargar temáticas:', error);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', inicializarCombos);
@@ -592,10 +794,47 @@ async function mostrarFormularioCombo() {
     document.getElementById('modal-combo-titulo').textContent = 'Nuevo Combo';
     document.getElementById('combo-id').value = '';
     document.getElementById('combo-tipo').value = '';
+    document.getElementById('combo-tematica').value = '';
+    
+    // Cargar temáticas en el desplegable
+    await cargarTematicasEnModal();
     
     // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('modal-combo'));
     modal.show();
+}
+
+async function cargarTematicasEnModal() {
+    const selectTematica = document.getElementById('combo-tematica');
+    if (!selectTematica) return;
+    
+    try {
+        // Cargar temáticas desde la tabla tematicas
+        const response = await fetch('/api/tematicas', {
+            headers: authManager.getAuthHeaders()
+        });
+        
+        if (response.ok) {
+            const tematicas = await response.json();
+            
+            // Limpiar opciones existentes (excepto "Sin temática")
+            selectTematica.innerHTML = '<option value="">Sin temática</option>';
+            
+            // Añadir temáticas
+            tematicas.forEach(tematica => {
+                const option = document.createElement('option');
+                option.value = tematica.nombre;
+                option.textContent = tematica.nombre;
+                selectTematica.appendChild(option);
+            });
+            
+            console.log('✅ [COMBOS] Temáticas cargadas en modal:', tematicas);
+        } else {
+            console.error('❌ [COMBOS] Error al cargar temáticas para modal');
+        }
+    } catch (error) {
+        console.error('❌ [COMBOS] Error al cargar temáticas para modal:', error);
+    }
 }
 
 async function editarCombo(id) {
@@ -616,6 +855,7 @@ async function editarCombo(id) {
         // Rellenar datos básicos
         document.getElementById('combo-id').value = combo.id;
         document.getElementById('combo-tipo').value = combo.tipo || '';
+        document.getElementById('combo-tematica').value = combo.tematica || '';
         
         // Limpiar primero todos los campos PM
         console.log(`[DEBUG_EDIT] Limpiando campos de formulario`);
@@ -669,6 +909,9 @@ async function editarCombo(id) {
         } else {
             console.warn(`[DEBUG_EDIT] No hay preguntas en el combo o no es un array`);
         }
+        
+        // Cargar temáticas en el desplegable
+        await cargarTematicasEnModal();
         
         // Mostrar el modal
         const modal = new bootstrap.Modal(document.getElementById('modal-combo'));
@@ -860,9 +1103,9 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
             if (!resp.ok) throw new Error('No se pudo añadir la pregunta');
             return resp.json();
         })
-        .then(() => {
+        .then(async () => {
             Toastify({ text: 'Pregunta añadida al combo', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
-            CombosManager.cargarCombos();
+            await CombosManager.cargarCombos();
         })
         .catch(e => {
             Toastify({ text: 'Error al añadir pregunta: ' + e.message, duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
@@ -942,6 +1185,7 @@ async function guardarCombo() {
     }
     
     const comboId = document.getElementById('combo-id').value;
+    const tematica = document.getElementById('combo-tematica').value;
     const esEdicion = !!comboId;
     
     try {
@@ -951,14 +1195,14 @@ async function guardarCombo() {
             resp = await fetch(`/api/combos/${comboId}`, {
                 method: 'PUT',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasMultiplicadoras, tipo })
+                body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica })
             });
         } else {
             // POST para crear
             resp = await fetch('/api/combos/nuevo', {
                 method: 'POST',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasMultiplicadoras, tipo })
+                body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica })
             });
         }
         
@@ -1191,6 +1435,23 @@ function getOpcionesEstadoCombo(estadoActual) {
             }
         });
     }
+    
+    return opciones;
+}
+
+function getOpcionesTematicaCombo(tematicaActual) {
+    let opciones = '';
+    
+    console.log(`🎯 [GET OPCIONES TEMATICA] Temática actual: "${tematicaActual}"`);
+    console.log(`🎯 [GET OPCIONES TEMATICA] Temáticas disponibles:`, CombosManager.tematicas);
+    
+    // Agregar todas las temáticas disponibles
+    CombosManager.tematicas.forEach(tematica => {
+        const selected = tematica === tematicaActual ? 'selected' : '';
+        opciones += `<option value="${tematica}" ${selected}>${tematica}</option>`;
+    });
+    
+    console.log(`🎯 [GET OPCIONES TEMATICA] Opciones generadas:`, opciones);
     
     return opciones;
 }

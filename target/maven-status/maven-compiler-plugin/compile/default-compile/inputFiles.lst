@@ -32,6 +32,7 @@ C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\entit
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\entity\ConfiguracionGlobal.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\entity\Cuestionario.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\entity\PreguntaCombo.java
+C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\controller\TematicaController.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\dto\ReaprovecharComboDTO.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\repository\ConcursanteRepository.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\validation\NoSpecialCharactersValidator.java

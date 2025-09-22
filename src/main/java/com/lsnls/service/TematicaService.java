@@ -3,80 +3,131 @@ package com.lsnls.service;
 import com.lsnls.entity.Tematica;
 import com.lsnls.entity.Usuario;
 import com.lsnls.repository.TematicaRepository;
-import com.lsnls.repository.CuestionarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class TematicaService {
-    
+
     @Autowired
     private TematicaRepository tematicaRepository;
-    
-    @Autowired
-    private CuestionarioRepository cuestionarioRepository;
-    
-    public List<Tematica> obtenerTematicasDisponibles() {
+
+    /**
+     * Obtiene todas las temáticas ordenadas por nombre
+     */
+    public List<Tematica> obtenerTodas() {
         return tematicaRepository.findAllByOrderByNombreAsc();
     }
-    
+
+    /**
+     * Busca una temática por nombre (case insensitive)
+     */
+    public Optional<Tematica> buscarPorNombre(String nombre) {
+        return tematicaRepository.findByNombreIgnoreCase(nombre);
+    }
+
+    /**
+     * Crea una nueva temática si no existe
+     */
+    public Tematica crearTematica(String nombre, Usuario usuario) {
+        // Verificar si ya existe
+        if (tematicaRepository.existsByNombreIgnoreCase(nombre)) {
+            return tematicaRepository.findByNombreIgnoreCase(nombre).orElse(null);
+        }
+        
+        // Crear nueva temática
+        Tematica tematica = new Tematica(nombre, usuario);
+        return tematicaRepository.save(tematica);
+    }
+
+    /**
+     * Busca temáticas que contengan un texto específico
+     */
+    public List<Tematica> buscarPorTexto(String texto) {
+        return tematicaRepository.findByNombreContainingIgnoreCase(texto);
+    }
+
+    /**
+     * Obtiene una temática por ID
+     */
+    public Optional<Tematica> obtenerPorId(Long id) {
+        return tematicaRepository.findById(id);
+    }
+
+    /**
+     * Actualiza el nombre de una temática
+     */
+    public Tematica actualizarTematica(Long id, String nuevoNombre) {
+        Optional<Tematica> tematicaOpt = tematicaRepository.findById(id);
+        if (tematicaOpt.isPresent()) {
+            Tematica tematica = tematicaOpt.get();
+            
+            // Verificar si el nuevo nombre ya existe (excluyendo la temática actual)
+            if (!nuevoNombre.equalsIgnoreCase(tematica.getNombre()) && 
+                tematicaRepository.existsByNombreIgnoreCase(nuevoNombre)) {
+                throw new IllegalArgumentException("Ya existe una temática con el nombre: " + nuevoNombre);
+            }
+            
+            tematica.setNombre(nuevoNombre);
+            return tematicaRepository.save(tematica);
+        }
+        return null;
+    }
+
+    /**
+     * Elimina una temática por ID
+     */
+    public boolean eliminarTematica(Long id) {
+        if (tematicaRepository.existsById(id)) {
+            tematicaRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Elimina una temática por nombre
+     */
+    public boolean eliminarTematica(String nombre) {
+        Optional<Tematica> tematicaOpt = tematicaRepository.findByNombreIgnoreCase(nombre);
+        if (tematicaOpt.isPresent()) {
+            tematicaRepository.delete(tematicaOpt.get());
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Obtiene solo los nombres de las temáticas como lista de strings
+     */
     public List<String> obtenerNombresTematicas() {
         return tematicaRepository.findAllByOrderByNombreAsc()
                 .stream()
-                .map(Tematica::getNombre)
-                .collect(Collectors.toList());
+                .map(tematica -> tematica.getNombre())
+                .collect(java.util.stream.Collectors.toList());
     }
-    
-    @Transactional
+
+    /**
+     * Añade una nueva temática (alias para crearTematica)
+     */
     public Tematica añadirTematica(String nombre, Usuario usuario) {
-        if (nombre == null || nombre.trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre de la temática no puede estar vacío");
-        }
-        
-        String nombreLimpio = nombre.trim();
-        
-        if (tematicaRepository.existsByNombre(nombreLimpio)) {
-            throw new RuntimeException("La temática '" + nombreLimpio + "' ya existe");
-        }
-        
-        Tematica tematica = new Tematica(nombreLimpio, usuario);
-        return tematicaRepository.save(tematica);
+        return crearTematica(nombre, usuario);
     }
-    
-    @Transactional
-    public void eliminarTematica(String nombre) {
-        if (nombre == null || nombre.trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre de la temática no puede estar vacío");
-        }
-        
-        String nombreLimpio = nombre.trim();
-        
-        // Verificar si hay cuestionarios usando esta temática
-        long count = cuestionarioRepository.countByTematica(nombreLimpio);
-        if (count > 0) {
-            throw new RuntimeException("No se puede eliminar la temática '" + nombreLimpio + "' porque hay " + count + " cuestionario(s) que la utilizan");
-        }
-        
-        Tematica tematica = tematicaRepository.findByNombre(nombreLimpio)
-                .orElseThrow(() -> new RuntimeException("La temática '" + nombreLimpio + "' no existe"));
-        
-        tematicaRepository.delete(tematica);
-    }
-    
+
+    /**
+     * Obtiene estadísticas de las temáticas
+     */
     public Map<String, Object> obtenerEstadisticas() {
-        List<Tematica> tematicas = obtenerTematicasDisponibles();
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("totalTematicas", tematicas.size());
-        return stats;
+        List<Tematica> tematicas = tematicaRepository.findAllByOrderByNombreAsc();
+        Map<String, Object> estadisticas = new java.util.HashMap<>();
+        estadisticas.put("totalTematicas", tematicas.size());
+        estadisticas.put("tematicas", tematicas);
+        return estadisticas;
     }
-    
-    public boolean existeTematica(String nombre) {
-        return tematicaRepository.existsByNombre(nombre);
-    }
-} 
+}

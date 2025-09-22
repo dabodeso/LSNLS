@@ -24,6 +24,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -55,6 +57,19 @@ public class ConcursanteService {
         return concursanteRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+    
+    public Page<ConcursanteDTO> findAllPaginated(Pageable pageable) {
+        return concursanteRepository.findAll(pageable)
+                .map(this::convertToDTO);
+    }
+
+    public Page<ConcursanteDTO> findAllPaginatedWithFilters(Pageable pageable, 
+            String estado, String programaId, String jornadaId, String valoracion, 
+            String lugar, String busqueda) {
+        return concursanteRepository.findAllWithFilters(pageable, estado, programaId, 
+                jornadaId, valoracion, lugar, busqueda)
+                .map(this::convertToDTO);
     }
 
     public ConcursanteDTO findById(Long id) {

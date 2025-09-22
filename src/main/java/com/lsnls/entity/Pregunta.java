@@ -43,17 +43,16 @@ public class Pregunta {
     private String tematica;
 
     @NotBlank(message = "La pregunta es obligatoria")
-    @Size(max = 150, message = "La pregunta no puede exceder 150 caracteres")
     @NoLineBreaks(message = "La pregunta no puede contener saltos de línea")
     @NoSpecialCharacters(message = "La pregunta contiene caracteres no permitidos")
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String pregunta;
 
     @NotBlank(message = "La respuesta es obligatoria")
-    @Size(max = 50, message = "La respuesta no puede exceder 50 caracteres")
+    @Size(max = 500, message = "La respuesta no puede exceder 500 caracteres")
     @NoLineBreaks(message = "La respuesta no puede contener saltos de línea")
     @NoSpecialCharacters(message = "La respuesta contiene caracteres no permitidos")
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 500)
     private String respuesta;
 
     @Column(name = "datos_extra")

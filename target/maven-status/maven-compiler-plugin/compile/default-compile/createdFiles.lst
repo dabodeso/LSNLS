@@ -56,6 +56,7 @@ com\lsnls\service\SessionValidationService$SessionValidationResult.class
 com\lsnls\service\JornadaService.class
 com\lsnls\service\AuthorizationService$1.class
 com\lsnls\service\CuestionarioService.class
+com\lsnls\controller\TematicaController.class
 com\lsnls\entity\HistorialJornada.class
 com\lsnls\service\RateLimitingService$RequestCounter.class
 com\lsnls\service\SessionValidationService.class

@@ -31,6 +31,16 @@ CREATE TABLE IF NOT EXISTS tematicas (
     FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
 );
 
+-- Crear tabla de temáticas
+CREATE TABLE IF NOT EXISTS tematicas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    fecha_creacion datetime(6),
+    creacion_usuario_id BIGINT,
+    version BIGINT DEFAULT 0,
+    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
+);
+
 -- Crear tabla de preguntas
 CREATE TABLE IF NOT EXISTS preguntas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -76,6 +86,7 @@ CREATE TABLE IF NOT EXISTS combos (
     estado ENUM('borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado') NOT NULL,
     nivel ENUM('_5LS', '_5NLS', 'NORMAL') NOT NULL,
     tipo ENUM('P', 'A', 'D', 'R'),
+    tematica VARCHAR(100),
     version BIGINT DEFAULT 0
 );
 

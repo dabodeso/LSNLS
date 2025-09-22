@@ -85,6 +85,7 @@ public class ComboController {
                 .body(ApiResponse.error("Error al obtener preguntas del combo: " + e.getMessage()));
         }
     }
+    
 
     @PostMapping("/nuevo")
     @PreAuthorize("@authorizationService.canCreateCuestionario()")
@@ -306,28 +307,25 @@ public class ComboController {
     
     @GetMapping("/filtrar")
     @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<List<Map<String, Object>>> filtrarCombos(
+    public ResponseEntity<Map<String, Object>> filtrarCombos(
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String tipo,
             @RequestParam(required = false) String tematica,
-            @RequestParam(required = false) String id
+            @RequestParam(required = false) String subtema,
+            @RequestParam(required = false) String id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size
     ) {
         try {
-            List<Combo> combos;
+            Map<String, Object> response;
             
             // Si se proporciona un ID, buscar por ID
             if (id != null && !id.isEmpty()) {
-                combos = comboService.filtrarCombosPorId(id);
+                response = comboService.filtrarCombosPorId(id, page, size);
             } else {
-                combos = comboService.filtrarCombos(estado, tipo, tematica);
+                response = comboService.filtrarCombos(estado, tipo, tematica, subtema, page, size);
             }
-            
-            List<Map<String, Object>> dtos = new java.util.ArrayList<>();
-            for (Combo c : combos) {
-                Map<String, Object> dto = comboService.obtenerComboConSlots(c.getId());
-                if (dto != null) dtos.add(dto);
-            }
-            return ResponseEntity.ok(dtos);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error al filtrar combos: ", e);
             return ResponseEntity.internalServerError().build();
@@ -399,6 +397,12 @@ public class ComboController {
                 } catch (IllegalArgumentException e) {
                     return ResponseEntity.badRequest().body("Estado de combo inválido: " + estadoStr);
                 }
+            }
+            
+            // Actualizar temática si se proporciona
+            if (datos.containsKey("tematica")) {
+                String tematica = datos.get("tematica") != null ? datos.get("tematica").toString() : null;
+                combo.setTematica(tematica);
             }
             
             Combo comboActualizado = comboService.actualizar(id, combo);

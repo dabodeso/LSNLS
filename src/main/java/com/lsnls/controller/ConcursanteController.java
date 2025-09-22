@@ -12,6 +12,10 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/concursantes")
@@ -22,7 +26,33 @@ public class ConcursanteController {
     private ConcursanteService concursanteService;
 
     @GetMapping
-    public ResponseEntity<?> findAll() {
+    public ResponseEntity<?> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String programaId,
+            @RequestParam(required = false) String jornadaId,
+            @RequestParam(required = false) String valoracion,
+            @RequestParam(required = false) String lugar,
+            @RequestParam(required = false) String busqueda) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, 
+                sortDir.equalsIgnoreCase("desc") ? 
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending());
+            
+            Page<ConcursanteDTO> concursantes = concursanteService.findAllPaginatedWithFilters(
+                pageable, estado, programaId, jornadaId, valoracion, lugar, busqueda);
+            return ResponseEntity.ok(concursantes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error interno al obtener concursantes: " + e.getMessage());
+        }
+    }
+    
+    @GetMapping("/all")
+    public ResponseEntity<?> findAllWithoutPagination() {
         try {
             List<ConcursanteDTO> concursantes = concursanteService.findAll();
             return ResponseEntity.ok(concursantes);

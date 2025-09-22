@@ -7,10 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import javax.persistence.EntityManager;
 
@@ -34,6 +38,22 @@ public class ProgramaService {
         return programaRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+    
+    public Map<String, Object> findAllPaginated(Pageable pageable) {
+        Page<Programa> page = programaRepository.findAll(pageable);
+        
+        List<ProgramaDTO> programas = page.getContent().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("programas", programas);
+        response.put("currentPage", page.getNumber());
+        response.put("totalItems", page.getTotalElements());
+        response.put("totalPages", page.getTotalPages());
+        
+        return response;
     }
 
     public Optional<Programa> findById(Long id) {

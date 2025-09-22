@@ -13,6 +13,7 @@
     <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="css/styles.css" rel="stylesheet">
+    <link href="css/pagination.css" rel="stylesheet">
     <style>
         .foto-concursante {
             max-width: 80px;
@@ -53,6 +54,56 @@
         .campo-foto-vacio span {
             font-size: 0.7em;
             line-height: 1.2;
+        }
+        /* Estilos para la columna de notas de grabación */
+        #tabla-concursantes-principal th:nth-child(14),
+        #tabla-concursantes-principal td:nth-child(14) {
+            min-width: 700px; /* 5 veces más ancho que el estándar de ~100px */
+            max-width: 500px;
+            white-space: normal; /* Permitir saltos de línea */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.80em; /* Reducir tamaño de letra en 2 puntos */
+            line-height: 1.3; /* Ajustar interlineado para mejor legibilidad */
+        }
+        /* Limitar la altura para evitar filas demasiado altas */
+        #tabla-concursantes-principal td:nth-child(14) {
+            max-height: 80px; /* Reducir la altura máxima */
+            overflow-y: auto;
+            position: relative;
+            cursor: pointer;
+            padding: 4px 8px; /* Reducir el padding para que ocupe menos espacio */
+        }
+        
+        /* Indicador de expandir */
+        #tabla-concursantes-principal td:nth-child(14)::after {
+            content: '\f065'; /* Icono de expandir de Font Awesome */
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 2px;
+            padding: 1px 3px;
+            font-size: 0.7em;
+            color: #007bff;
+            opacity: 0.6;
+        }
+        
+        #tabla-concursantes-principal td:nth-child(14):hover::after {
+            opacity: 1;
+        }
+        
+        /* Estilos para las columnas de duración */
+        #tabla-concursantes-principal th:nth-of-type(19),
+        #tabla-concursantes-principal td:nth-of-type(19),
+        #tabla-concursantes-principal th:nth-of-type(20),
+        #tabla-concursantes-principal td:nth-of-type(20),
+        #tabla-concursantes-principal th:nth-of-type(21),
+        #tabla-concursantes-principal td:nth-of-type(21) {
+            min-width: 80px;
+            text-align: center;
         }
     </style>
 </head>
@@ -666,6 +717,24 @@
             Borrar
         </button>
     </div>
+    
+    <!-- Modal para ver notas completas -->
+    <div class="modal fade" id="modal-ver-notas" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Notas de Grabación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="contenido-notas" class="p-3" style="white-space: pre-wrap;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -842,5 +911,7 @@
             }
         });
     </script>
+    
+    <!-- Script de inicialización eliminado -->
 </body>
-</html> 
+</html>

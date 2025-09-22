@@ -3,6 +3,13 @@ let concursantes = [];
 let programas = [];
 let concursanteActual = null;
 
+// Variables de paginación
+let paginaActual = 0;
+let tamanioPagina = 25;
+let totalConcursantes = 0;
+let totalPaginas = 0;
+let cargando = false;
+
 // Configuración de columnas por rol
 let configuracionColumnas = {
     esDireccion: true,
@@ -41,7 +48,7 @@ async function inicializarConcursantes() {
     detectarRolUsuario();
     
     await cargarProgramas();
-    await cargarConcursantes();
+    await cargarConcursantes(true);
     setupEventListeners();
     
     // Actualizar encabezados de la tabla según la configuración
@@ -62,9 +69,76 @@ function detectarRolUsuario() {
 function aplicarConfiguracionBasica() { /* sin uso, mantenido por compatibilidad */ }
 
 // Carga de datos
-async function cargarConcursantes() {
+async function cargarConcursantes(resetear = true) {
     try {
-        concursantes = await apiManager.get('/api/concursantes');
+        console.log('Iniciando carga de concursantes, resetear:', resetear);
+        
+        if (!authManager.isAuthenticated()) {
+            console.error('Usuario no autenticado');
+            return;
+        }
+
+        if (resetear) {
+            paginaActual = 0;
+            concursantes = [];
+        }
+
+        cargando = true;
+        mostrarEstadoCarga();
+
+        // Obtener filtros del formulario
+        const estado = document.getElementById('filtro-estado-concursante')?.value || '';
+        const programaId = document.getElementById('filtro-programa')?.value || '';
+        const jornadaId = document.getElementById('filtro-jornada')?.value || '';
+        const valoracion = document.getElementById('filtro-valoracion')?.value || '';
+        const lugar = document.getElementById('filtro-lugar')?.value || '';
+        const busqueda = document.getElementById('buscar-concursante')?.value || '';
+
+        const params = new URLSearchParams({
+            page: paginaActual,
+            size: tamanioPagina,
+            sortBy: 'id',
+            sortDir: 'desc'
+        });
+
+        // Agregar filtros a los parámetros si tienen valor
+        if (estado) params.append('estado', estado);
+        if (programaId) params.append('programaId', programaId);
+        if (jornadaId) params.append('jornadaId', jornadaId);
+        if (valoracion) params.append('valoracion', valoracion);
+        if (lugar) params.append('lugar', lugar);
+        if (busqueda) params.append('busqueda', busqueda);
+
+        const response = await fetch(`/api/concursantes?${params}`, {
+            headers: authManager.getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error('Error al cargar los concursantes');
+        }
+
+        const data = await response.json();
+        console.log('Respuesta del servidor:', data);
+        
+        // Añadir logs detallados para depuración
+        if (data && data.content && data.content.length > 0) {
+            console.log('DEBUG - Primer concursante:', data.content[0]);
+            console.log('DEBUG - Campos de duración en primer concursante:',
+                'duracion:', data.content[0].duracion,
+                'duracion_direccion:', data.content[0].duracion_direccion,
+                'duracion_final:', data.content[0].duracion_final);
+        }
+        
+        if (resetear) {
+            concursantes = data.content;
+        } else {
+            concursantes = [...concursantes, ...data.content];
+        }
+        
+        totalConcursantes = data.totalElements;
+        totalPaginas = data.totalPages;
+        paginaActual = data.number;
+        
         mostrarConcursantes();
     } catch (error) {
         if (error && error.message && error.message.startsWith('401')) {
@@ -72,6 +146,98 @@ async function cargarConcursantes() {
             return;
         }
         mostrarError('Error al cargar concursantes: ' + error.message);
+    } finally {
+        cargando = false;
+        ocultarEstadoCarga();
+        // Actualizar paginación
+        actualizarPaginacion();
+    }
+}
+
+async function cargarMasConcursantes() {
+    if (cargando) {
+        return;
+    }
+    
+    if (paginaActual >= totalPaginas - 1) {
+        return;
+    }
+    
+    // Guardar la posición actual del scroll
+    const scrollPosition = window.scrollY;
+    
+    paginaActual++;
+    await cargarConcursantes(false);
+    
+    // Restaurar la posición del scroll después de cargar los concursantes
+    setTimeout(() => {
+        window.scrollTo(0, scrollPosition);
+    }, 100);
+}
+
+function mostrarEstadoCarga() {
+    const tbody = document.querySelector('#tabla-concursantes');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="26" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando concursantes...</td></tr>';
+    }
+}
+
+function ocultarEstadoCarga() {
+    // El estado de carga se oculta automáticamente cuando se muestran los concursantes
+}
+
+function actualizarPaginacion() {
+    let paginacionContainer = document.getElementById('paginacion-concursantes');
+    if (!paginacionContainer) {
+        // Crear el contenedor si no existe
+        const tablaContainer = document.querySelector('.table-responsive');
+        if (tablaContainer) {
+            const paginacionDiv = document.createElement('div');
+            paginacionDiv.id = 'paginacion-concursantes';
+            paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
+            tablaContainer.parentNode.insertBefore(paginacionDiv, tablaContainer.nextSibling);
+            // Obtener la referencia al contenedor recién creado
+            paginacionContainer = document.getElementById('paginacion-concursantes');
+        }
+    }
+
+    if (paginacionContainer) {
+        const infoPagina = document.createElement('div');
+        infoPagina.innerHTML = `Mostrando ${concursantes.length} de ${totalConcursantes} concursantes (Página ${paginaActual + 1} de ${totalPaginas})`;
+
+        // Crear el botón con un enfoque más robusto
+        const botonCargarMas = document.createElement('button');
+        botonCargarMas.className = 'btn btn-primary';
+        botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más concursantes';
+        botonCargarMas.type = 'button';
+        botonCargarMas.id = 'btn-cargar-mas-concursantes';
+        
+        // Estilos inline para asegurar que sea clickeable
+        Object.assign(botonCargarMas.style, {
+            cursor: 'pointer',
+            pointerEvents: 'auto',
+            position: 'relative',
+            zIndex: '1000',
+            display: 'inline-block',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            MozUserSelect: 'none',
+            msUserSelect: 'none'
+        });
+
+        // Deshabilitar el botón si estamos en la última página
+        if (paginaActual >= totalPaginas - 1 || totalPaginas <= 1) {
+            botonCargarMas.disabled = true;
+            botonCargarMas.innerHTML = '<i class="fas fa-check"></i> No hay más concursantes';
+        }
+
+        // Limpiar el contenedor y añadir los nuevos elementos
+        paginacionContainer.innerHTML = '';
+        paginacionContainer.appendChild(infoPagina);
+        paginacionContainer.appendChild(botonCargarMas);
+
+        // Añadir evento click al botón
+        botonCargarMas.addEventListener('click', cargarMasConcursantes);
     }
 }
 
@@ -132,11 +298,20 @@ async function actualizarSelectJornadasFiltro() {
 }
 
 function mostrarConcursantes(concursantesFiltrados = null) {
+    // Verificar si la columna de duración está configurada como visible
+    console.log('⏱️ DEBUG - Columna duración visible:', configuracionColumnas.columnasVisibles['duracion']);
+    console.log('⏱️ DEBUG - Todas las columnas visibles:', JSON.stringify(configuracionColumnas.columnasVisibles));
+    
     console.log('🔍 [CONCURSANTES] Mostrando concursantes con configuración:', configuracionColumnas.columnasVisibles);
     const lista = concursantesFiltrados || concursantes;
     const tbody = document.getElementById('tabla-concursantes');
     
-    tbody.innerHTML = lista.map(concursante => {
+    const htmlGenerado = lista.map(concursante => {
+        // Verificar si este concursante tiene duración
+        if (concursante.duracion) {
+            console.log(`⏱️ DEBUG - Concursante ${concursante.id} tiene duración: ${concursante.duracion}`);
+        }
+        
         const celdas = [];
         
         // Nº CONCUR
@@ -220,7 +395,11 @@ function mostrarConcursantes(concursantesFiltrados = null) {
         
         // NOTAS GRABACIÓN
         if (configuracionColumnas.columnasVisibles['notas-grabacion']) {
-            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'notasGrabacion', this)">${concursante.notasGrabacion || ''}</td>`);
+            celdas.push(`<td 
+                ondblclick="editarCeldaConcursante(${concursante.id}, 'notasGrabacion', this)" 
+                onclick="mostrarNotasCompletas(event, '${concursante.notasGrabacion ? concursante.notasGrabacion.replace(/'/g, "\\'").replace(/"/g, '\\"') : ''}')"
+                title="Click para ver completo, doble click para editar"
+            >${concursante.notasGrabacion || ''}</td>`);
         }
         
         // GUIONISTA
@@ -245,18 +424,19 @@ function mostrarConcursantes(concursantesFiltrados = null) {
         
         // DURACIÓN
         if (configuracionColumnas.columnasVisibles['duracion']) {
-            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracion', this)">${concursante.duracion || ''}</td>`);
+            const duracionValue = concursante.duracion || '';
+            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracion', this)" class="columna-duracion">${duracionValue}</td>`);
         }
         
         // DUR. DIRECCIÓN
         if (configuracionColumnas.columnasVisibles['duracion-direccion']) {
-            console.log('🔍 [CONCURSANTES] Renderizando columna DUR. DIRECCIÓN para concursante:', concursante.id);
+            console.log('🔍 [CONCURSANTES] Renderizando columna DUR. DIRECCIÓN para concursante:', concursante.id, 'valor:', concursante.duracionDireccion);
             celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracionDireccion', this)">${concursante.duracionDireccion || ''}</td>`);
         }
         
         // DUR. FINAL
         if (configuracionColumnas.columnasVisibles['duracion-final']) {
-            console.log('🔍 [CONCURSANTES] Renderizando columna DUR. FINAL para concursante:', concursante.id);
+            console.log('🔍 [CONCURSANTES] Renderizando columna DUR. FINAL para concursante:', concursante.id, 'valor:', concursante.duracionFinal);
             celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracionFinal', this)">${concursante.duracionFinal || ''}</td>`);
         }
         
@@ -294,6 +474,11 @@ function mostrarConcursantes(concursantesFiltrados = null) {
             ${celdas.join('')}
         </tr>`;
     }).join('');
+    
+    console.log('⏱️ DEBUG - Primeros 500 caracteres del HTML generado:', htmlGenerado.substring(0, 500));
+    tbody.innerHTML = htmlGenerado;
+    
+    // Eliminar verificación de depuración
     // Resaltado y scroll si hay id en la URL
     const params = new URLSearchParams(window.location.search);
     const idDestacado = params.get('id');
@@ -308,33 +493,21 @@ function mostrarConcursantes(concursantesFiltrados = null) {
     }
 }
 
-function filtrarConcursantes() {
-    const estado = (document.getElementById('filtro-estado-concursante')?.value || '').toUpperCase();
-    const programaId = document.getElementById('filtro-programa')?.value || '';
-    const jornadaId = document.getElementById('filtro-jornada')?.value || '';
-    const valoracion = (document.getElementById('filtro-valoracion')?.value || '').toLowerCase();
-    const lugar = (document.getElementById('filtro-lugar')?.value || '').toLowerCase();
-    const busqueda = (document.getElementById('buscar-concursante')?.value || '').toLowerCase();
+async function filtrarConcursantes() {
+    // Reiniciar la paginación al aplicar filtros
+    paginaActual = 0;
     
-    const filtrados = concursantes.filter(concursante => {
-        const cumpleEstado = !estado || (concursante.estado && concursante.estado.toUpperCase() === estado);
-        const cumplePrograma = !programaId || (concursante.numeroPrograma && concursante.numeroPrograma.toString() === programaId);
-        const cumpleJornada = !jornadaId || (concursante.jornadaId && concursante.jornadaId.toString() === jornadaId);
-        const txtValoraciones = `${concursante.valoracionGuionista || ''} ${concursante.valoracionFinal || ''}`.toLowerCase();
-        const cumpleValoracion = !valoracion || txtValoraciones.includes(valoracion);
-        const cumpleLugar = !lugar || (concursante.lugar && concursante.lugar.toLowerCase().includes(lugar));
-        const cumpleBusqueda = !busqueda || (concursante.nombre && concursante.nombre.toLowerCase().includes(busqueda)) ||
-            (concursante.numeroConcursante && concursante.numeroConcursante.toString().includes(busqueda));
-        return cumpleEstado && cumplePrograma && cumpleJornada && cumpleValoracion && cumpleLugar && cumpleBusqueda;
-    });
-    
-    mostrarConcursantes(filtrados);
+    // Recargar concursantes con los filtros aplicados
+    await cargarConcursantes(true);
 }
 
 function limpiarFiltrosConcursantes() {
     ['filtro-estado-concursante','filtro-programa','filtro-jornada','filtro-valoracion','filtro-lugar','buscar-concursante']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    mostrarConcursantes();
+    
+    // Reiniciar paginación y cargar desde el servidor
+    paginaActual = 0;
+    cargarConcursantes(true);
 }
 
 function mostrarFormularioConcursante() {
@@ -394,9 +567,10 @@ async function editarConcursante(id) {
         document.getElementById('guionista').value = concursanteActual.guionista || '';
         document.getElementById('valoracion-guionista').value = concursanteActual.valoracionGuionista || '';
         document.getElementById('momentos-destacados').value = concursanteActual.momentosDestacados || '';
-        document.getElementById('duracion').value = concursanteActual.duracion || '';
-        document.getElementById('duracion-direccion').value = concursanteActual.duracionDireccion || '';
-        document.getElementById('duracion-final').value = concursanteActual.duracionFinal || '';
+                console.log('⏱️ DEBUG - Valor de duración en modal:', concursanteActual.duracion);
+                document.getElementById('duracion').value = concursanteActual.duracion || '';
+                document.getElementById('duracion-direccion').value = concursanteActual.duracionDireccion || '';
+                document.getElementById('duracion-final').value = concursanteActual.duracionFinal || '';
         document.getElementById('valoracion-final').value = concursanteActual.valoracionFinal || '';
         document.getElementById('numero-programa').value = concursanteActual.numeroPrograma || '';
         document.getElementById('orden-escaleta').value = concursanteActual.ordenEscaleta || '';
@@ -505,7 +679,9 @@ async function guardarConcursante() {
         if (response.ok) {
             mostrarExito(esEdicion ? 'Concursante editado correctamente' : 'Concursante guardado correctamente');
             $('#modal-concursante').modal('hide');
-            await cargarConcursantes();
+            // Reiniciar paginación y cargar desde el servidor
+            paginaActual = 0;
+            await cargarConcursantes(true);
         } else {
             let mensaje = 'Error desconocido al guardar concursante.';
             let errorText = '';
@@ -553,7 +729,9 @@ async function eliminarConcursante(id) {
 
     try {
         await apiManager.delete(`/api/concursantes/${id}`);
-        await cargarConcursantes();
+        // Reiniciar paginación y cargar desde el servidor
+        paginaActual = 0;
+        await cargarConcursantes(true);
         mostrarExito('Concursante eliminado correctamente');
     } catch (error) {
         mostrarError('Error al eliminar concursante: ' + error.message);
@@ -619,20 +797,26 @@ async function guardarCeldaConcursante(id, campo, input, td, valorOriginal) {
         
         // Campos de duración - validar formato MM:SS
         if (['duracion', 'duracionDireccion', 'duracionFinal'].includes(campo)) {
+            console.log('⏱️ DEBUG - Guardando duración:', campo, 'valor original:', valorOriginal, 'nuevo valor:', nuevoValor);
+            
             if (nuevoValor === '' || nuevoValor === null) {
                 valorConvertido = null;
+                console.log('⏱️ DEBUG - Duración vacía, estableciendo a null');
             } else {
                 // Validar formato MM:SS
                 const formatoValido = /^\d{1,3}:\d{2}$/.test(nuevoValor);
                 if (!formatoValido) {
+                    console.log('⏱️ DEBUG - Formato de duración inválido:', nuevoValor);
                     throw new Error('La duración debe tener formato MM:SS (ej: 25:08)');
                 }
                 // Validar que los segundos sean válidos (00-59)
                 const [minutos, segundos] = nuevoValor.split(':');
                 if (parseInt(segundos) > 59) {
+                    console.log('⏱️ DEBUG - Segundos inválidos:', segundos);
                     throw new Error('Los segundos deben estar entre 00 y 59');
                 }
                 valorConvertido = nuevoValor; // Mantener como string
+                console.log('⏱️ DEBUG - Duración validada correctamente:', valorConvertido);
             }
         }
         // Campos numéricos enteros (excluyendo duracion)
@@ -686,8 +870,16 @@ async function guardarCeldaConcursante(id, campo, input, td, valorOriginal) {
             concursante.programa = prog ? { id: prog.id } : null;
         }
         
+        // Log para depuración de campos de duración
+        if (['duracion', 'duracion_direccion', 'duracion_final'].includes(campo)) {
+            console.log('⏱️ DEBUG - Enviando al servidor:', campo, '=', valorConvertido);
+            console.log('⏱️ DEBUG - Objeto concursante a enviar:', JSON.stringify(concursante));
+        }
+        
         await apiManager.put(`/api/concursantes/${id}`, concursante);
-        await cargarConcursantes();
+        // Reiniciar paginación y cargar desde el servidor
+        paginaActual = 0;
+        await cargarConcursantes(true);
         mostrarExito('Campo actualizado correctamente');
     } catch (error) {
         mostrarError('Error al guardar el cambio: ' + error.message);
@@ -822,7 +1014,9 @@ async function seleccionarCuestionarioModal(id) {
             if (concursante) {
                 concursante.cuestionarioId = id;
                 await apiManager.put(`/api/concursantes/${concursanteParaAsignar}`, concursante);
-                await cargarConcursantes();
+                // Reiniciar paginación y cargar desde el servidor
+                paginaActual = 0;
+                await cargarConcursantes(true);
                 mostrarExito('Cuestionario asignado correctamente');
             }
         } catch (error) {
@@ -845,7 +1039,9 @@ async function seleccionarComboModal(id) {
             if (concursante) {
                 concursante.comboId = id;
                 await apiManager.put(`/api/concursantes/${concursanteParaAsignar}`, concursante);
-                await cargarConcursantes();
+                // Reiniciar paginación y cargar desde el servidor
+                paginaActual = 0;
+                await cargarConcursantes(true);
                 mostrarExito('Combo asignado correctamente');
             }
         } catch (error) {
@@ -1128,7 +1324,9 @@ async function seleccionarJornadaModal(jornadaId) {
     if (concursanteParaAsignarJornada) {
         try {
             await apiManager.post(`/api/concursantes/${concursanteParaAsignarJornada}/asignar-jornada/${jornadaId}`);
-            await cargarConcursantes();
+            // Reiniciar paginación y cargar desde el servidor
+            paginaActual = 0;
+            await cargarConcursantes(true);
             mostrarExito('Jornada asignada correctamente');
         } catch (error) {
             mostrarError('Error al asignar jornada: ' + error.message);
@@ -1144,7 +1342,9 @@ async function desasignarJornadaModal() {
     if (concursanteParaAsignarJornada) {
         try {
             await apiManager.delete(`/api/concursantes/${concursanteParaAsignarJornada}/desasignar-jornada`);
-            await cargarConcursantes();
+            // Reiniciar paginación y cargar desde el servidor
+            paginaActual = 0;
+            await cargarConcursantes(true);
             mostrarExito('Jornada desasignada correctamente');
         } catch (error) {
             mostrarError('Error al desasignar jornada: ' + error.message);
@@ -1209,7 +1409,9 @@ async function subirFotoConcursante(concursanteId, file) {
         const resultado = await response.json();
         
         // Actualizar la vista
-        await cargarConcursantes();
+        // Reiniciar paginación y cargar desde el servidor
+        paginaActual = 0;
+        await cargarConcursantes(true);
         mostrarExito('Foto subida correctamente');
         
     } catch (error) {
@@ -1391,16 +1593,24 @@ function deseleccionarTodasColumnas() {
 function cargarConfiguracionGuardada() {
     try {
         const configGuardada = localStorage.getItem('configuracionColumnasConcursantes');
+        console.log('⏱️ DEBUG - Configuración guardada en localStorage:', configGuardada);
+        
         if (configGuardada) {
             const config = JSON.parse(configGuardada);
+            console.log('⏱️ DEBUG - Configuración parseada:', config);
+            
             // Cargar configuración guardada si existe
             if (config && config.columnasVisibles) {
+                console.log('⏱️ DEBUG - Columnas visibles antes de aplicar configuración:', JSON.stringify(configuracionColumnas.columnasVisibles));
+                
                 // Aplicar configuración guardada solo para las columnas que están en la configuración guardada
                 Object.keys(config.columnasVisibles).forEach(columna => {
                     if (configuracionColumnas.columnasVisibles.hasOwnProperty(columna)) {
                         configuracionColumnas.columnasVisibles[columna] = config.columnasVisibles[columna];
                     }
                 });
+                
+                console.log('⏱️ DEBUG - Columnas visibles después de aplicar configuración:', JSON.stringify(configuracionColumnas.columnasVisibles));
             }
         }
     } catch (error) {
@@ -1427,4 +1637,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Añadir función para mostrar notas completas
+    window.mostrarNotasCompletas = function(event, texto) {
+        // Evitar que se active el evento de doble clic
+        event.preventDefault();
+        
+        // Si el usuario está haciendo doble clic, no mostrar el modal
+        if (event.detail > 1) {
+            return;
+        }
+        
+        // Si el usuario está haciendo clic en un input o está editando, no mostrar el modal
+        if (event.target.tagName === 'INPUT' || event.target.classList.contains('editing')) {
+            return;
+        }
+        
+        // Mostrar el modal con el texto completo
+        const contenidoNotas = document.getElementById('contenido-notas');
+        if (contenidoNotas) {
+            contenidoNotas.textContent = texto;
+            const modal = new bootstrap.Modal(document.getElementById('modal-ver-notas'));
+            modal.show();
+        }
+    };
 }); 

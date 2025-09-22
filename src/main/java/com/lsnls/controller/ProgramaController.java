@@ -1,7 +1,6 @@
 package com.lsnls.controller;
 
 import com.lsnls.dto.ProgramaDTO;
-import com.lsnls.entity.Programa;
 import com.lsnls.service.ProgramaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +11,10 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/programas")
@@ -24,6 +27,19 @@ public class ProgramaController {
     @GetMapping
     public ResponseEntity<List<ProgramaDTO>> findAll() {
         return ResponseEntity.ok(programaService.findAllDTO());
+    }
+    
+    @GetMapping("/pagina")
+    public ResponseEntity<Map<String, Object>> findAllPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        
+        return ResponseEntity.ok(programaService.findAllPaginated(pageable));
     }
 
     @GetMapping("/{id}")

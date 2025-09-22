@@ -6,12 +6,17 @@ const JornadasManager = {
     jornadaEditando: null,
     cuestionariosSeleccionados: [],
     combosSeleccionados: [],
+    // Variables de paginación
+    paginaActual: 0,
+    tamanioPagina: 10,
+    totalJornadas: 0,
+    totalPaginas: 0,
+    cargando: false,
 
     async init() {
         console.log('🚀 [JORNADAS] Inicializando gestión de jornadas');
         try {
-            await this.cargarDatos();
-            this.mostrarJornadas();
+            await this.cargarDatos(true);
             this.configurarEventos();
             console.log('✅ [JORNADAS] Inicialización completada');
         } catch (error) {
@@ -36,23 +41,66 @@ const JornadasManager = {
         this.seleccionarCombos();
     },
 
-    async cargarDatos() {
+    async cargarDatos(resetear = true) {
         console.log('📡 [JORNADAS] Cargando datos...');
         try {
+            if (resetear) {
+                this.paginaActual = 0;
+                this.jornadas = [];
+            }
+
+            this.cargando = true;
+            this.mostrarEstadoCarga();
+
+            // Obtener filtros del formulario
+            const estado = document.getElementById('filtroEstado')?.value || '';
+            const fechaDesde = document.getElementById('filtroFechaDesde')?.value || '';
+            const fechaHasta = document.getElementById('filtroFechaHasta')?.value || '';
+            const buscar = document.getElementById('filtroBuscar')?.value || '';
+
+            const params = new URLSearchParams({
+                page: this.paginaActual,
+                size: this.tamanioPagina,
+                sortBy: 'id',
+                sortDir: 'desc' // Ordenar por ID más alto primero
+            });
+
+            // Agregar filtros a los parámetros si tienen valor
+            if (estado) params.append('estado', estado);
+            if (fechaDesde) params.append('fechaDesde', fechaDesde);
+            if (fechaHasta) params.append('fechaHasta', fechaHasta);
+            if (buscar) params.append('buscar', buscar);
+
             const [jornadasRes, cuestionariosRes, combosRes] = await Promise.all([
-                apiManager.get('/api/jornadas'),
+                apiManager.get(`/api/jornadas?${params}`),
                 apiManager.get('/api/jornadas/cuestionarios-disponibles'),
                 apiManager.get('/api/jornadas/combos-disponibles')
             ]);
 
-            this.jornadas = jornadasRes.datos || [];
+            if (resetear) {
+                this.jornadas = jornadasRes.datos?.content || [];
+            } else {
+                this.jornadas = [...this.jornadas, ...(jornadasRes.datos?.content || [])];
+            }
+
+            this.totalJornadas = jornadasRes.datos?.totalElements || 0;
+            this.totalPaginas = jornadasRes.datos?.totalPages || 0;
+            this.paginaActual = jornadasRes.datos?.number || 0;
+
             this.cuestionariosDisponibles = cuestionariosRes.datos || [];
             this.combosDisponibles = combosRes.datos || [];
 
             console.log(`✅ [JORNADAS] Datos cargados: ${this.jornadas.length} jornadas, ${this.cuestionariosDisponibles.length} cuestionarios, ${this.combosDisponibles.length} combos`);
+            
+            // Mostrar las jornadas después de cargar los datos
+            this.mostrarJornadas();
         } catch (error) {
             console.error('❌ [JORNADAS] Error al cargar datos:', error);
             throw error;
+        } finally {
+            this.cargando = false;
+            this.ocultarEstadoCarga();
+            this.actualizarPaginacion();
         }
     },
 
@@ -65,6 +113,133 @@ const JornadasManager = {
         document.getElementById('buscarCombos').addEventListener('input', (e) => {
             this.filtrarCombos(e.target.value);
         });
+    },
+
+    async cargarMasJornadas() {
+        console.log('🔄 [CARGAR MÁS] Iniciando carga de más jornadas...');
+        
+        if (this.cargando) {
+            console.log('❌ [CARGAR MÁS] Ya está cargando, abortando...');
+            return;
+        }
+        
+        if (this.paginaActual >= this.totalPaginas - 1) {
+            console.log('❌ [CARGAR MÁS] Ya estamos en la última página, abortando...');
+            return;
+        }
+        
+        // Guardar la posición actual del scroll
+        const scrollPosition = window.scrollY;
+        console.log('📍 [CARGAR MÁS] Posición del scroll guardada:', scrollPosition);
+        
+        this.paginaActual++;
+        console.log('✅ [CARGAR MÁS] Página incrementada a:', this.paginaActual);
+        await this.cargarDatos(false);
+        
+        // Restaurar la posición del scroll después de cargar las jornadas
+        setTimeout(() => {
+            window.scrollTo(0, scrollPosition);
+            console.log('📍 [CARGAR MÁS] Posición del scroll restaurada:', scrollPosition);
+        }, 100);
+    },
+
+    mostrarEstadoCarga() {
+        const container = document.getElementById('listaJornadas');
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p class="mt-2">Cargando jornadas...</p>
+                </div>
+            `;
+        }
+    },
+
+    ocultarEstadoCarga() {
+        // El estado de carga se oculta automáticamente cuando se muestran las jornadas
+    },
+
+    actualizarPaginacion() {
+        console.log('🔄 [PAGINACION] Actualizando paginación...');
+        console.log('🔄 [PAGINACION] Estado - jornadas.length:', this.jornadas.length, 'totalJornadas:', this.totalJornadas, 'paginaActual:', this.paginaActual, 'totalPaginas:', this.totalPaginas);
+        
+        let paginacionContainer = document.getElementById('paginacion-jornadas');
+        if (!paginacionContainer) {
+            console.log('🔄 [PAGINACION] Contenedor no encontrado, creando...');
+            // Crear el contenedor si no existe
+            const listaContainer = document.getElementById('listaJornadas');
+            if (listaContainer) {
+                console.log('✅ [PAGINACION] Lista encontrada, creando contenedor...');
+                const paginacionDiv = document.createElement('div');
+                paginacionDiv.id = 'paginacion-jornadas';
+                paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
+                listaContainer.parentNode.insertBefore(paginacionDiv, listaContainer.nextSibling);
+                // Obtener la referencia al contenedor recién creado
+                paginacionContainer = document.getElementById('paginacion-jornadas');
+                console.log('✅ [PAGINACION] Contenedor creado:', paginacionContainer);
+            } else {
+                console.error('❌ [PAGINACION] No se encontró la lista de jornadas');
+            }
+        } else {
+            console.log('✅ [PAGINACION] Contenedor existente encontrado');
+        }
+
+        if (paginacionContainer) {
+            const infoPagina = document.createElement('div');
+            infoPagina.innerHTML = `Mostrando ${this.jornadas.length} de ${this.totalJornadas} jornadas (Página ${this.paginaActual + 1} de ${this.totalPaginas})`;
+
+            // Crear el botón con un enfoque más robusto
+            const botonCargarMas = document.createElement('button');
+            botonCargarMas.className = 'btn btn-primary';
+            botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más jornadas';
+            botonCargarMas.type = 'button';
+            botonCargarMas.id = 'btn-cargar-mas-jornadas';
+            
+            // Estilos inline para asegurar que sea clickeable
+            Object.assign(botonCargarMas.style, {
+                cursor: 'pointer',
+                pointerEvents: 'auto',
+                position: 'relative',
+                zIndex: '1000',
+                display: 'inline-block',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none'
+            });
+            
+            // Verificar si el botón debe estar deshabilitado
+            const botonDeshabilitado = this.cargando || this.paginaActual >= this.totalPaginas - 1;
+            
+            if (botonDeshabilitado) {
+                botonCargarMas.disabled = true;
+                botonCargarMas.style.opacity = '0.6';
+                botonCargarMas.style.cursor = 'not-allowed';
+            } else {
+                botonCargarMas.disabled = false;
+                botonCargarMas.style.opacity = '1';
+                botonCargarMas.style.cursor = 'pointer';
+                
+                // Añadir event listener solo si el botón está habilitado
+                botonCargarMas.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔄 [BOTON] Botón "Cargar más" clickeado');
+                    this.cargarMasJornadas();
+                });
+            }
+            
+            console.log('✅ [PAGINACION] Botón creado, deshabilitado:', botonDeshabilitado);
+            console.log('✅ [PAGINACION] Estado del botón - cargando:', this.cargando, 'paginaActual >= totalPaginas-1:', this.paginaActual >= this.totalPaginas - 1);
+            console.log('✅ [PAGINACION] Total páginas:', this.totalPaginas, 'Página actual:', this.paginaActual);
+
+            paginacionContainer.innerHTML = '';
+            paginacionContainer.appendChild(infoPagina);
+            paginacionContainer.appendChild(botonCargarMas);
+            
+            console.log('✅ [PAGINACION] Paginación actualizada correctamente');
+            console.log('✅ [PAGINACION] Botón añadido al DOM:', botonCargarMas);
+        }
     },
 
     mostrarJornadas() {
@@ -113,29 +288,29 @@ const JornadasManager = {
             if (i < cuestionarios.length) {
                 const c = cuestionarios[i];
                 cuestionariosHtml += `
-                    <div class="cuestionario-slot">
+                    <div class="cuestionario-slot p-2 border rounded" style="background-color: #ffffff; border-color: #e9ecef !important;">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span style="font-weight: bold; color: #0066cc;">Cuestionario ${c.id}</span>
+                            <span style="font-weight: 500; color: #495057;">Cuestionario ${c.id}</span>
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-info" onclick="JornadasManager.verPreguntasCuestionario(${c.id})" title="Ver preguntas">
+                                <button class="btn btn-outline-info btn-sm" onclick="JornadasManager.verPreguntasCuestionario(${c.id})" title="Ver preguntas">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-outline-secondary" onclick="JornadasManager.mostrarHistorialCuestionario(${c.id})" title="Ver historial">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="JornadasManager.mostrarHistorialCuestionario(${c.id})" title="Ver historial">
                                     <i class="fas fa-history"></i>
                                 </button>
-                                <button class="btn btn-outline-success" onclick="JornadasManager.reutilizarCuestionario(${c.id}, ${jornada.id})" title="Reutilizar cuestionario">
+                                <button class="btn btn-outline-success btn-sm" onclick="JornadasManager.reutilizarCuestionario(${c.id}, ${jornada.id})" title="Reutilizar cuestionario">
                                     <i class="fas fa-recycle"></i>
                                 </button>
                             </div>
                         </div>
-                        <small>${c.tematica || 'Sin temática'}</small>
+                        <small style="color: #6c757d;">${c.tematica || 'Sin temática'}</small>
                     </div>
                 `;
             } else {
                 // Slot vacío con botón de añadir
                 cuestionariosHtml += `
-                    <div class="cuestionario-slot empty-slot">
-                        <button class="btn btn-sm btn-success w-100" 
+                    <div class="cuestionario-slot empty-slot p-2 border rounded" style="background-color: #f8f9fa; border-color: #e9ecef !important; border-style: dashed !important;">
+                        <button class="btn btn-sm btn-outline-success w-100" 
                                 onclick="JornadasManager.seleccionarCuestionariosDirecto(${jornada.id})">
                             <i class="fas fa-plus"></i> Añadir
                         </button>
@@ -161,29 +336,29 @@ const JornadasManager = {
                 const tipoNombre = tipoComboNombres[c.tipo] || c.tipo || 'Sin tipo';
                 
                 combosHtml += `
-                    <div class="combo-slot">
+                    <div class="combo-slot p-2 border rounded" style="background-color: #ffffff; border-color: #e9ecef !important;">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span style="font-weight: bold; color: #0066cc;">Combo ${c.id}</span>
+                            <span style="font-weight: 500; color: #495057;">Combo ${c.id}</span>
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-info" onclick="JornadasManager.verPreguntasCombo(${c.id})" title="Ver preguntas">
+                                <button class="btn btn-outline-info btn-sm" onclick="JornadasManager.verPreguntasCombo(${c.id})" title="Ver preguntas">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-outline-secondary" onclick="JornadasManager.mostrarHistorialCombo(${c.id})" title="Ver historial">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="JornadasManager.mostrarHistorialCombo(${c.id})" title="Ver historial">
                                     <i class="fas fa-history"></i>
                                 </button>
-                                <button class="btn btn-outline-success" onclick="JornadasManager.reutilizarCombo(${c.id}, ${jornada.id})" title="Reutilizar combo">
+                                <button class="btn btn-outline-success btn-sm" onclick="JornadasManager.reutilizarCombo(${c.id}, ${jornada.id})" title="Reutilizar combo">
                                     <i class="fas fa-recycle"></i>
                                 </button>
                             </div>
                         </div>
-                        <small>${tipoNombre}</small>
+                        <small style="color: #6c757d;">${tipoNombre}</small>
                     </div>
                 `;
             } else {
                 // Slot vacío con botón de añadir
                 combosHtml += `
-                    <div class="combo-slot empty-slot">
-                        <button class="btn btn-sm btn-success w-100" 
+                    <div class="combo-slot empty-slot p-2 border rounded" style="background-color: #f8f9fa; border-color: #e9ecef !important; border-style: dashed !important;">
+                        <button class="btn btn-sm btn-outline-success w-100" 
                                 onclick="JornadasManager.seleccionarCombosDirecto(${jornada.id})">
                             <i class="fas fa-plus"></i> Añadir
                         </button>
@@ -208,58 +383,72 @@ const JornadasManager = {
         ` : estadoBadge;
         
         return `
-            <div class="jornada-card" data-id="${jornada.id}">
+            <div class="jornada-card mb-4 p-3 border rounded shadow-sm" data-id="${jornada.id}" style="background-color: #f8f9fa; border-left: 4px solid #0066cc !important;">
                 <div class="mb-3">
-                    <table class="table">
-                        <tr>
-                            <td style="font-weight: bold; font-size: 1.1em; color: #0066cc; padding-right: 20px; width: 10%;">${jornada.id}</td>
-                            <td style="width: 20%;">${jornada.nombre}</td>
-                            <td style="width: 25%;">${selectorEstado}</td>
-                            <td style="width: 15%;">${fecha}</td>
-                            <td style="width: 15%;">${jornada.lugar || 'No especificado'}</td>
-                            <td style="width: 15%;">
-                                <div class="btn-group">
-                                    <button class="btn btn-outline-primary btn-sm" onclick="JornadasManager.verDetalle(${jornada.id})" title="Ver detalle">
-                                        <i class="fas fa-eye"></i>
+                    <div class="row align-items-center">
+                        <div class="col-md-1">
+                            <span style="font-weight: bold; font-size: 1.2em; color: #0066cc;">${jornada.id}</span>
+                        </div>
+                        <div class="col-md-2">
+                            <span style="font-weight: 500; color: #495057;">${jornada.nombre}</span>
+                        </div>
+                        <div class="col-md-2">
+                            ${selectorEstado}
+                        </div>
+                        <div class="col-md-2">
+                            <span style="color: #6c757d; font-size: 0.9em;">${fecha}</span>
+                        </div>
+                        <div class="col-md-2">
+                            <span style="color: #6c757d; font-size: 0.9em;">${jornada.lugar || 'No especificado'}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="btn-group">
+                                <button class="btn btn-outline-primary btn-sm" onclick="JornadasManager.verDetalle(${jornada.id})" title="Ver detalle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-success btn-sm" onclick="JornadasManager.exportarExcel(${jornada.id})" title="Exportar Excel">
+                                    <i class="fas fa-file-excel"></i>
+                                </button>
+                                ${this.puedeEditar(jornada) ? `
+                                    <button class="btn btn-outline-warning btn-sm" onclick="JornadasManager.editarJornada(${jornada.id})" title="Editar">
+                                        <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-outline-success btn-sm" onclick="JornadasManager.exportarExcel(${jornada.id})" title="Exportar Excel">
-                                        <i class="fas fa-file-excel"></i>
+                                ` : ''}
+                                ${this.puedeEliminar(jornada) ? `
+                                    <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarJornada(${jornada.id})" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
                                     </button>
-                                    ${this.puedeEditar(jornada) ? `
-                                        <button class="btn btn-outline-warning btn-sm" onclick="JornadasManager.editarJornada(${jornada.id})" title="Editar">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    ` : ''}
-                                    ${this.puedeEliminar(jornada) ? `
-                                        <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarJornada(${jornada.id})" title="Eliminar">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Línea divisoria con texto "CUESTIONARIOS" -->
-                <div class="combos-divider">
-                    <span class="combos-text">CUESTIONARIOS</span>
+                <div class="mt-4 mb-3">
+                    <hr style="border-color: #dee2e6; margin: 0;">
+                    <div class="text-center">
+                        <span class="badge bg-light text-dark px-3 py-1" style="font-size: 0.8em; font-weight: 500;">CUESTIONARIOS</span>
+                    </div>
                 </div>
                 
                 <!-- Cuestionarios -->
-                <div class="cuestionarios-container mt-3">
+                <div class="cuestionarios-container">
                     <div class="cuestionarios-grid">
                         ${cuestionariosHtml}
                     </div>
                 </div>
                 
                 <!-- Línea divisoria con texto "COMBOS" -->
-                <div class="combos-divider">
-                    <span class="combos-text">COMBOS</span>
+                <div class="mt-4 mb-3">
+                    <hr style="border-color: #dee2e6; margin: 0;">
+                    <div class="text-center">
+                        <span class="badge bg-light text-dark px-3 py-1" style="font-size: 0.8em; font-weight: 500;">COMBOS</span>
+                    </div>
                 </div>
                 
                 <!-- Combos -->
-                <div class="combos-container mt-2">
+                <div class="combos-container">
                     <div class="combos-grid">
                         ${combosHtml}
                     </div>
@@ -381,7 +570,7 @@ const JornadasManager = {
             Utils.showAlert('Jornada guardada exitosamente', 'success');
             bootstrap.Modal.getInstance(document.getElementById('modalJornada')).hide();
             
-            await this.cargarDatos();
+            await this.cargarDatos(true);
             this.mostrarJornadas();
             
         } catch (error) {
@@ -397,7 +586,9 @@ const JornadasManager = {
                 return;
             }
             
-            Utils.showAlert('Error al guardar la jornada: ' + (error.message || 'Error desconocido'), 'error');
+            // Extraer mensaje de error de la respuesta JSON
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
         }
     },
 
@@ -410,7 +601,7 @@ const JornadasManager = {
             await apiManager.delete(`/api/jornadas/${id}`);
             Utils.showAlert('Jornada eliminada exitosamente', 'success');
             
-            await this.cargarDatos();
+            await this.cargarDatos(true);
             this.mostrarJornadas();
             
         } catch (error) {
@@ -425,7 +616,9 @@ const JornadasManager = {
                 return;
             }
             
-            Utils.showAlert('Error al eliminar la jornada: ' + (error.message || 'Error desconocido'), 'error');
+            // Extraer mensaje de error de la respuesta JSON
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
         }
     },
 
@@ -436,7 +629,7 @@ const JornadasManager = {
             await apiManager.put(`/api/jornadas/${id}/estado`, { estado: nuevoEstado });
             Utils.showAlert('Estado actualizado exitosamente', 'success');
             
-            await this.cargarDatos();
+            await this.cargarDatos(true);
             this.mostrarJornadas();
             
         } catch (error) {
@@ -451,7 +644,9 @@ const JornadasManager = {
                 return;
             }
             
-            Utils.showAlert('Error al cambiar el estado: ' + (error.message || 'Error desconocido'), 'error');
+            // Extraer mensaje de error de la respuesta JSON
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
         }
     },
 
@@ -500,7 +695,8 @@ const JornadasManager = {
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al exportar Excel:', error);
-            Utils.showAlert('Error al exportar Excel: ' + (error.message || 'Error desconocido'), 'error');
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
         }
     },
 
@@ -740,12 +936,13 @@ const JornadasManager = {
             Utils.showAlert('Cuestionarios actualizados exitosamente', 'success');
             
             // Recargar datos para mostrar los cambios
-            await this.cargarDatos();
+            await this.cargarDatos(true);
             this.mostrarJornadas();
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al guardar cambios de cuestionarios:', error);
-            Utils.showAlert('Error al actualizar cuestionarios: ' + (error.message || 'Error desconocido'), 'error');
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
         }
     },
 
@@ -784,12 +981,13 @@ const JornadasManager = {
             Utils.showAlert('Combos actualizados exitosamente', 'success');
             
             // Recargar datos para mostrar los cambios
-            await this.cargarDatos();
+            await this.cargarDatos(true);
             this.mostrarJornadas();
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al guardar cambios de combos:', error);
-            Utils.showAlert('Error al actualizar combos: ' + (error.message || 'Error desconocido'), 'error');
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
         }
     },
 
@@ -817,10 +1015,10 @@ const JornadasManager = {
         });
     },
 
-    aplicarFiltros() {
-        // Implementar filtros de fecha, estado, etc.
+    async aplicarFiltros() {
         console.log('🔍 [JORNADAS] Aplicando filtros...');
-        // Esta funcionalidad se puede expandir según necesidades
+        // Resetear paginación y recargar datos
+        await this.cargarDatos(true);
     },
 
     async verDetalle(id) {
@@ -1245,12 +1443,13 @@ const JornadasManager = {
             
             // Cerrar modal y recargar datos
             bootstrap.Modal.getInstance(document.getElementById('modalMarcarNoUsados')).hide();
-            await this.cargarDatos();
+            await this.cargarDatos(true);
             this.mostrarJornadas();
             
         } catch (error) {
             console.error('Error al marcar elementos como no usados:', error);
-            Utils.showAlert('Error al marcar elementos como no usados', 'error');
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
         }
     },
 
@@ -1418,12 +1617,13 @@ const JornadasManager = {
             
             // Cerrar modal y recargar datos
             bootstrap.Modal.getInstance(document.getElementById('modalReaprovecharCombo')).hide();
-            await this.cargarDatos();
+            await this.cargarDatos(true);
             this.mostrarJornadas();
             
         } catch (error) {
             console.error('Error al reaprovechar combo:', error);
-            Utils.showAlert('Error al reaprovechar combo', 'error');
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
         }
     },
 
@@ -1540,7 +1740,8 @@ const JornadasManager = {
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al reutilizar cuestionario:', error);
-            Utils.showAlert('Error al reutilizar cuestionario', 'error');
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
         }
     },
 
@@ -1597,7 +1798,8 @@ const JornadasManager = {
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al reciclar combo entero:', error);
-            Utils.showAlert('Error al reciclar combo entero', 'error');
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
         }
     },
 
@@ -1703,7 +1905,39 @@ const JornadasManager = {
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al confirmar reciclaje parcial:', error);
-            Utils.showAlert('Error al confirmar reciclaje parcial', 'error');
+            const mensajeError = this.extraerMensajeError(error.message);
+            Utils.showAlert(mensajeError, 'error');
+        }
+    },
+
+    // Función para extraer el mensaje de error de la respuesta JSON
+    extraerMensajeError(errorMessage) {
+        try {
+            // Si el mensaje contiene un JSON, intentar parsearlo
+            if (errorMessage && errorMessage.includes('{')) {
+                // Buscar el JSON en el mensaje (después del código de estado)
+                const jsonMatch = errorMessage.match(/\{.*\}/);
+                if (jsonMatch) {
+                    const jsonStr = jsonMatch[0];
+                    const errorObj = JSON.parse(jsonStr);
+                    
+                    // Si tiene un campo 'mensaje', usarlo
+                    if (errorObj.mensaje) {
+                        return errorObj.mensaje;
+                    }
+                    
+                    // Si tiene un campo 'message', usarlo
+                    if (errorObj.message) {
+                        return errorObj.message;
+                    }
+                }
+            }
+            
+            // Si no se puede extraer el mensaje del JSON, devolver el mensaje original
+            return errorMessage || 'Error desconocido';
+        } catch (parseError) {
+            console.warn('No se pudo parsear el mensaje de error:', parseError);
+            return errorMessage || 'Error desconocido';
         }
     }
 

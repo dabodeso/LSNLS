@@ -1,6 +1,12 @@
 let programas = [];
 let concursantesPorPrograma = {};
 
+// Variables para paginación
+let paginaActual = 0;
+let totalPaginas = 0;
+let tamañoPagina = 5;
+let totalItems = 0;
+
 async function inicializarProgramas() {
     // Mostrar enlace de administración solo para admins
     const usuario = JSON.parse(localStorage.getItem('usuario'));
@@ -16,9 +22,36 @@ async function inicializarProgramas() {
 
 async function cargarProgramas() {
     try {
-        programas = await apiManager.get('/api/programas');
+        await cargarProgramasPaginados(0);
+    } catch (error) {
+        if (error && error.message && error.message.startsWith('401')) {
+            return;
+        }
+        mostrarError('Error al cargar programas: ' + error.message);
+    }
+}
+
+// Función auxiliar para recargar programas y configurar scroll
+async function recargarProgramas() {
+    await cargarProgramas();
+    configurarScrollTablas();
+}
+
+async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden = 'asc') {
+    try {
+        const response = await apiManager.get(
+            `/api/programas/pagina?page=${pagina}&size=${tamañoPagina}&sortBy=${ordenPor}&sortDir=${direccionOrden}`
+        );
+        
+        programas = response.programas;
+        paginaActual = response.currentPage;
+        totalItems = response.totalItems;
+        totalPaginas = response.totalPages;
+        
         await cargarConcursantesPorPrograma();
         mostrarProgramas();
+        configurarScrollTablas(); // Configurar scroll automático en las tablas
+        renderizarPaginacion();
     } catch (error) {
         if (error && error.message && error.message.startsWith('401')) {
             return;
@@ -53,7 +86,22 @@ function mostrarProgramas() {
         return;
     }
     
-    contenedor.innerHTML = visibles.map(programa => {
+    // Añadir información de paginación
+    let infoPaginacion = '';
+    if (totalItems > 0) {
+        const inicio = paginaActual * tamañoPagina + 1;
+        const fin = Math.min((paginaActual + 1) * tamañoPagina, totalItems);
+        infoPaginacion = `<div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="text-muted">
+                Mostrando ${inicio}-${fin} de ${totalItems} programas
+            </div>
+            <div id="paginacion-programas" class="btn-group">
+                <!-- Los botones de paginación se insertarán aquí -->
+            </div>
+        </div>`;
+    }
+    
+    contenedor.innerHTML = infoPaginacion + visibles.map(programa => {
         const concursantes = concursantesPorPrograma[programa.id] || [];
         const fechaFormateada = formatearFechaPrograma(programa.fechaEmision);
         const totalResultados = calcularTotalResultados(concursantes);
@@ -153,12 +201,12 @@ function mostrarProgramas() {
                                 <span class="programa-info-readonly">${gap}</span>
                             </div>
                         </div>
-                        <div class="d-flex align-items-center" style="gap: 8px; white-space: nowrap;">
-                            <button class="btn btn-sm btn-success" onclick="mostrarConcursantesDisponibles(${programa.id})" title="Añadir concursante">
-                                <i class="fas fa-user-plus"></i> Añadir
+                        <div class="programa-acciones">
+                            <button class="btn btn-success" onclick="mostrarConcursantesDisponibles(${programa.id})" title="Añadir concursante">
+                                <i class="fas fa-user-plus"></i>
                             </button>
-                            <button class="btn btn-sm btn-danger" onclick="eliminarPrograma(${programa.id})" title="Borrar programa">
-                                <i class="fas fa-trash"></i> Borrar
+                            <button class="btn btn-danger" onclick="eliminarPrograma(${programa.id})" title="Borrar programa">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </div>
                     </div>
@@ -257,6 +305,11 @@ function mostrarProgramas() {
 
     // Ajustar automáticamente la altura de los textareas para ver todo el contenido sin scroll interno
     autoResizeTextareasEnProgramas();
+    
+    // Configurar scroll horizontal con cursor se hará al final del DOMContentLoaded
+    
+    // Renderizar controles de paginación
+    renderizarPaginacion();
 }
 
 function autoResizeTextareasEnProgramas() {
@@ -272,6 +325,7 @@ function autoResizeTextareasEnProgramas() {
         ta.addEventListener('change', () => autoResize(ta));
     });
 }
+
 
 function formatearFechaPrograma(fecha) {
     if (!fecha) return 'N/A';
@@ -602,7 +656,7 @@ async function actualizarDuracionObjetivoPrograma(programaId, nuevaDuracion) {
         }
         
         mostrarExito('Duración objetivo actualizada');
-        await cargarProgramas();
+        await recargarProgramas();
         
     } catch (error) {
         mostrarError('Error al actualizar duración objetivo: ' + error.message);
@@ -613,9 +667,114 @@ function irAConcursante(concursanteId) {
     window.location.href = `concursantes.html?id=${concursanteId}`;
 }
 
+// Variables para filtros globales
+let programasFiltrados = [];
+let aplicandoFiltros = false;
+
 function filtrarProgramas() {
-    // Re-renderizar con los filtros aplicados
+    // Reiniciar a la primera página al aplicar filtros
+    paginaActual = 0;
+    aplicandoFiltros = true;
+    cargarProgramasFiltrados();
+}
+
+// Nueva función para cargar programas con filtros aplicados
+async function cargarProgramasFiltrados() {
+    try {
+        // Obtener todos los programas sin paginación
+        const response = await apiManager.get('/api/programas');
+        const todosLosProgramas = response;
+        
+        // Aplicar filtros
+        programasFiltrados = aplicarFiltros(todosLosProgramas);
+        
+        // Cargar concursantes para los programas filtrados
+        await cargarConcursantesParaProgramasFiltrados();
+        
+        // Mostrar solo los primeros 5 programas filtrados
+        mostrarProgramasFiltrados();
+        renderizarPaginacionFiltrada();
+        
+    } catch (error) {
+        if (error && error.message && error.message.startsWith('401')) {
+            return;
+        }
+        mostrarError('Error al cargar programas filtrados: ' + error.message);
+    }
+}
+
+// Cargar concursantes solo para los programas filtrados
+async function cargarConcursantesParaProgramasFiltrados() {
+    concursantesPorPrograma = {};
+    for (const programa of programasFiltrados) {
+        try {
+            const concursantes = await apiManager.get(`/api/concursantes/programa/${programa.id}`);
+            concursantesPorPrograma[programa.id] = concursantes;
+        } catch (e) {
+            console.warn(`No se pudieron cargar concursantes para programa ${programa.id}:`, e);
+            concursantesPorPrograma[programa.id] = [];
+        }
+    }
+}
+
+// Mostrar programas filtrados con paginación de 5
+function mostrarProgramasFiltrados() {
+    const inicio = paginaActual * 5;
+    const fin = inicio + 5;
+    const programasVisibles = programasFiltrados.slice(inicio, fin);
+    
+    // Actualizar variables globales para la paginación
+    programas = programasVisibles;
+    totalItems = programasFiltrados.length;
+    totalPaginas = Math.ceil(programasFiltrados.length / 5);
+    
     mostrarProgramas();
+    configurarScrollTablas();
+}
+
+// Renderizar paginación para resultados filtrados
+function renderizarPaginacionFiltrada() {
+    const paginacion = document.getElementById('paginacion-programas');
+    if (!paginacion) return;
+    
+    if (totalPaginas <= 1) {
+        paginacion.innerHTML = '';
+        return;
+    }
+    
+    let html = '<nav aria-label="Paginación de programas"><ul class="pagination justify-content-center">';
+    
+    // Botón anterior
+    html += `<li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="cambiarPaginaFiltrada(${paginaActual - 1})">Anterior</a>
+    </li>`;
+    
+    // Números de página
+    const inicioPagina = Math.max(0, paginaActual - 2);
+    const finPagina = Math.min(totalPaginas, inicioPagina + 5);
+    
+    for (let i = inicioPagina; i < finPagina; i++) {
+        html += `<li class="page-item ${i === paginaActual ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="cambiarPaginaFiltrada(${i})">${i + 1}</a>
+        </li>`;
+    }
+    
+    // Botón siguiente
+    html += `<li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="cambiarPaginaFiltrada(${paginaActual + 1})">Siguiente</a>
+    </li>`;
+    
+    html += '</ul></nav>';
+    paginacion.innerHTML = html;
+}
+
+// Cambiar página en resultados filtrados
+function cambiarPaginaFiltrada(nuevaPagina) {
+    if (nuevaPagina < 0 || nuevaPagina >= totalPaginas) return;
+    
+    paginaActual = nuevaPagina;
+    mostrarProgramasFiltrados();
+    renderizarPaginacionFiltrada();
 }
 
 function aplicarFiltros(lista) {
@@ -659,7 +818,12 @@ function aplicarFiltros(lista) {
 function limpiarFiltrosProgramas() {
     ['filtro-estado-programa','filtro-temporada','filtro-programa-id','filtro-fecha-emision','filtro-premios-min','filtro-premios-max']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    mostrarProgramas();
+    
+    // Volver al modo normal (sin filtros)
+    aplicandoFiltros = false;
+    programasFiltrados = [];
+    paginaActual = 0;
+    cargarProgramasPaginados(paginaActual);
 }
 
 function mostrarFormularioPrograma() {
@@ -699,7 +863,7 @@ async function guardarPrograma() {
         }
         
         bootstrap.Modal.getInstance(document.getElementById('modal-programa')).hide();
-        await cargarProgramas();
+        await recargarProgramas();
         
     } catch (error) {
         mostrarError('Error al guardar programa: ' + error.message);
@@ -760,7 +924,7 @@ async function subirFotoConcursante(concursanteId, file) {
         const resultado = await response.json();
         
         // Actualizar la vista
-        await cargarProgramas();
+        await recargarProgramas();
         mostrarMensaje('Foto subida correctamente', 'success');
         
     } catch (error) {
@@ -974,7 +1138,7 @@ async function asignarConcursanteAPrograma(concursanteId) {
         modal.hide();
         
         // Recargar programas
-        await cargarProgramas();
+        await recargarProgramas();
         
         mostrarMensaje('Concursante añadido al programa correctamente', 'success');
     } catch (error) {
@@ -993,7 +1157,7 @@ async function quitarConcursanteDePrograma(concursanteId, event) {
         await apiManager.delete(`/api/concursantes/${concursanteId}/desasignar-programa`);
         
         // Recargar programas
-        await cargarProgramas();
+        await recargarProgramas();
         
         mostrarMensaje('Concursante quitado del programa correctamente', 'success');
     } catch (error) {
@@ -1016,6 +1180,44 @@ async function editarPrograma(programaId) {
     }
 }
 
+// Función para renderizar los controles de paginación
+function renderizarPaginacion() {
+    const paginacionDiv = document.getElementById('paginacion-programas');
+    if (!paginacionDiv) return;
+    
+    let html = '';
+    
+    // Botón Anterior
+    html += `<button class="btn btn-outline-primary" ${paginaActual <= 0 ? 'disabled' : ''} 
+            onclick="cambiarPagina(${paginaActual - 1})">
+            <i class="fas fa-chevron-left"></i> Anterior
+        </button>`;
+    
+    // Botón Siguiente
+    html += `<button class="btn btn-outline-primary" ${paginaActual >= totalPaginas - 1 ? 'disabled' : ''} 
+            onclick="cambiarPagina(${paginaActual + 1})">
+            Siguiente <i class="fas fa-chevron-right"></i>
+        </button>`;
+    
+    paginacionDiv.innerHTML = html;
+}
+
+// Función para cambiar de página
+async function cambiarPagina(nuevaPagina) {
+    if (nuevaPagina < 0 || nuevaPagina >= totalPaginas) return;
+    
+    paginaActual = nuevaPagina;
+    
+    if (aplicandoFiltros) {
+        // Si estamos aplicando filtros, usar la paginación filtrada
+        mostrarProgramasFiltrados();
+        renderizarPaginacionFiltrada();
+    } else {
+        // Modo normal sin filtros
+        await cargarProgramasPaginados(paginaActual);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', inicializarProgramas); 
 
 async function eliminarPrograma(programaId) {
@@ -1023,7 +1225,7 @@ async function eliminarPrograma(programaId) {
     try {
         await apiManager.delete(`/api/programas/${programaId}`);
         mostrarExito('Programa eliminado');
-        await cargarProgramas();
+        await recargarProgramas();
     } catch (error) {
         // Traducir mensajes técnicos a mensajes entendibles
         const msg = (error && error.message) ? error.message : '';
@@ -1041,4 +1243,187 @@ async function eliminarPrograma(programaId) {
         }
         mostrarError(amigable);
     }
+}
+
+// Función para configurar scroll automático en las tablas de concursantes
+function configurarScrollTablas() {
+    console.log('🔧 [SCROLL] Configurando scroll en tablas existentes...');
+    
+    // Buscar todos los contenedores de tablas de concursantes
+    const contenedores = document.querySelectorAll('.concursantes-table');
+    console.log(`🔧 [SCROLL] Encontrados ${contenedores.length} contenedores de tablas`);
+    
+    contenedores.forEach((contenedor, index) => {
+        console.log(`🔧 [SCROLL] Configurando scroll para tabla ${index + 1}`);
+        configurarScrollEnTabla(contenedor);
+    });
+}
+
+// Función para configurar scroll en una tabla específica
+function configurarScrollEnTabla(contenedor) {
+    if (!contenedor) {
+        console.error('❌ [SCROLL] Contenedor no válido');
+        return;
+    }
+    
+    // Evitar configurar múltiples veces la misma tabla
+    if (contenedor.dataset.scrollConfigurado === 'true') {
+        console.log('🔧 [SCROLL] Tabla ya configurada, saltando...');
+        return;
+    }
+    
+    // Buscar el contenedor real del scroll (table-responsive dentro de concursantes-table)
+    const scrollContainer = contenedor.querySelector('.table-responsive');
+    if (!scrollContainer) {
+        console.error('❌ [SCROLL] No se encontró .table-responsive dentro del contenedor');
+        return;
+    }
+    
+    console.log('✅ [SCROLL] Configurando scroll para tabla:', contenedor);
+    console.log('✅ [SCROLL] Contenedor de scroll real:', scrollContainer);
+    console.log(`📏 [SCROLL] Dimensiones: Width=${scrollContainer.scrollWidth}, Client=${scrollContainer.clientWidth}, ScrollLeft=${scrollContainer.scrollLeft}`);
+    
+    // OPCIÓN 1: Scroll automático con cursor (mejorado)
+    let scrollInterval = null;
+    let scrollDirection = null;
+    
+    contenedor.addEventListener('mousemove', function(e) {
+        const borde = 100; // px desde el borde para activar scroll (aumentado)
+        const { left, right } = contenedor.getBoundingClientRect();
+        const x = e.clientX;
+        const scrollSpeed = 20; // px por frame (aumentado para más velocidad)
+        clearInterval(scrollInterval);
+        
+        // Debug: mostrar información del cursor
+        const distanciaIzquierda = x - left;
+        const distanciaDerecha = right - x;
+        console.log(`🖱️ [CURSOR] Posición: ${x}, Izq: ${distanciaIzquierda}px, Der: ${distanciaDerecha}px, Borde: ${borde}px`);
+        
+        if (x - left < borde) {
+            // Scroll hacia la izquierda (mostrar columnas ocultas de la izquierda)
+            console.log('🔄 [SCROLL] Activando scroll hacia la izquierda');
+            scrollDirection = 'left';
+            contenedor.style.cursor = 'w-resize';
+            contenedor.classList.add('scrolling-left');
+            contenedor.classList.remove('scrolling-right');
+            scrollInterval = setInterval(() => {
+                const oldScroll = scrollContainer.scrollLeft;
+                const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+                scrollContainer.scrollLeft -= scrollSpeed;
+                console.log(`🔄 [SCROLL] Scroll: ${oldScroll} → ${scrollContainer.scrollLeft} (Max: ${maxScroll}, Width: ${scrollContainer.scrollWidth}, Client: ${scrollContainer.clientWidth})`);
+            }, 16);
+        } else if (right - x < borde) {
+            // Scroll hacia la derecha (mostrar columnas ocultas de la derecha)
+            console.log('🔄 [SCROLL] Activando scroll hacia la derecha');
+            scrollDirection = 'right';
+            contenedor.style.cursor = 'e-resize';
+            contenedor.classList.add('scrolling-right');
+            contenedor.classList.remove('scrolling-left');
+            scrollInterval = setInterval(() => {
+                const oldScroll = scrollContainer.scrollLeft;
+                const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+                scrollContainer.scrollLeft += scrollSpeed;
+                console.log(`🔄 [SCROLL] Scroll: ${oldScroll} → ${scrollContainer.scrollLeft} (Max: ${maxScroll}, Width: ${scrollContainer.scrollWidth}, Client: ${scrollContainer.clientWidth})`);
+            }, 16);
+        } else {
+            // Cursor normal cuando no está en los bordes
+            contenedor.style.cursor = 'default';
+            contenedor.classList.remove('scrolling-left', 'scrolling-right');
+            scrollDirection = null;
+        }
+    });
+    
+    contenedor.addEventListener('mouseleave', function() {
+        clearInterval(scrollInterval);
+        contenedor.style.cursor = 'default';
+        contenedor.classList.remove('scrolling-left', 'scrolling-right');
+        scrollDirection = null;
+    });
+    
+    // OPCIÓN 2: Botones de navegación
+    crearBotonesNavegacion(contenedor, scrollContainer);
+    
+    // OPCIÓN 3: Scroll con rueda del mouse (horizontal) - DESHABILITADO
+    // contenedor.addEventListener('wheel', function(e) {
+    //     if (e.deltaY !== 0) {
+    //         e.preventDefault();
+    //         scrollContainer.scrollLeft += e.deltaY;
+    //     }
+    // });
+    
+    // OPCIÓN 4: Scroll con teclado
+    contenedor.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            scrollContainer.scrollLeft -= 50;
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            scrollContainer.scrollLeft += 50;
+        }
+    });
+    
+    // Hacer el contenedor focusable para el scroll con teclado
+    contenedor.setAttribute('tabindex', '0');
+    
+    // Marcar como configurado para evitar configuraciones múltiples
+    contenedor.dataset.scrollConfigurado = 'true';
+    
+    console.log('✅ [SCROLL] Todas las opciones de scroll configuradas para esta tabla');
+}
+
+// Función para crear botones de navegación
+function crearBotonesNavegacion(contenedor, scrollContainer) {
+    console.log('🔧 [BOTONES] Creando botones de navegación...');
+    
+    // Crear contenedor de botones
+    const botonesContainer = document.createElement('div');
+    botonesContainer.className = 'd-flex justify-content-center gap-2 mb-2';
+    botonesContainer.style.marginTop = '10px';
+    
+    // Botón izquierda
+    const btnIzquierda = document.createElement('button');
+    btnIzquierda.className = 'btn btn-outline-primary btn-sm';
+    btnIzquierda.innerHTML = '<i class="fas fa-chevron-left"></i> ←';
+    btnIzquierda.title = 'Desplazar hacia la izquierda';
+    btnIzquierda.onclick = () => {
+        scrollContainer.scrollLeft -= 200;
+    };
+    
+    // Botón derecha
+    const btnDerecha = document.createElement('button');
+    btnDerecha.className = 'btn btn-outline-primary btn-sm';
+    btnDerecha.innerHTML = '→ <i class="fas fa-chevron-right"></i>';
+    btnDerecha.title = 'Desplazar hacia la derecha';
+    btnDerecha.onclick = () => {
+        scrollContainer.scrollLeft += 200;
+    };
+    
+    // Botón inicio
+    const btnInicio = document.createElement('button');
+    btnInicio.className = 'btn btn-outline-secondary btn-sm';
+    btnInicio.innerHTML = '<i class="fas fa-home"></i> Inicio';
+    btnInicio.title = 'Ir al inicio de la tabla';
+    btnInicio.onclick = () => {
+        scrollContainer.scrollLeft = 0;
+    };
+    
+    // Botón final
+    const btnFinal = document.createElement('button');
+    btnFinal.className = 'btn btn-outline-secondary btn-sm';
+    btnFinal.innerHTML = 'Final <i class="fas fa-home"></i>';
+    btnFinal.title = 'Ir al final de la tabla';
+    btnFinal.onclick = () => {
+        scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+    };
+    
+    // Agregar botones al contenedor
+    botonesContainer.appendChild(btnInicio);
+    botonesContainer.appendChild(btnIzquierda);
+    botonesContainer.appendChild(btnDerecha);
+    botonesContainer.appendChild(btnFinal);
+    
+    // Insertar botones después del contenedor de la tabla
+    contenedor.parentNode.insertBefore(botonesContainer, contenedor.nextSibling);
+    
+    console.log('✅ [BOTONES] Botones de navegación creados');
 }

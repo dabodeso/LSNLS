@@ -67,11 +67,105 @@ const CuestionariosManager = {
     },
     
     async cargarMasCuestionarios() {
-        if (this.cargando) return;
-        if (this.paginaActual >= this.totalPaginas - 1) return;
+        console.log('🔄 [CARGAR MÁS] Iniciando cargarMasCuestionarios...');
+        console.log(`🔄 [CARGAR MÁS] Estado actual: cargando=${this.cargando}, paginaActual=${this.paginaActual}, totalPaginas=${this.totalPaginas}`);
         
-        this.paginaActual++;
-        await this.cargarCuestionarios(false);
+        // Evitar cargar más si ya está cargando o si no hay más páginas
+        if (this.cargando) {
+            console.log('⚠️ [CARGAR MÁS] Ya está cargando, saliendo...');
+            return;
+        }
+        if (this.paginaActual >= this.totalPaginas - 1) {
+            console.log('⚠️ [CARGAR MÁS] No hay más páginas, saliendo...');
+            return;
+        }
+        
+        try {
+            // Incrementar la página ANTES de marcar como cargando
+            this.paginaActual++;
+            console.log(`🔄 [CARGAR MÁS] Incrementada paginaActual a ${this.paginaActual}`);
+            
+            // Marcar como cargando y actualizar la UI
+            console.log('🔄 [CARGAR MÁS] Marcando como cargando y actualizando UI...');
+            this.cargando = true;
+            this.actualizarPaginacion();
+            
+            // Verificar si hay filtros activos
+            const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
+            const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
+            const busqueda = document.getElementById('buscar-cuestionario')?.value || '';
+            
+            console.log(`🔍 [CARGAR MÁS] Filtros activos: estado=${estado}, tematica=${tematica}, busqueda=${busqueda}`);
+            
+            // Realizar la solicitud directamente aquí en lugar de llamar a filtrarCuestionarios
+            if (estado || tematica || busqueda) {
+                console.log('🔄 [CARGAR MÁS] Realizando solicitud con filtros para página ' + this.paginaActual);
+                
+                // Construir parámetros de búsqueda
+                const params = new URLSearchParams({
+                    page: this.paginaActual,
+                    size: this.tamanioPagina
+                });
+                
+                // Añadir filtros si existen
+                if (estado) params.append('estado', estado);
+                if (tematica) params.append('tematica', tematica);
+                if (busqueda) params.append('id', busqueda);
+                
+                console.log('🔄 [CARGAR MÁS] Parámetros:', params.toString());
+                
+                // Realizar la solicitud
+                const response = await fetch(`/api/cuestionarios/filtrar?${params.toString()}`, {
+                    headers: authManager.getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error al cargar más cuestionarios: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('🔄 [CARGAR MÁS] Respuesta recibida:', data);
+                
+                // Añadir los nuevos cuestionarios a los existentes
+                if (data.cuestionarios && data.cuestionarios.length > 0) {
+                    console.log(`🔄 [CARGAR MÁS] Añadiendo ${data.cuestionarios.length} cuestionarios a los ${this.cuestionarios.length} existentes`);
+                    this.cuestionarios = [...this.cuestionarios, ...data.cuestionarios];
+                    
+                    // Actualizar datos de paginación
+                    this.totalCuestionarios = data.totalItems || this.totalCuestionarios;
+                    this.totalPaginas = data.totalPages || this.totalPaginas;
+                    
+                    // Mostrar los cuestionarios
+                    await this.mostrarCuestionarios(this.cuestionarios);
+                } else {
+                    console.log('⚠️ [CARGAR MÁS] No se recibieron nuevos cuestionarios');
+                }
+            } else {
+                console.log('🔄 [CARGAR MÁS] Usando cargarCuestionarios con resetear=false');
+                // Si no hay filtros, usar la carga normal
+                await this.cargarCuestionarios(false);
+            }
+            
+            console.log(`✅ [CARGAR MÁS] Completado. Cuestionarios cargados: ${this.cuestionarios.length}`);
+        } catch (error) {
+            console.error('❌ [CARGAR MÁS] Error:', error);
+            Toastify({
+                text: 'Error al cargar más cuestionarios: ' + error.message,
+                duration: 3000,
+                close: true,
+                gravity: "top",
+                position: "right",
+                style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
+            }).showToast();
+            
+            // Revertir el incremento de página si hay error
+            this.paginaActual = Math.max(0, this.paginaActual - 1);
+        } finally {
+            // Asegurar que siempre se marque como no cargando
+            console.log('🔄 [CARGAR MÁS] Finalizando, marcando como no cargando...');
+            this.cargando = false;
+            this.actualizarPaginacion();
+        }
     },
     
     mostrarEstadoCarga() {
@@ -84,8 +178,12 @@ const CuestionariosManager = {
     },
     
     actualizarPaginacion() {
+        console.log('📊 [PAGINACIÓN] Iniciando actualizarPaginacion...');
+        console.log(`📊 [PAGINACIÓN] Estado actual: cargando=${this.cargando}, paginaActual=${this.paginaActual}, totalPaginas=${this.totalPaginas}, totalCuestionarios=${this.totalCuestionarios}, cuestionarios.length=${this.cuestionarios.length}`);
+        
         let paginacionContainer = document.getElementById('paginacion-cuestionarios');
         if (!paginacionContainer) {
+            console.log('📊 [PAGINACIÓN] Contenedor no existe, creando uno nuevo...');
             // Crear el contenedor si no existe
             const tablaContainer = document.querySelector('.table-responsive');
             if (tablaContainer) {
@@ -94,41 +192,89 @@ const CuestionariosManager = {
                 paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
                 tablaContainer.parentNode.insertBefore(paginacionDiv, tablaContainer.nextSibling);
                 paginacionContainer = document.getElementById('paginacion-cuestionarios');
+                console.log('📊 [PAGINACIÓN] Contenedor creado correctamente');
+            } else {
+                console.log('⚠️ [PAGINACIÓN] No se encontró el contenedor .table-responsive');
             }
+        } else {
+            console.log('📊 [PAGINACIÓN] Contenedor encontrado');
         }
         
         if (paginacionContainer) {
+            // Limpiar el contenedor antes de añadir nuevos elementos
+            console.log('📊 [PAGINACIÓN] Limpiando contenedor...');
+            paginacionContainer.innerHTML = '';
+            
             const infoPagina = document.createElement('div');
-            infoPagina.innerHTML = `Mostrando ${this.cuestionarios.length} de ${this.totalCuestionarios} cuestionarios (Página ${this.paginaActual + 1} de ${this.totalPaginas})`;
+            const paginaActual = this.paginaActual + 1;
+            const totalPaginas = Math.max(1, Math.ceil(this.totalPaginas));
+            infoPagina.innerHTML = `Mostrando ${this.cuestionarios.length} de ${this.totalCuestionarios} cuestionarios (Página ${paginaActual} de ${totalPaginas})`;
+            paginacionContainer.appendChild(infoPagina);
+            console.log(`📊 [PAGINACIÓN] Información de página añadida: Página ${paginaActual} de ${totalPaginas}`);
             
-            const botonCargarMas = document.createElement('button');
-            botonCargarMas.className = 'btn btn-primary';
-            botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más cuestionarios';
-            botonCargarMas.type = 'button';
-            botonCargarMas.id = 'btn-cargar-mas-cuestionarios';
+            // Verificar si hay más páginas para cargar
+            const hayMasPaginas = this.paginaActual < this.totalPaginas - 1;
+            console.log(`📊 [PAGINACIÓN] ¿Hay más páginas? ${hayMasPaginas} (paginaActual=${this.paginaActual}, totalPaginas=${this.totalPaginas})`);
             
-            const botonDeshabilitado = this.cargando || this.paginaActual >= this.totalPaginas - 1;
-            
-            if (botonDeshabilitado) {
-                botonCargarMas.disabled = true;
-                botonCargarMas.style.opacity = '0.6';
-                botonCargarMas.style.cursor = 'not-allowed';
-            } else {
-                botonCargarMas.disabled = false;
-                botonCargarMas.style.opacity = '1';
-                botonCargarMas.style.cursor = 'pointer';
+            if (hayMasPaginas) {
+                console.log('📊 [PAGINACIÓN] Creando botón "Cargar más"...');
+                const botonCargarMas = document.createElement('button');
+                botonCargarMas.className = 'btn btn-primary';
+                botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más cuestionarios';
+                botonCargarMas.type = 'button';
+                botonCargarMas.id = 'btn-cargar-mas-cuestionarios';
                 
-                botonCargarMas.addEventListener('click', (e) => {
+                // Deshabilitar el botón mientras se está cargando
+                if (this.cargando) {
+                    console.log('📊 [PAGINACIÓN] Deshabilitando botón (cargando=true)');
+                    botonCargarMas.disabled = true;
+                    botonCargarMas.style.opacity = '0.6';
+                    botonCargarMas.style.cursor = 'not-allowed';
+                    botonCargarMas.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+                } else {
+                    console.log('📊 [PAGINACIÓN] Habilitando botón (cargando=false)');
+                    botonCargarMas.disabled = false;
+                }
+                
+                // Usar onclick en lugar de addEventListener para evitar duplicación de eventos
+                botonCargarMas.onclick = (e) => {
+                    console.log('🖱️ [PAGINACIÓN] Botón "Cargar más" clickeado');
                     e.preventDefault();
                     e.stopPropagation();
-                    this.cargarMasCuestionarios();
-                });
+                    // Usar una referencia explícita al objeto CuestionariosManager
+                    CuestionariosManager.cargarMasCuestionarios();
+                };
+                
+                paginacionContainer.appendChild(botonCargarMas);
+                console.log('📊 [PAGINACIÓN] Botón "Cargar más" añadido al DOM');
+                
+                // Verificar que el botón esté correctamente añadido y tenga el evento onclick
+                setTimeout(() => {
+                    const botonEnDOM = document.getElementById('btn-cargar-mas-cuestionarios');
+                    if (botonEnDOM) {
+                        console.log('✅ [PAGINACIÓN] Botón verificado en el DOM');
+                        if (typeof botonEnDOM.onclick === 'function') {
+                            console.log('✅ [PAGINACIÓN] El botón tiene un manejador de eventos onclick');
+                        } else {
+                            console.error('❌ [PAGINACIÓN] El botón NO tiene un manejador de eventos onclick');
+                        }
+                    } else {
+                        console.error('❌ [PAGINACIÓN] No se pudo encontrar el botón en el DOM después de añadirlo');
+                    }
+                }, 100);
+            } else if (this.cuestionarios.length > 0) {
+                // Si no hay más páginas pero hay resultados, mostrar un mensaje
+                console.log('📊 [PAGINACIÓN] No hay más páginas, mostrando mensaje de "No hay más resultados"');
+                const noMasResultados = document.createElement('div');
+                noMasResultados.className = 'text-muted';
+                noMasResultados.textContent = 'No hay más resultados para mostrar';
+                paginacionContainer.appendChild(noMasResultados);
             }
-            
-            paginacionContainer.innerHTML = '';
-            paginacionContainer.appendChild(infoPagina);
-            paginacionContainer.appendChild(botonCargarMas);
+        } else {
+            console.error('❌ [PAGINACIÓN] No se pudo encontrar ni crear el contenedor de paginación');
         }
+        
+        console.log('📊 [PAGINACIÓN] actualizarPaginacion completado');
     },
     async mostrarCuestionarios(cuestionarios) {
         const tbody = document.getElementById('tabla-cuestionarios');
@@ -868,90 +1014,98 @@ CuestionariosManager.mostrarCuestionarios = function(cuestionarios) {
 }
 
 // Funciones de filtrado
-window.filtrarCuestionarios = async function() {
+window.filtrarCuestionarios = async function(resetear = true) {
+    console.log(`🔍 [FILTRAR] Iniciando filtrarCuestionarios con resetear=${resetear}`);
+    console.log(`🔍 [FILTRAR] Estado actual: cargando=${CuestionariosManager.cargando}, paginaActual=${CuestionariosManager.paginaActual}, totalPaginas=${CuestionariosManager.totalPaginas}`);
+    
+    // No verificamos si está cargando cuando viene de cargarMasCuestionarios (resetear=false)
+    // porque cargarMasCuestionarios ya establece cargando=true antes de llamar a esta función
+    
     try {
         const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
         const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
         const subtema = document.getElementById('filtro-subtema-cuestionario')?.value || '';
         const busqueda = document.getElementById('buscar-cuestionario')?.value || '';
+        
+        console.log(`🔍 [FILTRAR] Filtros: estado=${estado}, tematica=${tematica}, subtema=${subtema}, busqueda=${busqueda}`);
 
-        // Si hay filtros de estado, temática o subtema, usar backend
-        if (estado || tematica || subtema) {
-            const params = new URLSearchParams();
-            if (estado) params.append('estado', estado);
-            if (tematica) params.append('tematica', tematica);
-            if (subtema) params.append('subtema', subtema);
-
-            const response = await fetch(`/api/cuestionarios/filtrar?${params.toString()}`, {
-                headers: authManager.getAuthHeaders()
-            });
-
-            if (!response.ok) throw new Error('Error al filtrar cuestionarios');
-            const cuestionarios = await response.json();
-            
-            // Aplicar filtro de búsqueda por ID si existe
-            let cuestionariosFiltrados = cuestionarios;
-            if (busqueda) {
-                cuestionariosFiltrados = cuestionarios.filter(c => 
-                    c.id.toString().includes(busqueda)
-                );
-            }
-            
-            CuestionariosManager.mostrarCuestionarios(cuestionariosFiltrados);
-        } else if (busqueda) {
-            // Buscar por ID directamente en el backend
-            try {
-                // Intentar buscar por ID exacto primero
-                if (!isNaN(parseInt(busqueda))) {
-                    const idBusqueda = parseInt(busqueda);
-                    const response = await fetch(`/api/cuestionarios/${idBusqueda}`, {
-                        headers: authManager.getAuthHeaders()
-                    });
-                    
-                    if (response.ok) {
-                        // Si se encuentra el cuestionario por ID exacto
-                        const cuestionario = await response.json();
-                        CuestionariosManager.mostrarCuestionarios([cuestionario]);
-                        return;
-                    }
-                }
-                
-                // Si no se encuentra por ID exacto o no es un número, buscar por coincidencia parcial
-                const params = new URLSearchParams();
-                params.append('id', busqueda);
-                
-                const response = await fetch(`/api/cuestionarios/filtrar?${params.toString()}`, {
-                    headers: authManager.getAuthHeaders()
-                });
-                
-                if (!response.ok) throw new Error('Error al buscar cuestionarios por ID');
-                const cuestionarios = await response.json();
-                CuestionariosManager.mostrarCuestionarios(cuestionarios);
-            } catch (error) {
-                console.error('Error al buscar cuestionario por ID:', error);
-                Toastify({
-                    text: 'Error al buscar cuestionario por ID',
-                    duration: 3000,
-                    close: true,
-                    gravity: "top",
-                    position: "right",
-                    style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
-                }).showToast();
-            }
-        } else {
-            // Sin filtros, recargar todos
-            await CuestionariosManager.cargarCuestionarios();
+        // Resetear paginación si es una nueva búsqueda
+        if (resetear) {
+            console.log('🔍 [FILTRAR] Reseteando paginación y cuestionarios');
+            CuestionariosManager.paginaActual = 0;
+            CuestionariosManager.cuestionarios = [];
         }
+        
+        // Marcar como cargando y actualizar la UI
+        console.log('🔍 [FILTRAR] Marcando como cargando y actualizando UI');
+        CuestionariosManager.cargando = true;
+        CuestionariosManager.mostrarEstadoCarga();
+        CuestionariosManager.actualizarPaginacion();
+        
+        // Construir parámetros de búsqueda
+        const params = new URLSearchParams({
+            page: CuestionariosManager.paginaActual,
+            size: CuestionariosManager.tamanioPagina
+        });
+        
+        // Añadir filtros si existen
+        if (estado) params.append('estado', estado);
+        if (tematica) params.append('tematica', tematica);
+        if (subtema) params.append('subtema', subtema);
+        if (busqueda) params.append('id', busqueda);
+
+        console.log('🔍 [FILTRAR] Parámetros de búsqueda:', params.toString());
+
+        // Realizar la búsqueda con filtros y paginación
+        console.log(`🔍 [FILTRAR] Enviando solicitud a /api/cuestionarios/filtrar?${params.toString()}`);
+        const response = await fetch(`/api/cuestionarios/filtrar?${params.toString()}`, {
+            headers: authManager.getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            console.error(`❌ [FILTRAR] Error en respuesta: ${response.status} ${response.statusText}`);
+            throw new Error(`Error al filtrar cuestionarios: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('🔍 [FILTRAR] Respuesta recibida:', data);
+        console.log(`🔍 [FILTRAR] Datos de paginación: currentPage=${data.currentPage}, totalItems=${data.totalItems}, totalPages=${data.totalPages}`);
+        console.log(`🔍 [FILTRAR] Cuestionarios recibidos: ${data.cuestionarios ? data.cuestionarios.length : 0}`);
+        
+        // Actualizar datos de paginación
+        if (resetear) {
+            console.log('🔍 [FILTRAR] Reemplazando cuestionarios existentes');
+            CuestionariosManager.cuestionarios = data.cuestionarios || [];
+        } else {
+            console.log(`🔍 [FILTRAR] Añadiendo ${data.cuestionarios ? data.cuestionarios.length : 0} cuestionarios a los ${CuestionariosManager.cuestionarios.length} existentes`);
+            CuestionariosManager.cuestionarios = [...CuestionariosManager.cuestionarios, ...(data.cuestionarios || [])];
+        }
+        
+        CuestionariosManager.totalCuestionarios = data.totalItems || 0;
+        CuestionariosManager.totalPaginas = data.totalPages || 0;
+        CuestionariosManager.paginaActual = data.currentPage || 0;
+        
+        console.log(`🔍 [FILTRAR] Estado actualizado: totalCuestionarios=${CuestionariosManager.totalCuestionarios}, totalPaginas=${CuestionariosManager.totalPaginas}, paginaActual=${CuestionariosManager.paginaActual}`);
+        
+        // Mostrar cuestionarios y actualizar paginación
+        console.log(`🔍 [FILTRAR] Mostrando ${CuestionariosManager.cuestionarios.length} cuestionarios`);
+        await CuestionariosManager.mostrarCuestionarios(CuestionariosManager.cuestionarios);
+        console.log('✅ [FILTRAR] Cuestionarios mostrados correctamente');
     } catch (error) {
-        console.error('Error al filtrar cuestionarios:', error);
+        console.error('❌ [FILTRAR] Error:', error);
         Toastify({
-            text: 'Error al filtrar cuestionarios',
+            text: 'Error al filtrar cuestionarios: ' + error.message,
             duration: 3000,
             close: true,
             gravity: "top",
             position: "right",
             style: { background: "linear-gradient(to right, #ff0000, #cc0000)" }
         }).showToast();
+    } finally {
+        // Asegurar que siempre se marque como no cargando y se actualice la UI
+        console.log('🔍 [FILTRAR] Finalizando, marcando como no cargando');
+        CuestionariosManager.cargando = false;
+        CuestionariosManager.actualizarPaginacion();
     }
 };
 
@@ -959,7 +1113,8 @@ window.limpiarFiltrosCuestionarios = function() {
     document.getElementById('filtro-estado-cuestionario').value = '';
     document.getElementById('filtro-tematica-cuestionario').value = '';
     document.getElementById('buscar-cuestionario').value = '';
-    CuestionariosManager.cargarCuestionarios();
+    CuestionariosManager.paginaActual = 0;
+    CuestionariosManager.cargarCuestionarios(true);
 };
 
 window.actualizarNotasDireccion = async function(cuestionarioId, notas) {

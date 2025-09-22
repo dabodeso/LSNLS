@@ -640,6 +640,43 @@ public class PreguntaService {
     }
 
     public void eliminarPorId(Long id) {
+        // Verificar que la pregunta existe
+        Optional<Pregunta> preguntaOpt = preguntaRepository.findById(id);
+        if (preguntaOpt.isEmpty()) {
+            throw new IllegalArgumentException("Pregunta con ID " + id + " no encontrada");
+        }
+
+        Pregunta pregunta = preguntaOpt.get();
+        
+        // Verificar si la pregunta está en estado "usada"
+        if (pregunta.getEstado() == EstadoPregunta.usada || 
+            pregunta.getEstadoDisponibilidad() == EstadoDisponibilidad.usada) {
+            throw new IllegalArgumentException("No se puede eliminar la pregunta porque está siendo usada en un cuestionario o combo");
+        }
+        
+        // Verificar si está siendo usada en cuestionarios
+        Long cuestionariosCount = entityManager.createQuery(
+            "SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta.id = :preguntaId", Long.class)
+            .setParameter("preguntaId", id)
+            .getSingleResult();
+        
+        if (cuestionariosCount > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la pregunta porque está siendo usada en " + 
+                cuestionariosCount + " cuestionario(s). Quítala de los cuestionarios primero.");
+        }
+
+        // Verificar si está siendo usada en combos
+        Long combosCount = entityManager.createQuery(
+            "SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId", Long.class)
+            .setParameter("preguntaId", id)
+            .getSingleResult();
+        
+        if (combosCount > 0) {
+            throw new IllegalArgumentException("No se puede eliminar la pregunta porque está siendo usada en " + 
+                combosCount + " combo(s). Quítala de los combos primero.");
+        }
+
+        // Si llegamos aquí, es seguro eliminar
         preguntaRepository.deleteById(id);
     }
 

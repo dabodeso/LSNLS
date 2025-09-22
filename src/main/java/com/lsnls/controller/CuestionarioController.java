@@ -118,27 +118,25 @@ public class CuestionarioController {
 
     @GetMapping("/filtrar")
     @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<List<Map<String, Object>>> filtrarCuestionarios(
+    public ResponseEntity<Map<String, Object>> filtrarCuestionarios(
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String tematica,
-            @RequestParam(required = false) String id
+            @RequestParam(required = false) String id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size
     ) {
         try {
-            List<Cuestionario> cuestionarios;
+            Map<String, Object> response;
             
             // Si se proporciona un ID, buscar por ID
             if (id != null && !id.isEmpty()) {
-                cuestionarios = cuestionarioService.filtrarCuestionariosPorId(id);
+                response = cuestionarioService.filtrarCuestionariosPorId(id, page, size);
             } else {
-                cuestionarios = cuestionarioService.filtrarCuestionarios(estado, tematica);
+                response = cuestionarioService.filtrarCuestionarios(estado, tematica, page, size);
             }
-            List<Map<String, Object>> dtos = new java.util.ArrayList<>();
-            for (Cuestionario c : cuestionarios) {
-                Map<String, Object> dto = cuestionarioService.obtenerCuestionarioConSlots(c.getId());
-                if (dto != null) dtos.add(dto);
-            }
-            return ResponseEntity.ok(dtos);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
+            log.error("Error al filtrar cuestionarios: ", e);
             return ResponseEntity.internalServerError().build();
         }
     }

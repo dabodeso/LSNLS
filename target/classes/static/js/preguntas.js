@@ -1311,14 +1311,143 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- NUEVO: Resaltar y hacer scroll a la pregunta si hay id en la URL ---
     const params = new URLSearchParams(window.location.search);
     const idDestacado = params.get('id');
+    console.log(`🔍 [URL] URL completa: ${window.location.href}`);
+    console.log(`🔍 [URL] Parámetros de búsqueda: ${window.location.search}`);
+    console.log(`🔍 [URL] ID encontrado: ${idDestacado}`);
+    
     if (idDestacado) {
-        setTimeout(() => {
-            const fila = document.querySelector(`#tabla-preguntas tr[data-id='${idDestacado}']`);
-            if (fila) {
+        console.log(`🎯 [REDIRECT] Iniciando búsqueda de pregunta ${idDestacado}...`);
+        setTimeout(async () => {
+            console.log(`🔍 [REDIRECT] Buscando fila con data-id='${idDestacado}'...`);
+            let fila = document.querySelector(`#tabla-preguntas tr[data-id='${idDestacado}']`);
+            console.log(`🔍 [REDIRECT] Fila encontrada:`, fila);
+            
+            // Si no se encuentra en la página actual, buscar en todas las páginas
+            if (!fila) {
+                console.log(`🔍 [REDIRECT] Pregunta ${idDestacado} no encontrada en página actual, buscando en todas las páginas...`);
+                await buscarPreguntaEnTodasLasPaginas(idDestacado);
+            } else {
+                console.log(`✅ [REDIRECT] Pregunta ${idDestacado} encontrada en página actual, resaltando...`);
+                // Si se encuentra en la página actual, resaltarla
                 fila.classList.add('table-warning');
                 fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }, 500);
+    } else {
+        console.log(`⚠️ [URL] No se encontró parámetro 'id' en la URL`);
+    }
+
+    // Función para buscar una pregunta en todas las páginas
+    async function buscarPreguntaEnTodasLasPaginas(idPregunta) {
+        try {
+            console.log(`🔍 [BUSCAR] Buscando pregunta ${idPregunta} con consulta directa...`);
+            
+            // Primero verificar que la pregunta existe
+            console.log(`🔍 [BUSCAR] Verificando existencia de pregunta ${idPregunta}...`);
+            const response = await apiManager.get(`/api/preguntas/${idPregunta}`);
+            console.log(`🔍 [BUSCAR] Respuesta de API:`, response);
+            
+            if (!response || !response.id) {
+                console.error(`❌ [BUSCAR] Pregunta ${idPregunta} no encontrada en la base de datos`);
+                return;
+            }
+            
+            console.log(`✅ [BUSCAR] Pregunta ${idPregunta} existe, calculando página objetivo...`);
+            console.log(`📊 [BUSCAR] Tamaño de página: ${PreguntasManager.tamanioPagina}`);
+            console.log(`📊 [BUSCAR] Total páginas: ${PreguntasManager.totalPaginas}`);
+            
+            // Calcular la página que debería contener esta pregunta
+            // Asumiendo que las preguntas están ordenadas por ID
+            const paginaObjetivo = Math.floor((idPregunta - 1) / PreguntasManager.tamanioPagina);
+            console.log(`📄 [BUSCAR] Pregunta ${idPregunta} debería estar en la página ${paginaObjetivo}`);
+            console.log(`📄 [BUSCAR] Rango de IDs en página ${paginaObjetivo}: ${paginaObjetivo * PreguntasManager.tamanioPagina + 1} - ${(paginaObjetivo + 1) * PreguntasManager.tamanioPagina}`);
+            
+            // Cargar la página calculada
+            console.log(`🔄 [BUSCAR] Estableciendo página objetivo: ${paginaObjetivo}`);
+            PreguntasManager.paginaActual = paginaObjetivo;
+            console.log(`🔄 [BUSCAR] Página actual antes de cargar: ${PreguntasManager.paginaActual}`);
+            await PreguntasManager.cargarPreguntas(false); // NO resetear para mantener la página
+            console.log(`🔄 [BUSCAR] Página actual después de cargar: ${PreguntasManager.paginaActual}`);
+            
+            // Esperar a que se cargue
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Buscar la pregunta en esta página
+            console.log(`🔍 [BUSCAR] Buscando pregunta ${idPregunta} en página ${paginaObjetivo}...`);
+            const fila = document.querySelector(`#tabla-preguntas tr[data-id='${idPregunta}']`);
+            
+            // Mostrar qué preguntas están en esta página
+            const todasLasFilas = document.querySelectorAll('#tabla-preguntas tr[data-id]');
+            const idsEnPagina = Array.from(todasLasFilas).map(f => f.getAttribute('data-id'));
+            console.log(`📋 [BUSCAR] IDs en página ${paginaObjetivo}:`, idsEnPagina);
+            console.log(`🔍 [BUSCAR] Fila encontrada:`, fila);
+            
+            if (fila) {
+                console.log(`✅ [BUSCAR] Pregunta ${idPregunta} encontrada en la página ${paginaObjetivo}`);
+                
+                // Resaltar la pregunta
+                fila.classList.add('table-warning');
+                fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Actualizar la paginación visual
+                PreguntasManager.renderizarPaginacion();
+                
+                return;
+            }
+            
+            // Si no se encuentra en la página calculada, buscar en páginas cercanas
+            console.log(`⚠️ [BUSCAR] No encontrada en página calculada, buscando en páginas cercanas...`);
+            
+            const rangos = [
+                { inicio: Math.max(0, paginaObjetivo - 2), fin: Math.min(PreguntasManager.totalPaginas - 1, paginaObjetivo + 2) },
+                { inicio: 0, fin: Math.min(10, PreguntasManager.totalPaginas - 1) }, // Primeras 10 páginas
+                { inicio: Math.max(0, PreguntasManager.totalPaginas - 10), fin: PreguntasManager.totalPaginas - 1 } // Últimas 10 páginas
+            ];
+            
+            for (const rango of rangos) {
+                console.log(`🔍 [BUSCAR] Buscando en rango ${rango.inicio}-${rango.fin}...`);
+                
+                for (let pagina = rango.inicio; pagina <= rango.fin; pagina++) {
+                    console.log(`🔍 [BUSCAR] Buscando en página ${pagina}...`);
+                    
+                    // Cargar la página
+                    console.log(`🔄 [BUSCAR] Estableciendo página en búsqueda: ${pagina}`);
+                    PreguntasManager.paginaActual = pagina;
+                    console.log(`🔄 [BUSCAR] Página actual antes de cargar: ${PreguntasManager.paginaActual}`);
+                    await PreguntasManager.cargarPreguntas(false); // NO resetear para mantener la página
+                    console.log(`🔄 [BUSCAR] Página actual después de cargar: ${PreguntasManager.paginaActual}`);
+                    
+                    // Esperar un momento para que se cargue
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Buscar la pregunta en esta página
+                    const fila = document.querySelector(`#tabla-preguntas tr[data-id='${idPregunta}']`);
+                    
+                    // Mostrar qué preguntas están en esta página
+                    const todasLasFilas = document.querySelectorAll('#tabla-preguntas tr[data-id]');
+                    const idsEnPagina = Array.from(todasLasFilas).map(f => f.getAttribute('data-id'));
+                    console.log(`📋 [BUSCAR] IDs en página ${pagina}:`, idsEnPagina.slice(0, 5), idsEnPagina.length > 5 ? '...' : '');
+                    
+                    if (fila) {
+                        console.log(`✅ [BUSCAR] Pregunta ${idPregunta} encontrada en la página ${pagina}`);
+                        
+                        // Resaltar la pregunta
+                        fila.classList.add('table-warning');
+                        fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Actualizar la paginación visual
+                        PreguntasManager.renderizarPaginacion();
+                        
+                        return; // Salir cuando se encuentra
+                    }
+                }
+            }
+            
+            console.error(`❌ [BUSCAR] Pregunta ${idPregunta} no encontrada en ninguna página`);
+            
+        } catch (error) {
+            console.error(`❌ [BUSCAR] Error al buscar pregunta ${idPregunta}:`, error);
+        }
     }
 
     // --- AUTO-SCROLL HORIZONTAL EN TABLA DE PREGUNTAS ---
@@ -1670,4 +1799,41 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('subtemas-tab')?.addEventListener('shown.bs.tab', function() {
         TemasManager.cargarSubtemas();
     });
+    
+    // Configurar el desplazamiento automático de la tabla
+    setupAutoScroll();
 }); 
+
+// Función para configurar el desplazamiento automático de la tabla
+function setupAutoScroll() {
+    const scrollRightZone = document.getElementById('scroll-right');
+    const scrollLeftZone = document.getElementById('scroll-left');
+    const tableContainer = document.querySelector('.table-responsive');
+    
+    if (!scrollRightZone || !scrollLeftZone || !tableContainer) return;
+    
+    let scrollInterval;
+    const scrollSpeed = 10;
+    
+    // Desplazamiento hacia la derecha
+    scrollRightZone.addEventListener('mouseenter', function() {
+        scrollInterval = setInterval(function() {
+            tableContainer.scrollLeft += scrollSpeed;
+        }, 50);
+    });
+    
+    scrollRightZone.addEventListener('mouseleave', function() {
+        clearInterval(scrollInterval);
+    });
+    
+    // Desplazamiento hacia la izquierda
+    scrollLeftZone.addEventListener('mouseenter', function() {
+        scrollInterval = setInterval(function() {
+            tableContainer.scrollLeft -= scrollSpeed;
+        }, 50);
+    });
+    
+    scrollLeftZone.addEventListener('mouseleave', function() {
+        clearInterval(scrollInterval);
+    });
+}

@@ -41,6 +41,9 @@ public class Combo {
     @Column(length = 1)
     private TipoCombo tipo;
 
+    @Column(name = "tematica")
+    private String tematica;
+
     @Column(name = "fecha_creacion")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;

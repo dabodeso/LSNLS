@@ -51,23 +51,21 @@ public class DataTransformationService {
     }
 
     /**
-     * Normaliza específicamente las preguntas (150 caracteres máximo)
+     * Normaliza específicamente las preguntas (sin límite de caracteres)
      */
     public String normalizarPregunta(String pregunta) {
         String normalizada = normalizarTexto(pregunta);
-        if (normalizada != null && normalizada.length() > 150) {
-            normalizada = normalizada.substring(0, 150).trim();
-        }
+        // Ya no se trunca a 150 caracteres
         return normalizada;
     }
 
     /**
-     * Normaliza específicamente las respuestas (50 caracteres máximo)
+     * Normaliza específicamente las respuestas (500 caracteres máximo)
      */
     public String normalizarRespuesta(String respuesta) {
         String normalizada = normalizarTexto(respuesta);
-        if (normalizada != null && normalizada.length() > 50) {
-            normalizada = normalizada.substring(0, 50).trim();
+        if (normalizada != null && normalizada.length() > 500) {
+            normalizada = normalizada.substring(0, 500).trim();
         }
         return normalizada;
     }
@@ -89,14 +87,28 @@ public class DataTransformationService {
     public ValidationResult validarPreguntaCompleta(String pregunta, String respuesta, String tematica) {
         ValidationResult result = new ValidationResult();
         
-        // Validar pregunta
-        if (!esTextoValido(pregunta, 150)) {
-            result.addError("pregunta", "La pregunta no cumple con el formato requerido (máximo 150 caracteres, sin saltos de línea)");
+        // Validar pregunta - sin límite de caracteres
+        if (pregunta == null || pregunta.trim().isEmpty() || pregunta.contains("\n") || pregunta.contains("\r")) {
+            result.addError("pregunta", "La pregunta no puede estar vacía ni contener saltos de línea");
+        } else {
+            // Verificar caracteres permitidos (letras, números, espacios, signos básicos)
+            String patronPermitido = "^[A-Za-zÀ-ÿÑñ0-9\\s.,;:!?¡¿()\\[\\]\"'\\-]+$";
+            if (!pregunta.matches(patronPermitido)) {
+                result.addError("pregunta", "La pregunta contiene caracteres no permitidos");
+            }
         }
         
-        // Validar respuesta
-        if (!esTextoValido(respuesta, 50)) {
-            result.addError("respuesta", "La respuesta no cumple con el formato requerido (máximo 50 caracteres, sin saltos de línea)");
+        // Validar respuesta - aumentado a 500 caracteres
+        if (respuesta == null || respuesta.trim().isEmpty() || respuesta.contains("\n") || respuesta.contains("\r")) {
+            result.addError("respuesta", "La respuesta no puede estar vacía ni contener saltos de línea");
+        } else if (respuesta.length() > 500) {
+            result.addError("respuesta", "La respuesta no puede exceder los 500 caracteres");
+        } else {
+            // Verificar caracteres permitidos (letras, números, espacios, signos básicos)
+            String patronPermitido = "^[A-Za-zÀ-ÿÑñ0-9\\s.,;:!?¡¿()\\[\\]\"'\\-]+$";
+            if (!respuesta.matches(patronPermitido)) {
+                result.addError("respuesta", "La respuesta contiene caracteres no permitidos");
+            }
         }
         
         // Validar temática

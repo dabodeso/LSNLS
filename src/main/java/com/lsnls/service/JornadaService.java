@@ -5,12 +5,15 @@ import com.lsnls.entity.*;
 import com.lsnls.repository.*;
 import com.lsnls.entity.PreguntaCombo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.HashMap;
+import java.time.LocalDate;
 import javax.persistence.EntityManager;
 
 @Service
@@ -47,6 +50,29 @@ public class JornadaService {
     public List<JornadaDTO> obtenerTodas() {
         List<Jornada> jornadas = jornadaRepository.findAllOrderByFechaCreacionDesc();
         return jornadas.stream().map(this::convertirADTO).collect(Collectors.toList());
+    }
+
+    public Page<JornadaDTO> obtenerTodasPaginadas(Pageable pageable) {
+        Page<Jornada> jornadas = jornadaRepository.findAllOrderByIdDesc(pageable);
+        return jornadas.map(this::convertirADTO);
+    }
+
+    public Page<JornadaDTO> obtenerTodasPaginadasConFiltros(Pageable pageable, 
+            String estado, String fechaDesde, String fechaHasta, String buscar) {
+        // Convertir fechas de String a LocalDate
+        LocalDate fechaDesdeLocal = null;
+        LocalDate fechaHastaLocal = null;
+        
+        if (fechaDesde != null && !fechaDesde.isEmpty()) {
+            fechaDesdeLocal = LocalDate.parse(fechaDesde);
+        }
+        if (fechaHasta != null && !fechaHasta.isEmpty()) {
+            fechaHastaLocal = LocalDate.parse(fechaHasta);
+        }
+        
+        Page<Jornada> jornadas = jornadaRepository.findAllWithFilters(pageable, estado, 
+                fechaDesdeLocal, fechaHastaLocal, buscar);
+        return jornadas.map(this::convertirADTO);
     }
 
     public Optional<JornadaDTO> obtenerPorId(Long id) {

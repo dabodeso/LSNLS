@@ -6,6 +6,10 @@ import com.lsnls.entity.Usuario;
 import com.lsnls.service.AuthorizationService;
 import com.lsnls.service.JornadaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +18,6 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +36,22 @@ public class JornadaController {
 
     @GetMapping
     @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<ApiResponse<List<JornadaDTO>>> obtenerTodas() {
+    public ResponseEntity<ApiResponse<Page<JornadaDTO>>> obtenerTodas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta,
+            @RequestParam(required = false) String buscar) {
         try {
-            List<JornadaDTO> jornadas = jornadaService.obtenerTodas();
+            // Crear objeto de ordenamiento
+            Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+            Pageable pageable = PageRequest.of(page, size, sort);
+            
+            Page<JornadaDTO> jornadas = jornadaService.obtenerTodasPaginadasConFiltros(
+                pageable, estado, fechaDesde, fechaHasta, buscar);
             return ResponseEntity.ok(ApiResponse.exitoso("Jornadas obtenidas exitosamente", jornadas));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()

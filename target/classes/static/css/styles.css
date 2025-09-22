@@ -362,9 +362,99 @@ textarea {
 .table-preguntas tbody td {
     white-space: normal !important;
     word-break: break-word !important;
-    max-width: 400px;
-    font-size: 0.93rem;
-    padding: 7px 4px;
+    max-width: 420px;
+    font-size: 0.95rem;
+    padding: 8px 5px;
+}
+
+/* Configuración para desplazamiento automático de la tabla */
+.table-responsive {
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    position: relative;
+}
+
+.table-responsive::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+/* Zonas de desplazamiento automático */
+.scroll-zone-right {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50px;
+    height: 100%;
+    z-index: 10;
+    cursor: e-resize;
+}
+
+.scroll-zone-left {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50px;
+    height: 100%;
+    z-index: 10;
+    cursor: w-resize;
+}
+
+/* Hacer que las columnas importantes sean del doble de ancho */
+/* Temática (columna 4) */
+.table-preguntas th:nth-child(4),
+.table-preguntas td:nth-child(4) {
+    min-width: 150px;
+    width: 150px;
+}
+
+/* Subtema (columna 5) */
+.table-preguntas th:nth-child(5),
+.table-preguntas td:nth-child(5) {
+    min-width: 150px;
+    width: 150px;
+}
+
+/* Pregunta (columna 6) */
+.table-preguntas th:nth-child(6),
+.table-preguntas td:nth-child(6) {
+    min-width: 300px;
+    width: 300px;
+}
+
+/* Respuesta (columna 7) */
+.table-preguntas th:nth-child(7),
+.table-preguntas td:nth-child(7) {
+    min-width: 200px;
+    width: 200px;
+}
+
+/* Datos Extra (columna 8) */
+.table-preguntas th:nth-child(8),
+.table-preguntas td:nth-child(8) {
+    min-width: 300px;
+    width: 300px;
+}
+
+/* Fuentes (columna 9) */
+.table-preguntas th:nth-child(9),
+.table-preguntas td:nth-child(9) {
+    min-width: 200px;
+    width: 200px;
+}
+
+/* Notas Verificación (columna 11) */
+.table-preguntas th:nth-child(11),
+.table-preguntas td:nth-child(11) {
+    min-width: 400px;
+    width: 400px;
+}
+
+/* Notas Dirección (columna 12) */
+.table-preguntas th:nth-child(12),
+.table-preguntas td:nth-child(12) {
+    min-width: 400px;
+    width: 400px;
 }
 
 /* Estilos para formulario de concursantes reorganizado */

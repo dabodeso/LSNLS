@@ -5,6 +5,7 @@ import java.util.List;
 public class CrearComboDTO {
     private List<PreguntaMultiplicadoraDTO> preguntasMultiplicadoras;
     private String tipo;
+    private String tematica;
 
     public List<PreguntaMultiplicadoraDTO> getPreguntasMultiplicadoras() { 
         return preguntasMultiplicadoras; 
@@ -20,6 +21,14 @@ public class CrearComboDTO {
     
     public void setTipo(String tipo) { 
         this.tipo = tipo; 
+    }
+
+    public String getTematica() { 
+        return tematica; 
+    }
+    
+    public void setTematica(String tematica) { 
+        this.tematica = tematica; 
     }
 
     public static class PreguntaMultiplicadoraDTO {

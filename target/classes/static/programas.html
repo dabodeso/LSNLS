@@ -13,6 +13,7 @@
     <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="css/styles.css" rel="stylesheet">
+    <link href="css/pagination-programas.css" rel="stylesheet">
     <style>
         .programa-header {
             background-color: #1e3a8a;
@@ -29,15 +30,33 @@
             flex-wrap: nowrap; /* Evitar salto de línea */
             gap: 32px; /* Más espacio entre columnas */
         }
+        
+        /* Botones de acción en el header */
+        .programa-acciones {
+            display: flex;
+            gap: 4px;
+            margin-left: auto;
+            margin-right: 50px; /* Desplazar hacia la izquierda pero sin salirse */
+        }
+        
+        .programa-acciones .btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
         /* Todos los bloques del header con el mismo ancho visual */
         .programa-info-item {
-            flex: 0 0 130px; /* ancho consistente por bloque */
+            flex: 0 0 100px; /* ancho reducido para hacer espacio a los botones */
         }
         .programa-info-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 100px; /* Permitir algo más de respiración sin forzar salto */
+            min-width: 125px; /* Reducido para hacer más espacio */
             gap: 7px; /* Un poco más de separación interna */
         }
         .programa-info-label {
@@ -194,6 +213,29 @@
         /* Asegurar que las celdas se expandan en altura cuando el contenido crece */
         .concursantes-table table.table {
             table-layout: fixed;
+        }
+        
+        /* Scroll horizontal automático con cursor */
+        .concursantes-table {
+            position: relative;
+            overflow-x: auto;
+            transition: all 0.2s ease;
+        }
+        
+        /* Indicador visual para scroll automático */
+        .concursantes-table.scrolling-left {
+            border-left: 3px solid #007bff;
+            box-shadow: inset 5px 0 10px rgba(0, 123, 255, 0.2);
+        }
+        
+        .concursantes-table.scrolling-right {
+            border-right: 3px solid #007bff;
+            box-shadow: inset -5px 0 10px rgba(0, 123, 255, 0.2);
+        }
+        
+        /* Cursor personalizado para indicar scroll automático */
+        .concursantes-table:hover {
+            cursor: default;
         }
     </style>
 </head>
