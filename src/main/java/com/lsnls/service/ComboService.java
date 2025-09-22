@@ -442,12 +442,20 @@ public class ComboService {
                 jornadasCount + " jornada(s). Desasígnalo primero.");
         }
 
-        // Eliminar registros del historial que referencian este combo
+        // Eliminar registros del historial que referencian este combo (si la tabla existe)
         try {
-            entityManager.createNativeQuery(
-                "DELETE FROM historial_jornadas WHERE combo_id = ?")
-                .setParameter(1, id)
-                .executeUpdate();
+            // Verificar si la tabla existe antes de intentar eliminar
+            Object result = entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'historial_jornadas'")
+                .getSingleResult();
+            Long tableExists = ((Number) result).longValue();
+            
+            if (tableExists > 0) {
+                entityManager.createNativeQuery(
+                    "DELETE FROM historial_jornadas WHERE combo_id = ?")
+                    .setParameter(1, id)
+                    .executeUpdate();
+            }
         } catch (Exception e) {
             // Si hay error al eliminar el historial, continuamos de todas formas
             System.err.println("Advertencia: No se pudieron eliminar algunos registros del historial para el combo " + id + ": " + e.getMessage());

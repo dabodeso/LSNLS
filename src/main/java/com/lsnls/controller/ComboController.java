@@ -508,7 +508,8 @@ public class ComboController {
             if (msg.contains("concursante")) {
                 return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está asignado a concursantes.");
             }
-            return ResponseEntity.badRequest().body("Error interno al eliminar combo: " + e.getMessage());
+            // Mensaje genérico para errores internos
+            return ResponseEntity.badRequest().body("No se pudo eliminar el combo. Verifica que no esté siendo usado por otros elementos del sistema.");
         }
     }
 } 
