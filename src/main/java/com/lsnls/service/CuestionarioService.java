@@ -334,12 +334,28 @@ public class CuestionarioService {
                 jornadasCount + " jornada(s). Desasígnalo primero.");
         }
 
-        // Eliminar registros del historial que referencian este cuestionario
+        // Eliminar registros del historial que referencian este cuestionario (si la tabla existe)
         try {
-            entityManager.createNativeQuery(
-                "DELETE FROM historial_jornadas WHERE cuestionario_id = ?")
-                .setParameter(1, id)
-                .executeUpdate();
+            // Verificar si la tabla existe antes de intentar eliminar
+            Object result = entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'historial_jornadas'")
+                .getSingleResult();
+            Long tableExists = ((Number) result).longValue();
+            
+            if (tableExists > 0) {
+                // Verificar si la columna cuestionario_id existe
+                Object columnExists = entityManager.createNativeQuery(
+                    "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'historial_jornadas' AND column_name = 'cuestionario_id'")
+                    .getSingleResult();
+                Long columnExistsCount = ((Number) columnExists).longValue();
+                
+                if (columnExistsCount > 0) {
+                    entityManager.createNativeQuery(
+                        "DELETE FROM historial_jornadas WHERE cuestionario_id = ?")
+                        .setParameter(1, id)
+                        .executeUpdate();
+                }
+            }
         } catch (Exception e) {
             // Si hay error al eliminar el historial, continuamos de todas formas
             System.err.println("Advertencia: No se pudieron eliminar algunos registros del historial para el cuestionario " + id + ": " + e.getMessage());

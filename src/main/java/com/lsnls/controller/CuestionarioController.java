@@ -372,7 +372,14 @@ public class CuestionarioController {
             if (msg.contains("foreign key") || msg.contains("constraint fails")) {
                 return ResponseEntity.badRequest().body("No se puede eliminar el cuestionario porque está siendo usado por uno o más concursantes.");
             }
-            return ResponseEntity.badRequest().body("Error al eliminar cuestionario: " + e.getMessage());
+            if (msg.contains("jornada")) {
+                return ResponseEntity.badRequest().body("No se puede eliminar el cuestionario porque está asignado a una jornada.");
+            }
+            if (msg.contains("concursante")) {
+                return ResponseEntity.badRequest().body("No se puede eliminar el cuestionario porque está asignado a concursantes.");
+            }
+            // Mensaje genérico para errores internos
+            return ResponseEntity.badRequest().body("No se pudo eliminar el cuestionario. Verifica que no esté siendo usado por otros elementos del sistema.");
         }
     }
 

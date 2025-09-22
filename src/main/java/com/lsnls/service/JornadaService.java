@@ -70,7 +70,19 @@ public class JornadaService {
             fechaHastaLocal = LocalDate.parse(fechaHasta);
         }
         
-        Page<Jornada> jornadas = jornadaRepository.findAllWithFilters(pageable, estado, 
+        // Convertir estado de String a Enum
+        Jornada.EstadoJornada estadoEnum = null;
+        if (estado != null && !estado.isEmpty()) {
+            try {
+                // Los valores del enum son en minúsculas, no necesitamos toUpperCase()
+                estadoEnum = Jornada.EstadoJornada.valueOf(estado);
+            } catch (IllegalArgumentException e) {
+                // Si el estado no es válido, ignorar el filtro
+                estadoEnum = null;
+            }
+        }
+        
+        Page<Jornada> jornadas = jornadaRepository.findAllWithFilters(pageable, estado, estadoEnum,
                 fechaDesdeLocal, fechaHastaLocal, buscar);
         return jornadas.map(this::convertirADTO);
     }

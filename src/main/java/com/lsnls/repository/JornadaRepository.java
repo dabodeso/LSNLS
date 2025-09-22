@@ -29,7 +29,7 @@ public interface JornadaRepository extends JpaRepository<Jornada, Long> {
     Page<Jornada> findAllOrderByIdDesc(Pageable pageable);
     
     @Query("SELECT j FROM Jornada j WHERE " +
-           "(:estado IS NULL OR j.estado = :estado) AND " +
+           "(:estado IS NULL OR j.estado = :estadoEnum) AND " +
            "(:fechaDesde IS NULL OR j.fechaJornada >= :fechaDesde) AND " +
            "(:fechaHasta IS NULL OR j.fechaJornada <= :fechaHasta) AND " +
            "(:buscar IS NULL OR LOWER(j.nombre) LIKE LOWER(CONCAT('%', :buscar, '%')) OR " +
@@ -37,6 +37,7 @@ public interface JornadaRepository extends JpaRepository<Jornada, Long> {
            "ORDER BY j.id DESC")
     Page<Jornada> findAllWithFilters(Pageable pageable,
             @Param("estado") String estado,
+            @Param("estadoEnum") Jornada.EstadoJornada estadoEnum,
             @Param("fechaDesde") LocalDate fechaDesde,
             @Param("fechaHasta") LocalDate fechaHasta,
             @Param("buscar") String buscar);
