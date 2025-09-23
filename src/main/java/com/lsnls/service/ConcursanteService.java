@@ -280,6 +280,16 @@ public class ConcursanteService {
                 .collect(Collectors.toList());
     }
 
+    public Page<ConcursanteDTO> findConcursantesSinProgramaPaginated(Pageable pageable) {
+        return concursanteRepository.findByNumeroProgramaIsNull(pageable)
+                .map(this::convertToDTO);
+    }
+
+    public Page<ConcursanteDTO> findConcursantesSinProgramaPaginated(Pageable pageable, String busqueda) {
+        return concursanteRepository.findByNumeroProgramaIsNullWithSearch(pageable, busqueda)
+                .map(this::convertToDTO);
+    }
+
     @Transactional
     public ConcursanteDTO asignarAPrograma(Long concursanteId, Long programaId) {
         Concursante concursante = concursanteRepository.findById(concursanteId)

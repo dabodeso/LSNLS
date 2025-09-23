@@ -14,6 +14,15 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long> 
     List<Concursante> findByEstado(String estado); // Cambio de EstadoConcursante a String
     List<Concursante> findByNumeroPrograma(Integer numeroPrograma);
     List<Concursante> findByNumeroProgramaIsNull();
+    Page<Concursante> findByNumeroProgramaIsNull(Pageable pageable);
+    
+    @Query("SELECT c FROM Concursante c WHERE c.numeroPrograma IS NULL AND " +
+           "(:busqueda IS NULL OR " +
+           "LOWER(c.nombre) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
+           "LOWER(c.ocupacion) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
+           "LOWER(c.lugar) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
+           "CAST(c.numeroConcursante AS string) LIKE CONCAT('%', :busqueda, '%'))")
+    Page<Concursante> findByNumeroProgramaIsNullWithSearch(Pageable pageable, @Param("busqueda") String busqueda);
     
     @Query("SELECT MAX(c.numeroConcursante) FROM Concursante c")
     Integer findMaxNumeroConcursante();

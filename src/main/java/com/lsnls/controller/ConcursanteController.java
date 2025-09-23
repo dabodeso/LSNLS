@@ -101,9 +101,13 @@ public class ConcursanteController {
     }
 
     @GetMapping("/disponibles")
-    public ResponseEntity<?> findConcursantesDisponibles() {
+    public ResponseEntity<?> findConcursantesDisponibles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String busqueda) {
         try {
-            List<ConcursanteDTO> concursantes = concursanteService.findConcursantesSinPrograma();
+            Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+            Page<ConcursanteDTO> concursantes = concursanteService.findConcursantesSinProgramaPaginated(pageable, busqueda);
             return ResponseEntity.ok(concursantes);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error interno al obtener concursantes disponibles: " + e.getMessage());
