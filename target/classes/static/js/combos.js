@@ -983,38 +983,6 @@ function limpiarSeleccionPM(pm) {
     console.log(`Limpiada selección de ${pm}`);
 }
 
-async function buscarPreguntasModal(page = 0) {
-    const id = document.getElementById('buscador-id').value.trim();
-    const pregunta = document.getElementById('buscador-pregunta').value.trim();
-    const respuesta = document.getElementById('buscador-respuesta').value.trim();
-    const tematica = document.getElementById('buscador-tematica').value.trim();
-
-    try {
-        let preguntas = [];
-        let totalPages = 1;
-        
-        // Para combos, buscar solo preguntas de nivel 5 (_5LS y _5NLS)
-        const respLS = await fetch(`/api/preguntas/buscar?nivel=_5LS&page=${page}&size=20&id=${encodeURIComponent(id)}&pregunta=${encodeURIComponent(pregunta)}&respuesta=${encodeURIComponent(respuesta)}&tematica=${encodeURIComponent(tematica)}`, { headers: authManager.getAuthHeaders() });
-        const respNLS = await fetch(`/api/preguntas/buscar?nivel=_5NLS&page=${page}&size=20&id=${encodeURIComponent(id)}&pregunta=${encodeURIComponent(pregunta)}&respuesta=${encodeURIComponent(respuesta)}&tematica=${encodeURIComponent(tematica)}`, { headers: authManager.getAuthHeaders() });
-        const dataLS = await respLS.json();
-        const dataNLS = await respNLS.json();
-        preguntas = [...(dataLS.content || []), ...(dataNLS.content || [])];
-        totalPages = Math.max(dataLS.totalPages || 1, dataNLS.totalPages || 1);
-        
-        // Filtrar preguntas ya seleccionadas (solo si estamos creando un combo nuevo)
-        if (!window.contextoAnadirPregunta) {
-            const preguntasYaSeleccionadas = obtenerPreguntasYaSeleccionadas();
-            if (preguntasYaSeleccionadas.length > 0) {
-                preguntas = preguntas.filter(p => !preguntasYaSeleccionadas.includes(p.id));
-            }
-        }
-        
-        renderPreguntasModal(preguntas, page, totalPages);
-    } catch (e) {
-        document.getElementById('tbody-selector-pregunta').innerHTML = `<tr><td colspan="6">Error al cargar preguntas</td></tr>`;
-        document.getElementById('paginacion-selector-pregunta').innerHTML = '';
-    }
-}
 
 function renderPreguntasModal(preguntas, currentPage, totalPages) {
     const tbody = document.getElementById('tbody-selector-pregunta');
@@ -1489,4 +1457,4 @@ window.cambiarEstadoCombo = async function(id, nuevoEstado) {
             style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
         }).showToast();
     }
-}; 
+};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       

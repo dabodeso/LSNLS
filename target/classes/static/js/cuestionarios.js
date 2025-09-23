@@ -547,40 +547,55 @@ function abrirSelectorPregunta(nivel, factor = null) {
 
 // Mejorar paginación para PM
 async function buscarPreguntasModal(page = 0) {
-    const nivel = selectorPreguntaContext.nivel;
-    let url = '';
-    if (normales.includes(nivel)) {
-        url = `/api/preguntas/buscar?nivel=_${nivel}`;
-    } else {
-        url = `/api/preguntas/buscar?nivel=_5LS`;
-    }
     const id = document.getElementById('buscador-id').value.trim();
     const pregunta = document.getElementById('buscador-pregunta').value.trim();
     const respuesta = document.getElementById('buscador-respuesta').value.trim();
     const tematica = document.getElementById('buscador-tematica').value.trim();
-    if (id) url += `&id=${encodeURIComponent(id)}`;
-    if (pregunta) url += `&pregunta=${encodeURIComponent(pregunta)}`;
-    if (respuesta) url += `&respuesta=${encodeURIComponent(respuesta)}`;
-    if (tematica) url += `&tematica=${encodeURIComponent(tematica)}`;
-    url += `&page=${page}&size=20`;
     
-    console.log('[FRONT] URL de búsqueda:', url);
-    console.log('[FRONT] Contexto:', selectorPreguntaContext);
+    // Detectar si estamos en contexto de combo o cuestionario
+    const esCombo = window.contextoAnadirPregunta && window.contextoAnadirPregunta.comboId;
+    const esCuestionario = window.contextoAnadirPregunta && window.contextoAnadirPregunta.cuestionarioId;
     
     try {
         let preguntas = [];
         let totalPages = 1;
         
-        // Ejecutar la búsqueda siempre, no solo para niveles normales
-        const resp = await fetch(url, { headers: authManager.getAuthHeaders() });
-        console.log('[FRONT] Respuesta del servidor:', resp.status, resp.statusText);
-        
-        if (!resp.ok) throw new Error('Error al buscar preguntas');
-        const data = await resp.json();
-        console.log('[FRONT] Datos recibidos:', data);
-        
-        preguntas = data.content || [];
-        totalPages = data.totalPages || 1;
+        if (esCombo) {
+            // Para combos, buscar solo preguntas de nivel 5 (_5LS y _5NLS)
+            const respLS = await fetch(`/api/preguntas/buscar?nivel=_5LS&page=${page}&size=20&id=${encodeURIComponent(id)}&pregunta=${encodeURIComponent(pregunta)}&respuesta=${encodeURIComponent(respuesta)}&tematica=${encodeURIComponent(tematica)}`, { headers: authManager.getAuthHeaders() });
+            const respNLS = await fetch(`/api/preguntas/buscar?nivel=_5NLS&page=${page}&size=20&id=${encodeURIComponent(id)}&pregunta=${encodeURIComponent(pregunta)}&respuesta=${encodeURIComponent(respuesta)}&tematica=${encodeURIComponent(tematica)}`, { headers: authManager.getAuthHeaders() });
+            const dataLS = await respLS.json();
+            const dataNLS = await respNLS.json();
+            preguntas = [...(dataLS.content || []), ...(dataNLS.content || [])];
+            totalPages = Math.max(dataLS.totalPages || 1, dataNLS.totalPages || 1);
+        } else {
+            // Para cuestionarios, buscar según el nivel del contexto
+            const nivel = selectorPreguntaContext.nivel;
+            let url = '';
+            if (normales.includes(nivel)) {
+                url = `/api/preguntas/buscar?nivel=_${nivel}`;
+            } else {
+                url = `/api/preguntas/buscar?nivel=_5LS`;
+            }
+            if (id) url += `&id=${encodeURIComponent(id)}`;
+            if (pregunta) url += `&pregunta=${encodeURIComponent(pregunta)}`;
+            if (respuesta) url += `&respuesta=${encodeURIComponent(respuesta)}`;
+            if (tematica) url += `&tematica=${encodeURIComponent(tematica)}`;
+            url += `&page=${page}&size=20`;
+            
+            console.log('[FRONT] URL de búsqueda:', url);
+            console.log('[FRONT] Contexto:', selectorPreguntaContext);
+            
+            const resp = await fetch(url, { headers: authManager.getAuthHeaders() });
+            console.log('[FRONT] Respuesta del servidor:', resp.status, resp.statusText);
+            
+            if (!resp.ok) throw new Error('Error al buscar preguntas');
+            const data = await resp.json();
+            console.log('[FRONT] Datos recibidos:', data);
+            
+            preguntas = data.content || [];
+            totalPages = data.totalPages || 1;
+        }
         
         console.log('[FRONT] Preguntas encontradas:', preguntas.length);
         console.log('[FRONT] Total páginas:', totalPages);

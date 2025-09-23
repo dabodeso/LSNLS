@@ -9,7 +9,10 @@ const PreguntasManager = {
     filtros: {
         tematica: '',
         nivel: '',
-        estado: ''
+        estado: '',
+        subtema: '',
+        pregunta: '',
+        respuesta: ''
     },
     orden: {
         columna: null,
@@ -128,9 +131,61 @@ const PreguntasManager = {
         const scrollPosition = window.scrollY;
         console.log('📍 [CARGAR MÁS] Posición del scroll guardada:', scrollPosition);
         
+        // Determinar si hay filtros activos
+        const hayFiltrosActivos = !!(this.filtros?.estado || this.filtros?.nivel || this.filtros?.tematica || this.filtros?.subtema || this.filtros?.pregunta || this.filtros?.respuesta);
+        
         this.paginaActual++;
         console.log('✅ [CARGAR MÁS] Página incrementada a:', this.paginaActual);
-        await this.cargarPreguntas(false);
+        
+        if (hayFiltrosActivos) {
+            try {
+                this.cargando = true;
+                this.mostrarEstadoCarga();
+                
+                const params = new URLSearchParams({
+                    page: this.paginaActual,
+                    size: this.tamanioPagina
+                });
+                // Añadir filtros activos
+                if (this.filtros.tematica) params.append('tematica', this.filtros.tematica);
+                if (this.filtros.nivel) params.append('nivel', this.filtros.nivel);
+                if (this.filtros.estado) params.append('estado', this.filtros.estado);
+                if (this.filtros.subtema) params.append('subtema', this.filtros.subtema);
+                if (this.filtros.pregunta) params.append('pregunta', this.filtros.pregunta);
+                if (this.filtros.respuesta) params.append('respuesta', this.filtros.respuesta);
+                
+                const response = await fetch(`/api/preguntas/filtrar?${params.toString()}`, {
+                    headers: authManager.getAuthHeaders()
+                });
+                if (!response.ok) {
+                    throw new Error('Error al cargar más preguntas filtradas');
+                }
+                const data = await response.json();
+                const longitudAnterior = this.preguntas.length;
+                this.preguntas = [...this.preguntas, ...(data.content || [])];
+                this.totalPreguntas = data.totalElements ?? this.totalPreguntas;
+                this.totalPaginas = data.totalPages ?? this.totalPaginas;
+                this.paginaActual = data.number ?? this.paginaActual;
+                console.log('✅ [CARGAR MÁS] Preguntas filtradas añadidas, longitud anterior:', longitudAnterior, 'nueva longitud:', this.preguntas.length);
+                this.mostrarPreguntas();
+            } catch (e) {
+                console.error(e);
+                Toastify({
+                    text: `Error: ${e.message}`,
+                    duration: 3000,
+                    close: true,
+                    gravity: 'top',
+                    position: 'right',
+                    style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+                }).showToast();
+            } finally {
+                this.cargando = false;
+                this.ocultarEstadoCarga();
+                this.actualizarPaginacion();
+            }
+        } else {
+            await this.cargarPreguntas(false);
+        }
         
         // Restaurar la posición del scroll después de cargar las preguntas
         setTimeout(() => {
@@ -240,6 +295,7 @@ const PreguntasManager = {
             console.log('✅ [PAGINACION] Botón creado, deshabilitado:', botonDeshabilitado);
             console.log('✅ [PAGINACION] Estado del botón - cargando:', this.cargando, 'paginaActual >= totalPaginas-1:', this.paginaActual >= this.totalPaginas - 1);
             console.log('✅ [PAGINACION] Total páginas:', this.totalPaginas, 'Página actual:', this.paginaActual);
+            console.log('✅ [PAGINACION] Filtros activos:', this.filtros);
 
             paginacionContainer.innerHTML = '';
             paginacionContainer.appendChild(infoPagina);
@@ -343,6 +399,9 @@ const PreguntasManager = {
             const subtema = document.getElementById('filtro-subtema')?.value || '';
             const pregunta = document.getElementById('filtro-pregunta')?.value || '';
             const respuesta = document.getElementById('filtro-respuesta')?.value || '';
+            
+            // Guardar filtros actuales para soportar "cargar más"
+            this.filtros = { estado, nivel, tematica, subtema, pregunta, respuesta };
 
             // Si no hay filtros, cargar todas las preguntas
             const hayFiltros = estado || nivel || tematica || subtema || pregunta || respuesta;
@@ -352,8 +411,12 @@ const PreguntasManager = {
                 return;
             }
 
-            // Construir parámetros de consulta
-            const params = new URLSearchParams();
+            // Reiniciar paginación y construir parámetros de consulta con paginado
+            this.paginaActual = 0;
+            const params = new URLSearchParams({
+                page: this.paginaActual,
+                size: this.tamanioPagina
+            });
             if (estado) params.append('estado', estado);
             if (nivel) params.append('nivel', nivel);
             if (tematica) params.append('tematica', tematica);
@@ -371,27 +434,34 @@ const PreguntasManager = {
             }
 
             const responseData = await response.json();
+            console.log('🔍 [FILTRAR] Respuesta completa del backend:', responseData);
             
             // El backend devuelve una respuesta paginada, extraer el contenido
             if (responseData.content && Array.isArray(responseData.content)) {
                 this.preguntas = responseData.content;
                 this.totalPreguntas = responseData.totalElements || responseData.content.length;
                 this.totalPaginas = responseData.totalPages || 1;
-                this.paginaActual = 0; // Resetear a la primera página
+                this.paginaActual = responseData.number ?? 0; // Asegurar página actual
+                console.log('🔍 [FILTRAR] Valores extraídos - totalPreguntas:', this.totalPreguntas, 'totalPaginas:', this.totalPaginas, 'paginaActual:', this.paginaActual);
             } else {
                 // Si no es paginado, usar directamente
                 this.preguntas = Array.isArray(responseData) ? responseData : [];
                 this.totalPreguntas = this.preguntas.length;
                 this.totalPaginas = 1;
                 this.paginaActual = 0;
+                console.log('🔍 [FILTRAR] Respuesta no paginada - totalPreguntas:', this.totalPreguntas, 'totalPaginas:', this.totalPaginas);
             }
             
             this.mostrarPreguntas();
+            this.actualizarPaginacion();
 
         } catch (error) {
             console.error('Error al filtrar preguntas:', error);
             // En caso de error, usar filtro client-side como fallback
             this.filtrarPreguntasClientSide();
+        } finally {
+            this.cargando = false;
+            this.ocultarEstadoCarga();
         }
     },
 
@@ -562,7 +632,12 @@ const PreguntasManager = {
             const tematica = document.getElementById('filtro-tematica')?.value || '';
             const nivel = document.getElementById('filtro-nivel')?.value || '';
             const estado = document.getElementById('filtro-estado')?.value || '';
-            const pregunta = document.getElementById('buscar-pregunta')?.value || '';
+            const subtema = document.getElementById('filtro-subtema')?.value || '';
+            const pregunta = document.getElementById('filtro-pregunta')?.value || document.getElementById('buscar-pregunta')?.value || '';
+            const respuesta = document.getElementById('filtro-respuesta')?.value || '';
+
+            // Guardar filtros actuales para soportar "cargar más"
+            this.filtros = { tematica, nivel, estado, subtema, pregunta, respuesta };
 
             const params = new URLSearchParams({
                 page: this.paginaActual,
@@ -573,7 +648,9 @@ const PreguntasManager = {
             if (tematica) params.append('tematica', tematica);
             if (nivel) params.append('nivel', nivel);
             if (estado) params.append('estado', estado);
+            if (subtema) params.append('subtema', subtema);
             if (pregunta) params.append('pregunta', pregunta);
+            if (respuesta) params.append('respuesta', respuesta);
 
             const response = await fetch(`/api/preguntas/filtrar?${params}`, {
                 headers: authManager.getAuthHeaders()
@@ -584,10 +661,12 @@ const PreguntasManager = {
             }
 
             const data = await response.json();
+            console.log('🔍 [APLICAR FILTROS] Respuesta completa del backend:', data);
             this.preguntas = data.content;
             this.totalPreguntas = data.totalElements;
             this.totalPaginas = data.totalPages;
             this.paginaActual = data.number;
+            console.log('🔍 [APLICAR FILTROS] Valores extraídos - totalPreguntas:', this.totalPreguntas, 'totalPaginas:', this.totalPaginas, 'paginaActual:', this.paginaActual);
 
             this.mostrarPreguntas();
             this.actualizarPaginacion();
