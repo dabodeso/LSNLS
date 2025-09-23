@@ -16,13 +16,13 @@ public class PreguntaCuestionario {
     @EmbeddedId
     private PreguntaCuestionarioId id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("preguntaId")
     @JoinColumn(name = "pregunta_id")
     @JsonIgnoreProperties({"cuestionarios", "subtemas", "creacionUsuario", "verificacionUsuario"})
     private Pregunta pregunta;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("cuestionarioId")
     @JoinColumn(name = "cuestionario_id")
     @JsonBackReference

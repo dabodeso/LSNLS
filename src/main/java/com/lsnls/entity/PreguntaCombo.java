@@ -17,13 +17,13 @@ public class PreguntaCombo {
     @EmbeddedId
     private PreguntaComboId id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("preguntaId")
     @JoinColumn(name = "pregunta_id")
     @JsonIgnoreProperties({"cuestionarios", "combos", "subtemas", "creacionUsuario", "verificacionUsuario"})
     private Pregunta pregunta;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("comboId")
     @JoinColumn(name = "combo_id")
     @JsonBackReference

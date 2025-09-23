@@ -47,7 +47,7 @@ public class Cuestionario {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;
 
-    @OneToMany(mappedBy = "cuestionario", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "cuestionario", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("cuestionario")
     private Set<PreguntaCuestionario> preguntas;
 
