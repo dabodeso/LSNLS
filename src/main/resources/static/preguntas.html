@@ -14,6 +14,34 @@
     <!-- Custom CSS -->
     <link href="css/styles.css" rel="stylesheet">
     <link href="css/pagination.css" rel="stylesheet">
+    <style>
+        /* Hacer la tabla más ancha y ajustar columnas específicas */
+        .table-preguntas {
+            width: 100% !important;
+            min-width: 1800px !important;
+        }
+        
+        /* Columna de Pregunta (columna 6) - más ancha */
+        .table-preguntas th:nth-child(6),
+        .table-preguntas td:nth-child(6) {
+            width: 300px !important;
+            min-width: 300px !important;
+            max-width: 300px !important;
+        }
+        
+        /* Columna de Fuentes (columna 9) - más ancha */
+        .table-preguntas th:nth-child(9),
+        .table-preguntas td:nth-child(9) {
+            width: 250px !important;
+            min-width: 250px !important;
+            max-width: 250px !important;
+        }
+        
+        /* Ajustar el contenedor de la tabla para permitir scroll horizontal */
+        .table-responsive {
+            overflow-x: auto !important;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">

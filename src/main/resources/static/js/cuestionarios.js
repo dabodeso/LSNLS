@@ -672,14 +672,19 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
         let factorMultiplicacion = 1;
         if (nivel === 'PM1') factorMultiplicacion = 2;
         else if (nivel === 'PM2') factorMultiplicacion = 3;
-        else if (nivel === 'PM3') factorMultiplicacion = 0;
+        else if (nivel === 'PM3') factorMultiplicacion = 1; // Cambiado de 0 a 1
         fetch(`/api/cuestionarios/${cuestionarioId}/preguntas`, {
             method: 'POST',
             headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ preguntaId: id, factorMultiplicacion })
         })
         .then(resp => {
-            if (!resp.ok) throw new Error('No se pudo añadir la pregunta');
+            if (!resp.ok) {
+                return resp.text().then(text => {
+                    console.error('Error del servidor:', text);
+                    throw new Error(`Error ${resp.status}: ${text}`);
+                });
+            }
             return resp.json();
         })
         .then(() => {

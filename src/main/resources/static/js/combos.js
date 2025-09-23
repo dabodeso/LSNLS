@@ -957,6 +957,140 @@ function abrirSelectorPregunta(nivel, factor = null) {
     modal.show();
 }
 
+// Función para buscar preguntas en el modal (específica para combos)
+async function buscarPreguntasModal(page = 0) {
+    const id = document.getElementById('buscador-id').value.trim();
+    const pregunta = document.getElementById('buscador-pregunta').value.trim();
+    const respuesta = document.getElementById('buscador-respuesta').value.trim();
+    const tematica = document.getElementById('buscador-tematica').value.trim();
+
+    try {
+        // Para combos, buscar preguntas de nivel 5 (_5LS y _5NLS)
+        let preguntas = [];
+        let totalPages = 1;
+        
+        // Buscar preguntas _5LS
+        let urlLS = `/api/preguntas/buscar?nivel=_5LS&page=${page}&size=20`;
+        if (id) urlLS += `&id=${encodeURIComponent(id)}`;
+        if (pregunta) urlLS += `&pregunta=${encodeURIComponent(pregunta)}`;
+        if (respuesta) urlLS += `&respuesta=${encodeURIComponent(respuesta)}`;
+        if (tematica) urlLS += `&tematica=${encodeURIComponent(tematica)}`;
+        
+        // Buscar preguntas _5NLS
+        let urlNLS = `/api/preguntas/buscar?nivel=_5NLS&page=${page}&size=20`;
+        if (id) urlNLS += `&id=${encodeURIComponent(id)}`;
+        if (pregunta) urlNLS += `&pregunta=${encodeURIComponent(pregunta)}`;
+        if (respuesta) urlNLS += `&respuesta=${encodeURIComponent(respuesta)}`;
+        if (tematica) urlNLS += `&tematica=${encodeURIComponent(tematica)}`;
+        
+        console.log('[COMBO] URL _5LS:', urlLS);
+        console.log('[COMBO] URL _5NLS:', urlNLS);
+        
+        // Hacer ambas peticiones en paralelo
+        const [respLS, respNLS] = await Promise.all([
+            fetch(urlLS, { headers: authManager.getAuthHeaders() }),
+            fetch(urlNLS, { headers: authManager.getAuthHeaders() })
+        ]);
+        
+        console.log('[COMBO] Respuesta _5LS:', respLS.status);
+        console.log('[COMBO] Respuesta _5NLS:', respNLS.status);
+        
+        if (!respLS.ok || !respNLS.ok) {
+            const errorTextLS = respLS.ok ? '' : await respLS.text();
+            const errorTextNLS = respNLS.ok ? '' : await respNLS.text();
+            console.error('[COMBO] Error del servidor:', errorTextLS, errorTextNLS);
+            throw new Error(`Error en búsqueda: ${respLS.status} / ${respNLS.status}`);
+        }
+        
+        const dataLS = await respLS.json();
+        const dataNLS = await respNLS.json();
+        
+        // Combinar resultados
+        preguntas = [...(dataLS.content || []), ...(dataNLS.content || [])];
+        totalPages = Math.max(dataLS.totalPages || 1, dataNLS.totalPages || 1);
+        
+        console.log('[COMBO] Preguntas _5LS:', dataLS.content?.length || 0);
+        console.log('[COMBO] Preguntas _5NLS:', dataNLS.content?.length || 0);
+        console.log('[COMBO] Total combinado:', preguntas.length);
+        
+        renderizarPreguntasModal(preguntas, totalPages, page);
+    } catch (error) {
+        console.error('[COMBO] Error al buscar preguntas:', error);
+        document.getElementById('tbody-selector-pregunta').innerHTML = `<tr><td colspan="4">Error al cargar preguntas: ${error.message}</td></tr>`;
+        document.getElementById('paginacion-selector-pregunta').innerHTML = '';
+    }
+}
+
+// Función para renderizar las preguntas en el modal
+function renderizarPreguntasModal(preguntas, totalPages, currentPage) {
+    const tbody = document.getElementById('tbody-selector-pregunta');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    preguntas.forEach(pregunta => {
+        const row = document.createElement('tr');
+        
+        // Determinar el color del nivel
+        let nivelColor = '';
+        if (pregunta.nivel === '_5NLS') {
+            nivelColor = 'text-danger fw-bold'; // Rojo para 5NLS
+        } else if (pregunta.nivel === '_5LS') {
+            nivelColor = 'text-success fw-bold'; // Verde para 5LS
+        } else {
+            nivelColor = 'text-muted'; // Gris para otros niveles
+        }
+        
+        row.innerHTML = `
+            <td>${pregunta.id}</td>
+            <td colspan="4">
+                <div class="pregunta-item">
+                    <div class="pregunta-texto">${pregunta.pregunta}</div>
+                    <div class="respuesta-texto"><strong>Respuesta:</strong> ${pregunta.respuesta}</div>
+                    <div class="pregunta-meta">
+                        <small class="text-muted">
+                            Temática: ${pregunta.tematica || 'N/A'} | 
+                            Nivel: <span class="${nivelColor}">${pregunta.nivel}</span> | 
+                            Estado: ${pregunta.estado}
+                        </small>
+                    </div>
+                </div>
+            </td>
+        `;
+        
+        // Añadir evento de clic para seleccionar la pregunta
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+            seleccionarPreguntaModal(
+                pregunta.id,
+                pregunta.pregunta,
+                pregunta.tematica,
+                pregunta.respuesta,
+                pregunta.subtema
+            );
+        });
+        
+        tbody.appendChild(row);
+    });
+    
+    // Renderizar paginación
+    const paginacion = document.getElementById('paginacion-selector-pregunta');
+    if (paginacion) {
+        let paginacionHTML = '';
+        
+        for (let i = 0; i < totalPages; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            paginacionHTML += `
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" onclick="buscarPreguntasModal(${i})">${i + 1}</a>
+                </li>
+            `;
+        }
+        
+        paginacion.innerHTML = paginacionHTML;
+    }
+}
+
 // Función para obtener IDs de preguntas ya seleccionadas en el combo
 function obtenerPreguntasYaSeleccionadas() {
     const preguntasSeleccionadas = [];
