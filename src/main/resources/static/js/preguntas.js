@@ -24,6 +24,13 @@ const PreguntasManager = {
             console.log('🔄 [CARGAR] Iniciando carga de preguntas, resetear:', resetear);
             console.log('🔄 [CARGAR] Estado actual - paginaActual:', this.paginaActual, 'preguntas.length:', this.preguntas.length);
             
+            // Inicializar estado de ordenamiento si no existe
+            if (!this.orden.columna) {
+                this.orden.columna = 'id';
+                this.orden.asc = true;
+                console.log('🔄 [CARGAR] Inicializando ordenamiento por defecto - columna: id, asc: true');
+            }
+            
             if (!authManager.isAuthenticated()) {
                 console.error('Usuario no autenticado');
                 return;
@@ -89,6 +96,11 @@ const PreguntasManager = {
             console.log('✅ [CARGAR] Estado finalizado - totalPreguntas:', this.totalPreguntas, 'totalPaginas:', this.totalPaginas, 'paginaActual:', this.paginaActual);
             
             this.mostrarPreguntas();
+            
+            // Actualizar indicadores visuales después de cargar
+            if (typeof actualizarIndicadoresOrdenamientoPreguntas === 'function') {
+                actualizarIndicadoresOrdenamientoPreguntas();
+            }
         } catch (error) {
             if (error && error.message && error.message.startsWith('401')) {
                 // No mostrar mensaje, la redirección ya ocurre en api.js
@@ -113,85 +125,100 @@ const PreguntasManager = {
         }
     },
 
-    async cargarMasPreguntas() {
-        console.log('🔄 [CARGAR MÁS] Iniciando carga de más preguntas...');
-        console.log('🔄 [CARGAR MÁS] Estado actual - cargando:', this.cargando, 'paginaActual:', this.paginaActual, 'totalPaginas:', this.totalPaginas);
+    async irAPagina(pagina) {
+        console.log('🔄 [PAGINACIÓN] Navegando a página:', pagina);
         
         if (this.cargando) {
-            console.log('❌ [CARGAR MÁS] Ya está cargando, abortando...');
+            console.log('❌ [PAGINACIÓN] Ya está cargando, abortando...');
             return;
         }
         
-        if (this.paginaActual >= this.totalPaginas - 1) {
-            console.log('❌ [CARGAR MÁS] Ya estamos en la última página, abortando...');
+        if (pagina < 0 || pagina >= this.totalPaginas) {
+            console.log('❌ [PAGINACIÓN] Página inválida:', pagina);
             return;
         }
         
-        // Guardar la posición actual del scroll
-        const scrollPosition = window.scrollY;
-        console.log('📍 [CARGAR MÁS] Posición del scroll guardada:', scrollPosition);
+        this.paginaActual = pagina;
+        this.cargando = true;
+        this.mostrarEstadoCarga();
         
-        // Determinar si hay filtros activos
-        const hayFiltrosActivos = !!(this.filtros?.estado || this.filtros?.nivel || this.filtros?.tematica || this.filtros?.subtema || this.filtros?.pregunta || this.filtros?.respuesta);
-        
-        this.paginaActual++;
-        console.log('✅ [CARGAR MÁS] Página incrementada a:', this.paginaActual);
-        
-        if (hayFiltrosActivos) {
-            try {
-                this.cargando = true;
-                this.mostrarEstadoCarga();
+        try {
+            // Determinar si hay filtros activos
+            const hayFiltrosActivos = !!(this.filtros?.estado || this.filtros?.autoria || this.filtros?.nivel || this.filtros?.tematica || this.filtros?.subtema || this.filtros?.pregunta || this.filtros?.respuesta);
+            
+            if (hayFiltrosActivos) {
+                console.log('🔍 [PAGINACIÓN] Cargando página con filtros activos...');
                 
                 const params = new URLSearchParams({
                     page: this.paginaActual,
-                    size: this.tamanioPagina
+                    size: this.tamanioPagina,
+                    sortBy: this.orden.columna || 'id',
+                    sortDir: this.orden.asc ? 'asc' : 'desc'
                 });
                 // Añadir filtros activos
                 if (this.filtros.tematica) params.append('tematica', this.filtros.tematica);
                 if (this.filtros.nivel) params.append('nivel', this.filtros.nivel);
                 if (this.filtros.estado) params.append('estado', this.filtros.estado);
+                if (this.filtros.autoria) params.append('autoria', this.filtros.autoria);
                 if (this.filtros.subtema) params.append('subtema', this.filtros.subtema);
                 if (this.filtros.pregunta) params.append('pregunta', this.filtros.pregunta);
                 if (this.filtros.respuesta) params.append('respuesta', this.filtros.respuesta);
+                
+                console.log('🔍 [PAGINACIÓN] Parámetros con ordenamiento:', params.toString());
                 
                 const response = await fetch(`/api/preguntas/filtrar?${params.toString()}`, {
                     headers: authManager.getAuthHeaders()
                 });
                 if (!response.ok) {
-                    throw new Error('Error al cargar más preguntas filtradas');
+                    throw new Error('Error al cargar página con filtros');
                 }
                 const data = await response.json();
-                const longitudAnterior = this.preguntas.length;
-                this.preguntas = [...this.preguntas, ...(data.content || [])];
-                this.totalPreguntas = data.totalElements ?? this.totalPreguntas;
-                this.totalPaginas = data.totalPages ?? this.totalPaginas;
-                this.paginaActual = data.number ?? this.paginaActual;
-                console.log('✅ [CARGAR MÁS] Preguntas filtradas añadidas, longitud anterior:', longitudAnterior, 'nueva longitud:', this.preguntas.length);
-                this.mostrarPreguntas();
-            } catch (e) {
-                console.error(e);
-                Toastify({
-                    text: `Error: ${e.message}`,
-                    duration: 3000,
-                    close: true,
-                    gravity: 'top',
-                    position: 'right',
-                    style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
-                }).showToast();
-            } finally {
-                this.cargando = false;
-                this.ocultarEstadoCarga();
-                this.actualizarPaginacion();
+                console.log('🔍 [PAGINACIÓN] Datos recibidos con filtros:', data);
+                this.preguntas = data.content || [];
+                this.totalPreguntas = data.totalElements || 0;
+                this.totalPaginas = data.totalPages || 1;
+            } else {
+                console.log('🔄 [PAGINACIÓN] Cargando página sin filtros...');
+                
+                const params = new URLSearchParams({
+                    page: this.paginaActual,
+                    size: this.tamanioPagina,
+                    sortBy: this.orden.columna || 'id',
+                    sortDir: this.orden.asc ? 'asc' : 'desc'
+                });
+                
+                console.log('🔄 [PAGINACIÓN] Parámetros sin filtros:', params.toString());
+                
+                const response = await fetch(`/api/preguntas?${params.toString()}`, {
+                    headers: authManager.getAuthHeaders()
+                });
+                if (!response.ok) {
+                    throw new Error('Error al cargar página');
+                }
+                const data = await response.json();
+                console.log('🔄 [PAGINACIÓN] Datos recibidos sin filtros:', data);
+                this.preguntas = data.content || [];
+                this.totalPreguntas = data.totalElements || 0;
+                this.totalPaginas = data.totalPages || 1;
             }
-        } else {
-            await this.cargarPreguntas(false);
+            
+            this.mostrarPreguntas();
+            this.actualizarPaginacion();
+            
+        } catch (error) {
+            console.error('❌ [PAGINACIÓN] Error al cargar página:', error);
+            Toastify({
+                text: `Error: ${error.message}`,
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+        } finally {
+            this.cargando = false;
+            this.ocultarEstadoCarga();
         }
-        
-        // Restaurar la posición del scroll después de cargar las preguntas
-        setTimeout(() => {
-            window.scrollTo(0, scrollPosition);
-            console.log('📍 [CARGAR MÁS] Posición del scroll restaurada:', scrollPosition);
-        }, 100);
     },
 
     mostrarEstadoCarga() {
@@ -206,120 +233,70 @@ const PreguntasManager = {
     },
 
     actualizarPaginacion() {
-        console.log('🔄 [PAGINACION] Actualizando paginación...');
+        console.log('🔄 [PAGINACION] Actualizando paginación con botones de páginas...');
         console.log('🔄 [PAGINACION] Estado - preguntas.length:', this.preguntas.length, 'totalPreguntas:', this.totalPreguntas, 'paginaActual:', this.paginaActual, 'totalPaginas:', this.totalPaginas);
         
-        let paginacionContainer = document.getElementById('paginacion-preguntas');
+        // Usar el contenedor de paginación del HTML
+        const paginacionContainer = document.getElementById('paginacion-preguntas');
+        const infoPaginacion = document.getElementById('info-paginacion');
+        
         if (!paginacionContainer) {
-            console.log('🔄 [PAGINACION] Contenedor no encontrado, creando...');
-            // Crear el contenedor si no existe
-            const tablaContainer = document.querySelector('.table-responsive');
-            if (tablaContainer) {
-                console.log('✅ [PAGINACION] Tabla encontrada, creando contenedor...');
-                const paginacionDiv = document.createElement('div');
-                paginacionDiv.id = 'paginacion-preguntas';
-                paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
-                tablaContainer.parentNode.insertBefore(paginacionDiv, tablaContainer.nextSibling);
-                // Obtener la referencia al contenedor recién creado
-                paginacionContainer = document.getElementById('paginacion-preguntas');
-                console.log('✅ [PAGINACION] Contenedor creado:', paginacionContainer);
-            } else {
-                console.error('❌ [PAGINACION] No se encontró la tabla .table-responsive');
-            }
-        } else {
-            console.log('✅ [PAGINACION] Contenedor existente encontrado');
+            console.error('❌ [PAGINACION] Contenedor de paginación no encontrado');
+            return;
         }
 
-        if (paginacionContainer) {
-            const infoPagina = document.createElement('div');
-            infoPagina.innerHTML = `Mostrando ${this.preguntas.length} de ${this.totalPreguntas} preguntas (Página ${this.paginaActual + 1} de ${this.totalPaginas})`;
-
-            // Crear el botón con un enfoque más robusto
-            const botonCargarMas = document.createElement('button');
-            botonCargarMas.className = 'btn btn-primary';
-            botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más preguntas';
-            botonCargarMas.type = 'button';
-            botonCargarMas.id = 'btn-cargar-mas-preguntas';
-            
-            // Estilos inline para asegurar que sea clickeable
-            Object.assign(botonCargarMas.style, {
-                cursor: 'pointer',
-                pointerEvents: 'auto',
-                position: 'relative',
-                zIndex: '1000',
-                display: 'inline-block',
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-                MozUserSelect: 'none',
-                msUserSelect: 'none'
-            });
-            
-            // Verificar si el botón debe estar deshabilitado
-            const botonDeshabilitado = this.cargando || this.paginaActual >= this.totalPaginas - 1;
-            
-            if (botonDeshabilitado) {
-                botonCargarMas.disabled = true;
-                botonCargarMas.style.opacity = '0.6';
-                botonCargarMas.style.cursor = 'not-allowed';
-            } else {
-                botonCargarMas.disabled = false;
-                botonCargarMas.style.opacity = '1';
-                botonCargarMas.style.cursor = 'pointer';
-                
-                // Añadir event listener solo si el botón está habilitado
-                botonCargarMas.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('🔄 [BOTON] Botón "Cargar más" clickeado');
-                    this.cargarMasPreguntas();
-                });
-                
-                // Añadir eventos adicionales para debug
-                botonCargarMas.addEventListener('mouseenter', () => {
-                    console.log('🔄 [BOTON] Mouse enter en botón');
-                });
-                
-                botonCargarMas.addEventListener('mouseleave', () => {
-                    console.log('🔄 [BOTON] Mouse leave en botón');
-                });
-                
-                botonCargarMas.addEventListener('mousedown', () => {
-                    console.log('🔄 [BOTON] Mouse down en botón');
-                });
-                
-                botonCargarMas.addEventListener('mouseup', () => {
-                    console.log('🔄 [BOTON] Mouse up en botón');
-                });
-            }
-            
-            console.log('✅ [PAGINACION] Botón creado, deshabilitado:', botonDeshabilitado);
-            console.log('✅ [PAGINACION] Estado del botón - cargando:', this.cargando, 'paginaActual >= totalPaginas-1:', this.paginaActual >= this.totalPaginas - 1);
-            console.log('✅ [PAGINACION] Total páginas:', this.totalPaginas, 'Página actual:', this.paginaActual);
-            console.log('✅ [PAGINACION] Filtros activos:', this.filtros);
-
-            paginacionContainer.innerHTML = '';
-            paginacionContainer.appendChild(infoPagina);
-            paginacionContainer.appendChild(botonCargarMas);
-            
-            console.log('✅ [PAGINACION] Paginación actualizada correctamente');
-            console.log('✅ [PAGINACION] Botón añadido al DOM:', botonCargarMas);
-            console.log('✅ [PAGINACION] Botón visible:', botonCargarMas.offsetParent !== null);
-            console.log('✅ [PAGINACION] Botón habilitado:', !botonCargarMas.disabled);
-            console.log('✅ [PAGINACION] Botón clickeable:', botonCargarMas.style.pointerEvents !== 'none');
-            
-            // Debug adicional: verificar elementos superpuestos
-            const rect = botonCargarMas.getBoundingClientRect();
-            const elementosEnPosicion = document.elementsFromPoint(
-                rect.left + rect.width / 2, 
-                rect.top + rect.height / 2
-            );
-            console.log('🔍 [PAGINACION] Elementos en la posición del botón:', elementosEnPosicion);
-            console.log('🔍 [PAGINACION] ¿El botón está en la parte superior?', elementosEnPosicion[0] === botonCargarMas);
-            
-
-        } else {
-            console.error('❌ [PAGINACION] No se pudo crear o encontrar el contenedor de paginación');
+        // Actualizar información de paginación
+        if (infoPaginacion) {
+            const inicio = (this.paginaActual * this.tamanioPagina) + 1;
+            const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalPreguntas);
+            infoPaginacion.textContent = `Mostrando ${inicio}-${fin} de ${this.totalPreguntas} preguntas`;
         }
+
+        // Limpiar botones existentes
+        paginacionContainer.innerHTML = '';
+
+        if (this.totalPaginas <= 1) {
+            console.log('✅ [PAGINACION] Solo hay una página, no se muestran botones');
+            return;
+        }
+
+        // Crear botón "Primera"
+        const primeraPagina = document.createElement('li');
+        primeraPagina.className = `page-item ${this.paginaActual === 0 ? 'disabled' : ''}`;
+        primeraPagina.innerHTML = `<a class="page-link" href="#" onclick="PreguntasManager.irAPagina(0)">Primera</a>`;
+        paginacionContainer.appendChild(primeraPagina);
+
+        // Crear botón "Anterior"
+        const paginaAnterior = document.createElement('li');
+        paginaAnterior.className = `page-item ${this.paginaActual === 0 ? 'disabled' : ''}`;
+        paginaAnterior.innerHTML = `<a class="page-link" href="#" onclick="PreguntasManager.irAPagina(${this.paginaActual - 1})">Anterior</a>`;
+        paginacionContainer.appendChild(paginaAnterior);
+
+        // Calcular rango de páginas a mostrar
+        const inicio = Math.max(0, this.paginaActual - 2);
+        const fin = Math.min(this.totalPaginas - 1, this.paginaActual + 2);
+
+        // Mostrar páginas en el rango
+        for (let i = inicio; i <= fin; i++) {
+            const pagina = document.createElement('li');
+            pagina.className = `page-item ${i === this.paginaActual ? 'active' : ''}`;
+            pagina.innerHTML = `<a class="page-link" href="#" onclick="PreguntasManager.irAPagina(${i})">${i + 1}</a>`;
+            paginacionContainer.appendChild(pagina);
+        }
+
+        // Crear botón "Siguiente"
+        const paginaSiguiente = document.createElement('li');
+        paginaSiguiente.className = `page-item ${this.paginaActual >= this.totalPaginas - 1 ? 'disabled' : ''}`;
+        paginaSiguiente.innerHTML = `<a class="page-link" href="#" onclick="PreguntasManager.irAPagina(${this.paginaActual + 1})">Siguiente</a>`;
+        paginacionContainer.appendChild(paginaSiguiente);
+
+        // Crear botón "Última"
+        const ultimaPagina = document.createElement('li');
+        ultimaPagina.className = `page-item ${this.paginaActual >= this.totalPaginas - 1 ? 'disabled' : ''}`;
+        ultimaPagina.innerHTML = `<a class="page-link" href="#" onclick="PreguntasManager.irAPagina(${this.totalPaginas - 1})">Última</a>`;
+        paginacionContainer.appendChild(ultimaPagina);
+
+        console.log('✅ [PAGINACION] Botones de paginación creados correctamente');
     },
 
     mostrarPreguntas() {
@@ -394,6 +371,7 @@ const PreguntasManager = {
         try {
             // Obtener valores de todos los filtros
             const estado = document.getElementById('filtro-estado')?.value || '';
+            const autoria = document.getElementById('filtro-autoria')?.value || '';
             const nivel = document.getElementById('filtro-nivel')?.value || '';
             const tematica = document.getElementById('filtro-tematica')?.value || '';
             const subtema = document.getElementById('filtro-subtema')?.value || '';
@@ -401,10 +379,10 @@ const PreguntasManager = {
             const respuesta = document.getElementById('filtro-respuesta')?.value || '';
             
             // Guardar filtros actuales para soportar "cargar más"
-            this.filtros = { estado, nivel, tematica, subtema, pregunta, respuesta };
+            this.filtros = { estado, autoria, nivel, tematica, subtema, pregunta, respuesta };
 
             // Si no hay filtros, cargar todas las preguntas
-            const hayFiltros = estado || nivel || tematica || subtema || pregunta || respuesta;
+            const hayFiltros = estado || autoria || nivel || tematica || subtema || pregunta || respuesta;
             
             if (!hayFiltros) {
                 await this.cargarPreguntas();
@@ -418,6 +396,7 @@ const PreguntasManager = {
                 size: this.tamanioPagina
             });
             if (estado) params.append('estado', estado);
+            if (autoria) params.append('autoria', autoria);
             if (nivel) params.append('nivel', nivel);
             if (tematica) params.append('tematica', tematica);
             if (subtema) params.append('subtema', subtema);
@@ -630,6 +609,7 @@ const PreguntasManager = {
 
             // Obtener valores de los filtros
             const tematica = document.getElementById('filtro-tematica')?.value || '';
+            const autoria = document.getElementById('filtro-autoria')?.value || '';
             const nivel = document.getElementById('filtro-nivel')?.value || '';
             const estado = document.getElementById('filtro-estado')?.value || '';
             const subtema = document.getElementById('filtro-subtema')?.value || '';
@@ -637,7 +617,7 @@ const PreguntasManager = {
             const respuesta = document.getElementById('filtro-respuesta')?.value || '';
 
             // Guardar filtros actuales para soportar "cargar más"
-            this.filtros = { tematica, nivel, estado, subtema, pregunta, respuesta };
+            this.filtros = { tematica, autoria, nivel, estado, subtema, pregunta, respuesta };
 
             const params = new URLSearchParams({
                 page: this.paginaActual,
@@ -646,6 +626,7 @@ const PreguntasManager = {
 
             // Añadir filtros solo si tienen valor
             if (tematica) params.append('tematica', tematica);
+            if (autoria) params.append('autoria', autoria);
             if (nivel) params.append('nivel', nivel);
             if (estado) params.append('estado', estado);
             if (subtema) params.append('subtema', subtema);
@@ -689,16 +670,128 @@ const PreguntasManager = {
     },
 
     async setOrden(columna) {
+        console.log('🔄 [ORDEN] setOrden llamado con columna:', columna);
+        console.log('🔄 [ORDEN] Estado actual - columna:', this.orden.columna, 'asc:', this.orden.asc);
+        
+        // Verificar si se está redimensionando una columna
+        if (typeof isTableResizing === 'function' && isTableResizing('tabla-preguntas')) {
+            console.log('❌ [ORDEN] Se está redimensionando una columna, abortando ordenamiento...');
+            return;
+        }
+        
+        // Prevenir múltiples llamadas simultáneas
+        if (this.cargando) {
+            console.log('❌ [ORDEN] Ya está cargando, abortando ordenamiento...');
+            return;
+        }
+        
+        // Lógica mejorada de ordenamiento
         if (this.orden.columna === columna) {
+            // Misma columna: alternar dirección
             this.orden.asc = !this.orden.asc;
+            console.log('🔄 [ORDEN] Misma columna, cambiando dirección a:', this.orden.asc ? 'ASC' : 'DESC');
         } else {
+            // Nueva columna: empezar con ASC
             this.orden.columna = columna;
             this.orden.asc = true;
+            console.log('🔄 [ORDEN] Nueva columna, estableciendo:', columna, 'ASC');
         }
+        
+        console.log('🔄 [ORDEN] Estado final - columna:', this.orden.columna, 'asc:', this.orden.asc);
+        console.log('🔄 [ORDEN] Filtros activos:', this.filtros);
         
         // Recargar preguntas con el nuevo orden desde el servidor
         this.paginaActual = 0;
-        await this.cargarPreguntas(true);
+        
+        // Determinar si hay filtros activos
+        const hayFiltrosActivos = !!(this.filtros?.estado || this.filtros?.autoria || this.filtros?.nivel || this.filtros?.tematica || this.filtros?.subtema || this.filtros?.pregunta || this.filtros?.respuesta);
+        
+        if (hayFiltrosActivos) {
+            console.log('🔍 [ORDEN] Aplicando ordenamiento con filtros activos...');
+            await this.aplicarFiltrosConOrden();
+        } else {
+            console.log('🔄 [ORDEN] Aplicando ordenamiento sin filtros...');
+            await this.cargarPreguntas(true);
+        }
+        
+        // Actualizar indicadores visuales
+        if (typeof actualizarIndicadoresOrdenamientoPreguntas === 'function') {
+            actualizarIndicadoresOrdenamientoPreguntas();
+        }
+        
+        // Log del estado final para debug
+        console.log('✅ [ORDEN] Ordenamiento aplicado - columna:', this.orden.columna, 'dirección:', this.orden.asc ? 'ASC' : 'DESC');
+    },
+
+    async aplicarFiltrosConOrden() {
+        try {
+            if (!authManager.isAuthenticated()) {
+                console.error('Usuario no autenticado');
+                return;
+            }
+
+            this.cargando = true;
+            this.mostrarEstadoCarga();
+
+            const params = new URLSearchParams({
+                page: this.paginaActual,
+                size: this.tamanioPagina,
+                sortBy: this.orden.columna || 'id',
+                sortDir: this.orden.asc ? 'asc' : 'desc'
+            });
+            
+            console.log('🔍 [FILTROS+ORDEN] Parámetros de ordenamiento - sortBy:', this.orden.columna, 'sortDir:', this.orden.asc ? 'asc' : 'desc');
+
+            // Añadir filtros activos
+            if (this.filtros.tematica) params.append('tematica', this.filtros.tematica);
+            if (this.filtros.nivel) params.append('nivel', this.filtros.nivel);
+            if (this.filtros.estado) params.append('estado', this.filtros.estado);
+            if (this.filtros.autoria) params.append('autoria', this.filtros.autoria);
+            if (this.filtros.subtema) params.append('subtema', this.filtros.subtema);
+            if (this.filtros.pregunta) params.append('pregunta', this.filtros.pregunta);
+            if (this.filtros.respuesta) params.append('respuesta', this.filtros.respuesta);
+
+            console.log('🔍 [FILTROS+ORDEN] Parámetros:', params.toString());
+            console.log('🔍 [FILTROS+ORDEN] Ordenamiento - columna:', this.orden.columna, 'dirección:', this.orden.asc ? 'ASC' : 'DESC');
+
+            const response = await fetch(`/api/preguntas/filtrar?${params.toString()}`, {
+                headers: authManager.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al aplicar filtros con ordenamiento');
+            }
+
+            const data = await response.json();
+            console.log('✅ [FILTROS+ORDEN] Datos recibidos:', data);
+
+            this.preguntas = data.content || [];
+            this.totalPreguntas = data.totalElements || 0;
+            this.totalPaginas = data.totalPages || 1;
+            this.paginaActual = data.number || 0;
+
+            this.mostrarPreguntas();
+            this.actualizarPaginacion();
+            
+            // Actualizar indicadores visuales
+            if (typeof actualizarIndicadoresOrdenamientoPreguntas === 'function') {
+                actualizarIndicadoresOrdenamientoPreguntas();
+            }
+
+        } catch (error) {
+            console.error('❌ [FILTROS+ORDEN] Error:', error);
+            Toastify({
+                text: `Error: ${error.message}`,
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+        } finally {
+            this.cargando = false;
+            this.ocultarEstadoCarga();
+        }
     },
 
     getNivelColor(nivel) {
@@ -1366,7 +1459,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     ];
     const ths = document.querySelectorAll('table thead th');
     headers.forEach((h, i) => {
-        ths[h.idx]?.addEventListener('click', () => PreguntasManager.setOrden(h.id));
+        ths[h.idx]?.addEventListener('click', (e) => {
+            // Verificar si se está redimensionando
+            if (typeof isTableResizing === 'function' && isTableResizing('tabla-preguntas')) {
+                console.log('❌ [ORDEN] Click bloqueado - se está redimensionando');
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            
+            // Verificar si el click fue en la zona de redimensionamiento
+            const rect = e.target.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const headerWidth = rect.width;
+            
+            // Si el click está en los últimos 30px (zona de redimensionamiento), no ordenar
+            if (clickX > headerWidth - 30) {
+                console.log('❌ [ORDEN] Click en zona de redimensionamiento, bloqueando ordenamiento');
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            
+            PreguntasManager.setOrden(h.id);
+        });
         ths[h.idx]?.classList.add('sortable');
         ths[h.idx]?.setAttribute('style', 'cursor:pointer');
     });

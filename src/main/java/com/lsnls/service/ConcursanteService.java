@@ -65,10 +65,10 @@ public class ConcursanteService {
     }
 
     public Page<ConcursanteDTO> findAllPaginatedWithFilters(Pageable pageable, 
-            String estado, String programaId, String jornadaId, String valoracion, 
-            String lugar, String busqueda) {
-        return concursanteRepository.findAllWithFilters(pageable, estado, programaId, 
-                jornadaId, valoracion, lugar, busqueda)
+            String estado, String jornada, String lugar, String numeroPrograma, 
+            String duracionFinal, String valoracionFinal, String bonico) {
+        return concursanteRepository.findAllWithFilters(pageable, estado, jornada, 
+                lugar, numeroPrograma, duracionFinal, valoracionFinal, bonico)
                 .map(this::convertToDTO);
     }
 

@@ -15,31 +15,167 @@
     <link href="css/styles.css" rel="stylesheet">
     <link href="css/pagination.css" rel="stylesheet">
     <style>
-        /* Hacer la tabla más ancha y ajustar columnas específicas */
+        /* Hacer la tabla más ancha y permitir redimensionamiento */
         .table-preguntas {
             width: 100% !important;
             min-width: 1800px !important;
-        }
-        
-        /* Columna de Pregunta (columna 6) - más ancha */
-        .table-preguntas th:nth-child(6),
-        .table-preguntas td:nth-child(6) {
-            width: 300px !important;
-            min-width: 300px !important;
-            max-width: 300px !important;
-        }
-        
-        /* Columna de Fuentes (columna 9) - más ancha */
-        .table-preguntas th:nth-child(9),
-        .table-preguntas td:nth-child(9) {
-            width: 250px !important;
-            min-width: 250px !important;
-            max-width: 250px !important;
+            table-layout: fixed;
         }
         
         /* Ajustar el contenedor de la tabla para permitir scroll horizontal */
         .table-responsive {
             overflow-x: auto !important;
+        }
+        
+        /* Encabezado fijo para la tabla de preguntas */
+        .table-preguntas thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa !important; /* Fondo claro */
+            color: #000 !important; /* Texto negro */
+            z-index: 10;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: bold;
+        }
+        
+        /* Asegurar que el contenedor de la tabla permita scroll vertical */
+        .table-responsive {
+            max-height: 80vh;
+            overflow-y: auto;
+            overflow-x: hidden; /* Ocultar scroll horizontal nativo */
+            position: relative;
+        }
+        
+        /* Barra de scroll horizontal personalizada */
+        .custom-scrollbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.1);
+            border-top: 1px solid rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        
+        .custom-scrollbar-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 2px;
+        }
+        
+        .custom-scrollbar-thumb {
+            position: absolute;
+            top: 2px;
+            left: 0;
+            height: 16px;
+            background: rgba(0, 123, 255, 0.7);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            min-width: 20px;
+        }
+        
+        .custom-scrollbar-thumb:hover {
+            background: rgba(0, 123, 255, 0.9);
+        }
+        
+        .custom-scrollbar-thumb:active {
+            background: rgba(0, 123, 255, 1);
+        }
+        
+        /* Estilos para indicadores de ordenamiento */
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 25px !important;
+        }
+        
+        .sortable-header:hover {
+            background-color: #e9ecef !important;
+        }
+        
+        .sort-indicator {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #6c757d;
+            transition: color 0.2s ease;
+            pointer-events: none;
+        }
+        
+        .sort-indicator.active {
+            color: #007bff;
+        }
+        
+        .sort-indicator.asc::after {
+            content: '▲';
+            color: #007bff;
+        }
+        
+        .sort-indicator.desc::after {
+            content: '▼';
+            color: #007bff;
+        }
+        
+        .sort-indicator.inactive::after {
+            content: '↕';
+            color: #6c757d;
+        }
+        
+        /* Estilos para paginación */
+        .pagination-info {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        
+        /* Centrar la paginación */
+        #paginacion-preguntas {
+            justify-content: center !important;
+            display: flex !important;
+        }
+        
+        /* Hacer los botones más grandes */
+        .pagination .page-link {
+            color: #007bff;
+            border-color: #dee2e6;
+            padding: 0.75rem 1.25rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .pagination .page-link:hover {
+            color: #0056b3;
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+            font-weight: 600;
+        }
+        
+        .pagination .page-item.disabled .page-link {
+            color: #6c757d;
+            background-color: #fff;
+            border-color: #dee2e6;
+            opacity: 0.6;
+        }
+        
+        /* Espaciado entre botones */
+        .pagination .page-item {
+            margin: 0 2px;
         }
     </style>
 </head>
@@ -97,6 +233,12 @@
                 <button class="btn btn-primary" onclick="mostrarFormularioPregunta()">
                     <i class="fas fa-plus"></i> Nueva Pregunta
                 </button>
+                <button class="btn btn-outline-secondary" onclick="resetTableColumns('tabla-preguntas')" title="Resetear anchos de columnas">
+                    <i class="fas fa-arrows-alt-h"></i> Reset Columnas
+                </button>
+                <button class="btn btn-outline-info" onclick="autoResizeTableColumns('tabla-preguntas')" title="Ajustar automáticamente">
+                    <i class="fas fa-magic"></i> Auto Ajustar
+                </button>
             </div>
         </div>
 
@@ -132,6 +274,11 @@
                                 <option value="aprobada">Aprobada</option>
                                 <option value="usada">Usada</option>
                             </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Autoría:</label>
+                            <input type="text" id="filtro-autoria" class="form-control form-control-sm" 
+                                   onkeyup="filtrarPreguntas()" placeholder="Buscar autoría...">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Nivel:</label>
@@ -180,25 +327,23 @@
         </div>
 
         <!-- Tabla de Preguntas -->
-        <div class="table-responsive" style="width: 100%; margin: 0 auto;">
-            <div class="scroll-zone-left" id="scroll-left"></div>
-            <div class="scroll-zone-right" id="scroll-right"></div>
+        <div class="table-responsive" style="width: 100%; margin: 0 auto;" id="tabla-preguntas-container">
             <table class="table table-excel table-preguntas">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Autoría</th>
-                        <th>Nivel</th>
-                        <th>Temática</th>
-                        <th>Subtemas</th>
-                        <th>Pregunta</th>
-                        <th>Respuesta</th>
-                        <th>Datos Extra</th>
-                        <th>Fuentes</th>
-                        <th>Verificación</th>
-                        <th>Notas Verificación</th>
-                        <th>Notas Dirección</th>
-                        <th>Estado</th>
+                        <th class="sortable-header" data-column="id">ID<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="creacionUsuario">Autoría<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="nivel">Nivel<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="tematica">Temática<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="subtema">Subtemas<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="pregunta">Pregunta<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="respuesta">Respuesta<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="datosExtra">Datos Extra<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="fuentes">Fuentes<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="verificacionUsuario">Verificación<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="notasVerificacion">Notas Verificación<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="notasDireccion">Notas Dirección<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="estado">Estado<span class="sort-indicator inactive"></span></th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -206,6 +351,24 @@
                     <!-- Las preguntas se cargarán dinámicamente aquí -->
                 </tbody>
             </table>
+            <!-- Barra de scroll horizontal personalizada -->
+            <div class="custom-scrollbar" id="scrollbar-preguntas">
+                <div class="custom-scrollbar-track">
+                    <div class="custom-scrollbar-thumb" id="thumb-preguntas"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        <div class="d-flex flex-column align-items-center mb-3">
+            <div class="pagination-info mb-2">
+                <span id="info-paginacion">Mostrando 0 de 0 preguntas</span>
+            </div>
+            <nav aria-label="Paginación de preguntas">
+                <ul class="pagination mb-0" id="paginacion-preguntas">
+                    <!-- Los botones de paginación se generarán dinámicamente -->
+                </ul>
+            </nav>
         </div>
 
         <!-- Modal para crear/editar pregunta -->
@@ -245,6 +408,10 @@
                             <div class="mb-3">
                                 <label for="pregunta-pregunta" class="form-label">Pregunta</label>
                                 <textarea id="pregunta-pregunta" name="pregunta" class="form-control" rows="4" required></textarea>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <small class="text-muted">Recomendado: 150 caracteres</small>
+                                    <small id="contador-pregunta" class="text-muted">0/150</small>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label for="respuesta-pregunta" class="form-label">Respuesta</label>
@@ -507,10 +674,25 @@
     <script src="js/utils.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/table-resizer.js"></script>
     <script src="js/preguntas.js"></script>
     <script>
+    // Variables globales para ordenamiento de preguntas
+    let currentSortColumnPreguntas = null;
+    let currentSortDirectionPreguntas = 'asc';
+    let preguntasData = [];
+    
+    // Variables globales para paginación
+    let paginaActualPreguntas = 1;
+    let totalPaginasPreguntas = 1;
+    let totalPreguntas = 0;
+    let preguntasPorPagina = 25;
+
     document.addEventListener('DOMContentLoaded', function() {
         mostrarBotonAdminNavbar();
+        inicializarScrollbarPersonalizadaPreguntas();
+        inicializarContadorCaracteres();
+        // inicializarOrdenamientoPreguntas(); // Ya no es necesario - se maneja en preguntas.js
         document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
             e.preventDefault();
             const actual = document.getElementById('password-actual').value;
@@ -548,6 +730,319 @@
             }
         });
     });
+    
+    // Función para inicializar la barra de scroll personalizada en preguntas
+    function inicializarScrollbarPersonalizadaPreguntas() {
+        const container = document.getElementById('tabla-preguntas-container');
+        const scrollbar = document.getElementById('scrollbar-preguntas');
+        const thumb = document.getElementById('thumb-preguntas');
+        
+        if (!container || !scrollbar || !thumb) return;
+        
+        // Función para actualizar la posición del thumb
+        function actualizarThumb() {
+            const scrollLeft = container.scrollLeft;
+            const scrollWidth = container.scrollWidth;
+            const clientWidth = container.clientWidth;
+            
+            if (scrollWidth <= clientWidth) {
+                scrollbar.style.display = 'none';
+                return;
+            }
+            
+            scrollbar.style.display = 'block';
+            const thumbWidth = (clientWidth / scrollWidth) * 100;
+            const thumbLeft = (scrollLeft / (scrollWidth - clientWidth)) * (100 - thumbWidth);
+            
+            thumb.style.width = thumbWidth + '%';
+            thumb.style.left = thumbLeft + '%';
+        }
+        
+        // Función para ocultar la barra cuando no estemos en la página
+        function verificarVisibilidad() {
+            const rect = container.getBoundingClientRect();
+            const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+            if (!isVisible) {
+                scrollbar.style.display = 'none';
+            } else {
+                actualizarThumb();
+            }
+        }
+        
+        // Event listeners para el scroll del contenedor
+        container.addEventListener('scroll', actualizarThumb);
+        window.addEventListener('resize', actualizarThumb);
+        window.addEventListener('scroll', verificarVisibilidad);
+        
+        // Event listeners para el thumb
+        let isDragging = false;
+        let startX = 0;
+        let startScrollLeft = 0;
+        
+        thumb.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            startX = e.clientX;
+            startScrollLeft = container.scrollLeft;
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - startX;
+            const scrollWidth = container.scrollWidth;
+            const clientWidth = container.clientWidth;
+            const maxScrollLeft = scrollWidth - clientWidth;
+            const thumbWidth = thumb.offsetWidth;
+            const trackWidth = thumb.parentElement.offsetWidth;
+            
+            const deltaScroll = (deltaX / (trackWidth - thumbWidth)) * maxScrollLeft;
+            container.scrollLeft = startScrollLeft + deltaScroll;
+        });
+        
+        document.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+        
+        // Click en el track para mover el scroll
+        thumb.parentElement.addEventListener('click', function(e) {
+            if (e.target === thumb) return;
+            
+            const rect = this.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const trackWidth = rect.width;
+            const thumbWidth = thumb.offsetWidth;
+            const thumbLeft = thumb.offsetLeft;
+            
+            if (clickX < thumbLeft) {
+                // Click a la izquierda del thumb
+                container.scrollLeft -= container.clientWidth * 0.5;
+            } else if (clickX > thumbLeft + thumbWidth) {
+                // Click a la derecha del thumb
+                container.scrollLeft += container.clientWidth * 0.5;
+            }
+        });
+        
+        // Inicializar
+        actualizarThumb();
+    }
+    
+    // Función para inicializar el ordenamiento de preguntas
+    function inicializarOrdenamientoPreguntas() {
+        console.log('🔧 [ORDEN HTML] Inicializando ordenamiento...');
+        const sortableHeaders = document.querySelectorAll('.sortable-header');
+        console.log('🔧 [ORDEN HTML] Headers encontrados:', sortableHeaders.length);
+        
+        // NO añadir event listeners aquí - ya se manejan en preguntas.js
+        // Solo actualizar indicadores visuales
+        console.log('🔧 [ORDEN HTML] Ordenamiento manejado por preguntas.js');
+    }
+    
+    // Función para ordenar la tabla de preguntas (DEPRECATED - manejado por preguntas.js)
+    function ordenarTablaPreguntas(column) {
+        console.log('🔄 [ORDEN HTML] Función deprecada - ordenamiento manejado por preguntas.js');
+        // Esta función ya no se usa - el ordenamiento se maneja directamente en preguntas.js
+    }
+    
+    // Función para obtener el valor de ordenamiento de una pregunta
+    function obtenerValorOrdenamientoPreguntas(obj, column) {
+        const columnMap = {
+            'id': obj.id,
+            'autor': obj.autor,
+            'nivel': obj.nivel,
+            'tematica': obj.tematica,
+            'subtema': obj.subtema,
+            'pregunta': obj.pregunta,
+            'respuesta': obj.respuesta,
+            'datosExtra': obj.datosExtra,
+            'fuentes': obj.fuentes,
+            'verificacion': obj.verificacion,
+            'notasVerificacion': obj.notasVerificacion,
+            'notasDireccion': obj.notasDireccion,
+            'estado': obj.estado
+        };
+        
+        return columnMap[column] || '';
+    }
+    
+    // Función para actualizar los indicadores visuales de preguntas
+    function actualizarIndicadoresOrdenamientoPreguntas() {
+        console.log('🎯 [INDICADORES] Actualizando indicadores visuales...');
+        const sortableHeaders = document.querySelectorAll('.sortable-header');
+        
+        sortableHeaders.forEach(header => {
+            const indicator = header.querySelector('.sort-indicator');
+            const column = header.getAttribute('data-column');
+            
+            // Resetear todos los indicadores
+            indicator.className = 'sort-indicator inactive';
+            
+            // Activar el indicador de la columna actual usando PreguntasManager
+            if (typeof PreguntasManager !== 'undefined' && PreguntasManager.orden) {
+                console.log('🎯 [INDICADORES] Estado actual - columna:', PreguntasManager.orden.columna, 'asc:', PreguntasManager.orden.asc);
+                if (column === PreguntasManager.orden.columna) {
+                    const direction = PreguntasManager.orden.asc ? 'asc' : 'desc';
+                    indicator.className = `sort-indicator active ${direction}`;
+                    console.log('🎯 [INDICADORES] Activando indicador para columna:', column, 'dirección:', direction);
+                }
+            }
+        });
+    }
+    
+    // Función para renderizar la tabla de preguntas
+    function renderTablaPreguntas(data) {
+        const tbody = document.getElementById('tabla-preguntas');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        data.forEach(pregunta => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${pregunta.id || ''}</td>
+                <td>${pregunta.autoria || ''}</td>
+                <td>${pregunta.nivel || ''}</td>
+                <td>${pregunta.tematica || ''}</td>
+                <td>${pregunta.subtemas || ''}</td>
+                <td>${pregunta.pregunta || ''}</td>
+                <td>${pregunta.respuesta || ''}</td>
+                <td>${pregunta.datosExtra || ''}</td>
+                <td>${pregunta.fuentes || ''}</td>
+                <td>${pregunta.verificacion || ''}</td>
+                <td>${pregunta.notasVerificacion || ''}</td>
+                <td>${pregunta.notasDireccion || ''}</td>
+                <td>${pregunta.estado || ''}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="PreguntasManager.editarPregunta(${pregunta.id})">Editar</button>
+                    <button class="btn btn-sm btn-danger" onclick="PreguntasManager.eliminarPregunta(${pregunta.id})">Eliminar</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    // Función para actualizar la información de paginación
+    function actualizarInfoPaginacion() {
+        const infoElement = document.getElementById('info-paginacion');
+        if (infoElement) {
+            const inicio = (paginaActualPreguntas - 1) * preguntasPorPagina + 1;
+            const fin = Math.min(paginaActualPreguntas * preguntasPorPagina, totalPreguntas);
+            infoElement.textContent = `Mostrando ${inicio}-${fin} de ${totalPreguntas} preguntas`;
+        }
+    }
+    
+    // Función para generar los botones de paginación
+    function generarPaginacion() {
+        const paginacionElement = document.getElementById('paginacion-preguntas');
+        if (!paginacionElement) return;
+        
+        paginacionElement.innerHTML = '';
+        
+        if (totalPaginasPreguntas <= 1) return;
+        
+        // Botón Primera página
+        const primeraPagina = document.createElement('li');
+        primeraPagina.className = `page-item ${paginaActualPreguntas === 1 ? 'disabled' : ''}`;
+        primeraPagina.innerHTML = `<a class="page-link" href="#" onclick="irAPagina(1)">Primera</a>`;
+        paginacionElement.appendChild(primeraPagina);
+        
+        // Botón Página anterior
+        const paginaAnterior = document.createElement('li');
+        paginaAnterior.className = `page-item ${paginaActualPreguntas === 1 ? 'disabled' : ''}`;
+        paginaAnterior.innerHTML = `<a class="page-link" href="#" onclick="irAPagina(${paginaActualPreguntas - 1})">Anterior</a>`;
+        paginacionElement.appendChild(paginaAnterior);
+        
+        // Calcular rango de páginas a mostrar
+        const inicio = Math.max(1, paginaActualPreguntas - 2);
+        const fin = Math.min(totalPaginasPreguntas, paginaActualPreguntas + 2);
+        
+        // Mostrar páginas en el rango
+        for (let i = inicio; i <= fin; i++) {
+            const pagina = document.createElement('li');
+            pagina.className = `page-item ${i === paginaActualPreguntas ? 'active' : ''}`;
+            pagina.innerHTML = `<a class="page-link" href="#" onclick="irAPagina(${i})">${i}</a>`;
+            paginacionElement.appendChild(pagina);
+        }
+        
+        // Botón Página siguiente
+        const paginaSiguiente = document.createElement('li');
+        paginaSiguiente.className = `page-item ${paginaActualPreguntas === totalPaginasPreguntas ? 'disabled' : ''}`;
+        paginaSiguiente.innerHTML = `<a class="page-link" href="#" onclick="irAPagina(${paginaActualPreguntas + 1})">Siguiente</a>`;
+        paginacionElement.appendChild(paginaSiguiente);
+        
+        // Botón Última página
+        const ultimaPagina = document.createElement('li');
+        ultimaPagina.className = `page-item ${paginaActualPreguntas === totalPaginasPreguntas ? 'disabled' : ''}`;
+        ultimaPagina.innerHTML = `<a class="page-link" href="#" onclick="irAPagina(${totalPaginasPreguntas})">Última</a>`;
+        paginacionElement.appendChild(ultimaPagina);
+    }
+    
+    // Función para ir a una página específica
+    function irAPagina(pagina) {
+        if (pagina < 1 || pagina > totalPaginasPreguntas || pagina === paginaActualPreguntas) return;
+        
+        paginaActualPreguntas = pagina;
+        cargarPreguntas();
+    }
+    
+    // Función para cargar preguntas con paginación
+    function cargarPreguntas() {
+        // Esta función debe ser implementada en preguntas.js
+        // Por ahora, solo actualizamos la paginación
+        actualizarInfoPaginacion();
+        generarPaginacion();
+    }
+    
+    // Función para inicializar el contador de caracteres
+    function inicializarContadorCaracteres() {
+        const textareaPregunta = document.getElementById('pregunta-pregunta');
+        const contador = document.getElementById('contador-pregunta');
+        
+        if (!textareaPregunta || !contador) return;
+        
+        // Función para actualizar el contador
+        function actualizarContador() {
+            const longitud = textareaPregunta.value.length;
+            const maximo = 150;
+            
+            contador.textContent = `${longitud}/${maximo}`;
+            
+            // Cambiar color según el límite
+            if (longitud > maximo) {
+                contador.className = 'text-danger fw-bold';
+                textareaPregunta.classList.add('border-danger');
+            } else if (longitud > maximo * 0.9) { // 90% del límite
+                contador.className = 'text-warning fw-bold';
+                textareaPregunta.classList.remove('border-danger');
+            } else {
+                contador.className = 'text-muted';
+                textareaPregunta.classList.remove('border-danger');
+            }
+        }
+        
+        // Event listeners
+        textareaPregunta.addEventListener('input', actualizarContador);
+        textareaPregunta.addEventListener('paste', function() {
+            // Pequeño delay para que se procese el paste
+            setTimeout(actualizarContador, 10);
+        });
+        
+        // Inicializar contador
+        actualizarContador();
+    }
+    
+    // Funciones para el redimensionamiento de columnas
+    function resetTableColumns(tableId) {
+        const resizer = new TableResizer(tableId);
+        resizer.resetColumnWidths();
+        mostrarExito('Anchos de columnas reseteados a los valores por defecto');
+    }
+    
+    function autoResizeTableColumns(tableId) {
+        const resizer = new TableResizer(tableId);
+        resizer.autoResizeColumns();
+        mostrarExito('Columnas ajustadas automáticamente según su contenido');
+    }
     </script>
     <script>
         // Variables globales para el menú contextual

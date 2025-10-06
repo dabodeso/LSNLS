@@ -32,11 +32,12 @@ public class ConcursanteController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(required = false) String estado,
-            @RequestParam(required = false) String programaId,
-            @RequestParam(required = false) String jornadaId,
-            @RequestParam(required = false) String valoracion,
+            @RequestParam(required = false) String jornada,
             @RequestParam(required = false) String lugar,
-            @RequestParam(required = false) String busqueda) {
+            @RequestParam(required = false) String numeroPrograma,
+            @RequestParam(required = false) String duracionFinal,
+            @RequestParam(required = false) String valoracionFinal,
+            @RequestParam(required = false) String bonico) {
         try {
             Pageable pageable = PageRequest.of(page, size, 
                 sortDir.equalsIgnoreCase("desc") ? 
@@ -44,7 +45,7 @@ public class ConcursanteController {
                 Sort.by(sortBy).ascending());
             
             Page<ConcursanteDTO> concursantes = concursanteService.findAllPaginatedWithFilters(
-                pageable, estado, programaId, jornadaId, valoracion, lugar, busqueda);
+                pageable, estado, jornada, lugar, numeroPrograma, duracionFinal, valoracionFinal, bonico);
             return ResponseEntity.ok(concursantes);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error interno al obtener concursantes: " + e.getMessage());

@@ -653,15 +653,29 @@ public class PreguntaController {
             @RequestParam(required = false) String subtema,
             @RequestParam(required = false) String pregunta,
             @RequestParam(required = false) String respuesta,
+            @RequestParam(required = false) String autoria,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "25") int size
+            @RequestParam(defaultValue = "25") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir
     ) {
         try {
+            log.info("[FILTRAR] Parámetros recibidos - page: {}, size: {}, sortBy: {}, sortDir: {}", 
+                page, size, sortBy, sortDir);
+            
             Pageable pageable = PageRequest.of(page, size, 
-                org.springframework.data.domain.Sort.by("id").descending());
+                sortDir.equalsIgnoreCase("desc") ? 
+                org.springframework.data.domain.Sort.by(sortBy).descending() :
+                org.springframework.data.domain.Sort.by(sortBy).ascending());
+            
+            log.info("[FILTRAR] Pageable creado - sort: {}", pageable.getSort());
             
             Page<PreguntaDTO> preguntas = preguntaService.filtrarPreguntasCompletoPaginado(
-                nivel, factor, estado, tematica, subtema, pregunta, respuesta, pageable);
+                nivel, factor, estado, tematica, subtema, pregunta, respuesta, autoria, pageable);
+            
+            log.info("[FILTRAR] Preguntas encontradas - total: {}, página: {}", 
+                preguntas.getTotalElements(), preguntas.getNumber());
+            
             return ResponseEntity.ok(preguntas);
         } catch (Exception e) {
             log.error("Error al filtrar preguntas: {}", e.getMessage(), e);

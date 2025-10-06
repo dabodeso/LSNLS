@@ -102,21 +102,24 @@ public class UsuarioController {
             Usuario usuarioExistente = usuarioExistenteOpt.get();
 
             // Verificar permisos de edición
-            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION && !currentUser.getId().equals(id)) {
-                return ResponseEntity.status(403).body("No tienes permisos para editar otros usuarios. Solo usuarios con rol DIRECCION pueden editar otros usuarios, o puedes editar tu propio perfil.");
+            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION && 
+                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN && 
+                !currentUser.getId().equals(id)) {
+                return ResponseEntity.status(403).body("No tienes permisos para editar otros usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden editar otros usuarios, o puedes editar tu propio perfil.");
             }
 
             // Validar duplicación de nombre (excepto si es el mismo usuario)
-            if (!usuario.getNombre().equals(usuarioExistente.getNombre())) {
-                if (usuarioService.obtenerPorNombre(usuario.getNombre()).isPresent()) {
+            if (!usuario.getNombre().trim().equals(usuarioExistente.getNombre().trim())) {
+                if (usuarioService.obtenerPorNombre(usuario.getNombre().trim()).isPresent()) {
                     return ResponseEntity.badRequest().body("Ya existe otro usuario con el nombre '" + usuario.getNombre() + "'");
                 }
             }
 
             // Verificar permisos para cambiar roles
             if (!usuario.getRol().equals(usuarioExistente.getRol()) && 
-                currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION) {
-                return ResponseEntity.status(403).body("No tienes permisos para cambiar roles de otros usuarios. Solo usuarios con rol DIRECCION pueden cambiar roles de otros usuarios.");
+                currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &&
+                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {
+                return ResponseEntity.status(403).body("No tienes permisos para cambiar roles de otros usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden cambiar roles de otros usuarios.");
             }
 
             try {

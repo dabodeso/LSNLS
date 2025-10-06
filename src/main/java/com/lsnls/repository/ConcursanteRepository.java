@@ -31,18 +31,20 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long> 
 
     @Query("SELECT c FROM Concursante c WHERE " +
            "(:estado IS NULL OR c.estado = :estado) AND " +
-           "(:programaId IS NULL OR c.numeroPrograma = :programaId) AND " +
-           "(:jornadaId IS NULL OR c.jornada.id = :jornadaId) AND " +
-           "(:valoracion IS NULL OR LOWER(c.valoracionGuionista) LIKE LOWER(CONCAT('%', :valoracion, '%')) OR " +
-           "LOWER(c.valoracionFinal) LIKE LOWER(CONCAT('%', :valoracion, '%'))) AND " +
+           "(:jornada IS NULL OR LOWER(c.jornada.nombre) LIKE LOWER(CONCAT('%', :jornada, '%'))) AND " +
            "(:lugar IS NULL OR LOWER(c.lugar) LIKE LOWER(CONCAT('%', :lugar, '%'))) AND " +
-           "(:busqueda IS NULL OR LOWER(c.nombre) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
-           "CAST(c.numeroConcursante AS string) LIKE CONCAT('%', :busqueda, '%'))")
+           "(:numeroPrograma IS NULL OR CAST(c.numeroPrograma AS string) LIKE CONCAT('%', :numeroPrograma, '%')) AND " +
+           "(:duracionFinal IS NULL OR LOWER(c.duracionFinal) LIKE LOWER(CONCAT('%', :duracionFinal, '%'))) AND " +
+           "(:valoracionFinal IS NULL OR c.valoracionFinal = :valoracionFinal) AND " +
+           "(:bonico IS NULL OR " +
+           "((:bonico = 'vacio' AND (c.bonico IS NULL OR c.bonico = '')) OR " +
+           "(:bonico = 'contenido' AND c.bonico IS NOT NULL AND c.bonico != '')))")
     Page<Concursante> findAllWithFilters(Pageable pageable, 
             @Param("estado") String estado,
-            @Param("programaId") String programaId,
-            @Param("jornadaId") String jornadaId,
-            @Param("valoracion") String valoracion,
+            @Param("jornada") String jornada,
             @Param("lugar") String lugar,
-            @Param("busqueda") String busqueda);
+            @Param("numeroPrograma") String numeroPrograma,
+            @Param("duracionFinal") String duracionFinal,
+            @Param("valoracionFinal") String valoracionFinal,
+            @Param("bonico") String bonico);
 } 

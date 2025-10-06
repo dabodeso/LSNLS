@@ -681,7 +681,7 @@ public class PreguntaService {
     }
 
     public List<PreguntaDTO> filtrarPreguntasCompleto(String nivel, String factor, String estado, 
-                                                     String tematica, String subtema, String pregunta, String respuesta) {
+                                                     String tematica, String subtema, String pregunta, String respuesta, String autoria) {
         // Convertir strings a enums
         Pregunta.NivelPregunta nivelEnum = null;
         Pregunta.FactorPregunta factorEnum = null;
@@ -713,7 +713,8 @@ public class PreguntaService {
             (tematica != null && !tematica.isBlank()) ? tematica : null,
             (subtema != null && !subtema.isBlank()) ? subtema : null,
             (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
-            (respuesta != null && !respuesta.isBlank()) ? respuesta : null
+            (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
+            (autoria != null && !autoria.isBlank()) ? autoria : null
         );
         
         return preguntas.stream().map(this::mapPreguntaToDTO).collect(java.util.stream.Collectors.toList());
@@ -721,7 +722,7 @@ public class PreguntaService {
 
     public Page<PreguntaDTO> filtrarPreguntasCompletoPaginado(String nivel, String factor, String estado, 
                                                              String tematica, String subtema, String pregunta, String respuesta, 
-                                                             Pageable pageable) {
+                                                             String autoria, Pageable pageable) {
         // Convertir strings a enums
         Pregunta.NivelPregunta nivelEnum = null;
         Pregunta.FactorPregunta factorEnum = null;
@@ -753,8 +754,33 @@ public class PreguntaService {
             (tematica != null && !tematica.isBlank()) ? tematica : null,
             (subtema != null && !subtema.isBlank()) ? subtema : null,
             (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
-            (respuesta != null && !respuesta.isBlank()) ? respuesta : null
+            (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
+            (autoria != null && !autoria.isBlank()) ? autoria : null
         );
+        
+        // Aplicar ordenamiento del Pageable
+        if (pageable.getSort().isSorted()) {
+            log.info("[FILTRAR] Aplicando ordenamiento: {}", pageable.getSort());
+            todasLasPreguntas.sort((a, b) -> {
+                for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
+                    String property = order.getProperty();
+                    org.springframework.data.domain.Sort.Direction direction = order.getDirection();
+                    
+                    Comparable<Object> valueA = getFieldValue(a, property);
+                    Comparable<Object> valueB = getFieldValue(b, property);
+                    
+                    if (valueA == null && valueB == null) continue;
+                    if (valueA == null) return direction == org.springframework.data.domain.Sort.Direction.ASC ? -1 : 1;
+                    if (valueB == null) return direction == org.springframework.data.domain.Sort.Direction.ASC ? 1 : -1;
+                    
+                    int comparison = valueA.compareTo(valueB);
+                    if (comparison != 0) {
+                        return direction == org.springframework.data.domain.Sort.Direction.ASC ? comparison : -comparison;
+                    }
+                }
+                return 0;
+            });
+        }
         
         // Aplicar paginación manualmente
         int total = todasLasPreguntas.size();
@@ -769,6 +795,51 @@ public class PreguntaService {
         List<PreguntaDTO> dtos = preguntasPaginadas.stream().map(this::mapPreguntaToDTO).collect(java.util.stream.Collectors.toList());
         
         return new org.springframework.data.domain.PageImpl<>(dtos, pageable, total);
+    }
+
+    // Método auxiliar para obtener el valor de un campo por reflexión
+    @SuppressWarnings("unchecked")
+    private Comparable<Object> getFieldValue(Pregunta pregunta, String fieldName) {
+        try {
+            switch (fieldName) {
+                case "id":
+                    return (Comparable<Object>) (Object) pregunta.getId();
+                case "autor":
+                    return (Comparable<Object>) (Object) pregunta.getAutor();
+                case "nivel":
+                    return (Comparable<Object>) (Object) (pregunta.getNivel() != null ? pregunta.getNivel().name() : null);
+                case "tematica":
+                    return (Comparable<Object>) (Object) pregunta.getTematica();
+                case "subtema":
+                    return (Comparable<Object>) (Object) pregunta.getSubtema();
+                case "pregunta":
+                    return (Comparable<Object>) (Object) pregunta.getPregunta();
+                case "respuesta":
+                    return (Comparable<Object>) (Object) pregunta.getRespuesta();
+                case "datosExtra":
+                    return (Comparable<Object>) (Object) pregunta.getDatosExtra();
+                case "fuentes":
+                    return (Comparable<Object>) (Object) pregunta.getFuentes();
+                case "verificacion":
+                    return (Comparable<Object>) (Object) pregunta.getVerificacion();
+                case "notasVerificacion":
+                    return (Comparable<Object>) (Object) pregunta.getNotasVerificacion();
+                case "notasDireccion":
+                    return (Comparable<Object>) (Object) pregunta.getNotasDireccion();
+                case "estado":
+                    return (Comparable<Object>) (Object) (pregunta.getEstado() != null ? pregunta.getEstado().name() : null);
+                case "fechaCreacion":
+                    return (Comparable<Object>) (Object) pregunta.getFechaCreacion();
+                case "fechaVerificacion":
+                    return (Comparable<Object>) (Object) pregunta.getFechaVerificacion();
+                default:
+                    log.warn("[FILTRAR] Campo no reconocido para ordenamiento: {}", fieldName);
+                    return null;
+            }
+        } catch (Exception e) {
+            log.error("[FILTRAR] Error al obtener valor del campo {}: {}", fieldName, e.getMessage());
+            return null;
+        }
     }
 
     // --- MÉTODO DE MAPEADO DTO ---

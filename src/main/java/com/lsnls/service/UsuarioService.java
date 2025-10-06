@@ -43,16 +43,23 @@ public class UsuarioService {
 
     public Usuario actualizar(Long id, Usuario usuario) {
         if (usuarioRepository.existsById(id)) {
-            usuario.setId(id);
-            // TEMPORAL: Para desarrollo no encriptar contraseñas (usar texto plano)
-            // Si la contraseña se está actualizando, NO encriptarla
-            if (usuario.getPassword() == null || usuario.getPassword().isEmpty()) {
-                // Si no se proporciona nueva contraseña, mantener la existente
-                Usuario usuarioExistente = usuarioRepository.findById(id).orElse(null);
-                if (usuarioExistente != null) {
-                    usuario.setPassword(usuarioExistente.getPassword());
-                }
+            // Obtener el usuario existente para preservar datos importantes
+            Usuario usuarioExistente = usuarioRepository.findById(id).orElse(null);
+            if (usuarioExistente == null) {
+                return null;
             }
+            
+            // Preservar la contraseña existente si no se proporciona una nueva
+            if (usuario.getPassword() == null || usuario.getPassword().isEmpty()) {
+                usuario.setPassword(usuarioExistente.getPassword());
+            }
+            
+            // Preservar la versión para control de concurrencia
+            usuario.setVersion(usuarioExistente.getVersion());
+            
+            // Establecer el ID
+            usuario.setId(id);
+            
             return usuarioRepository.save(usuario);
         }
         return null;

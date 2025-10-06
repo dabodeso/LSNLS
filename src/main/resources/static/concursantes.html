@@ -58,8 +58,6 @@
         /* Estilos para la columna de notas de grabación */
         #tabla-concursantes-principal th:nth-child(14),
         #tabla-concursantes-principal td:nth-child(14) {
-            min-width: 700px; /* 5 veces más ancho que el estándar de ~100px */
-            max-width: 500px;
             white-space: normal; /* Permitir saltos de línea */
             overflow: hidden;
             text-overflow: ellipsis;
@@ -102,8 +100,116 @@
         #tabla-concursantes-principal td:nth-of-type(20),
         #tabla-concursantes-principal th:nth-of-type(21),
         #tabla-concursantes-principal td:nth-of-type(21) {
-            min-width: 80px;
             text-align: center;
+        }
+        
+        /* Configuración general de la tabla de concursantes */
+        #tabla-concursantes-principal {
+            width: 100% !important;
+            min-width: 2000px !important;
+            table-layout: fixed;
+        }
+        
+        /* Encabezado fijo para la tabla de concursantes */
+        #tabla-concursantes-principal thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa !important; /* Fondo claro */
+            color: #000 !important; /* Texto negro */
+            z-index: 10;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: bold;
+        }
+        
+        /* Asegurar que el contenedor de la tabla permita scroll */
+        .table-responsive {
+            max-height: 80vh;
+            overflow-y: auto;
+            overflow-x: hidden; /* Ocultar scroll horizontal nativo */
+            position: relative;
+        }
+        
+        /* Barra de scroll horizontal personalizada */
+        .custom-scrollbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.1);
+            border-top: 1px solid rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        
+        .custom-scrollbar-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 2px;
+        }
+        
+        .custom-scrollbar-thumb {
+            position: absolute;
+            top: 2px;
+            left: 0;
+            height: 16px;
+            background: rgba(0, 123, 255, 0.7);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            min-width: 20px;
+        }
+        
+        .custom-scrollbar-thumb:hover {
+            background: rgba(0, 123, 255, 0.9);
+        }
+        
+        .custom-scrollbar-thumb:active {
+            background: rgba(0, 123, 255, 1);
+        }
+        
+        /* Estilos para indicadores de ordenamiento */
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 25px !important;
+        }
+        
+        .sortable-header:hover {
+            background-color: #e9ecef !important;
+        }
+        
+        .sort-indicator {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #6c757d;
+            transition: color 0.2s ease;
+            pointer-events: none;
+        }
+        
+        .sort-indicator.active {
+            color: #007bff;
+        }
+        
+        .sort-indicator.asc::after {
+            content: '▲';
+            color: #007bff;
+        }
+        
+        .sort-indicator.desc::after {
+            content: '▼';
+            color: #007bff;
+        }
+        
+        .sort-indicator.inactive::after {
+            content: '↕';
+            color: #6c757d;
         }
     </style>
 </head>
@@ -164,6 +270,12 @@
                 <button class="btn btn-outline-secondary" id="btn-config-columnas" onclick="mostrarConfiguracionColumnas()">
                     <i class="fas fa-cog"></i> Editar elementos tabla
                 </button>
+                <button class="btn btn-outline-secondary" onclick="resetTableColumns('tabla-concursantes-principal')" title="Resetear anchos de columnas">
+                    <i class="fas fa-arrows-alt-h"></i> Reset Columnas
+                </button>
+                <button class="btn btn-outline-info" onclick="autoResizeTableColumns('tabla-concursantes-principal')" title="Ajustar automáticamente">
+                    <i class="fas fa-magic"></i> Auto Ajustar
+                </button>
             </div>
         </div>
 
@@ -194,24 +306,47 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Valoración</label>
-                            <input type="text" id="filtro-valoracion" class="form-control form-control-sm" placeholder="Texto en valoraciones">
+                            <label class="form-label">Jornada</label>
+                            <input type="text" id="filtro-jornada" class="form-control form-control-sm" placeholder="Buscar por jornada...">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Lugar</label>
                             <input type="text" id="filtro-lugar" class="form-control form-control-sm" placeholder="Lugar de grabación">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Programa</label>
-                            <select id="filtro-programa" class="form-select form-select-sm">
-                                <option value="">Todos</option>
+                        <div class="col-md-2">
+                            <label class="form-label">Nº PGM</label>
+                            <input type="text" id="filtro-numero-programa" class="form-control form-control-sm" placeholder="Número de programa">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Duración Final</label>
+                            <input type="text" id="filtro-duracion-final" class="form-control form-control-sm" placeholder="MM:SS">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Valoración Final</label>
+                            <select id="filtro-valoracion-final" class="form-select form-select-sm">
+                                <option value="">Todas</option>
+                                <option value="EXCELENTE">Excelente</option>
+                                <option value="MUY_BUENA">Muy Buena</option>
+                                <option value="BUENA">Buena</option>
+                                <option value="REGULAR">Regular</option>
+                                <option value="MALA">Mala</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="row g-3 mt-2">
                         <div class="col-md-3">
-                            <label class="form-label">Jornada</label>
-                            <select id="filtro-jornada" class="form-select form-select-sm">
-                                <option value="">Todas</option>
+                            <label class="form-label">Bonico</label>
+                            <select id="filtro-bonico" class="form-select form-select-sm">
+                                <option value="">Todos</option>
+                                <option value="vacio">Solo vacíos (no repetidos)</option>
+                                <option value="contenido">Solo con contenido</option>
                             </select>
+                        </div>
+                        <div class="col-md-9">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> 
+                                Los filtros se aplican automáticamente. "Bonico vacío" muestra concursantes que aún no han sido repetidos.
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -219,35 +354,35 @@
         </div>
 
         <!-- Tabla de Concursantes -->
-        <div class="table-responsive">
+        <div class="table-responsive" id="tabla-concursantes-container">
             <table class="table table-excel table-preguntas" id="tabla-concursantes-principal">
                 <thead>
                     <tr>
-                        <th>Nº CONCUR</th>
-                        <th>JORNADA</th>
-                        <th>DÍA GRABACIÓN</th>
-                        <th>LUGAR</th>
-                        <th>NOMBRE</th>
+                        <th class="sortable-header" data-column="numeroConcursante">Nº CONCUR<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="jornadaId">JORNADA<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="diaGrabacion">DÍA GRABACIÓN<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="lugar">LUGAR<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="nombre">NOMBRE<span class="sort-indicator inactive"></span></th>
                         <th>FOTO</th>
-                        <th>EDAD</th>
-                        <th>OCUPACIÓN</th>
-                        <th>RR SS</th>
-                        <th>CUEST</th>
-                        <th>COMBO</th>
-                        <th>X</th>
-                        <th>RESULTADO</th>
-                        <th>NOTAS GRABACIÓN</th>
-                        <th>GUIONISTA</th>
-                        <th>VALORACIÓN GUIONISTA</th>
-                        <th>ESTADO</th>
-                        <th>MOMENTOS DESTACADOS</th>
-                        <th>DURACIÓN</th>
-                        <th>DUR. DIRECCIÓN</th>
-                        <th>DUR. FINAL</th>
-                        <th>VALORACIÓN FINAL</th>
-                        <th>Nº PGM</th>
-                        <th>ORDEN ESCALETA</th>
-                        <th>BONICO</th>
+                        <th class="sortable-header" data-column="edad">EDAD<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="ocupacion">OCUPACIÓN<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="redesSociales">RR SS<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="cuestionarioId">CUEST<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="comboId">COMBO<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="factorX">X<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="resultado">RESULTADO<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="notasGrabacion">NOTAS GRABACIÓN<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="guionista">GUIONISTA<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="valoracionGuionista">VALORACIÓN GUIONISTA<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="estado">ESTADO<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="momentosDestacados">MOMENTOS DESTACADOS<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="duracion">DURACIÓN<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="duracionDireccion">DUR. DIRECCIÓN<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="duracionFinal">DUR. FINAL<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="valoracionFinal">VALORACIÓN FINAL<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="numeroPrograma">Nº PGM<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="ordenEscaleta">ORDEN ESCALETA<span class="sort-indicator inactive"></span></th>
+                        <th class="sortable-header" data-column="bonico">BONICO<span class="sort-indicator inactive"></span></th>
                         <th>ACCIONES</th>
                     </tr>
                 </thead>
@@ -255,6 +390,24 @@
                     <!-- Los concursantes se cargarán dinámicamente aquí -->
                 </tbody>
             </table>
+            <!-- Barra de scroll horizontal personalizada -->
+            <div class="custom-scrollbar" id="scrollbar-concursantes">
+                <div class="custom-scrollbar-track">
+                    <div class="custom-scrollbar-thumb" id="thumb-concursantes"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Paginación -->
+        <div class="d-flex flex-column align-items-center mb-3">
+            <div class="pagination-info mb-2">
+                <span id="info-paginacion-concursantes">Mostrando 0 de 0 concursantes</span>
+            </div>
+            <nav aria-label="Paginación de concursantes">
+                <ul class="pagination mb-0" id="paginacion-concursantes">
+                    <!-- Los botones de paginación se generarán dinámicamente -->
+                </ul>
+            </nav>
         </div>
 
         <!-- Modal para Crear/Editar Concursante -->
@@ -507,6 +660,12 @@
                                 <tbody id="tabla-selector-cuestionario"></tbody>
                             </table>
                         </div>
+                        <!-- Paginación para cuestionarios -->
+                        <nav aria-label="Paginación de cuestionarios" class="mt-3">
+                            <ul class="pagination justify-content-center" id="paginacion-cuestionario">
+                                <!-- Los botones de paginación se generarán dinámicamente -->
+                            </ul>
+                        </nav>
                     </div>
                 </div>
             </div>
@@ -540,6 +699,12 @@
                                 <tbody id="tabla-selector-combo"></tbody>
                             </table>
                         </div>
+                        <!-- Paginación para combos -->
+                        <nav aria-label="Paginación de combos" class="mt-3">
+                            <ul class="pagination justify-content-center" id="paginacion-combo">
+                                <!-- Los botones de paginación se generarán dinámicamente -->
+                            </ul>
+                        </nav>
                     </div>
                 </div>
             </div>
@@ -748,13 +913,141 @@
     <script src="js/auth.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/table-resizer.js"></script>
     <script src="js/concursantes.js"></script>
     <script>
+        // Variables globales para ordenamiento (DEPRECATED - manejado por concursantes.js)
+        // let currentSortColumn = null;
+        // let currentSortDirection = 'asc';
+        // let concursantesData = [];
+
         // Inicializar la página cuando se carga
         document.addEventListener('DOMContentLoaded', function() {
             inicializarConcursantes();
             mostrarBotonAdminNavbar();
+            inicializarScrollbarPersonalizada();
+            // inicializarOrdenamiento(); // Ya no es necesario - se maneja en concursantes.js
         });
+        
+        // Función para inicializar la barra de scroll personalizada
+        function inicializarScrollbarPersonalizada() {
+            const container = document.getElementById('tabla-concursantes-container');
+            const scrollbar = document.getElementById('scrollbar-concursantes');
+            const thumb = document.getElementById('thumb-concursantes');
+            
+            if (!container || !scrollbar || !thumb) return;
+            
+            // Función para actualizar la posición del thumb
+            function actualizarThumb() {
+                const scrollLeft = container.scrollLeft;
+                const scrollWidth = container.scrollWidth;
+                const clientWidth = container.clientWidth;
+                
+                if (scrollWidth <= clientWidth) {
+                    scrollbar.style.display = 'none';
+                    return;
+                }
+                
+                scrollbar.style.display = 'block';
+                const thumbWidth = (clientWidth / scrollWidth) * 100;
+                const thumbLeft = (scrollLeft / (scrollWidth - clientWidth)) * (100 - thumbWidth);
+                
+                thumb.style.width = thumbWidth + '%';
+                thumb.style.left = thumbLeft + '%';
+            }
+            
+            // Función para ocultar la barra cuando no estemos en la página
+            function verificarVisibilidad() {
+                const rect = container.getBoundingClientRect();
+                const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+                if (!isVisible) {
+                    scrollbar.style.display = 'none';
+                } else {
+                    actualizarThumb();
+                }
+            }
+            
+            // Event listeners para el scroll del contenedor
+            container.addEventListener('scroll', actualizarThumb);
+            window.addEventListener('resize', actualizarThumb);
+            window.addEventListener('scroll', verificarVisibilidad);
+            
+            // Event listeners para el thumb
+            let isDragging = false;
+            let startX = 0;
+            let startScrollLeft = 0;
+            
+            thumb.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                startX = e.clientX;
+                startScrollLeft = container.scrollLeft;
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                
+                const deltaX = e.clientX - startX;
+                const scrollWidth = container.scrollWidth;
+                const clientWidth = container.clientWidth;
+                const maxScrollLeft = scrollWidth - clientWidth;
+                const thumbWidth = thumb.offsetWidth;
+                const trackWidth = thumb.parentElement.offsetWidth;
+                
+                const deltaScroll = (deltaX / (trackWidth - thumbWidth)) * maxScrollLeft;
+                container.scrollLeft = startScrollLeft + deltaScroll;
+            });
+            
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+            
+            // Click en el track para mover el scroll
+            thumb.parentElement.addEventListener('click', function(e) {
+                if (e.target === thumb) return;
+                
+                const rect = this.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const trackWidth = rect.width;
+                const thumbWidth = thumb.offsetWidth;
+                const thumbLeft = thumb.offsetLeft;
+                
+                if (clickX < thumbLeft) {
+                    // Click a la izquierda del thumb
+                    container.scrollLeft -= container.clientWidth * 0.5;
+                } else if (clickX > thumbLeft + thumbWidth) {
+                    // Click a la derecha del thumb
+                    container.scrollLeft += container.clientWidth * 0.5;
+                }
+            });
+            
+            // Inicializar
+            actualizarThumb();
+        }
+        
+        // Función para inicializar el ordenamiento (DEPRECATED - manejado por concursantes.js)
+        function inicializarOrdenamiento() {
+            console.log('🔧 [ORDEN HTML] Ordenamiento manejado por concursantes.js');
+            // Esta función ya no se usa - el ordenamiento se maneja directamente en concursantes.js
+        }
+        
+        // Función para ordenar la tabla (DEPRECATED - manejado por concursantes.js)
+        function ordenarTabla(column) {
+            console.log('🔄 [ORDEN HTML] Función deprecada - ordenamiento manejado por concursantes.js');
+            // Esta función ya no se usa - el ordenamiento se maneja directamente en concursantes.js
+        }
+        
+        // Función para obtener el valor de ordenamiento de un objeto (DEPRECATED - manejado por concursantes.js)
+        function obtenerValorOrdenamiento(obj, column) {
+            console.log('🔄 [ORDEN HTML] Función deprecada - ordenamiento manejado por concursantes.js');
+            return '';
+        }
+        
+        // Función para actualizar los indicadores visuales (DEPRECATED - manejado por concursantes.js)
+        function actualizarIndicadoresOrdenamiento() {
+            console.log('🎯 [INDICADORES HTML] Función deprecada - indicadores manejados por concursantes.js');
+        }
+        
 
         function cambiarPassword() {
             document.getElementById('form-cambiar-password').reset();
@@ -800,6 +1093,19 @@
                 }
             });
         });
+        
+        // Funciones para el redimensionamiento de columnas
+        function resetTableColumns(tableId) {
+            const resizer = new TableResizer(tableId);
+            resizer.resetColumnWidths();
+            mostrarExito('Anchos de columnas reseteados a los valores por defecto');
+        }
+        
+        function autoResizeTableColumns(tableId) {
+            const resizer = new TableResizer(tableId);
+            resizer.autoResizeColumns();
+            mostrarExito('Columnas ajustadas automáticamente según su contenido');
+        }
     </script>
 
     <script>
