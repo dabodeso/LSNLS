@@ -10,6 +10,16 @@ let totalConcursantes = 0;
 let totalPaginas = 0;
 let cargando = false;
 
+// Estado de ordenación (server-side)
+let sortByConcursantes = 'id';
+let sortAscConcursantes = false;
+
+// Paginación de selectores (cuestionario/combo)
+let modalCuestPagina = 1;
+const modalCuestPorPagina = 25;
+let modalComboPagina = 1;
+const modalComboPorPagina = 25;
+
 // Configuración de columnas por rol
 let configuracionColumnas = {
 esDireccion: true,
@@ -48,7 +58,6 @@ async function inicializarConcursantes() {
 detectarRolUsuario();
 
 await cargarProgramas();
-    await cargarConcursantes();
     await cargarConcursantes(true);
 setupEventListeners();
 
@@ -72,8 +81,8 @@ function aplicarConfiguracionBasica() { /* sin uso, mantenido por compatibilidad
 // Carga de datos
 async function cargarConcursantes(resetear = true) {
 try {
-        concursantes = await apiManager.get('/api/concursantes');
-        console.log('Iniciando carga de concursantes, resetear:', resetear);
+        // Log de entrada
+        console.info('📄 [CONCURSANTES] Cargando', { paginaActual, tamanioPagina, resetear });
         
         if (!authManager.isAuthenticated()) {
             console.error('Usuario no autenticado');
@@ -81,7 +90,7 @@ try {
         }
 
         if (resetear) {
-            paginaActual = 0;
+            // no alterar paginaActual aquí; puede venir fijada por navegación
             concursantes = [];
         }
 
@@ -90,52 +99,57 @@ try {
 
         // Obtener filtros del formulario
         const estado = document.getElementById('filtro-estado-concursante')?.value || '';
-        const programaId = document.getElementById('filtro-programa')?.value || '';
-        const jornadaId = document.getElementById('filtro-jornada')?.value || '';
-        const valoracion = document.getElementById('filtro-valoracion')?.value || '';
+        const jornadaFiltro = document.getElementById('filtro-jornada-text')?.value || '';
         const lugar = document.getElementById('filtro-lugar')?.value || '';
+        const numeroProgramaTxt = document.getElementById('filtro-numero-pgm')?.value || '';
+        const duracionFinalMin = document.getElementById('filtro-duracion-final-min')?.value || '';
+        const duracionFinalMax = document.getElementById('filtro-duracion-final-max')?.value || '';
+        const valoracionFinal = document.getElementById('filtro-valoracion-final')?.value || '';
+        const bonico = document.getElementById('filtro-bonico')?.value || '';
         const busqueda = document.getElementById('buscar-concursante')?.value || '';
 
         const params = new URLSearchParams({
             page: paginaActual,
             size: tamanioPagina,
-            sortBy: 'id',
-            sortDir: 'desc'
+            sortBy: sortByConcursantes || 'id',
+            sortDir: sortAscConcursantes ? 'asc' : 'desc'
         });
 
         // Agregar filtros a los parámetros si tienen valor
         if (estado) params.append('estado', estado);
-        if (programaId) params.append('programaId', programaId);
-        if (jornadaId) params.append('jornadaId', jornadaId);
-        if (valoracion) params.append('valoracion', valoracion);
+        if (jornadaFiltro) params.append('jornada', jornadaFiltro);
         if (lugar) params.append('lugar', lugar);
+        if (numeroProgramaTxt) params.append('numeroPrograma', numeroProgramaTxt);
+        if (duracionFinalMin) params.append('duracionFinalMin', duracionFinalMin);
+        if (duracionFinalMax) params.append('duracionFinalMax', duracionFinalMax);
+        if (valoracionFinal) params.append('valoracionFinal', valoracionFinal);
+        if (bonico) params.append('bonico', bonico);
         if (busqueda) params.append('busqueda', busqueda);
 
-        const response = await fetch(`/api/concursantes?${params}`, {
+        const url = `/api/concursantes?${params}`;
+        console.info('📄 [CONCURSANTES] Fetch', url);
+        const response = await fetch(url, {
             headers: authManager.getAuthHeaders()
         });
 
         if (!response.ok) {
+            let errorText = '';
+            try { errorText = await response.text(); } catch {}
+            console.error('❌ [CONCURSANTES] HTTP', response.status, errorText);
             throw new Error('Error al cargar los concursantes');
         }
 
         const data = await response.json();
-        console.log('Respuesta del servidor:', data);
+        console.info('📄 [CONCURSANTES] Resumen respuesta', {
+            number: data.number,
+            size: data.size,
+            totalPages: data.totalPages,
+            totalElements: data.totalElements,
+            pageContent: Array.isArray(data.content) ? data.content.length : 0
+        });
         
-        // Añadir logs detallados para depuración
-        if (data && data.content && data.content.length > 0) {
-            console.log('DEBUG - Primer concursante:', data.content[0]);
-            console.log('DEBUG - Campos de duración en primer concursante:',
-                'duracion:', data.content[0].duracion,
-                'duracion_direccion:', data.content[0].duracion_direccion,
-                'duracion_final:', data.content[0].duracion_final);
-        }
-        
-        if (resetear) {
-            concursantes = data.content;
-        } else {
-            concursantes = [...concursantes, ...data.content];
-        }
+        // Para paginación por páginas, siempre mostramos solo la página actual
+        concursantes = data.content;
         
         totalConcursantes = data.totalElements;
         totalPaginas = data.totalPages;
@@ -147,7 +161,8 @@ if (error && error.message && error.message.startsWith('401')) {
 // No mostrar mensaje, la redirección ya ocurre en api.js
 return;
 }
-mostrarError('Error al cargar concursantes: ' + error.message);
+        console.error('❌ [CONCURSANTES] Error en carga', error);
+        mostrarError('Error al cargar concursantes: ' + error.message);
     } finally {
         cargando = false;
         ocultarEstadoCarga();
@@ -189,58 +204,57 @@ function ocultarEstadoCarga() {
 }
 
 function actualizarPaginacion() {
-    let paginacionContainer = document.getElementById('paginacion-concursantes');
-    if (!paginacionContainer) {
-        // Crear el contenedor si no existe
-        const tablaContainer = document.querySelector('.table-responsive');
-        if (tablaContainer) {
-            const paginacionDiv = document.createElement('div');
-            paginacionDiv.id = 'paginacion-concursantes';
-            paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
-            tablaContainer.parentNode.insertBefore(paginacionDiv, tablaContainer.nextSibling);
-            // Obtener la referencia al contenedor recién creado
-            paginacionContainer = document.getElementById('paginacion-concursantes');
-        }
+    const infoEl = document.getElementById('info-paginacion-concursantes');
+    const paginacionEl = document.getElementById('paginacion-concursantes');
+    if (!paginacionEl || !infoEl) return;
+
+    // Info "Mostrando X-Y de Z"
+    const inicio = totalConcursantes === 0 ? 0 : (paginaActual * tamanioPagina + 1);
+    const fin = Math.min((paginaActual + 1) * tamanioPagina, totalConcursantes);
+    infoEl.textContent = `Mostrando ${inicio}-${fin} de ${totalConcursantes} concursantes`;
+
+    paginacionEl.innerHTML = '';
+    if (totalPaginas <= 1) return;
+
+    // Primera
+    const primera = document.createElement('li');
+    primera.className = `page-item ${paginaActual === 0 ? 'disabled' : ''}`;
+    primera.innerHTML = `<a class="page-link" href="#" onclick="irAPaginaConcursantes(0)">Primera</a>`;
+    paginacionEl.appendChild(primera);
+
+    // Anterior
+    const anterior = document.createElement('li');
+    anterior.className = `page-item ${paginaActual === 0 ? 'disabled' : ''}`;
+    anterior.innerHTML = `<a class="page-link" href="#" onclick="irAPaginaConcursantes(${paginaActual - 1})">Anterior</a>`;
+    paginacionEl.appendChild(anterior);
+
+    // Rango central (como en preguntas)
+const inicioR = Math.max(0, paginaActual - 2);
+const finR = Math.min(totalPaginas - 1, paginaActual + 2);
+    for (let i = inicioR; i <= finR; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === paginaActual ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" onclick="irAPaginaConcursantes(${i}); return false;">${i + 1}</a>`;
+        paginacionEl.appendChild(li);
     }
 
-    if (paginacionContainer) {
-        const infoPagina = document.createElement('div');
-        infoPagina.innerHTML = `Mostrando ${concursantes.length} de ${totalConcursantes} concursantes (Página ${paginaActual + 1} de ${totalPaginas})`;
+    // Siguiente
+    const siguiente = document.createElement('li');
+    siguiente.className = `page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}`;
+    siguiente.innerHTML = `<a class="page-link" href="#" onclick="irAPaginaConcursantes(${paginaActual + 1})">Siguiente</a>`;
+    paginacionEl.appendChild(siguiente);
 
-        // Crear el botón con un enfoque más robusto
-        const botonCargarMas = document.createElement('button');
-        botonCargarMas.className = 'btn btn-primary';
-        botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más concursantes';
-        botonCargarMas.type = 'button';
-        botonCargarMas.id = 'btn-cargar-mas-concursantes';
-        
-        // Estilos inline para asegurar que sea clickeable
-        Object.assign(botonCargarMas.style, {
-            cursor: 'pointer',
-            pointerEvents: 'auto',
-            position: 'relative',
-            zIndex: '1000',
-            display: 'inline-block',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-            MozUserSelect: 'none',
-            msUserSelect: 'none'
-        });
-
-        // Deshabilitar el botón si estamos en la última página
-        if (paginaActual >= totalPaginas - 1 || totalPaginas <= 1) {
-            botonCargarMas.disabled = true;
-            botonCargarMas.innerHTML = '<i class="fas fa-check"></i> No hay más concursantes';
-        }
-
-        // Limpiar el contenedor y añadir los nuevos elementos
-        paginacionContainer.innerHTML = '';
-        paginacionContainer.appendChild(infoPagina);
-        paginacionContainer.appendChild(botonCargarMas);
-
-        // Añadir evento click al botón
-        botonCargarMas.addEventListener('click', cargarMasConcursantes);
+    // Última
+    const ultima = document.createElement('li');
+    ultima.className = `page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}`;
+    ultima.innerHTML = `<a class="page-link" href="#" onclick="irAPaginaConcursantes(${totalPaginas - 1})">Última</a>`;
+    paginacionEl.appendChild(ultima);
 }
+
+function irAPaginaConcursantes(pagina) {
+    if (pagina < 0 || pagina >= totalPaginas || pagina === paginaActual) return;
+    paginaActual = pagina;
+    cargarConcursantes(true);
 }
 
 async function cargarProgramas() {
@@ -256,16 +270,22 @@ mostrarError('Error al cargar programas: ' + error.message);
 // Funciones de UI
 function setupEventListeners() {
 const fe = document.getElementById('filtro-estado-concursante');
-const fp = document.getElementById('filtro-programa');
-const fj = document.getElementById('filtro-jornada');
-const fv = document.getElementById('filtro-valoracion');
+const fjText = document.getElementById('filtro-jornada-text');
 const fl = document.getElementById('filtro-lugar');
+const fpgm = document.getElementById('filtro-numero-pgm');
+const fdfmin = document.getElementById('filtro-duracion-final-min');
+const fdfmax = document.getElementById('filtro-duracion-final-max');
+const fvalfin = document.getElementById('filtro-valoracion-final');
+const fbon = document.getElementById('filtro-bonico');
 const fb = document.getElementById('buscar-concursante');
 if (fe) fe.addEventListener('change', filtrarConcursantes);
-if (fp) fp.addEventListener('change', filtrarConcursantes);
-if (fj) fj.addEventListener('change', filtrarConcursantes);
-if (fv) fv.addEventListener('keyup', filtrarConcursantes);
+if (fjText) fjText.addEventListener('keyup', filtrarConcursantes);
 if (fl) fl.addEventListener('keyup', filtrarConcursantes);
+if (fpgm) fpgm.addEventListener('keyup', filtrarConcursantes);
+if (fdfmin) fdfmin.addEventListener('keyup', filtrarConcursantes);
+if (fdfmax) fdfmax.addEventListener('keyup', filtrarConcursantes);
+if (fvalfin) fvalfin.addEventListener('change', filtrarConcursantes);
+if (fbon) fbon.addEventListener('change', filtrarConcursantes);
 if (fb) fb.addEventListener('keyup', filtrarConcursantes);
 }
 
@@ -300,20 +320,10 @@ console.warn('No se pudieron cargar jornadas para el filtro:', e);
 }
 
 function mostrarConcursantes(concursantesFiltrados = null) {
-    // Verificar si la columna de duración está configurada como visible
-    console.log('⏱️ DEBUG - Columna duración visible:', configuracionColumnas.columnasVisibles['duracion']);
-    console.log('⏱️ DEBUG - Todas las columnas visibles:', JSON.stringify(configuracionColumnas.columnasVisibles));
-    
-console.log('🔍 [CONCURSANTES] Mostrando concursantes con configuración:', configuracionColumnas.columnasVisibles);
 const lista = concursantesFiltrados || concursantes;
 const tbody = document.getElementById('tabla-concursantes');
 
     const htmlGenerado = lista.map(concursante => {
-        // Verificar si este concursante tiene duración
-        if (concursante.duracion) {
-            console.log(`⏱️ DEBUG - Concursante ${concursante.id} tiene duración: ${concursante.duracion}`);
-        }
-        
 const celdas = [];
 
 // Nº CONCUR
@@ -373,15 +383,15 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'redesSoc
 
 // CUEST
 if (configuracionColumnas.columnasVisibles['cuest']) {
-celdas.push(`<td onclick="abrirSelectorCuestionarioParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar cuestionario">
-               ${concursante.cuestionarioId ? `<span class="badge bg-primary">${concursante.cuestionarioId}</span>` : '<em class="text-muted">Sin asignar</em>'}
+celdas.push(`<td onclick="${concursante.cuestionarioId ? `verCuestionario(${concursante.cuestionarioId}, ${concursante.id})` : `abrirSelectorCuestionarioParaConcursante(${concursante.id})`}" style="cursor: pointer; background-color: #f8f9fa;" title="${concursante.cuestionarioId ? 'Ver cuestionario' : 'Seleccionar cuestionario'}">
+               ${concursante.cuestionarioId && concursante.cuestionarioId !== 0 ? `<span class=\"badge bg-primary\">${concursante.cuestionarioId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
 }
 
 // COMBO
 if (configuracionColumnas.columnasVisibles['combo']) {
-celdas.push(`<td onclick="abrirSelectorComboParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar combo">
-               ${concursante.comboId ? `<span class="badge bg-warning">${concursante.comboId}</span>` : '<em class="text-muted">Sin asignar</em>'}
+celdas.push(`<td onclick="${concursante.comboId ? `verCombo(${concursante.comboId}, ${concursante.id})` : `abrirSelectorComboParaConcursante(${concursante.id})`}" style="cursor: pointer; background-color: #f8f9fa;" title="${concursante.comboId ? 'Ver combo' : 'Seleccionar combo'}">
+               ${concursante.comboId && concursante.comboId !== 0 ? `<span class=\"badge bg-warning\">${concursante.comboId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
 }
 
@@ -392,17 +402,14 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'factorX'
 
 // RESULTADO
 if (configuracionColumnas.columnasVisibles['resultado']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'resultado', this)">${concursante.resultado !== null && concursante.resultado !== undefined ? concursante.resultado : ''}</td>`);
+celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'resultado', this)">${(concursante.resultado !== null && concursante.resultado !== undefined) ? formatEuro(concursante.resultado) : ''}</td>`);
 }
 
 // NOTAS GRABACIÓN
 if (configuracionColumnas.columnasVisibles['notas-grabacion']) {
-            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'notasGrabacion', this)">${concursante.notasGrabacion || ''}</td>`);
-            celdas.push(`<td 
-                ondblclick="editarCeldaConcursante(${concursante.id}, 'notasGrabacion', this)" 
-                onclick="mostrarNotasCompletas(event, '${concursante.notasGrabacion ? concursante.notasGrabacion.replace(/'/g, "\\'").replace(/"/g, '\\"') : ''}')"
-                title="Click para ver completo, doble click para editar"
-            >${concursante.notasGrabacion || ''}</td>`);
+            const notas = concursante.notasGrabacion || '';
+            const contenidoTrunc = `<div class=\"notas-trunc\">${notas}</div>`;
+            celdas.push(`<td ondblclick=\"editarCeldaConcursante(${concursante.id}, 'notasGrabacion', this)\" data-notas=\"${encodeURIComponent(notas)}\" title=\"Doble click para editar\">${contenidoTrunc}</td>`);
 }
 
 // GUIONISTA
@@ -428,21 +435,15 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'momentos
 // DURACIÓN
 if (configuracionColumnas.columnasVisibles['duracion']) {
             celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracion', this)">${concursante.duracion || ''}</td>`);
-            const duracionValue = concursante.duracion || '';
-            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracion', this)" class="columna-duracion">${duracionValue}</td>`);
 }
 
 // DUR. DIRECCIÓN
 if (configuracionColumnas.columnasVisibles['duracion-direccion']) {
-            console.log('🔍 [CONCURSANTES] Renderizando columna DUR. DIRECCIÓN para concursante:', concursante.id);
-            console.log('🔍 [CONCURSANTES] Renderizando columna DUR. DIRECCIÓN para concursante:', concursante.id, 'valor:', concursante.duracionDireccion);
 celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracionDireccion', this)">${concursante.duracionDireccion || ''}</td>`);
 }
 
 // DUR. FINAL
 if (configuracionColumnas.columnasVisibles['duracion-final']) {
-            console.log('🔍 [CONCURSANTES] Renderizando columna DUR. FINAL para concursante:', concursante.id);
-            console.log('🔍 [CONCURSANTES] Renderizando columna DUR. FINAL para concursante:', concursante.id, 'valor:', concursante.duracionFinal);
 celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracionFinal', this)">${concursante.duracionFinal || ''}</td>`);
 }
 
@@ -481,7 +482,6 @@ return `<tr data-id="${concursante.id}" oncontextmenu="showContextMenu(event, ${
        </tr>`;
     }).join('');
     
-    console.log('⏱️ DEBUG - Primeros 500 caracteres del HTML generado:', htmlGenerado.substring(0, 500));
     tbody.innerHTML = htmlGenerado;
     
     // Eliminar verificación de depuración
@@ -500,28 +500,9 @@ fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function filtrarConcursantes() {
-    const estado = (document.getElementById('filtro-estado-concursante')?.value || '').toUpperCase();
-    const programaId = document.getElementById('filtro-programa')?.value || '';
-    const jornadaId = document.getElementById('filtro-jornada')?.value || '';
-    const valoracion = (document.getElementById('filtro-valoracion')?.value || '').toLowerCase();
-    const lugar = (document.getElementById('filtro-lugar')?.value || '').toLowerCase();
-    const busqueda = (document.getElementById('buscar-concursante')?.value || '').toLowerCase();
-
-    const filtrados = concursantes.filter(concursante => {
-        const cumpleEstado = !estado || (concursante.estado && concursante.estado.toUpperCase() === estado);
-        const cumplePrograma = !programaId || (concursante.numeroPrograma && concursante.numeroPrograma.toString() === programaId);
-        const cumpleJornada = !jornadaId || (concursante.jornadaId && concursante.jornadaId.toString() === jornadaId);
-        const txtValoraciones = `${concursante.valoracionGuionista || ''} ${concursante.valoracionFinal || ''}`.toLowerCase();
-        const cumpleValoracion = !valoracion || txtValoraciones.includes(valoracion);
-        const cumpleLugar = !lugar || (concursante.lugar && concursante.lugar.toLowerCase().includes(lugar));
-        const cumpleBusqueda = !busqueda || (concursante.nombre && concursante.nombre.toLowerCase().includes(busqueda)) ||
-            (concursante.numeroConcursante && concursante.numeroConcursante.toString().includes(busqueda));
-        return cumpleEstado && cumplePrograma && cumpleJornada && cumpleValoracion && cumpleLugar && cumpleBusqueda;
-    });
-
-    // Reiniciar la paginación al aplicar filtros y renderizar resultado local
+    // Reiniciar paginación y solicitar datos filtrados al backend
     paginaActual = 0;
-    mostrarConcursantes(filtrados);
+    cargarConcursantes(true);
 }
 
 function limpiarFiltrosConcursantes() {
@@ -929,6 +910,137 @@ backgroundColor: "#dc3545"
 }).showToast();
 }
 
+// Formateo de euros con separador de miles (punto)
+function formatEuro(num) {
+    try {
+        const n = Number(num);
+        if (isNaN(n)) return '';
+        return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' €';
+    } catch { return ''; }
+}
+
+// Fecha flexible: acepta string ISO o array [yyyy, mm, dd, HH?, MM?, SS?]
+function formatFechaFlexible(f) {
+    try {
+        if (!f) return '';
+        if (typeof f === 'string') {
+            return (typeof Utils !== 'undefined' && Utils.formatearFecha) ? Utils.formatearFecha(f) : f;
+        }
+        if (Array.isArray(f)) {
+            const y = f[0];
+            const m = (f[1] || 1);
+            const d = (f[2] || 1);
+            const hh = f[3] || 0;
+            const mm = f[4] || 0;
+            const ss = f[5] || 0;
+            const fecha = new Date(y, m - 1, d, hh, mm, ss);
+            if (isNaN(fecha.getTime())) return '';
+            const dd = String(fecha.getDate()).padStart(2, '0');
+            const mm2 = String(fecha.getMonth() + 1).padStart(2, '0');
+            const yyyy = fecha.getFullYear();
+            return `${dd}/${mm2}/${yyyy}`;
+        }
+        return '';
+    } catch {
+        return '';
+    }
+}
+
+// Vista previa de Cuestionario
+let concursanteParaReemplazo = null;
+
+async function verCuestionario(id, concursanteId) {
+    try {
+        if (concursanteId) concursanteParaReemplazo = concursanteId;
+        console.info('[PREVIEW] Cargando cuestionario', { id, concursanteId });
+        const data = await apiManager.get(`/api/cuestionarios/${id}`);
+        console.info('[PREVIEW] Cuestionario recibido', { keys: Object.keys(data || {}), preguntasLen: Array.isArray(data?.preguntas) ? data.preguntas.length : 'N/A' });
+        document.getElementById('preview-cuestionario-id').textContent = `#${id}`;
+        const cont = document.getElementById('preview-cuestionario-contenido');
+        if (cont) {
+            const items = (data && data.preguntas) ? Array.from(data.preguntas) : [];
+            console.info('[PREVIEW] Items cuestionario', items.slice(0, 3));
+            const filas = items
+                .map(item => item && (item.pregunta ? item.pregunta : (item.pregunta?.pregunta ? item.pregunta : item)))
+                .filter(q => q && typeof q.pregunta === 'string' && q.pregunta.trim().length > 0)
+                .map(q => {
+                    const nivel = (q.nivel && typeof q.nivel === 'string') ? q.nivel : (q.nivel || '');
+                    const texto = q.pregunta;
+                    const resp = (q.respuesta && typeof q.respuesta === 'string') ? q.respuesta : (q.respuesta || '');
+                    return `<tr><td>${nivel || ''}</td><td>${texto}</td><td>${resp || ''}</td></tr>`;
+                })
+                .join('');
+            cont.innerHTML = `
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr><th>Nivel</th><th>Pregunta</th><th>Respuesta</th></tr>
+                    </thead>
+                    <tbody>${filas}</tbody>
+                </table>`;
+        }
+        new bootstrap.Modal(document.getElementById('modal-preview-cuestionario')).show();
+    } catch (e) {
+        console.error('[PREVIEW] Error cargando cuestionario', e);
+        mostrarError('No se pudo cargar el cuestionario: ' + e);
+    }
+}
+
+// Vista previa de Combo
+async function verCombo(id, concursanteId) {
+    try {
+        if (concursanteId) concursanteParaReemplazo = concursanteId;
+        console.info('[PREVIEW] Cargando combo', { id, concursanteId });
+        const data = await apiManager.get(`/api/combos/${id}`);
+        console.info('[PREVIEW] Combo recibido', { keys: Object.keys(data || {}), preguntasLen: Array.isArray(data?.preguntas) ? data.preguntas.length : 'N/A' });
+        document.getElementById('preview-combo-id').textContent = `#${id}`;
+        const cont = document.getElementById('preview-combo-contenido');
+        if (cont) {
+            const items = (data && data.preguntas) ? Array.from(data.preguntas) : [];
+            console.info('[PREVIEW] Items combo', items.slice(0, 3));
+            const filas = items.map(item => {
+                const q = item.pregunta ? item.pregunta : (item.pregunta?.pregunta ? item.pregunta : item);
+                const nivel = (q.nivel && typeof q.nivel === 'string') ? q.nivel : (q.nivel || '');
+                const texto = (q.pregunta && typeof q.pregunta === 'string') ? q.pregunta : (q.pregunta || '');
+                const resp = (q.respuesta && typeof q.respuesta === 'string') ? q.respuesta : (q.respuesta || '');
+                const factor = item.factorMultiplicacion || item.factor || '';
+                return `<tr><td>${nivel || ''}</td><td>${texto || ''}</td><td>${resp || ''}</td><td>${factor || ''}</td></tr>`;
+            }).join('');
+            cont.innerHTML = `
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr><th>Nivel</th><th>Pregunta</th><th>Respuesta</th><th>Factor</th></tr>
+                    </thead>
+                    <tbody>${filas}</tbody>
+                </table>`;
+        }
+        new bootstrap.Modal(document.getElementById('modal-preview-combo')).show();
+    } catch (e) {
+        console.error('[PREVIEW] Error cargando combo', e);
+        mostrarError('No se pudo cargar el combo: ' + e);
+    }
+}
+
+// Reemplazar desde la vista previa
+function abrirSelectorCuestionarioDesdePreview() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-preview-cuestionario'));
+    if (modal) modal.hide();
+    if (concursanteParaReemplazo) {
+        abrirSelectorCuestionarioParaConcursante(concursanteParaReemplazo);
+    } else {
+        abrirSelectorCuestionario();
+    }
+}
+
+function abrirSelectorComboDesdePreview() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-preview-combo'));
+    if (modal) modal.hide();
+    if (concursanteParaReemplazo) {
+        abrirSelectorComboParaConcursante(concursanteParaReemplazo);
+    } else {
+        abrirSelectorCombo();
+    }
+}
+
 function mostrarExito(mensaje) {
 Toastify({
 text: mensaje,
@@ -953,7 +1065,17 @@ const filtro = document.getElementById('buscador-cuestionario').value.trim().toL
 const nivelFiltro = document.getElementById('filtro-nivel-cuestionario').value;
 
 try {
-let cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar');
+let cuestionarios;
+try {
+cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar?estado=aprobado');
+} catch (_) {
+cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar');
+}
+
+// Solo aprobados
+cuestionarios = cuestionarios.filter(c => c.estado && c.estado.toLowerCase() === 'aprobado');
+
+console.info('[SELECTOR][CUEST] Lista base recibida', { total: cuestionarios.length, sample: cuestionarios.slice(0,3) });
 
 // Aplicar filtros
 if (nivelFiltro) {
@@ -962,13 +1084,8 @@ cuestionarios = cuestionarios.filter(c => c.nivel === nivelFiltro);
 
 if (filtro) {
 cuestionarios = cuestionarios.filter(c => {
-// Buscar por ID
-if (c.id.toString().includes(filtro)) return true;
-
-// Buscar por nivel
+if (c.id && c.id.toString().includes(filtro)) return true;
 if (c.nivel && c.nivel.toLowerCase().includes(filtro)) return true;
-
-// Buscar en texto de preguntas
 if (c.preguntas && c.preguntas.length > 0) {
 return c.preguntas.some(p => 
 (p.pregunta && p.pregunta.toLowerCase().includes(filtro)) ||
@@ -976,44 +1093,109 @@ return c.preguntas.some(p =>
 (p.tematica && p.tematica.toLowerCase().includes(filtro))
 );
 }
-
 return false;
 });
 }
 
+// Paginación
+const total = cuestionarios.length;
+const totalPag = Math.max(1, Math.ceil(total / modalCuestPorPagina));
+modalCuestPagina = Math.min(modalCuestPagina, totalPag);
+const start = (modalCuestPagina - 1) * modalCuestPorPagina;
+const pageItems = cuestionarios.slice(start, start + modalCuestPorPagina);
+
 const tbody = document.getElementById('tabla-selector-cuestionario');
 tbody.innerHTML = '';
 
-if (!cuestionarios.length) {
+if (!pageItems.length) {
 tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay cuestionarios disponibles</td></tr>';
-return;
-}
-
-cuestionarios.forEach(c => {
-const tr = document.createElement('tr');
-
-// Crear resumen de preguntas
-let preguntasResumen = '';
-if (c.preguntas && c.preguntas.length > 0) {
-preguntasResumen = c.preguntas.map(p => {
-const preguntaCorta = p.pregunta ? (p.pregunta.length > 50 ? p.pregunta.substring(0, 50) + '...' : p.pregunta) : '';
-const nivel = p.nivel ? p.nivel.replace('_', '') : '';
-return `${nivel} ${preguntaCorta}`;
-}).join('<br>');
 } else {
-preguntasResumen = '<em>Sin preguntas</em>';
-}
-
+pageItems.forEach(c => {
+const tr = document.createElement('tr');
+// Cargaremos las preguntas de forma diferida por rendimiento
+const resumenId = `resumen-cuestionario-${c.id}`;
+const preguntasResumen = `<em id="${resumenId}">Cargando…</em>`;
 tr.innerHTML = `
                <td><strong>${c.id}</strong></td>
                <td><span class="badge bg-info">${c.nivel || 'N/A'}</span></td>
                <td><span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'cuestionario')}">${Utils.formatearEstadoCuestionario(c.estado)}</span></td>
-               <td>${c.fechaCreacion ? Utils.formatearFecha(c.fechaCreacion) : ''}</td>
+               <td>${c.fechaCreacion ? formatFechaFlexible(c.fechaCreacion) : ''}</td>
                <td style="max-width: 300px; font-size: 0.85em;">${preguntasResumen}</td>
                <td><button class="btn btn-sm btn-success" onclick="seleccionarCuestionarioModal(${c.id})">Seleccionar</button></td>
            `;
 tbody.appendChild(tr);
+
+// Cargar resumen de preguntas (primeras 3) asíncronamente con logs
+setTimeout(async () => {
+    try {
+        console.info('[SELECTOR][CUEST] Cargando detalle', c.id);
+        const det = await apiManager.get(`/api/cuestionarios/${c.id}`);
+        const items = Array.isArray(det?.preguntas) ? det.preguntas : [];
+        console.info('[SELECTOR][CUEST] Detalle recibido', { id: c.id, len: items.length });
+        const nivelOrder = (niv) => {
+            if (!niv) return 999;
+            const s = String(niv);
+            const m = s.match(/(\d+)/);
+            return m ? parseInt(m[1], 10) : 999;
+        };
+        const textos = items
+            .map(it => {
+                const q = it.pregunta ? it.pregunta : (it.pregunta?.pregunta ? it.pregunta : it);
+                return {
+                    nivel: q?.nivel,
+                    texto: (typeof q?.pregunta === 'string') ? q.pregunta.trim() : ''
+                };
+            })
+            .filter(row => row.texto.length > 0)
+            .sort((a,b) => nivelOrder(a.nivel) - nivelOrder(b.nivel))
+            .slice(0,4)
+            .map(row => {
+                const nivelNum = nivelOrder(row.nivel);
+                const corta = row.texto.length > 50 ? row.texto.substring(0,50) + '…' : row.texto;
+                return corta ? `${isFinite(nivelNum) && nivelNum !== 999 ? nivelNum : ''} ${corta}`.trim() : '';
+            })
+            .filter(Boolean);
+        const el = document.getElementById(resumenId);
+        if (el) el.innerHTML = textos.length ? textos.join('<br>') : '<em>Sin preguntas</em>';
+    } catch (e) {
+        console.error('[SELECTOR][CUEST] Error cargando detalle', c.id, e);
+        const el = document.getElementById(resumenId);
+        if (el) el.innerHTML = '<em>Error al cargar</em>';
+    }
+}, 0);
 });
+}
+
+// Render paginación modal
+let pagEl = document.getElementById('paginacion-selector-cuestionario');
+if (!pagEl) {
+    pagEl = document.createElement('nav');
+    pagEl.id = 'paginacion-selector-cuestionario';
+    pagEl.className = 'mt-2';
+    tbody.parentElement.parentElement.appendChild(pagEl);
+}
+pagEl.innerHTML = '';
+if (totalPag > 1) {
+    const ul = document.createElement('ul');
+    ul.className = 'pagination pagination-sm mb-0';
+    const prev = document.createElement('li');
+    prev.className = `page-item ${modalCuestPagina === 1 ? 'disabled' : ''}`;
+    prev.innerHTML = `<a class="page-link" href="#" onclick="modalCuestPagina=Math.max(1, modalCuestPagina-1); buscarCuestionariosModal(); return false;">Anterior</a>`;
+    ul.appendChild(prev);
+    const inicio = Math.max(1, modalCuestPagina - 2);
+    const fin = Math.min(totalPag, modalCuestPagina + 2);
+    for (let i = inicio; i <= fin; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === modalCuestPagina ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" onclick="modalCuestPagina=${i}; buscarCuestionariosModal(); return false;">${i}</a>`;
+        ul.appendChild(li);
+    }
+    const next = document.createElement('li');
+    next.className = `page-item ${modalCuestPagina === totalPag ? 'disabled' : ''}`;
+    next.innerHTML = `<a class="page-link" href="#" onclick="modalCuestPagina=Math.min(${totalPag}, modalCuestPagina+1); buscarCuestionariosModal(); return false;">Siguiente</a>`;
+    ul.appendChild(next);
+    pagEl.appendChild(ul);
+}
 } catch (e) {
 mostrarError('Error al buscar cuestionarios: ' + e.message);
 }
@@ -1024,6 +1206,7 @@ let concursanteParaAsignar = null;
 
 function abrirSelectorCuestionarioParaConcursante(concursanteId) {
 concursanteParaAsignar = concursanteId;
+modalCuestPagina = 1;
 buscarCuestionariosModal();
 const modal = new bootstrap.Modal(document.getElementById('modal-selector-cuestionario'));
 modal.show();
@@ -1031,6 +1214,7 @@ modal.show();
 
 function abrirSelectorComboParaConcursante(concursanteId) {
 concursanteParaAsignar = concursanteId;
+modalComboPagina = 1;
 buscarCombosModal();
 const modal = new bootstrap.Modal(document.getElementById('modal-selector-combo'));
 modal.show();
@@ -1054,6 +1238,7 @@ mostrarExito('Cuestionario asignado correctamente');
 mostrarError('Error al asignar cuestionario: ' + error.message);
 }
 concursanteParaAsignar = null;
+concursanteParaReemplazo = null;
 } else {
 // Asignar al formulario
 document.getElementById('cuestionario-id').value = id;
@@ -1080,6 +1265,7 @@ mostrarExito('Combo asignado correctamente');
 mostrarError('Error al asignar combo: ' + error.message);
 }
 concursanteParaAsignar = null;
+concursanteParaReemplazo = null;
 } else {
 // Asignar al formulario
 document.getElementById('combo-id').value = id;
@@ -1104,15 +1290,21 @@ async function buscarCombosModal() {
 const filtro = document.getElementById('buscador-combo').value.trim().toLowerCase();
 
 try {
-let combos = await apiManager.get('/api/combos/para-asignar');
+let combos;
+try {
+combos = await apiManager.get('/api/combos/para-asignar?estado=aprobado');
+} catch (_) {
+combos = await apiManager.get('/api/combos/para-asignar');
+}
 
-// Aplicar filtro de búsqueda
+// Solo aprobados
+combos = combos.filter(c => c.estado && c.estado.toLowerCase() === 'aprobado');
+console.info('[SELECTOR][COMBO] Lista base recibida', { total: combos.length, sample: combos.slice(0,3) });
+
+// Filtro de búsqueda
 if (filtro) {
 combos = combos.filter(c => {
-// Buscar por ID
-if (c.id.toString().includes(filtro)) return true;
-
-// Buscar en texto de preguntas multiplicadoras
+if (c.id && c.id.toString().includes(filtro)) return true;
 if (c.preguntas && c.preguntas.length > 0) {
 return c.preguntas.some(p => 
 (p.pregunta && p.pregunta.toLowerCase().includes(filtro)) ||
@@ -1120,44 +1312,95 @@ return c.preguntas.some(p =>
 (p.tematica && p.tematica.toLowerCase().includes(filtro))
 );
 }
-
 return false;
 });
 }
 
+// Paginación
+const total = combos.length;
+const totalPag = Math.max(1, Math.ceil(total / modalComboPorPagina));
+modalComboPagina = Math.min(modalComboPagina, totalPag);
+const start = (modalComboPagina - 1) * modalComboPorPagina;
+const pageItems = combos.slice(start, start + modalComboPorPagina);
+
 const tbody = document.getElementById('tabla-selector-combo');
 tbody.innerHTML = '';
 
-if (!combos.length) {
+if (!pageItems.length) {
 tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay combos disponibles</td></tr>';
-return;
-}
-
-combos.forEach(c => {
-const tr = document.createElement('tr');
-
-// Crear resumen de preguntas multiplicadoras
-let preguntasResumen = '';
-if (c.preguntas && c.preguntas.length > 0) {
-preguntasResumen = c.preguntas.map(p => {
-const preguntaCorta = p.pregunta ? (p.pregunta.length > 40 ? p.pregunta.substring(0, 40) + '...' : p.pregunta) : '';
-const nivel = p.nivel ? p.nivel.replace('_', '') : '';
-const factor = p.factor ? `<span class="badge bg-warning">x${p.factor}</span>` : '';
-return `${factor} ${nivel} ${preguntaCorta}`;
-}).join('<br>');
 } else {
-preguntasResumen = '<em>Sin preguntas</em>';
-}
-
+pageItems.forEach(c => {
+const tr = document.createElement('tr');
+let preguntasResumen = '';
+// Diferido
+const resumenId = `resumen-combo-${c.id}`;
+preguntasResumen = `<em id="${resumenId}">Cargando…</em>`;
 tr.innerHTML = `
                <td><strong>${c.id}</strong></td>
                <td><span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span></td>
-               <td>${c.fechaCreacion ? Utils.formatearFecha(c.fechaCreacion) : ''}</td>
+               <td>${c.fechaCreacion ? formatFechaFlexible(c.fechaCreacion) : ''}</td>
                <td style="max-width: 350px; font-size: 0.85em;">${preguntasResumen}</td>
                <td><button class="btn btn-sm btn-success" onclick="seleccionarComboModal(${c.id})">Seleccionar</button></td>
            `;
 tbody.appendChild(tr);
+
+// Cargar resumen de preguntas del combo (primeras 3)
+setTimeout(async () => {
+    try {
+        console.info('[SELECTOR][COMBO] Cargando detalle', c.id);
+        const det = await apiManager.get(`/api/combos/${c.id}`);
+        const items = Array.isArray(det?.preguntas) ? det.preguntas : [];
+        console.info('[SELECTOR][COMBO] Detalle recibido', { id: c.id, len: items.length });
+        const textos = items.slice(0,3).map(it => {
+            const q = it.pregunta ? it.pregunta : (it.pregunta?.pregunta ? it.pregunta : it);
+            const nivel = q?.nivel ? String(q.nivel).replace('_','') : '';
+            const texto = q?.pregunta || '';
+            const corta = texto.length > 40 ? texto.substring(0,40) + '…' : texto;
+            const factor = it.factorMultiplicacion || it.factor || '';
+            const fx = factor ? `<span class=\"badge bg-warning\">x${factor}</span> ` : '';
+            return `${fx}${nivel} ${corta}`.trim();
+        }).filter(Boolean);
+        const el = document.getElementById(resumenId);
+        if (el) el.innerHTML = textos.length ? textos.join('<br>') : '<em>Sin preguntas</em>';
+    } catch (e) {
+        console.error('[SELECTOR][COMBO] Error cargando detalle', c.id, e);
+        const el = document.getElementById(resumenId);
+        if (el) el.innerHTML = '<em>Error al cargar</em>';
+    }
+}, 0);
 });
+}
+
+// Render paginación modal
+let pagEl = document.getElementById('paginacion-selector-combo');
+if (!pagEl) {
+    pagEl = document.createElement('nav');
+    pagEl.id = 'paginacion-selector-combo';
+    pagEl.className = 'mt-2';
+    tbody.parentElement.parentElement.appendChild(pagEl);
+}
+pagEl.innerHTML = '';
+if (totalPag > 1) {
+    const ul = document.createElement('ul');
+    ul.className = 'pagination pagination-sm mb-0';
+    const prev = document.createElement('li');
+    prev.className = `page-item ${modalComboPagina === 1 ? 'disabled' : ''}`;
+    prev.innerHTML = `<a class="page-link" href="#" onclick="modalComboPagina=Math.max(1, modalComboPagina-1); buscarCombosModal(); return false;">Anterior</a>`;
+    ul.appendChild(prev);
+    const inicio = Math.max(1, modalComboPagina - 2);
+    const fin = Math.min(totalPag, modalComboPagina + 2);
+    for (let i = inicio; i <= fin; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === modalComboPagina ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" onclick="modalComboPagina=${i}; buscarCombosModal(); return false;">${i}</a>`;
+        ul.appendChild(li);
+    }
+    const next = document.createElement('li');
+    next.className = `page-item ${modalComboPagina === totalPag ? 'disabled' : ''}`;
+    next.innerHTML = `<a class="page-link" href="#" onclick="modalComboPagina=Math.min(${totalPag}, modalComboPagina+1); buscarCombosModal(); return false;">Siguiente</a>`;
+    ul.appendChild(next);
+    pagEl.appendChild(ul);
+}
 } catch (error) {
 mostrarError('Error al cargar combos: ' + error.message);
 }
@@ -1167,24 +1410,67 @@ function limpiarSelectorCombo() {
 document.getElementById('combo-id').value = '';
 }
 
-// --- ORDENACIÓN POR COLUMNA ---
+// --- ORDENACIÓN POR COLUMNA con indicadores ---
+function actualizarIndicadoresOrdenamientoConcursantes() {
+    const tabla = document.getElementById('tabla-concursantes-principal');
+    if (!tabla) return;
+    const headers = tabla.querySelectorAll('thead th');
+    headers.forEach((th, idx) => {
+        const indicator = th.querySelector('.sort-indicator');
+        if (!indicator) return;
+        indicator.className = 'sort-indicator inactive';
+        if (tabla.dataset.ordenCol == idx) {
+            const isAsc = tabla.dataset.ordenAsc === 'true';
+            indicator.className = `sort-indicator active ${isAsc ? 'asc' : 'desc'}`;
+        }
+    });
+}
+
 function ordenarTablaConcursantes(colIndex, tipo = 'string') {
 const tabla = document.getElementById('tabla-concursantes-principal');
-const tbody = tabla.querySelector('tbody');
-const filas = Array.from(tbody.querySelectorAll('tr'));
 const asc = tabla.dataset.ordenCol == colIndex ? tabla.dataset.ordenAsc !== 'true' : true;
-filas.sort((a, b) => {
-let va = a.children[colIndex].innerText.trim();
-let vb = b.children[colIndex].innerText.trim();
-if (tipo === 'number') {
-va = parseFloat(va.replace(/[^\d.\-]/g, '')) || 0;
-vb = parseFloat(vb.replace(/[^\d.\-]/g, '')) || 0;
-}
-return asc ? va.localeCompare(vb, undefined, {numeric: tipo==='number'}) : vb.localeCompare(va, undefined, {numeric: tipo==='number'});
-});
-filas.forEach(f => tbody.appendChild(f));
+
+// Mapear índice a sortBy del backend
+const headerMap = Array.from(tabla.querySelectorAll('thead th')).map(th => th.textContent.trim());
+const header = headerMap[colIndex] || '';
+const mapSortBy = {
+    'Nº CONCUR': 'numeroConcursante',
+    'JORNADA': 'jornadaNombre',
+    'DÍA GRABACIÓN': 'diaGrabacion',
+    'LUGAR': 'lugar',
+    'NOMBRE': 'nombre',
+    'EDAD': 'edad',
+    'OCUPACIÓN': 'ocupacion',
+    'RR SS': 'redesSociales',
+    'CUEST': 'cuestionarioId',
+    'COMBO': 'comboId',
+    'X': 'factorX',
+    'RESULTADO': 'resultado',
+    'NOTAS GRABACIÓN': 'notasGrabacion',
+    'GUIONISTA': 'guionista',
+    'VALORACIÓN GUIONISTA': 'valoracionGuionista',
+    'ESTADO': 'estado',
+    'MOMENTOS DESTACADOS': 'momentosDestacados',
+    'DURACIÓN': 'duracion',
+    'DUR. DIRECCIÓN': 'duracionDireccion',
+    'DUR. FINAL': 'duracionFinal',
+    'VALORACIÓN FINAL': 'valoracionFinal',
+    'Nº PGM': 'numeroPrograma',
+    'ORDEN ESCALETA': 'ordenEscaleta',
+    'BONICO': 'bonico'
+};
+
+sortByConcursantes = mapSortBy[header] || 'id';
+sortAscConcursantes = asc;
+
+// Guardar estado visual
 tabla.dataset.ordenCol = colIndex;
 tabla.dataset.ordenAsc = asc;
+actualizarIndicadoresOrdenamientoConcursantes();
+
+// Recargar desde servidor con nuevo sort
+paginaActual = 0;
+cargarConcursantes(true);
 }
 
 // Añadir listeners a los th
@@ -1193,38 +1479,92 @@ const tabla = document.getElementById('tabla-concursantes-principal');
 if (tabla) {
 tabla.querySelectorAll('thead th').forEach((th, idx) => {
 th.style.cursor = 'pointer';
-th.onclick = () => ordenarTablaConcursantes(idx, th.dataset.tipo || 'string');
+th.onclick = (e) => {
+    // Evitar conflicto si se está redimensionando
+    if (typeof isTableResizing === 'function' && isTableResizing('tabla-concursantes-principal')) return;
+    ordenarTablaConcursantes(idx, th.dataset.tipo || 'string');
+};
 });
+actualizarIndicadoresOrdenamientoConcursantes();
 }
 }, 500);
 
 // --- AUTO-SCROLL HORIZONTAL EN TABLA DE CONCURSANTES ---
-document.addEventListener('DOMContentLoaded', function() {
-const contenedor = document.querySelector('.table-responsive');
-if (!contenedor) return;
-let scrollInterval = null;
-contenedor.addEventListener('mousemove', function(e) {
-const borde = 60; // px desde el borde para activar scroll
-const { left, right } = contenedor.getBoundingClientRect();
-const x = e.clientX;
-const scrollSpeed = 15; // px por frame
-clearInterval(scrollInterval);
-if (x - left < borde) {
-// Scroll a la izquierda
-scrollInterval = setInterval(() => {
-contenedor.scrollLeft -= scrollSpeed;
-}, 16);
-} else if (right - x < borde) {
-// Scroll a la derecha
-scrollInterval = setInterval(() => {
-contenedor.scrollLeft += scrollSpeed;
-}, 16);
+function inicializarScrollbarPersonalizadaConcursantes() {
+    const container = document.getElementById('tabla-concursantes-container');
+    const scrollbar = document.getElementById('scrollbar-concursantes');
+    const thumb = document.getElementById('thumb-concursantes');
+    if (!container || !scrollbar || !thumb) return;
+
+    function actualizarThumb() {
+        const scrollLeft = container.scrollLeft;
+        const scrollWidth = container.scrollWidth;
+        const clientWidth = container.clientWidth;
+        if (scrollWidth <= clientWidth) {
+            scrollbar.style.display = 'none';
+            return;
+        }
+        scrollbar.style.display = 'block';
+        const thumbWidth = (clientWidth / scrollWidth) * 100;
+        const thumbLeft = (scrollLeft / (scrollWidth - clientWidth)) * (100 - thumbWidth);
+        thumb.style.width = thumbWidth + '%';
+        thumb.style.left = thumbLeft + '%';
+    }
+
+    function verificarVisibilidad() {
+        const rect = container.getBoundingClientRect();
+        const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+        if (!isVisible) {
+            scrollbar.style.display = 'none';
+        } else {
+            actualizarThumb();
+        }
+    }
+
+    container.addEventListener('scroll', actualizarThumb);
+    window.addEventListener('resize', actualizarThumb);
+    window.addEventListener('scroll', verificarVisibilidad);
+
+    // Drag del thumb
+    let isDragging = false;
+    let startX = 0;
+    let startScrollLeft = 0;
+    thumb.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        startX = e.clientX;
+        startScrollLeft = container.scrollLeft;
+        e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        const deltaX = e.clientX - startX;
+        const scrollWidth = container.scrollWidth;
+        const clientWidth = container.clientWidth;
+        const maxScrollLeft = scrollWidth - clientWidth;
+        const thumbWidth = thumb.offsetWidth;
+        const trackWidth = thumb.parentElement.offsetWidth;
+        const deltaScroll = (deltaX / (trackWidth - thumbWidth)) * maxScrollLeft;
+        container.scrollLeft = startScrollLeft + deltaScroll;
+    });
+    document.addEventListener('mouseup', function() { isDragging = false; });
+
+    // Click en track
+    thumb.parentElement.addEventListener('click', function(e) {
+        if (e.target === thumb) return;
+        const rect = this.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const trackWidth = rect.width;
+        const thumbWidth = thumb.offsetWidth;
+        const thumbLeft = thumb.offsetLeft;
+        if (clickX < thumbLeft) {
+            container.scrollLeft -= container.clientWidth * 0.5;
+        } else if (clickX > thumbLeft + thumbWidth) {
+            container.scrollLeft += container.clientWidth * 0.5;
+        }
+    });
+
+    actualizarThumb();
 }
-});
-contenedor.addEventListener('mouseleave', function() {
-clearInterval(scrollInterval);
-});
-});
 
 window.cambiarPassword = function() {
 document.getElementById('form-cambiar-password').reset();
@@ -1597,10 +1937,12 @@ const mapeoEncabezados = {
 'bonico': 'BONICO'
 };
 
-// Construir encabezados visibles
+// Construir encabezados visibles (ordenables con indicador)
 Object.keys(mapeoEncabezados).forEach(columna => {
 if (configuracionColumnas.columnasVisibles[columna]) {
-encabezados.push(`<th>${mapeoEncabezados[columna]}</th>`);
+const esNumero = ['numero-concur','edad','resultado','numero-pgm','orden-escaleta','cuest','combo'].includes(columna);
+const attrTipo = esNumero ? ' data-tipo="number"' : '';
+encabezados.push(`<th class="sortable-header"${attrTipo}>${mapeoEncabezados[columna]}<span class="sort-indicator inactive"></span></th>`);
 }
 });
 
@@ -1608,6 +1950,22 @@ encabezados.push(`<th>${mapeoEncabezados[columna]}</th>`);
 encabezados.push('<th>ACCIONES</th>');
 
 thead.innerHTML = encabezados.join('');
+
+// Reasignar listeners de orden tras reconstruir encabezados
+const tabla = document.getElementById('tabla-concursantes-principal');
+if (tabla) {
+tabla.querySelectorAll('thead th').forEach((th, idx) => {
+th.style.cursor = 'pointer';
+th.onclick = () => {
+    if (typeof isTableResizing === 'function' && isTableResizing('tabla-concursantes-principal')) return;
+    ordenarTablaConcursantes(idx, th.dataset.tipo || 'string');
+};
+});
+// Actualizar flechas según último estado
+if (typeof actualizarIndicadoresOrdenamientoConcursantes === 'function') {
+actualizarIndicadoresOrdenamientoConcursantes();
+}
+}
 }
 
 function seleccionarTodasColumnas() {
@@ -1696,4 +2054,28 @@ reader.readAsDataURL(file);
             modal.show();
         }
     };
+
+    // Click en icono de expandir (pseudoelemento): delegar al TD completo
+    const tablaNotas = document.getElementById('tabla-concursantes');
+    if (tablaNotas) {
+        tablaNotas.addEventListener('click', function(e) {
+            const td = e.target.closest('td');
+            if (!td) return;
+            const tr = td.parentElement;
+            const notasAttr = td.getAttribute('data-notas');
+            if (notasAttr && e.offsetX >= td.clientWidth - 24 && e.offsetY >= td.clientHeight - 24) {
+                try {
+                    const txt = decodeURIComponent(notasAttr);
+                    const contenidoNotas = document.getElementById('contenido-notas');
+                    if (contenidoNotas) {
+                        contenidoNotas.textContent = txt;
+                        const modal = new bootstrap.Modal(document.getElementById('modal-ver-notas'));
+                        modal.show();
+                    }
+                } catch (err) {
+                    console.error('Error decodificando notas:', err);
+                }
+            }
+        });
+    }
 }); 

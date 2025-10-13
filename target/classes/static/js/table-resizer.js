@@ -60,7 +60,8 @@ class TableResizer {
             } else if (columnName.includes('fuentes')) {
                 defaultWidth = Math.max(baseWidth, 250);
             } else if (columnName.includes('notas')) {
-                defaultWidth = Math.max(baseWidth, 400);
+                // Doble ancho por defecto para "NOTAS GRABACIÓN"
+                defaultWidth = Math.max(baseWidth, 800);
             } else if (columnName.includes('foto') || columnName.includes('imagen')) {
                 defaultWidth = Math.max(baseWidth, 100);
             } else if (columnName.includes('nombre') || columnName.includes('lugar')) {

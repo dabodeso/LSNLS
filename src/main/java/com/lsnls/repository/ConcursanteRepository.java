@@ -31,20 +31,25 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long> 
 
     @Query("SELECT c FROM Concursante c WHERE " +
            "(:estado IS NULL OR c.estado = :estado) AND " +
-           "(:jornada IS NULL OR LOWER(c.jornada.nombre) LIKE LOWER(CONCAT('%', :jornada, '%'))) AND " +
+           // Jornada: por nombre o por id cuando el filtro es numérico
+           "(:jornada IS NULL OR (LOWER(c.jornada.nombre) LIKE LOWER(CONCAT('%', :jornada, '%')) OR CAST(c.jornada.id AS string) = :jornada)) AND " +
            "(:lugar IS NULL OR LOWER(c.lugar) LIKE LOWER(CONCAT('%', :lugar, '%'))) AND " +
            "(:numeroPrograma IS NULL OR CAST(c.numeroPrograma AS string) LIKE CONCAT('%', :numeroPrograma, '%')) AND " +
-           "(:duracionFinal IS NULL OR LOWER(c.duracionFinal) LIKE LOWER(CONCAT('%', :duracionFinal, '%'))) AND " +
+           // Rango de duración usando fallback: final -> dirección -> general
+           "(:duracionFinalMin IS NULL OR COALESCE(c.duracionFinal, c.duracionDireccion, c.duracion) >= :duracionFinalMin) AND " +
+           "(:duracionFinalMax IS NULL OR COALESCE(c.duracionFinal, c.duracionDireccion, c.duracion) <= :duracionFinalMax) AND " +
+           // Valoración final (1,2,3)
            "(:valoracionFinal IS NULL OR c.valoracionFinal = :valoracionFinal) AND " +
-           "(:bonico IS NULL OR " +
-           "((:bonico = 'vacio' AND (c.bonico IS NULL OR c.bonico = '')) OR " +
-           "(:bonico = 'contenido' AND c.bonico IS NOT NULL AND c.bonico != '')))")
+           // Bonico vacío o con contenido
+           "(:bonico IS NULL OR ((:bonico = 'vacio' AND (c.bonico IS NULL OR c.bonico = '')) OR (:bonico = 'contenido' AND c.bonico IS NOT NULL AND c.bonico <> '')))"
+    )
     Page<Concursante> findAllWithFilters(Pageable pageable, 
             @Param("estado") String estado,
             @Param("jornada") String jornada,
             @Param("lugar") String lugar,
             @Param("numeroPrograma") String numeroPrograma,
-            @Param("duracionFinal") String duracionFinal,
+            @Param("duracionFinalMin") String duracionFinalMin,
+            @Param("duracionFinalMax") String duracionFinalMax,
             @Param("valoracionFinal") String valoracionFinal,
             @Param("bonico") String bonico);
 } 

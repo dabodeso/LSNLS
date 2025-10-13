@@ -15,6 +15,122 @@
 <link href="css/styles.css" rel="stylesheet">
     <link href="css/pagination.css" rel="stylesheet">
 <style>
+/* Ancho y diseño general de la tabla (como en preguntas) */
+.table-preguntas {
+width: 100% !important;
+min-width: 2000px !important; /* más ancha por defecto */
+table-layout: fixed;
+}
+
+.table-responsive {
+max-height: 80vh;
+overflow-y: auto;
+overflow-x: hidden; /* ocultar scroll horizontal nativo */
+position: relative;
+}
+
+/* Asegurar scroll en el contenedor específico de concursantes */
+#tabla-concursantes-container {
+max-height: 80vh;
+overflow-y: auto !important;
+overflow-x: hidden;
+position: relative;
+}
+
+/* Asegurar encabezados sticky en esta tabla */
+#tabla-concursantes-principal thead th {
+position: sticky;
+top: 0;
+z-index: 20;
+background-color: #f8f9fa !important;
+}
+
+/* Encabezado fijo */
+.table-preguntas thead th {
+position: sticky;
+top: 0;
+background-color: #f8f9fa !important;
+color: #000 !important;
+z-index: 10;
+border-bottom: 2px solid #dee2e6;
+font-weight: bold;
+}
+
+/* Encabezados ordenables con indicador */
+.sortable-header {
+cursor: pointer;
+user-select: none;
+position: relative;
+padding-right: 25px !important;
+}
+
+.sort-indicator {
+position: absolute;
+right: 8px;
+top: 50%;
+transform: translateY(-50%);
+font-size: 12px;
+color: #6c757d;
+transition: color 0.2s ease;
+pointer-events: none;
+}
+
+.sort-indicator.active { color: #007bff; }
+.sort-indicator.asc::after { content: '▲'; color: #007bff; }
+.sort-indicator.desc::after { content: '▼'; color: #007bff; }
+.sort-indicator.inactive::after { content: '↕'; color: #6c757d; }
+
+/* Notas de grabación: truncado a 3 líneas */
+.notas-trunc {
+display: -webkit-box;
+-webkit-line-clamp: 3;
+-webkit-box-orient: vertical;
+overflow: hidden;
+white-space: pre-wrap;
+}
+
+.notas-leer-mas {
+display: inline-block;
+margin-top: 4px;
+font-size: 0.85em;
+}
+
+/* Barra de scroll horizontal personalizada */
+.custom-scrollbar {
+position: fixed;
+bottom: 0;
+left: 0;
+right: 0;
+height: 20px;
+background: rgba(0, 0, 0, 0.1);
+border-top: 1px solid rgba(0, 0, 0, 0.2);
+z-index: 1000;
+}
+
+.custom-scrollbar-track {
+position: relative;
+width: 100%;
+height: 100%;
+background: rgba(255, 255, 255, 0.1);
+border-radius: 10px;
+margin: 2px;
+}
+
+.custom-scrollbar-thumb {
+position: absolute;
+top: 2px;
+left: 0;
+height: 16px;
+background: rgba(0, 123, 255, 0.7);
+border-radius: 8px;
+cursor: pointer;
+transition: background-color 0.2s ease;
+min-width: 20px;
+}
+
+.custom-scrollbar-thumb:hover { background: rgba(0, 123, 255, 0.9); }
+.custom-scrollbar-thumb:active { background: rgba(0, 123, 255, 1); }
+
 .foto-concursante {
 max-width: 80px;
 max-height: 80px;
@@ -58,13 +174,13 @@ line-height: 1.2;
         /* Estilos para la columna de notas de grabación */
         #tabla-concursantes-principal th:nth-child(14),
         #tabla-concursantes-principal td:nth-child(14) {
-            min-width: 700px; /* 5 veces más ancho que el estándar de ~100px */
-            max-width: 500px;
+            min-width: 800px; /* doble por defecto */
+            max-width: none;
             white-space: normal; /* Permitir saltos de línea */
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: 0.80em; /* Reducir tamaño de letra en 2 puntos */
-            line-height: 1.3; /* Ajustar interlineado para mejor legibilidad */
+            font-size: inherit; /* mismo tamaño que el resto */
+            line-height: inherit; /* mismo interlineado */
         }
         /* Limitar la altura para evitar filas demasiado altas */
         #tabla-concursantes-principal td:nth-child(14) {
@@ -164,6 +280,7 @@ line-height: 1.2;
 <button class="btn btn-outline-secondary" id="btn-config-columnas" onclick="mostrarConfiguracionColumnas()">
 <i class="fas fa-cog"></i> Editar elementos tabla
 </button>
+
 </div>
 </div>
 
@@ -194,23 +311,40 @@ line-height: 1.2;
 </select>
 </div>
 <div class="col-md-2">
-<label class="form-label">Valoración</label>
-<input type="text" id="filtro-valoracion" class="form-control form-control-sm" placeholder="Texto en valoraciones">
+<label class="form-label">Jornada</label>
+<input type="text" id="filtro-jornada-text" class="form-control form-control-sm" placeholder="Nombre de la jornada">
 </div>
 <div class="col-md-2">
 <label class="form-label">Lugar</label>
 <input type="text" id="filtro-lugar" class="form-control form-control-sm" placeholder="Lugar de grabación">
 </div>
-<div class="col-md-3">
-<label class="form-label">Programa</label>
-<select id="filtro-programa" class="form-select form-select-sm">
-<option value="">Todos</option>
+<div class="col-md-2">
+<label class="form-label">Nº PGM</label>
+<input type="text" id="filtro-numero-pgm" class="form-control form-control-sm" placeholder="Ej: 123">
+</div>
+<div class="col-md-2">
+<label class="form-label">Duración fin (mín)</label>
+<input type="text" id="filtro-duracion-final-min" class="form-control form-control-sm" placeholder="MM:SS">
+</div>
+<div class="col-md-2">
+<label class="form-label">Duración fin (máx)</label>
+<input type="text" id="filtro-duracion-final-max" class="form-control form-control-sm" placeholder="MM:SS">
+</div>
+<div class="col-md-2">
+<label class="form-label">Valoración final</label>
+<select id="filtro-valoracion-final" class="form-select form-select-sm">
+<option value="">Todas</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
 </select>
 </div>
-<div class="col-md-3">
-<label class="form-label">Jornada</label>
-<select id="filtro-jornada" class="form-select form-select-sm">
-<option value="">Todas</option>
+<div class="col-md-2">
+<label class="form-label">Bonico</label>
+<select id="filtro-bonico" class="form-select form-select-sm">
+<option value="">Todos</option>
+<option value="vacio">Vacío</option>
+<option value="contenido">Con contenido</option>
 </select>
 </div>
 </div>
@@ -219,35 +353,35 @@ line-height: 1.2;
 </div>
 
 <!-- Tabla de Concursantes -->
-<div class="table-responsive">
+<div class="table-responsive" id="tabla-concursantes-container" style="width: 100%; margin: 0 auto;">
 <table class="table table-excel table-preguntas" id="tabla-concursantes-principal">
 <thead>
 <tr>
-<th>Nº CONCUR</th>
-<th>JORNADA</th>
-<th>DÍA GRABACIÓN</th>
-<th>LUGAR</th>
-<th>NOMBRE</th>
+<th class="sortable-header" data-tipo="number">Nº CONCUR<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">JORNADA<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">DÍA GRABACIÓN<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">LUGAR<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">NOMBRE<span class="sort-indicator inactive"></span></th>
 <th>FOTO</th>
-<th>EDAD</th>
-<th>OCUPACIÓN</th>
-<th>RR SS</th>
-<th>CUEST</th>
-<th>COMBO</th>
-<th>X</th>
-<th>RESULTADO</th>
-<th>NOTAS GRABACIÓN</th>
-<th>GUIONISTA</th>
-<th>VALORACIÓN GUIONISTA</th>
-<th>ESTADO</th>
-<th>MOMENTOS DESTACADOS</th>
-<th>DURACIÓN</th>
-<th>DUR. DIRECCIÓN</th>
-<th>DUR. FINAL</th>
-<th>VALORACIÓN FINAL</th>
-<th>Nº PGM</th>
-<th>ORDEN ESCALETA</th>
-<th>BONICO</th>
+<th class="sortable-header" data-tipo="number">EDAD<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">OCUPACIÓN<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">RR SS<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header" data-tipo="number">CUEST<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header" data-tipo="number">COMBO<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">X<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header" data-tipo="number">RESULTADO<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">NOTAS GRABACIÓN<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">GUIONISTA<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">VALORACIÓN GUIONISTA<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">ESTADO<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">MOMENTOS DESTACADOS<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">DURACIÓN<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">DUR. DIRECCIÓN<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">DUR. FINAL<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">VALORACIÓN FINAL<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header" data-tipo="number">Nº PGM<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header" data-tipo="number">ORDEN ESCALETA<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">BONICO<span class="sort-indicator inactive"></span></th>
 <th>ACCIONES</th>
 </tr>
 </thead>
@@ -255,6 +389,23 @@ line-height: 1.2;
 <!-- Los concursantes se cargarán dinámicamente aquí -->
 </tbody>
 </table>
+</div>
+
+<!-- Barra de scroll horizontal personalizada -->
+<div class="custom-scrollbar" id="scrollbar-concursantes">
+    <div class="custom-scrollbar-track">
+        <div class="custom-scrollbar-thumb" id="thumb-concursantes"></div>
+    </div>
+</div>
+
+<!-- Paginación -->
+<div class="d-flex flex-column align-items-center mb-3">
+    <div class="pagination-info mb-2">
+        <span id="info-paginacion-concursantes">Mostrando 0 de 0 concursantes</span>
+    </div>
+    <nav aria-label="Paginación de concursantes">
+        <ul class="pagination mb-0" id="paginacion-concursantes"></ul>
+    </nav>
 </div>
 
 <!-- Modal para Crear/Editar Concursante -->
@@ -736,6 +887,44 @@ Borrar
         </div>
     </div>
 
+    <!-- Modal Vista Previa Cuestionario -->
+    <div class="modal fade" id="modal-preview-cuestionario" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cuestionario <span id="preview-cuestionario-id"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="preview-cuestionario-contenido" class="table-responsive" style="max-height:60vh; overflow:auto;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="abrirSelectorCuestionarioDesdePreview()">Reemplazar…</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Vista Previa Combo -->
+    <div class="modal fade" id="modal-preview-combo" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Combo <span id="preview-combo-id"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="preview-combo-contenido" class="table-responsive" style="max-height:60vh; overflow:auto;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="abrirSelectorComboDesdePreview()">Reemplazar…</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <!-- Bootstrap Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- jQuery -->
@@ -746,12 +935,14 @@ Borrar
 <script src="js/auth.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/api.js"></script>
+<script src="js/table-resizer.js"></script>
 <script src="js/concursantes.js"></script>
 <script>
 // Inicializar la página cuando se carga
 document.addEventListener('DOMContentLoaded', function() {
 inicializarConcursantes();
 mostrarBotonAdminNavbar();
+inicializarScrollbarPersonalizadaConcursantes();
 });
 
 function cambiarPassword() {

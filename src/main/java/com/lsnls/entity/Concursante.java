@@ -1,6 +1,8 @@
 package com.lsnls.entity;
 
 import javax.persistence.*;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import java.time.LocalDate;
 import java.math.BigDecimal;
 import lombok.Data;
@@ -38,13 +40,15 @@ public class Concursante {
     @Column(name = "redes_sociales")
     private String redesSociales;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "cuestionario_id")
+    @NotFound(action = NotFoundAction.IGNORE)
     @JsonIgnoreProperties({"preguntas", "creacionUsuario"})
     private Cuestionario cuestionario;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "combo_id")
+    @NotFound(action = NotFoundAction.IGNORE)
     @JsonIgnoreProperties({"preguntas", "creacionUsuario"})
     private Combo combo;
 

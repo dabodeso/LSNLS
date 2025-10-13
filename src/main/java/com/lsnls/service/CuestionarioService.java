@@ -172,21 +172,12 @@ public class CuestionarioService {
     }
 
     /**
-     * Obtiene cuestionarios disponibles para asignar a concursantes.
-     * Incluye cuestionarios en estado 'aprobado' y 'adjudicado'.
+     * Obtiene cuestionarios disponibles para asignar: solo 'aprobado'.
      */
     public List<Cuestionario> obtenerDisponiblesParaConcursantes() {
         List<Cuestionario> aprobados = cuestionarioRepository.findByEstado(EstadoCuestionario.aprobado);
-        List<Cuestionario> adjudicados = cuestionarioRepository.findByEstado(EstadoCuestionario.adjudicado);
-        
-        List<Cuestionario> disponibles = new ArrayList<>();
-        disponibles.addAll(aprobados);
-        disponibles.addAll(adjudicados);
-        
-        // Ordenar por ID descendente (más recientes primero)
-        disponibles.sort((a, b) -> b.getId().compareTo(a.getId()));
-        
-        return disponibles;
+        aprobados.sort((a, b) -> b.getId().compareTo(a.getId()));
+        return aprobados;
     }
 
     public boolean agregarPregunta(Long cuestionarioId, Long preguntaId, Integer factorMultiplicacion) {
@@ -210,7 +201,9 @@ public class CuestionarioService {
         }
         
         // Verificar que la pregunta esté disponible o liberada (puede reutilizarse)
-        if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
+        // Tratar null como disponible para compatibilidad con datos antiguos
+        if (pregunta.getEstadoDisponibilidad() != null &&
+            pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
             pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
             throw new RuntimeException("La pregunta no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
         }
@@ -562,7 +555,7 @@ public class CuestionarioService {
         int preguntasReservadas = entityManager.createNativeQuery(
             "UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' " +
             "WHERE id IN (" + preguntaIdsStr + ") " +
-            "AND estado_disponibilidad IN ('disponible', 'liberada') " +
+            "AND (estado_disponibilidad IN ('disponible', 'liberada') OR estado_disponibilidad IS NULL) " +
             "AND estado = 'aprobada'"
         ).executeUpdate();
         

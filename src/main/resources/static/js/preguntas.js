@@ -1294,7 +1294,7 @@ const PreguntasManager = {
             if (totalApariciones === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="text-center">No se encontraron apariciones</td>
+                        <td colspan="5" class="text-center">No se encontraron apariciones</td>
                     </tr>
                 `;
                 return;
@@ -1308,11 +1308,6 @@ const PreguntasManager = {
                     <td>${this.resaltarTexto(pregunta.pregunta, textoRespuesta)}</td>
                     <td>${this.resaltarTexto(pregunta.respuesta, textoRespuesta)}</td>
                     <td><span class="badge ${this.getEstadoColor(pregunta.estado)}">${pregunta.estado || ''}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="PreguntasManager.editarPregunta(${pregunta.id}); $('#modal-apariciones').modal('hide');">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1399,7 +1394,7 @@ const PreguntasManager = {
             if (totalApariciones === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="text-center">No se encontraron apariciones</td>
+                        <td colspan="5" class="text-center">No se encontraron apariciones</td>
                     </tr>
                 `;
                 return;
@@ -1413,11 +1408,6 @@ const PreguntasManager = {
                     <td>${this.resaltarTexto(pregunta.pregunta, textoRespuesta)}</td>
                     <td>${this.resaltarTexto(pregunta.respuesta, textoRespuesta)}</td>
                     <td><span class="badge ${this.getEstadoColor(pregunta.estado)}">${pregunta.estado || ''}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="PreguntasManager.editarPregunta(${pregunta.id}); $('#modal-apariciones').modal('hide');">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    </td>
                 `;
                 tbody.appendChild(tr);
             });

@@ -227,21 +227,12 @@ public class ComboService {
     }
 
     /**
-     * Obtiene combos disponibles para asignar a concursantes.
-     * Incluye combos en estado 'aprobado' y 'adjudicado'.
+     * Obtiene combos disponibles para asignar: solo 'aprobado'.
      */
     public List<Combo> obtenerDisponiblesParaConcursantes() {
         List<Combo> aprobados = comboRepository.findByEstado(EstadoCombo.aprobado);
-        List<Combo> adjudicados = comboRepository.findByEstado(EstadoCombo.adjudicado);
-        
-        List<Combo> disponibles = new java.util.ArrayList<>();
-        disponibles.addAll(aprobados);
-        disponibles.addAll(adjudicados);
-        
-        // Ordenar por ID descendente (más recientes primero)
-        disponibles.sort((a, b) -> b.getId().compareTo(a.getId()));
-        
-        return disponibles;
+        aprobados.sort((a, b) -> b.getId().compareTo(a.getId()));
+        return aprobados;
     }
 
     public List<Combo> obtenerPorUsuario(Usuario usuario) {

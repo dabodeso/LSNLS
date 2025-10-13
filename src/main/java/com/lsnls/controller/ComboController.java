@@ -249,33 +249,14 @@ public class ComboController {
         try {
             List<Combo> combos = comboService.obtenerDisponiblesParaConcursantes();
             List<Map<String, Object>> resultado = new ArrayList<>();
-            
             for (Combo c : combos) {
                 Map<String, Object> dto = new HashMap<>();
                 dto.put("id", c.getId());
                 dto.put("estado", c.getEstado());
                 dto.put("fechaCreacion", c.getFechaCreacion());
                 dto.put("nivel", c.getNivel());
-                
-                // Obtener preguntas con texto para búsqueda
-                List<Map<String, Object>> preguntasInfo = new ArrayList<>();
-                if (c.getPreguntas() != null) {
-                    for (PreguntaCombo pc : c.getPreguntas()) {
-                        if (pc.getPregunta() != null) {
-                            Map<String, Object> preguntaInfo = new HashMap<>();
-                            preguntaInfo.put("id", pc.getPregunta().getId());
-                            preguntaInfo.put("pregunta", pc.getPregunta().getPregunta());
-                            preguntaInfo.put("respuesta", pc.getPregunta().getRespuesta());
-                            preguntaInfo.put("tematica", pc.getPregunta().getTematica());
-                            preguntaInfo.put("factor", pc.getFactorMultiplicacion());
-                            preguntasInfo.add(preguntaInfo);
-                        }
-                    }
-                }
-                dto.put("preguntas", preguntasInfo);
                 resultado.add(dto);
             }
-            
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
             log.error("Error al obtener combos para asignar", e);
