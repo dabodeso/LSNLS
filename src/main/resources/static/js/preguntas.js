@@ -1635,31 +1635,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- AUTO-SCROLL HORIZONTAL EN TABLA DE PREGUNTAS ---
-    const contenedor = document.querySelector('.table-responsive');
-    if (!contenedor) return;
-    let scrollInterval = null;
-    contenedor.addEventListener('mousemove', function(e) {
-        const borde = 60; // px desde el borde para activar scroll
-        const { left, right } = contenedor.getBoundingClientRect();
-        const x = e.clientX;
-        const scrollSpeed = 15; // px por frame
-        clearInterval(scrollInterval);
-        if (x - left < borde) {
-            // Scroll a la izquierda
-            scrollInterval = setInterval(() => {
-                contenedor.scrollLeft -= scrollSpeed;
-            }, 16);
-        } else if (right - x < borde) {
-            // Scroll a la derecha
-            scrollInterval = setInterval(() => {
-                contenedor.scrollLeft += scrollSpeed;
-            }, 16);
-        }
-    });
-    contenedor.addEventListener('mouseleave', function() {
-        clearInterval(scrollInterval);
-    });
+    // Auto-scroll por acercar el cursor a los bordes deshabilitado: se usará solo la barra personalizada
 });
 
 window.mostrarFormularioPregunta = function() {

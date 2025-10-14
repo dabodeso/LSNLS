@@ -46,6 +46,12 @@
             position: relative;
         }
         
+        /* Desactivar scroll horizontal nativo con rueda dentro del contenedor; usar barra personalizada */
+        #tabla-preguntas-container {
+            overscroll-behavior-x: none;
+            touch-action: pan-y; /* Permitir solo desplazamiento vertical en táctil/trackpad */
+        }
+        
         /* Barra de scroll horizontal personalizada */
         .custom-scrollbar {
             position: fixed;
@@ -141,14 +147,10 @@
             display: flex !important;
         }
         
-        /* Hacer los botones más grandes */
+        /* Estilo de color para enlaces de paginación (tamaños por defecto Bootstrap) */
         .pagination .page-link {
             color: #007bff;
             border-color: #dee2e6;
-            padding: 0.75rem 1.25rem;
-            font-size: 1.1rem;
-            font-weight: 500;
-            min-width: 50px;
             text-align: center;
         }
         
@@ -173,10 +175,7 @@
             opacity: 0.6;
         }
         
-        /* Espaciado entre botones */
-        .pagination .page-item {
-            margin: 0 2px;
-        }
+        /* Espaciado entre botones (usar por defecto Bootstrap para igualar tamaños) */
     </style>
 </head>
 <body>
@@ -767,6 +766,13 @@
         container.addEventListener('scroll', actualizarThumb);
         window.addEventListener('resize', actualizarThumb);
         window.addEventListener('scroll', verificarVisibilidad);
+        
+        // Bloquear desplazamiento horizontal con la rueda/trackpad; usar solo la barra personalizada
+        container.addEventListener('wheel', function(e) {
+            if (e.shiftKey || Math.abs(e.deltaX) > 0) {
+                e.preventDefault();
+            }
+        }, { passive: false });
         
         // Event listeners para el thumb
         let isDragging = false;
