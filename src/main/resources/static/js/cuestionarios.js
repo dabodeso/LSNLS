@@ -7,7 +7,7 @@ const CuestionariosManager = {
     totalPaginas: 0,
     cargando: false,
     
-    async cargarCuestionarios(resetear = true) {
+    async cargarCuestionarios(resetear = true, mantenerPagina = false) {
         try {
             if (!authManager.isAuthenticated()) {
                 console.error('Usuario no autenticado');
@@ -15,7 +15,9 @@ const CuestionariosManager = {
             }
             
             if (resetear) {
-                this.paginaActual = 0;
+                if (!mantenerPagina) {
+                    this.paginaActual = 0;
+                }
                 this.cuestionarios = [];
             }
             
@@ -178,104 +180,77 @@ const CuestionariosManager = {
     },
     
     actualizarPaginacion() {
-        console.log('📊 [PAGINACIÓN] Iniciando actualizarPaginacion...');
-        console.log(`📊 [PAGINACIÓN] Estado actual: cargando=${this.cargando}, paginaActual=${this.paginaActual}, totalPaginas=${this.totalPaginas}, totalCuestionarios=${this.totalCuestionarios}, cuestionarios.length=${this.cuestionarios.length}`);
-        
-        let paginacionContainer = document.getElementById('paginacion-cuestionarios');
-        if (!paginacionContainer) {
-            console.log('📊 [PAGINACIÓN] Contenedor no existe, creando uno nuevo...');
-            // Crear el contenedor si no existe
-            const tablaContainer = document.querySelector('.table-responsive');
-            if (tablaContainer) {
-                const paginacionDiv = document.createElement('div');
-                paginacionDiv.id = 'paginacion-cuestionarios';
-                paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
-                tablaContainer.parentNode.insertBefore(paginacionDiv, tablaContainer.nextSibling);
-                paginacionContainer = document.getElementById('paginacion-cuestionarios');
-                console.log('📊 [PAGINACIÓN] Contenedor creado correctamente');
-            } else {
-                console.log('⚠️ [PAGINACIÓN] No se encontró el contenedor .table-responsive');
-            }
-        } else {
-            console.log('📊 [PAGINACIÓN] Contenedor encontrado');
+        const infoElement = document.getElementById('info-paginacion-cuestionarios');
+        if (infoElement) {
+            const inicio = (this.paginaActual * this.tamanioPagina) + 1;
+            const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalCuestionarios);
+            infoElement.textContent = `Mostrando ${inicio}-${fin} de ${this.totalCuestionarios} cuestionarios`;
         }
-        
-        if (paginacionContainer) {
-            // Limpiar el contenedor antes de añadir nuevos elementos
-            console.log('📊 [PAGINACIÓN] Limpiando contenedor...');
-            paginacionContainer.innerHTML = '';
-            
-            const infoPagina = document.createElement('div');
-            const paginaActual = this.paginaActual + 1;
-            const totalPaginas = Math.max(1, Math.ceil(this.totalPaginas));
-            infoPagina.innerHTML = `Mostrando ${this.cuestionarios.length} de ${this.totalCuestionarios} cuestionarios (Página ${paginaActual} de ${totalPaginas})`;
-            paginacionContainer.appendChild(infoPagina);
-            console.log(`📊 [PAGINACIÓN] Información de página añadida: Página ${paginaActual} de ${totalPaginas}`);
-            
-            // Verificar si hay más páginas para cargar
-            const hayMasPaginas = this.paginaActual < this.totalPaginas - 1;
-            console.log(`📊 [PAGINACIÓN] ¿Hay más páginas? ${hayMasPaginas} (paginaActual=${this.paginaActual}, totalPaginas=${this.totalPaginas})`);
-            
-            if (hayMasPaginas) {
-                console.log('📊 [PAGINACIÓN] Creando botón "Cargar más"...');
-                const botonCargarMas = document.createElement('button');
-                botonCargarMas.className = 'btn btn-primary';
-                botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más cuestionarios';
-                botonCargarMas.type = 'button';
-                botonCargarMas.id = 'btn-cargar-mas-cuestionarios';
-                
-                // Deshabilitar el botón mientras se está cargando
-                if (this.cargando) {
-                    console.log('📊 [PAGINACIÓN] Deshabilitando botón (cargando=true)');
-                    botonCargarMas.disabled = true;
-                    botonCargarMas.style.opacity = '0.6';
-                    botonCargarMas.style.cursor = 'not-allowed';
-                    botonCargarMas.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
-                } else {
-                    console.log('📊 [PAGINACIÓN] Habilitando botón (cargando=false)');
-                    botonCargarMas.disabled = false;
-                }
-                
-                // Usar onclick en lugar de addEventListener para evitar duplicación de eventos
-                botonCargarMas.onclick = (e) => {
-                    console.log('🖱️ [PAGINACIÓN] Botón "Cargar más" clickeado');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Usar una referencia explícita al objeto CuestionariosManager
-                    CuestionariosManager.cargarMasCuestionarios();
-                };
-                
-                paginacionContainer.appendChild(botonCargarMas);
-                console.log('📊 [PAGINACIÓN] Botón "Cargar más" añadido al DOM');
-                
-                // Verificar que el botón esté correctamente añadido y tenga el evento onclick
-                setTimeout(() => {
-                    const botonEnDOM = document.getElementById('btn-cargar-mas-cuestionarios');
-                    if (botonEnDOM) {
-                        console.log('✅ [PAGINACIÓN] Botón verificado en el DOM');
-                        if (typeof botonEnDOM.onclick === 'function') {
-                            console.log('✅ [PAGINACIÓN] El botón tiene un manejador de eventos onclick');
-                        } else {
-                            console.error('❌ [PAGINACIÓN] El botón NO tiene un manejador de eventos onclick');
-                        }
-                    } else {
-                        console.error('❌ [PAGINACIÓN] No se pudo encontrar el botón en el DOM después de añadirlo');
-                    }
-                }, 100);
-            } else if (this.cuestionarios.length > 0) {
-                // Si no hay más páginas pero hay resultados, mostrar un mensaje
-                console.log('📊 [PAGINACIÓN] No hay más páginas, mostrando mensaje de "No hay más resultados"');
-                const noMasResultados = document.createElement('div');
-                noMasResultados.className = 'text-muted';
-                noMasResultados.textContent = 'No hay más resultados para mostrar';
-                paginacionContainer.appendChild(noMasResultados);
-            }
-        } else {
-            console.error('❌ [PAGINACIÓN] No se pudo encontrar ni crear el contenedor de paginación');
+
+        const paginacionElement = document.getElementById('paginacion-cuestionarios');
+        if (!paginacionElement) return;
+
+        paginacionElement.innerHTML = '';
+        if (this.totalPaginas <= 1) return;
+
+        // Primera
+        const primera = document.createElement('li');
+        primera.className = `page-item ${this.paginaActual === 0 ? 'disabled' : ''}`;
+        primera.innerHTML = `<a class="page-link" href="#" onclick="CuestionariosManager.irAPagina(0);return false;">Primera</a>`;
+        paginacionElement.appendChild(primera);
+
+        // Anterior
+        const anterior = document.createElement('li');
+        anterior.className = `page-item ${this.paginaActual === 0 ? 'disabled' : ''}`;
+        anterior.innerHTML = `<a class="page-link" href="#" onclick="CuestionariosManager.irAPagina(${this.paginaActual - 1});return false;">Anterior</a>`;
+        paginacionElement.appendChild(anterior);
+
+        // Rango de páginas
+        const inicio = Math.max(0, this.paginaActual - 2);
+        const fin = Math.min(this.totalPaginas - 1, this.paginaActual + 2);
+        for (let i = inicio; i <= fin; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === this.paginaActual ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="CuestionariosManager.irAPagina(${i});return false;">${i + 1}</a>`;
+            paginacionElement.appendChild(li);
         }
-        
-        console.log('📊 [PAGINACIÓN] actualizarPaginacion completado');
+
+        // Siguiente
+        const siguiente = document.createElement('li');
+        siguiente.className = `page-item ${this.paginaActual >= this.totalPaginas - 1 ? 'disabled' : ''}`;
+        siguiente.innerHTML = `<a class="page-link" href="#" onclick="CuestionariosManager.irAPagina(${this.paginaActual + 1});return false;">Siguiente</a>`;
+        paginacionElement.appendChild(siguiente);
+
+        // Última
+        const ultima = document.createElement('li');
+        ultima.className = `page-item ${this.paginaActual >= this.totalPaginas - 1 ? 'disabled' : ''}`;
+        ultima.innerHTML = `<a class="page-link" href="#" onclick="CuestionariosManager.irAPagina(${this.totalPaginas - 1});return false;">Última</a>`;
+        paginacionElement.appendChild(ultima);
     },
+
+    async irAPagina(pagina) {
+        if (pagina < 0 || pagina >= this.totalPaginas || pagina === this.paginaActual || this.cargando) return;
+        this.paginaActual = pagina;
+
+        // Detectar filtros activos
+        const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
+        const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
+        const busqueda = document.getElementById('buscar-cuestionario')?.value || '';
+        const hayFiltros = !!(estado || tematica || busqueda);
+
+        if (hayFiltros) {
+            // Reemplazar contenido, manteniendo la página actual
+            this.cuestionarios = [];
+            await window.filtrarCuestionarios(false);
+        } else {
+            // Reemplazar contenido de la página actual (no resetear a 0)
+            await this.cargarCuestionarios(true, true);
+        }
+    },
+
+    // (sin uso)
+    
+    
     async mostrarCuestionarios(cuestionarios) {
         const tbody = document.getElementById('tabla-cuestionarios');
         if (!tbody) {

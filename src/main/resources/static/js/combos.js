@@ -33,7 +33,7 @@ const CombosManager = {
         }
     },
     
-    async cargarCombos(resetear = true) {
+    async cargarCombos(resetear = true, mantenerPagina = false) {
         try {
             if (!authManager.isAuthenticated()) {
                 console.error('Usuario no autenticado');
@@ -41,7 +41,9 @@ const CombosManager = {
             }
             
             if (resetear) {
-                this.paginaActual = 0;
+                if (!mantenerPagina) {
+                    this.paginaActual = 0;
+                }
                 this.combos = [];
             }
             
@@ -61,11 +63,8 @@ const CombosManager = {
             
             const data = await response.json();
             
-            if (resetear) {
-                this.combos = data.combos;
-            } else {
-                this.combos = [...this.combos, ...data.combos];
-            }
+            // Siempre sustituir por la página actual
+            this.combos = data.combos;
             
             this.ultimoListado = this.combos;
             this.totalCombos = data.totalItems;
@@ -210,103 +209,66 @@ const CombosManager = {
     },
     
     actualizarPaginacion() {
-        console.log('📊 [PAGINACIÓN COMBOS] Iniciando actualizarPaginacion...');
-        console.log(`📊 [PAGINACIÓN COMBOS] Estado actual: cargando=${this.cargando}, paginaActual=${this.paginaActual}, totalPaginas=${this.totalPaginas}, totalCombos=${this.totalCombos}, combos.length=${this.combos.length}`);
-        
-        let paginacionContainer = document.getElementById('paginacion-combos');
-        if (!paginacionContainer) {
-            console.log('📊 [PAGINACIÓN COMBOS] Contenedor no existe, creando uno nuevo...');
-            // Crear el contenedor si no existe
-            const tablaContainer = document.querySelector('.table-responsive');
-            if (tablaContainer) {
-                const paginacionDiv = document.createElement('div');
-                paginacionDiv.id = 'paginacion-combos';
-                paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
-                tablaContainer.parentNode.insertBefore(paginacionDiv, tablaContainer.nextSibling);
-                paginacionContainer = document.getElementById('paginacion-combos');
-                console.log('📊 [PAGINACIÓN COMBOS] Contenedor creado correctamente');
-            } else {
-                console.log('⚠️ [PAGINACIÓN COMBOS] No se encontró el contenedor .table-responsive');
-            }
-        } else {
-            console.log('📊 [PAGINACIÓN COMBOS] Contenedor encontrado');
+        const infoElement = document.getElementById('info-paginacion-combos');
+        if (infoElement) {
+            const inicio = (this.paginaActual * this.tamanioPagina) + 1;
+            const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalCombos);
+            infoElement.textContent = `Mostrando ${inicio}-${fin} de ${this.totalCombos} combos`;
         }
-        
-        if (paginacionContainer) {
-            // Limpiar el contenedor antes de añadir nuevos elementos
-            console.log('📊 [PAGINACIÓN COMBOS] Limpiando contenedor...');
-            paginacionContainer.innerHTML = '';
-            
-            const infoPagina = document.createElement('div');
-            const paginaActual = this.paginaActual + 1;
-            const totalPaginas = Math.max(1, Math.ceil(this.totalPaginas));
-            infoPagina.innerHTML = `Mostrando ${this.combos.length} de ${this.totalCombos} combos (Página ${paginaActual} de ${totalPaginas})`;
-            paginacionContainer.appendChild(infoPagina);
-            console.log(`📊 [PAGINACIÓN COMBOS] Información de página añadida: Página ${paginaActual} de ${totalPaginas}`);
-            
-            // Verificar si hay más páginas para cargar
-            const hayMasPaginas = this.paginaActual < this.totalPaginas - 1;
-            console.log(`📊 [PAGINACIÓN COMBOS] ¿Hay más páginas? ${hayMasPaginas} (paginaActual=${this.paginaActual}, totalPaginas=${this.totalPaginas})`);
-            
-            if (hayMasPaginas) {
-                console.log('📊 [PAGINACIÓN COMBOS] Creando botón "Cargar más"...');
-                const botonCargarMas = document.createElement('button');
-                botonCargarMas.className = 'btn btn-primary';
-                botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más combos';
-                botonCargarMas.type = 'button';
-                botonCargarMas.id = 'btn-cargar-mas-combos';
-                
-                // Deshabilitar el botón mientras se está cargando
-                if (this.cargando) {
-                    console.log('📊 [PAGINACIÓN COMBOS] Deshabilitando botón (cargando=true)');
-                    botonCargarMas.disabled = true;
-                    botonCargarMas.style.opacity = '0.6';
-                    botonCargarMas.style.cursor = 'not-allowed';
-                    botonCargarMas.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
-                } else {
-                    console.log('📊 [PAGINACIÓN COMBOS] Habilitando botón (cargando=false)');
-                    botonCargarMas.disabled = false;
-                }
-                
-                // Usar onclick en lugar de addEventListener para evitar duplicación de eventos
-                botonCargarMas.onclick = (e) => {
-                    console.log('🖱️ [PAGINACIÓN COMBOS] Botón "Cargar más" clickeado');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Usar una referencia explícita al objeto CombosManager
-                    CombosManager.cargarMasCombos();
-                };
-                
-                paginacionContainer.appendChild(botonCargarMas);
-                console.log('📊 [PAGINACIÓN COMBOS] Botón "Cargar más" añadido al DOM');
-                
-                // Verificar que el botón esté correctamente añadido y tenga el evento onclick
-                setTimeout(() => {
-                    const botonEnDOM = document.getElementById('btn-cargar-mas-combos');
-                    if (botonEnDOM) {
-                        console.log('✅ [PAGINACIÓN COMBOS] Botón verificado en el DOM');
-                        if (typeof botonEnDOM.onclick === 'function') {
-                            console.log('✅ [PAGINACIÓN COMBOS] El botón tiene un manejador de eventos onclick');
-                        } else {
-                            console.error('❌ [PAGINACIÓN COMBOS] El botón NO tiene un manejador de eventos onclick');
-                        }
-                    } else {
-                        console.error('❌ [PAGINACIÓN COMBOS] No se pudo encontrar el botón en el DOM después de añadirlo');
-                    }
-                }, 100);
-            } else if (this.combos.length > 0) {
-                // Si no hay más páginas pero hay resultados, mostrar un mensaje
-                console.log('📊 [PAGINACIÓN COMBOS] No hay más páginas, mostrando mensaje de "No hay más resultados"');
-                const noMasResultados = document.createElement('div');
-                noMasResultados.className = 'text-muted';
-                noMasResultados.textContent = 'No hay más resultados para mostrar';
-                paginacionContainer.appendChild(noMasResultados);
-            }
-        } else {
-            console.error('❌ [PAGINACIÓN COMBOS] No se pudo encontrar ni crear el contenedor de paginación');
+
+        const paginacionElement = document.getElementById('paginacion-combos');
+        if (!paginacionElement) return;
+
+        paginacionElement.innerHTML = '';
+        if (this.totalPaginas <= 1) return;
+
+        const primera = document.createElement('li');
+        primera.className = `page-item ${this.paginaActual === 0 ? 'disabled' : ''}`;
+        primera.innerHTML = `<a class="page-link" href="#" onclick="CombosManager.irAPagina(0);return false;">Primera</a>`;
+        paginacionElement.appendChild(primera);
+
+        const anterior = document.createElement('li');
+        anterior.className = `page-item ${this.paginaActual === 0 ? 'disabled' : ''}`;
+        anterior.innerHTML = `<a class="page-link" href="#" onclick="CombosManager.irAPagina(${this.paginaActual - 1});return false;">Anterior</a>`;
+        paginacionElement.appendChild(anterior);
+
+        const inicio = Math.max(0, this.paginaActual - 2);
+        const fin = Math.min(this.totalPaginas - 1, this.paginaActual + 2);
+        for (let i = inicio; i <= fin; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === this.paginaActual ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="CombosManager.irAPagina(${i});return false;">${i + 1}</a>`;
+            paginacionElement.appendChild(li);
         }
-        
-        console.log('📊 [PAGINACIÓN COMBOS] actualizarPaginacion completado');
+
+        const siguiente = document.createElement('li');
+        siguiente.className = `page-item ${this.paginaActual >= this.totalPaginas - 1 ? 'disabled' : ''}`;
+        siguiente.innerHTML = `<a class="page-link" href="#" onclick="CombosManager.irAPagina(${this.paginaActual + 1});return false;">Siguiente</a>`;
+        paginacionElement.appendChild(siguiente);
+
+        const ultima = document.createElement('li');
+        ultima.className = `page-item ${this.paginaActual >= this.totalPaginas - 1 ? 'disabled' : ''}`;
+        ultima.innerHTML = `<a class="page-link" href="#" onclick="CombosManager.irAPagina(${this.totalPaginas - 1});return false;">Última</a>`;
+        paginacionElement.appendChild(ultima);
+    },
+
+    async irAPagina(pagina) {
+        if (pagina < 0 || pagina >= this.totalPaginas || pagina === this.paginaActual || this.cargando) return;
+        this.paginaActual = pagina;
+
+        const estado = document.getElementById('filtro-estado-combo')?.value || '';
+        const tipo = document.getElementById('filtro-tipo-combo')?.value || '';
+        const tematica = document.getElementById('filtro-tematica-combo')?.value || '';
+        const subtema = document.getElementById('filtro-subtema-combo')?.value || '';
+        const busqueda = document.getElementById('buscar-combo')?.value || '';
+        const hayFiltros = !!(estado || tipo || tematica || subtema || busqueda);
+
+        if (hayFiltros) {
+            this.combos = [];
+            await window.filtrarCombos(false);
+        } else {
+            await this.cargarCombos(true, true);
+        }
     },
 
     async mostrarCombos(combos) {
@@ -764,6 +726,70 @@ async function cargarOpcionesTematicas() {
 }
 
 document.addEventListener('DOMContentLoaded', inicializarCombos);
+
+// Reutilizar el gestor de temáticas ya existente (como en cuestionarios)
+window.mostrarGestionTematicas = function() {
+    const modalCuest = document.getElementById('modal-gestion-temas-subtemas');
+    if (modalCuest) {
+        const modal = new bootstrap.Modal(modalCuest);
+        modal.show();
+        if (typeof TematicasManager !== 'undefined') {
+            TematicasManager.cargarTematicas?.();
+            TematicasManager.cargarEstadisticas?.();
+        }
+        return;
+    }
+    const modalLocal = document.getElementById('modal-gestion-tematicas');
+    if (modalLocal) {
+        const modal = new bootstrap.Modal(modalLocal);
+        modal.show();
+        (async () => {
+            try {
+                const resp = await fetch('/api/cuestionarios/tematicas', { headers: authManager.getAuthHeaders() });
+                const tematicas = resp.ok ? await resp.json() : [];
+                const tbody = document.getElementById('lista-tematicas');
+                const total = document.getElementById('total-tematicas');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    tematicas.forEach((t, i) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${i + 1}</td><td>${t}</td><td></td>`;
+                        tbody.appendChild(tr);
+                    });
+                }
+                if (total) total.textContent = tematicas.length;
+            } catch {}
+        })();
+        const form = document.getElementById('form-añadir-tematica');
+        if (form && !form._bound) {
+            form._bound = true;
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const input = document.getElementById('nueva-tematica');
+                const nombre = (input?.value || '').trim();
+                if (!nombre) return;
+                try {
+                    const resp = await fetch('/api/cuestionarios/tematicas', {
+                        method: 'POST',
+                        headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tematica: nombre })
+                    });
+                    if (!resp.ok) {
+                        const txt = await resp.text();
+                        throw new Error(txt || 'Error al añadir temática');
+                    }
+                    Toastify({ text: 'Temática añadida', duration: 2000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
+                    input.value = '';
+                    await CombosManager.cargarTematicas();
+                    await cargarOpcionesTematicas();
+                    window.mostrarGestionTematicas();
+                } catch (err) {
+                    Toastify({ text: 'Error: ' + err.message, duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
+                }
+            });
+        }
+    }
+};
 
 // IDs de los campos para las preguntas multiplicadoras
 const pms = [

@@ -95,6 +95,7 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
            "  AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%'))) " +
            "  AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%'))) " +
            "  AND (:autoria IS NULL OR LOWER(p.autor) LIKE LOWER(CONCAT('%', :autoria, '%'))) " +
+           "  AND (:texto IS NULL OR (LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :texto, '%')) OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :texto, '%')))) " +
            "ORDER BY p.id DESC")
     List<Pregunta> filtrarTodas(
         @Param("nivel") com.lsnls.entity.Pregunta.NivelPregunta nivel,
@@ -104,7 +105,8 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
         @Param("subtema") String subtema,
         @Param("pregunta") String pregunta,
         @Param("respuesta") String respuesta,
-        @Param("autoria") String autoria
+        @Param("autoria") String autoria,
+        @Param("texto") String texto
     );
 
     Long countByCreacionUsuario(Usuario usuario);

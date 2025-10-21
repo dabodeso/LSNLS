@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 import com.lsnls.dto.PreguntaDTO;
 import javax.persistence.EntityManager;
 import java.util.ArrayList;
-import com.lsnls.entity.AuditLog;
 import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Collections;
 import java.util.Map;
@@ -46,8 +45,8 @@ public class PreguntaService {
     @Autowired
     private EntityManager entityManager;
     
-    @Autowired
-    private UsuarioService usuarioService;
+    @Autowired(required = false)
+    private UsuarioService usuarioService; // no usado actualmente
 
     public Pregunta crear(Pregunta pregunta) {
         // Transformar datos automáticamente a mayúsculas y limpiar
@@ -272,7 +271,7 @@ public class PreguntaService {
         List<Object> parametros = new ArrayList<>();
         parametros.add(nuevoEstado.name());
         
-        int paramIndex = 2;
+        int paramIndex = 2; // mantenido para claridad aunque no se usa después
         
         // Agregar campos adicionales según el nuevo estado
         if (nuevoEstado == EstadoPregunta.verificada) {
@@ -467,7 +466,7 @@ public class PreguntaService {
             throw new IllegalArgumentException("Pregunta con ID " + id + " no encontrada");
         }
 
-        Pregunta pregunta = preguntaOpt.get();
+        Pregunta pregunta = preguntaOpt.get(); // usado para validaciones más abajo
 
         // Verificar si está siendo usada en cuestionarios
         Long cuestionariosCount = entityManager.createQuery(
@@ -681,7 +680,7 @@ public class PreguntaService {
     }
 
     public List<PreguntaDTO> filtrarPreguntasCompleto(String nivel, String factor, String estado, 
-                                                     String tematica, String subtema, String pregunta, String respuesta, String autoria) {
+                                                     String tematica, String subtema, String pregunta, String respuesta, String autoria, String texto) {
         // Convertir strings a enums
         Pregunta.NivelPregunta nivelEnum = null;
         Pregunta.FactorPregunta factorEnum = null;
@@ -714,7 +713,8 @@ public class PreguntaService {
             (subtema != null && !subtema.isBlank()) ? subtema : null,
             (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
             (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
-            (autoria != null && !autoria.isBlank()) ? autoria : null
+            (autoria != null && !autoria.isBlank()) ? autoria : null,
+            (texto != null && !texto.isBlank()) ? texto : null
         );
         
         return preguntas.stream().map(this::mapPreguntaToDTO).collect(java.util.stream.Collectors.toList());
@@ -722,7 +722,7 @@ public class PreguntaService {
 
     public Page<PreguntaDTO> filtrarPreguntasCompletoPaginado(String nivel, String factor, String estado, 
                                                              String tematica, String subtema, String pregunta, String respuesta, 
-                                                             String autoria, Pageable pageable) {
+                                                             String autoria, String texto, Pageable pageable) {
         // Convertir strings a enums
         Pregunta.NivelPregunta nivelEnum = null;
         Pregunta.FactorPregunta factorEnum = null;
@@ -755,7 +755,8 @@ public class PreguntaService {
             (subtema != null && !subtema.isBlank()) ? subtema : null,
             (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
             (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
-            (autoria != null && !autoria.isBlank()) ? autoria : null
+            (autoria != null && !autoria.isBlank()) ? autoria : null,
+            (texto != null && !texto.isBlank()) ? texto : null
         );
         
         // Aplicar ordenamiento del Pageable

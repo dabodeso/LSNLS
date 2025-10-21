@@ -11,8 +11,7 @@ const PreguntasManager = {
         nivel: '',
         estado: '',
         subtema: '',
-        pregunta: '',
-        respuesta: ''
+        texto: '' // busca en pregunta y respuesta
     },
     orden: {
         columna: null,
@@ -144,7 +143,7 @@ const PreguntasManager = {
         
         try {
             // Determinar si hay filtros activos
-            const hayFiltrosActivos = !!(this.filtros?.estado || this.filtros?.autoria || this.filtros?.nivel || this.filtros?.tematica || this.filtros?.subtema || this.filtros?.pregunta || this.filtros?.respuesta);
+            const hayFiltrosActivos = !!(this.filtros?.estado || this.filtros?.autoria || this.filtros?.nivel || this.filtros?.tematica || this.filtros?.subtema || this.filtros?.texto);
             
             if (hayFiltrosActivos) {
                 console.log('🔍 [PAGINACIÓN] Cargando página con filtros activos...');
@@ -161,8 +160,7 @@ const PreguntasManager = {
                 if (this.filtros.estado) params.append('estado', this.filtros.estado);
                 if (this.filtros.autoria) params.append('autoria', this.filtros.autoria);
                 if (this.filtros.subtema) params.append('subtema', this.filtros.subtema);
-                if (this.filtros.pregunta) params.append('pregunta', this.filtros.pregunta);
-                if (this.filtros.respuesta) params.append('respuesta', this.filtros.respuesta);
+                if (this.filtros.texto) params.append('texto', this.filtros.texto);
                 
                 console.log('🔍 [PAGINACIÓN] Parámetros con ordenamiento:', params.toString());
                 
@@ -338,7 +336,7 @@ const PreguntasManager = {
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'pregunta', this)" style="white-space:pre-line; word-break:break-word; max-width:300px;">${pregunta.pregunta ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'respuesta', this)">${pregunta.respuesta ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'datosExtra', this)">${pregunta.datosExtra ?? ''}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'fuentes', this)">${pregunta.fuentes ?? ''}</td>
+                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'fuentes', this)">${this.linkify(pregunta.fuentes ?? '')}</td>
                 <td>${pregunta.verificacion ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'notasVerificacion', this)">${pregunta.notasVerificacion ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'notasDireccion', this)">${pregunta.notasDireccion ?? ''}</td>
@@ -367,6 +365,26 @@ const PreguntasManager = {
         }
     },
 
+    // Convertir URLs en enlaces clicables, manteniendo texto no-URL intacto
+    linkify(textoFuentes) {
+        try {
+            if (!textoFuentes || typeof textoFuentes !== 'string') return '';
+            const urlRegex = /((https?:\/\/|www\.)[^\s<>"'\)]+)(?![^<]*>)/gi;
+            return textoFuentes.replace(urlRegex, (urlMatch) => {
+                let href = urlMatch;
+                if (href.toLowerCase().startsWith('www.')) {
+                    href = 'https://' + href;
+                }
+                const hrefSafe = href.replace(/"/g, '&quot;');
+                // Evitar que el clic/doble-clic sobre el enlace dispare la edición inline
+                return `<a href="${hrefSafe}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" ondblclick="event.stopPropagation();">${urlMatch}</a>`;
+            });
+        } catch (e) {
+            console.warn('linkify error:', e);
+            return textoFuentes || '';
+        }
+    },
+
     async filtrarPreguntas() {
         try {
             // Obtener valores de todos los filtros
@@ -375,14 +393,13 @@ const PreguntasManager = {
             const nivel = document.getElementById('filtro-nivel')?.value || '';
             const tematica = document.getElementById('filtro-tematica')?.value || '';
             const subtema = document.getElementById('filtro-subtema')?.value || '';
-            const pregunta = document.getElementById('filtro-pregunta')?.value || '';
-            const respuesta = document.getElementById('filtro-respuesta')?.value || '';
+            const texto = document.getElementById('filtro-texto')?.value || '';
             
             // Guardar filtros actuales para soportar "cargar más"
-            this.filtros = { estado, autoria, nivel, tematica, subtema, pregunta, respuesta };
+            this.filtros = { estado, autoria, nivel, tematica, subtema, texto };
 
             // Si no hay filtros, cargar todas las preguntas
-            const hayFiltros = estado || autoria || nivel || tematica || subtema || pregunta || respuesta;
+            const hayFiltros = estado || autoria || nivel || tematica || subtema || texto;
             
             if (!hayFiltros) {
                 await this.cargarPreguntas();
@@ -400,8 +417,7 @@ const PreguntasManager = {
             if (nivel) params.append('nivel', nivel);
             if (tematica) params.append('tematica', tematica);
             if (subtema) params.append('subtema', subtema);
-            if (pregunta) params.append('pregunta', pregunta);
-            if (respuesta) params.append('respuesta', respuesta);
+            if (texto) params.append('texto', texto);
 
             // Llamar al endpoint de filtrado del backend
             const response = await fetch(`/api/preguntas/filtrar?${params.toString()}`, {
@@ -450,18 +466,17 @@ const PreguntasManager = {
         const tematica = document.getElementById('filtro-tematica')?.value.toLowerCase() || '';
         const subtema = document.getElementById('filtro-subtema')?.value.toLowerCase() || '';
         const pregunta = document.getElementById('filtro-pregunta')?.value.toLowerCase() || '';
-        const respuesta = document.getElementById('filtro-respuesta')?.value.toLowerCase() || '';
+        const texto = document.getElementById('filtro-texto')?.value.toLowerCase() || '';
         
         const preguntasFiltradas = this.preguntas.filter(p => {
             const coincideEstado = !estado || p.estado === estado;
             const coincideNivel = !nivel || p.nivel === nivel;
             const coincideTematica = !tematica || (p.tematica && p.tematica.toLowerCase().includes(tematica));
             const coincideSubtema = !subtema || (p.subtema && p.subtema.toLowerCase().includes(subtema));
-            const coincidePregunta = !pregunta || (p.pregunta && p.pregunta.toLowerCase().includes(pregunta));
-            const coincideRespuesta = !respuesta || (p.respuesta && p.respuesta.toLowerCase().includes(respuesta));
+            const coincideTexto = !texto || ((p.pregunta && p.pregunta.toLowerCase().includes(texto)) || (p.respuesta && p.respuesta.toLowerCase().includes(texto)));
             
             return coincideEstado && coincideNivel && coincideTematica && 
-                   coincideSubtema && coincidePregunta && coincideRespuesta;
+                   coincideSubtema && coincideTexto;
         });
         
         // Actualizar preguntas filtradas y mostrar
@@ -704,7 +719,7 @@ const PreguntasManager = {
         this.paginaActual = 0;
         
         // Determinar si hay filtros activos
-        const hayFiltrosActivos = !!(this.filtros?.estado || this.filtros?.autoria || this.filtros?.nivel || this.filtros?.tematica || this.filtros?.subtema || this.filtros?.pregunta || this.filtros?.respuesta);
+        const hayFiltrosActivos = !!(this.filtros?.estado || this.filtros?.autoria || this.filtros?.nivel || this.filtros?.tematica || this.filtros?.subtema || this.filtros?.texto);
         
         if (hayFiltrosActivos) {
             console.log('🔍 [ORDEN] Aplicando ordenamiento con filtros activos...');
@@ -748,8 +763,7 @@ const PreguntasManager = {
             if (this.filtros.estado) params.append('estado', this.filtros.estado);
             if (this.filtros.autoria) params.append('autoria', this.filtros.autoria);
             if (this.filtros.subtema) params.append('subtema', this.filtros.subtema);
-            if (this.filtros.pregunta) params.append('pregunta', this.filtros.pregunta);
-            if (this.filtros.respuesta) params.append('respuesta', this.filtros.respuesta);
+            if (this.filtros.texto) params.append('texto', this.filtros.texto);
 
             console.log('🔍 [FILTROS+ORDEN] Parámetros:', params.toString());
             console.log('🔍 [FILTROS+ORDEN] Ordenamiento - columna:', this.orden.columna, 'dirección:', this.orden.asc ? 'ASC' : 'DESC');
@@ -1335,8 +1349,9 @@ const PreguntasManager = {
         document.getElementById('filtro-nivel').value = '';
         document.getElementById('filtro-tematica').value = '';
         document.getElementById('filtro-subtema').value = '';
-        document.getElementById('filtro-pregunta').value = '';
-        document.getElementById('filtro-respuesta').value = '';
+        document.getElementById('filtro-autoria') && (document.getElementById('filtro-autoria').value = '');
+        document.getElementById('filtro-texto') && (document.getElementById('filtro-texto').value = '');
+        this.filtros = { tematica: '', nivel: '', estado: '', subtema: '', texto: '', autoria: '' };
         this.cargarPreguntas();
     },
 
@@ -1432,7 +1447,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await TemasManager.cargarSubtemas();
 
     // Añadir eventos de ordenación a las cabeceras
-    const headers = [
+        const headers = [
         { id: 'id', idx: 0 },
         { id: 'creacionUsuario', idx: 1 },
         { id: 'nivel', idx: 2 },

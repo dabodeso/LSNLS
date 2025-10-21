@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.HashMap;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.lsnls.dto.PreguntaCreateDTO;
 import com.lsnls.dto.PreguntaDTO;
@@ -653,6 +651,7 @@ public class PreguntaController {
             @RequestParam(required = false) String subtema,
             @RequestParam(required = false) String pregunta,
             @RequestParam(required = false) String respuesta,
+            @RequestParam(required = false) String texto,
             @RequestParam(required = false) String autoria,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
@@ -669,9 +668,18 @@ public class PreguntaController {
                 org.springframework.data.domain.Sort.by(sortBy).ascending());
             
             log.info("[FILTRAR] Pageable creado - sort: {}", pageable.getSort());
-            
+            // Nuevo: si llega 'texto', buscarlo tanto en pregunta como en respuesta
+            String preguntaFiltro = pregunta;
+            String respuestaFiltro = respuesta;
+            if (texto != null && !texto.isBlank()) {
+                // Cuando se usa 'texto', NO filtrar por pregunta y respuesta individualmente,
+                // delegamos al parámetro 'texto' que aplica OR (pregunta O respuesta)
+                preguntaFiltro = null;
+                respuestaFiltro = null;
+            }
+
             Page<PreguntaDTO> preguntas = preguntaService.filtrarPreguntasCompletoPaginado(
-                nivel, factor, estado, tematica, subtema, pregunta, respuesta, autoria, pageable);
+                nivel, factor, estado, tematica, subtema, preguntaFiltro, respuestaFiltro, autoria, texto, pageable);
             
             log.info("[FILTRAR] Preguntas encontradas - total: {}, página: {}", 
                 preguntas.getTotalElements(), preguntas.getNumber());
