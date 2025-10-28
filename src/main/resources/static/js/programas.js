@@ -6,6 +6,7 @@ let paginaActual = 0;
 let totalPaginas = 0;
 let tamañoPagina = 5;
 let totalItems = 0;
+let lastScrollYProgramas = 0;
 
 async function inicializarProgramas() {
     // Mostrar enlace de administración solo para admins
@@ -39,6 +40,7 @@ async function recargarProgramas() {
 
 async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden = 'asc') {
     try {
+        lastScrollYProgramas = window.scrollY || window.pageYOffset || 0;
         const response = await apiManager.get(
             `/api/programas/pagina?page=${pagina}&size=${tamañoPagina}&sortBy=${ordenPor}&sortDir=${direccionOrden}`
         );
@@ -52,6 +54,7 @@ async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden 
         mostrarProgramas();
         configurarScrollTablas(); // Configurar scroll automático en las tablas
         renderizarPaginacion();
+        setTimeout(() => { window.scrollTo({ top: lastScrollYProgramas || 0, behavior: 'auto' }); }, 0);
     } catch (error) {
         if (error && error.message && error.message.startsWith('401')) {
             return;

@@ -89,7 +89,7 @@ public class ExcelExportService {
         
         // Procesar cada cuestionario
         List<Cuestionario> cuestionarios = jornada.getCuestionarios().stream().collect(java.util.stream.Collectors.toList());
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 6; i++) {
             Cuestionario cuestionario = i < cuestionarios.size() ? cuestionarios.get(i) : null;
             filaActual = crearTablaCuestionario(sheet, cuestionario, i + 1, filaActual, workbook, opciones);
             filaActual += 2; // Espacio entre cuestionarios
@@ -251,7 +251,7 @@ public class ExcelExportService {
         
         // Procesar cada combo
         List<Combo> combos = jornada.getCombos().stream().collect(java.util.stream.Collectors.toList());
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 6; i++) {
             Combo combo = i < combos.size() ? combos.get(i) : null;
             filaActual = crearTablaCombo(sheet, combo, i + 1, filaActual, workbook, opciones);
             filaActual += 2; // Espacio entre combos

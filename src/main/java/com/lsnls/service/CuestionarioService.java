@@ -46,6 +46,14 @@ public class CuestionarioService {
     @Autowired
     private EntityManager entityManager;
 
+    public boolean estaAsignadoAJornada(Long cuestionarioId) {
+        Long count = entityManager.createQuery(
+            "SELECT COUNT(j) FROM Jornada j JOIN j.cuestionarios c WHERE c.id = :id", Long.class)
+            .setParameter("id", cuestionarioId)
+            .getSingleResult();
+        return count != null && count > 0;
+    }
+
     @Autowired
     private TematicaService tematicaService;
 
@@ -60,6 +68,8 @@ public class CuestionarioService {
     }
     
     public Map<String, Object> obtenerTodosPaginados(int page, int size) {
+        // Sincronizar estados con asignaciones de jornadas
+        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
         // Crear objeto Pageable para paginación
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
@@ -357,9 +367,9 @@ public class CuestionarioService {
         // Si llegamos aquí, es seguro eliminar - liberar las preguntas asociadas
         Set<PreguntaCuestionario> preguntas = cuestionario.getPreguntas();
         for (PreguntaCuestionario pc : preguntas) {
-            // Cambiar a disponible
+            // Devolver a aprobada y marcar como liberada para poder reutilizar
             entityManager.createNativeQuery(
-                "UPDATE preguntas SET estado_disponibilidad = 'disponible' WHERE id = ?")
+                "UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?")
                 .setParameter(1, pc.getPregunta().getId())
                 .executeUpdate();
         }
@@ -382,6 +392,7 @@ public class CuestionarioService {
     }
 
     public Map<String, Object> filtrarCuestionarios(String estado, String tematica, int page, int size) {
+        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
         // Crear objeto Pageable para paginación
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
@@ -424,6 +435,18 @@ public class CuestionarioService {
                           ", Cuestionarios en esta página: " + dtos.size());
         
         return response;
+    }
+
+    /** Sincroniza estados adjudicado/aprobado con asignaciones de jornada (lote) */
+    private void sincronizarEstadosAsignaciones() {
+        // Cuestionarios adjudicados por estar en jornadas
+        entityManager.createNativeQuery(
+            "UPDATE cuestionarios SET estado='adjudicado' WHERE id IN (SELECT cuestionario_id FROM jornadas_cuestionarios) AND estado<>'adjudicado'")
+            .executeUpdate();
+        // Cuestionarios sin jornada → aprobado (solo si estaban adjudicados)
+        entityManager.createNativeQuery(
+            "UPDATE cuestionarios SET estado='aprobado' WHERE estado='adjudicado' AND id NOT IN (SELECT cuestionario_id FROM jornadas_cuestionarios)")
+            .executeUpdate();
     }
     
     public Map<String, Object> filtrarCuestionariosPorId(String idStr, int page, int size) {
@@ -535,7 +558,9 @@ public class CuestionarioService {
                 throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está aprobada (estado: " + pregunta.getEstado() + ")");
             }
             
-            if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
+            // Tratar null como disponible para compatibilidad con datos antiguos
+            if (pregunta.getEstadoDisponibilidad() != null &&
+                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
                 throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
             }
@@ -640,38 +665,51 @@ public class CuestionarioService {
             throw new IllegalArgumentException("Cuestionario no encontrado");
         }
         Cuestionario cuestionario = optCuestionario.get();
-        
-        // PASO 1: VERIFICACIÓN Y RESERVA ATÓMICA de las nuevas preguntas
+
+        // Conjuntos para calcular diferencias
+        Set<Long> actualesIds = new HashSet<>();
+        for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {
+            actualesIds.add(pc.getPregunta().getId());
+        }
+        Set<Long> nuevosIds = new HashSet<>(dto.getPreguntasNormales());
+
+        // Calcular listas: reservar solo nuevas; liberar solo eliminadas; mantener intersección
+        List<Long> aReservar = new ArrayList<>();
+        for (Long pid : nuevosIds) {
+            if (!actualesIds.contains(pid)) aReservar.add(pid);
+        }
+        List<Long> aLiberar = new ArrayList<>();
+        for (Long pid : actualesIds) {
+            if (!nuevosIds.contains(pid)) aLiberar.add(pid);
+        }
+
+        // PASO 1: Verificar y reservar SOLO las nuevas preguntas
         try {
-            verificarYReservarPreguntasAtomico(dto.getPreguntasNormales());
+            verificarYReservarPreguntasAtomico(aReservar);
         } catch (IllegalStateException e) {
-            // Error de concurrencia - mensaje específico
             throw new IllegalArgumentException("Error de concurrencia al reservar preguntas: " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            // Error de validación - reenviar tal como está
             throw e;
         }
 
-        // PASO 2: Liberar las preguntas actuales
-        Set<PreguntaCuestionario> actuales = new HashSet<>(cuestionario.getPreguntas());
-        List<Long> preguntasALiberar = new ArrayList<>();
-        for (PreguntaCuestionario pc : actuales) {
-            preguntasALiberar.add(pc.getPregunta().getId());
-            preguntaCuestionarioRepository.delete(pc);
-        }
-        cuestionario.getPreguntas().clear();
-        
-        // Liberar preguntas anteriores atómicamente
-        if (!preguntasALiberar.isEmpty()) {
-            liberarPreguntasAtomico(preguntasALiberar);
+        // PASO 2: Eliminar relaciones solo de las preguntas a liberar
+        if (!aLiberar.isEmpty()) {
+            // Eliminar relaciones y liberar disponibilidad
+            for (PreguntaCuestionario pc : new HashSet<>(cuestionario.getPreguntas())) {
+                if (aLiberar.contains(pc.getPregunta().getId())) {
+                    preguntaCuestionarioRepository.delete(pc);
+                    cuestionario.getPreguntas().remove(pc);
+                }
+            }
+            liberarPreguntasAtomico(aLiberar);
         }
 
-        // PASO 3: Crear las nuevas relaciones pregunta-cuestionario
+        // PASO 3: Crear relaciones SOLO para las nuevas (aReservar)
         try {
-            for (Long idPregunta : dto.getPreguntasNormales()) {
+            for (Long idPregunta : aReservar) {
                 Pregunta pregunta = preguntaRepository.findById(idPregunta)
                     .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + idPregunta));
-                
+
                 PreguntaCuestionario pc = new PreguntaCuestionario();
                 PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();
                 pcid.setPreguntaId(idPregunta);
@@ -681,19 +719,18 @@ public class CuestionarioService {
                 pc.setCuestionario(cuestionario);
                 pc.setFactorMultiplicacion(1);
                 preguntaCuestionarioRepository.save(pc);
-                // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasAtomico()
+                cuestionario.getPreguntas().add(pc);
             }
-            
-            // Actualizar otros campos del cuestionario
+
+            // Actualizar campos
             cuestionario.setTematica(dto.getTematica());
             cuestionario.setNotasDireccion(dto.getNotasDireccion());
             cuestionarioRepository.save(cuestionario);
-            
-            Cuestionario resultado = cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);
-            return resultado;
+
+            return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);
         } catch (Exception e) {
-            // En caso de error, liberar las preguntas nuevas reservadas
-            liberarPreguntasAtomico(dto.getPreguntasNormales());
+            // Revertir reserva de nuevas si falla
+            liberarPreguntasAtomico(aReservar);
             throw new RuntimeException("Error al actualizar relaciones pregunta-cuestionario: " + e.getMessage());
         }
     }
@@ -709,6 +746,18 @@ public class CuestionarioService {
         dto.put("id", c.getId());
         dto.put("estado", c.getEstado());
         dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
+        // Jornada asignada (si existe)
+        try {
+            Long jornadaId = entityManager.createQuery(
+                "SELECT j.id FROM Jornada j JOIN j.cuestionarios cu WHERE cu.id = :id", Long.class)
+                .setParameter("id", id)
+                .setMaxResults(1)
+                .getResultList()
+                .stream().findFirst().orElse(null);
+            if (jornadaId != null) {
+                dto.put("jornadaAsignada", jornadaId);
+            }
+        } catch (Exception ignored) {}
         
         // Mapear preguntas a slots según su nivel real
         java.util.Map<String, PreguntaCuestionarioDTO> mapPorSlot = new java.util.HashMap<>();

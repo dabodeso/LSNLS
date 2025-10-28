@@ -6,6 +6,23 @@ const CuestionariosManager = {
     totalCuestionarios: 0,
     totalPaginas: 0,
     cargando: false,
+    lastScrollY: 0,
+    lastFocusCuestionarioId: null,
+
+    rememberScroll() {
+        this.lastScrollY = window.scrollY || window.pageYOffset || 0;
+    },
+    restoreScrollOrFocus() {
+        if (this.lastFocusCuestionarioId) {
+            const row = document.querySelector(`tr.fila-cuestionario[data-id="${this.lastFocusCuestionarioId}"]`);
+            if (row) {
+                row.scrollIntoView({ block: 'start', behavior: 'auto' });
+                try { window.scrollBy(0, -80); } catch (e) {}
+                return;
+            }
+        }
+        window.scrollTo({ top: this.lastScrollY || 0, behavior: 'auto' });
+    },
     
     async cargarCuestionarios(resetear = true, mantenerPagina = false) {
         try {
@@ -309,6 +326,7 @@ const CuestionariosManager = {
             const estadoMostrar = c.estado ?? '';
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', c.id);
+            tr.classList.add('fila-cuestionario');
             
             // Crear opciones del dropdown de temáticas dinámicamente
             let opcionesTematicas = '<option value="" ' + (!c.tematica || c.tematica === '' ? 'selected' : '') + '>Sin temática</option>';
@@ -324,16 +342,17 @@ const CuestionariosManager = {
             }
             
             tr.innerHTML = `
-                <td style="font-weight: bold; font-size: 1.1em; color: #0066cc; padding-right: 20px;">${c.id ?? ''}</td>
+                <td class="celda-numero-cuestionario">${c.id ?? ''}</td>
                 <td>
                     <select class="form-select form-select-sm" onchange="cambiarTematicaCuestionario(${c.id}, this.value)">
                         ${opcionesTematicas}
                     </select>
                 </td>
                 <td>
-                    <select class="form-select form-select-sm" onchange="cambiarEstadoCuestionario(${c.id}, this.value)">
+                    ${c.jornadaAsignada ? `<div class="text-muted">Asignado a jornada ${c.jornadaAsignada}</div>` :
+                    `<select class="form-select form-select-sm" onchange="cambiarEstadoCuestionario(${c.id}, this.value)">
                         ${getOpcionesEstadoCuestionario(c.estado)}
-                    </select>
+                    </select>`}
                 </td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
@@ -365,6 +384,7 @@ const CuestionariosManager = {
                         <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(p.nivel) : ''}'>${slotNivel}</span></td>
                         <td>${p.pregunta ?? ''}</td>
                         <td>${p.respuesta ?? ''}</td>
+                        <td>${p.datosExtra ?? ''}</td>
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCuestionario(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
                     </tr>`;
                 } else {
@@ -373,18 +393,13 @@ const CuestionariosManager = {
                         <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(slotNivel) : ''}'>${slotNivel}</span></td>
                         <td class="text-center text-muted">(Vacío)</td>
                         <td class="text-center text-muted">-</td>
+                        <td class="text-center text-muted">-</td>
                         <td><button class='btn btn-sm btn-success' onclick='event.stopPropagation();anadirPreguntaACuestionario(${c.id}, "${slotNivel}")'><i class='fas fa-plus'></i></button></td>
                     </tr>`;
                 }
             }
             
             subtr.innerHTML = `<td colspan="6">
-                ${puedeEditarNotas ? `
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Notas de Dirección:</label>
-                    <textarea class="form-control" rows="2" placeholder="Añadir notas para dirección..." 
-                              onblur="actualizarNotasDireccion(${c.id}, this.value)">${c.notasDireccion || ''}</textarea>
-                </div>` : ''}
                 <div>
                     <table class="table table-preguntas-cuestionario mb-0">
                         <thead>
@@ -392,6 +407,7 @@ const CuestionariosManager = {
                                 <th>Nivel</th>
                                 <th>Pregunta</th>
                                 <th>Respuesta</th>
+                                <th>Datos extra</th>
                                 <th>Acción</th>
                             </tr>
                         </thead>
@@ -400,15 +416,26 @@ const CuestionariosManager = {
                         </tbody>
                     </table>
                 </div>
+                ${puedeEditarNotas ? `
+                <div class="mt-3">
+                    <label class="form-label fw-bold">Añadir notas</label>
+                    <textarea class="form-control" rows="2" placeholder="Añadir notas" 
+                              onblur="actualizarNotasDireccion(${c.id}, this.value)">${c.notasDireccion || ''}</textarea>
+                </div>` : ''}
             </td>`;
             tbody.appendChild(subtr);
+            // Añadir separador de espacio entre cuestionarios
+            const sep = document.createElement('tr');
+            sep.classList.add('separador-cuestionario');
+            sep.innerHTML = '<td colspan="6"></td>';
+            tbody.appendChild(sep);
             // Añadir evento de click a filas con pregunta para redirigir
             setTimeout(() => {
                 const filas = subtr.querySelectorAll('tbody tr[data-id]');
                 filas.forEach(fila => {
                     fila.addEventListener('click', function() {
                         const id = this.getAttribute('data-id');
-                        if (id) window.location.href = `preguntas.html?id=${id}`;
+                        if (id) window.open(`preguntas.html?id=${id}`, '_blank');
                     });
                 });
             }, 0);
@@ -418,7 +445,7 @@ const CuestionariosManager = {
             a.addEventListener('click', function(e) {
                 e.preventDefault();
                 const id = this.dataset.id;
-                window.location.href = `preguntas.html?id=${id}`;
+                window.open(`preguntas.html?id=${id}`, '_blank');
             });
         });
         // Resaltar y hacer scroll si hay id en la URL
@@ -433,6 +460,8 @@ const CuestionariosManager = {
                 }
             }, 500);
         }
+        // Restaurar posición/foco
+        setTimeout(() => CuestionariosManager.restoreScrollOrFocus(), 0);
     },
     getNivelColor(nivel) {
         if (["_2NLS", "_4NLS", "_5NLS", "2NLS", "4NLS"].includes(nivel)) return 'text-danger fw-bold';
@@ -488,6 +517,14 @@ async function mostrarFormularioCuestionario() {
         console.error('Error al cargar temáticas para el formulario:', error);
     }
     
+    // Reiniciar estado/jornada asignada
+    const estadoSelect = document.getElementById('cuestionario-estado');
+    if (estadoSelect) {
+        estadoSelect.disabled = false;
+    }
+    const asignadoDiv = document.getElementById('cuestionario-jornada-asignada');
+    if (asignadoDiv) asignadoDiv.classList.add('d-none');
+
     // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('modal-cuestionario'));
     modal.show();
@@ -495,12 +532,44 @@ async function mostrarFormularioCuestionario() {
 
 // Añadir eventos reactivos a los inputs del modal de búsqueda de preguntas
 function inicializarBuscadorPreguntasModal() {
-    ['buscador-id', 'buscador-pregunta', 'buscador-respuesta', 'buscador-tematica'].forEach(id => {
+    const cargarTematicas = async () => {
+        try {
+            const sel = document.getElementById('buscador-tematica-select');
+            if (!sel) return;
+            // cargar temáticas de preguntas (distintas)
+            const resp = await fetch('/api/preguntas/tematicas', { headers: authManager.getAuthHeaders() });
+            if (!resp.ok) return;
+            const tematicas = await resp.json();
+            sel.innerHTML = '<option value="">Todas las temáticas</option>';
+            (Array.isArray(tematicas) ? tematicas : []).forEach(t => {
+                const nombre = typeof t === 'string' ? t : t?.nombre;
+                if (!nombre) return;
+                const opt = document.createElement('option');
+                opt.value = nombre;
+                opt.textContent = nombre;
+                sel.appendChild(opt);
+            });
+        } catch {}
+    };
+    cargarTematicas();
+
+    ['buscador-id', 'buscador-texto', 'buscador-tematica-select'].forEach(id => {
         const input = document.getElementById(id);
         if (input) {
             input.removeEventListener('keyup', input._buscadorHandler || (()=>{}));
-            input._buscadorHandler = () => buscarPreguntasModal(0);
-            input.addEventListener('keyup', input._buscadorHandler);
+            const handler = () => buscarPreguntasModal(0);
+            input._buscadorHandler = handler;
+            if (input.tagName === 'SELECT') {
+                input.removeEventListener('change', input._buscadorHandler || (()=>{}));
+                input.addEventListener('change', handler);
+            } else {
+                input.addEventListener('keyup', handler);
+                if (id === 'buscador-id') {
+                    input.removeEventListener('change', input._buscadorHandlerChange || (()=>{}));
+                    input._buscadorHandlerChange = handler;
+                    input.addEventListener('change', handler);
+                }
+            }
         }
     });
 }
@@ -510,132 +579,133 @@ function abrirSelectorPregunta(nivel, factor = null) {
     selectorPreguntaContext.factor = factor;
     selectorPreguntaContext.inputId = `pregunta-${nivel}`;
     selectorPreguntaContext.textoId = `pregunta-${nivel}-texto`;
-    document.getElementById('buscador-id').value = '';
-    document.getElementById('buscador-pregunta').value = '';
-    document.getElementById('buscador-respuesta').value = '';
-    document.getElementById('buscador-tematica').value = '';
+    const idInput = document.getElementById('buscador-id');
+    if (idInput) idInput.value = '';
+    const textoInput = document.getElementById('buscador-texto');
+    if (textoInput) textoInput.value = '';
+    const temaSelect = document.getElementById('buscador-tematica-select');
+    if (temaSelect) temaSelect.value = '';
     inicializarBuscadorPreguntasModal();
     buscarPreguntasModal(0);
     const modal = new bootstrap.Modal(document.getElementById('modal-selector-pregunta'));
     modal.show();
 }
 
-// Mejorar paginación para PM
+// Búsqueda en modal de preguntas (para cuestionarios)
 async function buscarPreguntasModal(page = 0) {
-    const id = document.getElementById('buscador-id').value.trim();
-    const pregunta = document.getElementById('buscador-pregunta').value.trim();
-    const respuesta = document.getElementById('buscador-respuesta').value.trim();
-    const tematica = document.getElementById('buscador-tematica').value.trim();
-    
-    // Detectar si estamos en contexto de combo o cuestionario
-    const esCombo = window.contextoAnadirPregunta && window.contextoAnadirPregunta.comboId;
-    const esCuestionario = window.contextoAnadirPregunta && window.contextoAnadirPregunta.cuestionarioId;
-    
+    const id = (document.getElementById('buscador-id')?.value || '').trim();
+    const texto = (document.getElementById('buscador-texto')?.value || '').trim();
+    const tematica = document.getElementById('buscador-tematica-select')?.value || '';
+
     try {
-        let preguntas = [];
-        let totalPages = 1;
-        
-        if (esCombo) {
-            // Para combos, buscar solo preguntas de nivel 5 (_5LS y _5NLS)
-            const respLS = await fetch(`/api/preguntas/buscar?nivel=_5LS&page=${page}&size=20&id=${encodeURIComponent(id)}&pregunta=${encodeURIComponent(pregunta)}&respuesta=${encodeURIComponent(respuesta)}&tematica=${encodeURIComponent(tematica)}`, { headers: authManager.getAuthHeaders() });
-            const respNLS = await fetch(`/api/preguntas/buscar?nivel=_5NLS&page=${page}&size=20&id=${encodeURIComponent(id)}&pregunta=${encodeURIComponent(pregunta)}&respuesta=${encodeURIComponent(respuesta)}&tematica=${encodeURIComponent(tematica)}`, { headers: authManager.getAuthHeaders() });
-            const dataLS = await respLS.json();
-            const dataNLS = await respNLS.json();
-            preguntas = [...(dataLS.content || []), ...(dataNLS.content || [])];
-            totalPages = Math.max(dataLS.totalPages || 1, dataNLS.totalPages || 1);
+        const nivel = selectorPreguntaContext.nivel;
+        const params = new URLSearchParams();
+        let url = '';
+        if (normales.includes(nivel)) params.set('nivel', `_${nivel}`);
+        params.set('page', page);
+        params.set('size', 20);
+
+        if (id) {
+            // Búsqueda exacta por ID
+            params.set('id', id);
+            if (tematica) params.set('tematica', tematica);
+            url = `/api/preguntas/buscar?${params.toString()}`;
         } else {
-            // Para cuestionarios, buscar según el nivel del contexto
-            const nivel = selectorPreguntaContext.nivel;
-            let url = '';
-            if (normales.includes(nivel)) {
-                url = `/api/preguntas/buscar?nivel=_${nivel}`;
-            } else {
-                url = `/api/preguntas/buscar?nivel=_5LS`;
-            }
-            if (id) url += `&id=${encodeURIComponent(id)}`;
-            if (pregunta) url += `&pregunta=${encodeURIComponent(pregunta)}`;
-            if (respuesta) url += `&respuesta=${encodeURIComponent(respuesta)}`;
-            if (tematica) url += `&tematica=${encodeURIComponent(tematica)}`;
-            url += `&page=${page}&size=20`;
-            
-            console.log('[FRONT] URL de búsqueda:', url);
-            console.log('[FRONT] Contexto:', selectorPreguntaContext);
-            
-            const resp = await fetch(url, { headers: authManager.getAuthHeaders() });
-            console.log('[FRONT] Respuesta del servidor:', resp.status, resp.statusText);
-            
-            if (!resp.ok) throw new Error('Error al buscar preguntas');
-            const data = await resp.json();
-            console.log('[FRONT] Datos recibidos:', data);
-            
-            preguntas = data.content || [];
-            totalPages = data.totalPages || 1;
+            if (texto) params.set('texto', texto); // OR pregunta/respuesta
+            if (tematica) params.set('tematica', tematica);
+            // Solo aprobadas para evitar errores al guardar
+            params.set('estado', 'aprobada');
+            url = `/api/preguntas/filtrar?${params.toString()}`;
         }
-        
-        console.log('[FRONT] Preguntas encontradas:', preguntas.length);
-        console.log('[FRONT] Total páginas:', totalPages);
-        
-        renderPreguntasModal(preguntas, page, totalPages);
+
+        console.log('[FRONT][CUEST] URL de búsqueda:', url);
+        const resp = await fetch(url, { headers: authManager.getAuthHeaders() });
+        if (!resp.ok) throw new Error('Error al buscar preguntas');
+        const data = await resp.json();
+        let preguntas = data.content || [];
+        // Si entramos por ID, filtrar a aprobadas para coherencia
+        if (id) preguntas = preguntas.filter(p => p.estado === 'aprobada');
+
+        console.log('[FRONT][CUEST] Preguntas encontradas:', preguntas.length);
+        renderPreguntasModal(preguntas, page, data.totalPages || 1);
     } catch (e) {
         console.error('Error en buscarPreguntasModal:', e);
-        document.getElementById('tbody-selector-pregunta').innerHTML = `<tr><td colspan="6">Error al cargar preguntas: ${e.message}</td></tr>`;
-        document.getElementById('paginacion-selector-pregunta').innerHTML = '';
+        const tbody = document.getElementById('tbody-selector-pregunta');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6">Error al cargar preguntas: ${e.message}</td></tr>`;
+        const pag = document.getElementById('paginacion-selector-pregunta');
+        if (pag) pag.innerHTML = '';
     }
 }
 
-function renderPreguntasModal(preguntas, page, totalPages) {
+function renderPreguntasModal(preguntas, currentPage, totalPages) {
     const tbody = document.getElementById('tbody-selector-pregunta');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
     if (!preguntas || preguntas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6">No hay preguntas disponibles</td></tr>';
-        document.getElementById('paginacion-selector-pregunta').innerHTML = '';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No se encontraron preguntas</td></tr>';
+        const pag = document.getElementById('paginacion-selector-pregunta');
+        if (pag) pag.innerHTML = '';
         return;
     }
-    console.log('[FRONT] Renderizando preguntas en modal:', preguntas);
-    tbody.innerHTML = preguntas.map(p => {
-        return `
-        <tr>
-            <td style="width:80px;vertical-align:top;"><b>ID:</b> ${p.id}<br>
-                <button class="btn btn-success btn-sm btn-seleccionar-pregunta"
-                    data-id="${p.id}"
-                    data-pregunta="${encodeURIComponent(p.pregunta ?? '')}"
-                    data-tematica="${encodeURIComponent(p.tematica ?? '')}"
-                    data-respuesta="${encodeURIComponent(p.respuesta ?? '')}"
-                    data-subtema="${encodeURIComponent(p.subtema ?? '')}">
-                    Seleccionar
-                </button>
-            </td>
-            <td colspan="4" style="white-space:pre-line;word-break:break-word;max-width:700px;vertical-align:top;">
-                <div style="font-weight:bold;">${p.pregunta}</div>
-            </td>
-        </tr>
-        <tr>
-            <td></td>
-            <td style="width:180px;"><b>Temática:</b> ${p.tematica}</td>
-            <td style="width:180px;"><b>Respuesta:</b> ${p.respuesta}</td>
-            <td style="width:180px;"><b>Subtema:</b> ${p.subtema ?? ''}</td>
-            <td></td>
-        </tr>
-        `;
-    }).join('');
-    // Paginación
-    let paginacion = '';
-    for (let i = 0; i < totalPages; i++) {
-        paginacion += `<li class="page-item${i === page ? ' active' : ''}"><a class="page-link" href="#" onclick="buscarPreguntasModal(${i});return false;">${i + 1}</a></li>`;
-    }
-    document.getElementById('paginacion-selector-pregunta').innerHTML = paginacion;
 
-    // Añadir event listener delegado para los botones
-    tbody.querySelectorAll('.btn-seleccionar-pregunta').forEach(btn => {
-        btn.addEventListener('click', function() {
+    preguntas.forEach(pregunta => {
+        const row = document.createElement('tr');
+        // Determinar color del nivel (coherente con combos)
+        let nivelColor = '';
+        if (pregunta.nivel === '_5NLS' || (pregunta.nivel && pregunta.nivel.includes('NLS'))) {
+            nivelColor = 'text-danger fw-bold';
+        } else if (pregunta.nivel === '_5LS' || (pregunta.nivel && pregunta.nivel.includes('LS'))) {
+            nivelColor = 'text-success fw-bold';
+        } else {
+            nivelColor = 'text-muted';
+        }
+
+        row.innerHTML = `
+            <td>${pregunta.id}</td>
+            <td colspan="4">
+                <div class="pregunta-item">
+                    <div class="pregunta-texto">${pregunta.pregunta}</div>
+                    <div class="respuesta-texto"><strong>Respuesta:</strong> ${pregunta.respuesta}</div>
+                    <div class="pregunta-meta">
+                        <small class="text-muted">
+                            Temática: ${pregunta.tematica || 'N/A'} | 
+                            Nivel: <span class="${nivelColor}">${pregunta.nivel || '-'}</span> | 
+                            Estado: ${pregunta.estado || '-'}
+                        </small>
+                    </div>
+                </div>
+            </td>
+        `;
+
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
             seleccionarPreguntaModal(
-                this.dataset.id,
-                decodeURIComponent(this.dataset.pregunta),
-                decodeURIComponent(this.dataset.tematica),
-                decodeURIComponent(this.dataset.respuesta),
-                decodeURIComponent(this.dataset.subtema)
+                pregunta.id,
+                pregunta.pregunta,
+                pregunta.tematica,
+                pregunta.respuesta,
+                pregunta.subtema
             );
         });
+
+        tbody.appendChild(row);
     });
+
+    // Renderizar paginación como en combos
+    const paginacion = document.getElementById('paginacion-selector-pregunta');
+    if (paginacion) {
+        let paginacionHTML = '';
+        for (let i = 0; i < totalPages; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            paginacionHTML += `
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" onclick="buscarPreguntasModal(${i})">${i + 1}</a>
+                </li>
+            `;
+        }
+        paginacion.innerHTML = paginacionHTML;
+    }
 }
 
 function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
@@ -705,6 +775,7 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
 // --- FIN NUEVO SISTEMA DE SELECCIÓN ---
 
 async function guardarCuestionario() {
+    CuestionariosManager.rememberScroll();
     let preguntasNormales = [];
     normales.forEach(nivel => {
         const element = document.getElementById(`pregunta-${nivel}`);
@@ -729,10 +800,12 @@ async function guardarCuestionario() {
     
     const cuestionarioIdElement = document.getElementById('cuestionario-id');
     const tematicaElement = document.getElementById('cuestionario-tematica');
+    const estadoElement = document.getElementById('cuestionario-estado');
     const notasElement = document.getElementById('cuestionario-notas');
     
     const cuestionarioId = cuestionarioIdElement ? cuestionarioIdElement.value : '';
     const tematica = tematicaElement ? tematicaElement.value : '';
+    const estadoSeleccionado = estadoElement ? estadoElement.value : '';
     const notasDireccion = notasElement ? notasElement.value : '';
     const esEdicion = !!cuestionarioId;
     
@@ -819,7 +892,22 @@ async function guardarCuestionario() {
         
         const modal = bootstrap.Modal.getInstance(document.getElementById('modal-cuestionario'));
         modal.hide();
+        // Si el usuario seleccionó un estado distinto a borrador, aplicar cambio de estado
+        try {
+            if (estadoSeleccionado && estadoSeleccionado !== 'borrador') {
+                const idFinal = (data && (data.id || data.ID)) || (cuestionarioId || null);
+                if (idFinal) {
+                    await fetch(`/api/cuestionarios/${idFinal}/estado?nuevoEstado=${encodeURIComponent(estadoSeleccionado)}`, {
+                        method: 'PUT',
+                        headers: authManager.getAuthHeaders()
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('No se pudo aplicar el estado seleccionado tras guardar:', e);
+        }
         await CuestionariosManager.cargarCuestionarios();
+        CuestionariosManager.restoreScrollOrFocus();
     } catch (error) {
         console.error('❌ [FRONTEND] Error al guardar:', error);
         Toastify({
@@ -836,10 +924,29 @@ async function guardarCuestionario() {
 // --- EDICIÓN Y ELIMINACIÓN DE CUESTIONARIOS ---
 window.editarCuestionario = async function(id) {
     try {
+        CuestionariosManager.lastFocusCuestionarioId = id;
         const resp = await fetch(`/api/cuestionarios/${id}`, { headers: authManager.getAuthHeaders() });
         if (!resp.ok) throw new Error('No se pudo cargar el cuestionario');
         const cuestionario = await resp.json();
         
+        // Cargar temáticas gestionadas y poblar el select antes de asignar valor
+        try {
+            const respTem = await fetch('/api/cuestionarios/tematicas', { headers: authManager.getAuthHeaders() });
+            if (respTem.ok) {
+                const tematicas = await respTem.json();
+                const tematicaSelect = document.getElementById('cuestionario-tematica');
+                if (tematicaSelect) {
+                    tematicaSelect.innerHTML = '<option value="">Sin temática</option>';
+                    tematicas.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t;
+                        opt.textContent = t;
+                        tematicaSelect.appendChild(opt);
+                    });
+                }
+            }
+        } catch (e) { console.warn('No se pudieron cargar temáticas gestionadas:', e); }
+
         // Precargar preguntas normales y PM en el modal
         const normalesIds = ['1LS','2NLS','3LS','4NLS'];
         const pmsIds = ['PM1','PM2','PM3'];
@@ -887,6 +994,32 @@ window.editarCuestionario = async function(id) {
         const cuestionarioIdElement = document.getElementById('cuestionario-id');
         if (cuestionarioIdElement) cuestionarioIdElement.value = cuestionario.id;
         
+        // Asignar estado actual al selector si existe
+        const estadoElement = document.getElementById('cuestionario-estado');
+        if (estadoElement) {
+            estadoElement.value = (cuestionario.estado || 'borrador');
+            if (cuestionario.jornadaAsignada) {
+                estadoElement.disabled = true;
+            } else {
+                estadoElement.disabled = false;
+            }
+        }
+
+        // Mostrar info de jornada asignada en el modal
+        const asignadoDiv = document.getElementById('cuestionario-jornada-asignada');
+        if (asignadoDiv) {
+            if (cuestionario.jornadaAsignada) {
+                asignadoDiv.textContent = `Asignado a jornada ${cuestionario.jornadaAsignada}`;
+                asignadoDiv.classList.remove('d-none');
+            } else {
+                asignadoDiv.classList.add('d-none');
+            }
+        }
+
+        // Asignar temática actual si existe
+        const tematicaSelect = document.getElementById('cuestionario-tematica');
+        if (tematicaSelect) tematicaSelect.value = (cuestionario.tematica || '');
+
         // Cambiar título del modal con verificación
         const tituloElement = document.getElementById('modal-cuestionario-titulo');
         if (tituloElement) tituloElement.innerText = 'Editar Cuestionario';
@@ -913,6 +1046,7 @@ window.editarCuestionario = async function(id) {
 window.eliminarCuestionario = async function(id) {
     if (!confirm('¿Seguro que quieres eliminar este cuestionario? Esta acción no se puede deshacer.')) return;
     try {
+        CuestionariosManager.rememberScroll();
         const resp = await fetch(`/api/cuestionarios/${id}`, { method: 'DELETE', headers: authManager.getAuthHeaders() });
         
         if (!resp.ok) {
@@ -944,6 +1078,7 @@ window.eliminarCuestionario = async function(id) {
         
         Toastify({ text: 'Cuestionario eliminado', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
         await CuestionariosManager.cargarCuestionarios();
+        CuestionariosManager.restoreScrollOrFocus();
     } catch (e) {
         console.error('Error al eliminar cuestionario:', e);
         Toastify({ text: 'Error al eliminar cuestionario: ' + e.message, duration: 5000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();

@@ -28,6 +28,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.jpa.domain.Specification;
 
 @Service
 public class ConcursanteService {
@@ -64,12 +65,74 @@ public class ConcursanteService {
                 .map(this::convertToDTO);
     }
 
-    public Page<ConcursanteDTO> findAllPaginatedWithFilters(Pageable pageable, 
-            String estado, String jornada, String lugar, String numeroPrograma, 
-            String duracionFinalMin, String duracionFinalMax, String valoracionFinal, String bonico) {
-        return concursanteRepository.findAllWithFilters(pageable, estado, jornada, 
-                lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico)
-                .map(this::convertToDTO);
+    public Page<ConcursanteDTO> findAllPaginatedWithFilters(Pageable pageable,
+            String estado, String jornada, String lugar, String numeroPrograma,
+            String duracionFinalMin, String duracionFinalMax, String valoracionFinal, String bonico, String busqueda) {
+        Specification<Concursante> spec = Specification.where(null);
+
+        if (estado != null && !estado.isBlank()) {
+            spec = spec.and((root, cq, cb) -> cb.equal(root.get("estado"), estado));
+        }
+        if (jornada != null && !jornada.isBlank()) {
+            spec = spec.and((root, cq, cb) -> {
+                try {
+                    // si es numérico, comparar por id
+                    Long jid = Long.valueOf(jornada);
+                    return cb.equal(root.join("jornada", javax.persistence.criteria.JoinType.LEFT).get("id"), jid);
+                } catch (NumberFormatException e) {
+                    // si no, comparar por nombre like
+                    return cb.like(cb.lower(root.join("jornada", javax.persistence.criteria.JoinType.LEFT).get("nombre")), "%" + jornada.toLowerCase() + "%");
+                }
+            });
+        }
+        if (lugar != null && !lugar.isBlank()) {
+            spec = spec.and((root, cq, cb) -> cb.like(cb.lower(root.get("lugar")), "%" + lugar.toLowerCase() + "%"));
+        }
+        if (numeroPrograma != null && !numeroPrograma.isBlank()) {
+            spec = spec.and((root, cq, cb) -> cb.like(root.get("numeroPrograma").as(String.class), "%" + numeroPrograma + "%"));
+        }
+        if (duracionFinalMin != null && !duracionFinalMin.isBlank()) {
+            spec = spec.and((root, cq, cb) -> {
+                javax.persistence.criteria.Expression<String> df = root.get("duracionFinal").as(String.class);
+                javax.persistence.criteria.Expression<String> dd = root.get("duracionDireccion").as(String.class);
+                javax.persistence.criteria.Expression<String> dg = root.get("duracion").as(String.class);
+                javax.persistence.criteria.Predicate p1 = cb.and(cb.isNotNull(df), cb.greaterThanOrEqualTo(df, duracionFinalMin));
+                javax.persistence.criteria.Predicate p2 = cb.and(cb.isNull(df), cb.isNotNull(dd), cb.greaterThanOrEqualTo(dd, duracionFinalMin));
+                javax.persistence.criteria.Predicate p3 = cb.and(cb.isNull(df), cb.isNull(dd), cb.isNotNull(dg), cb.greaterThanOrEqualTo(dg, duracionFinalMin));
+                return cb.or(p1, p2, p3);
+            });
+        }
+        if (duracionFinalMax != null && !duracionFinalMax.isBlank()) {
+            spec = spec.and((root, cq, cb) -> {
+                javax.persistence.criteria.Expression<String> df = root.get("duracionFinal").as(String.class);
+                javax.persistence.criteria.Expression<String> dd = root.get("duracionDireccion").as(String.class);
+                javax.persistence.criteria.Expression<String> dg = root.get("duracion").as(String.class);
+                javax.persistence.criteria.Predicate p1 = cb.and(cb.isNotNull(df), cb.lessThanOrEqualTo(df, duracionFinalMax));
+                javax.persistence.criteria.Predicate p2 = cb.and(cb.isNull(df), cb.isNotNull(dd), cb.lessThanOrEqualTo(dd, duracionFinalMax));
+                javax.persistence.criteria.Predicate p3 = cb.and(cb.isNull(df), cb.isNull(dd), cb.isNotNull(dg), cb.lessThanOrEqualTo(dg, duracionFinalMax));
+                return cb.or(p1, p2, p3);
+            });
+        }
+        if (valoracionFinal != null && !valoracionFinal.isBlank()) {
+            spec = spec.and((root, cq, cb) -> cb.equal(root.get("valoracionFinal"), valoracionFinal));
+        }
+        if (bonico != null && !bonico.isBlank()) {
+            spec = spec.and((root, cq, cb) -> {
+                if ("vacio".equalsIgnoreCase(bonico)) {
+                    return cb.or(cb.isNull(root.get("bonico")), cb.equal(root.get("bonico"), ""));
+                } else if ("contenido".equalsIgnoreCase(bonico)) {
+                    return cb.and(cb.isNotNull(root.get("bonico")), cb.notEqual(root.get("bonico"), ""));
+                }
+                return cb.conjunction();
+            });
+        }
+        if (busqueda != null && !busqueda.isBlank()) {
+            final String like = "%" + busqueda.toLowerCase() + "%";
+            spec = spec.and((root, cq, cb) -> cb.like(cb.lower(root.get("nombre")), like));
+        }
+
+        Page<Concursante> page = concursanteRepository.findAll(spec, pageable);
+        return page.map(this::convertToDTO);
     }
 
     public ConcursanteDTO findById(Long id) {

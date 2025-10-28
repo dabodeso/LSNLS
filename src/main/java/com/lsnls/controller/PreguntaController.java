@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.HashMap;
+import java.util.List;
 
 import com.lsnls.dto.PreguntaCreateDTO;
 import com.lsnls.dto.PreguntaDTO;
@@ -728,6 +729,21 @@ public class PreguntaController {
         } catch (Exception e) {
             log.error("Error al obtener estadísticas de niveles: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+        }
+    }
+
+    @Autowired
+    private com.lsnls.repository.PreguntaRepository preguntaRepository;
+
+    @GetMapping("/tematicas")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<List<String>> obtenerTematicasPreguntas() {
+        try {
+            List<String> tematicas = preguntaRepository.findDistinctTematicas();
+            return ResponseEntity.ok(tematicas);
+        } catch (Exception e) {
+            log.error("Error al obtener temáticas de preguntas: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 

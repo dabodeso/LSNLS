@@ -14,6 +14,95 @@
     <!-- Custom CSS -->
     <link href="css/styles.css" rel="stylesheet">
     <link href="css/pagination.css" rel="stylesheet">
+
+    <style>
+        /* Recuadro azul para elementos del cuestionario */
+        .recuadro-azul {
+            border: 2px solid #0d6efd;
+            border-radius: 6px;
+            padding: 12px;
+        }
+        /* Ocultar columna "Preguntas" (4ª columna) en la tabla de cuestionarios */
+        #tabla-cuestionarios-tabla > thead > tr > th:nth-child(4),
+        #tabla-cuestionarios-tabla > tbody > tr > td:nth-child(4) {
+            display: none;
+        }
+        /* Aumentar tamaño de fuente del número de cuestionario (1ª columna) */
+        #tabla-cuestionarios-tabla td:nth-child(1) {
+            font-size: 1.25em;
+            font-weight: 700;
+        }
+        /* Borde azul continuo para cada cuestionario en el listado */
+        #tabla-cuestionarios-tabla tr.fila-cuestionario > td {
+            border-top: 2px solid #0d6efd;
+        }
+        #tabla-cuestionarios-tabla tr.fila-cuestionario > td:first-child {
+            border-left: 2px solid #0d6efd;
+        }
+        #tabla-cuestionarios-tabla tr.fila-cuestionario > td:last-child {
+            border-right: 2px solid #0d6efd;
+        }
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla > td {
+            border-left: 2px solid #0d6efd;
+            border-right: 2px solid #0d6efd;
+            border-bottom: 2px solid #0d6efd;
+        }
+        /* Ajustes visuales internos del bloque inferior */
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla > td .table {
+            margin-bottom: 0;
+        }
+        /* Anchos de la subtabla de preguntas */
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario thead th:nth-child(1),
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario tbody td:nth-child(1) {
+            width: 8%; /* Mitad de lo que suele ocupar */
+            white-space: nowrap;
+        }
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario thead th:nth-child(2),
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario tbody td:nth-child(2) {
+            width: 44%;
+        }
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario thead th:nth-child(3),
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario tbody td:nth-child(3) {
+            width: 24%;
+        }
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario thead th:nth-child(4),
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario tbody td:nth-child(4) {
+            width: 16%;
+        }
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario thead th:nth-child(5),
+        #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario tbody td:nth-child(5) {
+            width: 8%;
+            white-space: nowrap;
+        }
+        /* Evitar desbordamiento de botones en acciones de tabla principal */
+        #tabla-cuestionarios-tabla > thead > tr > th:nth-child(6),
+        #tabla-cuestionarios-tabla > tbody > tr.fila-cuestionario > td:nth-child(6) {
+            width: 120px;
+            white-space: nowrap;
+        }
+        /* Estilo dedicado para la celda del número si se usa la clase */
+        .celda-numero-cuestionario {
+            font-size: 1.25em !important;
+            font-weight: 700;
+            color: #0066cc;
+            padding-right: 20px;
+        }
+        /* Cabecera fija de la tabla principal (no afecta subtablas) */
+        #tabla-cuestionarios-tabla > thead > tr > th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: #fff;
+        }
+        /* Asegurar contexto y scroll para sticky */
+        .table-responsive { position: relative; max-height: 80vh; overflow-y: auto; }
+        /* Fila separadora entre cuestionarios */
+        #tabla-cuestionarios-tabla tr.separador-cuestionario td {
+            height: 16px;
+            border: none !important;
+            padding: 0;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -119,7 +208,7 @@
 
         <!-- Tabla de Cuestionarios -->
         <div class="table-responsive">
-            <table class="table">
+            <table class="table" id="tabla-cuestionarios-tabla">
                 <thead>
                     <tr>
                         <th style="font-weight: bold; font-size: 1.1em; color: #0066cc; padding-right: 20px;">Número</th>
@@ -168,14 +257,21 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Notas de Dirección:</label>
-                                <textarea class="form-control" id="cuestionario-notas" rows="3" 
-                                          placeholder="Notas específicas para dirección..."></textarea>
+                                <label class="form-label">Estado:</label>
+                                <select class="form-select" id="cuestionario-estado">
+                                    <option value="borrador">Borrador</option>
+                                    <option value="revisar">Revisar</option>
+                                    <option value="corregir">Corregir</option>
+                                    <option value="aprobado">Aprobado</option>
+                                    <option value="adjudicado">Adjudicado</option>
+                                    <option value="grabado">Grabado</option>
+                                </select>
+                                <div id="cuestionario-jornada-asignada" class="form-text text-muted d-none mt-1"></div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Preguntas normales y multiplicadoras:</label>
                                 <div class="row g-2 mb-2">
-                                    <div class="col-12 mb-2">
+                                    <div class="col-12 mb-2 recuadro-azul">
                                         <label>P1</label>
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="pregunta-1LS-texto" readonly placeholder="Sin seleccionar">
@@ -183,7 +279,7 @@
                                             <input type="hidden" id="pregunta-1LS">
                                         </div>
                                     </div>
-                                    <div class="col-12 mb-2">
+                                    <div class="col-12 mb-2 recuadro-azul">
                                         <label>P2</label>
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="pregunta-2NLS-texto" readonly placeholder="Sin seleccionar">
@@ -191,7 +287,7 @@
                                             <input type="hidden" id="pregunta-2NLS">
                                         </div>
                                     </div>
-                                    <div class="col-12 mb-2">
+                                    <div class="col-12 mb-2 recuadro-azul">
                                         <label>P3</label>
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="pregunta-3LS-texto" readonly placeholder="Sin seleccionar">
@@ -199,7 +295,7 @@
                                             <input type="hidden" id="pregunta-3LS">
                                         </div>
                                     </div>
-                                    <div class="col-12 mb-2">
+                                    <div class="col-12 mb-2 recuadro-azul">
                                         <label>P4</label>
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="pregunta-4NLS-texto" readonly placeholder="Sin seleccionar">
@@ -209,6 +305,11 @@
                                     </div>
 
                                 </div>
+                            </div>
+                            <div class="mb-3 recuadro-azul">
+                                <label class="form-label">Añadir notas</label>
+                                <textarea class="form-control" id="cuestionario-notas" rows="3" 
+                                          placeholder="Añadir notas"></textarea>
                             </div>
                         </form>
                     </div>
@@ -248,10 +349,13 @@
                     <div class="modal-body">
                         <div class="row mb-2">
                             <div class="col-md-2"><input id="buscador-id" class="form-control form-control-sm" placeholder="ID"></div>
-                            <div class="col-md-3"><input id="buscador-pregunta" class="form-control form-control-sm" placeholder="Buscar en pregunta..."></div>
-                            <div class="col-md-3"><input id="buscador-respuesta" class="form-control form-control-sm" placeholder="Buscar en respuesta..."></div>
-                            <div class="col-md-3"><input id="buscador-tematica" class="form-control form-control-sm" placeholder="Buscar en temática..."></div>
-                            <div class="col-md-1"><button class="btn btn-primary btn-sm w-100" onclick="buscarPreguntasModal(0)">Buscar</button></div>
+                            <div class="col-md-4"><input id="buscador-texto" class="form-control form-control-sm" placeholder="Buscar en pregunta o respuesta..."></div>
+                            <div class="col-md-4">
+                                <select id="buscador-tematica-select" class="form-select form-select-sm">
+                                    <option value="">Todas las temáticas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2"><button class="btn btn-primary btn-sm w-100" onclick="buscarPreguntasModal(0)">Buscar</button></div>
                         </div>
                         <div class="table-responsive" style="max-height: 70vh;">
                             <table class="table table-bordered table-hover align-middle">

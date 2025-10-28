@@ -15,6 +15,8 @@ import com.lsnls.entity.Usuario;
 
 @Repository
 public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
+    @Query("SELECT DISTINCT p.tematica FROM Pregunta p WHERE p.tematica IS NOT NULL AND p.tematica <> '' ORDER BY p.tematica ASC")
+    List<String> findDistinctTematicas();
     List<Pregunta> findByEstado(EstadoPregunta estado);
     
     List<Pregunta> findByNivel(NivelPregunta nivel);

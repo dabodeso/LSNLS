@@ -2,13 +2,13 @@ package com.lsnls.controller;
 
 import com.lsnls.entity.Combo;
 import com.lsnls.entity.Combo.EstadoCombo;
-import com.lsnls.entity.Combo.NivelCombo;
+// import com.lsnls.entity.Combo.NivelCombo;
 import com.lsnls.entity.Usuario;
-import com.lsnls.entity.PreguntaCombo;
+// import com.lsnls.entity.PreguntaCombo;
 import com.lsnls.service.ComboService;
 import com.lsnls.service.AuthorizationService;
 import com.lsnls.repository.ComboRepository;
-import javax.validation.Valid;
+// import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -324,6 +324,11 @@ public class ComboController {
 
             Combo combo = comboOpt.get();
             
+            // Bloquear cambio si está asignado a una jornada
+            if (comboService.estaAsignadoAJornada(id)) {
+                return ResponseEntity.status(409).body("Este combo está asignado a una jornada y su estado está bloqueado en 'adjudicado'.");
+            }
+
             // Verificar permisos para cambiar estado
             if (!authService.canEditCombo(combo.getEstado())) {
                 String estadoDescripcion = combo.getEstado().toString();

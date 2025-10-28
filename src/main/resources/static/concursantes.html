@@ -299,6 +299,10 @@ line-height: 1.2;
 <div id="filtros-concursantes" class="collapse show">
 <div class="card-body">
 <div class="row g-3">
+<div class="col-md-3">
+<label class="form-label">Buscar nombre</label>
+<input type="text" id="buscar-concursante" class="form-control form-control-sm" placeholder="Escribe un nombre…">
+</div>
 <div class="col-md-2">
 <label class="form-label">Estado</label>
 <select id="filtro-estado-concursante" class="form-select form-select-sm">
@@ -473,7 +477,13 @@ line-height: 1.2;
 <div class="row mb-3">
 <div class="col-md-6">
 <label class="form-label">Jornada:</label>
-<input type="text" class="form-control" id="jornada" placeholder="Nombre de la jornada">
+<div class="input-group">
+    <select class="form-select" id="jornada-select">
+        <option value="">Sin asignar</option>
+    </select>
+    <input type="text" class="form-control" id="jornada-buscar-id" placeholder="ID…">
+    <button type="button" class="btn btn-outline-primary" onclick="buscarJornadaPorId()" title="Buscar por ID">Buscar</button>
+    </div>
 </div>
 <div class="col-md-6">
 <label class="form-label">Día Grabación:</label>
@@ -919,6 +929,7 @@ Borrar
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-outline-warning" onclick="iniciarReciclajeParcialDesdePreview()">Reciclar…</button>
                     <button type="button" class="btn btn-primary" onclick="abrirSelectorComboDesdePreview()">Reemplazar…</button>
                 </div>
             </div>

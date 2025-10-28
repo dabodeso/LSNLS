@@ -1,10 +1,10 @@
 package com.lsnls.controller;
 
 import com.lsnls.entity.Cuestionario;
-import com.lsnls.entity.Cuestionario.EstadoCuestionario;
-import com.lsnls.entity.Cuestionario.NivelCuestionario;
+// import com.lsnls.entity.Cuestionario.EstadoCuestionario;
+// import com.lsnls.entity.Cuestionario.NivelCuestionario;
 import com.lsnls.entity.Usuario;
-import com.lsnls.entity.PreguntaCuestionario;
+// import com.lsnls.entity.PreguntaCuestionario;
 import com.lsnls.service.CuestionarioService;
 import com.lsnls.service.TematicaService;
 import com.lsnls.service.AuthorizationService;
@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.HashMap;
 import java.util.ArrayList;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+// import org.springframework.security.core.Authentication;
+// import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequestMapping("/api/cuestionarios")
@@ -225,13 +225,23 @@ public class CuestionarioController {
 
             Cuestionario cuestionario = cuestionarioExistente.get();
 
+            // Bloquear cambio si está asignado a una jornada
+            if (cuestionarioService.estaAsignadoAJornada(id)) {
+                return ResponseEntity.status(409).body("Este cuestionario está asignado a una jornada y su estado está bloqueado en 'adjudicado'.");
+            }
+
             if (!authorizationService.canEditCuestionario(cuestionario.getEstado())) {
                 String estadoDescripcion = getCuestionarioEstadoDescripcion(cuestionario.getEstado());
                 return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado de este cuestionario. Tu rol actual no permite editar cuestionarios en estado '" + estadoDescripcion + "'.");
             }
 
             Cuestionario cuestionarioActualizado = cuestionarioService.cambiarEstado(id, nuevoEstado);
-            return ResponseEntity.ok(cuestionarioActualizado);
+            // Devolver payload ligero para evitar problemas de serialización con proxies LAZY
+            return ResponseEntity.ok(Map.of(
+                "id", cuestionarioActualizado.getId(),
+                "estado", cuestionarioActualizado.getEstado(),
+                "message", "Estado actualizado correctamente"
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al cambiar estado: " + e.getMessage());
         }
@@ -254,7 +264,12 @@ public class CuestionarioController {
 
             String nuevaTematica = datos.get("tematica");
             Cuestionario cuestionarioActualizado = cuestionarioService.cambiarTematica(id, nuevaTematica);
-            return ResponseEntity.ok(cuestionarioActualizado);
+            // Devolver payload ligero para evitar problemas de serialización con proxies LAZY
+            return ResponseEntity.ok(Map.of(
+                "id", cuestionarioActualizado.getId(),
+                "tematica", cuestionarioActualizado.getTematica(),
+                "message", "Temática actualizada correctamente"
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al cambiar temática: " + e.getMessage());
         }
@@ -592,8 +607,7 @@ public class CuestionarioController {
             }
             
             // Obtener el usuario actual
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
+            // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Optional<Usuario> currentUserOpt = authorizationService.getCurrentUser();
             
             if (currentUserOpt.isEmpty()) {

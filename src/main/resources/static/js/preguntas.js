@@ -6,6 +6,7 @@ const PreguntasManager = {
     totalPreguntas: 0,
     totalPaginas: 0,
     cargando: false,
+    lastScrollY: 0,
     filtros: {
         tematica: '',
         nivel: '',
@@ -20,6 +21,7 @@ const PreguntasManager = {
 
     async cargarPreguntas(resetear = true) {
         try {
+            this.lastScrollY = window.scrollY || window.pageYOffset || 0;
             console.log('🔄 [CARGAR] Iniciando carga de preguntas, resetear:', resetear);
             console.log('🔄 [CARGAR] Estado actual - paginaActual:', this.paginaActual, 'preguntas.length:', this.preguntas.length);
             
@@ -95,6 +97,7 @@ const PreguntasManager = {
             console.log('✅ [CARGAR] Estado finalizado - totalPreguntas:', this.totalPreguntas, 'totalPaginas:', this.totalPaginas, 'paginaActual:', this.paginaActual);
             
             this.mostrarPreguntas();
+            setTimeout(() => { window.scrollTo({ top: this.lastScrollY || 0, behavior: 'auto' }); }, 0);
             
             // Actualizar indicadores visuales después de cargar
             if (typeof actualizarIndicadoresOrdenamientoPreguntas === 'function') {
@@ -356,13 +359,10 @@ const PreguntasManager = {
             tbody.appendChild(tr);
         });
         
-        // Si estamos añadiendo más preguntas, restaurar la posición del scroll
-        if (isAddingMore) {
-            setTimeout(() => {
-                window.scrollTo(0, scrollPosition);
-                console.log('📍 [MOSTRAR] Posición del scroll restaurada:', scrollPosition);
-            }, 50);
-        }
+        // Restaurar posición del scroll
+        setTimeout(() => {
+            window.scrollTo({ top: this.lastScrollY || scrollPosition || 0, behavior: 'auto' });
+        }, 0);
     },
 
     // Convertir URLs en enlaces clicables, manteniendo texto no-URL intacto

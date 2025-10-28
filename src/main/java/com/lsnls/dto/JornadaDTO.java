@@ -31,6 +31,7 @@ public class JornadaDTO {
         private String tematica;
         private String notasDireccion;
         private Integer totalPreguntas;
+        private boolean reutilizado;
     }
     
     @Data
@@ -40,5 +41,6 @@ public class JornadaDTO {
         private String estado;
         private String tipo;
         private Integer totalPreguntas;
+        private boolean reutilizado;
     }
 } 

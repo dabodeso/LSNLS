@@ -58,6 +58,8 @@ public class ComboService {
     }
     
     public Map<String, Object> obtenerTodosPaginados(int page, int size) {
+        // Sincronizar estados con asignaciones de jornadas
+        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
         // Crear objeto Pageable para paginación
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
@@ -121,6 +123,7 @@ public class ComboService {
     
     
     public Map<String, Object> filtrarCombos(String estado, String tipo, String tematica, String subtema, int page, int size) {
+        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
         // Crear objeto Pageable para paginación
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
@@ -254,6 +257,14 @@ public class ComboService {
         }).orElse(null);
     }
 
+    public boolean estaAsignadoAJornada(Long comboId) {
+        Long count = entityManager.createQuery(
+            "SELECT COUNT(j) FROM Jornada j JOIN j.combos c WHERE c.id = :id", Long.class)
+            .setParameter("id", comboId)
+            .getSingleResult();
+        return count != null && count > 0;
+    }
+
     public boolean agregarPregunta(Long comboId, Long preguntaId, Integer factorMultiplicacion) {
         Optional<Combo> comboOpt = comboRepository.findById(comboId);
         Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
@@ -273,7 +284,9 @@ public class ComboService {
             }
             
             // Verificar que la pregunta esté disponible o liberada
-            if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
+            // Tratar null como disponible para compatibilidad con datos antiguos
+            if (pregunta.getEstadoDisponibilidad() != null &&
+                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
                 throw new RuntimeException("La pregunta no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
             }
@@ -455,9 +468,9 @@ public class ComboService {
         // Si llegamos aquí, es seguro eliminar - liberar las preguntas asociadas
         Set<PreguntaCombo> preguntas = combo.getPreguntas();
         for (PreguntaCombo pc : preguntas) {
-            // Cambiar a disponible
+            // Devolver a aprobada y marcar como liberada para poder reutilizar
             entityManager.createNativeQuery(
-                "UPDATE preguntas SET estado_disponibilidad = 'disponible' WHERE id = ?")
+                "UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?")
                 .setParameter(1, pc.getPregunta().getId())
                 .executeUpdate();
         }
@@ -483,6 +496,18 @@ public class ComboService {
         dto.put("tipo", c.getTipo());
         dto.put("tematica", c.getTematica());
         dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
+        // Jornada asignada (si existe)
+        try {
+            Long jornadaId = entityManager.createQuery(
+                "SELECT j.id FROM Jornada j JOIN j.combos co WHERE co.id = :id", Long.class)
+                .setParameter("id", id)
+                .setMaxResults(1)
+                .getResultList()
+                .stream().findFirst().orElse(null);
+            if (jornadaId != null) {
+                dto.put("jornadaAsignada", jornadaId);
+            }
+        } catch (Exception ignored) {}
         
         // Mapear preguntas a slots PM1, PM2, PM3
         java.util.Map<String, Object> mapPorSlot = new java.util.HashMap<>();
@@ -577,6 +602,18 @@ public class ComboService {
         }
         dto.put("preguntas", preguntasDTO);
         return dto;
+    }
+
+    /** Sincroniza estados adjudicado/aprobado con asignaciones de jornada (lote) */
+    private void sincronizarEstadosAsignaciones() {
+        // Combos adjudicados por estar en jornadas
+        entityManager.createNativeQuery(
+            "UPDATE combos SET estado='adjudicado' WHERE id IN (SELECT combo_id FROM jornadas_combos) AND estado<>'adjudicado'")
+            .executeUpdate();
+        // Combos sin jornada → aprobado (solo si estaban adjudicados)
+        entityManager.createNativeQuery(
+            "UPDATE combos SET estado='aprobado' WHERE estado='adjudicado' AND id NOT IN (SELECT combo_id FROM jornadas_combos)")
+            .executeUpdate();
     }
 
     private Map<String, Object> mapPreguntaToDTO(Pregunta p) {

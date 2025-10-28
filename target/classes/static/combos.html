@@ -129,7 +129,7 @@
 
         <!-- Tabla de Combos -->
         <div class="table-responsive">
-            <table class="table">
+            <table class="table" id="tabla-combos-tabla">
                 <thead>
                     <tr>
                         <th style="font-weight: bold; font-size: 1.1em; color: #0066cc;">Número</th>
@@ -184,6 +184,18 @@
                                     <option value="">Sin temática</option>
                                     <!-- Las opciones se cargarán dinámicamente -->
                                 </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Estado:</label>
+                                <select class="form-select" id="combo-estado">
+                                    <option value="borrador">Borrador</option>
+                                    <option value="revisar">Revisar</option>
+                                    <option value="corregir">Corregir</option>
+                                    <option value="aprobado">Aprobado</option>
+                                    <option value="adjudicado">Adjudicado</option>
+                                    <option value="grabado">Grabado</option>
+                                </select>
+                                <div id="combo-jornada-asignada" class="form-text text-muted d-none mt-1"></div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Preguntas multiplicadoras:</label>
@@ -241,10 +253,20 @@
                     <div class="modal-body">
                         <div class="row mb-2">
                             <div class="col-md-2"><input id="buscador-id" class="form-control form-control-sm" placeholder="ID"></div>
-                            <div class="col-md-3"><input id="buscador-pregunta" class="form-control form-control-sm" placeholder="Buscar en pregunta..."></div>
-                            <div class="col-md-3"><input id="buscador-respuesta" class="form-control form-control-sm" placeholder="Buscar en respuesta..."></div>
-                            <div class="col-md-3"><input id="buscador-tematica" class="form-control form-control-sm" placeholder="Buscar en temática..."></div>
-                            <div class="col-md-1"><button class="btn btn-primary btn-sm w-100" onclick="buscarPreguntasModal(0)">Buscar</button></div>
+                            <div class="col-md-3"><input id="buscador-texto" class="form-control form-control-sm" placeholder="Buscar en pregunta o respuesta..."></div>
+                            <div class="col-md-3">
+                                <select id="buscador-tematica-select" class="form-select form-select-sm">
+                                    <option value="">Todas las temáticas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select id="buscador-nivel-combo" class="form-select form-select-sm">
+                                    <option value="">Nivel (todos)</option>
+                                    <option value="_5LS">5LS</option>
+                                    <option value="_5NLS">5NLS</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2"><button class="btn btn-primary btn-sm w-100" onclick="buscarPreguntasModal(0)">Buscar</button></div>
                         </div>
                         <div class="table-responsive" style="max-height: 70vh;">
                             <table class="table table-bordered table-hover align-middle">
@@ -364,6 +386,25 @@
     <script src="js/api.js"></script>
     <script src="js/undo-manager.js"></script>
     <script src="js/combos.js"></script>
+    <style>
+        /* Ocultar columna "Preguntas" (5ª) solo en la tabla principal */
+        #tabla-combos-tabla > thead > tr > th:nth-child(5),
+        #tabla-combos-tabla > tbody > tr.fila-combo > td:nth-child(5) { display: none; }
+        /* Borde azul continuo por combo */
+        #tabla-combos-tabla tr.fila-combo > td { border-top: 2px solid #0d6efd; }
+        #tabla-combos-tabla tr.fila-combo > td:first-child { border-left: 2px solid #0d6efd; }
+        #tabla-combos-tabla tr.fila-combo > td:last-child { border-right: 2px solid #0d6efd; }
+        #tabla-combos-tabla tr.cuestionario-subtabla > td { border-left: 2px solid #0d6efd; border-right: 2px solid #0d6efd; border-bottom: 2px solid #0d6efd; }
+        #tabla-combos-tabla tr.cuestionario-subtabla > td .table { margin-bottom: 0; }
+        .celda-numero-combo { font-size: 1.25em; font-weight: 700; color: #0066cc; }
+        #tabla-combos-tabla > thead > tr > th:nth-child(7),
+        #tabla-combos-tabla > tbody > tr.fila-combo > td:nth-child(7) { width: 120px; white-space: nowrap; }
+        /* Separador entre combos */
+        #tabla-combos-tabla tr.separador-combo td { height: 16px; border: none !important; padding: 0; }
+        /* Cabecera fija de la tabla principal (no afecta subtablas) */
+        #tabla-combos-tabla > thead > tr > th { position: sticky; top: 0; z-index: 5; background: #fff; }
+        .table-responsive { position: relative; max-height: 80vh; overflow-y: auto; }
+    </style>
     <script>
         // Inicializar la página cuando se carga
         document.addEventListener('DOMContentLoaded', function() {

@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
     <style>
         .jornada-card {
             border: 1px solid #dee2e6;
@@ -29,7 +30,7 @@
         /* Estilos para los slots de cuestionarios y combos */
         .cuestionarios-grid, .combos-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 10px;
         }
         .cuestionario-slot, .combo-slot {
@@ -332,7 +333,7 @@
                         <!-- Selección de Cuestionarios -->
                         <div class="mt-4">
                             <div class="d-flex justify-content-between align-items-center">
-                                <h6><i class="fas fa-clipboard-list"></i> Cuestionarios (5 máximo)</h6>
+                                <h6><i class="fas fa-clipboard-list"></i> Cuestionarios (6 máximo)</h6>
                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="JornadasManager.seleccionarCuestionarios()">
                                     <i class="fas fa-plus"></i> Seleccionar
                                 </button>
@@ -345,7 +346,7 @@
                         <!-- Selección de Combos -->
                         <div class="mt-4">
                             <div class="d-flex justify-content-between align-items-center">
-                                <h6><i class="fas fa-layer-group"></i> Combos (5 máximo)</h6>
+                                <h6><i class="fas fa-layer-group"></i> Combos (6 máximo)</h6>
                                 <button type="button" class="btn btn-outline-primary btn-sm" onclick="JornadasManager.seleccionarCombos()">
                                     <i class="fas fa-plus"></i> Seleccionar
                                 </button>
@@ -375,8 +376,15 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="buscarCuestionarios" placeholder="Buscar por temática o ID...">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="filtroCuestId" placeholder="ID">
+                        </div>
+                        <div class="col-md-9">
+                            <select class="form-select" id="filtroCuestTematica">
+                                <option value="">Temática (todas)</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="list-group" id="listaCuestionarios">
                         <!-- Lista de cuestionarios disponibles -->
@@ -401,8 +409,24 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <input type="text" class="form-control" id="buscarCombos" placeholder="Buscar por tipo o ID...">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="filtroComboId" placeholder="ID">
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="filtroComboTipo">
+                                <option value="">Tipo de combo (todos)</option>
+                                <option value="P">Premio</option>
+                                <option value="A">Asequible</option>
+                                <option value="D">Difícil</option>
+                                <option value="R">Rescate</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <select class="form-select" id="filtroComboTematica">
+                                <option value="">Temática (todas)</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="list-group" id="listaCombos">
                         <!-- Lista de combos disponibles -->
@@ -732,6 +756,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/utils.js"></script>

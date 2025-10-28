@@ -9,6 +9,9 @@ let tamanioPagina = 25;
 let totalConcursantes = 0;
 let totalPaginas = 0;
 let cargando = false;
+let lastScrollYConcursantes = 0;
+// Jornada activa para filtrar cuestionarios/combos en los selectores (si procede)
+let jornadaFiltroSeleccion = null;
 
 // Estado de ordenación (server-side)
 let sortByConcursantes = 'id';
@@ -81,6 +84,7 @@ function aplicarConfiguracionBasica() { /* sin uso, mantenido por compatibilidad
 // Carga de datos
 async function cargarConcursantes(resetear = true) {
 try {
+        lastScrollYConcursantes = window.scrollY || window.pageYOffset || 0;
         // Log de entrada
         console.info('📄 [CONCURSANTES] Cargando', { paginaActual, tamanioPagina, resetear });
         
@@ -127,7 +131,21 @@ try {
         if (busqueda) params.append('busqueda', busqueda);
 
         const url = `/api/concursantes?${params}`;
-        console.info('📄 [CONCURSANTES] Fetch', url);
+        console.info('📄 [CONCURSANTES] Fetch', url, {
+            filtros: {
+                estado,
+                jornadaFiltro,
+                lugar,
+                numeroProgramaTxt,
+                duracionFinalMin,
+                duracionFinalMax,
+                valoracionFinal,
+                bonico,
+                busqueda
+            },
+            sortBy: sortByConcursantes,
+            sortDir: sortAscConcursantes ? 'asc' : 'desc'
+        });
         const response = await fetch(url, {
             headers: authManager.getAuthHeaders()
         });
@@ -150,12 +168,16 @@ try {
         
         // Para paginación por páginas, siempre mostramos solo la página actual
         concursantes = data.content;
+        try {
+            console.info('📄 [CONCURSANTES] IDs en página', (concursantes || []).map(c => c && c.id).slice(0, 25));
+        } catch {}
         
         totalConcursantes = data.totalElements;
         totalPaginas = data.totalPages;
         paginaActual = data.number;
         
 mostrarConcursantes();
+        setTimeout(() => { window.scrollTo({ top: lastScrollYConcursantes || 0, behavior: 'auto' }); }, 0);
 } catch (error) {
 if (error && error.message && error.message.startsWith('401')) {
 // No mostrar mensaje, la redirección ya ocurre en api.js
@@ -522,6 +544,8 @@ document.getElementById('form-concursante').reset();
 document.getElementById('concursante-id').value = '';
 document.getElementById('cuestionario-id').value = '';
 document.getElementById('combo-id').value = '';
+// Cargar jornadas en el desplegable
+try { cargarJornadas(); } catch {}
 const modal = new bootstrap.Modal(document.getElementById('modal-concursante'));
 modal.show();
 }
@@ -536,8 +560,28 @@ form.reset();
 // Campos básicos
 document.getElementById('concursante-id').value = concursanteActual.id;
 
-// CORREGIR: usar jornadaNombre en lugar de jornada
-document.getElementById('jornada').value = concursanteActual.jornadaNombre || '';
+// Asignar jornada al select si existe (cargar solo 5 y seleccionar la del concursante si está)
+await cargarJornadas();
+const jornadaSel = document.getElementById('jornada-select');
+if (jornadaSel) {
+    if (concursanteActual.jornadaId) {
+        // Si no está en los 5 últimos, intentar cargarla por ID y añadirla
+        if (!Array.from(jornadaSel.options).some(o => String(o.value) === String(concursanteActual.jornadaId))) {
+            try {
+                const j = await apiManager.get(`/api/jornadas/${concursanteActual.jornadaId}`);
+                if (j && j.id) {
+                    const opt = document.createElement('option');
+                    opt.value = j.id;
+                    opt.textContent = `${j.nombre || ('Jornada ' + j.id)}${j.fechaJornada ? ' - ' + new Date(j.fechaJornada).toLocaleDateString('es-ES') : ''}`;
+                    jornadaSel.insertBefore(opt, jornadaSel.options[1] || null);
+                }
+            } catch {}
+        }
+        jornadaSel.value = concursanteActual.jornadaId;
+    } else {
+        jornadaSel.value = '';
+    }
+}
 
 // CORREGIR: formatear fecha correctamente para input type="date"
 if (concursanteActual.diaGrabacion) {
@@ -626,8 +670,8 @@ const esEdicion = document.getElementById('concursante-id').value;
 // Recoge todos los campos del formulario
 const datosConcursante = {
 id: document.getElementById('concursante-id').value || null,
-// CORREGIR: mantener jornadaId original en edición, null en creación
-jornadaId: esEdicion && concursanteActual ? concursanteActual.jornadaId : null,
+// Tomar jornada seleccionada del desplegable (prioritario)
+jornadaId: (document.getElementById('jornada-select') && document.getElementById('jornada-select').value) ? document.getElementById('jornada-select').value : (esEdicion && concursanteActual ? concursanteActual.jornadaId : null),
 diaGrabacion: document.getElementById('dia-grabacion').value || null,
 lugar: document.getElementById('lugar-concursante').value || null,
 nombre: document.getElementById('nombre-concursante').value,
@@ -657,40 +701,128 @@ foto: document.getElementById('foto') ? document.getElementById('foto').value ||
 creditosEspeciales: document.getElementById('creditos-especiales') ? document.getElementById('creditos-especiales').value || null : null
 };
 
+// Debug: payload enviado
+try {
+    console.info('📝 [GUARDAR] Payload concursante', JSON.parse(JSON.stringify(datosConcursante)));
+} catch {}
+
 // Enviar como JSON usando apiManager o fetch
 try {
 const token = localStorage.getItem('token');
 let response;
+    const selectedJornadaId = (document.getElementById('jornada-select') && document.getElementById('jornada-select').value) ? document.getElementById('jornada-select').value : '';
+    console.info('🔧 [GUARDAR] selectedJornadaId', selectedJornadaId);
 
-if (esEdicion) {
-// Editar concursante existente
-response = await fetch(`/api/concursantes/${datosConcursante.id}`, {
-method: 'PUT',
-headers: {
-'Content-Type': 'application/json',
-'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
-},
-body: JSON.stringify(datosConcursante)
-});
-} else {
-// Crear nuevo concursante
-response = await fetch('/api/concursantes', {
-method: 'POST',
-headers: {
-'Content-Type': 'application/json',
-'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
-},
-body: JSON.stringify(datosConcursante)
-});
-}
+    if (esEdicion) {
+        // Editar concursante existente
+        console.info('📤 [GUARDAR] PUT', `/api/concursantes/${datosConcursante.id}`);
+        response = await fetch(`/api/concursantes/${datosConcursante.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+            },
+            body: JSON.stringify(datosConcursante)
+        });
+    } else {
+        // Crear nuevo concursante
+        console.info('📤 [GUARDAR] POST', '/api/concursantes');
+        response = await fetch('/api/concursantes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+            },
+            body: JSON.stringify(datosConcursante)
+        });
+    }
 
 if (response.ok) {
-mostrarExito(esEdicion ? 'Concursante editado correctamente' : 'Concursante guardado correctamente');
-$('#modal-concursante').modal('hide');
-            await cargarConcursantes();
-            // Reiniciar paginación y cargar desde el servidor
+        console.info('✅ [GUARDAR] Respuesta OK', response.status);
+        // Sincronizar jornada explícitamente con endpoints dedicados
+        if (esEdicion) {
+            const prevJornada = (concursanteActual && concursanteActual.jornadaId) ? String(concursanteActual.jornadaId) : '';
+            const nuevaJornada = String(selectedJornadaId || '');
+            if (nuevaJornada !== prevJornada) {
+                try {
+                    if (nuevaJornada) {
+                        console.info('🔗 [GUARDAR] Asignando jornada (edición)', { id: datosConcursante.id, nuevaJornada });
+                        await apiManager.post(`/api/concursantes/${datosConcursante.id}/asignar-jornada/${nuevaJornada}`);
+                    } else {
+                        console.info('🔗 [GUARDAR] Desasignando jornada (edición)', { id: datosConcursante.id });
+                        await apiManager.delete(`/api/concursantes/${datosConcursante.id}/desasignar-jornada`);
+                    }
+                } catch (e) {
+                    console.warn('No se pudo sincronizar la jornada del concursante:', e);
+                }
+            }
+        } else {
+            // Creación: obtener ID creado y asignar jornada si procede
+            let creadoId = null;
+            try {
+                const body = await response.clone().json();
+                console.info('✅ [GUARDAR] Cuerpo creación', body);
+                creadoId = (body && (body.id || body?.datos?.id || body?.data?.id)) ? (body.id || body?.datos?.id || body?.data?.id) : null;
+            } catch (e) {
+                console.warn('⚠️ [GUARDAR] No se pudo parsear el cuerpo de creación', e);
+            }
+            if (!creadoId) console.warn('⚠️ [GUARDAR] No se pudo determinar el ID creado');
+            if (selectedJornadaId && creadoId) {
+                try {
+                    console.info('🔗 [GUARDAR] Asignando jornada tras crear', { creadoId, selectedJornadaId });
+                    await apiManager.post(`/api/concursantes/${creadoId}/asignar-jornada/${selectedJornadaId}`);
+                } catch (e) {
+                    console.warn('⚠️ [GUARDAR] Error asignando jornada tras crear', e);
+                }
+            }
+            // Forzar orden por ID desc y primera página para ver el recién creado
+            sortByConcursantes = 'id';
+            sortAscConcursantes = false;
             paginaActual = 0;
-            await cargarConcursantes(true);
+            // Guardar el id creado para resaltarlo después
+            datosConcursante.id = creadoId;
+        }
+
+        mostrarExito(esEdicion ? 'Concursante editado correctamente' : 'Concursante guardado correctamente');
+        $('#modal-concursante').modal('hide');
+        const idEditado = datosConcursante.id || (concursanteActual && concursanteActual.id) || null;
+        const paginaAntes = esEdicion ? paginaActual : 0;
+        console.info('🔄 [GUARDAR] Recargando lista', { idEditado, paginaAntes, sortByConcursantes, sortAscConcursantes });
+        // Recargar y posicionar
+        await cargarConcursantes(true);
+        paginaActual = paginaAntes;
+        setTimeout(() => {
+            try {
+                const fila = document.querySelector(`#tabla-concursantes tr[data-id='${idEditado}']`);
+                if (fila) {
+                    fila.classList.add('table-warning');
+                    fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => fila.classList.remove('table-warning'), 2000);
+                } else {
+                    console.warn('🔍 [GUARDAR] Fila no encontrada tras recarga', { idEditado });
+                    // Fallback: obtener por ID e inyectar al inicio para que sea visible
+                    (async () => {
+                        try {
+                            if (!idEditado) return;
+                            const creado = await apiManager.get(`/api/concursantes/${idEditado}`);
+                            if (creado && creado.id) {
+                                // Prepend y re-render
+                                concursantes = [creado, ...concursantes.filter(c => c && c.id !== creado.id)];
+                                mostrarConcursantes();
+                                const fila2 = document.querySelector(`#tabla-concursantes tr[data-id='${idEditado}']`);
+                                if (fila2) {
+                                    fila2.classList.add('table-warning');
+                                    fila2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    setTimeout(() => fila2.classList.remove('table-warning'), 2000);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('⚠️ [GUARDAR] Fallback por ID falló', e);
+                        }
+                    })();
+                }
+            } catch {}
+        }, 100);
 } else {
 let mensaje = 'Error desconocido al guardar concursante.';
 let errorText = '';
@@ -711,9 +843,11 @@ mensaje = 'No tienes permisos para realizar esta acción.';
 } else if (response.status === 500) {
 mensaje = 'Error interno del servidor.';
 }
+        console.error('❌ [GUARDAR] Error HTTP', { status: response.status, body: errorText });
 mostrarError('Error al guardar concursante: ' + mensaje);
 }
 } catch (err) {
+console.error('❌ [GUARDAR] Excepción', err);
 mostrarError('Error de red o inesperado: ' + err);
 }
 }
@@ -1020,6 +1154,91 @@ async function verCombo(id, concursanteId) {
     }
 }
 
+// Reciclaje parcial desde vista previa (Concursantes)
+async function iniciarReciclajeParcialDesdePreview() {
+    try {
+        const idTxt = document.getElementById('preview-combo-id')?.textContent || '';
+        const comboId = idTxt.replace('#','').trim();
+        if (!comboId) {
+            mostrarError('No se pudo determinar el combo');
+            return;
+        }
+        // Cargar preguntas del combo
+        const resp = await apiManager.get(`/api/combos/${comboId}/preguntas`);
+        if (!(resp && resp.exito && Array.isArray(resp.datos))) {
+            mostrarError('No se pudieron cargar las preguntas del combo');
+            return;
+        }
+        const preguntas = resp.datos;
+        // Construir un modal ligero para seleccionar la usada
+        const html = `
+            <div class="modal fade" id="modal-reciclar-desde-preview" tabindex="-1">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Reciclar combo #${comboId}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p>¿Qué pregunta se usó?</p>
+                    ${preguntas.map((p,i)=>`
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" name="preguntaUsada" id="pregUsada${p.id}" value="${p.id}">
+                        <label class="form-check-label" for="pregUsada${p.id}">
+                          ${i+1}. ${p.pregunta}
+                        </label>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning" id="btn-confirmar-reciclaje-preview">Confirmar</button>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+        // Insertar si no existe
+        let cont = document.getElementById('modal-reciclar-desde-preview');
+        if (cont) cont.parentElement.removeChild(cont);
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        document.body.appendChild(div.firstElementChild);
+        const modal = new bootstrap.Modal(document.getElementById('modal-reciclar-desde-preview'));
+        modal.show();
+
+        document.getElementById('btn-confirmar-reciclaje-preview').onclick = async () => {
+            try {
+                const sel = document.querySelector('input[name="preguntaUsada"]:checked');
+                if (!sel) { mostrarError('Selecciona la pregunta usada'); return; }
+                const preguntaUsadaId = sel.value;
+                // Necesitamos la jornada del concursante para el endpoint
+                let jornadaId = null;
+                if (concursanteActual && concursanteActual.jornadaId) {
+                    jornadaId = concursanteActual.jornadaId;
+                } else {
+                    // Si no estamos en edición, intentar leer de la fila seleccionada (no trivial); omitir
+                }
+                if (!jornadaId) { mostrarError('Este concursante no tiene jornada asignada'); return; }
+                const r = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-parcial/${comboId}`, { preguntaUsadaId });
+                if (r && r.exito) {
+                    Utils.showAlert('Reciclaje parcial aplicado. Otras dos preguntas quedan reciclables.', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-desde-preview')).hide();
+                    // Cerrar preview y recargar lista para refrescar estados
+                    const prev = bootstrap.Modal.getInstance(document.getElementById('modal-preview-combo'));
+                    if (prev) prev.hide();
+                    await cargarConcursantes(true);
+                } else {
+                    mostrarError(r?.mensaje || 'No se pudo reciclar el combo');
+                }
+            } catch (e) {
+                mostrarError('Error al reciclar: ' + e.message);
+            }
+        };
+    } catch (e) {
+        mostrarError('No se pudo iniciar el reciclaje: ' + e.message);
+    }
+}
+
 // Reemplazar desde la vista previa
 function abrirSelectorCuestionarioDesdePreview() {
     const modal = bootstrap.Modal.getInstance(document.getElementById('modal-preview-cuestionario'));
@@ -1055,6 +1274,11 @@ backgroundColor: "#28a745"
 // Modal selector de cuestionario
 function abrirSelectorCuestionario() {
 concursanteParaAsignar = null; // Limpiar para uso en formulario
+// Fijar jornada desde el select del formulario si hay valor
+try {
+    const sel = document.getElementById('jornada-select');
+    jornadaFiltroSeleccion = (sel && sel.value) ? sel.value : null;
+} catch { jornadaFiltroSeleccion = null; }
 buscarCuestionariosModal();
 const modal = new bootstrap.Modal(document.getElementById('modal-selector-cuestionario'));
 modal.show();
@@ -1066,14 +1290,37 @@ const nivelFiltro = document.getElementById('filtro-nivel-cuestionario').value;
 
 try {
 let cuestionarios;
-try {
-cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar?estado=aprobado');
-} catch (_) {
-cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar');
+// Si el concursante tiene jornada asignada, limitar a los cuestionarios de esa jornada
+if (jornadaFiltroSeleccion) {
+    try {
+        const jornadaResp = await apiManager.get(`/api/jornadas/${jornadaFiltroSeleccion}`);
+        const jornada = (jornadaResp && jornadaResp.datos) ? jornadaResp.datos : jornadaResp;
+        const ids = (jornada && Array.isArray(jornada.cuestionarioIds)) ? jornada.cuestionarioIds : [];
+        const detalles = [];
+        for (const id of ids) {
+            try { detalles.push(await apiManager.get(`/api/cuestionarios/${id}`)); } catch {}
+        }
+        cuestionarios = detalles;
+    } catch (e) {
+        // Fallback: usar disponibles aprobados
+        try {
+            cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar?estado=aprobado');
+        } catch (_) {
+            cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar');
+        }
+    }
+} else {
+    try {
+        cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar?estado=aprobado');
+    } catch (_) {
+        cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar');
+    }
 }
 
-// Solo aprobados
-cuestionarios = cuestionarios.filter(c => c.estado && c.estado.toLowerCase() === 'aprobado');
+// Solo aprobados si NO estamos filtrando por jornada asignada
+if (!jornadaFiltroSeleccion) {
+    cuestionarios = cuestionarios.filter(c => c.estado && c.estado.toLowerCase() === 'aprobado');
+}
 
 console.info('[SELECTOR][CUEST] Lista base recibida', { total: cuestionarios.length, sample: cuestionarios.slice(0,3) });
 
@@ -1207,6 +1454,11 @@ let concursanteParaAsignar = null;
 function abrirSelectorCuestionarioParaConcursante(concursanteId) {
 concursanteParaAsignar = concursanteId;
 modalCuestPagina = 1;
+    // Fijar jornada para filtrar según el concursante seleccionado
+    try {
+        const c = concursantes.find(x => x && x.id === concursanteId);
+        jornadaFiltroSeleccion = c && c.jornadaId ? c.jornadaId : null;
+    } catch { jornadaFiltroSeleccion = null; }
 buscarCuestionariosModal();
 const modal = new bootstrap.Modal(document.getElementById('modal-selector-cuestionario'));
 modal.show();
@@ -1215,6 +1467,11 @@ modal.show();
 function abrirSelectorComboParaConcursante(concursanteId) {
 concursanteParaAsignar = concursanteId;
 modalComboPagina = 1;
+    // Fijar jornada para filtrar según el concursante seleccionado
+    try {
+        const c = concursantes.find(x => x && x.id === concursanteId);
+        jornadaFiltroSeleccion = c && c.jornadaId ? c.jornadaId : null;
+    } catch { jornadaFiltroSeleccion = null; }
 buscarCombosModal();
 const modal = new bootstrap.Modal(document.getElementById('modal-selector-combo'));
 modal.show();
@@ -1228,10 +1485,10 @@ const concursante = concursantes.find(c => c.id === concursanteParaAsignar);
 if (concursante) {
 concursante.cuestionarioId = id;
 await apiManager.put(`/api/concursantes/${concursanteParaAsignar}`, concursante);
-                await cargarConcursantes();
-                // Reiniciar paginación y cargar desde el servidor
-                paginaActual = 0;
+                // Refrescar fila en pantalla sin perder contexto
+                const paginaAntes = paginaActual;
                 await cargarConcursantes(true);
+                paginaActual = paginaAntes;
 mostrarExito('Cuestionario asignado correctamente');
 }
 } catch (error) {
@@ -1255,10 +1512,10 @@ const concursante = concursantes.find(c => c.id === concursanteParaAsignar);
 if (concursante) {
 concursante.comboId = id;
 await apiManager.put(`/api/concursantes/${concursanteParaAsignar}`, concursante);
-                await cargarConcursantes();
-                // Reiniciar paginación y cargar desde el servidor
-                paginaActual = 0;
+                // Refrescar fila en pantalla sin perder contexto
+                const paginaAntes = paginaActual;
                 await cargarConcursantes(true);
+                paginaActual = paginaAntes;
 mostrarExito('Combo asignado correctamente');
 }
 } catch (error) {
@@ -1281,6 +1538,11 @@ document.getElementById('cuestionario-id').value = '';
 // Funciones para selector de combos
 function abrirSelectorCombo() {
 concursanteParaAsignar = null; // Limpiar para uso en formulario
+// Fijar jornada desde el select del formulario si hay valor
+try {
+    const sel = document.getElementById('jornada-select');
+    jornadaFiltroSeleccion = (sel && sel.value) ? sel.value : null;
+} catch { jornadaFiltroSeleccion = null; }
 buscarCombosModal();
 const modal = new bootstrap.Modal(document.getElementById('modal-selector-combo'));
 modal.show();
@@ -1291,14 +1553,37 @@ const filtro = document.getElementById('buscador-combo').value.trim().toLowerCas
 
 try {
 let combos;
-try {
-combos = await apiManager.get('/api/combos/para-asignar?estado=aprobado');
-} catch (_) {
-combos = await apiManager.get('/api/combos/para-asignar');
+// Si el concursante tiene jornada asignada, limitar a los combos de esa jornada
+if (jornadaFiltroSeleccion) {
+    try {
+        const jornadaResp = await apiManager.get(`/api/jornadas/${jornadaFiltroSeleccion}`);
+        const jornada = (jornadaResp && jornadaResp.datos) ? jornadaResp.datos : jornadaResp;
+        const ids = (jornada && Array.isArray(jornada.comboIds)) ? jornada.comboIds : [];
+        const detalles = [];
+        for (const id of ids) {
+            try { detalles.push(await apiManager.get(`/api/combos/${id}`)); } catch {}
+        }
+        combos = detalles;
+    } catch (e) {
+        // Fallback: usar disponibles aprobados
+        try {
+            combos = await apiManager.get('/api/combos/para-asignar?estado=aprobado');
+        } catch (_) {
+            combos = await apiManager.get('/api/combos/para-asignar');
+        }
+    }
+} else {
+    try {
+        combos = await apiManager.get('/api/combos/para-asignar?estado=aprobado');
+    } catch (_) {
+        combos = await apiManager.get('/api/combos/para-asignar');
+    }
 }
 
-// Solo aprobados
-combos = combos.filter(c => c.estado && c.estado.toLowerCase() === 'aprobado');
+// Solo aprobados si NO estamos filtrando por jornada asignada
+if (!jornadaFiltroSeleccion) {
+    combos = combos.filter(c => c.estado && c.estado.toLowerCase() === 'aprobado');
+}
 console.info('[SELECTOR][COMBO] Lista base recibida', { total: combos.length, sample: combos.slice(0,3) });
 
 // Filtro de búsqueda
@@ -1616,11 +1901,60 @@ let concursanteParaAsignarJornada = null;
 
 async function cargarJornadas() {
 try {
-const response = await apiManager.get('/api/jornadas');
-jornadas = response.datos || [];
+// Cargar solo 5 jornadas más recientes
+const response = await apiManager.get('/api/jornadas?page=0&size=5&sortBy=id&sortDir=desc');
+let lista = [];
+// Normalizar posibles formatos de respuesta
+if (Array.isArray(response)) {
+    lista = response;
+} else if (response && Array.isArray(response.datos)) {
+    lista = response.datos;
+} else if (response && response.datos && Array.isArray(response.datos.content)) {
+    lista = response.datos.content;
+} else if (response && Array.isArray(response.content)) {
+    lista = response.content;
+} else if (response && Array.isArray(response.jornadas)) {
+    lista = response.jornadas;
+}
+if (!Array.isArray(lista)) lista = [];
+jornadas = lista;
+const sel = document.getElementById('jornada-select');
+if (sel) {
+    const valorPrevio = sel.value;
+    sel.innerHTML = '<option value="">Sin asignar</option>' +
+        jornadas.map(j => `<option value="${j.id}">${j.nombre || ('Jornada ' + j.id)}${j.fechaJornada ? ' - ' + new Date(j.fechaJornada).toLocaleDateString('es-ES') : ''}</option>`).join('');
+    if (valorPrevio) sel.value = valorPrevio;
+}
 } catch (error) {
 console.error('Error al cargar jornadas:', error);
 }
+}
+
+// Buscar una jornada concreta por ID y colocarla en el select
+async function buscarJornadaPorId() {
+    try {
+        const input = document.getElementById('jornada-buscar-id');
+        const sel = document.getElementById('jornada-select');
+        if (!input || !sel) return;
+        const id = (input.value || '').trim();
+        if (!id) return;
+        const j = await apiManager.get(`/api/jornadas/${id}`);
+        if (!j || !j.id) {
+            mostrarError('Jornada no encontrada');
+            return;
+        }
+        // Si no está en el select, añadirla al principio
+        if (!Array.from(sel.options).some(o => String(o.value) === String(j.id))) {
+            const texto = `${j.nombre || ('Jornada ' + j.id)}${j.fechaJornada ? ' - ' + new Date(j.fechaJornada).toLocaleDateString('es-ES') : ''}`;
+            const opt = document.createElement('option');
+            opt.value = j.id;
+            opt.textContent = texto;
+            sel.insertBefore(opt, sel.options[1] || null); // tras "Sin asignar"
+        }
+        sel.value = j.id;
+    } catch (e) {
+        mostrarError('No se pudo cargar la jornada indicada');
+    }
 }
 
 function abrirSelectorJornadaParaConcursante(concursanteId) {

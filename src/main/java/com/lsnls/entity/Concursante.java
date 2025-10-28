@@ -23,9 +23,10 @@ public class Concursante {
     @Column(name = "numero_concursante")
     private Integer numeroConcursante;
 
-    // Relación real con Jornada
-    @ManyToOne
+    // Relación real con Jornada (puede estar ausente en datos legacy)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "jornada_id")
+    @NotFound(action = NotFoundAction.IGNORE)
     @JsonIgnoreProperties({"cuestionarios", "combos", "creacionUsuario"})
     private Jornada jornada;
 

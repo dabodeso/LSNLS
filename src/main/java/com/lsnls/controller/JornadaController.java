@@ -297,6 +297,21 @@ public class JornadaController {
         }
     }
 
+    @PostMapping("/{jornadaId}/quitar-reutilizacion-cuestionario/{cuestionarioId}")
+    @PreAuthorize("@authorizationService.canEdit()")
+    public ResponseEntity<ApiResponse<String>> quitarReutilizacionCuestionario(
+            @PathVariable Long jornadaId,
+            @PathVariable Long cuestionarioId) {
+        try {
+            jornadaService.quitarReutilizacionCuestionario(jornadaId, cuestionarioId);
+            return ResponseEntity.ok(ApiResponse.exitoso("Reutilización de cuestionario quitada", "OK"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ApiResponse.error("Error al quitar reutilización: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/{jornadaId}/reutilizar-combo/{comboId}")
     @PreAuthorize("@authorizationService.canEdit()")
     public ResponseEntity<ApiResponse<String>> reutilizarCombo(
@@ -323,6 +338,21 @@ public class JornadaController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(ApiResponse.error("Error al reutilizar combo: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{jornadaId}/quitar-reutilizacion-combo/{comboId}")
+    @PreAuthorize("@authorizationService.canEdit()")
+    public ResponseEntity<ApiResponse<String>> quitarReutilizacionCombo(
+            @PathVariable Long jornadaId,
+            @PathVariable Long comboId) {
+        try {
+            jornadaService.quitarReutilizacionCombo(jornadaId, comboId);
+            return ResponseEntity.ok(ApiResponse.exitoso("Reutilización de combo quitada", "OK"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ApiResponse.error("Error al quitar reutilización: " + e.getMessage()));
         }
     }
 

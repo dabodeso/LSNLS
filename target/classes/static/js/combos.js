@@ -8,6 +8,24 @@ const CombosManager = {
     totalPaginas: 0,
     cargando: false,
     tematicas: [],
+    lastScrollY: 0,
+    lastFocusComboId: null,
+
+    rememberScroll() {
+        this.lastScrollY = window.scrollY || window.pageYOffset || 0;
+    },
+
+    restoreScrollOrFocus() {
+        if (this.lastFocusComboId) {
+            const row = document.querySelector(`tr.fila-combo[data-id="${this.lastFocusComboId}"]`);
+            if (row) {
+                row.scrollIntoView({ block: 'start', behavior: 'auto' });
+                try { window.scrollBy(0, -80); } catch (e) {}
+                return;
+            }
+        }
+        window.scrollTo({ top: this.lastScrollY || 0, behavior: 'auto' });
+    },
     
     async cargarTematicas() {
         try {
@@ -330,8 +348,9 @@ const CombosManager = {
             }
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', c.id);
+            tr.classList.add('fila-combo');
             tr.innerHTML = `
-                <td style="font-weight: bold; font-size: 1.2em; color: #0066cc;">${c.id ?? ''}</td>
+                <td class="celda-numero-combo">${c.id ?? ''}</td>
                 <td>
                     <select class="form-select form-select-sm" onchange="actualizarCombo(${c.id}, 'tipo', this.value)">
                         <option value="">Sin tipo</option>
@@ -348,9 +367,10 @@ const CombosManager = {
                     </select>
                 </td>
                 <td>
-                    <select class="form-select form-select-sm" onchange="cambiarEstadoCombo(${c.id}, this.value)">
+                    ${c.jornadaAsignada ? `<div class="text-muted">Asignado a jornada ${c.jornadaAsignada}</div>` :
+                    `<select class="form-select form-select-sm" onchange="cambiarEstadoCombo(${c.id}, this.value)">
                         ${getOpcionesEstadoCombo(c.estado)}
-                    </select>
+                    </select>`}
                 </td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
@@ -430,6 +450,7 @@ const CombosManager = {
                         </td>
                         <td>${p.pregunta ?? ''}</td>
                         <td>${p.respuesta ?? ''}</td>
+                        <td>${p.datosExtra ?? ''}</td>
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCombo(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
                     </tr>`;
                 } else {
@@ -447,6 +468,7 @@ const CombosManager = {
                         <td style="width:60px; max-width:60px;" class="text-center text-muted">${multiplicador}</td>
                         <td class="text-center text-muted">(Vacío)</td>
                         <td class="text-center text-muted">-</td>
+                        <td class="text-center text-muted">-</td>
                         <td><button class='btn btn-sm btn-success' onclick='event.stopPropagation();anadirPreguntaACombo(${c.id}, "${slotNivel}")'><i class='fas fa-plus'></i></button></td>
                     </tr>`;
                 }
@@ -459,8 +481,9 @@ const CombosManager = {
                             <tr>
                                 <th style="width:60px; max-width:60px;">Nivel</th>
                                 <th style="width:60px; max-width:60px;">Factor</th>
-                                <th style="width:45%; min-width:200px;">Pregunta</th>
-                                <th style="width:30%; min-width:150px;">Respuesta</th>
+                                <th style="width:40%; min-width:200px;">Pregunta</th>
+                                <th style="width:22%; min-width:120px;">Respuesta</th>
+                                <th style="width:18%; min-width:120px;">Datos extra</th>
                                 <th style="width:60px; max-width:60px;">Acción</th>
                             </tr>
                         </thead>
@@ -471,13 +494,18 @@ const CombosManager = {
                 </div>
             </td>`;
             tbody.appendChild(subtr);
+            // Separador entre combos
+            const sep = document.createElement('tr');
+            sep.classList.add('separador-combo');
+            sep.innerHTML = '<td colspan="7"></td>';
+            tbody.appendChild(sep);
             // Añadir evento de click a filas con pregunta para redirigir
-            setTimeout(() => {
+                setTimeout(() => {
                 const filas = subtr.querySelectorAll('tbody tr[data-id]');
                 filas.forEach(fila => {
                     fila.addEventListener('click', function() {
                         const id = this.getAttribute('data-id');
-                        if (id) window.location.href = `preguntas.html?id=${id}`;
+                        if (id) window.open(`preguntas.html?id=${id}`, '_blank');
                     });
                 });
             }, 0);
@@ -494,6 +522,8 @@ const CombosManager = {
                 }
             }, 500);
         }
+        // Restaurar posición o foco
+        setTimeout(() => this.restoreScrollOrFocus(), 0);
     },
 
     getNivelColor(nivel) {
@@ -821,6 +851,13 @@ async function mostrarFormularioCombo() {
     document.getElementById('combo-id').value = '';
     document.getElementById('combo-tipo').value = '';
     document.getElementById('combo-tematica').value = '';
+    const comboEstado = document.getElementById('combo-estado');
+    if (comboEstado) {
+        comboEstado.value = 'borrador';
+        comboEstado.disabled = false;
+    }
+    const asignadoDiv = document.getElementById('combo-jornada-asignada');
+    if (asignadoDiv) asignadoDiv.classList.add('d-none');
     
     // Cargar temáticas en el desplegable
     await cargarTematicasEnModal();
@@ -865,6 +902,7 @@ async function cargarTematicasEnModal() {
 
 async function editarCombo(id) {
     try {
+        CombosManager.lastFocusComboId = id;
         console.log(`[DEBUG_EDIT] Iniciando edición del combo ${id}`);
         const response = await fetch(`/api/combos/${id}`, {
             headers: authManager.getAuthHeaders()
@@ -881,7 +919,22 @@ async function editarCombo(id) {
         // Rellenar datos básicos
         document.getElementById('combo-id').value = combo.id;
         document.getElementById('combo-tipo').value = combo.tipo || '';
+        await cargarTematicasEnModal();
         document.getElementById('combo-tematica').value = combo.tematica || '';
+        const comboEstado = document.getElementById('combo-estado');
+        if (comboEstado) {
+            comboEstado.value = (combo.estado || 'borrador');
+            comboEstado.disabled = !!combo.jornadaAsignada;
+        }
+        const asignadoDiv = document.getElementById('combo-jornada-asignada');
+        if (asignadoDiv) {
+            if (combo.jornadaAsignada) {
+                asignadoDiv.textContent = `Asignado a jornada ${combo.jornadaAsignada}`;
+                asignadoDiv.classList.remove('d-none');
+            } else {
+                asignadoDiv.classList.add('d-none');
+            }
+        }
         
         // Limpiar primero todos los campos PM
         console.log(`[DEBUG_EDIT] Limpiando campos de formulario`);
@@ -957,12 +1010,45 @@ async function editarCombo(id) {
 
 // Añadir eventos reactivos a los inputs del modal de búsqueda de preguntas
 function inicializarBuscadorPreguntasModal() {
-    ['buscador-id', 'buscador-pregunta', 'buscador-respuesta', 'buscador-tematica'].forEach(id => {
-        const input = document.getElementById(id);
-        if (input) {
-            input.removeEventListener('keyup', input._buscadorHandler || (()=>{}));
-            input._buscadorHandler = () => buscarPreguntasModal(0);
-            input.addEventListener('keyup', input._buscadorHandler);
+    const cargarTematicas = async () => {
+        try {
+            const sel = document.getElementById('buscador-tematica-select');
+            if (!sel) return;
+            // Temáticas de preguntas (distintas)
+            const resp = await fetch('/api/preguntas/tematicas', { headers: authManager.getAuthHeaders() });
+            if (!resp.ok) return;
+            const tematicas = await resp.json();
+            sel.innerHTML = '<option value="">Todas las temáticas</option>';
+            (Array.isArray(tematicas) ? tematicas : []).forEach(t => {
+                const nombre = typeof t === 'string' ? t : t?.nombre;
+                if (!nombre) return;
+                const opt = document.createElement('option');
+                opt.value = nombre;
+                opt.textContent = nombre;
+                sel.appendChild(opt);
+            });
+        } catch {}
+    };
+    cargarTematicas();
+
+    const ids = ['buscador-id', 'buscador-texto', 'buscador-tematica-select', 'buscador-nivel-combo'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const handler = () => buscarPreguntasModal(0);
+        if (el.tagName === 'SELECT') {
+            el.removeEventListener('change', el._buscadorHandler || (()=>{}));
+            el._buscadorHandler = handler;
+            el.addEventListener('change', handler);
+        } else {
+            el.removeEventListener('keyup', el._buscadorHandler || (()=>{}));
+            el._buscadorHandler = handler;
+            el.addEventListener('keyup', handler);
+            if (id === 'buscador-id') {
+                el.removeEventListener('change', el._buscadorHandlerChange || (()=>{}));
+                el._buscadorHandlerChange = handler;
+                el.addEventListener('change', handler);
+            }
         }
     });
 }
@@ -973,10 +1059,14 @@ function abrirSelectorPregunta(nivel, factor = null) {
     selectorPreguntaContext.inputId = `pm-${nivel}`;
     selectorPreguntaContext.textoId = `pm-${nivel}-texto`;
     
-    document.getElementById('buscador-id').value = '';
-    document.getElementById('buscador-pregunta').value = '';
-    document.getElementById('buscador-respuesta').value = '';
-    document.getElementById('buscador-tematica').value = '';
+    const idInput = document.getElementById('buscador-id');
+    if (idInput) idInput.value = '';
+    const textoInput = document.getElementById('buscador-texto');
+    if (textoInput) textoInput.value = '';
+    const temaSelect = document.getElementById('buscador-tematica-select');
+    if (temaSelect) temaSelect.value = '';
+    const nivelSelect = document.getElementById('buscador-nivel-combo');
+    if (nivelSelect) nivelSelect.value = '';
     inicializarBuscadorPreguntasModal();
     buscarPreguntasModal(0);
     const modal = new bootstrap.Modal(document.getElementById('modal-selector-pregunta'));
@@ -986,58 +1076,49 @@ function abrirSelectorPregunta(nivel, factor = null) {
 // Función para buscar preguntas en el modal (específica para combos)
 async function buscarPreguntasModal(page = 0) {
     const id = document.getElementById('buscador-id').value.trim();
-    const pregunta = document.getElementById('buscador-pregunta').value.trim();
-    const respuesta = document.getElementById('buscador-respuesta').value.trim();
-    const tematica = document.getElementById('buscador-tematica').value.trim();
+    const texto = (document.getElementById('buscador-texto')?.value || '').trim();
+    const tematica = document.getElementById('buscador-tematica-select')?.value || '';
+    const filtroNivel = document.getElementById('buscador-nivel-combo')?.value || '';
 
     try {
-        // Para combos, buscar preguntas de nivel 5 (_5LS y _5NLS)
+        // Para combos, buscar preguntas de nivel 5 con endpoint /filtrar y 'texto'
         let preguntas = [];
         let totalPages = 1;
-        
-        // Buscar preguntas _5LS
-        let urlLS = `/api/preguntas/buscar?nivel=_5LS&page=${page}&size=20`;
-        if (id) urlLS += `&id=${encodeURIComponent(id)}`;
-        if (pregunta) urlLS += `&pregunta=${encodeURIComponent(pregunta)}`;
-        if (respuesta) urlLS += `&respuesta=${encodeURIComponent(respuesta)}`;
-        if (tematica) urlLS += `&tematica=${encodeURIComponent(tematica)}`;
-        
-        // Buscar preguntas _5NLS
-        let urlNLS = `/api/preguntas/buscar?nivel=_5NLS&page=${page}&size=20`;
-        if (id) urlNLS += `&id=${encodeURIComponent(id)}`;
-        if (pregunta) urlNLS += `&pregunta=${encodeURIComponent(pregunta)}`;
-        if (respuesta) urlNLS += `&respuesta=${encodeURIComponent(respuesta)}`;
-        if (tematica) urlNLS += `&tematica=${encodeURIComponent(tematica)}`;
-        
-        console.log('[COMBO] URL _5LS:', urlLS);
-        console.log('[COMBO] URL _5NLS:', urlNLS);
-        
-        // Hacer ambas peticiones en paralelo
-        const [respLS, respNLS] = await Promise.all([
-            fetch(urlLS, { headers: authManager.getAuthHeaders() }),
-            fetch(urlNLS, { headers: authManager.getAuthHeaders() })
-        ]);
-        
-        console.log('[COMBO] Respuesta _5LS:', respLS.status);
-        console.log('[COMBO] Respuesta _5NLS:', respNLS.status);
-        
-        if (!respLS.ok || !respNLS.ok) {
-            const errorTextLS = respLS.ok ? '' : await respLS.text();
-            const errorTextNLS = respNLS.ok ? '' : await respNLS.text();
-            console.error('[COMBO] Error del servidor:', errorTextLS, errorTextNLS);
-            throw new Error(`Error en búsqueda: ${respLS.status} / ${respNLS.status}`);
+        const params = new URLSearchParams();
+        params.set('page', page);
+        params.set('size', 20);
+        let url = '';
+        if (id) {
+            // id exacto -> usar /buscar
+            params.set('id', id.trim());
+            if (tematica) params.set('tematica', tematica);
+            if (filtroNivel) params.set('nivel', filtroNivel);
+            url = `/api/preguntas/buscar?${params.toString()}`;
+        } else {
+            if (texto) params.set('texto', texto);
+            if (tematica) params.set('tematica', tematica);
+            // Solo mostrar preguntas aprobadas
+            params.set('estado', 'aprobada');
+            // nivel: por defecto trae _5LS y _5NLS; si el usuario elige uno, filtrar
+            if (filtroNivel) {
+                params.set('nivel', filtroNivel);
+            }
+            url = `/api/preguntas/filtrar?${params.toString()}`;
         }
+        console.log('[FRONT][COMBO] URL de búsqueda:', url);
+        const resp = await fetch(url, { headers: authManager.getAuthHeaders() });
+        if (!resp.ok) throw new Error('Error al buscar preguntas');
+        const data = await resp.json();
+        // Filtrar en cliente a solo nivel 5 si no se seleccionó filtroNivel
+        let lista = data.content || [];
+        if (id) {
+            // Coherencia: solo aprobadas cuando buscamos por ID desde el modal
+            lista = lista.filter(p => p.estado === 'aprobada');
+        }
+        preguntas = filtroNivel ? lista : lista.filter(p => p.nivel === '_5LS' || p.nivel === '_5NLS');
+        totalPages = data.totalPages || 1;
         
-        const dataLS = await respLS.json();
-        const dataNLS = await respNLS.json();
-        
-        // Combinar resultados
-        preguntas = [...(dataLS.content || []), ...(dataNLS.content || [])];
-        totalPages = Math.max(dataLS.totalPages || 1, dataNLS.totalPages || 1);
-        
-        console.log('[COMBO] Preguntas _5LS:', dataLS.content?.length || 0);
-        console.log('[COMBO] Preguntas _5NLS:', dataNLS.content?.length || 0);
-        console.log('[COMBO] Total combinado:', preguntas.length);
+        console.log('[COMBO] Total preguntas nivel 5 filtradas:', preguntas.length);
         
         renderizarPreguntasModal(preguntas, totalPages, page);
     } catch (error) {
@@ -1272,6 +1353,7 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
 }
 
 async function guardarCombo() {
+    CombosManager.rememberScroll();
     const tipo = document.getElementById('combo-tipo').value;
     if (!tipo) {
         Toastify({
@@ -1311,10 +1393,47 @@ async function guardarCombo() {
         }).showToast();
         return;
     }
+    // Validaciones adicionales: IDs únicos y factores no vacíos y únicos
+    const idsSet = new Set(preguntasMultiplicadoras.map(pm => pm.id));
+    if (idsSet.size !== 3) {
+        Toastify({
+            text: 'No puedes usar la misma pregunta en varios multiplicadores (PM1, PM2, PM3)',
+            duration: 4000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        return;
+    }
+    const factores = preguntasMultiplicadoras.map(pm => (pm.factor || '').trim());
+    if (factores.some(f => !f)) {
+        Toastify({
+            text: 'Todas las preguntas multiplicadoras deben tener un factor (X2, X3, X)',
+            duration: 4000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        return;
+    }
+    if (new Set(factores).size !== 3) {
+        Toastify({
+            text: 'Los factores deben ser distintos entre sí (X2, X3, X)',
+            duration: 4000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        return;
+    }
     
     const comboId = document.getElementById('combo-id').value;
     const tematica = document.getElementById('combo-tematica').value;
     const esEdicion = !!comboId;
+    const estadoSeleccionado = (document.getElementById('combo-estado')?.value) || 'borrador';
     
     try {
         let resp, data;
@@ -1334,8 +1453,12 @@ async function guardarCombo() {
             });
         }
         
-        try { data = await resp.json(); } catch (e) { data = null; }
-        if (!resp.ok) throw new Error(data && data.message ? data.message : 'Error al guardar el combo');
+        // Intentar leer JSON o texto para mostrar el mensaje del backend
+        try { data = await resp.json(); } catch (e) { try { data = await resp.text(); } catch { data = null; } }
+        if (!resp.ok) {
+            const msg = (data && data.message) ? data.message : (typeof data === 'string' && data ? data : 'Error al guardar el combo');
+            throw new Error(msg);
+        }
         
         Toastify({
             text: data && data.message ? data.message : (esEdicion ? 'Combo editado correctamente' : 'Combo creado correctamente'),
@@ -1348,7 +1471,31 @@ async function guardarCombo() {
         
         const modal = bootstrap.Modal.getInstance(document.getElementById('modal-combo'));
         modal.hide();
+        // Aplicar estado si procede
+        try {
+            const idFinal = (data && (data.id || data.ID)) || (comboId || null);
+            if (idFinal && estadoSeleccionado && estadoSeleccionado !== 'borrador') {
+                await fetch(`/api/combos/${idFinal}/estado?nuevoEstado=${encodeURIComponent(estadoSeleccionado)}`, {
+                    method: 'PUT',
+                    headers: authManager.getAuthHeaders()
+                });
+            }
+            // Asegurar actualización de factores tras guardar (edición o creación)
+            const idParaFactores = (data && (data.id || data.ID)) || comboId;
+            if (idParaFactores) {
+                await Promise.all(preguntasMultiplicadoras.map(pm => (
+                    fetch(`/api/combos/${idParaFactores}/preguntas/${pm.id}/factor`, {
+                        method: 'PUT',
+                        headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ factorMultiplicacion: pm.factor || 'X' })
+                    }).catch(() => {})
+                )));
+            }
+        } catch (e) {
+            console.warn('No se pudo aplicar el estado seleccionado tras guardar combo:', e);
+        }
         await CombosManager.cargarCombos();
+        CombosManager.restoreScrollOrFocus();
     } catch (error) {
         Toastify({
             text: 'Error al guardar combo: ' + error.message,
@@ -1364,6 +1511,7 @@ async function guardarCombo() {
 window.eliminarCombo = async function(id) {
     if (!confirm('¿Seguro que quieres eliminar este combo? Esta acción no se puede deshacer.')) return;
     try {
+        CombosManager.rememberScroll();
         const resp = await fetch(`/api/combos/${id}`, { method: 'DELETE', headers: authManager.getAuthHeaders() });
         
         if (!resp.ok) {
@@ -1395,6 +1543,7 @@ window.eliminarCombo = async function(id) {
         
         Toastify({ text: 'Combo eliminado', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
         await CombosManager.cargarCombos();
+        CombosManager.restoreScrollOrFocus();
     } catch (e) {
         console.error('Error al eliminar combo:', e);
         Toastify({ text: 'Error al eliminar combo: ' + e.message, duration: 5000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();

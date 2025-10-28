@@ -38,7 +38,8 @@ public class ConcursanteController {
             @RequestParam(required = false) String duracionFinalMin,
             @RequestParam(required = false) String duracionFinalMax,
             @RequestParam(required = false) String valoracionFinal,
-            @RequestParam(required = false) String bonico) {
+            @RequestParam(required = false) String bonico,
+            @RequestParam(required = false) String busqueda) {
         try {
             Pageable pageable = PageRequest.of(page, size, 
                 sortDir.equalsIgnoreCase("desc") ? 
@@ -46,7 +47,7 @@ public class ConcursanteController {
                 Sort.by(sortBy).ascending());
             
             Page<ConcursanteDTO> concursantes = concursanteService.findAllPaginatedWithFilters(
-                pageable, estado, jornada, lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico);
+                pageable, estado, jornada, lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico, busqueda);
             return ResponseEntity.ok(concursantes);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error interno al obtener concursantes: " + e.getMessage());
