@@ -124,6 +124,76 @@ class ApiManager {
         });
     }
 
+    // ==== OPERACIONES DESHACIBLES (GENÉRICAS) ====
+    // PUT deshaciente: hace snapshot previo (GET) y registra Undo/Redo
+    async putUndoable(endpoint, data, { label, snapshotEndpoint } = {}) {
+        try {
+            const snapUrl = snapshotEndpoint || endpoint;
+            let previous = null;
+            try {
+                previous = await this.get(snapUrl);
+            } catch (e) {
+                console.warn('[Undoable PUT] No se pudo obtener snapshot previo:', e);
+            }
+
+            const result = await this.put(endpoint, data);
+
+            if (window.UndoManager && previous) {
+                const hacer = async () => { await this.put(endpoint, data); };
+                const deshacer = async () => { await this.put(endpoint, previous); };
+                window.UndoManager.record({ do: hacer, undo: deshacer, label: label || `PUT ${endpoint}` });
+            }
+
+            return result;
+        } catch (e) {
+            throw e;
+        }
+    }
+
+    // DELETE deshaciente: snapshot previo (GET) y registra Undo/Redo (rehace con DELETE)
+    async deleteUndoable(endpoint, { label, snapshotEndpoint } = {}) {
+        try {
+            const snapUrl = snapshotEndpoint || endpoint;
+            let previous = null;
+            try {
+                previous = await this.get(snapUrl);
+            } catch (e) {
+                console.warn('[Undoable DELETE] No se pudo obtener snapshot previo:', e);
+            }
+
+            const result = await this.delete(endpoint);
+
+            if (window.UndoManager && previous) {
+                const deshacer = async () => { await this.put(snapUrl, previous); };
+                const rehacer = async () => { await this.delete(endpoint); };
+                window.UndoManager.record({ do: rehacer, undo: deshacer, label: label || `DELETE ${endpoint}` });
+            }
+
+            return result;
+        } catch (e) {
+            throw e;
+        }
+    }
+
+    // POST deshaciente (opcional): requiere cómo obtener el id creado
+    async postUndoable(endpoint, data, { label, idExtractor, deleteEndpointBuilder } = {}) {
+        // idExtractor: (response) => id o (obj) => obj.id
+        // deleteEndpointBuilder: (id) => `/api/entidad/${id}`
+        const created = await this.post(endpoint, data);
+        try {
+            if (window.UndoManager && idExtractor && deleteEndpointBuilder) {
+                const id = idExtractor(created);
+                const delUrl = deleteEndpointBuilder(id);
+                const rehacer = async () => { await this.post(endpoint, data); };
+                const deshacer = async () => { await this.delete(delUrl); };
+                window.UndoManager.record({ do: rehacer, undo: deshacer, label: label || `POST ${endpoint}` });
+            }
+        } catch (e) {
+            console.warn('[Undoable POST] No se pudo registrar undo:', e);
+        }
+        return created;
+    }
+
     async patch(endpoint, data, options = {}) {
         return this.makeRequest(endpoint, {
             method: 'PATCH',

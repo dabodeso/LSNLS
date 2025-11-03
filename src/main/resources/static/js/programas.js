@@ -856,12 +856,16 @@ async function guardarPrograma() {
     try {
         if (programaId) {
             // Actualizar (PUT) y reforzar campos críticos con PATCH
-            await apiManager.put(`/api/programas/${programaId}`, programaData);
+            await apiManager.putUndoable(`/api/programas/${programaId}`, programaData, { label: `Actualizar programa ${programaId}` });
             await apiManager.patch(`/api/programas/${programaId}/campo`, { temporada: parseInt(temporada) });
             await apiManager.patch(`/api/programas/${programaId}/campo`, { fechaEmision });
             mostrarExito('Programa actualizado correctamente');
         } else {
-            const creado = await apiManager.post('/api/programas', programaData);
+            const creado = await apiManager.postUndoable('/api/programas', programaData, {
+                label: 'Crear programa',
+                idExtractor: (r) => r?.id || r?.datos?.id,
+                deleteEndpointBuilder: (id) => `/api/programas/${id}`
+            });
             mostrarExito('Programa creado correctamente');
         }
         
@@ -965,7 +969,7 @@ function mostrarMensaje(mensaje, tipo = 'info') {
 // Función para actualizar el estado del programa automáticamente
 async function actualizarEstadoProgramaAutomatico(programaId) {
     try {
-        await apiManager.put(`/api/programas/${programaId}/actualizar-estado`);
+        await apiManager.putUndoable(`/api/programas/${programaId}/actualizar-estado`, {}, { label: `Actualizar estado programa ${programaId}`, snapshotEndpoint: `/api/programas/${programaId}` });
         await cargarProgramas();
     } catch (error) {
         console.error('Error al actualizar estado del programa:', error);
@@ -1129,7 +1133,11 @@ async function asignarConcursanteAPrograma(concursanteId) {
     try {
         const programaId = document.getElementById('programa-seleccionado-id').value;
         
-        await apiManager.post(`/api/concursantes/${concursanteId}/asignar-programa/${programaId}`);
+        await apiManager.postUndoable(`/api/concursantes/${concursanteId}/asignar-programa/${programaId}`, {}, {
+            label: `Asignar programa ${programaId} a concursante ${concursanteId}`,
+            idExtractor: () => concursanteId,
+            deleteEndpointBuilder: () => `/api/concursantes/${concursanteId}/desasignar-programa`
+        });
         
         // Cerrar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('modal-añadir-concursantes'));
@@ -1152,7 +1160,7 @@ async function quitarConcursanteDePrograma(concursanteId, event) {
     }
     
     try {
-        await apiManager.delete(`/api/concursantes/${concursanteId}/desasignar-programa`);
+        await apiManager.deleteUndoable(`/api/concursantes/${concursanteId}/desasignar-programa`, { label: `Desasignar programa de concursante ${concursanteId}`, snapshotEndpoint: `/api/concursantes/${concursanteId}` });
         
         // Recargar programas
         await recargarProgramas();
@@ -1221,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', inicializarProgramas);
 async function eliminarPrograma(programaId) {
     if (!confirm('¿Seguro que deseas borrar este programa? Esta acción no se puede deshacer.')) return;
     try {
-        await apiManager.delete(`/api/programas/${programaId}`);
+        await apiManager.deleteUndoable(`/api/programas/${programaId}`, { label: `Eliminar programa ${programaId}`, snapshotEndpoint: `/api/programas/${programaId}` });
         mostrarExito('Programa eliminado');
         await recargarProgramas();
     } catch (error) {

@@ -844,7 +844,7 @@ const PreguntasManager = {
                 break;
                 
             case 'revisar':
-                estados.push('para_verificar', 'rechazada');
+                estados.push('para_verificar', 'para_aprobar', 'rechazada');
                 break;
                 
             case 'verificada':
@@ -856,7 +856,7 @@ const PreguntasManager = {
                 break;
                 
             case 'para_aprobar':
-                estados.push('aprobada', 'corregir', 'rechazada');
+                estados.push('aprobada', 'corregir', 'rechazada', 'para_verificar');
                 break;
                 
             case 'aprobada':
@@ -872,13 +872,50 @@ const PreguntasManager = {
                 break;
         }
         
-        // Si el usuario es admin, permitir todos los estados
+        // Si el usuario es admin o dirección, permitir todos los estados
         const usuario = JSON.parse(localStorage.getItem('usuario'));
-        if (usuario && usuario.rol === 'ROLE_ADMIN') {
+        if (usuario && (usuario.rol === 'ROLE_ADMIN' || usuario.rol === 'ROLE_DIRECCION')) {
             return ['borrador', 'para_verificar', 'verificada', 'revisar', 'corregir', 
                    'rechazada', 'aprobada', 'para_aprobar', 'usada'];
         }
         
+        // Filtrar por rol para mostrar solo transiciones que el usuario puede ejecutar
+        if (usuario && usuario.rol) {
+            const rol = usuario.rol;
+            const puedeTransicionar = (from, to, rol) => {
+                switch (rol) {
+                    case 'ROLE_GUION':
+                        switch (from) {
+                            case 'borrador': return to === 'para_verificar';
+                            case 'para_verificar': return to === 'revisar';
+                            case 'revisar': return to === 'para_verificar' || to === 'para_aprobar' || to === 'rechazada';
+                            case 'corregir': return to === 'para_aprobar' || to === 'para_verificar';
+                            default: return false;
+                        }
+                    case 'ROLE_VERIFICACION':
+                        switch (from) {
+                            case 'para_verificar': return to === 'verificada' || to === 'revisar';
+                            default: return false;
+                        }
+                    case 'ROLE_DIRECCION':
+                        switch (from) {
+                            case 'para_verificar': return to === 'verificada';
+                            case 'verificada': return to === 'corregir' || to === 'rechazada' || to === 'aprobada';
+                            case 'para_aprobar': return to === 'aprobada' || to === 'corregir' || to === 'rechazada' || to === 'para_verificar';
+                            case 'aprobada': return to === 'usada';
+                            case 'usada': return to === 'aprobada';
+                            default: return false;
+                        }
+                    default:
+                        return false;
+                }
+            };
+
+            // Mantener el estado actual como primera opción y filtrar el resto
+            const estadosFiltrados = estados.filter((estado, index) => index === 0 || puedeTransicionar(estadoActual, estado, rol));
+            return estadosFiltrados;
+        }
+
         return estados;
     },
 
@@ -999,6 +1036,8 @@ const PreguntasManager = {
             let response;
             
             if (campo === 'estado') {
+                const prevEstadoObj = this.preguntas.find(p => p.id === id);
+                const estadoAnterior = prevEstadoObj ? prevEstadoObj.estado : (valorOriginal || '');
                 // Usar endpoint especial para cambio de estado
                 console.log('📤 [FRONTEND] Enviando cambio de estado a:', `/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`);
                 response = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`, {
@@ -1019,6 +1058,27 @@ const PreguntasManager = {
                     const preguntaIndex = this.preguntas.findIndex(p => p.id === id);
                     if (preguntaIndex !== -1) {
                         this.preguntas[preguntaIndex].estado = estadoActual;
+                    }
+                    
+                    // Registrar acción de deshacer/rehacer
+                    if (window.UndoManager) {
+                        const hacer = async () => {
+                            const r = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`, { method: 'PUT', headers: authManager.getAuthHeaders() });
+                            if (r.ok) {
+                                await this.cargarPreguntas();
+                            } else {
+                                throw new Error('No se pudo rehacer el cambio de estado');
+                            }
+                        };
+                        const deshacer = async () => {
+                            const r = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${estadoAnterior}`, { method: 'PUT', headers: authManager.getAuthHeaders() });
+                            if (r.ok) {
+                                await this.cargarPreguntas();
+                            } else {
+                                throw new Error('No se pudo deshacer el cambio de estado');
+                            }
+                        };
+                        window.UndoManager.record({ do: hacer, undo: deshacer, label: `Estado ${estadoAnterior}→${nuevoValor}` });
                     }
                     
                     // Recargar la tabla completa para asegurar consistencia
@@ -1797,6 +1857,35 @@ const TemasManager = {
             `;
             tbody.appendChild(tr);
         });
+
+        // Rellenar dropdown de filtros de temática con estética Bootstrap
+        const cont = document.getElementById('filtro-tematica-options');
+        const search = document.getElementById('filtro-tematica-search');
+        const hidden = document.getElementById('filtro-tematica');
+        const toggle = document.getElementById('filtro-tematica-toggle');
+        if (cont && search && hidden && toggle) {
+            const render = (filtro = '') => {
+                cont.innerHTML = '';
+                const items = ['(Todos)', ...this.temas].filter(t => t.toLowerCase().includes(filtro.toLowerCase()));
+                items.forEach(t => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'dropdown-item';
+                    btn.textContent = t;
+                    btn.onclick = () => {
+                        const valor = t === '(Todos)' ? '' : t;
+                        hidden.value = valor;
+                        toggle.textContent = valor || 'Todos';
+                        // Cerrar dropdown
+                        document.body.click();
+                        if (typeof filtrarPreguntas === 'function') filtrarPreguntas();
+                    };
+                    cont.appendChild(btn);
+                });
+            };
+            render('');
+            search.oninput = () => render(search.value || '');
+        }
     },
 
     mostrarSubtemas() {
@@ -1817,6 +1906,35 @@ const TemasManager = {
             `;
             tbody.appendChild(tr);
         });
+
+        // Rellenar dropdown de filtros de subtema con estética Bootstrap
+        const cont = document.getElementById('filtro-subtema-options');
+        const search = document.getElementById('filtro-subtema-search');
+        const hidden = document.getElementById('filtro-subtema');
+        const toggle = document.getElementById('filtro-subtema-toggle');
+        if (cont && search && hidden && toggle) {
+            const render = (filtro = '') => {
+                cont.innerHTML = '';
+                const items = ['(Todos)', ...this.subtemas].filter(s => s.toLowerCase().includes(filtro.toLowerCase()));
+                items.forEach(s => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'dropdown-item';
+                    btn.textContent = s;
+                    btn.onclick = () => {
+                        const valor = s === '(Todos)' ? '' : s;
+                        hidden.value = valor;
+                        toggle.textContent = valor || 'Todos';
+                        // Cerrar dropdown
+                        document.body.click();
+                        if (typeof filtrarPreguntas === 'function') filtrarPreguntas();
+                    };
+                    cont.appendChild(btn);
+                });
+            };
+            render('');
+            search.oninput = () => render(search.value || '');
+        }
     },
 
     async añadirTema(nombreTema) {

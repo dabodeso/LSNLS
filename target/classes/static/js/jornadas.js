@@ -65,7 +65,7 @@ const JornadasManager = {
         this.seleccionarCombos();
     },
 
-    async cargarDatos(resetear = true) {
+    async cargarDatos(resetear = false) {
         console.log('📡 [JORNADAS] Cargando datos...');
         try {
             if (resetear) {
@@ -101,11 +101,8 @@ const JornadasManager = {
                 apiManager.get('/api/jornadas/combos-disponibles')
             ]);
 
-            if (resetear) {
-                this.jornadas = jornadasRes.datos?.content || [];
-            } else {
-                this.jornadas = [...this.jornadas, ...(jornadasRes.datos?.content || [])];
-            }
+            // Siempre reemplazar las jornadas con las de la página actual
+            this.jornadas = jornadasRes.datos?.content || [];
 
             this.totalJornadas = jornadasRes.datos?.totalElements || 0;
             this.totalPaginas = jornadasRes.datos?.totalPages || 0;
@@ -166,33 +163,6 @@ const JornadasManager = {
         }
     },
 
-    async cargarMasJornadas() {
-        console.log('🔄 [CARGAR MÁS] Iniciando carga de más jornadas...');
-        
-        if (this.cargando) {
-            console.log('❌ [CARGAR MÁS] Ya está cargando, abortando...');
-            return;
-        }
-        
-        if (this.paginaActual >= this.totalPaginas - 1) {
-            console.log('❌ [CARGAR MÁS] Ya estamos en la última página, abortando...');
-            return;
-        }
-        
-        // Guardar la posición actual del scroll
-        const scrollPosition = window.scrollY;
-        console.log('📍 [CARGAR MÁS] Posición del scroll guardada:', scrollPosition);
-        
-        this.paginaActual++;
-        console.log('✅ [CARGAR MÁS] Página incrementada a:', this.paginaActual);
-        await this.cargarDatos(false);
-        
-        // Restaurar la posición del scroll después de cargar las jornadas
-        setTimeout(() => {
-            window.scrollTo(0, scrollPosition);
-            console.log('📍 [CARGAR MÁS] Posición del scroll restaurada:', scrollPosition);
-        }, 100);
-    },
 
     mostrarEstadoCarga() {
         const container = document.getElementById('listaJornadas');
@@ -211,85 +181,89 @@ const JornadasManager = {
     },
 
     actualizarPaginacion() {
-        console.log('🔄 [PAGINACION] Actualizando paginación...');
+        console.log('🔄 [PAGINACION] Actualizando paginación con botones de páginas...');
         console.log('🔄 [PAGINACION] Estado - jornadas.length:', this.jornadas.length, 'totalJornadas:', this.totalJornadas, 'paginaActual:', this.paginaActual, 'totalPaginas:', this.totalPaginas);
         
-        let paginacionContainer = document.getElementById('paginacion-jornadas');
+        // Usar el contenedor de paginación del HTML
+        const paginacionContainer = document.getElementById('paginacion-jornadas');
+        const infoPaginacion = document.getElementById('info-paginacion-jornadas');
+        
         if (!paginacionContainer) {
-            console.log('🔄 [PAGINACION] Contenedor no encontrado, creando...');
-            // Crear el contenedor si no existe
-            const listaContainer = document.getElementById('listaJornadas');
-            if (listaContainer) {
-                console.log('✅ [PAGINACION] Lista encontrada, creando contenedor...');
-                const paginacionDiv = document.createElement('div');
-                paginacionDiv.id = 'paginacion-jornadas';
-                paginacionDiv.className = 'mt-3 d-flex justify-content-between align-items-center';
-                listaContainer.parentNode.insertBefore(paginacionDiv, listaContainer.nextSibling);
-                // Obtener la referencia al contenedor recién creado
-                paginacionContainer = document.getElementById('paginacion-jornadas');
-                console.log('✅ [PAGINACION] Contenedor creado:', paginacionContainer);
-            } else {
-                console.error('❌ [PAGINACION] No se encontró la lista de jornadas');
-            }
-        } else {
-            console.log('✅ [PAGINACION] Contenedor existente encontrado');
+            console.error('❌ [PAGINACION] Contenedor de paginación no encontrado');
+            return;
         }
 
-        if (paginacionContainer) {
-            const infoPagina = document.createElement('div');
-            infoPagina.innerHTML = `Mostrando ${this.jornadas.length} de ${this.totalJornadas} jornadas (Página ${this.paginaActual + 1} de ${this.totalPaginas})`;
+        // Actualizar información de paginación
+        if (infoPaginacion) {
+            const inicio = (this.paginaActual * this.tamanioPagina) + 1;
+            const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalJornadas);
+            infoPaginacion.textContent = `Mostrando ${inicio}-${fin} de ${this.totalJornadas} jornadas`;
+        }
 
-            // Crear el botón con un enfoque más robusto
-            const botonCargarMas = document.createElement('button');
-            botonCargarMas.className = 'btn btn-primary';
-            botonCargarMas.innerHTML = '<i class="fas fa-plus"></i> Cargar más jornadas';
-            botonCargarMas.type = 'button';
-            botonCargarMas.id = 'btn-cargar-mas-jornadas';
-            
-            // Estilos inline para asegurar que sea clickeable
-            Object.assign(botonCargarMas.style, {
-                cursor: 'pointer',
-                pointerEvents: 'auto',
-                position: 'relative',
-                zIndex: '1000',
-                display: 'inline-block',
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-                MozUserSelect: 'none',
-                msUserSelect: 'none'
-            });
-            
-            // Verificar si el botón debe estar deshabilitado
-            const botonDeshabilitado = this.cargando || this.paginaActual >= this.totalPaginas - 1;
-            
-            if (botonDeshabilitado) {
-                botonCargarMas.disabled = true;
-                botonCargarMas.style.opacity = '0.6';
-                botonCargarMas.style.cursor = 'not-allowed';
-            } else {
-                botonCargarMas.disabled = false;
-                botonCargarMas.style.opacity = '1';
-                botonCargarMas.style.cursor = 'pointer';
-                
-                // Añadir event listener solo si el botón está habilitado
-                botonCargarMas.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('🔄 [BOTON] Botón "Cargar más" clickeado');
-                    this.cargarMasJornadas();
-                });
-            }
-            
-            console.log('✅ [PAGINACION] Botón creado, deshabilitado:', botonDeshabilitado);
-            console.log('✅ [PAGINACION] Estado del botón - cargando:', this.cargando, 'paginaActual >= totalPaginas-1:', this.paginaActual >= this.totalPaginas - 1);
-            console.log('✅ [PAGINACION] Total páginas:', this.totalPaginas, 'Página actual:', this.paginaActual);
+        // Limpiar botones existentes
+        paginacionContainer.innerHTML = '';
 
-            paginacionContainer.innerHTML = '';
-            paginacionContainer.appendChild(infoPagina);
-            paginacionContainer.appendChild(botonCargarMas);
-            
-            console.log('✅ [PAGINACION] Paginación actualizada correctamente');
-            console.log('✅ [PAGINACION] Botón añadido al DOM:', botonCargarMas);
+        if (this.totalPaginas <= 1) {
+            console.log('✅ [PAGINACION] Solo hay una página, no se muestran botones');
+            return;
+        }
+
+        // Crear botón "Primera"
+        const primeraPagina = document.createElement('li');
+        primeraPagina.className = `page-item ${this.paginaActual === 0 ? 'disabled' : ''}`;
+        primeraPagina.innerHTML = `<a class="page-link" href="#" onclick="JornadasManager.irAPagina(0)">Primera</a>`;
+        paginacionContainer.appendChild(primeraPagina);
+
+        // Crear botón "Anterior"
+        const paginaAnterior = document.createElement('li');
+        paginaAnterior.className = `page-item ${this.paginaActual === 0 ? 'disabled' : ''}`;
+        paginaAnterior.innerHTML = `<a class="page-link" href="#" onclick="JornadasManager.irAPagina(${this.paginaActual - 1})">Anterior</a>`;
+        paginacionContainer.appendChild(paginaAnterior);
+
+        // Calcular rango de páginas a mostrar
+        const inicio = Math.max(0, this.paginaActual - 2);
+        const fin = Math.min(this.totalPaginas - 1, this.paginaActual + 2);
+
+        // Mostrar páginas en el rango
+        for (let i = inicio; i <= fin; i++) {
+            const pagina = document.createElement('li');
+            pagina.className = `page-item ${i === this.paginaActual ? 'active' : ''}`;
+            pagina.innerHTML = `<a class="page-link" href="#" onclick="JornadasManager.irAPagina(${i})">${i + 1}</a>`;
+            paginacionContainer.appendChild(pagina);
+        }
+
+        // Crear botón "Siguiente"
+        const paginaSiguiente = document.createElement('li');
+        paginaSiguiente.className = `page-item ${this.paginaActual >= this.totalPaginas - 1 ? 'disabled' : ''}`;
+        paginaSiguiente.innerHTML = `<a class="page-link" href="#" onclick="JornadasManager.irAPagina(${this.paginaActual + 1})">Siguiente</a>`;
+        paginacionContainer.appendChild(paginaSiguiente);
+
+        // Crear botón "Última"
+        const ultimaPagina = document.createElement('li');
+        ultimaPagina.className = `page-item ${this.paginaActual >= this.totalPaginas - 1 ? 'disabled' : ''}`;
+        ultimaPagina.innerHTML = `<a class="page-link" href="#" onclick="JornadasManager.irAPagina(${this.totalPaginas - 1})">Última</a>`;
+        paginacionContainer.appendChild(ultimaPagina);
+
+        console.log('✅ [PAGINACION] Botones de paginación creados correctamente');
+    },
+
+    irAPagina(pagina) {
+        if (pagina < 0 || pagina >= this.totalPaginas || pagina === this.paginaActual) {
+            return;
+        }
+        
+        console.log(`🔄 [PAGINACION] Navegando a página ${pagina + 1}`);
+        this.paginaActual = pagina;
+        this.cargarDatos(); // Cargar datos de la nueva página
+    },
+
+    cambiarTamanioPagina() {
+        const select = document.getElementById('tamanio-pagina-jornadas');
+        if (select) {
+            this.tamanioPagina = parseInt(select.value);
+            console.log(`🔄 [PAGINACION] Cambiando tamaño de página a ${this.tamanioPagina}`);
+            this.paginaActual = 0;
+            this.cargarDatos();
         }
     },
 
@@ -623,9 +597,9 @@ const JornadasManager = {
 
             let response;
             if (this.jornadaEditando) {
-                response = await apiManager.put(`/api/jornadas/${this.jornadaEditando.id}`, datos);
+                response = await apiManager.putUndoable(`/api/jornadas/${this.jornadaEditando.id}`, datos, { label: `Actualizar jornada ${this.jornadaEditando.id}` });
             } else {
-                response = await apiManager.post('/api/jornadas', datos);
+                response = await apiManager.postUndoable('/api/jornadas', datos, { label: 'Crear jornada', idExtractor: (r) => r?.id || r?.datos?.id, deleteEndpointBuilder: (id) => `/api/jornadas/${id}` });
             }
 
             Utils.showAlert('Jornada guardada exitosamente', 'success');
@@ -660,7 +634,7 @@ const JornadasManager = {
         }
 
         try {
-            await apiManager.delete(`/api/jornadas/${id}`);
+            await apiManager.deleteUndoable(`/api/jornadas/${id}`, { label: `Eliminar jornada ${id}`, snapshotEndpoint: `/api/jornadas/${id}` });
             Utils.showAlert('Jornada eliminada exitosamente', 'success');
             
             await this.cargarDatos(true);
@@ -688,7 +662,7 @@ const JornadasManager = {
         if (!nuevoEstado) return;
 
         try {
-            await apiManager.put(`/api/jornadas/${id}/estado`, { estado: nuevoEstado });
+            await apiManager.putUndoable(`/api/jornadas/${id}/estado`, { estado: nuevoEstado }, { label: `Estado jornada ${id}` , snapshotEndpoint: `/api/jornadas/${id}`});
             Utils.showAlert('Estado actualizado exitosamente', 'success');
             
             await this.cargarDatos(true);
@@ -1248,6 +1222,10 @@ const JornadasManager = {
             console.log('🔍 [JORNADAS] Cuestionarios seleccionados:', this.cuestionariosSeleccionados);
             console.log('🔍 [JORNADAS] Jornada editando:', this.jornadaEditando);
             
+            const jid = this.jornadaEditando.id;
+            const prevLista = (this.jornadaEditando.cuestionarioIds || []).slice();
+            const nuevaLista = (this.cuestionariosSeleccionados || []).slice();
+
             // Incluir todos los campos de la jornada actual para evitar que se pierdan datos
             const datos = {
                 nombre: this.jornadaEditando.nombre,
@@ -1259,11 +1237,40 @@ const JornadasManager = {
             };
             
             console.log('🔍 [JORNADAS] Datos a enviar:', datos);
-
-            const jid = this.jornadaEditando.id;
             await apiManager.put(`/api/jornadas/${jid}`, datos);
             Utils.showAlert('Cuestionarios actualizados exitosamente', 'success');
             
+            // Registrar acción de deshacer/rehacer para cuestionarios
+            if (window.UndoManager) {
+                const hacer = async () => {
+                    const d = {
+                        nombre: this.jornadaEditando.nombre,
+                        fechaJornada: this.jornadaEditando.fechaJornada,
+                        lugar: this.jornadaEditando.lugar,
+                        notas: this.jornadaEditando.notas,
+                        cuestionarioIds: nuevaLista,
+                        comboIds: this.jornadaEditando.comboIds || []
+                    };
+                    await apiManager.put(`/api/jornadas/${jid}`, d);
+                    await this.cargarDatos(true);
+                    this.mostrarJornadas();
+                };
+                const deshacer = async () => {
+                    const d = {
+                        nombre: this.jornadaEditando.nombre,
+                        fechaJornada: this.jornadaEditando.fechaJornada,
+                        lugar: this.jornadaEditando.lugar,
+                        notas: this.jornadaEditando.notas,
+                        cuestionarioIds: prevLista,
+                        comboIds: this.jornadaEditando.comboIds || []
+                    };
+                    await apiManager.put(`/api/jornadas/${jid}`, d);
+                    await this.cargarDatos(true);
+                    this.mostrarJornadas();
+                };
+                window.UndoManager.record({ do: hacer, undo: deshacer, label: `Jornada ${jid}: cuestionarios ${prevLista.join(',')}→${nuevaLista.join(',')}` });
+            }
+
             // Recargar datos para mostrar los cambios
             await this.cargarDatos(true);
             this.mostrarJornadas();
@@ -1300,6 +1307,10 @@ const JornadasManager = {
             console.log('🔍 [JORNADAS] Combos seleccionados:', this.combosSeleccionados);
             console.log('🔍 [JORNADAS] Jornada editando:', this.jornadaEditando);
             
+            const jid = this.jornadaEditando.id;
+            const prevLista = (this.jornadaEditando.comboIds || []).slice();
+            const nuevaLista = (this.combosSeleccionados || []).slice();
+
             // Incluir todos los campos de la jornada actual para evitar que se pierdan datos
             const datos = {
                 nombre: this.jornadaEditando.nombre,
@@ -1311,11 +1322,40 @@ const JornadasManager = {
             };
             
             console.log('🔍 [JORNADAS] Datos a enviar:', datos);
-
-            const jid = this.jornadaEditando.id;
             await apiManager.put(`/api/jornadas/${jid}`, datos);
             Utils.showAlert('Combos actualizados exitosamente', 'success');
             
+            // Registrar acción de deshacer/rehacer para combos
+            if (window.UndoManager) {
+                const hacer = async () => {
+                    const d = {
+                        nombre: this.jornadaEditando.nombre,
+                        fechaJornada: this.jornadaEditando.fechaJornada,
+                        lugar: this.jornadaEditando.lugar,
+                        notas: this.jornadaEditando.notas,
+                        cuestionarioIds: this.jornadaEditando.cuestionarioIds || [],
+                        comboIds: nuevaLista
+                    };
+                    await apiManager.put(`/api/jornadas/${jid}`, d);
+                    await this.cargarDatos(true);
+                    this.mostrarJornadas();
+                };
+                const deshacer = async () => {
+                    const d = {
+                        nombre: this.jornadaEditando.nombre,
+                        fechaJornada: this.jornadaEditando.fechaJornada,
+                        lugar: this.jornadaEditando.lugar,
+                        notas: this.jornadaEditando.notas,
+                        cuestionarioIds: this.jornadaEditando.cuestionarioIds || [],
+                        comboIds: prevLista
+                    };
+                    await apiManager.put(`/api/jornadas/${jid}`, d);
+                    await this.cargarDatos(true);
+                    this.mostrarJornadas();
+                };
+                window.UndoManager.record({ do: hacer, undo: deshacer, label: `Jornada ${jid}: combos ${prevLista.join(',')}→${nuevaLista.join(',')}` });
+            }
+
             // Recargar datos para mostrar los cambios
             await this.cargarDatos(true);
             this.mostrarJornadas();
@@ -1598,7 +1638,7 @@ const JornadasManager = {
         try {
             const factor = (valor || '').trim();
             const body = { factorMultiplicacion: factor };
-            await apiManager.put(`/api/combos/${comboId}/preguntas/${preguntaId}/factor`, body);
+            await apiManager.putUndoable(`/api/combos/${comboId}/preguntas/${preguntaId}/factor`, body, { label: `Factor combo ${comboId}` , snapshotEndpoint: `/api/combos/${comboId}`});
             Toastify({
                 text: 'Multiplicador actualizado',
                 duration: 2000,

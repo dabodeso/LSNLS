@@ -294,13 +294,29 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Temática:</label>
-                            <input type="text" id="filtro-tematica" class="form-control form-control-sm" 
-                                   onkeyup="filtrarPreguntas()" placeholder="Buscar tema...">
+                            <input type="hidden" id="filtro-tematica" value="">
+                            <div class="dropdown w-100">
+                                <button class="form-select form-select-sm text-start" id="filtro-tematica-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Todos
+                                </button>
+                                <div class="dropdown-menu p-2 w-100" style="max-height: 260px; overflow-y:auto;">
+                                    <input type="text" id="filtro-tematica-search" class="form-control form-control-sm mb-2" placeholder="Buscar tema...">
+                                    <div id="filtro-tematica-options"></div>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Subtema:</label>
-                            <input type="text" id="filtro-subtema" class="form-control form-control-sm" 
-                                   onkeyup="filtrarPreguntas()" placeholder="Buscar subtema...">
+                            <input type="hidden" id="filtro-subtema" value="">
+                            <div class="dropdown w-100">
+                                <button class="form-select form-select-sm text-start" id="filtro-subtema-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Todos
+                                </button>
+                                <div class="dropdown-menu p-2 w-100" style="max-height: 260px; overflow-y:auto;">
+                                    <input type="text" id="filtro-subtema-search" class="form-control form-control-sm mb-2" placeholder="Buscar subtema...">
+                                    <div id="filtro-subtema-options"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="row mt-2">
@@ -682,6 +698,11 @@
         inicializarScrollbarPersonalizadaPreguntas();
         inicializarContadorCaracteres();
         // inicializarOrdenamientoPreguntas(); // Ya no es necesario - se maneja en preguntas.js
+        // Cargar Temas/Subtemas para autocompletar de filtros
+        if (typeof TemasManager !== 'undefined') {
+            TemasManager.cargarTemas();
+            TemasManager.cargarSubtemas();
+        }
         document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
             e.preventDefault();
             const actual = document.getElementById('password-actual').value;

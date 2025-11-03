@@ -747,10 +747,14 @@ if (response.ok) {
                 try {
                     if (nuevaJornada) {
                         console.info('🔗 [GUARDAR] Asignando jornada (edición)', { id: datosConcursante.id, nuevaJornada });
-                        await apiManager.post(`/api/concursantes/${datosConcursante.id}/asignar-jornada/${nuevaJornada}`);
+                        await apiManager.postUndoable(`/api/concursantes/${datosConcursante.id}/asignar-jornada/${nuevaJornada}`, {}, {
+                            label: `Asignar jornada a concursante ${datosConcursante.id}`,
+                            idExtractor: () => datosConcursante.id,
+                            deleteEndpointBuilder: () => `/api/concursantes/${datosConcursante.id}/desasignar-jornada`
+                        });
                     } else {
                         console.info('🔗 [GUARDAR] Desasignando jornada (edición)', { id: datosConcursante.id });
-                        await apiManager.delete(`/api/concursantes/${datosConcursante.id}/desasignar-jornada`);
+                        await apiManager.deleteUndoable(`/api/concursantes/${datosConcursante.id}/desasignar-jornada`, { label: `Desasignar jornada de concursante ${datosConcursante.id}`, snapshotEndpoint: `/api/concursantes/${datosConcursante.id}` });
                     }
                 } catch (e) {
                     console.warn('No se pudo sincronizar la jornada del concursante:', e);
@@ -770,7 +774,11 @@ if (response.ok) {
             if (selectedJornadaId && creadoId) {
                 try {
                     console.info('🔗 [GUARDAR] Asignando jornada tras crear', { creadoId, selectedJornadaId });
-                    await apiManager.post(`/api/concursantes/${creadoId}/asignar-jornada/${selectedJornadaId}`);
+                    await apiManager.postUndoable(`/api/concursantes/${creadoId}/asignar-jornada/${selectedJornadaId}`, {}, {
+                        label: `Asignar jornada a concursante ${creadoId}`,
+                        idExtractor: () => creadoId,
+                        deleteEndpointBuilder: () => `/api/concursantes/${creadoId}/desasignar-jornada`
+                    });
                 } catch (e) {
                     console.warn('⚠️ [GUARDAR] Error asignando jornada tras crear', e);
                 }
@@ -871,7 +879,7 @@ return;
 }
 
 try {
-await apiManager.delete(`/api/concursantes/${id}`);
+await apiManager.deleteUndoable(`/api/concursantes/${id}`, { label: `Eliminar concursante ${id}`, snapshotEndpoint: `/api/concursantes/${id}` });
         await cargarConcursantes();
         // Reiniciar paginación y cargar desde el servidor
         paginaActual = 0;
@@ -1020,7 +1028,7 @@ concursante.programa = prog ? { id: prog.id } : null;
             console.log('⏱️ DEBUG - Objeto concursante a enviar:', JSON.stringify(concursante));
         }
         
-await apiManager.put(`/api/concursantes/${id}`, concursante);
+await apiManager.putUndoable(`/api/concursantes/${id}`, concursante, { label: `Actualizar concursante ${id}` });
         await cargarConcursantes();
         // Reiniciar paginación y cargar desde el servidor
         paginaActual = 0;
@@ -1484,7 +1492,7 @@ try {
 const concursante = concursantes.find(c => c.id === concursanteParaAsignar);
 if (concursante) {
 concursante.cuestionarioId = id;
-await apiManager.put(`/api/concursantes/${concursanteParaAsignar}`, concursante);
+await apiManager.putUndoable(`/api/concursantes/${concursanteParaAsignar}`, concursante, { label: `Actualizar concursante ${concursanteParaAsignar}` });
                 // Refrescar fila en pantalla sin perder contexto
                 const paginaAntes = paginaActual;
                 await cargarConcursantes(true);
@@ -1511,7 +1519,7 @@ try {
 const concursante = concursantes.find(c => c.id === concursanteParaAsignar);
 if (concursante) {
 concursante.comboId = id;
-await apiManager.put(`/api/concursantes/${concursanteParaAsignar}`, concursante);
+await apiManager.putUndoable(`/api/concursantes/${concursanteParaAsignar}`, concursante, { label: `Actualizar concursante ${concursanteParaAsignar}` });
                 // Refrescar fila en pantalla sin perder contexto
                 const paginaAntes = paginaActual;
                 await cargarConcursantes(true);
@@ -2029,7 +2037,11 @@ document.body.insertAdjacentHTML('beforeend', modalHTML);
 async function seleccionarJornadaModal(jornadaId) {
 if (concursanteParaAsignarJornada) {
 try {
-await apiManager.post(`/api/concursantes/${concursanteParaAsignarJornada}/asignar-jornada/${jornadaId}`);
+await apiManager.postUndoable(`/api/concursantes/${concursanteParaAsignarJornada}/asignar-jornada/${jornadaId}`, {}, {
+    label: `Asignar jornada a concursante ${concursanteParaAsignarJornada}`,
+    idExtractor: () => concursanteParaAsignarJornada,
+    deleteEndpointBuilder: () => `/api/concursantes/${concursanteParaAsignarJornada}/desasignar-jornada`
+});
             await cargarConcursantes();
             // Reiniciar paginación y cargar desde el servidor
             paginaActual = 0;
@@ -2048,7 +2060,7 @@ modal.hide();
 async function desasignarJornadaModal() {
 if (concursanteParaAsignarJornada) {
 try {
-await apiManager.delete(`/api/concursantes/${concursanteParaAsignarJornada}/desasignar-jornada`);
+await apiManager.deleteUndoable(`/api/concursantes/${concursanteParaAsignarJornada}/desasignar-jornada`, { label: `Desasignar jornada de concursante ${concursanteParaAsignarJornada}`, snapshotEndpoint: `/api/concursantes/${concursanteParaAsignarJornada}` });
             await cargarConcursantes();
             // Reiniciar paginación y cargar desde el servidor
             paginaActual = 0;

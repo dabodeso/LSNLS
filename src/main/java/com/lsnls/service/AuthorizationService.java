@@ -2,10 +2,8 @@ package com.lsnls.service;
 
 import com.lsnls.entity.Usuario;
 import com.lsnls.entity.Pregunta;
-import com.lsnls.entity.Cuestionario;
 import com.lsnls.entity.Cuestionario.EstadoCuestionario;
 import com.lsnls.entity.Combo;
-import com.lsnls.entity.Concursante;
 import com.lsnls.entity.Programa;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -96,6 +94,11 @@ public class AuthorizationService {
                 
                 // Verificar la transición válida según el autómata
                 boolean transicionValida = false;
+
+                // Dirección puede hacer cualquier transición
+                if (isDireccion) {
+                    return true;
+                }
                 
                 switch (estadoActual) {
                     case borrador:
@@ -112,10 +115,11 @@ public class AuthorizationService {
                         break;
                         
                     case revisar:
-                        // Revisar -> Para Verificar o Rechazada (por Guion)
-                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_verificar || 
-                                           nuevoEstado == Pregunta.EstadoPregunta.rechazada) && 
-                                          isGuion;
+                    // Revisar -> Para Verificar, Para Aprobar o Rechazada (por Guion)
+                    transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_verificar ||
+                                       nuevoEstado == Pregunta.EstadoPregunta.para_aprobar ||
+                                       nuevoEstado == Pregunta.EstadoPregunta.rechazada) &&
+                                      isGuion;
                         break;
                         
                     case verificada:
@@ -134,11 +138,12 @@ public class AuthorizationService {
                         break;
                         
                     case para_aprobar:
-                        // Para Aprobar -> Aprobada, Corregir o Rechazada (por Dirección)
-                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.aprobada || 
-                                           nuevoEstado == Pregunta.EstadoPregunta.corregir || 
-                                           nuevoEstado == Pregunta.EstadoPregunta.rechazada) && 
-                                          isDireccion;
+                    // Para Aprobar -> Aprobada, Corregir, Rechazada o Para Verificar (por Dirección)
+                    transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.aprobada ||
+                                       nuevoEstado == Pregunta.EstadoPregunta.corregir ||
+                                       nuevoEstado == Pregunta.EstadoPregunta.rechazada ||
+                                       nuevoEstado == Pregunta.EstadoPregunta.para_verificar) &&
+                                      isDireccion;
                         break;
                         
                     case aprobada:
