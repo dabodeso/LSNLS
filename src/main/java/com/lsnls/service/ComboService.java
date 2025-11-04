@@ -495,6 +495,7 @@ public class ComboService {
         dto.put("estado", c.getEstado());
         dto.put("tipo", c.getTipo());
         dto.put("tematica", c.getTematica());
+        dto.put("notasDireccion", c.getNotasDireccion());
         dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
         // Jornada asignada (si existe)
         try {
@@ -780,6 +781,7 @@ public class ComboService {
         combo.setNivel(NivelCombo.NORMAL);
         combo.setTipo(Combo.TipoCombo.valueOf(dto.getTipo()));
         combo.setTematica(dto.getTematica());
+        combo.setNotasDireccion(dto.getNotasDireccion());
         combo = comboRepository.save(combo);
 
         // PASO 4: Crear las relaciones pregunta-combo (preguntas ya reservadas)

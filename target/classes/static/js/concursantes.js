@@ -714,27 +714,25 @@ let response;
     console.info('🔧 [GUARDAR] selectedJornadaId', selectedJornadaId);
 
     if (esEdicion) {
-        // Editar concursante existente
-        console.info('📤 [GUARDAR] PUT', `/api/concursantes/${datosConcursante.id}`);
-        response = await fetch(`/api/concursantes/${datosConcursante.id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
-            },
-            body: JSON.stringify(datosConcursante)
-        });
+        // Editar concursante existente (manual do/undo con refresco UI)
+        console.info('📤 [GUARDAR] PUT (manual do/undo)', `/api/concursantes/${datosConcursante.id}`);
+        const snapshotPrevio = await apiManager.get(`/api/concursantes/${datosConcursante.id}`);
+        const doAction = async () => { await apiManager.put(`/api/concursantes/${datosConcursante.id}`, datosConcursante); await cargarConcursantes(true); };
+        const undoAction = async () => { await apiManager.put(`/api/concursantes/${datosConcursante.id}`, snapshotPrevio); await cargarConcursantes(true); };
+        await doAction();
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar concursante ${datosConcursante.id}` });
+        // Simular objeto Response OK para flujo existente
+        response = new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     } else {
-        // Crear nuevo concursante
-        console.info('📤 [GUARDAR] POST', '/api/concursantes');
-        response = await fetch('/api/concursantes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
-            },
-            body: JSON.stringify(datosConcursante)
+        // Crear nuevo concursante (undoable)
+        console.info('📤 [GUARDAR] POST-undoable', '/api/concursantes');
+        const creado = await apiManager.postUndoable('/api/concursantes', datosConcursante, {
+            label: 'Crear concursante',
+            idExtractor: (r) => (r && (r.id || r?.datos?.id || r?.data?.id)) ? (r.id || r?.datos?.id || r?.data?.id) : null,
+            deleteEndpointBuilder: (id) => `/api/concursantes/${id}`
         });
+        // Construir Response-like para seguir flujo
+        response = new Response(JSON.stringify(creado || {}), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
 if (response.ok) {
@@ -862,32 +860,92 @@ mostrarError('Error de red o inesperado: ' + err);
 
 // Manejar cambio de estado desde el select en la tabla
 $(document).on('change', '.estado-select', async function() {
-const id = $(this).data('id');
-const nuevoEstado = $(this).val();
-// Lógica para actualizar el estado en el backend
-await fetch(`/api/concursantes/${id}/estado`, {
-method: 'PUT',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ estado: nuevoEstado })
-});
-// Recargar o actualizar la fila si es necesario
+    const id = $(this).data('id');
+    const nuevoEstado = $(this).val();
+    try {
+        const snapshot = await apiManager.get(`/api/concursantes/${id}`);
+        const estadoPrevio = snapshot && snapshot.estado ? snapshot.estado : null;
+        const doAction = async () => { await apiManager.put(`/api/concursantes/${id}/estado`, { estado: nuevoEstado }); await cargarConcursantes(true); };
+        const undoAction = async () => { if (estadoPrevio !== null) { await apiManager.put(`/api/concursantes/${id}/estado`, { estado: estadoPrevio }); await cargarConcursantes(true); } };
+        await doAction();
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Estado concursante ${id}` });
+    } catch (e) {
+        mostrarError('Error al cambiar estado: ' + e.message);
+    }
 });
 
 async function eliminarConcursante(id) {
-if (!confirm('¿Está seguro de que desea eliminar este concursante?')) {
-return;
-}
+    try {
+        const c = (concursantes || []).find(x => x && x.id === id);
+        if (c && c.jornadaId) {
+            mostrarError('No se puede eliminar un concursante con jornada asignada. Desasigna la jornada primero.');
+            return;
+        }
+        if (!confirm('¿Está seguro de que desea eliminar este concursante?')) {
+            return;
+        }
 
-try {
-await apiManager.deleteUndoable(`/api/concursantes/${id}`, { label: `Eliminar concursante ${id}`, snapshotEndpoint: `/api/concursantes/${id}` });
-        await cargarConcursantes();
-        // Reiniciar paginación y cargar desde el servidor
-        paginaActual = 0;
-        await cargarConcursantes(true);
-mostrarExito('Concursante eliminado correctamente');
-} catch (error) {
-mostrarError('Error al eliminar concursante: ' + error.message);
-}
+        // Snapshot previo
+        const previo = await apiManager.get(`/api/concursantes/${id}`);
+        let idOriginal = id;
+        let idRecreado = null;
+
+        const doDelete = async () => {
+            const objetivo = idRecreado || idOriginal;
+            await apiManager.delete(`/api/concursantes/${objetivo}`);
+            await cargarConcursantes(true);
+        };
+
+        const undoCreate = async () => {
+            try {
+                // Reconstruir payload compatible con POST creación
+                const payload = {
+                    jornadaId: previo?.jornadaId || null,
+                    diaGrabacion: previo?.diaGrabacion || null,
+                    lugar: previo?.lugar || null,
+                    nombre: previo?.nombre || null,
+                    edad: previo?.edad || null,
+                    ocupacion: previo?.ocupacion || null,
+                    redesSociales: previo?.redesSociales || null,
+                    cuestionarioId: previo?.cuestionarioId || null,
+                    comboId: previo?.comboId || null,
+                    factorX: previo?.factorX || null,
+                    resultado: previo?.resultado || null,
+                    notasGrabacion: previo?.notasGrabacion || null,
+                    guionista: previo?.guionista || null,
+                    valoracionGuionista: previo?.valoracionGuionista || null,
+                    momentosDestacados: previo?.momentosDestacados || null,
+                    duracion: previo?.duracion || null,
+                    duracionDireccion: previo?.duracionDireccion || null,
+                    duracionFinal: previo?.duracionFinal || null,
+                    valoracionFinal: previo?.valoracionFinal || null,
+                    numeroPrograma: previo?.numeroPrograma || null,
+                    ordenEscaleta: previo?.ordenEscaleta || null,
+                    bonico: previo?.bonico || null,
+                    estado: previo?.estado || null,
+                    premio: previo?.premio || null,
+                    foto: previo?.foto || null,
+                    creditosEspeciales: previo?.creditosEspeciales || null,
+                    numeroConcursante: previo?.numeroConcursante || null
+                };
+                const creado = await apiManager.post('/api/concursantes', payload);
+                const nuevoId = (creado && (creado.id || creado?.datos?.id || creado?.data?.id)) ? (creado.id || creado?.datos?.id || creado?.data?.id) : null;
+                if (payload.jornadaId && nuevoId) {
+                    try { await apiManager.post(`/api/concursantes/${nuevoId}/asignar-jornada/${payload.jornadaId}`, {}); } catch {}
+                }
+                idRecreado = nuevoId; // Para que REDO elimine el recreado
+                await cargarConcursantes(true);
+            } catch (e) {
+                mostrarError('No se pudo restaurar el concursante: ' + e.message);
+            }
+        };
+
+        await doDelete();
+        if (window.UndoManager) window.UndoManager.record({ do: doDelete, undo: undoCreate, label: `Eliminar concursante ${id}` });
+        mostrarExito('Concursante eliminado correctamente');
+    } catch (error) {
+        mostrarError('Error al eliminar concursante: ' + error.message);
+    }
 }
 
 async function editarCeldaConcursante(id, campo, td) {
@@ -1022,18 +1080,49 @@ const prog = programas.find(p => p.id == valorConvertido);
 concursante.programa = prog ? { id: prog.id } : null;
 }
 
-        // Log para depuración de campos de duración
-        if (['duracion', 'duracion_direccion', 'duracion_final'].includes(campo)) {
-            console.log('⏱️ DEBUG - Enviando al servidor:', campo, '=', valorConvertido);
-            console.log('⏱️ DEBUG - Objeto concursante a enviar:', JSON.stringify(concursante));
-        }
-        
-await apiManager.putUndoable(`/api/concursantes/${id}`, concursante, { label: `Actualizar concursante ${id}` });
-        await cargarConcursantes();
-        // Reiniciar paginación y cargar desde el servidor
-        paginaActual = 0;
-        await cargarConcursantes(true);
-mostrarExito('Campo actualizado correctamente');
+        // Construir payloads prev/next para do/undo y refrescar UI sin F5
+        const snapshot = await apiManager.get(`/api/concursantes/${id}`);
+        const buildPayload = (src) => ({
+            id: id,
+            jornadaId: src?.jornadaId ?? null,
+            diaGrabacion: src?.diaGrabacion ?? null,
+            lugar: src?.lugar ?? null,
+            nombre: src?.nombre ?? null,
+            edad: src?.edad ?? null,
+            ocupacion: src?.ocupacion ?? null,
+            redesSociales: src?.redesSociales ?? null,
+            cuestionarioId: src?.cuestionarioId ?? null,
+            comboId: src?.comboId ?? null,
+            factorX: src?.factorX ?? null,
+            resultado: src?.resultado ?? null,
+            notasGrabacion: src?.notasGrabacion ?? null,
+            guionista: src?.guionista ?? null,
+            valoracionGuionista: src?.valoracionGuionista ?? null,
+            momentosDestacados: src?.momentosDestacados ?? null,
+            duracion: src?.duracion ?? null,
+            duracionDireccion: src?.duracionDireccion ?? null,
+            duracionFinal: src?.duracionFinal ?? null,
+            valoracionFinal: src?.valoracionFinal ?? null,
+            numeroPrograma: src?.numeroPrograma ?? null,
+            ordenEscaleta: src?.ordenEscaleta ?? null,
+            bonico: src?.bonico ?? null,
+            estado: src?.estado ?? null,
+            premio: src?.premio ?? null,
+            foto: src?.foto ?? null,
+            creditosEspeciales: src?.creditosEspeciales ?? null,
+            numeroConcursante: src?.numeroConcursante ?? null
+        });
+
+        const prevPayload = buildPayload(snapshot);
+        const nextSource = { ...snapshot, [campo]: valorConvertido };
+        const nextPayload = buildPayload(nextSource);
+
+        const doAction = async () => { await apiManager.put(`/api/concursantes/${id}`, nextPayload); await cargarConcursantes(true); };
+        const undoAction = async () => { await apiManager.put(`/api/concursantes/${id}`, prevPayload); await cargarConcursantes(true); };
+
+        await doAction();
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar concursante ${id} - ${campo}` });
+        mostrarExito('Campo actualizado correctamente');
 } catch (error) {
 mostrarError('Error al guardar el cambio: ' + error.message);
 td.innerHTML = valorOriginal;

@@ -60,4 +60,7 @@ public interface ComboRepository extends JpaRepository<Combo, Long> {
     
     // Método para filtrar por estado, tipo y temática con paginación
     Page<Combo> findByEstadoAndTipoAndTematica(EstadoCombo estado, Combo.TipoCombo tipo, String tematica, Pageable pageable);
+    
+    // Conteo por temática (exacto, case-insensitive)
+    long countByTematicaIgnoreCase(String tematica);
 } 

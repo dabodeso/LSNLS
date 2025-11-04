@@ -39,14 +39,18 @@ com\lsnls\entity\EstadoConcursante.class
 com\lsnls\dto\ErrorResponse.class
 com\lsnls\dto\ReaprovecharComboDTO.class
 com\lsnls\service\TimeoutOperationService$OperationType.class
+com\lsnls\entity\SubtemaPregunta.class
 com\lsnls\service\ValidationService.class
 com\lsnls\entity\Pregunta.class
+com\lsnls\entity\TematicaPregunta.class
 com\lsnls\repository\AuditLogRepository.class
 com\lsnls\controller\CuestionarioController.class
 com\lsnls\entity\PreguntaCuestionario$PreguntaCuestionarioId.class
 com\lsnls\dto\JornadaDTO$ComboResumenDTO.class
 com\lsnls\controller\JornadaController.class
 com\lsnls\controller\AuthController.class
+com\lsnls\repository\TematicaPreguntaRepository.class
+com\lsnls\repository\TematicaComboRepository.class
 com\lsnls\service\RateLimitingService$RateLimit.class
 com\lsnls\dto\CrearCuestionarioDTO.class
 com\lsnls\entity\Usuario.class
@@ -67,6 +71,7 @@ com\lsnls\entity\Combo$TipoCombo.class
 com\lsnls\entity\AuditLog$OperationResult.class
 com\lsnls\validation\NoLineBreaks.class
 com\lsnls\entity\Programa$EstadoPrograma.class
+com\lsnls\repository\SubtemaPreguntaRepository.class
 com\lsnls\config\WebConfig.class
 com\lsnls\dto\PreguntaCuestionarioDTO.class
 com\lsnls\dto\CrearComboDTO$PreguntaMultiplicadoraDTO.class
@@ -99,6 +104,7 @@ com\lsnls\dto\CrearCuestionarioDTO$PreguntaMultiplicadoraDTO.class
 com\lsnls\dto\ProgramaDTO.class
 com\lsnls\entity\Concursante.class
 com\lsnls\service\AuthService.class
+com\lsnls\entity\TematicaCombo.class
 com\lsnls\dto\JornadaDTO.class
 com\lsnls\config\JwtAuthenticationFilter.class
 com\lsnls\controller\HistorialJornadaController.class
@@ -120,6 +126,7 @@ com\lsnls\controller\ConfiguracionGlobalController.class
 com\lsnls\entity\PreguntaCombo$PreguntaComboId.class
 com\lsnls\repository\PreguntaRepository.class
 com\lsnls\controller\BackupController.class
+com\lsnls\service\TemasCatalogService.class
 com\lsnls\service\ComboService.class
 com\lsnls\repository\ProgramaRepository.class
 com\lsnls\entity\Combo$NivelCombo.class

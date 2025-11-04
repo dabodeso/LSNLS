@@ -474,6 +474,7 @@ const CombosManager = {
                 }
             }
             
+            const puedeEditarNotas = authManager.hasRole('ROLE_ADMIN') || authManager.hasRole('ROLE_DIRECCION');
             subtr.innerHTML = `<td colspan="6">
                 <div>
                     <table class="table table-preguntas-cuestionario mb-0">
@@ -492,6 +493,12 @@ const CombosManager = {
                         </tbody>
                     </table>
                 </div>
+                ${puedeEditarNotas ? `
+                <div class="mt-3">
+                    <label class="form-label fw-bold">Añadir notas</label>
+                    <textarea class="form-control" rows="2" placeholder="Añadir notas"
+                              onblur="actualizarNotasDireccionCombo(${c.id}, this.value)">${c.notasDireccion || ''}</textarea>
+                </div>` : ''}
             </td>`;
             tbody.appendChild(subtr);
             // Separador entre combos
@@ -660,25 +667,20 @@ window.actualizarCombo = async function(comboId, campo, valor) {
         console.log(`🔄 [ACTUALIZAR COMBO] Actualizando combo ${comboId}, campo: ${campo}, valor: ${valor}`);
         console.log('📤 [ACTUALIZAR COMBO] Datos a enviar:', datos);
         
-        const response = await fetch(`/api/combos/${comboId}`, {
-            method: 'PUT',
-            headers: {
-                ...authManager.getAuthHeaders(),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(datos)
-        });
+        const previo = (CombosManager.ultimoListado || []).find(c => c.id === comboId);
+        const valorPrevio = previo ? previo[campo] : null;
+        const doAction = async () => { await apiManager.put(`/api/combos/${comboId}`, datos); await CombosManager.cargarCombos(); };
+        const undoAction = async () => {
+            if (valorPrevio !== null && valorPrevio !== undefined) {
+                const back = {}; back[campo] = valorPrevio;
+                await apiManager.put(`/api/combos/${comboId}`, back);
+                await CombosManager.cargarCombos();
+            }
+        };
+        await doAction();
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar combo ${comboId} - ${campo}` });
         
-        if (!response.ok) {
-            const errorData = await response.text();
-            console.error('❌ [ACTUALIZAR COMBO] Error en respuesta:', response.status, errorData);
-            throw new Error(errorData || 'Error al actualizar combo');
-        }
-        
-        const data = await response.json();
-        console.log('✅ [ACTUALIZAR COMBO] Respuesta del servidor:', data);
-        
-        const mensaje = data.message || 
+        const mensaje = 'Campo actualizado correctamente' || 
             (campo === 'tipo' ? 'Tipo actualizado correctamente' :
              campo === 'tematica' ? 'Temática actualizada correctamente' :
              'Campo actualizado correctamente');
@@ -727,6 +729,7 @@ async function cargarOpcionesTematicas() {
     if (!selectTematica) return;
     
     try {
+        const valorSeleccionado = selectTematica.value || '';
         // Cargar temáticas desde la tabla tematicas
         const response = await fetch('/api/tematicas', {
             headers: authManager.getAuthHeaders()
@@ -745,6 +748,13 @@ async function cargarOpcionesTematicas() {
                 option.textContent = tematica.nombre;
                 selectTematica.appendChild(option);
             });
+            // Restaurar selección previa si existe
+            if (valorSeleccionado) {
+                selectTematica.value = valorSeleccionado;
+                if (selectTematica.value !== valorSeleccionado) {
+                    selectTematica.value = '';
+                }
+            }
             
             console.log('✅ [COMBOS] Opciones de temática cargadas desde /api/tematicas:', tematicasData.map(t => t.nombre));
         } else {
@@ -858,6 +868,8 @@ async function mostrarFormularioCombo() {
     }
     const asignadoDiv = document.getElementById('combo-jornada-asignada');
     if (asignadoDiv) asignadoDiv.classList.add('d-none');
+    const comboNotas = document.getElementById('combo-notas');
+    if (comboNotas) comboNotas.value = '';
     
     // Cargar temáticas en el desplegable
     await cargarTematicasEnModal();
@@ -921,6 +933,8 @@ async function editarCombo(id) {
         document.getElementById('combo-tipo').value = combo.tipo || '';
         await cargarTematicasEnModal();
         document.getElementById('combo-tematica').value = combo.tematica || '';
+        const comboNotas = document.getElementById('combo-notas');
+        if (comboNotas) comboNotas.value = combo.notasDireccion || '';
         const comboEstado = document.getElementById('combo-estado');
         if (comboEstado) {
             comboEstado.value = (combo.estado || 'borrador');
@@ -1303,18 +1317,20 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
         else if (nivel === 'PM2') factorMultiplicacion = 3;
         else if (nivel === 'PM3') factorMultiplicacion = 0;
         
-        fetch(`/api/combos/${comboId}/preguntas`, {
-            method: 'POST',
-            headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ preguntaId: id, factorMultiplicacion })
-        })
-        .then(resp => {
-            if (!resp.ok) throw new Error('No se pudo añadir la pregunta');
-            return resp.json();
-        })
-        .then(async () => {
-            Toastify({ text: 'Pregunta añadida al combo', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
+        const doAdd = async () => {
+            await apiManager.post(`/api/combos/${comboId}/preguntas`, { preguntaId: id, factorMultiplicacion }, { headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' } });
             await CombosManager.cargarCombos();
+        };
+        const undoDelete = async () => {
+            await apiManager.delete(`/api/combos/${comboId}/preguntas/${id}`, { headers: authManager.getAuthHeaders() });
+            await CombosManager.cargarCombos();
+        };
+        doAdd()
+        .then(async () => {
+            if (window.UndoManager) {
+                window.UndoManager.record({ do: doAdd, undo: undoDelete, label: `Añadir pregunta ${id} a combo ${comboId}` });
+            }
+            Toastify({ text: 'Pregunta añadida al combo', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
         })
         .catch(e => {
             Toastify({ text: 'Error al añadir pregunta: ' + e.message, duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
@@ -1436,20 +1452,21 @@ async function guardarCombo() {
     const estadoSeleccionado = (document.getElementById('combo-estado')?.value) || 'borrador';
     
     try {
+        const notasDireccion = (document.getElementById('combo-notas')?.value || '').trim();
         let resp, data;
         if (esEdicion) {
             // PUT para editar (implementar si es necesario)
             resp = await fetch(`/api/combos/${comboId}`, {
                 method: 'PUT',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica })
+                body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica, notasDireccion })
             });
         } else {
             // POST para crear
             resp = await fetch('/api/combos/nuevo', {
                 method: 'POST',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica })
+                body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica, notasDireccion })
             });
         }
         
@@ -1558,11 +1575,15 @@ window.eliminarPreguntaDeCombo = async function(comboId, slot) {
     console.log(`[DEBUG] Combo encontrado:`, combo);
     
     let preguntaId = null;
+    let factorMultiplicacion = null;
     if (combo && Array.isArray(combo.preguntas)) {
         console.log(`[DEBUG] Preguntas del combo:`, combo.preguntas);
         const pc = combo.preguntas.find(pc => pc.slot === slot);
         console.log(`[DEBUG] Pregunta encontrada para slot ${slot}:`, pc);
-        if (pc && pc.pregunta && pc.pregunta.id) preguntaId = pc.pregunta.id;
+        if (pc && pc.pregunta && pc.pregunta.id) {
+            preguntaId = pc.pregunta.id;
+            factorMultiplicacion = pc.factorMultiplicacion || null;
+        }
     }
     
     if (!preguntaId) {
@@ -1575,14 +1596,18 @@ window.eliminarPreguntaDeCombo = async function(comboId, slot) {
     
     if (!confirm('¿Seguro que quieres quitar esta pregunta del combo?')) return;
     try {
-        const resp = await fetch(`/api/combos/${comboId}/preguntas/${preguntaId}`, {
-            method: 'DELETE',
-            headers: authManager.getAuthHeaders()
-        });
-        if (!resp.ok) {
-            const errorText = await resp.text();
-            console.log(`[DEBUG] Error del servidor:`, errorText);
-            throw new Error('No se pudo quitar la pregunta: ' + errorText);
+        // Acciones do/undo
+        const doDelete = async () => {
+            await apiManager.delete(`/api/combos/${comboId}/preguntas/${preguntaId}`, { headers: authManager.getAuthHeaders() });
+            await CombosManager.cargarCombos();
+        };
+        const undoAdd = async () => {
+            await apiManager.post(`/api/combos/${comboId}/preguntas`, { preguntaId, factorMultiplicacion: factorMultiplicacion ?? 1 }, { headers: authManager.getAuthHeaders() });
+            await CombosManager.cargarCombos();
+        };
+        await doDelete();
+        if (window.UndoManager) {
+            window.UndoManager.record({ do: doDelete, undo: undoAdd, label: `Quitar pregunta ${preguntaId} de combo ${comboId}` });
         }
         Toastify({ text: 'Pregunta eliminada del combo', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
         await CombosManager.cargarCombos();
@@ -1611,27 +1636,23 @@ window.actualizarFactorPregunta = async function(comboId, preguntaId, nuevoFacto
             nuevoFactor = 'X'; // Valor por defecto
         }
         
-        const response = await fetch(`/api/combos/${comboId}/preguntas/${preguntaId}/factor`, {
-            method: 'PUT',
-            headers: {
-                ...authManager.getAuthHeaders(),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ factorMultiplicacion: nuevoFactor })
-        });
-        
-        let responseData;
-        try {
-            responseData = await response.json();
-        } catch (e) {
-            responseData = await response.text();
+        // Obtener factor previo desde el listado
+        const combo = (CombosManager.ultimoListado || []).find(c => c.id === comboId);
+        let factorPrevio = null;
+        if (combo && Array.isArray(combo.preguntas)) {
+            const pc = combo.preguntas.find(x => x && x.pregunta && x.pregunta.id === preguntaId);
+            factorPrevio = pc && pc.factorMultiplicacion ? pc.factorMultiplicacion : null;
         }
-        
-        if (!response.ok) {
-            throw new Error(typeof responseData === 'string' ? responseData : 'Error al actualizar el factor');
-        }
-        
-        console.log(`[DEBUG] Factor actualizado correctamente en el servidor:`, responseData);
+        const doAction = async () => {
+            await apiManager.put(`/api/combos/${comboId}/preguntas/${preguntaId}/factor`, { factorMultiplicacion: nuevoFactor });
+            await CombosManager.cargarCombos();
+        };
+        const undoAction = async () => {
+            await apiManager.put(`/api/combos/${comboId}/preguntas/${preguntaId}/factor`, { factorMultiplicacion: factorPrevio || 'X' });
+            await CombosManager.cargarCombos();
+        };
+        await doAction();
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Factor pregunta ${preguntaId} combo ${comboId}` });
         
         Toastify({
             text: 'Factor actualizado correctamente',
@@ -1656,6 +1677,35 @@ window.actualizarFactorPregunta = async function(comboId, preguntaId, nuevoFacto
         console.error('[DEBUG] Error al actualizar factor:', error);
         Toastify({
             text: 'Error: ' + error.message,
+            duration: 3000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+    }
+}
+
+// Actualizar notas de dirección del combo (en listado)
+window.actualizarNotasDireccionCombo = async function(comboId, notas) {
+    try {
+        const previo = (CombosManager.ultimoListado || []).find(c => c.id === comboId);
+        const notasPrevias = previo ? (previo.notasDireccion || '') : '';
+        const doAction = async () => { await apiManager.put(`/api/combos/${comboId}`, { notasDireccion: notas }); };
+        const undoAction = async () => { await apiManager.put(`/api/combos/${comboId}`, { notasDireccion: notasPrevias }); };
+        await doAction();
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Notas combo ${comboId}` });
+        Toastify({
+            text: 'Notas de dirección actualizadas',
+            duration: 2000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+        }).showToast();
+    } catch (e) {
+        Toastify({
+            text: 'Error al actualizar notas: ' + e.message,
             duration: 3000,
             close: true,
             gravity: 'top',
@@ -1735,17 +1785,20 @@ function getOpcionesTematicaCombo(tematicaActual) {
 
 window.cambiarEstadoCombo = async function(id, nuevoEstado) {
     try {
-        const response = await fetch(`/api/combos/${id}/estado?nuevoEstado=${nuevoEstado}`, {
-            method: 'PUT',
-            headers: authManager.getAuthHeaders()
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText);
-        }
-
-        const data = await response.json();
+        const previo = (CombosManager.ultimoListado || []).find(c => c.id === id);
+        const estadoPrevio = previo ? previo.estado : null;
+        const doAction = async () => {
+            await apiManager.put(`/api/combos/${id}/estado?nuevoEstado=${encodeURIComponent(nuevoEstado)}`, null);
+            await CombosManager.cargarCombos();
+        };
+        const undoAction = async () => {
+            if (estadoPrevio) {
+                await apiManager.put(`/api/combos/${id}/estado?nuevoEstado=${encodeURIComponent(estadoPrevio)}`, null);
+                await CombosManager.cargarCombos();
+            }
+        };
+        await doAction();
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Estado combo ${id}` });
         await CombosManager.cargarCombos();
         
         Toastify({

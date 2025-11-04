@@ -6,6 +6,7 @@ public class CrearComboDTO {
     private List<PreguntaMultiplicadoraDTO> preguntasMultiplicadoras;
     private String tipo;
     private String tematica;
+    private String notasDireccion;
 
     public List<PreguntaMultiplicadoraDTO> getPreguntasMultiplicadoras() { 
         return preguntasMultiplicadoras; 
@@ -29,6 +30,14 @@ public class CrearComboDTO {
     
     public void setTematica(String tematica) { 
         this.tematica = tematica; 
+    }
+
+    public String getNotasDireccion() {
+        return notasDireccion;
+    }
+
+    public void setNotasDireccion(String notasDireccion) {
+        this.notasDireccion = notasDireccion;
     }
 
     public static class PreguntaMultiplicadoraDTO {

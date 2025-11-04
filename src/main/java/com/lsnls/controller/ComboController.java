@@ -390,6 +390,12 @@ public class ComboController {
                 String tematica = datos.get("tematica") != null ? datos.get("tematica").toString() : null;
                 combo.setTematica(tematica);
             }
+
+            // Actualizar notas de dirección si se proporciona
+            if (datos.containsKey("notasDireccion")) {
+                String notas = datos.get("notasDireccion") != null ? datos.get("notasDireccion").toString() : null;
+                combo.setNotasDireccion(notas);
+            }
             
             Combo comboActualizado = comboService.actualizar(id, combo);
             if (comboActualizado != null) {

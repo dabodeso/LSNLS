@@ -31,6 +31,36 @@ CREATE TABLE IF NOT EXISTS tematicas (
     FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
 );
 
+-- Catálogo de temáticas para preguntas
+CREATE TABLE IF NOT EXISTS tematicas_preguntas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    fecha_creacion datetime(6),
+    creacion_usuario_id BIGINT,
+    version BIGINT DEFAULT 0,
+    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
+);
+
+-- Catálogo de temáticas para combos
+CREATE TABLE IF NOT EXISTS tematicas_combos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    fecha_creacion datetime(6),
+    creacion_usuario_id BIGINT,
+    version BIGINT DEFAULT 0,
+    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
+);
+
+-- Catálogo de subtemas para preguntas
+CREATE TABLE IF NOT EXISTS subtemas_preguntas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    fecha_creacion datetime(6),
+    creacion_usuario_id BIGINT,
+    version BIGINT DEFAULT 0,
+    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
+);
+
 -- Crear tabla de temáticas
 CREATE TABLE IF NOT EXISTS tematicas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -87,6 +117,7 @@ CREATE TABLE IF NOT EXISTS combos (
     nivel ENUM('_5LS', '_5NLS', 'NORMAL') NOT NULL,
     tipo ENUM('P', 'A', 'D', 'R'),
     tematica VARCHAR(100),
+    notas_direccion TEXT,
     version BIGINT DEFAULT 0
 );
 

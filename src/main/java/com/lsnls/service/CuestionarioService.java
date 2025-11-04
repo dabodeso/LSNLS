@@ -746,6 +746,9 @@ public class CuestionarioService {
         dto.put("id", c.getId());
         dto.put("estado", c.getEstado());
         dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
+        // Campos visibles en la tabla
+        dto.put("tematica", c.getTematica());
+        dto.put("notasDireccion", c.getNotasDireccion());
         // Jornada asignada (si existe)
         try {
             Long jornadaId = entityManager.createQuery(

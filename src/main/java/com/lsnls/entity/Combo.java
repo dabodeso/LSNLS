@@ -42,6 +42,9 @@ public class Combo {
     @Column(name = "tematica")
     private String tematica;
 
+    @Column(name = "notas_direccion", columnDefinition = "TEXT")
+    private String notasDireccion;
+
     @Column(name = "fecha_creacion")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;

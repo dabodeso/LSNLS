@@ -287,6 +287,7 @@ const CuestionariosManager = {
                 // Llenar el filtro de temáticas
                 const filtroTematica = document.getElementById('filtro-tematica-cuestionario');
                 if (filtroTematica) {
+                    const valorSeleccionado = filtroTematica.value || '';
                     // Mantener la primera opción "Todas"
                     filtroTematica.innerHTML = '<option value="">Todas</option>';
                     
@@ -297,6 +298,15 @@ const CuestionariosManager = {
                         option.textContent = tematica;
                         filtroTematica.appendChild(option);
                     });
+
+                    // Restaurar selección previa si existe
+                    if (valorSeleccionado) {
+                        filtroTematica.value = valorSeleccionado;
+                        // Si no existe en la lista (temática no gestionada), mantener "Todas"
+                        if (filtroTematica.value !== valorSeleccionado) {
+                            filtroTematica.value = '';
+                        }
+                    }
                 }
             }
         } catch (error) {
@@ -717,31 +727,29 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
         let factorMultiplicacion = 1;
         if (nivel === 'PM1') factorMultiplicacion = 2;
         else if (nivel === 'PM2') factorMultiplicacion = 3;
-        else if (nivel === 'PM3') factorMultiplicacion = 1; // Cambiado de 0 a 1
-        fetch(`/api/cuestionarios/${cuestionarioId}/preguntas`, {
-            method: 'POST',
-            headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ preguntaId: id, factorMultiplicacion })
-        })
-        .then(resp => {
-            if (!resp.ok) {
-                return resp.text().then(text => {
-                    console.error('Error del servidor:', text);
-                    throw new Error(`Error ${resp.status}: ${text}`);
-                });
-            }
-            return resp.json();
-        })
+        else if (nivel === 'PM3') factorMultiplicacion = 1;
+
+        const doAdd = async () => {
+            await apiManager.post(`/api/cuestionarios/${cuestionarioId}/preguntas`, { preguntaId: id, factorMultiplicacion }, { headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' } });
+            await CuestionariosManager.cargarCuestionarios();
+        };
+        const undoDelete = async () => {
+            await apiManager.delete(`/api/cuestionarios/${cuestionarioId}/preguntas/${id}`, { headers: authManager.getAuthHeaders() });
+            await CuestionariosManager.cargarCuestionarios();
+        };
+
+        doAdd()
         .then(() => {
+            if (window.UndoManager) {
+                window.UndoManager.record({ do: doAdd, undo: undoDelete, label: `Añadir pregunta ${id} a cuestionario ${cuestionarioId}` });
+            }
             Toastify({ text: 'Pregunta añadida al cuestionario', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
-            CuestionariosManager.cargarCuestionarios();
         })
         .catch(e => {
             Toastify({ text: 'Error al añadir pregunta: ' + e.message, duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
         })
         .finally(() => {
             window.contextoAnadirPregunta = null;
-            // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-pregunta'));
             if (modal) modal.hide();
         });
@@ -1117,11 +1125,27 @@ document.addEventListener('DOMContentLoaded', function() {
 window.eliminarPreguntaDeCuestionario = async function(cuestionarioId, slot) {
     if (!confirm('¿Seguro que quieres quitar esta pregunta del cuestionario?')) return;
     try {
-        const resp = await fetch(`/api/cuestionarios/${cuestionarioId}/preguntas/slot/${slot}`, {
-            method: 'DELETE',
-            headers: authManager.getAuthHeaders()
-        });
-        if (!resp.ok) throw new Error('No se pudo quitar la pregunta');
+        // Preparar undo/redo: localizar pregunta en ese slot
+        const cuest = CuestionariosManager.ultimoListado?.find(c => c.id === cuestionarioId);
+        let preguntaId = null;
+        if (cuest && Array.isArray(cuest.preguntas)) {
+            const pc = cuest.preguntas.find(p => p.slot === slot);
+            if (pc && pc.pregunta && pc.pregunta.id) preguntaId = pc.pregunta.id;
+        }
+        const doDelete = async () => {
+            await apiManager.delete(`/api/cuestionarios/${cuestionarioId}/preguntas/slot/${slot}`, { headers: authManager.getAuthHeaders() });
+            await CuestionariosManager.cargarCuestionarios();
+        };
+        const undoAdd = async () => {
+            if (preguntaId) {
+                await apiManager.post(`/api/cuestionarios/${cuestionarioId}/preguntas`, { preguntaId, factorMultiplicacion: 1 }, { headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' } });
+                await CuestionariosManager.cargarCuestionarios();
+            }
+        };
+        await doDelete();
+        if (window.UndoManager) {
+            window.UndoManager.record({ do: doDelete, undo: undoAdd, label: `Quitar pregunta slot ${slot} de cuestionario ${cuestionarioId}` });
+        }
         Toastify({ text: 'Pregunta eliminada del cuestionario', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
         await CuestionariosManager.cargarCuestionarios();
     } catch (e) {
@@ -1249,16 +1273,19 @@ window.limpiarFiltrosCuestionarios = function() {
 
 window.actualizarNotasDireccion = async function(cuestionarioId, notas) {
     try {
-        const response = await fetch(`/api/cuestionarios/${cuestionarioId}/notas-direccion`, {
-            method: 'PUT',
-            headers: {
-                ...authManager.getAuthHeaders(),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ notasDireccion: notas })
-        });
-
-        if (!response.ok) throw new Error('Error al actualizar notas');
+        // Obtener valor anterior desde el listado
+        const previo = (CuestionariosManager.ultimoListado || []).find(c => c.id === cuestionarioId);
+        const notasPrevias = previo ? (previo.notasDireccion || '') : '';
+        const doAction = async () => {
+            await apiManager.put(`/api/cuestionarios/${cuestionarioId}/notas-direccion`, { notasDireccion: notas });
+            await CuestionariosManager.cargarCuestionarios();
+        };
+        const undoAction = async () => {
+            await apiManager.put(`/api/cuestionarios/${cuestionarioId}/notas-direccion`, { notasDireccion: notasPrevias });
+            await CuestionariosManager.cargarCuestionarios();
+        };
+        await doAction();
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Notas dirección cuestionario ${cuestionarioId}` });
         
         Toastify({
             text: 'Notas de dirección actualizadas',
@@ -1324,17 +1351,20 @@ function getOpcionesEstadoCuestionario(estadoActual) {
 
 window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
     try {
-        const response = await fetch(`/api/cuestionarios/${id}/estado?nuevoEstado=${nuevoEstado}`, {
-            method: 'PUT',
-            headers: authManager.getAuthHeaders()
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText);
-        }
-
-        const data = await response.json();
+        const previo = (CuestionariosManager.ultimoListado || []).find(c => c.id === id);
+        const estadoPrevio = previo ? previo.estado : null;
+        const doAction = async () => {
+            await apiManager.put(`/api/cuestionarios/${id}/estado?nuevoEstado=${encodeURIComponent(nuevoEstado)}`, null);
+            await CuestionariosManager.cargarCuestionarios();
+        };
+        const undoAction = async () => {
+            if (estadoPrevio) {
+                await apiManager.put(`/api/cuestionarios/${id}/estado?nuevoEstado=${encodeURIComponent(estadoPrevio)}`, null);
+                await CuestionariosManager.cargarCuestionarios();
+            }
+        };
+        await doAction();
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Estado cuestionario ${id}` });
         await CuestionariosManager.cargarCuestionarios();
         
         Toastify({
@@ -1359,21 +1389,18 @@ window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
 
 window.cambiarTematicaCuestionario = async function(id, nuevaTematica) {
     try {
-        const response = await fetch(`/api/cuestionarios/${id}/tematica`, {
-            method: 'PUT',
-            headers: {
-                ...authManager.getAuthHeaders(),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ tematica: nuevaTematica })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText);
-        }
-
-        const data = await response.json();
+        const previo = (CuestionariosManager.ultimoListado || []).find(c => c.id === id);
+        const tematicaPrevia = previo ? (previo.tematica || '') : '';
+        const doAction = async () => {
+            await apiManager.put(`/api/cuestionarios/${id}/tematica`, { tematica: nuevaTematica });
+            await CuestionariosManager.cargarCuestionarios();
+        };
+        const undoAction = async () => {
+            await apiManager.put(`/api/cuestionarios/${id}/tematica`, { tematica: tematicaPrevia });
+            await CuestionariosManager.cargarCuestionarios();
+        };
+        await doAction();
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Temática cuestionario ${id}` });
         await CuestionariosManager.cargarCuestionarios();
         
         Toastify({

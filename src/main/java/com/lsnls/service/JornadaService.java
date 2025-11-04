@@ -93,15 +93,13 @@ public class JornadaService {
 
     /**
      * Normaliza los valores legacy de estados de jornada en la base de datos
-     * para que coincidan con los nuevos: borrador, completa, grabada.
+     * para que coincidan con los nuevos: preparacion, lista, en_grabacion, completada, archivada.
      */
     private void normalizarEstadosLegacy() {
-        // preparacion -> borrador
-        entityManager.createNativeQuery("UPDATE jornadas SET estado='borrador' WHERE estado='preparacion'").executeUpdate();
-        // lista y completada -> completa
-        entityManager.createNativeQuery("UPDATE jornadas SET estado='completa' WHERE estado IN ('lista','completada')").executeUpdate();
-        // en_grabacion y archivada -> grabada
-        entityManager.createNativeQuery("UPDATE jornadas SET estado='grabada' WHERE estado IN ('en_grabacion','archivada')").executeUpdate();
+        // Migrar estados antiguos a los nuevos del enum actual
+        entityManager.createNativeQuery("UPDATE jornadas SET estado='preparacion' WHERE estado='borrador'").executeUpdate();
+        entityManager.createNativeQuery("UPDATE jornadas SET estado='completada' WHERE estado='completa'").executeUpdate();
+        entityManager.createNativeQuery("UPDATE jornadas SET estado='archivada' WHERE estado='grabada'").executeUpdate();
     }
 
     public Optional<JornadaDTO> obtenerPorId(Long id) {
@@ -122,7 +120,7 @@ public class JornadaService {
         jornada.setLugar(jornadaDTO.getLugar());
         jornada.setNotas(jornadaDTO.getNotas());
         jornada.setCreacionUsuario(usuario);
-        jornada.setEstado(Jornada.EstadoJornada.borrador);
+        jornada.setEstado(Jornada.EstadoJornada.preparacion);
 
         // Asignar cuestionarios (máximo 6) - CON PROTECCIÓN ATÓMICA
         if (jornadaDTO.getCuestionarioIds() != null) {
@@ -191,7 +189,8 @@ public class JornadaService {
             .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada"));
 
         // Verificar si se puede editar
-        if (jornada.getEstado() == Jornada.EstadoJornada.grabada) {
+        if (jornada.getEstado() == Jornada.EstadoJornada.completada ||
+            jornada.getEstado() == Jornada.EstadoJornada.archivada) {
             throw new IllegalArgumentException("No se puede editar una jornada completada o archivada");
         }
 
@@ -310,8 +309,9 @@ public class JornadaService {
             .orElseThrow(() -> new IllegalArgumentException("Jornada con ID " + id + " no encontrada"));
 
         // Verificar estado de la jornada
-        if (jornada.getEstado() == Jornada.EstadoJornada.grabada) {
-            throw new IllegalArgumentException("No se puede eliminar una jornada que ya está grabada.");
+        if (jornada.getEstado() == Jornada.EstadoJornada.completada ||
+            jornada.getEstado() == Jornada.EstadoJornada.archivada) {
+            throw new IllegalArgumentException("No se puede eliminar una jornada que ya está completada o archivada.");
         }
 
         // Verificar si hay concursantes asignados a esta jornada

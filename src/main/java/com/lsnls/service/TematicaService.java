@@ -3,6 +3,8 @@ package com.lsnls.service;
 import com.lsnls.entity.Tematica;
 import com.lsnls.entity.Usuario;
 import com.lsnls.repository.TematicaRepository;
+import com.lsnls.repository.CuestionarioRepository;
+import com.lsnls.repository.ComboRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,12 @@ public class TematicaService {
 
     @Autowired
     private TematicaRepository tematicaRepository;
+    
+    @Autowired
+    private CuestionarioRepository cuestionarioRepository;
+    
+    @Autowired
+    private ComboRepository comboRepository;
 
     /**
      * Obtiene todas las temáticas ordenadas por nombre
@@ -84,11 +92,18 @@ public class TematicaService {
      * Elimina una temática por ID
      */
     public boolean eliminarTematica(Long id) {
-        if (tematicaRepository.existsById(id)) {
-            tematicaRepository.deleteById(id);
-            return true;
+        Optional<Tematica> tematicaOpt = tematicaRepository.findById(id);
+        if (tematicaOpt.isEmpty()) {
+            return false;
         }
-        return false;
+        String nombre = tematicaOpt.get().getNombre();
+        long usadosEnCuestionarios = cuestionarioRepository.countByTematicaIgnoreCase(nombre);
+        long usadosEnCombos = comboRepository.countByTematicaIgnoreCase(nombre);
+        if (usadosEnCuestionarios > 0 || usadosEnCombos > 0) {
+            throw new IllegalStateException("No se puede eliminar la temática, hay cuestionarios/combos con ella");
+        }
+        tematicaRepository.deleteById(id);
+        return true;
     }
 
     /**
@@ -96,11 +111,16 @@ public class TematicaService {
      */
     public boolean eliminarTematica(String nombre) {
         Optional<Tematica> tematicaOpt = tematicaRepository.findByNombreIgnoreCase(nombre);
-        if (tematicaOpt.isPresent()) {
-            tematicaRepository.delete(tematicaOpt.get());
-            return true;
+        if (tematicaOpt.isEmpty()) {
+            return false;
         }
-        return false;
+        long usadosEnCuestionarios = cuestionarioRepository.countByTematicaIgnoreCase(nombre);
+        long usadosEnCombos = comboRepository.countByTematicaIgnoreCase(nombre);
+        if (usadosEnCuestionarios > 0 || usadosEnCombos > 0) {
+            throw new IllegalStateException("No se puede eliminar la temática, hay cuestionarios/combos con ella");
+        }
+        tematicaRepository.delete(tematicaOpt.get());
+        return true;
     }
 
     /**

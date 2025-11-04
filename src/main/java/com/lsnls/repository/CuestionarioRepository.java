@@ -42,6 +42,9 @@ public interface CuestionarioRepository extends JpaRepository<Cuestionario, Long
     // Filtros por temática con paginación
     Page<Cuestionario> findByTematicaContainingIgnoreCase(String tematica, Pageable pageable);
     
+    // Conteo por temática (exacto, case-insensitive)
+    long countByTematicaIgnoreCase(String tematica);
+    
     // Filtros combinados
     List<Cuestionario> findByEstadoAndTematicaContainingIgnoreCaseOrderByIdDesc(EstadoCuestionario estado, String tematica);
     

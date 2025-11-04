@@ -32,7 +32,7 @@ public class Jornada {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private EstadoJornada estado = EstadoJornada.borrador;
+    private EstadoJornada estado = EstadoJornada.preparacion;
 
     @ManyToOne
     @JoinColumn(name = "creacion_usuario_id", nullable = false)
@@ -67,7 +67,7 @@ public class Jornada {
     private Set<Combo> combos;
 
     public enum EstadoJornada {
-        borrador, completa, grabada
+        preparacion, lista, en_grabacion, completada, archivada
     }
 
     @PrePersist

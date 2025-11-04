@@ -627,6 +627,9 @@ public class CuestionarioController {
         try {
             tematicaService.eliminarTematica(tematica);
             return ResponseEntity.ok(Map.of("mensaje", "Temática eliminada correctamente"));
+        } catch (IllegalStateException e) {
+            // Validación de uso en cuestionarios/combos
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al eliminar temática: " + e.getMessage());
         }
