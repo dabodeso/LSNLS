@@ -33,7 +33,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- Usuario admin (texto plano, encoder NoOp)
 INSERT INTO usuarios (id, nombre, password, rol, version)
-VALUES (1, 'admin', '{noop}123456', 'ROLE_ADMIN', 0)
+VALUES (1, 'admin', '123456', 'ROLE_ADMIN', 0)
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), password = VALUES(password), rol = VALUES(rol);
 
 -- Catálogos de temáticas y subtemas (preguntas)
