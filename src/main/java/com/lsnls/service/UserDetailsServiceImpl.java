@@ -23,11 +23,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Optional<Usuario> usuarioOpt = usuarioRepository.findByNombre(username);
-        Usuario usuario = usuarioOpt.orElseThrow(() -> 
+        if (usuarioOpt.isEmpty()) {
+            log.warn("[UDS DEBUG] Usuario no encontrado en BD: {}", username);
+        }
+        Usuario usuario = usuarioOpt.orElseThrow(() ->
             new UsernameNotFoundException("Usuario no encontrado: " + username));
 
         String authority = usuario.getRol().toString();
-        log.debug("🔐 Cargando autoridades para usuario {}: {}", username, authority);
+        String pass = String.valueOf(usuario.getPassword());
+        log.info("[UDS DEBUG] Cargando usuario '{}': rol={}, passLen={}", username, authority, pass != null ? pass.length() : -1);
 
         return User.builder()
                 .username(usuario.getNombre())
