@@ -57,18 +57,29 @@
       if (this.undoStack.length > this.maxEntries) {
         this.undoStack.items.shift();
       }
+      console.log(`📚 [UndoManager] Acción registrada. Stack undo: ${this.undoStack.length}, Stack redo: ${this.redoStack.length}`);
+      console.log(`📚 [UndoManager] Última acción:`, action.label || 'sin label');
     }
 
     async undo() {
       if (!this.enabled) return;
+      console.log(`📚 [UndoManager] UNDO solicitado. Stack undo antes: ${this.undoStack.length}, Stack redo antes: ${this.redoStack.length}`);
       const last = this.undoStack.pop();
-      if (!last) return;
+      if (!last) {
+        console.log('📚 [UndoManager] No hay acciones para deshacer');
+        return;
+      }
+      console.log(`📚 [UndoManager] Deshaciendo:`, last.label || 'sin label');
       try {
         await last.undo();
         // Permitir rehacer con la operación inversa original (si existe .do)
         this.redoStack.push(last);
+        console.log(`📚 [UndoManager] UNDO exitoso. Stack undo después: ${this.undoStack.length}, Stack redo después: ${this.redoStack.length}`);
       } catch (e) {
         console.error('[UndoManager] Error al deshacer:', e);
+        // Si falla el undo, NO volver a meter la acción al stack (se perdió)
+        // Esto evita que se quede atascado intentando deshacer algo que falla
+        console.warn('[UndoManager] Acción descartada por error. No se puede deshacer.');
       }
     }
 

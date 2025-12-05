@@ -351,6 +351,18 @@ const CuestionariosManager = {
                 opcionesTematicas += `<option value="${c.tematica}" selected>${c.tematica} (no gestionada)</option>`;
             }
             
+            // Determinar icono y tooltip para reutilización
+            let iconoReutilizado = '';
+            if (c.reutilizadoDeJornadaId) {
+                iconoReutilizado = `<span class="ms-2" title="Reutilizado de ${c.reutilizadoDeJornadaNombre || 'jornada ' + c.reutilizadoDeJornadaId}" style="cursor: help;">♻️</span>`;
+                console.log(`[FRONT-CUEST] Cuest ${c.id} | estado=${c.estado} | jornada=${c.jornadaAsignada} | mostrarSelector=${!(c.jornadaAsignada && (c.estado === 'adjudicado' || c.estado === 'grabado'))}`);
+            }
+            
+            // Determinar si debe mostrar "Asignado a jornada X" o el selector de estado
+            // Solo mostrar "Asignado/Grabado" si está en estado adjudicado o grabado
+            const estadoActual = typeof c.estado === 'string' ? c.estado : c.estado?.name || 'borrador';
+            const estaReservado = c.jornadaAsignada && (estadoActual === 'adjudicado' || estadoActual === 'grabado');
+            
             tr.innerHTML = `
                 <td class="celda-numero-cuestionario">${c.id ?? ''}</td>
                 <td>
@@ -359,10 +371,10 @@ const CuestionariosManager = {
                     </select>
                 </td>
                 <td>
-                    ${c.jornadaAsignada ? `<div class="text-muted">Asignado a jornada ${c.jornadaAsignada}</div>` :
+                    ${estaReservado ? `<div class="text-muted">${(estadoActual === 'grabado') ? `Grabado en jornada ${c.jornadaAsignada}` : `Asignado a jornada ${c.jornadaAsignada}`}</div>` :
                     `<select class="form-select form-select-sm" onchange="cambiarEstadoCuestionario(${c.id}, this.value)">
-                        ${getOpcionesEstadoCuestionario(c.estado)}
-                    </select>`}
+                        ${getOpcionesEstadoCuestionario(estadoActual)}
+                    </select>${iconoReutilizado}`}
                 </td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
@@ -563,7 +575,7 @@ function inicializarBuscadorPreguntasModal() {
     };
     cargarTematicas();
 
-    ['buscador-id', 'buscador-texto', 'buscador-tematica-select'].forEach(id => {
+    ['buscador-id', 'buscador-texto', 'buscador-tematica-select', 'buscador-nivel-cuestionario', 'buscador-estado'].forEach(id => {
         const input = document.getElementById(id);
         if (input) {
             input.removeEventListener('keyup', input._buscadorHandler || (()=>{}));
@@ -606,12 +618,12 @@ async function buscarPreguntasModal(page = 0) {
     const id = (document.getElementById('buscador-id')?.value || '').trim();
     const texto = (document.getElementById('buscador-texto')?.value || '').trim();
     const tematica = document.getElementById('buscador-tematica-select')?.value || '';
+    const estadoSel = (document.getElementById('buscador-estado')?.value || 'todos').trim().toLowerCase();
+    const filtroNivel = document.getElementById('buscador-nivel-cuestionario')?.value || '';
 
     try {
-        const nivel = selectorPreguntaContext.nivel;
         const params = new URLSearchParams();
         let url = '';
-        if (normales.includes(nivel)) params.set('nivel', `_${nivel}`);
         params.set('page', page);
         params.set('size', 20);
 
@@ -619,12 +631,19 @@ async function buscarPreguntasModal(page = 0) {
             // Búsqueda exacta por ID
             params.set('id', id);
             if (tematica) params.set('tematica', tematica);
+            if (filtroNivel) params.set('nivel', filtroNivel);
             url = `/api/preguntas/buscar?${params.toString()}`;
         } else {
             if (texto) params.set('texto', texto); // OR pregunta/respuesta
             if (tematica) params.set('tematica', tematica);
-            // Solo aprobadas para evitar errores al guardar
-            params.set('estado', 'aprobada');
+            if (filtroNivel) params.set('nivel', filtroNivel);
+            // Estado: por defecto 'todos' (aprobada + verificada). Si se elige uno, aplicarlo.
+            if (estadoSel === 'aprobada' || estadoSel === 'verificada') {
+                params.set('estado', estadoSel);
+            } else {
+                // Enviar CSV para que el backend filtre ambos estados
+                params.set('estado', 'aprobada,verificada');
+            }
             url = `/api/preguntas/filtrar?${params.toString()}`;
         }
 
@@ -633,8 +652,12 @@ async function buscarPreguntasModal(page = 0) {
         if (!resp.ok) throw new Error('Error al buscar preguntas');
         const data = await resp.json();
         let preguntas = data.content || [];
-        // Si entramos por ID, filtrar a aprobadas para coherencia
-        if (id) preguntas = preguntas.filter(p => p.estado === 'aprobada');
+        // Filtro por estado en cliente si se pide 'todos'
+        if (estadoSel === 'todos') {
+            preguntas = preguntas.filter(p => p.estado === 'aprobada' || p.estado === 'verificada');
+        } else if (estadoSel === 'aprobada' || estadoSel === 'verificada') {
+            preguntas = preguntas.filter(p => p.estado === estadoSel);
+        }
 
         console.log('[FRONT][CUEST] Preguntas encontradas:', preguntas.length);
         renderPreguntasModal(preguntas, page, data.totalPages || 1);
@@ -695,7 +718,8 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
                 pregunta.pregunta,
                 pregunta.tematica,
                 pregunta.respuesta,
-                pregunta.subtema
+                pregunta.subtema,
+                pregunta.estado
             );
         });
 
@@ -718,7 +742,7 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
     }
 }
 
-function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
+function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, estado = null) {
     console.log('[FRONT] seleccionarPreguntaModal llamada con:', {id, pregunta, tematica, respuesta, subtema, selectorPreguntaContext});
     // --- NUEVO: Si hay contexto de añadir pregunta a cuestionario, hacer petición AJAX ---
     if (window.contextoAnadirPregunta) {
@@ -744,6 +768,9 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema) {
                 window.UndoManager.record({ do: doAdd, undo: undoDelete, label: `Añadir pregunta ${id} a cuestionario ${cuestionarioId}` });
             }
             Toastify({ text: 'Pregunta añadida al cuestionario', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
+            if (estado && String(estado).toLowerCase() === 'verificada') {
+                Toastify({ text: 'Aviso: La pregunta estaba VERIFICADA y se ha marcado como APROBADA automáticamente.', duration: 4000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ffc107, #ff9800)' } }).showToast();
+            }
         })
         .catch(e => {
             Toastify({ text: 'Error al añadir pregunta: ' + e.message, duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
@@ -1017,7 +1044,9 @@ window.editarCuestionario = async function(id) {
         const asignadoDiv = document.getElementById('cuestionario-jornada-asignada');
         if (asignadoDiv) {
             if (cuestionario.jornadaAsignada) {
-                asignadoDiv.textContent = `Asignado a jornada ${cuestionario.jornadaAsignada}`;
+                asignadoDiv.textContent = (cuestionario.estado === 'grabado')
+                    ? `Grabado en jornada ${cuestionario.jornadaAsignada}`
+                    : `Asignado a jornada ${cuestionario.jornadaAsignada}`;
                 asignadoDiv.classList.remove('d-none');
             } else {
                 asignadoDiv.classList.add('d-none');
@@ -1125,6 +1154,8 @@ document.addEventListener('DOMContentLoaded', function() {
 window.eliminarPreguntaDeCuestionario = async function(cuestionarioId, slot) {
     if (!confirm('¿Seguro que quieres quitar esta pregunta del cuestionario?')) return;
     try {
+        CuestionariosManager.rememberScroll();
+        CuestionariosManager.lastFocusCuestionarioId = cuestionarioId;
         // Preparar undo/redo: localizar pregunta en ese slot
         const cuest = CuestionariosManager.ultimoListado?.find(c => c.id === cuestionarioId);
         let preguntaId = null;
@@ -1148,6 +1179,7 @@ window.eliminarPreguntaDeCuestionario = async function(cuestionarioId, slot) {
         }
         Toastify({ text: 'Pregunta eliminada del cuestionario', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
         await CuestionariosManager.cargarCuestionarios();
+        CuestionariosManager.restoreScrollOrFocus();
     } catch (e) {
         Toastify({ text: 'Error al quitar pregunta: ' + e.message, duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
     }
@@ -1273,6 +1305,8 @@ window.limpiarFiltrosCuestionarios = function() {
 
 window.actualizarNotasDireccion = async function(cuestionarioId, notas) {
     try {
+        CuestionariosManager.rememberScroll();
+        CuestionariosManager.lastFocusCuestionarioId = cuestionarioId;
         // Obtener valor anterior desde el listado
         const previo = (CuestionariosManager.ultimoListado || []).find(c => c.id === cuestionarioId);
         const notasPrevias = previo ? (previo.notasDireccion || '') : '';
@@ -1295,6 +1329,7 @@ window.actualizarNotasDireccion = async function(cuestionarioId, notas) {
             position: "right",
             style: { background: "linear-gradient(to right, #00b09b, #96c93d)" }
         }).showToast();
+        CuestionariosManager.restoreScrollOrFocus();
     } catch (error) {
         console.error('Error al actualizar notas:', error);
         Toastify({
@@ -1351,6 +1386,8 @@ function getOpcionesEstadoCuestionario(estadoActual) {
 
 window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
     try {
+        CuestionariosManager.rememberScroll();
+        CuestionariosManager.lastFocusCuestionarioId = id;
         const previo = (CuestionariosManager.ultimoListado || []).find(c => c.id === id);
         const estadoPrevio = previo ? previo.estado : null;
         const doAction = async () => {
@@ -1375,6 +1412,7 @@ window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
             position: 'right',
             style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
         }).showToast();
+        CuestionariosManager.restoreScrollOrFocus();
     } catch (error) {
         Toastify({
             text: `Error: ${error.message}`,
@@ -1389,6 +1427,8 @@ window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
 
 window.cambiarTematicaCuestionario = async function(id, nuevaTematica) {
     try {
+        CuestionariosManager.rememberScroll();
+        CuestionariosManager.lastFocusCuestionarioId = id;
         const previo = (CuestionariosManager.ultimoListado || []).find(c => c.id === id);
         const tematicaPrevia = previo ? (previo.tematica || '') : '';
         const doAction = async () => {
@@ -1411,6 +1451,7 @@ window.cambiarTematicaCuestionario = async function(id, nuevaTematica) {
             position: 'right',
             style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
         }).showToast();
+        CuestionariosManager.restoreScrollOrFocus();
     } catch (error) {
         Toastify({
             text: `Error: ${error.message}`,

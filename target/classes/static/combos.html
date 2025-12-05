@@ -63,11 +63,15 @@
     </nav>
 
     <div class="container mt-4">
-        <div class="section-header">
-            <h2>Gestión de Combos</h2>
-            <button class="btn btn-primary" onclick="mostrarFormularioCombo()">
+        <div class="section-header d-flex align-items-center">
+            <h2 class="mb-0">Gestión de Combos</h2>
+            <button class="btn btn-primary ms-2" onclick="mostrarFormularioCombo()">
                 <i class="fas fa-plus"></i> Nuevo Combo
             </button>
+            <div class="btn-group btn-group-sm ms-2" role="group" aria-label="Vista de Combos">
+                <button type="button" id="btnVistaCombosActual" class="btn btn-outline-primary active" onclick="setVistaCombos('actual')">Vista actual</button>
+                <button type="button" id="btnVistaCombos2" class="btn btn-outline-primary" onclick="setVistaCombos('c2')">Combos 2</button>
+            </div>
         </div>
 
         <!-- Filtros -->
@@ -128,7 +132,7 @@
         </div>
 
         <!-- Tabla de Combos -->
-        <div class="table-responsive">
+        <div class="table-responsive" id="tabla-combos-wrapper">
             <table class="table" id="tabla-combos-tabla">
                 <thead>
                     <tr>
@@ -264,14 +268,27 @@
                                     <option value="">Todas las temáticas</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2"><button class="btn btn-primary btn-sm w-100" onclick="buscarPreguntasModal(0)">Buscar</button></div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3">
                                 <select id="buscador-nivel-combo" class="form-select form-select-sm">
                                     <option value="">Nivel (todos)</option>
+                                    <option value="_1LS">1LS</option>
+                                    <option value="_2NLS">2NLS</option>
+                                    <option value="_3LS">3LS</option>
+                                    <option value="_4NLS">4NLS</option>
                                     <option value="_5LS">5LS</option>
                                     <option value="_5NLS">5NLS</option>
                                 </select>
                             </div>
-                            <div class="col-md-2"><button class="btn btn-primary btn-sm w-100" onclick="buscarPreguntasModal(0)">Buscar</button></div>
+                            <div class="col-md-3">
+                                <select id="buscador-estado" class="form-select form-select-sm">
+                                    <option value="todos">Estado (aprobada + verificada)</option>
+                                    <option value="aprobada">Aprobada</option>
+                                    <option value="verificada">Verificada</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="table-responsive" style="max-height: 70vh;">
                             <table class="table table-bordered table-hover align-middle">
@@ -405,16 +422,46 @@
         #tabla-combos-tabla > thead > tr > th:nth-child(7),
         #tabla-combos-tabla > tbody > tr.fila-combo > td:nth-child(7) { width: 120px; white-space: nowrap; }
         /* Separador entre combos */
-        #tabla-combos-tabla tr.separador-combo td { height: 16px; border: none !important; padding: 0; }
+        #tabla-combos-tabla tr.separador-combo td { height: 24px; border: none !important; padding: 0; }
         /* Cabecera fija de la tabla principal (no afecta subtablas) */
         #tabla-combos-tabla > thead > tr > th { position: sticky; top: 0; z-index: 5; background: #fff; }
         .table-responsive { position: relative; max-height: 80vh; overflow-y: auto; }
+        /* Vista Combos 2: contraste suave del área + tabla destacada, sin scroll lateral raro */
+        body.c2-mode { background: #e3e8f3; }
+        .c2-mode #tabla-combos-wrapper {
+            position: relative;
+            background: transparent;
+            border-radius: 6px;
+            padding: 14px;
+            box-shadow: none;
+            max-height: none;       /* Que el fondo acompañe a toda la tabla */
+            overflow-y: visible;    /* El scroll pasa a la página, no al contenedor interno */
+            overflow-x: hidden;     /* Quitar el “desliz” lateral */
+        }
+        .c2-mode #tabla-combos-tabla {
+            position: relative;
+            z-index: 1;
+        }
+        .c2-mode #tabla-combos-tabla {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 12px 28px rgba(16, 24, 40, 0.10);
+            overflow: hidden;
+        }
+        /* En vista Combos 2, el hueco entre bloques también va en gris suave */
+        .c2-mode #tabla-combos-tabla tr.separador-combo td {
+            background: #e3e8f3;
+        }
     </style>
     <script>
         // Inicializar la página cuando se carga
         document.addEventListener('DOMContentLoaded', function() {
             inicializarCombos();
             mostrarBotonAdminNavbar();
+            try {
+                const preferida = localStorage.getItem('vistaCombos') || 'actual';
+                setVistaCombos(preferida);
+            } catch {}
         });
 
         function cambiarPassword() {
@@ -461,6 +508,22 @@
                 }
             });
         });
+        function setVistaCombos(modo) {
+            const b1 = document.getElementById('btnVistaCombosActual');
+            const b2 = document.getElementById('btnVistaCombos2');
+            if (!b1 || !b2) return;
+            if (modo === 'c2') {
+                document.body.classList.add('c2-mode');
+                b2.classList.add('active');
+                b1.classList.remove('active');
+            } else {
+                document.body.classList.remove('c2-mode');
+                b1.classList.add('active');
+                b2.classList.remove('active');
+                modo = 'actual';
+            }
+            try { localStorage.setItem('vistaCombos', modo); } catch {}
+        }
     </script>
 </body>
 </html> 

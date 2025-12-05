@@ -52,6 +52,11 @@ const JornadasManager = {
     // Función para seleccionar cuestionarios directamente sin pasar por el editor
     seleccionarCuestionariosDirecto(jornadaId) {
         this.jornadaEditando = this.jornadas.find(j => j.id === jornadaId);
+        // Bloquear si la jornada no es editable (por estado)
+        if (!this.puedeEditar(this.jornadaEditando)) {
+            Utils.showAlert('Esta jornada está bloqueada por estado y no se puede editar.', 'error');
+            return;
+        }
         // Usar los mismos campos que editarJornada para consistencia
         this.cuestionariosSeleccionados = this.jornadaEditando.cuestionarioIds || [];
         this.seleccionarCuestionarios();
@@ -60,6 +65,11 @@ const JornadasManager = {
     // Función para seleccionar combos directamente sin pasar por el editor
     seleccionarCombosDirecto(jornadaId) {
         this.jornadaEditando = this.jornadas.find(j => j.id === jornadaId);
+        // Bloquear si la jornada no es editable (por estado)
+        if (!this.puedeEditar(this.jornadaEditando)) {
+            Utils.showAlert('Esta jornada está bloqueada por estado y no se puede editar.', 'error');
+            return;
+        }
         // Usar los mismos campos que editarJornada para consistencia
         this.combosSeleccionados = this.jornadaEditando.comboIds || [];
         this.seleccionarCombos();
@@ -306,6 +316,16 @@ const JornadasManager = {
         // Preparar los cuestionarios y combos (asegurar que existan arrays)
         const cuestionarios = jornada.cuestionarios || [];
         const combos = jornada.combos || [];
+        // Mapear estado backend -> etiquetas del front
+        const estadoFront = (estado) => {
+            switch (estado) {
+                case 'preparacion': return 'borrador';
+                case 'completada': return 'completa';
+                case 'archivada': return 'grabada';
+                default: return estado;
+            }
+        };
+        const estadoVista = estadoFront(jornada.estado);
         
         // Generar slots de cuestionarios (6 en total)
         let cuestionariosHtml = '';
@@ -333,6 +353,11 @@ const JornadasManager = {
                                         <i class="fas fa-recycle"></i>
                                     </button>
                                 `}
+                                ${JornadasManager.puedeEditar(jornada) ? `
+                                    <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarCuestionarioDeJornada(${jornada.id}, ${c.id})" title="Borrar del slot">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                ` : ``}
                             </div>
                         </div>
                         <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : (c.tematica || 'Sin temática')}</small>
@@ -342,10 +367,12 @@ const JornadasManager = {
                 // Slot vacío con botón de añadir
                 cuestionariosHtml += `
                     <div class="cuestionario-slot empty-slot p-2 border rounded" style="background-color: #f8f9fa; border-color: #e9ecef !important; border-style: dashed !important;">
-                        <button class="btn btn-sm btn-outline-success w-100" 
-                                onclick="JornadasManager.seleccionarCuestionariosDirecto(${jornada.id})">
-                            <i class="fas fa-plus"></i> Añadir
-                        </button>
+                        ${JornadasManager.puedeEditar(jornada) ? `
+                            <button class="btn btn-sm btn-outline-success w-100" 
+                                    onclick="JornadasManager.seleccionarCuestionariosDirecto(${jornada.id})">
+                                <i class="fas fa-plus"></i> Añadir
+                            </button>
+                        ` : `<div class="text-muted small text-center">Bloqueado</div>`}
                     </div>
                 `;
             }
@@ -388,6 +415,11 @@ const JornadasManager = {
                                         <i class="fas fa-recycle"></i>
                                     </button>
                                 `}
+                                ${JornadasManager.puedeEditar(jornada) ? `
+                                    <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarComboDeJornada(${jornada.id}, ${c.id})" title="Borrar del slot">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                ` : ``}
                             </div>
                         </div>
                         <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : tipoNombre}</small>
@@ -397,25 +429,27 @@ const JornadasManager = {
                 // Slot vacío con botón de añadir
                 combosHtml += `
                     <div class="combo-slot empty-slot p-2 border rounded" style="background-color: #f8f9fa; border-color: #e9ecef !important; border-style: dashed !important;">
-                        <button class="btn btn-sm btn-outline-success w-100" 
-                                onclick="JornadasManager.seleccionarCombosDirecto(${jornada.id})">
-                            <i class="fas fa-plus"></i> Añadir
-                        </button>
+                        ${JornadasManager.puedeEditar(jornada) ? `
+                            <button class="btn btn-sm btn-outline-success w-100" 
+                                    onclick="JornadasManager.seleccionarCombosDirecto(${jornada.id})">
+                                <i class="fas fa-plus"></i> Añadir
+                            </button>
+                        ` : `<div class="text-muted small text-center">Bloqueado</div>`}
                     </div>
                 `;
             }
         }
 
-        const estadoBadge = this.getEstadoBadge(jornada.estado);
+        const estadoBadge = this.getEstadoBadge(estadoVista);
         const fecha = jornada.fechaJornada ? new Date(jornada.fechaJornada).toLocaleDateString('es-ES') : 'Sin fecha';
         
         // Selector de estado (solo se muestra si el usuario puede gestionar el estado)
         const selectorEstado = this.puedeGestionarEstado(jornada) ? `
             <select class=\"form-select form-select-sm\" style=\"width: auto; min-width: 120px\" 
                     onchange=\"JornadasManager.cambiarEstado(${jornada.id}, this.value)\">\n\
-                <option value=\"borrador\" ${jornada.estado === 'borrador' ? 'selected' : ''}>Borrador</option>\n\
-                <option value=\"completa\" ${jornada.estado === 'completa' ? 'selected' : ''}>Completa</option>\n\
-                <option value=\"grabada\" ${jornada.estado === 'grabada' ? 'selected' : ''}>Grabada</option>\n\
+                <option value=\"borrador\" ${estadoVista === 'borrador' ? 'selected' : ''}>Borrador</option>\n\
+                <option value=\"completa\" ${estadoVista === 'completa' ? 'selected' : ''}>Completa</option>\n\
+                <option value=\"grabada\" ${estadoVista === 'grabada' ? 'selected' : ''}>Grabada</option>\n\
             </select>
         ` : estadoBadge;
         
@@ -492,6 +526,132 @@ const JornadasManager = {
                 </div>
             </div>
         `;
+    },
+
+    async eliminarCuestionarioDeJornada(jornadaId, cuestionarioId) {
+        try {
+            this.rememberScroll();
+            const response = await apiManager.get(`/api/jornadas/${jornadaId}`);
+            const jornada = response?.datos || response;
+            if (!jornada) throw new Error('No se pudo cargar la jornada');
+            
+            // Capturar SOLO los campos editables (sin version, creacion_usuario_id, etc.)
+            const prevCuestionarioIds = [...(jornada.cuestionarioIds || [])];
+            const nuevaCuestionarioIds = prevCuestionarioIds.filter(id => id !== cuestionarioId);
+            
+            const doAction = async () => {
+                console.log('[UNDO][do][eliminar-cuestionario] Eliminando cuestionario:', { jornadaId, cuestionarioId, nuevaCuestionarioIds });
+                // Leer estado actual y modificar solo cuestionarioIds
+                const jActual = (await apiManager.get(`/api/jornadas/${jornadaId}`))?.datos || {};
+                await apiManager.put(`/api/jornadas/${jornadaId}`, {
+                    nombre: jActual.nombre,
+                    fechaJornada: jActual.fechaJornada || null,
+                    lugar: jActual.lugar || '',
+                    notas: jActual.notas || '',
+                    cuestionarioIds: nuevaCuestionarioIds,
+                    comboIds: jActual.comboIds || []
+                });
+            };
+            const undoAction = async () => {
+                console.log('[UNDO][undo][eliminar-cuestionario] Restaurando cuestionario:', { jornadaId, cuestionarioId, prevCuestionarioIds });
+                try {
+                    // Leer estado actual y restaurar cuestionarioIds
+                    const jActual = (await apiManager.get(`/api/jornadas/${jornadaId}`))?.datos || {};
+                    await apiManager.put(`/api/jornadas/${jornadaId}`, {
+                        nombre: jActual.nombre,
+                        fechaJornada: jActual.fechaJornada || null,
+                        lugar: jActual.lugar || '',
+                        notas: jActual.notas || '',
+                        cuestionarioIds: prevCuestionarioIds,
+                        comboIds: jActual.comboIds || []
+                    });
+                } catch (e) {
+                    console.warn('[UNDO][undo][eliminar-cuestionario] Error al restaurar (probablemente concurrencia), continuando:', e.message);
+                    // Si falla, simplemente continuamos para recargar la UI
+                }
+            };
+            const doWrapped = async () => {
+                await doAction();
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+                this.restoreScrollOrFocus();
+            };
+            const undoWrapped = async () => {
+                await undoAction();
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+                this.restoreScrollOrFocus();
+            };
+            await doWrapped();
+            if (window.UndoManager) window.UndoManager.record({ do: doWrapped, undo: undoWrapped, label: `Quitar cuestionario ${cuestionarioId} de jornada ${jornadaId}` });
+            Utils.showAlert(`Cuestionario ${cuestionarioId} eliminado de la jornada`, 'success');
+        } catch (e) {
+            console.error('❌ [JORNADAS] Error eliminando cuestionario de jornada:', e);
+            Utils.showAlert('Error al eliminar el cuestionario de la jornada', 'error');
+        }
+    },
+
+    async eliminarComboDeJornada(jornadaId, comboId) {
+        try {
+            this.rememberScroll();
+            const response = await apiManager.get(`/api/jornadas/${jornadaId}`);
+            const jornada = response?.datos || response;
+            if (!jornada) throw new Error('No se pudo cargar la jornada');
+            
+            // Capturar SOLO los campos editables (sin version, creacion_usuario_id, etc.)
+            const prevComboIds = [...(jornada.comboIds || [])];
+            const nuevaComboIds = prevComboIds.filter(id => id !== comboId);
+            
+            const doAction = async () => {
+                console.log('[UNDO][do][eliminar-combo] Eliminando combo:', { jornadaId, comboId, nuevaComboIds });
+                // Leer estado actual y modificar solo comboIds
+                const jActual = (await apiManager.get(`/api/jornadas/${jornadaId}`))?.datos || {};
+                await apiManager.put(`/api/jornadas/${jornadaId}`, {
+                    nombre: jActual.nombre,
+                    fechaJornada: jActual.fechaJornada || null,
+                    lugar: jActual.lugar || '',
+                    notas: jActual.notas || '',
+                    cuestionarioIds: jActual.cuestionarioIds || [],
+                    comboIds: nuevaComboIds
+                });
+            };
+            const undoAction = async () => {
+                console.log('[UNDO][undo][eliminar-combo] Restaurando combo:', { jornadaId, comboId, prevComboIds });
+                try {
+                    // Leer estado actual y restaurar comboIds
+                    const jActual = (await apiManager.get(`/api/jornadas/${jornadaId}`))?.datos || {};
+                    await apiManager.put(`/api/jornadas/${jornadaId}`, {
+                        nombre: jActual.nombre,
+                        fechaJornada: jActual.fechaJornada || null,
+                        lugar: jActual.lugar || '',
+                        notas: jActual.notas || '',
+                        cuestionarioIds: jActual.cuestionarioIds || [],
+                        comboIds: prevComboIds
+                    });
+                } catch (e) {
+                    console.warn('[UNDO][undo][eliminar-combo] Error al restaurar (probablemente concurrencia), continuando:', e.message);
+                    // Si falla, simplemente continuamos para recargar la UI
+                }
+            };
+            const doWrapped = async () => {
+                await doAction();
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+                this.restoreScrollOrFocus();
+            };
+            const undoWrapped = async () => {
+                await undoAction();
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+                this.restoreScrollOrFocus();
+            };
+            await doWrapped();
+            if (window.UndoManager) window.UndoManager.record({ do: doWrapped, undo: undoWrapped, label: `Quitar combo ${comboId} de jornada ${jornadaId}` });
+            Utils.showAlert(`Combo ${comboId} eliminado de la jornada`, 'success');
+        } catch (e) {
+            console.error('❌ [JORNADAS] Error eliminando combo de jornada:', e);
+            Utils.showAlert('Error al eliminar el combo de la jornada', 'error');
+        }
     },
 
     getEstadoBadge(estado) {
@@ -662,7 +822,18 @@ const JornadasManager = {
         if (!nuevoEstado) return;
 
         try {
-            await apiManager.putUndoable(`/api/jornadas/${id}/estado`, { estado: nuevoEstado }, { label: `Estado jornada ${id}` , snapshotEndpoint: `/api/jornadas/${id}`});
+            // Mapear estados del front a los del backend
+            const mapFrontToBack = (estado) => {
+                switch (estado) {
+                    case 'borrador': return 'preparacion';
+                    case 'completa': return 'completada';
+                    case 'grabada': return 'archivada';
+                    default: return estado; // permitir enviar estados backend tal cual
+                }
+            };
+            const estadoBackend = mapFrontToBack(nuevoEstado);
+
+            await apiManager.putUndoable(`/api/jornadas/${id}/estado`, { estado: estadoBackend }, { label: `Estado jornada ${id}` , snapshotEndpoint: `/api/jornadas/${id}`});
             Utils.showAlert('Estado actualizado exitosamente', 'success');
             
             await this.cargarDatos(true);
@@ -927,23 +1098,98 @@ const JornadasManager = {
     },
 
     seleccionarCuestionarioDirecto(id) {
-        if (!this.cuestionariosSeleccionados.includes(id)) {
-            if (this.cuestionariosSeleccionados.length >= 6) {
-                Utils.showAlert('Máximo 6 cuestionarios por jornada', 'error');
-                return;
-            }
-            this.cuestionariosSeleccionados.push(id);
+        console.log('🎯 [AÑADIR] seleccionarCuestionarioDirecto llamado con id:', id);
+        console.log('🎯 [AÑADIR] jornadaEditando:', this.jornadaEditando);
+        console.log('🎯 [AÑADIR] jornadaEditando.id:', this.jornadaEditando?.id);
+        
+        // Límite visual
+        if (this.cuestionariosSeleccionados.length >= 6 && !this.cuestionariosSeleccionados.includes(id)) {
+            Utils.showAlert('Máximo 6 cuestionarios por jornada', 'error');
+            return;
         }
+
+        // Si estamos en edición de jornada, hacemos PUT con snapshot y registramos undo/redo
+        if (this.jornadaEditando && this.jornadaEditando.id) {
+            console.log('✅ [AÑADIR] Entrando en bloque de edición de jornada existente');
+            const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios'));
+            modalInst && modalInst.hide();
+
+            const jid = this.jornadaEditando.id;
+            const prevLista = (this.jornadaEditando.cuestionarioIds || []).slice();
+            const nuevaLista = prevLista.includes(id) ? prevLista.slice() : prevLista.concat([id]);
+
+            const doAction = async () => {
+                console.log('[UNDO][do][add-cuestionario] DO Añadir:', { jid, id, nuevaLista });
+                try {
+                    this.rememberScroll();
+                    // Leer estado actual antes de hacer PUT
+                    const jActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+                    await apiManager.put(`/api/jornadas/${jid}`, {
+                        nombre: jActual.nombre,
+                        fechaJornada: jActual.fechaJornada || null,
+                        lugar: jActual.lugar || '',
+                        notas: jActual.notas || '',
+                        cuestionarioIds: nuevaLista,
+                        comboIds: jActual.comboIds || []
+                    });
+                } catch (e) {
+                    console.warn('[UNDO][do][add-cuestionario] Error al añadir (probablemente concurrencia), continuando:', e.message);
+                }
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+                this.restoreScrollOrFocus();
+            };
+            const undoAction = async () => {
+                console.log('[UNDO][undo][add-cuestionario] UNDO Quitar recién añadido:', { jid, id, prevLista });
+                try {
+                    this.rememberScroll();
+                    // Leer estado actual antes de hacer PUT
+                    const jActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+                    await apiManager.put(`/api/jornadas/${jid}`, {
+                        nombre: jActual.nombre,
+                        fechaJornada: jActual.fechaJornada || null,
+                        lugar: jActual.lugar || '',
+                        notas: jActual.notas || '',
+                        cuestionarioIds: prevLista,
+                        comboIds: jActual.comboIds || []
+                    });
+                } catch (e) {
+                    console.warn('[UNDO][undo][add-cuestionario] Error al quitar (probablemente concurrencia), continuando:', e.message);
+                }
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+                this.restoreScrollOrFocus();
+            };
+
+            console.log('🔥 [AÑADIR] A punto de ejecutar bloque async para registrar en UndoManager');
+            (async () => {
+                console.log('[UNDO][record][add-cuestionario] Ejecutando DO inicial y registrando en UndoManager');
+                await doAction();
+                if (window.UndoManager) {
+                    console.log('[UNDO][record][add-cuestionario] Registrando acción Añadir (con do/undo wrapped):', { label: `Añadir cuestionario ${id} a jornada ${jid}` });
+                    window.UndoManager.record({ 
+                        do: doAction, 
+                        undo: undoAction, 
+                        label: `Añadir cuestionario ${id} a jornada ${jid}` 
+                    });
+                    console.log('[UNDO][record][add-cuestionario] Acción registrada. Stack:', window.UndoManager.canUndo ? 'tiene undo' : 'sin undo');
+                } else {
+                    console.warn('[UNDO][record][add-cuestionario] UndoManager no disponible');
+                }
+                Utils.showAlert(`Cuestionario ${id} añadido`, 'success');
+            })();
+            return;
+        }
+
+        // Flujo en creación de jornada (modal de crear/editar abierto pero sin id persistido)
+        if (!this.cuestionariosSeleccionados.includes(id)) this.cuestionariosSeleccionados.push(id);
         this.actualizarSlotsVisual();
-        bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios')).hide();
-        if (this.jornadaEditando) {
-            this.guardarCambiosCuestionarios();
-        } else if (this.reabrirEditarTrasSeleccion) {
-            // Si venimos de edición, reabrir el modal aunque sea nueva
+        const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios'));
+        modalInst && modalInst.hide();
+        if (this.reabrirEditarTrasSeleccion) {
             const jid = document.getElementById('jornadaId')?.value;
-            if (jid && jid !== 'Auto') {
-                this.editarJornada(Number(jid));
-            } else {
+            if (jid && jid !== 'Auto') this.editarJornada(Number(jid));
+            else {
                 const modal = new bootstrap.Modal(document.getElementById('modalJornada'));
                 modal.show();
                 this.reabrirEditarTrasSeleccion = false;
@@ -952,22 +1198,98 @@ const JornadasManager = {
     },
 
     seleccionarComboDirecto(id) {
-        if (!this.combosSeleccionados.includes(id)) {
-            if (this.combosSeleccionados.length >= 6) {
-                Utils.showAlert('Máximo 6 combos por jornada', 'error');
-                return;
-            }
-            this.combosSeleccionados.push(id);
+        console.log('🎯 [AÑADIR] seleccionarComboDirecto llamado con id:', id);
+        console.log('🎯 [AÑADIR] jornadaEditando:', this.jornadaEditando);
+        console.log('🎯 [AÑADIR] jornadaEditando.id:', this.jornadaEditando?.id);
+        
+        // Límite visual
+        if (this.combosSeleccionados.length >= 6 && !this.combosSeleccionados.includes(id)) {
+            Utils.showAlert('Máximo 6 combos por jornada', 'error');
+            return;
         }
+
+        // Si estamos en edición de jornada, hacemos PUT con snapshot y registramos undo/redo
+        if (this.jornadaEditando && this.jornadaEditando.id) {
+            console.log('✅ [AÑADIR] Entrando en bloque de edición de jornada existente');
+            const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos'));
+            modalInst && modalInst.hide();
+
+            const jid = this.jornadaEditando.id;
+            const prevLista = (this.jornadaEditando.comboIds || []).slice();
+            const nuevaLista = prevLista.includes(id) ? prevLista.slice() : prevLista.concat([id]);
+
+            const doAction = async () => {
+                console.log('[UNDO][do][add-combo] DO Añadir:', { jid, id, nuevaLista });
+                try {
+                    this.rememberScroll();
+                    // Leer estado actual antes de hacer PUT
+                    const jActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+                    await apiManager.put(`/api/jornadas/${jid}`, {
+                        nombre: jActual.nombre,
+                        fechaJornada: jActual.fechaJornada || null,
+                        lugar: jActual.lugar || '',
+                        notas: jActual.notas || '',
+                        cuestionarioIds: jActual.cuestionarioIds || [],
+                        comboIds: nuevaLista
+                    });
+                } catch (e) {
+                    console.warn('[UNDO][do][add-combo] Error al añadir (probablemente concurrencia), continuando:', e.message);
+                }
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+                this.restoreScrollOrFocus();
+            };
+            const undoAction = async () => {
+                console.log('[UNDO][undo][add-combo] UNDO Quitar recién añadido:', { jid, id, prevLista });
+                try {
+                    this.rememberScroll();
+                    // Leer estado actual antes de hacer PUT
+                    const jActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+                    await apiManager.put(`/api/jornadas/${jid}`, {
+                        nombre: jActual.nombre,
+                        fechaJornada: jActual.fechaJornada || null,
+                        lugar: jActual.lugar || '',
+                        notas: jActual.notas || '',
+                        cuestionarioIds: jActual.cuestionarioIds || [],
+                        comboIds: prevLista
+                    });
+                } catch (e) {
+                    console.warn('[UNDO][undo][add-combo] Error al quitar (probablemente concurrencia), continuando:', e.message);
+                }
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+                this.restoreScrollOrFocus();
+            };
+
+            console.log('🔥 [AÑADIR] A punto de ejecutar bloque async para registrar en UndoManager');
+            (async () => {
+                console.log('[UNDO][record][add-combo] Ejecutando DO inicial y registrando en UndoManager');
+                await doAction();
+                if (window.UndoManager) {
+                    console.log('[UNDO][record][add-combo] Registrando acción Añadir (con do/undo wrapped):', { label: `Añadir combo ${id} a jornada ${jid}` });
+                    window.UndoManager.record({ 
+                        do: doAction, 
+                        undo: undoAction, 
+                        label: `Añadir combo ${id} a jornada ${jid}` 
+                    });
+                    console.log('[UNDO][record][add-combo] Acción registrada. Stack:', window.UndoManager.canUndo ? 'tiene undo' : 'sin undo');
+                } else {
+                    console.warn('[UNDO][record][add-combo] UndoManager no disponible');
+                }
+                Utils.showAlert(`Combo ${id} añadido`, 'success');
+            })();
+            return;
+        }
+
+        // Flujo en creación de jornada (modal de crear/editar abierto pero sin id persistido)
+        if (!this.combosSeleccionados.includes(id)) this.combosSeleccionados.push(id);
         this.actualizarSlotsVisual();
-        bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos')).hide();
-        if (this.jornadaEditando) {
-            this.guardarCambiosCombos?.();
-        } else if (this.reabrirEditarTrasSeleccion) {
+        const modalInst2 = bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos'));
+        modalInst2 && modalInst2.hide();
+        if (this.reabrirEditarTrasSeleccion) {
             const jid = document.getElementById('jornadaId')?.value;
-            if (jid && jid !== 'Auto') {
-                this.editarJornada(Number(jid));
-            } else {
+            if (jid && jid !== 'Auto') this.editarJornada(Number(jid));
+            else {
                 const modal = new bootstrap.Modal(document.getElementById('modalJornada'));
                 modal.show();
                 this.reabrirEditarTrasSeleccion = false;
@@ -1223,17 +1545,22 @@ const JornadasManager = {
             console.log('🔍 [JORNADAS] Jornada editando:', this.jornadaEditando);
             
             const jid = this.jornadaEditando.id;
-            const prevLista = (this.jornadaEditando.cuestionarioIds || []).slice();
+            // Leer el estado ACTUAL desde el backend para comparar correctamente
+            const jornadaActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+            const prevLista = (jornadaActual.cuestionarioIds || []).slice();
             const nuevaLista = (this.cuestionariosSeleccionados || []).slice();
+            
+            console.log('🔍 [JORNADAS] prevLista (desde backend):', prevLista);
+            console.log('🔍 [JORNADAS] nuevaLista (seleccionados):', nuevaLista);
 
-            // Incluir todos los campos de la jornada actual para evitar que se pierdan datos
+            // Incluir todos los campos de la jornada actual (desde backend) para evitar que se pierdan datos
             const datos = {
-                nombre: this.jornadaEditando.nombre,
-                fechaJornada: this.jornadaEditando.fechaJornada,
-                lugar: this.jornadaEditando.lugar,
-                notas: this.jornadaEditando.notas,
+                nombre: jornadaActual.nombre,
+                fechaJornada: jornadaActual.fechaJornada || null,
+                lugar: jornadaActual.lugar || '',
+                notas: jornadaActual.notas || '',
                 cuestionarioIds: this.cuestionariosSeleccionados,
-                comboIds: this.jornadaEditando.comboIds || []
+                comboIds: jornadaActual.comboIds || []
             };
             
             console.log('🔍 [JORNADAS] Datos a enviar:', datos);
@@ -1242,33 +1569,57 @@ const JornadasManager = {
             
             // Registrar acción de deshacer/rehacer para cuestionarios
             if (window.UndoManager) {
-                const hacer = async () => {
-                    const d = {
-                        nombre: this.jornadaEditando.nombre,
-                        fechaJornada: this.jornadaEditando.fechaJornada,
-                        lugar: this.jornadaEditando.lugar,
-                        notas: this.jornadaEditando.notas,
-                        cuestionarioIds: nuevaLista,
-                        comboIds: this.jornadaEditando.comboIds || []
-                    };
-                    await apiManager.put(`/api/jornadas/${jid}`, d);
-                    await this.cargarDatos(true);
-                    this.mostrarJornadas();
+                // Capturar un snapshot estático usando el estado actual del backend
+                const snapshot = {
+                    id: jid,
+                    nombre: jornadaActual.nombre,
+                    fechaJornada: jornadaActual.fechaJornada,
+                    lugar: jornadaActual.lugar,
+                    notas: jornadaActual.notas,
+                    comboIds: (jornadaActual.comboIds || []).slice()
                 };
-                const deshacer = async () => {
-                    const d = {
-                        nombre: this.jornadaEditando.nombre,
-                        fechaJornada: this.jornadaEditando.fechaJornada,
-                        lugar: this.jornadaEditando.lugar,
-                        notas: this.jornadaEditando.notas,
-                        cuestionarioIds: prevLista,
-                        comboIds: this.jornadaEditando.comboIds || []
+                const label = `Jornada ${jid}: cuestionarios ${prevLista.join(',')}→${nuevaLista.join(',')}`;
+
+                // Si no hay cambios reales, no registrar
+                if ((prevLista || []).join(',') === (nuevaLista || []).join(',')) {
+                    console.log('[UNDO][skip][cuestionarios] Sin cambios reales, no se registra acción:', label);
+                } else {
+                    const hacer = async () => {
+                        console.log('[UNDO][do][cuestionarios] Ejecutando DO:', label, { jid: snapshot.id, nuevaLista, snapshot });
+                        // Basar en estado actual para evitar conflictos
+                        const jAct = (await apiManager.get(`/api/jornadas/${snapshot.id}`))?.datos || {};
+                        const d = {
+                            nombre: jAct?.nombre || snapshot.nombre,
+                            fechaJornada: jAct?.fechaJornada ?? snapshot.fechaJornada,
+                            lugar: jAct?.lugar ?? snapshot.lugar,
+                            notas: jAct?.notas ?? snapshot.notas,
+                            cuestionarioIds: nuevaLista,
+                            comboIds: Array.isArray(jAct?.comboIds) ? jAct.comboIds : snapshot.comboIds
+                        };
+                        await apiManager.put(`/api/jornadas/${snapshot.id}`, d);
+                        await this.cargarDatos(true);
+                        this.mostrarJornadas();
+                        this.restoreScrollOrFocus();
                     };
-                    await apiManager.put(`/api/jornadas/${jid}`, d);
-                    await this.cargarDatos(true);
-                    this.mostrarJornadas();
-                };
-                window.UndoManager.record({ do: hacer, undo: deshacer, label: `Jornada ${jid}: cuestionarios ${prevLista.join(',')}→${nuevaLista.join(',')}` });
+                    const deshacer = async () => {
+                        console.log('[UNDO][undo][cuestionarios] Ejecutando UNDO:', label, { jid: snapshot.id, prevLista, snapshot });
+                        const jAct = (await apiManager.get(`/api/jornadas/${snapshot.id}`))?.datos || {};
+                        const d = {
+                            nombre: jAct?.nombre || snapshot.nombre,
+                            fechaJornada: jAct?.fechaJornada ?? snapshot.fechaJornada,
+                            lugar: jAct?.lugar ?? snapshot.lugar,
+                            notas: jAct?.notas ?? snapshot.notas,
+                            cuestionarioIds: prevLista,
+                            comboIds: Array.isArray(jAct?.comboIds) ? jAct.comboIds : snapshot.comboIds
+                        };
+                        await apiManager.put(`/api/jornadas/${snapshot.id}`, d);
+                        await this.cargarDatos(true);
+                        this.mostrarJornadas();
+                        this.restoreScrollOrFocus();
+                    };
+                    console.log('[UNDO][record][cuestionarios] Registrando acción:', label, { prevLista, nuevaLista, snapshot, hasUndoManager: !!window.UndoManager });
+                    window.UndoManager.record({ do: hacer, undo: deshacer, label });
+                }
             }
 
             // Recargar datos para mostrar los cambios
@@ -1308,16 +1659,21 @@ const JornadasManager = {
             console.log('🔍 [JORNADAS] Jornada editando:', this.jornadaEditando);
             
             const jid = this.jornadaEditando.id;
-            const prevLista = (this.jornadaEditando.comboIds || []).slice();
+            // Leer el estado ACTUAL desde el backend para comparar correctamente
+            const jornadaActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+            const prevLista = (jornadaActual.comboIds || []).slice();
             const nuevaLista = (this.combosSeleccionados || []).slice();
+            
+            console.log('🔍 [JORNADAS] prevLista (desde backend):', prevLista);
+            console.log('🔍 [JORNADAS] nuevaLista (seleccionados):', nuevaLista);
 
-            // Incluir todos los campos de la jornada actual para evitar que se pierdan datos
+            // Incluir todos los campos de la jornada actual (desde backend) para evitar que se pierdan datos
             const datos = {
-                nombre: this.jornadaEditando.nombre,
-                fechaJornada: this.jornadaEditando.fechaJornada,
-                lugar: this.jornadaEditando.lugar,
-                notas: this.jornadaEditando.notas,
-                cuestionarioIds: this.jornadaEditando.cuestionarioIds || [],
+                nombre: jornadaActual.nombre,
+                fechaJornada: jornadaActual.fechaJornada || null,
+                lugar: jornadaActual.lugar || '',
+                notas: jornadaActual.notas || '',
+                cuestionarioIds: jornadaActual.cuestionarioIds || [],
                 comboIds: this.combosSeleccionados
             };
             
@@ -1327,33 +1683,54 @@ const JornadasManager = {
             
             // Registrar acción de deshacer/rehacer para combos
             if (window.UndoManager) {
-                const hacer = async () => {
-                    const d = {
-                        nombre: this.jornadaEditando.nombre,
-                        fechaJornada: this.jornadaEditando.fechaJornada,
-                        lugar: this.jornadaEditando.lugar,
-                        notas: this.jornadaEditando.notas,
-                        cuestionarioIds: this.jornadaEditando.cuestionarioIds || [],
-                        comboIds: nuevaLista
-                    };
-                    await apiManager.put(`/api/jornadas/${jid}`, d);
-                    await this.cargarDatos(true);
-                    this.mostrarJornadas();
+                // Capturar un snapshot estático usando el estado actual del backend
+                const snapshot = {
+                    id: jid,
+                    nombre: jornadaActual.nombre,
+                    fechaJornada: jornadaActual.fechaJornada,
+                    lugar: jornadaActual.lugar,
+                    notas: jornadaActual.notas,
+                    cuestionarioIds: (jornadaActual.cuestionarioIds || []).slice()
                 };
-                const deshacer = async () => {
-                    const d = {
-                        nombre: this.jornadaEditando.nombre,
-                        fechaJornada: this.jornadaEditando.fechaJornada,
-                        lugar: this.jornadaEditando.lugar,
-                        notas: this.jornadaEditando.notas,
-                        cuestionarioIds: this.jornadaEditando.cuestionarioIds || [],
-                        comboIds: prevLista
+                const label = `Jornada ${jid}: combos ${prevLista.join(',')}→${nuevaLista.join(',')}`;
+                if ((prevLista || []).join(',') === (nuevaLista || []).join(',')) {
+                    console.log('[UNDO][skip][combos] Sin cambios reales, no se registra acción:', label);
+                } else {
+                    const hacer = async () => {
+                        console.log('[UNDO][do][combos] Ejecutando DO:', label, { jid: snapshot.id, nuevaLista, snapshot });
+                        const jAct = (await apiManager.get(`/api/jornadas/${snapshot.id}`))?.datos || {};
+                        const d = {
+                            nombre: jAct?.nombre || snapshot.nombre,
+                            fechaJornada: jAct?.fechaJornada ?? snapshot.fechaJornada,
+                            lugar: jAct?.lugar ?? snapshot.lugar,
+                            notas: jAct?.notas ?? snapshot.notas,
+                            cuestionarioIds: Array.isArray(jAct?.cuestionarioIds) ? jAct.cuestionarioIds : snapshot.cuestionarioIds,
+                            comboIds: nuevaLista
+                        };
+                        await apiManager.put(`/api/jornadas/${snapshot.id}`, d);
+                        await this.cargarDatos(true);
+                        this.mostrarJornadas();
+                        this.restoreScrollOrFocus();
                     };
-                    await apiManager.put(`/api/jornadas/${jid}`, d);
-                    await this.cargarDatos(true);
-                    this.mostrarJornadas();
-                };
-                window.UndoManager.record({ do: hacer, undo: deshacer, label: `Jornada ${jid}: combos ${prevLista.join(',')}→${nuevaLista.join(',')}` });
+                    const deshacer = async () => {
+                        console.log('[UNDO][undo][combos] Ejecutando UNDO:', label, { jid: snapshot.id, prevLista, snapshot });
+                        const jAct = (await apiManager.get(`/api/jornadas/${snapshot.id}`))?.datos || {};
+                        const d = {
+                            nombre: jAct?.nombre || snapshot.nombre,
+                            fechaJornada: jAct?.fechaJornada ?? snapshot.fechaJornada,
+                            lugar: jAct?.lugar ?? snapshot.lugar,
+                            notas: jAct?.notas ?? snapshot.notas,
+                            cuestionarioIds: Array.isArray(jAct?.cuestionarioIds) ? jAct.cuestionarioIds : snapshot.cuestionarioIds,
+                            comboIds: prevLista
+                        };
+                        await apiManager.put(`/api/jornadas/${snapshot.id}`, d);
+                        await this.cargarDatos(true);
+                        this.mostrarJornadas();
+                        this.restoreScrollOrFocus();
+                    };
+                    console.log('[UNDO][record][combos] Registrando acción:', label, { prevLista, nuevaLista, snapshot, hasUndoManager: !!window.UndoManager });
+                    window.UndoManager.record({ do: hacer, undo: deshacer, label });
+                }
             }
 
             // Recargar datos para mostrar los cambios
@@ -1406,6 +1783,7 @@ const JornadasManager = {
         try {
             const response = await apiManager.get(`/api/jornadas/${id}`);
             const jornada = response.datos;
+            const estadoVista = jornada.estado === 'preparacion' ? 'borrador' : (jornada.estado === 'completada' ? 'completa' : (jornada.estado === 'archivada' ? 'grabada' : jornada.estado));
             
             let detalleHtml = `
                 <div class="modal fade" id="modalDetalle" tabindex="-1">
@@ -1426,7 +1804,7 @@ const JornadasManager = {
                                     <div class="col-md-6">
                                         <p><strong>Fecha:</strong> ${jornada.fechaJornada ? new Date(jornada.fechaJornada).toLocaleDateString('es-ES') : 'Sin fecha'}</p>
                                         <p><strong>Lugar:</strong> ${jornada.lugar || 'No especificado'}</p>
-                                        <p><strong>Estado:</strong> ${this.getEstadoBadge(jornada.estado)}</p>
+                                        <p><strong>Estado:</strong> ${this.getEstadoBadge(estadoVista)}</p>
                                     </div>
                                     <div class="col-md-6">
                                         <p><strong>Creada por:</strong> ${jornada.creacionUsuarioNombre}</p>
@@ -2132,14 +2510,27 @@ const JornadasManager = {
             }
 
             // Llamar al endpoint para reutilizar el cuestionario
-            const response = await apiManager.post(`/api/jornadas/${jornadaId}/reutilizar-cuestionario/${cuestionarioId}`);
+            const doAction = async () => await apiManager.post(`/api/jornadas/${jornadaId}/reutilizar-cuestionario/${cuestionarioId}`);
+            const undoAction = async () => await apiManager.post(`/api/jornadas/${jornadaId}/quitar-reutilizacion-cuestionario/${cuestionarioId}`);
+            const doWrapped = async () => {
+                const r = await doAction();
+                await this.cargarDatos();
+                this.mostrarJornadas();
+                return r;
+            };
+            const undoWrapped = async () => {
+                await undoAction();
+                await this.cargarDatos();
+                this.mostrarJornadas();
+            };
+            const response = await doWrapped();
             
             if (response.exito) {
+                if (window.UndoManager) window.UndoManager.record({ do: doWrapped, undo: undoWrapped, label: `Reutilizar cuestionario ${cuestionarioId}` });
                 Utils.showAlert(`Cuestionario ${cuestionarioId} reutilizado correctamente. Ahora está disponible para usar en otras jornadas.`, 'success');
                 
                 // Recargar datos y actualizar vista
-                await this.cargarDatos();
-                this.mostrarJornadas();
+                // Ya recargado por doWrapped
             } else {
                 Utils.showAlert(`Error al reutilizar cuestionario: ${response.mensaje}`, 'error');
             }
@@ -2152,11 +2543,24 @@ const JornadasManager = {
     },
     async quitarReutilizacionCuestionario(cuestionarioId, jornadaId) {
         try {
-            const resp = await apiManager.post(`/api/jornadas/${jornadaId}/quitar-reutilizacion-cuestionario/${cuestionarioId}`);
-            if (resp.exito) {
-                Utils.showAlert('Reutilización de cuestionario quitada', 'success');
+            const doAction = async () => await apiManager.post(`/api/jornadas/${jornadaId}/quitar-reutilizacion-cuestionario/${cuestionarioId}`);
+            const undoAction = async () => await apiManager.post(`/api/jornadas/${jornadaId}/reutilizar-cuestionario/${cuestionarioId}`);
+            const doWrapped = async () => {
+                const r = await doAction();
                 await this.cargarDatos(true);
                 this.mostrarJornadas();
+                return r;
+            };
+            const undoWrapped = async () => {
+                await undoAction();
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+            };
+            const resp = await doWrapped();
+            if (resp.exito) {
+                if (window.UndoManager) window.UndoManager.record({ do: doWrapped, undo: undoWrapped, label: `Quitar reutilización cuestionario ${cuestionarioId}` });
+                Utils.showAlert('Reutilización de cuestionario quitada', 'success');
+                // UI ya refrescada por doWrapped
             } else {
                 Utils.showAlert(resp.mensaje || 'No se pudo quitar la reutilización', 'error');
             }
@@ -2207,11 +2611,24 @@ const JornadasManager = {
     },
     async quitarReutilizacionCombo(comboId, jornadaId) {
         try {
-            const resp = await apiManager.post(`/api/jornadas/${jornadaId}/quitar-reutilizacion-combo/${comboId}`);
-            if (resp.exito) {
-                Utils.showAlert('Reutilización de combo quitada', 'success');
+            const doAction = async () => await apiManager.post(`/api/jornadas/${jornadaId}/quitar-reutilizacion-combo/${comboId}`);
+            const undoAction = async () => await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-entero/${comboId}`);
+            const doWrapped = async () => {
+                const r = await doAction();
                 await this.cargarDatos(true);
                 this.mostrarJornadas();
+                return r;
+            };
+            const undoWrapped = async () => {
+                await undoAction();
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+            };
+            const resp = await doWrapped();
+            if (resp.exito) {
+                if (window.UndoManager) window.UndoManager.record({ do: doWrapped, undo: undoWrapped, label: `Quitar reutilización combo ${comboId}` });
+                Utils.showAlert('Reutilización de combo quitada', 'success');
+                // UI ya refrescada por doWrapped
             } else {
                 Utils.showAlert(resp.mensaje || 'No se pudo quitar la reutilización', 'error');
             }
@@ -2234,15 +2651,27 @@ const JornadasManager = {
             }
 
             // Llamar al endpoint para reciclar el combo entero
-            const response = await apiManager.post(`/api/jornadas/${this.jornadaReciclajeActual}/reciclar-combo-entero/${this.comboReciclajeActual}`);
-            
-            if (response.exito) {
-                Utils.showAlert(`Combo ${this.comboReciclajeActual} reciclado completamente. Marcado como liberado.`, 'success');
-                
-                // Cerrar modal y recargar datos
+            const doAction = async () => await apiManager.post(`/api/jornadas/${this.jornadaReciclajeActual}/reciclar-combo-entero/${this.comboReciclajeActual}`);
+            const undoAction = async () => await apiManager.post(`/api/jornadas/${this.jornadaReciclajeActual}/quitar-reutilizacion-combo/${this.comboReciclajeActual}`);
+            const doWrapped = async () => {
+                const r = await doAction();
                 bootstrap.Modal.getInstance(document.getElementById('modalReciclajeCombo')).hide();
                 await this.cargarDatos();
                 this.mostrarJornadas();
+                return r;
+            };
+            const undoWrapped = async () => {
+                await undoAction();
+                await this.cargarDatos();
+                this.mostrarJornadas();
+            };
+            const response = await doWrapped();
+            
+            if (response.exito) {
+                if (window.UndoManager) window.UndoManager.record({ do: doWrapped, undo: undoWrapped, label: `Reciclar combo entero ${this.comboReciclajeActual}` });
+                Utils.showAlert(`Combo ${this.comboReciclajeActual} reciclado completamente. Marcado como liberado.`, 'success');
+                
+                // UI recargada por doWrapped
             } else {
                 Utils.showAlert(`Error al reciclar combo: ${response.mensaje}`, 'error');
             }
@@ -2396,4 +2825,7 @@ const JornadasManager = {
         }
     }
 
-}; 
+};
+
+// Los atajos de teclado Ctrl+Z / Ctrl+Y están manejados globalmente por undo-manager.js
+// No es necesario duplicar los listeners aquí

@@ -746,18 +746,39 @@ public class PreguntaService {
             }
         } catch (Exception ignored) {}
         
-        // Obtener todas las preguntas filtradas
-        List<Pregunta> todasLasPreguntas = preguntaRepository.filtrarTodas(
-            nivelEnum,
-            factorEnum,
-            estadoEnum,
-            (tematica != null && !tematica.isBlank()) ? tematica : null,
-            (subtema != null && !subtema.isBlank()) ? subtema : null,
-            (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
-            (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
-            (autoria != null && !autoria.isBlank()) ? autoria : null,
-            (texto != null && !texto.isBlank()) ? texto : null
-        );
+        // Soporte multi-estado: si llega 'estado' con CSV (ej: aprobada,verificada), dividir y mapear
+        List<Pregunta> todasLasPreguntas;
+        if (estado != null && estado.contains(",")) {
+            java.util.List<com.lsnls.entity.Pregunta.EstadoPregunta> estadosEnum = new java.util.ArrayList<>();
+            for (String s : estado.split(",")) {
+                String v = s.trim();
+                if (!v.isEmpty()) {
+                    try { estadosEnum.add(com.lsnls.entity.Pregunta.EstadoPregunta.valueOf(v)); } catch (Exception ignored) {}
+                }
+            }
+            todasLasPreguntas = preguntaRepository.filtrarPorEstados(
+                nivelEnum, factorEnum, estadosEnum.isEmpty() ? null : estadosEnum,
+                (tematica != null && !tematica.isBlank()) ? tematica : null,
+                (subtema != null && !subtema.isBlank()) ? subtema : null,
+                (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
+                (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
+                (autoria != null && !autoria.isBlank()) ? autoria : null,
+                (texto != null && !texto.isBlank()) ? texto : null
+            );
+        } else {
+            // Obtener todas las preguntas filtradas
+            todasLasPreguntas = preguntaRepository.filtrarTodas(
+                nivelEnum,
+                factorEnum,
+                estadoEnum,
+                (tematica != null && !tematica.isBlank()) ? tematica : null,
+                (subtema != null && !subtema.isBlank()) ? subtema : null,
+                (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
+                (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
+                (autoria != null && !autoria.isBlank()) ? autoria : null,
+                (texto != null && !texto.isBlank()) ? texto : null
+            );
+        }
         
         // Aplicar ordenamiento del Pageable
         if (pageable.getSort().isSorted()) {

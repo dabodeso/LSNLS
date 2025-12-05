@@ -572,6 +572,37 @@ const PreguntasManager = {
                     console.error('❌ [GUARDAR] Error del servidor:', errorText);
                     throw new Error('Error al crear la pregunta: ' + errorText);
                 }
+                
+                // Registrar undo/redo para creación
+                try {
+                    const creada = await response.json();
+                    const createdId = creada?.id;
+                    if (window.UndoManager && createdId) {
+                        const undoAction = async () => {
+                            const del = await fetch(`/api/preguntas/${createdId}`, {
+                                method: 'DELETE',
+                                headers: authManager.getAuthHeaders()
+                            });
+                            if (!del.ok) throw new Error('No se pudo deshacer la creación');
+                            await this.cargarPreguntas();
+                        };
+                        const redoAction = async () => {
+                            const r = await fetch('/api/preguntas', {
+                                method: 'POST',
+                                headers: {
+                                    ...authManager.getAuthHeaders(),
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(preguntaData)
+                            });
+                            if (!r.ok) throw new Error('No se pudo rehacer la creación');
+                            await this.cargarPreguntas();
+                        };
+                        window.UndoManager.record({ do: redoAction, undo: undoAction, label: `Crear pregunta ${createdId}` });
+                    }
+                } catch (e) {
+                    console.warn('⚠️ [UNDO] No se pudo registrar undo para creación:', e);
+                }
             }
             
             console.log('📥 [GUARDAR] Respuesta del servidor:', response.status, response.statusText);
@@ -1103,6 +1134,29 @@ const PreguntasManager = {
                 throw new Error(errorMsg);
             }
             
+            // Registrar acción de deshacer/rehacer para cualquier campo distinto de 'estado'
+            if (campo !== 'estado' && window.UndoManager) {
+                const doAction = async () => {
+                    const r = await fetch(`/api/preguntas/${id}`, {
+                        method: 'PUT',
+                        headers: authManager.getAuthHeaders(),
+                        body: JSON.stringify({ [campo]: nuevoValor })
+                    });
+                    if (!r.ok) throw new Error('No se pudo rehacer el cambio');
+                    await this.cargarPreguntas();
+                };
+                const undoAction = async () => {
+                    const r = await fetch(`/api/preguntas/${id}`, {
+                        method: 'PUT',
+                        headers: authManager.getAuthHeaders(),
+                        body: JSON.stringify({ [campo]: valorOriginal })
+                    });
+                    if (!r.ok) throw new Error('No se pudo deshacer el cambio');
+                    await this.cargarPreguntas();
+                };
+                window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar pregunta ${id} - ${campo}` });
+            }
+            
             console.log('✅ [FRONTEND] Campo actualizado, recargando tabla...');
             // CAMBIO: Usar cargarPreguntas() en lugar de aplicarFiltros() para forzar recarga completa
             await this.cargarPreguntas();
@@ -1282,6 +1336,19 @@ const PreguntasManager = {
     async eliminarPregunta(id) {
         if (!confirm('¿Seguro que quieres borrar esta pregunta?')) return;
         try {
+            // Snapshot previo para permitir deshacer
+            let snapshot = null;
+            try {
+                const snapResp = await fetch(`/api/preguntas/${id}`, {
+                    headers: authManager.getAuthHeaders()
+                });
+                if (snapResp.ok) {
+                    snapshot = await snapResp.json();
+                }
+            } catch (e) {
+                console.warn('⚠️ [UNDO] No se pudo obtener snapshot previo de la pregunta:', e);
+            }
+
             const response = await fetch(`/api/preguntas/${id}`, {
                 method: 'DELETE',
                 headers: authManager.getAuthHeaders()
@@ -1294,6 +1361,50 @@ const PreguntasManager = {
                 } catch {}
                 throw new Error(msg);
             }
+
+            // Registrar undo/redo para eliminación (restaurando por POST)
+            if (window.UndoManager && snapshot) {
+                let recreatedId = null;
+                const payloadRestaurar = { ...snapshot };
+                // Evitar enviar id al crear de nuevo
+                try { delete payloadRestaurar.id; } catch {}
+
+                const undoAction = async () => {
+                    const r = await fetch('/api/preguntas', {
+                        method: 'POST',
+                        headers: {
+                            ...authManager.getAuthHeaders(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payloadRestaurar)
+                    });
+                    if (!r.ok) throw new Error('No se pudo deshacer la eliminación');
+                    try {
+                        const creada = await r.json();
+                        recreatedId = creada?.id || recreatedId;
+                    } catch {}
+                    await this.cargarPreguntas();
+                };
+                const doAction = async () => {
+                    if (!recreatedId) {
+                        // Si no hay id recreado aún, intentar localizar por contenido mínimo (pregunta+respuesta)
+                        try {
+                            await this.cargarPreguntas();
+                            const match = (this.preguntas || []).find(p => p.pregunta === snapshot.pregunta && p.respuesta === snapshot.respuesta);
+                            if (match) recreatedId = match.id;
+                        } catch {}
+                    }
+                    if (!recreatedId) return; // nada que borrar
+                    const r = await fetch(`/api/preguntas/${recreatedId}`, {
+                        method: 'DELETE',
+                        headers: authManager.getAuthHeaders()
+                    });
+                    if (!r.ok) throw new Error('No se pudo rehacer la eliminación');
+                    await this.cargarPreguntas();
+                };
+                window.UndoManager.record({ do: doAction, undo: undoAction, label: `Eliminar pregunta ${id}` });
+            }
+
             await this.cargarPreguntas();
             Toastify({
                 text: 'Pregunta eliminada',

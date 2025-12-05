@@ -98,9 +98,34 @@
         .table-responsive { position: relative; max-height: 80vh; overflow-y: auto; }
         /* Fila separadora entre cuestionarios */
         #tabla-cuestionarios-tabla tr.separador-cuestionario td {
-            height: 16px;
+            height: 24px;              /* Un pelín más grande */
             border: none !important;
             padding: 0;
+        }
+
+        /* Vista Cuestionarios 2: contraste suave del área + tabla destacada, sin scroll lateral raro */
+        body.q2-mode { background: #e3e8f3; }
+        .q2-mode .table-responsive {
+            position: relative;
+            background: transparent;
+            border-radius: 6px;
+            padding: 14px;
+            box-shadow: none;
+            overflow-x: hidden;   /* Quitar “desliz” lateral en esta vista */
+        }
+        .q2-mode #tabla-cuestionarios-tabla {
+            position: relative;
+            z-index: 1;
+        }
+        .q2-mode #tabla-cuestionarios-tabla {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 12px 28px rgba(16, 24, 40, 0.10);
+            overflow: hidden;
+        }
+        /* En vista 2, el hueco entre bloques también va en gris suave */
+        .q2-mode #tabla-cuestionarios-tabla tr.separador-cuestionario td {
+            background: #e3e8f3;
         }
     </style>
 </head>
@@ -157,6 +182,10 @@
             <button class="btn btn-primary" onclick="mostrarFormularioCuestionario()">
                 <i class="fas fa-plus"></i> Nuevo Cuestionario
             </button>
+            <div class="btn-group btn-group-sm ms-2" role="group" aria-label="Vista de Cuestionarios">
+                <button type="button" id="btnVistaCuestActual" class="btn btn-outline-primary active" onclick="setVistaCuestionarios('actual')">Vista actual</button>
+                <button type="button" id="btnVistaCuest2" class="btn btn-outline-primary" onclick="setVistaCuestionarios('q2')">Cuestionarios 2</button>
+            </div>
         </div>
 
         <!-- Filtros -->
@@ -357,6 +386,26 @@
                             </div>
                             <div class="col-md-2"><button class="btn btn-primary btn-sm w-100" onclick="buscarPreguntasModal(0)">Buscar</button></div>
                         </div>
+                        <div class="row mb-2">
+                            <div class="col-md-3">
+                                <select id="buscador-nivel-cuestionario" class="form-select form-select-sm">
+                                    <option value="">Nivel (todos)</option>
+                                    <option value="_1LS">1LS</option>
+                                    <option value="_2NLS">2NLS</option>
+                                    <option value="_3LS">3LS</option>
+                                    <option value="_4NLS">4NLS</option>
+                                    <option value="_5LS">5LS</option>
+                                    <option value="_5NLS">5NLS</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="buscador-estado" class="form-select form-select-sm">
+                                    <option value="todos">Estado (aprobada + verificada)</option>
+                                    <option value="aprobada">Aprobada</option>
+                                    <option value="verificada">Verificada</option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="table-responsive" style="max-height: 70vh;">
                             <table class="table table-bordered table-hover align-middle">
                                 <thead>
@@ -482,6 +531,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             inicializarCuestionarios();
             mostrarBotonAdminNavbar();
+            try {
+                const preferida = localStorage.getItem('vistaCuestionarios') || 'actual';
+                setVistaCuestionarios(preferida);
+            } catch {}
         });
 
         function cambiarPassword() {
@@ -528,6 +581,24 @@
                 }
             });
         });
+    </script>
+    <script>
+        function setVistaCuestionarios(modo) {
+            const b1 = document.getElementById('btnVistaCuestActual');
+            const b2 = document.getElementById('btnVistaCuest2');
+            if (!b1 || !b2) return;
+            if (modo === 'q2') {
+                document.body.classList.add('q2-mode');
+                b2.classList.add('active');
+                b1.classList.remove('active');
+            } else {
+                document.body.classList.remove('q2-mode');
+                b1.classList.add('active');
+                b2.classList.remove('active');
+                modo = 'actual';
+            }
+            try { localStorage.setItem('vistaCuestionarios', modo); } catch {}
+        }
     </script>
 </body>
 </html> 

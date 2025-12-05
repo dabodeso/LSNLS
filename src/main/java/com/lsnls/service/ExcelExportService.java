@@ -3,6 +3,7 @@ package com.lsnls.service;
 import com.lsnls.entity.*;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.RegionUtil;
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
@@ -44,10 +45,12 @@ public class ExcelExportService {
             
             // Crear hoja de CUESTIONARIOS
             Sheet hojaCuestionarios = workbook.createSheet("CUESTIONARIOS");
+            configurarPagina(hojaCuestionarios, "Cuestionarios - " + jornada.getNombre());
             crearHojaCuestionarios(hojaCuestionarios, jornada, workbook, opciones);
             
             // Crear hoja de COMBOS
             Sheet hojaCombos = workbook.createSheet("COMBOS");
+            configurarPagina(hojaCombos, "Combos - " + jornada.getNombre());
             crearHojaCombos(hojaCombos, jornada, workbook, opciones);
             
             // Convertir a bytes
@@ -69,13 +72,20 @@ public class ExcelExportService {
             opciones = new HashMap<>();
         }
         
-        // Configurar anchos de columna - hacer más anchas las importantes
-        sheet.setColumnWidth(0, 4000);  // ID PREGUNTA (más ancha para evitar cortes)
-        sheet.setColumnWidth(1, 2500);  // NIVEL  
-        sheet.setColumnWidth(2, 12000); // PREGUNTA (más ancha)
-        sheet.setColumnWidth(3, 8000);  // RESPUESTA (más ancha)
-        sheet.setColumnWidth(4, 6000);  // DATOS EXTRA (más ancha)
-        sheet.setColumnWidth(5, 2000);  // REC
+        // Configurar anchos de columna
+		// Ajustes: devolver A como antes (4000) y B a tamaño normal (~2500),
+		// mantener C con -20% y D a la mitad como acordado
+		final int anchoA = 4000;
+		final int anchoB = 2500;
+		final int anchoC = (int) (22000 * 0.8); // 17600
+		final int anchoD = 16000 / 2;          // 8000
+
+		sheet.setColumnWidth(0, anchoA);  // ID PREGUNTA
+		sheet.setColumnWidth(1, anchoB);  // NIVEL (1ls, 2nls, ...)
+		sheet.setColumnWidth(2, anchoC);  // PREGUNTA
+		sheet.setColumnWidth(3, anchoD);  // RESPUESTA
+		sheet.setColumnWidth(4, 10000); // DATOS EXTRA
+		sheet.setColumnWidth(5, 2000);  // REC (estrecha para marcar X)
         
         // Título de la jornada
         Row filaTitulo = sheet.createRow(filaActual++);
@@ -123,9 +133,7 @@ public class ExcelExportService {
         
         // Encabezados de tabla
         Row filaEncabezados = sheet.createRow(filaActual++);
-        String[] encabezados = {"ID PREGUNTA", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
-        
-        // Para cuestionarios, mantenemos los encabezados originales
+		String[] encabezados = {"ID PREGUNTA", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
         
         CellStyle estiloEncabezado = crearEstiloEncabezado(workbook);
         for (int i = 0; i < encabezados.length; i++) {
@@ -136,7 +144,7 @@ public class ExcelExportService {
         
         // Datos de las preguntas
         if (cuestionario != null && cuestionario.getPreguntas() != null) {
-            List<PreguntaCuestionario> preguntas = cuestionario.getPreguntas().stream().collect(java.util.stream.Collectors.toList());
+			List<PreguntaCuestionario> preguntas = cuestionario.getPreguntas().stream().collect(java.util.stream.Collectors.toList());
             
             // Ordenar preguntas por nivel si se solicita
             if (Boolean.TRUE.equals(opciones.get("ordenarCuestionariosPorNivel"))) {
@@ -164,24 +172,77 @@ public class ExcelExportService {
                 });
             }
             
-            for (PreguntaCuestionario pc : preguntas) {
+            // Estilos de datos
+            CellStyle estiloDatoWrap = crearEstiloDato(workbook, true);
+            CellStyle estiloDatoPlano = crearEstiloDato(workbook, false);
+
+			// Limitar a 4 preguntas por cuestionario
+			int limite = Math.min(4, preguntas.size());
+			for (int idx = 0; idx < limite; idx++) {
+				PreguntaCuestionario pc = preguntas.get(idx);
                 Row filaPregunta = sheet.createRow(filaActual++);
                 Pregunta p = pc.getPregunta();
-                
-                filaPregunta.createCell(0).setCellValue(p.getId());
-                filaPregunta.createCell(1).setCellValue(p.getNivel().name());
-                filaPregunta.createCell(2).setCellValue(p.getPregunta());
-                filaPregunta.createCell(3).setCellValue(p.getRespuesta());
-                filaPregunta.createCell(4).setCellValue(p.getDatosExtra() != null ? p.getDatosExtra() : "");
-                filaPregunta.createCell(5).setCellValue(""); // Campo REC editable
+
+				// Columna 0: ID PREGUNTA
+				Cell c0 = filaPregunta.createCell(0);
+				if (p != null && p.getId() != null) {
+					c0.setCellValue(p.getId());
+				} else {
+					c0.setCellValue("");
+				}
+				c0.setCellStyle(estiloDatoPlano);
+
+                Cell c1 = filaPregunta.createCell(1);
+				// Nivel en formato corto: "1ls", "2nls", etc. (en minúsculas)
+				if (p != null && p.getNivel() != null) {
+					String nivelName = p.getNivel().name(); // ej: _1LS, _2NLS, PM1...
+					String numerico = nivelName.replaceAll("\\D+", ""); // extraer dígitos
+					boolean esLS = nivelName.toUpperCase().contains("LS");
+					String sufijo = esLS ? "ls" : "nls";
+					String valor;
+					if (!numerico.isEmpty()) {
+						valor = numerico.toLowerCase() + sufijo; // p.ej. "1ls", "2nls"
+					} else {
+						// Fallback para PM1/PM2/NORMAL a partir de name()
+						String val = p.getNivel().name(); // p.ej. "PM1" o "NORMAL"
+						valor = val != null ? val.toLowerCase() : "";
+					}
+					c1.setCellValue(valor);
+				} else {
+					c1.setCellValue("");
+				}
+                c1.setCellStyle(estiloDatoPlano);
+
+                Cell c2 = filaPregunta.createCell(2);
+				c2.setCellValue(p != null ? p.getPregunta() : "");
+                c2.setCellStyle(estiloDatoWrap);
+
+                Cell c3 = filaPregunta.createCell(3);
+				c3.setCellValue(p != null ? p.getRespuesta() : "");
+                c3.setCellStyle(estiloDatoWrap);
+
+                Cell c4 = filaPregunta.createCell(4);
+				c4.setCellValue(p != null && p.getDatosExtra() != null ? p.getDatosExtra() : "");
+                c4.setCellStyle(estiloDatoWrap);
+
+                Cell c5 = filaPregunta.createCell(5);
+                c5.setCellValue(""); // Campo REC editable
+                c5.setCellStyle(estiloDatoPlano);
+
+				// Altura doble (aprox. 2 líneas) para leer bien
+				filaPregunta.setHeightInPoints(36);
             }
         } else {
             // Cuestionario vacío - crear filas en blanco
             for (int i = 0; i < 4; i++) {
                 Row filaVacia = sheet.createRow(filaActual++);
                 for (int j = 0; j < 6; j++) {
-                    filaVacia.createCell(j).setCellValue("");
+                    Cell c = filaVacia.createCell(j);
+                    c.setCellValue("");
+                    c.setCellStyle(crearEstiloDato(workbook, false));
                 }
+				// Altura doble para filas vacías también
+				filaVacia.setHeightInPoints(36);
             }
         }
         
@@ -192,32 +253,62 @@ public class ExcelExportService {
         Row filaConcursante = sheet.createRow(filaActual++);
         filaConcursante.createCell(0).setCellValue("CONCURSANTE:");
         Cell celdaConcursante = filaConcursante.createCell(1);
-        celdaConcursante.setCellValue(""); // Campo editable que se extiende
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 1, 5));
+		celdaConcursante.setCellValue(""); // Campo editable que se extiende
+		celdaConcursante.setCellStyle(crearEstiloDato(workbook, true));
+		CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
+		sheet.addMergedRegion(rgConc);
+		aplicarBordeRegion(sheet, rgConc);
+		// Altura aproximada a 2 líneas
+		filaConcursante.setHeightInPoints(36);
         
         // RESULTADO  
         Row filaResultado = sheet.createRow(filaActual++);
         filaResultado.createCell(0).setCellValue("RESULTADO:");
         Cell celdaResultado = filaResultado.createCell(1);
-        celdaResultado.setCellValue(""); // Campo editable que se extiende
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 1, 5));
+		celdaResultado.setCellValue(""); // Campo editable que se extiende
+		celdaResultado.setCellStyle(crearEstiloDato(workbook, true));
+		CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
+		sheet.addMergedRegion(rgRes);
+		aplicarBordeRegion(sheet, rgRes);
+		filaResultado.setHeightInPoints(36);
         
         // GRABACIÓN
         Row filaGrabacion = sheet.createRow(filaActual++);
-        filaGrabacion.createCell(0).setCellValue("GRABACIÓN:");
+		filaGrabacion.createCell(0).setCellValue("GRABACION:");
         Cell celdaGrabacion = filaGrabacion.createCell(1);
-        celdaGrabacion.setCellValue(""); // Campo editable que se extiende
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 1, 5));
+		celdaGrabacion.setCellValue(""); // Campo editable que se extiende
+		celdaGrabacion.setCellStyle(crearEstiloDato(workbook, true));
+		CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
+		sheet.addMergedRegion(rgGrab);
+		aplicarBordeRegion(sheet, rgGrab);
+		filaGrabacion.setHeightInPoints(36);
         
-        // NOTAS GUIÓN
+        // NOTAS GUION (sin tilde)
         Row filaNotasGuion = sheet.createRow(filaActual++);
-        filaNotasGuion.createCell(0).setCellValue("NOTAS GUIÓN:");
+        filaNotasGuion.createCell(0).setCellValue("NOTAS GUION:");
         Cell celdaNotasGuion = filaNotasGuion.createCell(1);
-        celdaNotasGuion.setCellValue(""); // Campo editable que se extiende
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 1, 5));
+		// Mostrar las notas de los guionistas si existen (notasDireccion del cuestionario)
+		String notasGuion = (cuestionario != null && cuestionario.getNotasDireccion() != null) ? cuestionario.getNotasDireccion() : "";
+		celdaNotasGuion.setCellValue(notasGuion);
+		celdaNotasGuion.setCellStyle(crearEstiloDato(workbook, true));
+		CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
+		sheet.addMergedRegion(rgNG);
+		aplicarBordeRegion(sheet, rgNG);
+		// Altura grande (aprox. 10 líneas)
+		filaNotasGuion.setHeightInPoints(150);
+
+        // Salto de página para imprimir un cuestionario por página
+        sheet.setRowBreak(filaActual);
         
         return filaActual;
     }
+
+	private void aplicarBordeRegion(Sheet sheet, CellRangeAddress region) {
+		RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
+		RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
+		RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
+		RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);
+	}
 
     private void crearHojaCombos(Sheet sheet, Jornada jornada, Workbook workbook) {
         crearHojaCombos(sheet, jornada, workbook, null);
@@ -231,13 +322,22 @@ public class ExcelExportService {
             opciones = new HashMap<>();
         }
         
-        // Configurar anchos de columna - hacer más anchas las importantes
-        sheet.setColumnWidth(0, 4000);  // ID PREGUNTA (más ancha para evitar cortes)
-        sheet.setColumnWidth(1, 2500);  // NIVEL  
-        sheet.setColumnWidth(2, 12000); // PREGUNTA (más ancha)
-        sheet.setColumnWidth(3, 8000);  // RESPUESTA (más ancha)
-        sheet.setColumnWidth(4, 6000);  // DATOS EXTRA (más ancha)
-        sheet.setColumnWidth(5, 2000);  // REC
+		// Configurar anchos de columna para COMBOS (7 columnas)
+		final int anchoAComb = 4000;            // ID COMBO
+		final int anchoBComb = 2500;            // TIPO
+		final int anchoCComb = 2500;            // FAC
+		final int anchoDComb = (int) (22000 * 0.8); // PREGUNTA (igual que cuestionarios)
+		final int anchoEComb = 16000 / 2;       // RESPUESTA (igual que cuestionarios)
+		final int anchoFComb = 10000;           // DATOS EXTRA
+		final int anchoGComb = 2000;            // REC
+
+		sheet.setColumnWidth(0, anchoAComb);
+		sheet.setColumnWidth(1, anchoBComb);
+		sheet.setColumnWidth(2, anchoCComb);
+		sheet.setColumnWidth(3, anchoDComb);
+		sheet.setColumnWidth(4, anchoEComb);
+		sheet.setColumnWidth(5, anchoFComb);
+		sheet.setColumnWidth(6, anchoGComb);
         
         // Título de la jornada
         Row filaTitulo = sheet.createRow(filaActual++);
@@ -245,7 +345,7 @@ public class ExcelExportService {
         celdaTitulo.setCellValue("COMBOS - JORNADA: " + jornada.getNombre() + " - " + jornada.getFechaJornada());
         CellStyle estiloTitulo = crearEstiloTitulo(workbook);
         celdaTitulo.setCellStyle(estiloTitulo);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 5));
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 6));
         
         filaActual++; // Fila en blanco
         
@@ -281,16 +381,11 @@ public class ExcelExportService {
         celdaTituloCombo.setCellValue(titulo);
         CellStyle estiloSubtitulo = crearEstiloSubtitulo(workbook);
         celdaTituloCombo.setCellStyle(estiloSubtitulo);
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 0, 5));
+        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 0, 6));
         
-        // Encabezados de tabla
+        // Encabezados de tabla (7 columnas)
         Row filaEncabezados = sheet.createRow(filaActual++);
-        String[] encabezados = {"ID PREGUNTA", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
-        
-        // En combos: cambiar "ID PREGUNTA" por "MULT" y mantener "NIVEL" para la segunda columna
-        if (opciones.containsKey("cambiarColumnaID") && opciones.get("cambiarColumnaID") instanceof String) {
-            encabezados[0] = (String) opciones.get("cambiarColumnaID");
-        }
+        String[] encabezados = {"ID COMBO", "TIPO", "FAC", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
         
         CellStyle estiloEncabezado = crearEstiloEncabezado(workbook);
         for (int i = 0; i < encabezados.length; i++) {
@@ -320,58 +415,77 @@ public class ExcelExportService {
                 });
             }
             
+            // Estilos de datos
+            CellStyle estiloDatoWrap = crearEstiloDato(workbook, true);
+            CellStyle estiloDatoPlano = crearEstiloDato(workbook, false);
+
             for (PreguntaCombo pc : preguntas) {
                 Row filaPregunta = sheet.createRow(filaActual++);
                 Pregunta p = pc.getPregunta();
                 
-                // Columna 0: ID PREGUNTA o FACTOR
-                if (Boolean.TRUE.equals(opciones.get("mostrarFactorMultiplicacion"))) {
-                    // Mostrar el factor de multiplicación en lugar del ID
-                    String factorStr = pc.getFactorMultiplicacion() != null ? pc.getFactorMultiplicacion() : "";
-                    int factorNum = 0;
-                    try {
-                        factorNum = Integer.parseInt(factorStr.replaceAll("\\D+", ""));
-                        factorStr = "x" + factorNum;
-                    } catch (Exception e) {
-                        if (factorStr.isEmpty()) {
-                            factorStr = "x";  // Factor vacío
-                        }
-                    }
-                    filaPregunta.createCell(0).setCellValue(factorStr);
+                // Columna 0: ID COMBO (repetido en cada fila)
+                Cell c0 = filaPregunta.createCell(0);
+                if (combo != null && combo.getId() != null) {
+                    c0.setCellValue(combo.getId());
                 } else {
-                    // Mostrar ID normal
-                    filaPregunta.createCell(0).setCellValue(p.getId());
+                    c0.setCellValue("");
                 }
-                
-                // Columna 1: NIVEL o 5LS/5NLS
-                if (Boolean.TRUE.equals(opciones.get("mostrarFactorMultiplicacion"))) {
-                    // Mostrar 5LS o 5NLS según el nivel
-                    String nivel = p.getNivel() != null ? p.getNivel().name() : "";
-                    // Verificar si el nivel contiene "LS" para distinguir entre 5LS y 5NLS
-                    String nivelStr;
-                    if (nivel.toUpperCase().contains("LS")) {
-                        nivelStr = "5LS";
-                    } else {
-                        nivelStr = "5NLS";
+                c0.setCellStyle(estiloDatoPlano);
+
+                // Columna 1: TIPO
+                Cell c1 = filaPregunta.createCell(1);
+                String tipo = (combo != null && combo.getTipo() != null) ? combo.getTipo().name() : "";
+                c1.setCellValue(tipo);
+                c1.setCellStyle(estiloDatoPlano);
+
+                // Columna 2: FAC (xN)
+                Cell c2 = filaPregunta.createCell(2);
+                String factorStr = pc.getFactorMultiplicacion() != null ? pc.getFactorMultiplicacion() : "";
+                int factorNum = 0;
+                try {
+                    factorNum = Integer.parseInt(factorStr.replaceAll("\\D+", ""));
+                    factorStr = "x" + factorNum;
+                } catch (Exception e) {
+                    if (factorStr == null || factorStr.trim().isEmpty()) {
+                        factorStr = "x";
                     }
-                    filaPregunta.createCell(1).setCellValue(nivelStr);
-                } else {
-                    // Mostrar nivel normal
-                    filaPregunta.createCell(1).setCellValue(p.getNivel() != null ? p.getNivel().name() : "");
                 }
-                
-                filaPregunta.createCell(2).setCellValue(p.getPregunta());
-                filaPregunta.createCell(3).setCellValue(p.getRespuesta());
-                filaPregunta.createCell(4).setCellValue(p.getDatosExtra() != null ? p.getDatosExtra() : "");
-                filaPregunta.createCell(5).setCellValue(""); // Campo REC editable
+                c2.setCellValue(factorStr);
+                c2.setCellStyle(estiloDatoPlano);
+
+                // Columna 3: PREGUNTA
+                Cell c3 = filaPregunta.createCell(3);
+                c3.setCellValue(p != null ? p.getPregunta() : "");
+                c3.setCellStyle(estiloDatoWrap);
+
+                // Columna 4: RESPUESTA
+                Cell c4 = filaPregunta.createCell(4);
+                c4.setCellValue(p != null ? p.getRespuesta() : "");
+                c4.setCellStyle(estiloDatoWrap);
+
+                // Columna 5: DATOS EXTRA
+                Cell c5 = filaPregunta.createCell(5);
+                c5.setCellValue(p != null && p.getDatosExtra() != null ? p.getDatosExtra() : "");
+                c5.setCellStyle(estiloDatoWrap);
+
+                // Columna 6: REC
+                Cell c6 = filaPregunta.createCell(6);
+                c6.setCellValue(""); // Campo REC editable
+                c6.setCellStyle(estiloDatoPlano);
+
+                // Altura doble como en cuestionarios
+                filaPregunta.setHeightInPoints(36);
             }
         } else {
             // Combo vacío - crear filas en blanco
             for (int i = 0; i < 3; i++) {
                 Row filaVacia = sheet.createRow(filaActual++);
-                for (int j = 0; j < 6; j++) {
-                    filaVacia.createCell(j).setCellValue("");
+                for (int j = 0; j < 7; j++) {
+                    Cell c = filaVacia.createCell(j);
+                    c.setCellValue("");
+                    c.setCellStyle(crearEstiloDato(workbook, false));
                 }
+                filaVacia.setHeightInPoints(36);
             }
         }
         
@@ -383,28 +497,46 @@ public class ExcelExportService {
         filaConcursante.createCell(0).setCellValue("CONCURSANTE:");
         Cell celdaConcursante = filaConcursante.createCell(1);
         celdaConcursante.setCellValue(""); // Campo editable que se extiende
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 1, 5));
+        CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 1, 6);
+        sheet.addMergedRegion(rgConc);
+        aplicarBordeRegion(sheet, rgConc);
+        filaConcursante.setHeightInPoints(36);
         
         // RESULTADO  
         Row filaResultado = sheet.createRow(filaActual++);
         filaResultado.createCell(0).setCellValue("RESULTADO:");
         Cell celdaResultado = filaResultado.createCell(1);
         celdaResultado.setCellValue(""); // Campo editable que se extiende
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 1, 5));
+        CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 1, 6);
+        sheet.addMergedRegion(rgRes);
+        aplicarBordeRegion(sheet, rgRes);
+        filaResultado.setHeightInPoints(36);
         
         // GRABACIÓN
         Row filaGrabacion = sheet.createRow(filaActual++);
-        filaGrabacion.createCell(0).setCellValue("GRABACIÓN:");
+        filaGrabacion.createCell(0).setCellValue("GRABACION:");
         Cell celdaGrabacion = filaGrabacion.createCell(1);
         celdaGrabacion.setCellValue(""); // Campo editable que se extiende
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 1, 5));
+        CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 1, 6);
+        sheet.addMergedRegion(rgGrab);
+        aplicarBordeRegion(sheet, rgGrab);
+        filaGrabacion.setHeightInPoints(36);
         
-        // NOTAS GUIÓN
+        // NOTAS GUION (sin tilde)
         Row filaNotasGuion = sheet.createRow(filaActual++);
-        filaNotasGuion.createCell(0).setCellValue("NOTAS GUIÓN:");
+        filaNotasGuion.createCell(0).setCellValue("NOTAS GUION:");
         Cell celdaNotasGuion = filaNotasGuion.createCell(1);
-        celdaNotasGuion.setCellValue(""); // Campo editable que se extiende
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 1, 5));
+        // Mostrar las notas de los guionistas si existen (notasDireccion del combo)
+        String notasGuion = (combo != null && combo.getNotasDireccion() != null) ? combo.getNotasDireccion() : "";
+        celdaNotasGuion.setCellValue(notasGuion); // Campo editable que se extiende
+        CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 1, 6);
+        sheet.addMergedRegion(rgNG);
+        aplicarBordeRegion(sheet, rgNG);
+        filaNotasGuion.setHeightInPoints(150);
+
+
+        // Salto de página por combo
+        sheet.setRowBreak(filaActual);
         
         return filaActual;
     }
@@ -448,5 +580,33 @@ public class ExcelExportService {
         estilo.setBorderRight(BorderStyle.THIN);
         estilo.setBorderLeft(BorderStyle.THIN);
         return estilo;
+    }
+
+    private CellStyle crearEstiloDato(Workbook workbook, boolean wrap) {
+        CellStyle estilo = workbook.createCellStyle();
+        estilo.setAlignment(HorizontalAlignment.LEFT);
+        estilo.setVerticalAlignment(VerticalAlignment.TOP);
+        estilo.setBorderBottom(BorderStyle.THIN);
+        estilo.setBorderTop(BorderStyle.THIN);
+        estilo.setBorderRight(BorderStyle.THIN);
+        estilo.setBorderLeft(BorderStyle.THIN);
+        estilo.setWrapText(wrap);
+        return estilo;
+    }
+
+    private void configurarPagina(Sheet sheet, String tituloCabecera) {
+        PrintSetup ps = sheet.getPrintSetup();
+        ps.setLandscape(true);
+        sheet.setFitToPage(true);
+        ps.setFitWidth((short) 1);
+        ps.setFitHeight((short) 0);
+        sheet.setMargin(Sheet.LeftMargin, 0.3);
+        sheet.setMargin(Sheet.RightMargin, 0.3);
+        sheet.setMargin(Sheet.TopMargin, 0.5);
+        sheet.setMargin(Sheet.BottomMargin, 0.5);
+        Header header = sheet.getHeader();
+        header.setCenter(tituloCabecera);
+        Footer footer = sheet.getFooter();
+        footer.setRight("Página &P de &N");
     }
 } 

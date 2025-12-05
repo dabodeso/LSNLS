@@ -679,6 +679,7 @@ public class PreguntaController {
                 respuestaFiltro = null;
             }
 
+            // Soporte de multi-estado via CSV en 'estado' (ej: 'aprobada,verificada')
             Page<PreguntaDTO> preguntas = preguntaService.filtrarPreguntasCompletoPaginado(
                 nivel, factor, estado, tematica, subtema, preguntaFiltro, respuestaFiltro, autoria, texto, pageable);
             

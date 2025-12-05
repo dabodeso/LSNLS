@@ -273,9 +273,16 @@ public class ComboService {
             Combo combo = comboOpt.get();
             Pregunta pregunta = preguntaOpt.get();
             
-            // Verificar que la pregunta esté aprobada
+            // Verificar que la pregunta esté aprobada; si está verificada, promover a aprobada automáticamente
             if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
-                throw new RuntimeException("La pregunta debe estar aprobada para ser agregada a un combo");
+                if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {
+                    entityManager.createNativeQuery("UPDATE preguntas SET estado = 'aprobada' WHERE id = ? AND estado = 'verificada'")
+                        .setParameter(1, preguntaId)
+                        .executeUpdate();
+                    pregunta = preguntaRepository.findById(preguntaId).orElse(pregunta);
+                } else {
+                    throw new RuntimeException("La pregunta debe estar aprobada para ser agregada a un combo");
+                }
             }
             
             // Verificar que sea pregunta de nivel 5
@@ -510,6 +517,29 @@ public class ComboService {
             }
         } catch (Exception ignored) {}
         
+        // Verificar si fue reutilizado de alguna jornada
+        try {
+            @SuppressWarnings("unchecked")
+            java.util.List<Object[]> historialReutilizado = entityManager.createNativeQuery(
+                "SELECT h.jornada_id, j.nombre " +
+                "FROM historial_jornadas h " +
+                "JOIN jornadas j ON h.jornada_id = j.id " +
+                "WHERE h.combo_id = :cid AND h.estado_asignacion = 'reaprovechado' " +
+                "ORDER BY h.fecha_asignacion DESC " +
+                "LIMIT 1")
+                .setParameter("cid", id)
+                .getResultList();
+            
+            if (!historialReutilizado.isEmpty()) {
+                Object[] registro = historialReutilizado.get(0);
+                dto.put("reutilizadoDeJornadaId", ((Number) registro[0]).longValue());
+                dto.put("reutilizadoDeJornadaNombre", (String) registro[1]);
+                System.out.println("[DTO-COMBO] Combo " + id + " | estado=" + c.getEstado() + " | jornada=" + dto.get("jornadaAsignada") + " | reutilizadoDe=" + dto.get("reutilizadoDeJornadaId"));
+            }
+        } catch (Exception e) {
+            System.err.println("[DTO-COMBO] ERROR al buscar historial para combo " + id);
+        }
+        
         // Mapear preguntas a slots PM1, PM2, PM3
         java.util.Map<String, Object> mapPorSlot = new java.util.HashMap<>();
         
@@ -608,8 +638,11 @@ public class ComboService {
     /** Sincroniza estados adjudicado/aprobado con asignaciones de jornada (lote) */
     private void sincronizarEstadosAsignaciones() {
         // Combos adjudicados por estar en jornadas
+        // IMPORTANTE: no tocar los que ya están en 'aprobado' porque pueden estar marcados como reutilizados/liberados
         entityManager.createNativeQuery(
-            "UPDATE combos SET estado='adjudicado' WHERE id IN (SELECT combo_id FROM jornadas_combos) AND estado<>'adjudicado'")
+            "UPDATE combos SET estado='adjudicado' " +
+            "WHERE id IN (SELECT combo_id FROM jornadas_combos) " +
+            "AND estado NOT IN ('adjudicado','grabado','aprobado')")
             .executeUpdate();
         // Combos sin jornada → aprobado (solo si estaban adjudicados)
         entityManager.createNativeQuery(
@@ -684,10 +717,17 @@ public class ComboService {
             throw new IllegalArgumentException("Una o más preguntas no fueron encontradas");
         }
         
-        // Verificar el estado de cada pregunta
+        // Verificar el estado de cada pregunta (promover 'verificada' -> 'aprobada' si aplica)
         for (Pregunta pregunta : preguntas) {
             if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
-                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está aprobada (estado: " + pregunta.getEstado() + ")");
+                if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {
+                    entityManager.createNativeQuery("UPDATE preguntas SET estado = 'aprobada' WHERE id = ? AND estado = 'verificada'")
+                        .setParameter(1, pregunta.getId())
+                        .executeUpdate();
+                    pregunta.setEstado(Pregunta.EstadoPregunta.aprobada);
+                } else {
+                    throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está aprobada (estado: " + pregunta.getEstado() + ")");
+                }
             }
             
             if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 

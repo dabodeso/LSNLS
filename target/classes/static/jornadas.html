@@ -175,6 +175,66 @@
             font-size: 0.75em;
             padding: 4px 8px;
         }
+
+        /* Caja estilo “recuadro” similar a combos/cuestionarios */
+        .jornadas2-box {
+            border: 2px solid #0d6efd;
+            border-radius: 6px;
+            padding: 12px;
+            background: #ffffff;
+        }
+
+        /* Modo Jornadas 2: la tarjeta es el recuadro */
+        .j2-mode .jornada-card {
+            border: 2px solid #0d6efd !important;
+            border-left: 2px solid #0d6efd !important; /* anula el inline del card */
+            border-radius: 6px;
+            box-shadow: 0 6px 18px rgba(108, 117, 125, 0.25);
+            background: #ffffff;
+        }
+
+        /* Ocultar gestión de historial solo en vista 2 */
+        .j2-mode #historialGestionCard {
+            display: none !important;
+        }
+
+        /* Vista 2: tarjetas pegadas sin espacio entre medias */
+        .j2-mode #listaJornadas .jornada-card {
+            margin: 0 !important;             /* sin separación vertical */
+            border-radius: 0 !important;      /* bordes rectos para pegarse */
+        }
+        .j2-mode #listaJornadas .jornada-card + .jornada-card {
+            border-top-width: 0;              /* evita línea doble entre tarjetas */
+        }
+        /* Opcional: redondear solo la primera y última si se desea */
+        .j2-mode #listaJornadas .jornada-card:first-child {
+            border-top-left-radius: 6px !important;
+            border-top-right-radius: 6px !important;
+        }
+        .j2-mode #listaJornadas .jornada-card:last-child {
+            border-bottom-left-radius: 6px !important;
+            border-bottom-right-radius: 6px !important;
+        }
+
+        /* Vista 3: fondo suave y tarjetas blancas sin bordes, con sombra sutil */
+        /* Vista 3: aplicar color de fondo solo al área de las tarjetas */
+        body.j3-mode {
+            background-color: #ffffff;
+        }
+        .j3-mode #listaJornadas {
+            background-color: #e3e8f3 !important;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 3px 10px rgba(16, 24, 40, 0.08);
+        }
+        .j3-mode .jornada-card {
+            background: #ffffff !important;
+            border: none !important;
+            border-left: none !important;
+            border-radius: 12px;
+            box-shadow: 0 12px 28px rgba(16, 24, 40, 0.12);
+            outline: 1px solid #e6ebf5;
+        }
     </style>
 </head>
 <body>
@@ -228,7 +288,14 @@
         <div class="row">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2><i class="fas fa-calendar-day"></i> Gestión de Jornadas</h2>
+                    <div class="d-flex align-items-center gap-3">
+                        <h2 class="mb-0"><i class="fas fa-calendar-day"></i> Gestión de Jornadas</h2>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Vista de Jornadas">
+                            <button type="button" id="btnVistaActual" class="btn btn-outline-primary active" onclick="setVistaJornadas('actual')">Ventana actual</button>
+                            <button type="button" id="btnVistaJ2" class="btn btn-outline-primary" onclick="setVistaJornadas('j2')">Jornadas 2</button>
+                            <button type="button" id="btnVistaJ3" class="btn btn-outline-primary" onclick="setVistaJornadas('j3')">Jornadas 3</button>
+                        </div>
+                    </div>
                     <button class="btn btn-primary" onclick="JornadasManager.mostrarModalCrear()">
                         <i class="fas fa-plus"></i> Nueva Jornada
                     </button>
@@ -265,55 +332,41 @@
                     </div>
                 </div>
 
-                <!-- Lista de Jornadas -->
-                <div id="listaJornadas">
-                    <div class="text-center py-5">
-                        <i class="fas fa-spinner fa-spin fa-2x"></i>
-                        <p class="mt-2">Cargando jornadas...</p>
-                    </div>
-                </div>
-
-                <!-- Información de paginación -->
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <div id="info-paginacion-jornadas" class="text-muted">
-                        <!-- Se llena dinámicamente -->
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <label class="form-label me-2 mb-0">Elementos por página:</label>
-                        <select class="form-select form-select-sm" id="tamanio-pagina-jornadas" style="width: auto;" onchange="JornadasManager.cambiarTamanioPagina()">
-                            <option value="10" selected>10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Controles de paginación -->
-                <nav aria-label="Paginación de jornadas" class="mt-3">
-                    <ul id="paginacion-jornadas" class="pagination justify-content-center">
-                        <!-- Se llena dinámicamente -->
-                    </ul>
-                </nav>
-
-                <!-- Nueva sección: Gestión de Historial -->
-                <div class="card mt-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-history"></i> Gestión de Historial de Jornadas
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <h6>Elementos No Usados</h6>
-                                <button class="btn btn-warning btn-sm" onclick="JornadasManager.mostrarElementosNoUsados()">
-                                    <i class="fas fa-eye"></i> Ver Elementos No Usados
-                                </button>
-                            </div>
+                <!-- Contenedor conmutable de vista -->
+                <div id="jornadas2Wrapper">
+                    <!-- Lista de Jornadas -->
+                    <div id="listaJornadas">
+                        <div class="text-center py-5">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p class="mt-2">Cargando jornadas...</p>
                         </div>
                     </div>
+
+                    <!-- Información de paginación -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div id="info-paginacion-jornadas" class="text-muted">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <label class="form-label me-2 mb-0">Elementos por página:</label>
+                            <select class="form-select form-select-sm" id="tamanio-pagina-jornadas" style="width: auto;" onchange="JornadasManager.cambiarTamanioPagina()">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Controles de paginación -->
+                    <nav aria-label="Paginación de jornadas" class="mt-3">
+                        <ul id="paginacion-jornadas" class="pagination justify-content-center">
+                            <!-- Se llena dinámicamente -->
+                        </ul>
+                    </nav>
                 </div>
+
+
             </div>
         </div>
     </div>
@@ -799,6 +852,12 @@
             // Cargar datos iniciales
             JornadasManager.init();
 
+            // Aplicar vista preferida (actual / j2)
+            try {
+                const preferida = localStorage.getItem('vistaJornadas') || 'actual';
+                setVistaJornadas(preferida);
+            } catch {}
+
             // Event listener para cambiar contraseña
             document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -870,6 +929,36 @@
         function cambiarPassword() {
             const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
             modal.show();
+        }
+
+        // Conmutar vista “Ventana actual” vs “Jornadas 2/3”
+        function setVistaJornadas(modo) {
+            const bActual = document.getElementById('btnVistaActual');
+            const bJ2 = document.getElementById('btnVistaJ2');
+            const bJ3 = document.getElementById('btnVistaJ3');
+            if (!bActual || !bJ2 || !bJ3) return;
+
+            if (modo === 'j2') {
+                document.body.classList.add('j2-mode');
+                document.body.classList.remove('j3-mode');
+                bJ2.classList.add('active');
+                bActual.classList.remove('active');
+                bJ3.classList.remove('active');
+            } else if (modo === 'j3') {
+                document.body.classList.add('j3-mode');
+                document.body.classList.remove('j2-mode');
+                bJ3.classList.add('active');
+                bActual.classList.remove('active');
+                bJ2.classList.remove('active');
+            } else {
+                document.body.classList.remove('j2-mode');
+                document.body.classList.remove('j3-mode');
+                bActual.classList.add('active');
+                bJ2.classList.remove('active');
+                bJ3.classList.remove('active');
+                modo = 'actual';
+            }
+            try { localStorage.setItem('vistaJornadas', modo); } catch {}
         }
     </script>
 </body>

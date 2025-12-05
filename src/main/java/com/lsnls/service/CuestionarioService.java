@@ -205,9 +205,17 @@ public class CuestionarioService {
         Cuestionario cuestionario = cuestionarioOpt.get();
         Pregunta pregunta = preguntaOpt.get();
         
-        // Verificar que la pregunta esté aprobada
+        // Verificar que la pregunta esté aprobada; si está verificada, promover a aprobada automáticamente
         if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
-            throw new RuntimeException("La pregunta debe estar aprobada para ser agregada a un cuestionario");
+            if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {
+                entityManager.createNativeQuery("UPDATE preguntas SET estado = 'aprobada' WHERE id = ? AND estado = 'verificada'")
+                    .setParameter(1, preguntaId)
+                    .executeUpdate();
+                // Refrescar entidad
+                pregunta = preguntaRepository.findById(preguntaId).orElse(pregunta);
+            } else {
+                throw new RuntimeException("La pregunta debe estar aprobada para ser agregada a un cuestionario");
+            }
         }
         
         // Verificar que la pregunta esté disponible o liberada (puede reutilizarse)
@@ -440,8 +448,11 @@ public class CuestionarioService {
     /** Sincroniza estados adjudicado/aprobado con asignaciones de jornada (lote) */
     private void sincronizarEstadosAsignaciones() {
         // Cuestionarios adjudicados por estar en jornadas
+        // IMPORTANTE: no tocar los que ya están en 'aprobado' porque pueden estar marcados como reutilizados/liberados
         entityManager.createNativeQuery(
-            "UPDATE cuestionarios SET estado='adjudicado' WHERE id IN (SELECT cuestionario_id FROM jornadas_cuestionarios) AND estado<>'adjudicado'")
+            "UPDATE cuestionarios SET estado='adjudicado' " +
+            "WHERE id IN (SELECT cuestionario_id FROM jornadas_cuestionarios) " +
+            "AND estado NOT IN ('adjudicado','grabado','aprobado')")
             .executeUpdate();
         // Cuestionarios sin jornada → aprobado (solo si estaban adjudicados)
         entityManager.createNativeQuery(
@@ -552,10 +563,18 @@ public class CuestionarioService {
             throw new IllegalArgumentException("Una o más preguntas no fueron encontradas");
         }
         
-        // Verificar el estado de cada pregunta
+        // Verificar el estado de cada pregunta (promover 'verificada' -> 'aprobada' si aplica)
         for (Pregunta pregunta : preguntas) {
             if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
-                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está aprobada (estado: " + pregunta.getEstado() + ")");
+                if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {
+                    entityManager.createNativeQuery("UPDATE preguntas SET estado = 'aprobada' WHERE id = ? AND estado = 'verificada'")
+                        .setParameter(1, pregunta.getId())
+                        .executeUpdate();
+                    // Actualizar objeto en memoria
+                    pregunta.setEstado(Pregunta.EstadoPregunta.aprobada);
+                } else {
+                    throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está aprobada (estado: " + pregunta.getEstado() + ")");
+                }
             }
             
             // Tratar null como disponible para compatibilidad con datos antiguos
@@ -761,6 +780,29 @@ public class CuestionarioService {
                 dto.put("jornadaAsignada", jornadaId);
             }
         } catch (Exception ignored) {}
+        
+        // Verificar si fue reutilizado de alguna jornada
+        try {
+            @SuppressWarnings("unchecked")
+            java.util.List<Object[]> historialReutilizado = entityManager.createNativeQuery(
+                "SELECT h.jornada_id, j.nombre " +
+                "FROM historial_jornadas h " +
+                "JOIN jornadas j ON h.jornada_id = j.id " +
+                "WHERE h.cuestionario_id = :cid AND h.estado_asignacion = 'reaprovechado' " +
+                "ORDER BY h.fecha_asignacion DESC " +
+                "LIMIT 1")
+                .setParameter("cid", id)
+                .getResultList();
+            
+            if (!historialReutilizado.isEmpty()) {
+                Object[] registro = historialReutilizado.get(0);
+                dto.put("reutilizadoDeJornadaId", ((Number) registro[0]).longValue());
+                dto.put("reutilizadoDeJornadaNombre", (String) registro[1]);
+                System.out.println("[DTO-CUEST] Cuest " + id + " | estado=" + c.getEstado() + " | jornada=" + dto.get("jornadaAsignada") + " | reutilizadoDe=" + dto.get("reutilizadoDeJornadaId"));
+            }
+        } catch (Exception e) {
+            System.err.println("[DTO-CUEST] ERROR al buscar historial para cuest " + id);
+        }
         
         // Mapear preguntas a slots según su nivel real
         java.util.Map<String, PreguntaCuestionarioDTO> mapPorSlot = new java.util.HashMap<>();

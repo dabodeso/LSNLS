@@ -130,14 +130,6 @@ public class ComboController {
                 return ResponseEntity.badRequest().body("No se puede usar la misma pregunta para diferentes multiplicadores (PM1, PM2, PM3)");
             }
             
-            // Validar factores únicos
-            java.util.HashSet<String> factores = new java.util.HashSet<>();
-            for (CrearComboDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {
-                if (!factores.add(pm.getFactor())) {
-                    return ResponseEntity.badRequest().body("No se puede asignar el mismo factor (" + pm.getFactor() + ") a múltiples preguntas");
-                }
-            }
-            
             // Validar tipo con validación anticipada
             try {
                 Combo.TipoCombo.valueOf(dto.getTipo());
@@ -177,6 +169,11 @@ public class ComboController {
                 return ResponseEntity.status(403).body("No tienes permisos para agregar preguntas a combos. Solo usuarios con rol GUION o DIRECCION pueden agregar preguntas a combos.");
             }
             
+            // Bloquear si el combo está asignado a una jornada
+            if (comboService.estaAsignadoAJornada(comboId)) {
+                return ResponseEntity.status(409).body("Este combo está asignado a una jornada y no se puede modificar.");
+            }
+            
             Long preguntaId = Long.valueOf(request.get("preguntaId").toString());
             Integer factorMultiplicacion = request.get("factorMultiplicacion") != null ? 
                 Integer.valueOf(request.get("factorMultiplicacion").toString()) : 1;
@@ -203,6 +200,11 @@ public class ComboController {
             
             if (!authService.canCreateCuestionario()) {
                 return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de combos. Solo usuarios con rol GUION o DIRECCION pueden quitar preguntas de combos.");
+            }
+            
+            // Bloquear si el combo está asignado a una jornada
+            if (comboService.estaAsignadoAJornada(comboId)) {
+                return ResponseEntity.status(409).body("Este combo está asignado a una jornada y no se puede modificar.");
             }
             
             boolean exito = comboService.quitarPregunta(comboId, preguntaId);

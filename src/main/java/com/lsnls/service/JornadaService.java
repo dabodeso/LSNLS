@@ -362,9 +362,94 @@ public class JornadaService {
             .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada"));
 
         try {
+            System.out.println("🔄 [JORNADA ESTADO] Solicitud de cambio de estado - Jornada " + id + " -> " + nuevoEstado);
             Jornada.EstadoJornada estado = Jornada.EstadoJornada.valueOf(nuevoEstado);
             jornada.setEstado(estado);
             jornada = jornadaRepository.save(jornada);
+            System.out.println("✅ [JORNADA ESTADO] Jornada " + id + " guardada con estado " + estado);
+
+            // Si jornada queda 'archivada' (grabada en front) → marcar elementos en 'grabado'.
+            // Si jornada NO está 'archivada' (p.ej. 'preparacion' o 'completada') → marcar elementos en 'adjudicado'.
+            if (estado == Jornada.EstadoJornada.archivada) {
+                int totalC = 0, totalCmb = 0;
+                if (jornada.getCuestionarios() != null) {
+                    System.out.println("ℹ️ [JORNADA ESTADO] (GRABADA) Cuestionarios asignados a jornada " + id + ": " + jornada.getCuestionarios().size());
+                    for (Cuestionario c : jornada.getCuestionarios()) {
+                        System.out.println("   • Cuestionario " + c.getId() + " estado actual: " + c.getEstado());
+                        if (c.getEstado() != Cuestionario.EstadoCuestionario.grabado) {
+                            c.setEstado(Cuestionario.EstadoCuestionario.grabado);
+                            totalC++;
+                            System.out.println("   → Cuestionario " + c.getId() + " marcado como GRABADO");
+                        }
+                        cuestionarioRepository.save(c);
+                    }
+                }
+                if (jornada.getCombos() != null) {
+                    System.out.println("ℹ️ [JORNADA ESTADO] (GRABADA) Combos asignados a jornada " + id + ": " + jornada.getCombos().size());
+                    for (Combo combo : jornada.getCombos()) {
+                        System.out.println("   • Combo " + combo.getId() + " estado actual: " + combo.getEstado());
+                        if (combo.getEstado() != Combo.EstadoCombo.grabado) {
+                            combo.setEstado(Combo.EstadoCombo.grabado);
+                            totalCmb++;
+                            System.out.println("   → Combo " + combo.getId() + " marcado como GRABADO");
+                        }
+                        comboRepository.save(combo);
+                    }
+                }
+                try { entityManager.flush(); } catch (Exception ignored) {}
+                try {
+                    int updatedC = entityManager.createNativeQuery(
+                        "UPDATE cuestionarios SET estado='grabado' WHERE id IN (SELECT cuestionario_id FROM jornadas_cuestionarios WHERE jornada_id = ?) AND estado <> 'grabado'")
+                        .setParameter(1, jornada.getId())
+                        .executeUpdate();
+                    int updatedCb = entityManager.createNativeQuery(
+                        "UPDATE combos SET estado='grabado' WHERE id IN (SELECT combo_id FROM jornadas_combos WHERE jornada_id = ?) AND estado <> 'grabado'")
+                        .setParameter(1, jornada.getId())
+                        .executeUpdate();
+                    System.out.println("🟢 [JORNADA ESTADO] Batch grabado → cuestionarios: " + updatedC + ", combos: " + updatedCb);
+                } catch (Exception e) {
+                    System.err.println("⚠️ [JORNADA ESTADO] Error batch (grabado): " + e.getMessage());
+                }
+            } else {
+                int totalC = 0, totalCmb = 0;
+                if (jornada.getCuestionarios() != null) {
+                    System.out.println("ℹ️ [JORNADA ESTADO] (NO GRABADA) Cuestionarios asignados a jornada " + id + ": " + jornada.getCuestionarios().size());
+                    for (Cuestionario c : jornada.getCuestionarios()) {
+                        if (c.getEstado() != Cuestionario.EstadoCuestionario.adjudicado) {
+                            c.setEstado(Cuestionario.EstadoCuestionario.adjudicado);
+                            totalC++;
+                            System.out.println("   → Cuestionario " + c.getId() + " marcado como ADJUDICADO");
+                        }
+                        cuestionarioRepository.save(c);
+                    }
+                }
+                if (jornada.getCombos() != null) {
+                    System.out.println("ℹ️ [JORNADA ESTADO] (NO GRABADA) Combos asignados a jornada " + id + ": " + jornada.getCombos().size());
+                    for (Combo combo : jornada.getCombos()) {
+                        if (combo.getEstado() != Combo.EstadoCombo.adjudicado) {
+                            combo.setEstado(Combo.EstadoCombo.adjudicado);
+                            totalCmb++;
+                            System.out.println("   → Combo " + combo.getId() + " marcado como ADJUDICADO");
+                        }
+                        comboRepository.save(combo);
+                    }
+                }
+                try { entityManager.flush(); } catch (Exception ignored) {}
+                try {
+                    int updatedC = entityManager.createNativeQuery(
+                        "UPDATE cuestionarios SET estado='adjudicado' WHERE id IN (SELECT cuestionario_id FROM jornadas_cuestionarios WHERE jornada_id = ?) AND estado <> 'adjudicado'")
+                        .setParameter(1, jornada.getId())
+                        .executeUpdate();
+                    int updatedCb = entityManager.createNativeQuery(
+                        "UPDATE combos SET estado='adjudicado' WHERE id IN (SELECT combo_id FROM jornadas_combos WHERE jornada_id = ?) AND estado <> 'adjudicado'")
+                        .setParameter(1, jornada.getId())
+                        .executeUpdate();
+                    System.out.println("🟡 [JORNADA ESTADO] Batch adjudicado → cuestionarios: " + updatedC + ", combos: " + updatedCb);
+                } catch (Exception e) {
+                    System.err.println("⚠️ [JORNADA ESTADO] Error batch (adjudicado): " + e.getMessage());
+                }
+            }
+
             return convertirADTO(jornada);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Estado no válido: " + nuevoEstado);
@@ -522,27 +607,41 @@ public class JornadaService {
             throw new IllegalArgumentException("El cuestionario " + cuestionarioId + " no está asignado a la jornada " + jornadaId);
         }
         
-        // Ponerlo disponible para nuevas jornadas: pasar de adjudicado -> aprobado (sin quitar de esta jornada)
+        // Ponerlo disponible para nuevas jornadas: pasar de adjudicado/grabado -> aprobado (sin quitar de esta jornada)
+        System.out.println("========================================");
+        System.out.println("[REUTILIZAR-CUEST] INICIO - Cuestionario " + cuestionarioId + " de jornada " + jornadaId);
+        
         try {
-            if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
+            Cuestionario.EstadoCuestionario estadoActual = cuestionario.getEstado();
+            System.out.println("[REUTILIZAR-CUEST] Estado actual: " + estadoActual);
+            
+            if (estadoActual == Cuestionario.EstadoCuestionario.adjudicado || estadoActual == Cuestionario.EstadoCuestionario.grabado) {
+                System.out.println("[REUTILIZAR-CUEST] Cambiando estado: " + estadoActual + " -> aprobado");
                 boolean exito = cuestionarioService.cambiarEstadoAtomico(
                     cuestionarioId,
-                    Cuestionario.EstadoCuestionario.adjudicado,
+                    estadoActual,
                     Cuestionario.EstadoCuestionario.aprobado
                 );
                 if (!exito) {
+                    System.err.println("[REUTILIZAR-CUEST] ERROR: No se pudo cambiar el estado");
                     throw new IllegalStateException("El cuestionario " + cuestionarioId + " fue modificado por otro usuario. Recarga e intenta de nuevo.");
                 }
                 // refrescar entidad
                 cuestionario = cuestionarioRepository.findById(cuestionarioId)
                     .orElse(cuestionario);
+                System.out.println("[REUTILIZAR-CUEST] EXITO: Estado cambiado a " + cuestionario.getEstado());
+            } else if (estadoActual == Cuestionario.EstadoCuestionario.aprobado) {
+                System.out.println("[REUTILIZAR-CUEST] Ya estaba en estado aprobado");
+            } else {
+                System.out.println("[REUTILIZAR-CUEST] ERROR: Estado invalido " + estadoActual);
+                throw new IllegalArgumentException("El cuestionario " + cuestionarioId + " está en estado " + estadoActual + ". Solo se pueden reutilizar cuestionarios en estado 'adjudicado' o 'grabado'.");
             }
         } catch (IllegalStateException e) {
             throw new IllegalArgumentException("Error de concurrencia al reutilizar cuestionario " + cuestionarioId + ": " + e.getMessage());
         }
 
         // Registrar reutilización (sin quitar de la jornada)
-        // Evitar duplicados
+        System.out.println("[REUTILIZAR-CUEST] Registrando en historial...");
         try {
             Long count = entityManager.createNativeQuery(
                 "SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND cuestionario_id = :cid AND estado_asignacion = 'reaprovechado'")
@@ -555,13 +654,17 @@ public class JornadaService {
                     .getSingleResult()).longValue() : 0L;
             if (count == null || count == 0L) {
                 registrarHistorialReutilizacion(jornada, cuestionario, "cuestionario", usuarioId);
+                System.out.println("[REUTILIZAR-CUEST] Registro de historial creado");
+            } else {
+                System.out.println("[REUTILIZAR-CUEST] Ya existia registro en historial");
             }
         } catch (Exception e) {
-            // Continuar aunque falle el conteo; intentar registrar igualmente
             registrarHistorialReutilizacion(jornada, cuestionario, "cuestionario", usuarioId);
+            System.out.println("[REUTILIZAR-CUEST] Registro de historial creado (catch)");
         }
         
-        System.out.println("✅ [JORNADA] Cuestionario " + cuestionarioId + " reutilizado de jornada " + jornadaId);
+        System.out.println("[REUTILIZAR-CUEST] COMPLETADO - Cuestionario " + cuestionarioId);
+        System.out.println("========================================");
     }
 
     /**
@@ -584,18 +687,29 @@ public class JornadaService {
             throw new IllegalArgumentException("El combo " + comboId + " no está asignado a la jornada " + jornadaId);
         }
         
-        // Ponerlo disponible: pasar de adjudicado -> aprobado (sin quitar de esta jornada)
+        // Ponerlo disponible: pasar de adjudicado/grabado -> aprobado (sin quitar de esta jornada)
         try {
-            if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {
+            Combo.EstadoCombo estadoActual = combo.getEstado();
+            System.out.println("🔄🔄🔄 [REUTILIZAR COMBO] Combo " + comboId + " | Estado actual: " + estadoActual + " | Jornada: " + jornadaId);
+            
+            if (estadoActual == Combo.EstadoCombo.adjudicado || estadoActual == Combo.EstadoCombo.grabado) {
+                System.out.println("🔄 [REUTILIZAR COMBO] Cambiando estado: " + estadoActual + " -> aprobado");
                 boolean exito = comboService.cambiarEstadoAtomico(
                     comboId,
-                    Combo.EstadoCombo.adjudicado,
+                    estadoActual,
                     Combo.EstadoCombo.aprobado
                 );
                 if (!exito) {
+                    System.err.println("❌ [REUTILIZAR COMBO] No se pudo cambiar el estado del combo " + comboId);
                     throw new IllegalStateException("El combo " + comboId + " fue modificado por otro usuario. Recarga e intenta de nuevo.");
                 }
                 combo = comboRepository.findById(comboId).orElse(combo);
+                System.out.println("✅✅✅ [REUTILIZAR COMBO] Combo " + comboId + " cambiado: " + estadoActual + " -> " + combo.getEstado());
+            } else if (estadoActual == Combo.EstadoCombo.aprobado) {
+                System.out.println("✅ [REUTILIZAR COMBO] Combo " + comboId + " ya está en estado aprobado");
+            } else {
+                System.out.println("⚠️ [REUTILIZAR COMBO] Combo " + comboId + " está en estado " + estadoActual + ", no se puede reutilizar");
+                throw new IllegalArgumentException("El combo " + comboId + " está en estado " + estadoActual + ". Solo se pueden reutilizar combos en estado 'adjudicado' o 'grabado'.");
             }
         } catch (IllegalStateException e) {
             throw new IllegalArgumentException("Error de concurrencia al reutilizar combo " + comboId + ": " + e.getMessage());
@@ -619,7 +733,7 @@ public class JornadaService {
             registrarHistorialReutilizacion(jornada, combo, "combo", usuarioId);
         }
         
-        System.out.println("✅ [JORNADA] Combo " + comboId + " reutilizado de jornada " + jornadaId);
+        System.out.println("♻️♻️♻️ [REUTILIZAR COMBO] Combo " + comboId + " reutilizado de jornada " + jornadaId);
     }
 
     public void quitarReutilizacionCuestionario(Long jornadaId, Long cuestionarioId) {
@@ -720,19 +834,22 @@ public class JornadaService {
             throw new IllegalArgumentException("El combo " + comboId + " no está asignado a la jornada " + jornadaId);
         }
         
-        // Verificar que el combo está en estado adjudicado
-        if (combo.getEstado() != Combo.EstadoCombo.adjudicado) {
-            throw new IllegalArgumentException("El combo " + comboId + " no está en estado adjudicado. Estado actual: " + combo.getEstado());
+        // Verificar que el combo está en estado adjudicado o grabado
+        Combo.EstadoCombo estadoActual = combo.getEstado();
+        if (estadoActual != Combo.EstadoCombo.adjudicado && estadoActual != Combo.EstadoCombo.grabado) {
+            throw new IllegalArgumentException("El combo " + comboId + " no está en estado adjudicado ni grabado. Estado actual: " + estadoActual);
         }
 
         // Mantener el combo en la jornada pero marcarlo como disponible para nuevas jornadas
+        System.out.println("🔄🔄🔄 [RECICLAR ENTERO] Combo " + comboId + " | Estado actual: " + estadoActual + " | Jornada: " + jornadaId);
         combo.setEstado(Combo.EstadoCombo.aprobado);
         comboRepository.save(combo);
+        System.out.println("✅✅✅ [RECICLAR ENTERO] Combo " + comboId + " cambiado: " + estadoActual + " -> aprobado");
 
         // Registrar en el historial como reaprovechado (para pintarlo en verde en la UI)
         registrarHistorialReutilizacion(jornada, combo, "combo", usuarioId);
 
-        System.out.println("✅ [JORNADA] Combo " + comboId + " reciclado completamente (marcado reutilizado y disponible) en jornada " + jornadaId);
+        System.out.println("♻️♻️♻️ [RECICLAR ENTERO] Combo " + comboId + " reciclado completamente de jornada " + jornadaId);
     }
 
     /**
@@ -756,10 +873,12 @@ public class JornadaService {
             throw new IllegalArgumentException("El combo " + comboId + " no está asignado a la jornada " + jornadaId);
         }
         
-        // Verificar que el combo está en estado adjudicado
-        if (combo.getEstado() != Combo.EstadoCombo.adjudicado) {
-            throw new IllegalArgumentException("El combo " + comboId + " no está en estado adjudicado. Estado actual: " + combo.getEstado());
+        // Verificar que el combo está en estado adjudicado o grabado
+        Combo.EstadoCombo estadoActual = combo.getEstado();
+        if (estadoActual != Combo.EstadoCombo.adjudicado && estadoActual != Combo.EstadoCombo.grabado) {
+            throw new IllegalArgumentException("El combo " + comboId + " no está en estado adjudicado ni grabado. Estado actual: " + estadoActual);
         }
+        System.out.println("🔍 [JORNADA] Reciclando combo " + comboId + " parcialmente. Estado actual: " + estadoActual);
         
         // Verificar que el combo tiene exactamente 3 preguntas
         if (combo.getPreguntas() == null || combo.getPreguntas().size() != 3) {
@@ -779,40 +898,60 @@ public class JornadaService {
             throw new IllegalArgumentException("La pregunta " + preguntaUsadaId + " no pertenece al combo " + comboId);
         }
         
-        // El combo se mantiene en la jornada; se libera(n) las 2 preguntas no usadas
-        // 1) Eliminar del combo las preguntas no usadas y marcarlas como disponibles
-        java.util.List<PreguntaCombo> aEliminar = new java.util.ArrayList<>();
+        // El combo original se mantiene en la jornada con sus 3 preguntas completas
+        // Se crea un COMBO NUEVO con las 2 preguntas no usadas para poder reutilizarlas en otras jornadas
+        
+        // 1) Recopilar las preguntas no usadas y sus factores
+        java.util.List<PreguntaCombo> preguntasNoUsadas = new java.util.ArrayList<>();
         for (PreguntaCombo pc : combo.getPreguntas()) {
             if (!pc.getPregunta().getId().equals(preguntaUsadaId)) {
-                aEliminar.add(pc);
+                preguntasNoUsadas.add(pc);
             }
         }
-        for (PreguntaCombo pc : aEliminar) {
-            try {
-                // Quitar relación del combo
-                preguntaComboRepository.delete(pc);
-            } catch (Exception ignored) {}
-            try {
-                // Marcar pregunta como disponible
-                entityManager.createQuery("UPDATE Pregunta p SET p.estadoDisponibilidad = :disp WHERE p.id = :pid")
-                    .setParameter("disp", com.lsnls.entity.Pregunta.EstadoDisponibilidad.disponible)
-                    .setParameter("pid", pc.getPregunta().getId())
-                    .executeUpdate();
-                // Si estaba 'usada', devolver a 'aprobada' para que vuelva a aparecer en los selectores
-                entityManager.createQuery("UPDATE Pregunta p SET p.estado = :aprobada WHERE p.id = :pid AND p.estado = :usada")
-                    .setParameter("aprobada", com.lsnls.entity.Pregunta.EstadoPregunta.aprobada)
-                    .setParameter("usada", com.lsnls.entity.Pregunta.EstadoPregunta.usada)
-                    .setParameter("pid", pc.getPregunta().getId())
-                    .executeUpdate();
-            } catch (Exception e) {
-                System.err.println("⚠️ [JORNADA] No se pudo marcar disponible la pregunta " + pc.getPregunta().getId() + ": " + e.getMessage());
-            }
+        
+        // 2) CREAR UN COMBO NUEVO con las 2 preguntas no usadas
+        Combo comboNuevo = new Combo();
+        comboNuevo.setNivel(combo.getNivel());
+        comboNuevo.setTipo(combo.getTipo());
+        comboNuevo.setTematica(combo.getTematica());
+        comboNuevo.setNotasDireccion("Combo derivado del combo " + comboId + " (reciclaje parcial) - " + (combo.getNotasDireccion() != null ? combo.getNotasDireccion() : ""));
+        comboNuevo.setEstado(Combo.EstadoCombo.aprobado);
+        comboNuevo.setFechaCreacion(java.time.LocalDateTime.now());
+        comboNuevo.setCreacionUsuario(combo.getCreacionUsuario());
+        comboNuevo = comboRepository.save(comboNuevo);
+        
+        // 3) Agregar las 2 preguntas al combo nuevo
+        for (PreguntaCombo pcOriginal : preguntasNoUsadas) {
+            // Crear la clave compuesta primero
+            PreguntaCombo.PreguntaComboId nuevoId = new PreguntaCombo.PreguntaComboId();
+            nuevoId.setComboId(comboNuevo.getId());
+            nuevoId.setPreguntaId(pcOriginal.getPregunta().getId());
+            
+            // Crear la relación PreguntaCombo
+            PreguntaCombo pcNuevo = new PreguntaCombo();
+            pcNuevo.setId(nuevoId);
+            pcNuevo.setCombo(comboNuevo);
+            pcNuevo.setPregunta(pcOriginal.getPregunta());
+            pcNuevo.setFactorMultiplicacion(pcOriginal.getFactorMultiplicacion());
+            preguntaComboRepository.save(pcNuevo);
         }
-
-        // 2) Mantener combo en la jornada, marcado como reutilizado en historial
+        
+        // 4) Mantener el combo original intacto (con sus 3 preguntas) y también su estado actual
+        //    (normalmente 'adjudicado' o 'grabado'), ya que sigue perteneciendo a esta jornada.
+        //    Solo las preguntas no usadas se copian al combo nuevo para poder reutilizarlas en otras jornadas.
+        System.out.println("🔄🔄🔄 [RECICLAR PARCIAL] Manteniendo estado del combo original " + comboId + ": " + estadoActual);
+        comboRepository.save(combo);
+        
+        // 5) Mantener combo original en la jornada, marcado como reutilizado en historial
         registrarHistorialReutilizacion(jornada, combo, "combo", usuarioId);
+        
+        // 6) Registrar el combo nuevo en el historial como hijo
+        registrarHistorialComboHijo(jornada, comboNuevo, comboId, usuarioId);
 
-        System.out.println("✅ [JORNADA] Combo " + comboId + " reciclado parcialmente: liberadas " + aEliminar.size() + " preguntas (disponibles), combo permanece en jornada marcado como reutilizado");
+        System.out.println("✅✅✅ [RECICLAR PARCIAL] Combo " + comboId + " reciclado parcialmente:");
+        System.out.println("   - Combo original " + comboId + ": estado=" + combo.getEstado() + ", preguntas=3 (incluida usada=" + preguntaUsadaId + ")");
+        System.out.println("   - Combo nuevo " + comboNuevo.getId() + ": estado=aprobado, preguntas=" + preguntasNoUsadas.size() + " (copias de no usadas)");
+        System.out.println("♻️♻️♻️ [RECICLAR PARCIAL] Reciclaje parcial completado para combo " + comboId);
     }
 
     /**

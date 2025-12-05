@@ -74,6 +74,7 @@ com\lsnls\entity\Programa$EstadoPrograma.class
 com\lsnls\repository\SubtemaPreguntaRepository.class
 com\lsnls\config\WebConfig.class
 com\lsnls\dto\PreguntaCuestionarioDTO.class
+com\lsnls\config\DataSourceDiagnostics.class
 com\lsnls\dto\CrearComboDTO$PreguntaMultiplicadoraDTO.class
 com\lsnls\entity\HistorialJornada$TipoAsignacion.class
 com\lsnls\dto\PreguntaDTO.class

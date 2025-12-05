@@ -111,5 +111,28 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
         @Param("texto") String texto
     );
 
+    @Query("SELECT p FROM Pregunta p " +
+           "WHERE (:nivel IS NULL OR p.nivel = :nivel) " +
+           "  AND (:factor IS NULL OR p.factor = :factor) " +
+           "  AND (:tematica IS NULL OR LOWER(p.tematica) LIKE LOWER(CONCAT('%', :tematica, '%'))) " +
+           "  AND (:subtema IS NULL OR LOWER(p.subtema) LIKE LOWER(CONCAT('%', :subtema, '%'))) " +
+           "  AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%'))) " +
+           "  AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%'))) " +
+           "  AND (:autoria IS NULL OR LOWER(p.autor) LIKE LOWER(CONCAT('%', :autoria, '%'))) " +
+           "  AND (:texto IS NULL OR (LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :texto, '%')) OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :texto, '%')))) " +
+           "  AND (COALESCE(:estados) IS NULL OR p.estado IN :estados) " +
+           "ORDER BY p.id DESC")
+    List<Pregunta> filtrarPorEstados(
+        @Param("nivel") com.lsnls.entity.Pregunta.NivelPregunta nivel,
+        @Param("factor") com.lsnls.entity.Pregunta.FactorPregunta factor,
+        @Param("estados") java.util.List<com.lsnls.entity.Pregunta.EstadoPregunta> estados,
+        @Param("tematica") String tematica,
+        @Param("subtema") String subtema,
+        @Param("pregunta") String pregunta,
+        @Param("respuesta") String respuesta,
+        @Param("autoria") String autoria,
+        @Param("texto") String texto
+    );
+
     Long countByCreacionUsuario(Usuario usuario);
 } 
