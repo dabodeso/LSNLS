@@ -812,10 +812,15 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
 async function guardarCuestionario() {
     CuestionariosManager.rememberScroll();
     let preguntasNormales = [];
+    const preguntasPorSlot = {};
     normales.forEach(nivel => {
         const element = document.getElementById(`pregunta-${nivel}`);
         const id = element ? element.value : '';
-        if (id) preguntasNormales.push(Number(id));
+        if (id) {
+            const numId = Number(id);
+            preguntasNormales.push(numId);
+            preguntasPorSlot[nivel] = numId;
+        }
     });
     
     console.log('🔍 [FRONTEND] Preguntas seleccionadas:', preguntasNormales);
@@ -831,6 +836,132 @@ async function guardarCuestionario() {
             style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
         }).showToast();
         return;
+    }
+    
+    // Antes de guardar: comprobar estado y nivel real de las preguntas seleccionadas
+    try {
+        const detallesPreguntas = await Promise.all(
+            preguntasNormales.map(async (id) => {
+                try {
+                    const resp = await fetch(`/api/preguntas/${id}`, {
+                        headers: authManager.getAuthHeaders()
+                    });
+                    if (!resp.ok) return null;
+                    return await resp.json();
+                } catch {
+                    return null;
+                }
+            })
+        );
+
+        const detallesPorId = {};
+        (detallesPreguntas || []).forEach(p => {
+            if (p && p.id != null) {
+                detallesPorId[p.id] = p;
+            }
+        });
+
+        // 1) Aviso por preguntas en estado VERIFICADA (se promocionan a APROBADA)
+        const preguntasVerificadas = (detallesPreguntas || []).filter(p =>
+            p && typeof p.estado === 'string' &&
+            String(p.estado).toLowerCase() === 'verificada'
+        );
+
+        if (preguntasVerificadas.length > 0) {
+            const lista = preguntasVerificadas
+                .map(p => `- ${p.id}: ${p.pregunta || '(sin texto)'}`)
+                .join('\n');
+
+            const mensajeConfirmacion =
+                'Atención: vas a crear/editar un cuestionario que utiliza preguntas en estado VERIFICADA (no APROBADA todavía):\n\n' +
+                lista +
+                '\n\n' +
+                'Si continúas, estas preguntas se marcarán automáticamente como APROBADAS y quedarán reservadas para este cuestionario.\n\n' +
+                '¿Quieres continuar y cambiar su estado a APROBADA?';
+
+            const continuar = window.confirm(mensajeConfirmacion);
+            if (!continuar) {
+                // El usuario ha cancelado explícitamente tras el aviso
+                return;
+            }
+        }
+
+        // 2) Aviso por preguntas cuyo NIVEL no coincide con el hueco del cuestionario
+        const slotToNivelEnum = {
+            '1LS': '_1LS',
+            '2NLS': '_2NLS',
+            '3LS': '_3LS',
+            '4NLS': '_4NLS'
+        };
+
+        const desajustesNivel = [];
+        Object.entries(preguntasPorSlot).forEach(([slot, id]) => {
+            const detalle = detallesPorId[id];
+            if (!detalle || !detalle.nivel) return;
+
+            const targetNivel = slotToNivelEnum[slot] || null;
+            const actualNivel = typeof detalle.nivel === 'string'
+                ? detalle.nivel
+                : (detalle.nivel.name || detalle.nivel);
+
+            if (targetNivel && actualNivel && actualNivel !== targetNivel) {
+                desajustesNivel.push({
+                    slot,
+                    id,
+                    actualNivel,
+                    targetNivel,
+                    pregunta: detalle.pregunta || ''
+                });
+            }
+        });
+
+        if (desajustesNivel.length > 0) {
+            const listaNiveles = desajustesNivel
+                .map(m => `- Pregunta ${m.id}: "${m.pregunta}" (nivel actual: ${m.actualNivel}, hueco: ${m.targetNivel})`)
+                .join('\n');
+
+            const mensajeNiveles =
+                'Atención: algunas preguntas no tienen el mismo NIVEL que el hueco del cuestionario donde las estás colocando:\n\n' +
+                listaNiveles +
+                '\n\n' +
+                'Si continúas, se cambiará automáticamente el NIVEL de esas preguntas al del hueco indicado para que el cuestionario sea consistente.\n\n' +
+                '¿Quieres continuar y cambiar el nivel de esas preguntas?';
+
+            const continuarNiveles = window.confirm(mensajeNiveles);
+            if (!continuarNiveles) {
+                return;
+            }
+
+            // Aplicar cambio de nivel en backend para cada pregunta con desajuste
+            for (const m of desajustesNivel) {
+                try {
+                    await fetch(`/api/preguntas/${m.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            ...authManager.getAuthHeaders(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: m.id,
+                            nivel: m.targetNivel
+                        })
+                    });
+                } catch (err) {
+                    console.error('Error al cambiar nivel de la pregunta', m.id, err);
+                    Toastify({
+                        text: `No se pudo cambiar el nivel de la pregunta ${m.id}: ${err.message || err}`,
+                        duration: 4000,
+                        close: true,
+                        gravity: 'top',
+                        position: 'right',
+                        style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+                    }).showToast();
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('No se pudo comprobar el estado de las preguntas antes de guardar el cuestionario:', e);
+        // En caso de error en esta verificación previa, seguimos con el flujo normal
     }
     
     const cuestionarioIdElement = document.getElementById('cuestionario-id');

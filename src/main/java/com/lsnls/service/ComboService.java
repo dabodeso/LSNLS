@@ -60,7 +60,7 @@ public class ComboService {
     public Map<String, Object> obtenerTodosPaginados(int page, int size) {
         // Sincronizar estados con asignaciones de jornadas
         try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
-        // Crear objeto Pageable para paginación
+        // Crear objeto Pageable para paginaci?n
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
         // Obtener el total de combos
@@ -124,14 +124,14 @@ public class ComboService {
     
     public Map<String, Object> filtrarCombos(String estado, String tipo, String tematica, String subtema, int page, int size) {
         try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
-        // Crear objeto Pageable para paginación
+        // Crear objeto Pageable para paginaci?n
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
         Page<Combo> paginaCombos;
 
-        // Aplicar filtros y paginación directamente en la consulta a la base de datos
+        // Aplicar filtros y paginaci?n directamente en la consulta a la base de datos
         if (estado != null && !estado.isEmpty() && tipo != null && !tipo.isEmpty() && tematica != null && !tematica.isEmpty()) {
-            // Filtrar por estado, tipo y temática
+            // Filtrar por estado, tipo y tem?tica
             EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);
             Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);
             paginaCombos = comboRepository.findByEstadoAndTipoAndTematica(estadoEnum, tipoEnum, tematica, pageable);
@@ -141,11 +141,11 @@ public class ComboService {
             Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);
             paginaCombos = comboRepository.findByEstadoAndTipo(estadoEnum, tipoEnum, pageable);
         } else if (estado != null && !estado.isEmpty() && tematica != null && !tematica.isEmpty()) {
-            // Filtrar por estado y temática
+            // Filtrar por estado y tem?tica
             EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);
             paginaCombos = comboRepository.findByEstadoAndTematica(estadoEnum, tematica, pageable);
         } else if (tipo != null && !tipo.isEmpty() && tematica != null && !tematica.isEmpty()) {
-            // Filtrar por tipo y temática
+            // Filtrar por tipo y tem?tica
             Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);
             paginaCombos = comboRepository.findByTipoAndTematica(tipoEnum, tematica, pageable);
         } else if (estado != null && !estado.isEmpty()) {
@@ -157,10 +157,10 @@ public class ComboService {
             Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);
             paginaCombos = comboRepository.findByTipo(tipoEnum, pageable);
         } else if (tematica != null && !tematica.isEmpty()) {
-            // Filtrar solo por temática
+            // Filtrar solo por tem?tica
             paginaCombos = comboRepository.findByTematica(tematica, pageable);
         } else {
-            // Si no hay filtros, usar la paginación existente
+            // Si no hay filtros, usar la paginaci?n existente
             return obtenerTodosPaginados(page, size);
         }
 
@@ -178,15 +178,15 @@ public class ComboService {
         response.put("totalItems", paginaCombos.getTotalElements());
         response.put("totalPages", paginaCombos.getTotalPages());
 
-        System.out.println("Filtrado de combos con paginación optimizada - Página: " + page + ", Tamaño: " + size +
+        System.out.println("Filtrado de combos con paginaci?n optimizada - P?gina: " + page + ", Tama?o: " + size +
                           ", Total: " + paginaCombos.getTotalElements() +
-                          ", Combos en esta página: " + dtos.size());
+                          ", Combos en esta p?gina: " + dtos.size());
 
         return response;
     }
     
     public Map<String, Object> filtrarCombosPorId(String idStr, int page, int size) {
-        // Crear objeto Pageable para paginación
+        // Crear objeto Pageable para paginaci?n
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
         try {
@@ -206,7 +206,7 @@ public class ComboService {
                 }
             }
         } catch (NumberFormatException e) {
-            // Si no es un número, buscar por coincidencia parcial
+            // Si no es un n?mero, buscar por coincidencia parcial
         }
         
         // Buscar por coincidencia parcial en el ID
@@ -273,7 +273,7 @@ public class ComboService {
             Combo combo = comboOpt.get();
             Pregunta pregunta = preguntaOpt.get();
             
-            // Verificar que la pregunta esté aprobada; si está verificada, promover a aprobada automáticamente
+            // Verificar que la pregunta est? aprobada; si est? verificada, promover a aprobada autom?ticamente
             if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {
                 if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {
                     entityManager.createNativeQuery("UPDATE preguntas SET estado = 'aprobada' WHERE id = ? AND estado = 'verificada'")
@@ -290,24 +290,24 @@ public class ComboService {
                 throw new RuntimeException("Solo se pueden agregar preguntas de nivel 5 a los combos");
             }
             
-            // Verificar que la pregunta esté disponible o liberada
+            // Verificar que la pregunta est? disponible o liberada
             // Tratar null como disponible para compatibilidad con datos antiguos
             if (pregunta.getEstadoDisponibilidad() != null &&
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
-                throw new RuntimeException("La pregunta no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
+                throw new RuntimeException("La pregunta no est? disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
             }
             
-            // Verificar que la pregunta no esté ya en este combo
+            // Verificar que la pregunta no est? ya en este combo
             PreguntaCombo.PreguntaComboId checkId = new PreguntaCombo.PreguntaComboId();
             checkId.setPreguntaId(preguntaId);
             checkId.setComboId(comboId);
             
             if (preguntaComboRepository.existsById(checkId)) {
-                throw new RuntimeException("La pregunta ya está agregada a este combo");
+                throw new RuntimeException("La pregunta ya est? agregada a este combo");
             }
             
-            // Crear la relación pregunta-combo
+            // Crear la relaci?n pregunta-combo
             PreguntaCombo pc = new PreguntaCombo();
             PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();
             id.setPreguntaId(preguntaId);
@@ -318,7 +318,7 @@ public class ComboService {
             pc.setCombo(combo);
             pc.setFactorMultiplicacion(factorMultiplicacion != null ? factorMultiplicacion.toString() : "1");
             
-            // Guardar la relación en la base de datos
+            // Guardar la relaci?n en la base de datos
             preguntaComboRepository.save(pc);
             
             // Marcar pregunta como usada
@@ -340,14 +340,14 @@ public class ComboService {
             Combo combo = comboOpt.get();
             Pregunta pregunta = preguntaOpt.get();
             
-            // Eliminar la relación directamente con consulta nativa
+            // Eliminar la relaci?n directamente con consulta nativa
             int relacionesEliminadas = entityManager.createNativeQuery(
                 "DELETE FROM combos_preguntas WHERE combo_id = ? AND pregunta_id = ?")
                 .setParameter(1, comboId)
                 .setParameter(2, preguntaId)
                 .executeUpdate();
             
-            // Liberar la pregunta solo si no está en otros combos
+            // Liberar la pregunta solo si no est? en otros combos
             long otrosCombos = entityManager.createQuery(
                 "SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId", Long.class)
                 .setParameter("preguntaId", preguntaId)
@@ -368,7 +368,7 @@ public class ComboService {
     @Transactional
     public boolean actualizarFactorPregunta(Long comboId, Long preguntaId, String factorMultiplicacion) {
         try {
-            // Validar que el factor no esté vacío
+            // Validar que el factor no est? vac?o
             if (factorMultiplicacion == null || factorMultiplicacion.trim().isEmpty()) {
                 factorMultiplicacion = "X"; // Valor por defecto
             }
@@ -385,12 +385,12 @@ public class ComboService {
                 return false;
             }
             
-            // Crear la clave primaria compuesta para buscar la relación
+            // Crear la clave primaria compuesta para buscar la relaci?n
             PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();
             id.setComboId(comboId);
             id.setPreguntaId(preguntaId);
             
-            // Buscar la relación
+            // Buscar la relaci?n
             Optional<PreguntaCombo> pcOpt = preguntaComboRepository.findById(id);
             if (pcOpt.isEmpty()) {
                 return false;
@@ -401,7 +401,7 @@ public class ComboService {
             // Actualizar el factor
             preguntaCombo.setFactorMultiplicacion(factorMultiplicacion);
             
-            // Guardar la relación actualizada
+            // Guardar la relaci?n actualizada
             preguntaComboRepository.save(preguntaCombo);
             
             // Forzar flush para asegurar que se guarde en la base de datos
@@ -423,12 +423,12 @@ public class ComboService {
 
         Combo combo = comboOpt.get();
 
-        // Verificar dependencias - no se puede eliminar si está adjudicado o grabado
+        // Verificar dependencias - no se puede eliminar si est? adjudicado o grabado
         if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {
-            throw new IllegalArgumentException("No se puede eliminar el combo porque está adjudicado a una jornada. Desasígnalo primero.");
+            throw new IllegalArgumentException("No se puede eliminar el combo porque est? adjudicado a una jornada. Desas?gnalo primero.");
         }
         if (combo.getEstado() == Combo.EstadoCombo.grabado) {
-            throw new IllegalArgumentException("No se puede eliminar el combo porque está grabado (asignado a concursantes). Desasígnalo primero.");
+            throw new IllegalArgumentException("No se puede eliminar el combo porque est? grabado (asignado a concursantes). Desas?gnalo primero.");
         }
 
         // Verificar si hay concursantes usando este combo
@@ -438,19 +438,19 @@ public class ComboService {
             .getSingleResult();
         
         if (concursantesCount > 0) {
-            throw new IllegalArgumentException("No se puede eliminar el combo porque está siendo usado por " + 
-                concursantesCount + " concursante(s). Desasígnalo primero.");
+            throw new IllegalArgumentException("No se puede eliminar el combo porque est? siendo usado por " + 
+                concursantesCount + " concursante(s). Desas?gnalo primero.");
         }
 
-        // Verificar si está en alguna jornada
+        // Verificar si est? en alguna jornada
         Long jornadasCount = entityManager.createQuery(
             "SELECT COUNT(j) FROM Jornada j JOIN j.combos c WHERE c.id = :comboId", Long.class)
             .setParameter("comboId", id)
             .getSingleResult();
             
         if (jornadasCount > 0) {
-            throw new IllegalArgumentException("No se puede eliminar el combo porque está asignado a " + 
-                jornadasCount + " jornada(s). Desasígnalo primero.");
+            throw new IllegalArgumentException("No se puede eliminar el combo porque est? asignado a " + 
+                jornadasCount + " jornada(s). Desas?gnalo primero.");
         }
 
         // Eliminar registros del historial que referencian este combo (si la tabla existe)
@@ -472,7 +472,7 @@ public class ComboService {
             System.err.println("Advertencia: No se pudieron eliminar algunos registros del historial para el combo " + id + ": " + e.getMessage());
         }
 
-        // Si llegamos aquí, es seguro eliminar - liberar las preguntas asociadas
+        // Si llegamos aqu?, es seguro eliminar - liberar las preguntas asociadas
         Set<PreguntaCombo> preguntas = combo.getPreguntas();
         for (PreguntaCombo pc : preguntas) {
             // Devolver a aprobada y marcar como liberada para poder reutilizar
@@ -550,13 +550,13 @@ public class ComboService {
             ((Map<String, Object>) pcdto).put("pregunta", mapPreguntaToDTO(p));
             ((Map<String, Object>) pcdto).put("factorMultiplicacion", pc.getFactorMultiplicacion());
             
-            // Determinar slot según factor - ahora con manejo más flexible para factores personalizados
+            // Determinar slot seg?n factor - ahora con manejo m?s flexible para factores personalizados
             String slot = null;
             String factor = pc.getFactorMultiplicacion();
             
-            // Asignación simplificada basada en la posición
+            // Asignaci?n simplificada basada en la posici?n
             if (factor != null) {
-                // Determinamos el slot según la posición en la lista
+                // Determinamos el slot seg?n la posici?n en la lista
                 int preguntaIndex = 0;
                 for (PreguntaCombo pcTemp : c.getPreguntas()) {
                     if (pcTemp.getPregunta().getId().equals(pc.getPregunta().getId())) {
@@ -565,7 +565,7 @@ public class ComboService {
                     preguntaIndex++;
                 }
                 
-                // Asignamos slot según su posición (cíclica entre PM1, PM2, PM3)
+                // Asignamos slot seg?n su posici?n (c?clica entre PM1, PM2, PM3)
                 int slotIndex = preguntaIndex % 3;
                 slot = "PM" + (slotIndex + 1);
             }
@@ -623,7 +623,7 @@ public class ComboService {
             if (mapPorSlot.containsKey(slot)) {
                 preguntasDTO.add(mapPorSlot.get(slot));
             } else {
-                // Slot vacío
+                // Slot vac?o
                 Object vacio = new java.util.HashMap<>();
                 ((Map<String, Object>) vacio).put("slot", slot);
                 ((Map<String, Object>) vacio).put("pregunta", null);
@@ -638,13 +638,13 @@ public class ComboService {
     /** Sincroniza estados adjudicado/aprobado con asignaciones de jornada (lote) */
     private void sincronizarEstadosAsignaciones() {
         // Combos adjudicados por estar en jornadas
-        // IMPORTANTE: no tocar los que ya están en 'aprobado' porque pueden estar marcados como reutilizados/liberados
+        // IMPORTANTE: no tocar los que ya est?n en 'aprobado' porque pueden estar marcados como reutilizados/liberados
         entityManager.createNativeQuery(
             "UPDATE combos SET estado='adjudicado' " +
             "WHERE id IN (SELECT combo_id FROM jornadas_combos) " +
             "AND estado NOT IN ('adjudicado','grabado','aprobado')")
             .executeUpdate();
-        // Combos sin jornada → aprobado (solo si estaban adjudicados)
+        // Combos sin jornada ? aprobado (solo si estaban adjudicados)
         entityManager.createNativeQuery(
             "UPDATE combos SET estado='aprobado' WHERE estado='adjudicado' AND id NOT IN (SELECT combo_id FROM jornadas_combos)")
             .executeUpdate();
@@ -663,7 +663,7 @@ public class ComboService {
     }
 
     /**
-     * Valida que un combo esté en el estado esperado para prevenir conflictos de concurrencia
+     * Valida que un combo est? en el estado esperado para prevenir conflictos de concurrencia
      */
     private void validarEstadoComboParaAsignacion(Long comboId, Combo.EstadoCombo estadoEsperado) {
         Optional<Combo> comboOpt = comboRepository.findById(comboId);
@@ -673,18 +673,18 @@ public class ComboService {
         
         Combo combo = comboOpt.get();
         if (combo.getEstado() != estadoEsperado) {
-            throw new IllegalStateException("El combo " + comboId + " no está en estado '" + estadoEsperado + 
+            throw new IllegalStateException("El combo " + comboId + " no est? en estado '" + estadoEsperado + 
                 "'. Estado actual: '" + combo.getEstado() + "'. Otro usuario pudo haberlo modificado.");
         }
     }
 
     /**
-     * Cambia el estado de un combo de forma atómica con validación de concurrencia
+     * Cambia el estado de un combo de forma at?mica con validaci?n de concurrencia
      */
     @Transactional
     public boolean cambiarEstadoAtomico(Long comboId, Combo.EstadoCombo estadoActualEsperado, 
                                        Combo.EstadoCombo nuevoEstado) {
-        // Usar query nativa para cambio atómico con verificación de estado
+        // Usar query nativa para cambio at?mico con verificaci?n de estado
         int filasActualizadas = entityManager.createNativeQuery(
             "UPDATE combos SET estado = ? WHERE id = ? AND estado = ?")
             .setParameter(1, nuevoEstado.name())
@@ -694,27 +694,55 @@ public class ComboService {
             
         if (filasActualizadas == 0) {
             throw new IllegalStateException("No se pudo cambiar el estado del combo " + comboId + 
-                " porque otro usuario lo modificó simultáneamente. Estado esperado: " + estadoActualEsperado);
+                " porque otro usuario lo modific? simult?neamente. Estado esperado: " + estadoActualEsperado);
         }
         
         return true;
     }
 
     /**
-     * Verifica y reserva múltiples preguntas nivel 5 atómicamente para combos
-     * @param preguntaIdsConFactores Map de ID de pregunta -> factor multiplicación
+     * Verifica y reserva m?ltiples preguntas nivel 5 at?micamente para combos
+     * @param preguntaIdsConFactores Map de ID de pregunta -> factor multiplicaci?n
      * @return true si todas las preguntas fueron reservadas exitosamente
-     * @throws IllegalArgumentException si alguna pregunta no está disponible
+     * @throws IllegalArgumentException si alguna pregunta no est? disponible
      */
     @Transactional
     public boolean verificarYReservarPreguntasComboAtomico(Map<Long, Integer> preguntaIdsConFactores) {
-        List<Long> preguntaIds = new java.util.ArrayList<>(preguntaIdsConFactores.keySet());
+        // Normalizar IDs: quitar nulos y duplicados para evitar falsos positivos de validaci?n
+        java.util.List<Long> preguntaIds = new java.util.ArrayList<>();
+        java.util.Set<Long> vistos = new java.util.LinkedHashSet<>();
+        for (Long id : preguntaIdsConFactores.keySet()) {
+            if (id == null) continue;
+            if (vistos.add(id)) {
+                preguntaIds.add(id);
+            }
+        }
         
-        // PASO 1: Verificar que todas las preguntas existen y están en estado correcto
+        if (preguntaIds.isEmpty()) {
+            return true;
+        }
+        
+        // PASO 1: Verificar que todas las preguntas existen y est?n en estado correcto
         List<Pregunta> preguntas = preguntaRepository.findAllById(preguntaIds);
         
         if (preguntas.size() != preguntaIds.size()) {
-            throw new IllegalArgumentException("Una o más preguntas no fueron encontradas");
+            // Construir lista expl?cita de IDs faltantes para facilitar el debug
+            java.util.Set<Long> encontrados = new java.util.HashSet<>();
+            for (Pregunta p : preguntas) {
+                if (p != null && p.getId() != null) {
+                    encontrados.add(p.getId());
+                }
+            }
+            java.util.List<Long> faltantes = new java.util.ArrayList<>();
+            for (Long id : preguntaIds) {
+                if (id != null && !encontrados.contains(id)) {
+                    faltantes.add(id);
+                }
+            }
+            String detalle = faltantes.isEmpty()
+                ? ""
+                : " (IDs faltantes: " + faltantes + ")";
+            throw new IllegalArgumentException("Una o m?s preguntas no fueron encontradas" + detalle);
         }
         
         // Verificar el estado de cada pregunta (promover 'verificada' -> 'aprobada' si aplica)
@@ -726,13 +754,13 @@ public class ComboService {
                         .executeUpdate();
                     pregunta.setEstado(Pregunta.EstadoPregunta.aprobada);
                 } else {
-                    throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está aprobada (estado: " + pregunta.getEstado() + ")");
+                    throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no est? aprobada (estado: " + pregunta.getEstado() + ")");
                 }
             }
             
             if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
-                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
+                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no est? disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
             }
             
             // Verificar que sea pregunta de nivel 5 para combos
@@ -741,7 +769,7 @@ public class ComboService {
             }
         }
         
-        // PASO 2: Reservar todas las preguntas ATÓMICAMENTE con una sola query
+        // PASO 2: Reservar todas las preguntas AT?MICAMENTE con una sola query
         String preguntaIdsStr = preguntaIds.stream()
             .map(String::valueOf)
             .reduce((a, b) -> a + "," + b)
@@ -766,13 +794,15 @@ public class ComboService {
     }
 
     /**
-     * Libera múltiples preguntas de combo atómicamente
+     * Libera m?ltiples preguntas de combo at?micamente
      */
     @Transactional
     public void liberarPreguntasComboAtomico(List<Long> preguntaIds) {
-        if (preguntaIds.isEmpty()) return;
+        if (preguntaIds == null || preguntaIds.isEmpty()) return;
         
         String preguntaIdsStr = preguntaIds.stream()
+            .filter(java.util.Objects::nonNull)
+            .distinct()
             .map(String::valueOf)
             .reduce((a, b) -> a + "," + b)
             .orElse("");
@@ -784,7 +814,7 @@ public class ComboService {
     }
 
     /**
-     * Crea un combo con múltiples preguntas de forma atómica
+     * Crea un combo con m?ltiples preguntas de forma at?mica
      */
     @Transactional
     public Combo crearComboDesdeDTO(CrearComboDTO dto, Usuario usuario) {
@@ -795,26 +825,26 @@ public class ComboService {
             if (factor == null || factor.trim().isEmpty()) {
                 factor = "1";
             }
-            // Extraer el número del factor (X2 -> 2, X3 -> 3, X -> 1)
+            // Extraer el n?mero del factor (X2 -> 2, X3 -> 3, X -> 1)
             String numeroFactor = factor.replaceAll("[^0-9]", "");
             if (numeroFactor.isEmpty()) {
-                numeroFactor = "1"; // Si no hay número, usar 1
+                numeroFactor = "1"; // Si no hay n?mero, usar 1
             }
             preguntaIdsConFactores.put(pm.getId(), Integer.valueOf(numeroFactor));
         }
         
-        // PASO 2: VERIFICACIÓN Y RESERVA ATÓMICA de todas las preguntas
+        // PASO 2: VERIFICACI?N Y RESERVA AT?MICA de todas las preguntas
         try {
             verificarYReservarPreguntasComboAtomico(preguntaIdsConFactores);
         } catch (IllegalStateException e) {
-            // Error de concurrencia - mensaje específico
+            // Error de concurrencia - mensaje espec?fico
             throw new IllegalArgumentException("Error de concurrencia al reservar preguntas: " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            // Error de validación - reenviar tal como está
+            // Error de validaci?n - reenviar tal como est?
             throw e;
         }
         
-        // PASO 3: Crear el combo (las preguntas ya están reservadas)
+        // PASO 3: Crear el combo (las preguntas ya est?n reservadas)
         Combo combo = new Combo();
         combo.setCreacionUsuario(usuario);
         combo.setEstado(EstadoCombo.borrador);
@@ -857,7 +887,7 @@ public class ComboService {
     }
 
     /**
-     * Obtiene las preguntas de un combo específico
+     * Obtiene las preguntas de un combo espec?fico
      */
     public List<Map<String, Object>> obtenerPreguntasCombo(Long comboId) {
         Combo combo = comboRepository.findById(comboId)

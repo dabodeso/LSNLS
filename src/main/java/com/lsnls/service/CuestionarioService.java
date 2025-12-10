@@ -555,12 +555,42 @@ public class CuestionarioService {
         if (preguntaIds == null || preguntaIds.isEmpty()) {
             return true; // No hay nada que reservar
         }
-        
+
+        // Normalizar IDs: quitar nulos y duplicados para evitar falsos positivos
+        java.util.List<Long> idsNormalizados = new java.util.ArrayList<>();
+        java.util.Set<Long> vistos = new java.util.LinkedHashSet<>();
+        for (Long id : preguntaIds) {
+            if (id == null) continue;
+            if (vistos.add(id)) {
+                idsNormalizados.add(id);
+            }
+        }
+
+        if (idsNormalizados.isEmpty()) {
+            return true;
+        }
+
         // PASO 1: Verificar que todas las preguntas existen y están en estado correcto
-        List<Pregunta> preguntas = preguntaRepository.findAllById(preguntaIds);
-        
-        if (preguntas.size() != preguntaIds.size()) {
-            throw new IllegalArgumentException("Una o más preguntas no fueron encontradas");
+        List<Pregunta> preguntas = preguntaRepository.findAllById(idsNormalizados);
+
+        if (preguntas.size() != idsNormalizados.size()) {
+            // Construir una lista explícita de IDs que faltan para facilitar el debug en el frontend
+            java.util.Set<Long> encontrados = new java.util.HashSet<>();
+            for (Pregunta p : preguntas) {
+                if (p != null && p.getId() != null) {
+                    encontrados.add(p.getId());
+                }
+            }
+            java.util.List<Long> faltantes = new java.util.ArrayList<>();
+            for (Long id : idsNormalizados) {
+                if (id != null && !encontrados.contains(id)) {
+                    faltantes.add(id);
+                }
+            }
+            String detalle = faltantes.isEmpty()
+                ? ""
+                : " (IDs faltantes: " + faltantes + ")";
+            throw new IllegalArgumentException("Una o más preguntas no fueron encontradas" + detalle);
         }
         
         // Verificar el estado de cada pregunta (promover 'verificada' -> 'aprobada' si aplica)
@@ -591,7 +621,7 @@ public class CuestionarioService {
         }
         
         // PASO 2: Reservar todas las preguntas ATÓMICAMENTE con una sola query
-        String preguntaIdsStr = preguntaIds.stream()
+        String preguntaIdsStr = idsNormalizados.stream()
             .map(String::valueOf)
             .reduce((a, b) -> a + "," + b)
             .orElse("");
@@ -604,9 +634,9 @@ public class CuestionarioService {
         ).executeUpdate();
         
         // PASO 3: Verificar que se reservaron TODAS las preguntas
-        if (preguntasReservadas != preguntaIds.size()) {
+        if (preguntasReservadas != idsNormalizados.size()) {
             // Rollback - alguna pregunta fue tomada por otro usuario
-            throw new IllegalStateException("Conflicto de concurrencia: " + (preguntaIds.size() - preguntasReservadas) + 
+            throw new IllegalStateException("Conflicto de concurrencia: " + (idsNormalizados.size() - preguntasReservadas) + 
                 " pregunta(s) fueron reservadas por otro usuario. Por favor, verifica la disponibilidad e intenta nuevamente.");
         }
         
@@ -618,7 +648,10 @@ public class CuestionarioService {
      */
     @Transactional
     public void liberarPreguntasAtomico(List<Long> preguntaIds) {
+        // Normalizar también aquí para evitar duplicados innecesarios
         String preguntaIdsStr = preguntaIds.stream()
+            .filter(java.util.Objects::nonNull)
+            .distinct()
             .map(String::valueOf)
             .reduce((a, b) -> a + "," + b)
             .orElse("");

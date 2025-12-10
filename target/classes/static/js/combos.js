@@ -1417,7 +1417,7 @@ async function guardarCombo() {
         console.log(`[DEBUG] PM${idx + 1}: ID=${id}, Factor=${factor}, FactorInput=${factorInput ? factorInput.value : 'null'}`);
         
         if (!id) valid = false;
-        else preguntasMultiplicadoras.push({ id: Number(id), factor: factor });
+        else preguntasMultiplicadoras.push({ id: Number(id), factor: factor, slot: pm.id });
     });
     
     console.log('[DEBUG] Preguntas multiplicadoras a enviar:', preguntasMultiplicadoras);
@@ -1459,6 +1459,120 @@ async function guardarCombo() {
         return;
     }
     
+    // Aviso 1: comprobar preguntas en estado VERIFICADA (se promocionarán a APROBADA)
+    try {
+        const detallesPreguntas = await Promise.all(
+            preguntasMultiplicadoras.map(async pm => {
+                try {
+                    const resp = await fetch(`/api/preguntas/${pm.id}`, {
+                        headers: authManager.getAuthHeaders()
+                    });
+                    if (!resp.ok) return null;
+                    return await resp.json();
+                } catch {
+                    return null;
+                }
+            })
+        );
+
+        const preguntasVerificadas = (detallesPreguntas || []).filter(p =>
+            p && typeof p.estado === 'string' &&
+            String(p.estado).toLowerCase() === 'verificada'
+        );
+
+        if (preguntasVerificadas.length > 0) {
+            const lista = preguntasVerificadas
+                .map(p => `- ${p.id}: ${p.pregunta || '(sin texto)'}`)
+                .join('\n');
+
+            const mensajeVerificadas =
+                'Atención: vas a crear/editar un combo que utiliza preguntas en estado VERIFICADA (no APROBADA todavía):\n\n' +
+                lista +
+                '\n\n' +
+                'Si continúas, estas preguntas se marcarán automáticamente como APROBADAS y quedarán reservadas para este combo.\n\n' +
+                '¿Quieres continuar y cambiar su estado a APROBADA?';
+
+            const continuarVerificadas = window.confirm(mensajeVerificadas);
+            if (!continuarVerificadas) {
+                return;
+            }
+        }
+
+        // Aviso 2: comprobar que las preguntas son de nivel 5 (para combos)
+        const detallesPorId = {};
+        (detallesPreguntas || []).forEach(p => {
+            if (p && p.id != null) detallesPorId[p.id] = p;
+        });
+
+        const desajustesNivel = [];
+        preguntasMultiplicadoras.forEach(pm => {
+            const detalle = detallesPorId[pm.id];
+            if (!detalle || !detalle.nivel) return;
+
+            const actualNivel = typeof detalle.nivel === 'string'
+                ? detalle.nivel
+                : (detalle.nivel.name || detalle.nivel);
+
+            if (!actualNivel || !String(actualNivel).startsWith('_5')) {
+                desajustesNivel.push({
+                    id: pm.id,
+                    slot: pm.slot,
+                    actualNivel,
+                    targetNivel: '_5' + (String(actualNivel || '').endsWith('NLS') ? 'NLS' : 'LS'),
+                    pregunta: detalle.pregunta || ''
+                });
+            }
+        });
+
+        if (desajustesNivel.length > 0) {
+            const listaNiveles = desajustesNivel
+                .map(m => `- Pregunta ${m.id}: "${m.pregunta}" (nivel actual: ${m.actualNivel || 'null'}, necesario: nivel 5 para combos)`)
+                .join('\n');
+
+            const mensajeNiveles =
+                'Atención: algunas preguntas que estás usando en el COMBO no son de nivel 5 (recomendado para combos):\n\n' +
+                listaNiveles +
+                '\n\n' +
+                'Si continúas, se cambiará automáticamente el NIVEL de esas preguntas a un nivel 5 (_5LS/_5NLS) compatible.\n\n' +
+                '¿Quieres continuar y cambiar el nivel de esas preguntas?';
+
+            const continuarNiveles = window.confirm(mensajeNiveles);
+            if (!continuarNiveles) {
+                return;
+            }
+
+            // Aplicar cambio de nivel en backend para cada pregunta con desajuste
+            for (const m of desajustesNivel) {
+                try {
+                    await fetch(`/api/preguntas/${m.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            ...authManager.getAuthHeaders(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: m.id,
+                            nivel: m.targetNivel
+                        })
+                    });
+                } catch (err) {
+                    console.error('Error al cambiar nivel de la pregunta para combo', m.id, err);
+                    Toastify({
+                        text: `No se pudo cambiar el nivel de la pregunta ${m.id}: ${err.message || err}`,
+                        duration: 4000,
+                        close: true,
+                        gravity: 'top',
+                        position: 'right',
+                        style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+                    }).showToast();
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('No se pudo comprobar estado/nivel de las preguntas antes de guardar el combo:', e);
+        // Seguimos igualmente: el backend seguirá validando
+    }
+
     const comboId = document.getElementById('combo-id').value;
     const tematica = document.getElementById('combo-tematica').value;
     const esEdicion = !!comboId;
@@ -1470,7 +1584,7 @@ async function guardarCombo() {
         if (esEdicion) {
             // PUT para editar (implementar si es necesario)
             resp = await fetch(`/api/combos/${comboId}`, {
-                method: 'PUT',
+            method: 'PUT',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
                 body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica, notasDireccion })
             });
