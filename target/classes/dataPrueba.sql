@@ -225,3 +225,129 @@ WHERE id IN (
     SELECT pregunta_id FROM combos_preguntas
 );
 
+-- ===========================================
+-- Bloque adicional: +50 preguntas, +5 cuestionarios, +5 combos y nueva jornada
+-- ===========================================
+
+-- 50 preguntas adicionales
+INSERT INTO preguntas (respuesta, tematica, pregunta, subtema, estado, nivel, fecha_creacion, version)
+VALUES
+('Respuesta extra 1',  'GEOGRAFÍA', 'Pregunta extra 1 sobre geografía',    'GEOGRAFÍA FÍSICA', 'aprobada', '_1LS',  NOW(6), 0),
+('Respuesta extra 2',  'HISTORIA',  'Pregunta extra 2 sobre historia',     'HISTORIA MODERNA', 'aprobada', '_2NLS', NOW(6), 0),
+('Respuesta extra 3',  'CIENCIA',   'Pregunta extra 3 sobre ciencia',      'FÍSICA CLÁSICA',   'aprobada', '_3LS',  NOW(6), 0),
+('Respuesta extra 4',  'ARTE',      'Pregunta extra 4 sobre arte',         'PINTURA',          'aprobada', '_4NLS', NOW(6), 0),
+('Respuesta extra 5',  'DEPORTES',  'Pregunta extra 5 sobre deportes',     'FÚTBOL',           'aprobada', '_5LS',  NOW(6), 0),
+('Respuesta extra 6',  'GEOGRAFÍA', 'Pregunta extra 6 sobre geografía',    'GEOGRAFÍA FÍSICA', 'aprobada', '_5NLS', NOW(6), 0),
+('Respuesta extra 7',  'HISTORIA',  'Pregunta extra 7 sobre historia',     'HISTORIA MODERNA', 'aprobada', '_0',    NOW(6), 0),
+('Respuesta extra 8',  'CIENCIA',   'Pregunta extra 8 sobre ciencia',      'FÍSICA CLÁSICA',   'aprobada', '_1LS',  NOW(6), 0),
+('Respuesta extra 9',  'ARTE',      'Pregunta extra 9 sobre arte',         'PINTURA',          'aprobada', '_2NLS', NOW(6), 0),
+('Respuesta extra 10', 'DEPORTES',  'Pregunta extra 10 sobre deportes',    'FÚTBOL',           'aprobada', '_3LS',  NOW(6), 0),
+('Respuesta extra 11', 'GEOGRAFÍA', 'Pregunta extra 11 sobre geografía',   'GEOGRAFÍA FÍSICA', 'aprobada', '_4NLS', NOW(6), 0),
+('Respuesta extra 12', 'HISTORIA',  'Pregunta extra 12 sobre historia',    'HISTORIA MODERNA', 'aprobada', '_5LS',  NOW(6), 0),
+('Respuesta extra 13', 'CIENCIA',   'Pregunta extra 13 sobre ciencia',     'FÍSICA CLÁSICA',   'aprobada', '_5NLS', NOW(6), 0),
+('Respuesta extra 14', 'ARTE',      'Pregunta extra 14 sobre arte',        'PINTURA',          'aprobada', '_0',    NOW(6), 0),
+('Respuesta extra 15', 'DEPORTES',  'Pregunta extra 15 sobre deportes',    'FÚTBOL',           'aprobada', '_1LS',  NOW(6), 0),
+('Respuesta extra 16', 'GEOGRAFÍA', 'Pregunta extra 16 sobre geografía',   'GEOGRAFÍA FÍSICA', 'aprobada', '_2NLS', NOW(6), 0),
+('Respuesta extra 17', 'HISTORIA',  'Pregunta extra 17 sobre historia',    'HISTORIA MODERNA', 'aprobada', '_3LS',  NOW(6), 0),
+('Respuesta extra 18', 'CIENCIA',   'Pregunta extra 18 sobre ciencia',     'FÍSICA CLÁSICA',   'aprobada', '_4NLS', NOW(6), 0),
+('Respuesta extra 19', 'ARTE',      'Pregunta extra 19 sobre arte',        'PINTURA',          'aprobada', '_5LS',  NOW(6), 0),
+('Respuesta extra 20', 'DEPORTES',  'Pregunta extra 20 sobre deportes',    'FÚTBOL',           'aprobada', '_5NLS', NOW(6), 0),
+('Respuesta extra 21', 'GEOGRAFÍA', 'Pregunta extra 21 sobre geografía',   'GEOGRAFÍA FÍSICA', 'aprobada', '_0',    NOW(6), 0),
+('Respuesta extra 22', 'HISTORIA',  'Pregunta extra 22 sobre historia',    'HISTORIA MODERNA', 'aprobada', '_1LS',  NOW(6), 0),
+('Respuesta extra 23', 'CIENCIA',   'Pregunta extra 23 sobre ciencia',     'FÍSICA CLÁSICA',   'aprobada', '_2NLS', NOW(6), 0),
+('Respuesta extra 24', 'ARTE',      'Pregunta extra 24 sobre arte',        'PINTURA',          'aprobada', '_3LS',  NOW(6), 0),
+('Respuesta extra 25', 'DEPORTES',  'Pregunta extra 25 sobre deportes',    'FÚTBOL',           'aprobada', '_4NLS', NOW(6), 0),
+('Respuesta extra 26', 'GEOGRAFÍA', 'Pregunta extra 26 sobre geografía',   'GEOGRAFÍA FÍSICA', 'aprobada', '_5LS',  NOW(6), 0),
+('Respuesta extra 27', 'HISTORIA',  'Pregunta extra 27 sobre historia',    'HISTORIA MODERNA', 'aprobada', '_5NLS', NOW(6), 0),
+('Respuesta extra 28', 'CIENCIA',   'Pregunta extra 28 sobre ciencia',     'FÍSICA CLÁSICA',   'aprobada', '_0',    NOW(6), 0),
+('Respuesta extra 29', 'ARTE',      'Pregunta extra 29 sobre arte',        'PINTURA',          'aprobada', '_1LS',  NOW(6), 0),
+('Respuesta extra 30', 'DEPORTES',  'Pregunta extra 30 sobre deportes',    'FÚTBOL',           'aprobada', '_2NLS', NOW(6), 0),
+('Respuesta extra 31', 'GEOGRAFÍA', 'Pregunta extra 31 sobre geografía',   'GEOGRAFÍA FÍSICA', 'aprobada', '_3LS',  NOW(6), 0),
+('Respuesta extra 32', 'HISTORIA',  'Pregunta extra 32 sobre historia',    'HISTORIA MODERNA', 'aprobada', '_4NLS', NOW(6), 0),
+('Respuesta extra 33', 'CIENCIA',   'Pregunta extra 33 sobre ciencia',     'FÍSICA CLÁSICA',   'aprobada', '_5LS',  NOW(6), 0),
+('Respuesta extra 34', 'ARTE',      'Pregunta extra 34 sobre arte',        'PINTURA',          'aprobada', '_5NLS', NOW(6), 0),
+('Respuesta extra 35', 'DEPORTES',  'Pregunta extra 35 sobre deportes',    'FÚTBOL',           'aprobada', '_0',    NOW(6), 0),
+('Respuesta extra 36', 'GEOGRAFÍA', 'Pregunta extra 36 sobre geografía',   'GEOGRAFÍA FÍSICA', 'aprobada', '_1LS',  NOW(6), 0),
+('Respuesta extra 37', 'HISTORIA',  'Pregunta extra 37 sobre historia',    'HISTORIA MODERNA', 'aprobada', '_2NLS', NOW(6), 0),
+('Respuesta extra 38', 'CIENCIA',   'Pregunta extra 38 sobre ciencia',     'FÍSICA CLÁSICA',   'aprobada', '_3LS',  NOW(6), 0),
+('Respuesta extra 39', 'ARTE',      'Pregunta extra 39 sobre arte',        'PINTURA',          'aprobada', '_4NLS', NOW(6), 0),
+('Respuesta extra 40', 'DEPORTES',  'Pregunta extra 40 sobre deportes',    'FÚTBOL',           'aprobada', '_5LS',  NOW(6), 0),
+('Respuesta extra 41', 'GEOGRAFÍA', 'Pregunta extra 41 sobre geografía',   'GEOGRAFÍA FÍSICA', 'aprobada', '_5NLS', NOW(6), 0),
+('Respuesta extra 42', 'HISTORIA',  'Pregunta extra 42 sobre historia',    'HISTORIA MODERNA', 'aprobada', '_0',    NOW(6), 0),
+('Respuesta extra 43', 'CIENCIA',   'Pregunta extra 43 sobre ciencia',     'FÍSICA CLÁSICA',   'aprobada', '_1LS',  NOW(6), 0),
+('Respuesta extra 44', 'ARTE',      'Pregunta extra 44 sobre arte',        'PINTURA',          'aprobada', '_2NLS', NOW(6), 0),
+('Respuesta extra 45', 'DEPORTES',  'Pregunta extra 45 sobre deportes',    'FÚTBOL',           'aprobada', '_3LS',  NOW(6), 0),
+('Respuesta extra 46', 'GEOGRAFÍA', 'Pregunta extra 46 sobre geografía',   'GEOGRAFÍA FÍSICA', 'aprobada', '_4NLS', NOW(6), 0),
+('Respuesta extra 47', 'HISTORIA',  'Pregunta extra 47 sobre historia',    'HISTORIA MODERNA', 'aprobada', '_5LS',  NOW(6), 0),
+('Respuesta extra 48', 'CIENCIA',   'Pregunta extra 48 sobre ciencia',     'FÍSICA CLÁSICA',   'aprobada', '_5NLS', NOW(6), 0),
+('Respuesta extra 49', 'ARTE',      'Pregunta extra 49 sobre arte',        'PINTURA',          'aprobada', '_0',    NOW(6), 0),
+('Respuesta extra 50', 'DEPORTES',  'Pregunta extra 50 sobre deportes',    'FÚTBOL',           'aprobada', '_1LS',  NOW(6), 0);
+
+-- 5 cuestionarios adicionales
+INSERT INTO cuestionarios (creacion_usuario_id, fecha_creacion, estado, nivel, tematica, notas_direccion, version)
+VALUES
+(1, NOW(6), 'borrador', 'NORMAL', 'GENERAL', 'Notas dirección Q7', 0),
+(1, NOW(6), 'borrador', 'NORMAL', 'GENERAL', 'Notas dirección Q8', 0),
+(1, NOW(6), 'borrador', 'NORMAL', 'GENERAL', 'Notas dirección Q9', 0),
+(1, NOW(6), 'borrador', 'NORMAL', 'GENERAL', 'Notas dirección Q10', 0),
+(1, NOW(6), 'borrador', 'NORMAL', 'GENERAL', 'Notas dirección Q11', 0);
+
+SET @q7_id  = (SELECT id FROM cuestionarios WHERE notas_direccion = 'Notas dirección Q7'  LIMIT 1);
+SET @q8_id  = (SELECT id FROM cuestionarios WHERE notas_direccion = 'Notas dirección Q8'  LIMIT 1);
+SET @q9_id  = (SELECT id FROM cuestionarios WHERE notas_direccion = 'Notas dirección Q9'  LIMIT 1);
+SET @q10_id = (SELECT id FROM cuestionarios WHERE notas_direccion = 'Notas dirección Q10' LIMIT 1);
+SET @q11_id = (SELECT id FROM cuestionarios WHERE notas_direccion = 'Notas dirección Q11' LIMIT 1);
+
+-- 5 combos adicionales
+INSERT INTO combos (creacion_usuario_id, fecha_creacion, estado, nivel, tipo, tematica, notas_direccion, version)
+VALUES
+(1, NOW(6), 'borrador', 'NORMAL', 'P', 'GENERAL', 'Notas dirección C7', 0),
+(1, NOW(6), 'borrador', '_5LS',   'A', 'GENERAL', 'Notas dirección C8', 0),
+(1, NOW(6), 'borrador', '_5NLS',  'D', 'GENERAL', 'Notas dirección C9', 0),
+(1, NOW(6), 'borrador', 'NORMAL', 'R', 'GENERAL', 'Notas dirección C10', 0),
+(1, NOW(6), 'borrador', '_5LS',   'P', 'GENERAL', 'Notas dirección C11', 0);
+
+SET @c7_id  = (SELECT id FROM combos WHERE notas_direccion = 'Notas dirección C7'  LIMIT 1);
+SET @c8_id  = (SELECT id FROM combos WHERE notas_direccion = 'Notas dirección C8'  LIMIT 1);
+SET @c9_id  = (SELECT id FROM combos WHERE notas_direccion = 'Notas dirección C9'  LIMIT 1);
+SET @c10_id = (SELECT id FROM combos WHERE notas_direccion = 'Notas dirección C10' LIMIT 1);
+SET @c11_id = (SELECT id FROM combos WHERE notas_direccion = 'Notas dirección C11' LIMIT 1);
+
+-- Nueva jornada
+INSERT INTO jornadas (nombre, fecha_jornada, lugar, estado, creacion_usuario_id, fecha_creacion, notas, version)
+VALUES ('Jornada Prueba 2', DATE_ADD(CURDATE(), INTERVAL 1 DAY), 'VALENCIA', 'preparacion', 1, NOW(6), 'Segunda jornada de prueba', 0);
+
+SET @jid2 = (SELECT id FROM jornadas WHERE nombre = 'Jornada Prueba 2' LIMIT 1);
+
+-- Asignar preguntas a los nuevos cuestionarios (reutilizamos las ya seleccionadas por nivel)
+INSERT INTO cuestionarios_preguntas (cuestionario_id, pregunta_id, factor_multiplicacion) VALUES
+(@q7_id,  @p1ls_1, 1), (@q7_id,  @p2nls_1, 1), (@q7_id,  @p3ls_1, 1), (@q7_id,  @p4nls_1, 1),
+(@q8_id,  @p1ls_2, 1), (@q8_id,  @p2nls_2, 1), (@q8_id,  @p3ls_2, 1), (@q8_id,  @p4nls_2, 1),
+(@q9_id,  @p1ls_3, 1), (@q9_id,  @p2nls_3, 1), (@q9_id,  @p3ls_3, 1), (@q9_id,  @p4nls_3, 1),
+(@q10_id, @p1ls_1, 1), (@q10_id, @p2nls_2, 1), (@q10_id, @p3ls_3, 1), (@q10_id, @p4nls_1, 1),
+(@q11_id, @p1ls_2, 1), (@q11_id, @p2nls_3, 1), (@q11_id, @p3ls_1, 1), (@q11_id, @p4nls_2, 1);
+
+-- Asignar preguntas de nivel 5 a los nuevos combos (reutilizamos las ya seleccionadas)
+INSERT INTO combos_preguntas (combo_id, pregunta_id, factor_multiplicacion) VALUES
+(@c7_id,  @p5ls_1,  'X2'), (@c7_id,  @p5nls_1, 'X3'), (@c7_id,  @p5ls_2, 'X'),
+(@c8_id,  @p5ls_2,  'X2'), (@c8_id,  @p5nls_2, 'X3'), (@c8_id,  @p5ls_3, 'X'),
+(@c9_id,  @p5ls_3,  'X2'), (@c9_id,  @p5nls_3, 'X3'), (@c9_id,  @p5ls_1, 'X'),
+(@c10_id, @p5ls_1,  'X2'), (@c10_id, @p5nls_2, 'X3'), (@c10_id, @p5ls_3, 'X'),
+(@c11_id, @p5ls_2,  'X2'), (@c11_id, @p5nls_3, 'X3'), (@c11_id, @p5ls_1, 'X');
+
+-- Asignar nuevos cuestionarios y combos a la nueva jornada
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) VALUES
+(@jid2, @q7_id), (@jid2, @q8_id), (@jid2, @q9_id), (@jid2, @q10_id), (@jid2, @q11_id);
+
+INSERT INTO jornadas_combos (jornada_id, combo_id) VALUES
+(@jid2, @c7_id), (@jid2, @c8_id), (@jid2, @c9_id), (@jid2, @c10_id), (@jid2, @c11_id);
+
+-- Asegurar de nuevo que todas las preguntas usadas en cuestionarios o combos estén en estado 'usada'
+UPDATE preguntas
+SET estado = 'usada', estado_disponibilidad = 'usada'
+WHERE id IN (
+    SELECT pregunta_id FROM cuestionarios_preguntas
+    UNION
+    SELECT pregunta_id FROM combos_preguntas
+);
+
