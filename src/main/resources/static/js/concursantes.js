@@ -513,7 +513,27 @@ if (configuracionColumnas.columnasVisibles['combo']) {
 
 // XUSÓKER
 if (configuracionColumnas.columnasVisibles['xusoker']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'xusoker', this)">${concursante.xusoker || ''}</td>`);
+    const opcionesXusoker = [
+        '',
+        'NO USÓ',
+        'CONTINÚE',
+        'AL VERRÉS',
+        'RECICLA',
+        'LLAMADA'
+    ];
+    const valorActualXusoker = concursante.xusoker || '';
+    const htmlOpcionesXusoker = opcionesXusoker.map(v => {
+        const selected = v === valorActualXusoker ? ' selected' : '';
+        const label = v === '' ? '' : v;
+        return `<option value="${v}"${selected}>${label}</option>`;
+    }).join('');
+    celdas.push(
+        `<td>
+            <select class="form-select form-select-sm xusoker-select" data-id="${concursante.id}">
+                ${htmlOpcionesXusoker}
+            </select>
+        </td>`
+    );
 }
 
 // X
@@ -1097,6 +1117,46 @@ $(document).on('change', '.estado-select', async function() {
             mostrarError('No tienes permisos para cambiar el estado de este concursante.');
         } else {
             mostrarError('Error al cambiar el estado del concursante: ' + msg);
+        }
+    }
+});
+
+// Manejar cambio de XUSÓKER desde el select en la tabla
+$(document).on('change', '.xusoker-select', async function() {
+    const id = $(this).data('id');
+    const nuevoValor = $(this).val() || null;
+    const select = this;
+    try {
+        const snapshot = await apiManager.get(`/api/concursantes/${id}`);
+        const valorPrevio = snapshot && snapshot.xusoker ? snapshot.xusoker : null;
+
+        const doAction = async () => {
+            await apiManager.patch(`/api/concursantes/${id}/campo`, { xusoker: nuevoValor });
+            await cargarConcursantes(true);
+        };
+        const undoAction = async () => {
+            await apiManager.patch(`/api/concursantes/${id}/campo`, { xusoker: valorPrevio });
+            await cargarConcursantes(true);
+        };
+
+        await doAction();
+        if (window.UndoManager) {
+            window.UndoManager.record({
+                do: doAction,
+                undo: undoAction,
+                label: `Cambiar XUSÓKER concursante ${id}`
+            });
+        }
+    } catch (e) {
+        console.error('Error al cambiar XUSÓKER del concursante:', e);
+        if (typeof valorPrevio !== 'undefined' && select) {
+            select.value = valorPrevio || '';
+        }
+        const msg = (e && e.message) ? e.message : '';
+        if (msg.startsWith('403')) {
+            mostrarError('No tienes permisos para cambiar el XUSÓKER de este concursante.');
+        } else {
+            mostrarError('Error al cambiar el XUSÓKER del concursante: ' + msg);
         }
     }
 });
@@ -2795,6 +2855,7 @@ const mapeoEncabezados = {
 'rr-ss': 'RR SS',
 'cuest': 'CUEST',
 'combo': 'COMBO',
+'xusoker': 'XUSÓKER',
 'x': 'X',
 'resultado': 'RESULTADO',
 'notas-grabacion': 'NOTAS GRABACIÓN',
