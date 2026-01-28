@@ -29,6 +29,8 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.data.jpa.domain.Specification;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 @Service
 public class ConcursanteService {
@@ -44,6 +46,9 @@ public class ConcursanteService {
 
     @Autowired
     private JornadaRepository jornadaRepository;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     private CuestionarioService cuestionarioService;
@@ -151,19 +156,73 @@ public class ConcursanteService {
             concursante.setNumeroConcursante(siguienteNumero);
         }
         
-        // Si se asignó un cuestionario, cambiar su estado a grabado
+        // Si se asignó un cuestionario, verificar si ya está asignado a otro concursante y desasignarlo
         if (concursante.getCuestionario() != null) {
             Cuestionario cuestionario = concursante.getCuestionario();
-            if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
+            
+            // Verificar si el cuestionario ya está asignado a otro concursante
+            @SuppressWarnings("unchecked")
+            List<Concursante> concursantesConMismoCuestionario = entityManager.createQuery(
+                "SELECT c FROM Concursante c WHERE c.cuestionario.id = :cuestionarioId"
+            )
+            .setParameter("cuestionarioId", cuestionario.getId())
+            .getResultList();
+            
+            // Si está asignado a otro concursante, lanzar error
+            if (!concursantesConMismoCuestionario.isEmpty()) {
+                Concursante otroConcursante = concursantesConMismoCuestionario.get(0);
+                throw new RuntimeException("El cuestionario " + cuestionario.getId() + 
+                    " ya está asignado al concursante " + otroConcursante.getNumeroConcursante() + 
+                    " (" + otroConcursante.getNombre() + "). Debe desasignarlo primero antes de asignarlo a otro concursante.");
+            }
+            
+            // Validar que el cuestionario esté en estado válido para asignación
+            // Permitir aprobado, adjudicado y grabado (grabado puede estar siendo reasignado)
+            if (cuestionario.getEstado() != Cuestionario.EstadoCuestionario.aprobado && 
+                cuestionario.getEstado() != Cuestionario.EstadoCuestionario.adjudicado &&
+                cuestionario.getEstado() != Cuestionario.EstadoCuestionario.grabado) {
+                throw new RuntimeException("Solo se pueden asignar cuestionarios en estado 'aprobado', 'adjudicado' o 'grabado'. El cuestionario " + 
+                                         cuestionario.getId() + " está en estado: " + cuestionario.getEstado());
+            }
+            
+            // Cambiar estado a 'grabado' cuando se asigna a un concursante (solo si no está ya en grabado)
+            if (cuestionario.getEstado() != Cuestionario.EstadoCuestionario.grabado) {
                 cuestionario.setEstado(Cuestionario.EstadoCuestionario.grabado);
                 cuestionarioRepository.save(cuestionario);
             }
         }
         
-        // Si se asignó un combo, cambiar su estado a grabado
+        // Si se asignó un combo, verificar si ya está asignado a otro concursante y desasignarlo
         if (concursante.getCombo() != null) {
             Combo combo = concursante.getCombo();
-            if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {
+            
+            // Verificar si el combo ya está asignado a otro concursante
+            @SuppressWarnings("unchecked")
+            List<Concursante> concursantesConMismoCombo = entityManager.createQuery(
+                "SELECT c FROM Concursante c WHERE c.combo.id = :comboId"
+            )
+            .setParameter("comboId", combo.getId())
+            .getResultList();
+            
+            // Si está asignado a otro concursante, lanzar error
+            if (!concursantesConMismoCombo.isEmpty()) {
+                Concursante otroConcursante = concursantesConMismoCombo.get(0);
+                throw new RuntimeException("El combo " + combo.getId() + 
+                    " ya está asignado al concursante " + otroConcursante.getNumeroConcursante() + 
+                    " (" + otroConcursante.getNombre() + "). Debe desasignarlo primero antes de asignarlo a otro concursante.");
+            }
+            
+            // Validar que el combo esté en estado válido para asignación
+            // Permitir aprobado, adjudicado y grabado (grabado puede estar siendo reasignado)
+            if (combo.getEstado() != Combo.EstadoCombo.aprobado && 
+                combo.getEstado() != Combo.EstadoCombo.adjudicado &&
+                combo.getEstado() != Combo.EstadoCombo.grabado) {
+                throw new RuntimeException("Solo se pueden asignar combos en estado 'aprobado', 'adjudicado' o 'grabado'. El combo " + 
+                                         combo.getId() + " está en estado: " + combo.getEstado());
+            }
+            
+            // Cambiar estado a 'grabado' cuando se asigna a un concursante (solo si no está ya en grabado)
+            if (combo.getEstado() != Combo.EstadoCombo.grabado) {
                 combo.setEstado(Combo.EstadoCombo.grabado);
                 comboRepository.save(combo);
             }
@@ -222,22 +281,43 @@ public class ConcursanteService {
             
             // Solo cambiar estado si es un cuestionario diferente al anterior
             if (cuestionarioAnterior == null || !cuestionarioAnterior.getId().equals(cuestionarioNuevo.getId())) {
-                // Si había un cuestionario anterior, restaurar su estado a 'creado'
+                // Si había un cuestionario anterior, restaurar su estado a 'aprobado'
                 if (cuestionarioAnterior != null && cuestionarioAnterior.getEstado() == Cuestionario.EstadoCuestionario.grabado) {
                     cuestionarioAnterior.setEstado(Cuestionario.EstadoCuestionario.aprobado);
                     cuestionarioRepository.save(cuestionarioAnterior);
                 }
                 
+                // Verificar si el cuestionario ya está asignado a otro concursante
+                @SuppressWarnings("unchecked")
+                List<Concursante> concursantesConMismoCuestionario = entityManager.createQuery(
+                    "SELECT c FROM Concursante c WHERE c.cuestionario.id = :cuestionarioId AND c.id != :concursanteId"
+                )
+                .setParameter("cuestionarioId", cuestionarioNuevo.getId())
+                .setParameter("concursanteId", id)
+                .getResultList();
+                
+                // Si está asignado a otro concursante, lanzar error
+                if (!concursantesConMismoCuestionario.isEmpty()) {
+                    Concursante otroConcursante = concursantesConMismoCuestionario.get(0);
+                    throw new RuntimeException("El cuestionario " + cuestionarioNuevo.getId() + 
+                        " ya está asignado al concursante " + otroConcursante.getNumeroConcursante() + 
+                        " (" + otroConcursante.getNombre() + "). Debe desasignarlo primero antes de asignarlo a otro concursante.");
+                }
+                
                 // Validar que el cuestionario esté en estado válido para asignación
+                // Permitir aprobado, adjudicado y grabado (grabado puede estar siendo reasignado)
                 if (cuestionarioNuevo.getEstado() != Cuestionario.EstadoCuestionario.aprobado && 
-                    cuestionarioNuevo.getEstado() != Cuestionario.EstadoCuestionario.adjudicado) {
-                    throw new RuntimeException("Solo se pueden asignar cuestionarios en estado 'aprobado' o 'adjudicado'. El cuestionario " + 
+                    cuestionarioNuevo.getEstado() != Cuestionario.EstadoCuestionario.adjudicado &&
+                    cuestionarioNuevo.getEstado() != Cuestionario.EstadoCuestionario.grabado) {
+                    throw new RuntimeException("Solo se pueden asignar cuestionarios en estado 'aprobado', 'adjudicado' o 'grabado'. El cuestionario " + 
                                              cuestionarioNuevo.getId() + " está en estado: " + cuestionarioNuevo.getEstado());
                 }
                 
-                // Cambiar estado a 'grabado' cuando se asigna a un concursante
-                cuestionarioNuevo.setEstado(Cuestionario.EstadoCuestionario.grabado);
-                cuestionarioRepository.save(cuestionarioNuevo);
+                // Cambiar estado a 'grabado' cuando se asigna a un concursante (solo si no está ya en grabado)
+                if (cuestionarioNuevo.getEstado() != Cuestionario.EstadoCuestionario.grabado) {
+                    cuestionarioNuevo.setEstado(Cuestionario.EstadoCuestionario.grabado);
+                    cuestionarioRepository.save(cuestionarioNuevo);
+                }
             }
             
             concursante.setCuestionario(cuestionarioNuevo);
@@ -257,22 +337,43 @@ public class ConcursanteService {
             
             // Solo cambiar estado si es un combo diferente al anterior
             if (comboAnterior == null || !comboAnterior.getId().equals(comboNuevo.getId())) {
-                // Si había un combo anterior, restaurar su estado a 'creado'
+                // Si había un combo anterior, restaurar su estado a 'aprobado'
                 if (comboAnterior != null && comboAnterior.getEstado() == Combo.EstadoCombo.grabado) {
                     comboAnterior.setEstado(Combo.EstadoCombo.aprobado);
                     comboRepository.save(comboAnterior);
                 }
                 
+                // Verificar si el combo ya está asignado a otro concursante
+                @SuppressWarnings("unchecked")
+                List<Concursante> concursantesConMismoCombo = entityManager.createQuery(
+                    "SELECT c FROM Concursante c WHERE c.combo.id = :comboId AND c.id != :concursanteId"
+                )
+                .setParameter("comboId", comboNuevo.getId())
+                .setParameter("concursanteId", id)
+                .getResultList();
+                
+                // Si está asignado a otro concursante, lanzar error
+                if (!concursantesConMismoCombo.isEmpty()) {
+                    Concursante otroConcursante = concursantesConMismoCombo.get(0);
+                    throw new RuntimeException("El combo " + comboNuevo.getId() + 
+                        " ya está asignado al concursante " + otroConcursante.getNumeroConcursante() + 
+                        " (" + otroConcursante.getNombre() + "). Debe desasignarlo primero antes de asignarlo a otro concursante.");
+                }
+                
                 // Validar que el combo esté en estado válido para asignación
+                // Permitir aprobado, adjudicado y grabado (grabado puede estar siendo reasignado)
                 if (comboNuevo.getEstado() != Combo.EstadoCombo.aprobado && 
-                    comboNuevo.getEstado() != Combo.EstadoCombo.adjudicado) {
-                    throw new RuntimeException("Solo se pueden asignar combos en estado 'aprobado' o 'adjudicado'. El combo " + 
+                    comboNuevo.getEstado() != Combo.EstadoCombo.adjudicado &&
+                    comboNuevo.getEstado() != Combo.EstadoCombo.grabado) {
+                    throw new RuntimeException("Solo se pueden asignar combos en estado 'aprobado', 'adjudicado' o 'grabado'. El combo " + 
                                              comboNuevo.getId() + " está en estado: " + comboNuevo.getEstado());
                 }
                 
-                // Cambiar estado a 'grabado' cuando se asigna a un concursante
-                comboNuevo.setEstado(Combo.EstadoCombo.grabado);
-                comboRepository.save(comboNuevo);
+                // Cambiar estado a 'grabado' cuando se asigna a un concursante (solo si no está ya en grabado)
+                if (comboNuevo.getEstado() != Combo.EstadoCombo.grabado) {
+                    comboNuevo.setEstado(Combo.EstadoCombo.grabado);
+                    comboRepository.save(comboNuevo);
+                }
             }
             
             concursante.setCombo(comboNuevo);
@@ -382,6 +483,10 @@ public class ConcursanteService {
         Jornada jornada = jornadaRepository.findById(jornadaId)
                 .orElseThrow(() -> new RuntimeException("Jornada no encontrada"));
         
+        // Validar que la jornada esté en un estado válido para asignación
+        // Permitir jornadas en cualquier estado (preparacion, lista, en_grabacion, completada, archivada)
+        // No hay restricción de estado para jornadas
+        
         // Si ya tenía una jornada asignada, desasignar primero
         if (concursante.getJornada() != null) {
             desasignarDeJornada(concursanteId);
@@ -423,6 +528,11 @@ public class ConcursanteService {
                         concursante.setResultado(null);
                     }
                     break;
+                case "estado":
+                    if (value != null) {
+                        concursante.setEstado(value.toString());
+                    }
+                    break;
                 case "premio":
                     concursante.setPremio(value != null ? new BigDecimal(value.toString()) : null);
                     break;
@@ -441,6 +551,9 @@ public class ConcursanteService {
                 case "creditosEspeciales":
                     concursante.setCreditosEspeciales((String) value);
                     break;
+                case "xusoker":
+                    concursante.setXusoker((String) value);
+                    break;
             }
         }
         
@@ -458,6 +571,29 @@ public class ConcursanteService {
         
         if (concursante.getCombo() != null) {
             dto.setComboId(concursante.getCombo().getId());
+            
+            // Verificar si el combo ha sido reciclado para esta jornada
+            if (concursante.getJornada() != null && concursante.getJornada().getId() != null) {
+                try {
+                    Long count = entityManager.createNativeQuery(
+                        "SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND combo_id = :cid AND estado_asignacion = 'reaprovechado'")
+                        .setParameter("jid", concursante.getJornada().getId())
+                        .setParameter("cid", concursante.getCombo().getId())
+                        .getSingleResult() instanceof Number ? ((Number) entityManager.createNativeQuery(
+                            "SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND combo_id = :cid AND estado_asignacion = 'reaprovechado'")
+                            .setParameter("jid", concursante.getJornada().getId())
+                            .setParameter("cid", concursante.getCombo().getId())
+                            .getSingleResult()).longValue() : 0L;
+                    dto.setComboReciclado(count != null && count > 0);
+                } catch (Exception e) {
+                    // Si hay error, asumir que no está reciclado
+                    dto.setComboReciclado(false);
+                }
+            } else {
+                dto.setComboReciclado(false);
+            }
+        } else {
+            dto.setComboReciclado(false);
         }
         
         if (concursante.getJornada() != null) {

@@ -484,6 +484,65 @@ const PreguntasManager = {
         this.mostrarPreguntas();
     },
 
+    // Función para recargar manteniendo los filtros activos
+    async recargarConFiltros() {
+        try {
+            console.log('🔄 [RECARGAR] Recargando con filtros activos:', this.filtros);
+            
+            // Verificar si hay filtros activos
+            const hayFiltrosActivos = !!(this.filtros?.estado || this.filtros?.autoria || this.filtros?.nivel || 
+                                         this.filtros?.tematica || this.filtros?.subtema || this.filtros?.texto);
+            
+            if (hayFiltrosActivos) {
+                console.log('🔍 [RECARGAR] Hay filtros activos, aplicando filtros...');
+                // Si hay filtros activos, llamar a filtrarPreguntas que usa los filtros guardados
+                await this.filtrarPreguntas();
+            } else {
+                console.log('🔄 [RECARGAR] No hay filtros activos, cargando todas las preguntas...');
+                // Si no hay filtros, cargar normalmente
+                await this.cargarPreguntas(true);
+            }
+        } catch (error) {
+            console.error('❌ [RECARGAR] Error al recargar con filtros:', error);
+            // En caso de error, recargar normalmente
+            await this.cargarPreguntas(true);
+        }
+    },
+
+    // Función para cargar los usuarios en el filtro de autoría
+    async cargarUsuariosEnFiltro() {
+        try {
+            const response = await fetch('/api/usuarios', {
+                headers: authManager.getAuthHeaders()
+            });
+            
+            if (!response.ok) {
+                console.error('Error al cargar usuarios para filtro de autoría');
+                return;
+            }
+            
+            const usuarios = await response.json();
+            const selectAutoria = document.getElementById('filtro-autoria');
+            
+            if (!selectAutoria) return;
+            
+            // Limpiar opciones existentes excepto "Todos"
+            selectAutoria.innerHTML = '<option value="">Todos</option>';
+            
+            // Agregar cada usuario como opción
+            usuarios.forEach(usuario => {
+                const option = document.createElement('option');
+                option.value = usuario.nombre;
+                option.textContent = usuario.nombre;
+                selectAutoria.appendChild(option);
+            });
+            
+            console.log('✅ [FILTRO] Cargados', usuarios.length, 'usuarios en filtro de autoría');
+        } catch (error) {
+            console.error('❌ [FILTRO] Error al cargar usuarios:', error);
+        }
+    },
+
     async crearPregunta(event) {
         event.preventDefault();
         const formData = new FormData(event.target);
@@ -584,7 +643,7 @@ const PreguntasManager = {
                                 headers: authManager.getAuthHeaders()
                             });
                             if (!del.ok) throw new Error('No se pudo deshacer la creación');
-                            await this.cargarPreguntas();
+                            await this.recargarConFiltros();
                         };
                         const redoAction = async () => {
                             const r = await fetch('/api/preguntas', {
@@ -596,7 +655,7 @@ const PreguntasManager = {
                                 body: JSON.stringify(preguntaData)
                             });
                             if (!r.ok) throw new Error('No se pudo rehacer la creación');
-                            await this.cargarPreguntas();
+                            await this.recargarConFiltros();
                         };
                         window.UndoManager.record({ do: redoAction, undo: undoAction, label: `Crear pregunta ${createdId}` });
                     }
@@ -607,8 +666,8 @@ const PreguntasManager = {
             
             console.log('📥 [GUARDAR] Respuesta del servidor:', response.status, response.statusText);
             
-            // Recargar las preguntas para reflejar los cambios
-            await this.cargarPreguntas();
+            // Recargar las preguntas manteniendo filtros activos
+            await this.recargarConFiltros();
             $('#modal-pregunta').modal('hide');
             
             Toastify({
@@ -1096,7 +1155,7 @@ const PreguntasManager = {
                         const hacer = async () => {
                             const r = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`, { method: 'PUT', headers: authManager.getAuthHeaders() });
                             if (r.ok) {
-                                await this.cargarPreguntas();
+                                await this.recargarConFiltros();
                             } else {
                                 throw new Error('No se pudo rehacer el cambio de estado');
                             }
@@ -1104,7 +1163,7 @@ const PreguntasManager = {
                         const deshacer = async () => {
                             const r = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${estadoAnterior}`, { method: 'PUT', headers: authManager.getAuthHeaders() });
                             if (r.ok) {
-                                await this.cargarPreguntas();
+                                await this.recargarConFiltros();
                             } else {
                                 throw new Error('No se pudo deshacer el cambio de estado');
                             }
@@ -1112,8 +1171,8 @@ const PreguntasManager = {
                         window.UndoManager.record({ do: hacer, undo: deshacer, label: `Estado ${estadoAnterior}→${nuevoValor}` });
                     }
                     
-                    // Recargar la tabla completa para asegurar consistencia
-                    await this.cargarPreguntas();
+                    // Recargar la tabla manteniendo filtros activos
+                    await this.recargarConFiltros();
                     return;
                 }
             } else {
@@ -1143,7 +1202,7 @@ const PreguntasManager = {
                         body: JSON.stringify({ [campo]: nuevoValor })
                     });
                     if (!r.ok) throw new Error('No se pudo rehacer el cambio');
-                    await this.cargarPreguntas();
+                    await this.recargarConFiltros();
                 };
                 const undoAction = async () => {
                     const r = await fetch(`/api/preguntas/${id}`, {
@@ -1152,14 +1211,14 @@ const PreguntasManager = {
                         body: JSON.stringify({ [campo]: valorOriginal })
                     });
                     if (!r.ok) throw new Error('No se pudo deshacer el cambio');
-                    await this.cargarPreguntas();
+                    await this.recargarConFiltros();
                 };
                 window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar pregunta ${id} - ${campo}` });
             }
             
             console.log('✅ [FRONTEND] Campo actualizado, recargando tabla...');
-            // CAMBIO: Usar cargarPreguntas() en lugar de aplicarFiltros() para forzar recarga completa
-            await this.cargarPreguntas();
+            // CAMBIO: Usar recargarConFiltros() en lugar de cargarPreguntas() para mantener filtros
+            await this.recargarConFiltros();
             
         } catch (e) {
             console.error('❌ [FRONTEND] Error:', e.message);
@@ -1212,6 +1271,9 @@ const PreguntasManager = {
             const selectTematica = document.getElementById('tematica-pregunta');
             if (selectTematica) {
                 console.log('🎯 [EDITAR] Llenando select de temática...');
+                console.log('🎯 [EDITAR] Temática de la pregunta:', pregunta.tematica);
+                
+                // Limpiar select
                 selectTematica.innerHTML = '';
                 
                 // Añadir opción vacía por defecto
@@ -1225,19 +1287,15 @@ const PreguntasManager = {
                     const opt = document.createElement('option');
                     opt.value = t;
                     opt.textContent = t;
+                    // Preseleccionar si coincide con la temática de la pregunta
+                    if (pregunta.tematica && t === pregunta.tematica) {
+                        opt.selected = true;
+                        console.log('✅ [EDITAR] Opción preseleccionada:', t);
+                    }
                     selectTematica.appendChild(opt);
                 });
                 
-                console.log('📝 [EDITAR] Opciones creadas. Intentando seleccionar:', pregunta.tematica);
-                
-                // DESPUÉS de añadir todas las opciones, seleccionar la correcta
-                if (pregunta.tematica) {
-                    selectTematica.value = pregunta.tematica;
-                    console.log('✅ [EDITAR] Valor asignado. Select.value ahora es:', selectTematica.value);
-                    console.log('🔍 [EDITAR] ¿Coincide?', selectTematica.value === pregunta.tematica);
-                } else {
-                    console.log('⚠️ [EDITAR] pregunta.tematica está vacía o es null');
-                }
+                console.log('📝 [EDITAR] Opciones creadas. Valor final del select:', selectTematica.value);
             } else {
                 console.error('❌ [EDITAR] No se encontró el elemento tematica-pregunta');
             }
@@ -1383,13 +1441,13 @@ const PreguntasManager = {
                         const creada = await r.json();
                         recreatedId = creada?.id || recreatedId;
                     } catch {}
-                    await this.cargarPreguntas();
+                    await this.recargarConFiltros();
                 };
                 const doAction = async () => {
                     if (!recreatedId) {
                         // Si no hay id recreado aún, intentar localizar por contenido mínimo (pregunta+respuesta)
                         try {
-                            await this.cargarPreguntas();
+                            await this.recargarConFiltros();
                             const match = (this.preguntas || []).find(p => p.pregunta === snapshot.pregunta && p.respuesta === snapshot.respuesta);
                             if (match) recreatedId = match.id;
                         } catch {}
@@ -1400,12 +1458,12 @@ const PreguntasManager = {
                         headers: authManager.getAuthHeaders()
                     });
                     if (!r.ok) throw new Error('No se pudo rehacer la eliminación');
-                    await this.cargarPreguntas();
+                    await this.recargarConFiltros();
                 };
                 window.UndoManager.record({ do: doAction, undo: undoAction, label: `Eliminar pregunta ${id}` });
             }
 
-            await this.cargarPreguntas();
+            await this.recargarConFiltros();
             Toastify({
                 text: 'Pregunta eliminada',
                 duration: 3000,
@@ -1610,6 +1668,9 @@ const PreguntasManager = {
 
 // Inicialización cuando el documento está listo
 document.addEventListener('DOMContentLoaded', async () => {
+    // Cargar usuarios para el filtro de autoría
+    await PreguntasManager.cargarUsuariosEnFiltro();
+    
     // Cargar preguntas directamente (la autenticación ya se verifica en auth.js)
     await PreguntasManager.cargarPreguntas();
     
@@ -1635,7 +1696,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     ];
     const ths = document.querySelectorAll('table thead th');
     headers.forEach((h, i) => {
-        ths[h.idx]?.addEventListener('click', (e) => {
+        const th = ths[h.idx];
+        if (!th) return;
+
+        th.addEventListener('click', (e) => {
             // Verificar si se está redimensionando
             if (typeof isTableResizing === 'function' && isTableResizing('tabla-preguntas')) {
                 console.log('❌ [ORDEN] Click bloqueado - se está redimensionando');
@@ -1659,8 +1723,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             PreguntasManager.setOrden(h.id);
         });
-        ths[h.idx]?.classList.add('sortable');
-        ths[h.idx]?.setAttribute('style', 'cursor:pointer');
+        th.classList.add('sortable');
+        // Importante: no machacar otros estilos inline (anchos del TableResizer)
+        th.style.cursor = 'pointer';
     });
 
     // Filtros

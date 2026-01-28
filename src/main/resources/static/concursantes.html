@@ -242,10 +242,10 @@ line-height: 1.2;
 <a class="nav-link" href="combos.html">Combos</a>
 </li>
 <li class="nav-item">
-<a class="nav-link active" href="concursantes.html">Concursantes</a>
+<a class="nav-link" href="jornadas.html">Jornadas</a>
 </li>
 <li class="nav-item">
-<a class="nav-link" href="jornadas.html">Jornadas</a>
+<a class="nav-link active" href="concursantes.html">Concursantes</a>
 </li>
 <li class="nav-item">
 <a class="nav-link" href="programas.html">Programas</a>
@@ -271,16 +271,29 @@ line-height: 1.2;
 </nav>
 
 <div class="container-fluid mt-4">
-<div class="section-header">
-<h2>Gestión de Concursantes</h2>
-<div class="d-flex gap-2">
+<div class="section-header d-flex align-items-center justify-content-between">
+<div class="d-flex gap-2 align-items-center">
+<h2 class="mb-0">Gestión de Concursantes</h2>
 <button class="btn btn-primary" onclick="mostrarFormularioConcursante()">
 <i class="fas fa-plus"></i> Nuevo Concursante
 </button>
 <button class="btn btn-outline-secondary" id="btn-config-columnas" onclick="mostrarConfiguracionColumnas()">
 <i class="fas fa-cog"></i> Editar elementos tabla
 </button>
-
+</div>
+<div class="d-flex align-items-center gap-1">
+<button type="button"
+        class="btn btn-sm btn-outline-secondary"
+        title="Deshacer (Ctrl+Z)"
+        onclick="handleGlobalUndo()">
+    <i class="fas fa-undo"></i>
+</button>
+<button type="button"
+        class="btn btn-sm btn-outline-secondary"
+        title="Rehacer (Ctrl+Y)"
+        onclick="handleGlobalRedo()">
+    <i class="fas fa-redo"></i>
+</button>
 </div>
 </div>
 
@@ -372,6 +385,7 @@ line-height: 1.2;
 <th class="sortable-header">RR SS<span class="sort-indicator inactive"></span></th>
 <th class="sortable-header" data-tipo="number">CUEST<span class="sort-indicator inactive"></span></th>
 <th class="sortable-header" data-tipo="number">COMBO<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header">XUSÓKER<span class="sort-indicator inactive"></span></th>
 <th class="sortable-header">X<span class="sort-indicator inactive"></span></th>
 <th class="sortable-header" data-tipo="number">RESULTADO<span class="sort-indicator inactive"></span></th>
 <th class="sortable-header">NOTAS GRABACIÓN<span class="sort-indicator inactive"></span></th>
@@ -521,15 +535,31 @@ line-height: 1.2;
 <button type="button" class="btn btn-outline-primary" onclick="abrirSelectorCombo()">
 <i class="fas fa-search"></i>
 </button>
+<button type="button" class="btn btn-outline-warning" id="btn-reciclar-combo" onclick="iniciarReciclajeComboDesdeFormulario()" title="Reciclar combo (seleccionar pregunta usada)" style="display: none;">
+<i class="fas fa-recycle"></i>
+</button>
 <button type="button" class="btn btn-outline-danger" onclick="limpiarSelectorCombo()">
 <i class="fas fa-times"></i>
 </button>
 </div>
 </div>
 </div>
-<div class="mb-3">
+<div class="row mb-3">
+<div class="col-md-6">
+<label class="form-label">XUusóker:</label>
+<select class="form-control" id="xusoker">
+<option value="">Seleccionar</option>
+<option value="NO USÓ">NO USÓ</option>
+<option value="CONTINÚE">CONTINÚE</option>
+<option value="AL VERRÉS">AL VERRÉS</option>
+<option value="RECICLA">RECICLA</option>
+<option value="LLAMADA">LLAMADA</option>
+</select>
+</div>
+<div class="col-md-6">
 <label class="form-label">Factor X:</label>
-<input type="text" class="form-control" id="factor-x" placeholder="Factor multiplicador especial">
+<input type="text" class="form-control" id="factor-x" placeholder="Factor X">
+</div>
 </div>
 </div>
 
@@ -605,9 +635,10 @@ line-height: 1.2;
 <label class="form-label">Estado:</label>
 <select class="form-control" id="estado">
 <option value="">Seleccionar estado</option>
-<option value="pendiente">Pendiente</option>
+<option value="borrador" selected>Borrador</option>
 <option value="grabado">Grabado</option>
 <option value="editado">Editado</option>
+<option value="programado">Programado</option>
 <option value="emitido">Emitido</option>
 <option value="archivado">Archivado</option>
 </select>
@@ -759,6 +790,10 @@ line-height: 1.2;
 <div class="form-check mb-2">
 <input class="form-check-input" type="checkbox" id="col-combo" checked>
 <label class="form-check-label" for="col-combo">COMBO</label>
+</div>
+<div class="form-check mb-2">
+<input class="form-check-input" type="checkbox" id="col-xusoker" checked>
+<label class="form-check-label" for="col-xusoker">XUSÓKER</label>
 </div>
 <div class="form-check mb-2">
 <input class="form-check-input" type="checkbox" id="col-x" checked>
@@ -947,7 +982,7 @@ Borrar
 <script src="js/utils.js"></script>
 <script src="js/api.js"></script>
 <script src="js/undo-manager.js"></script>
-<script src="js/table-resizer.js"></script>
+<script src="js/table-resizer.js?v=20260128-2"></script>
 <script src="js/concursantes.js"></script>
 <script>
 // Inicializar la página cuando se carga
@@ -955,6 +990,15 @@ document.addEventListener('DOMContentLoaded', function() {
 inicializarConcursantes();
 mostrarBotonAdminNavbar();
 inicializarScrollbarPersonalizadaConcursantes();
+// Asegurar inicialización del resizer en esta tabla concreta
+try {
+    const tabla = document.getElementById('tabla-concursantes-principal');
+    if (tabla && typeof TableResizer !== 'undefined' && !tabla.querySelector('.resize-handle')) {
+        new TableResizer('tabla-concursantes-principal', { minWidth: 50, maxWidth: 600 });
+    }
+} catch (e) {
+    console.error('Error al inicializar TableResizer en concursantes:', e);
+}
 });
 
 function cambiarPassword() {

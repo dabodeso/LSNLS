@@ -21,10 +21,20 @@ const JornadasManager = {
         try {
             await this.cargarDatos(true);
             this.configurarEventos();
+            this.configurarPermisos();
             console.log('✅ [JORNADAS] Inicialización completada');
         } catch (error) {
             console.error('❌ [JORNADAS] Error en inicialización:', error);
             Utils.showAlert('Error al cargar datos de jornadas', 'error');
+        }
+    },
+
+    configurarPermisos() {
+        // Ocultar botón de nueva jornada para guionistas
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        const btnNuevaJornada = document.querySelector('button[onclick*="mostrarModalCrear"]');
+        if (btnNuevaJornada && usuario.rol === 'ROLE_GUION') {
+            btnNuevaJornada.style.display = 'none';
         }
     },
 
@@ -316,6 +326,20 @@ const JornadasManager = {
         // Preparar los cuestionarios y combos (asegurar que existan arrays)
         const cuestionarios = jornada.cuestionarios || [];
         const combos = jornada.combos || [];
+        // Detectar la vista actual - verificar tanto la clase como el localStorage
+        const tieneClaseJ3 = document.body && document.body.classList.contains('j3-mode');
+        const vistaGuardada = localStorage.getItem('vistaJornadas');
+        const esVista3 = tieneClaseJ3 || vistaGuardada === 'j3';
+        // Debug: mostrar en consola para verificar que se ejecuta
+        if (jornada.id === (this.jornadas && this.jornadas[0] ? this.jornadas[0].id : null)) {
+            console.log('[JORNADAS DEBUG] Primera jornada - Detección de vista:', { 
+                tieneClaseJ3, 
+                vistaGuardada, 
+                esVista3, 
+                bodyClasses: document.body ? document.body.className : 'no body',
+                timestamp: new Date().toISOString()
+            });
+        }
         // Mapear estado backend -> etiquetas del front
         const estadoFront = (estado) => {
             switch (estado) {
@@ -344,7 +368,7 @@ const JornadasManager = {
                                 <button class="btn btn-outline-secondary btn-sm" onclick="JornadasManager.mostrarHistorialCuestionario(${c.id})" title="Ver historial">
                                     <i class="fas fa-history"></i>
                                 </button>
-                                ${esReutilizado ? `
+                                ${JornadasManager.puedeEditar(jornada) ? (esReutilizado ? `
                                     <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.quitarReutilizacionCuestionario(${c.id}, ${jornada.id})" title="Quitar reutilización">
                                         <i class="fas fa-undo"></i>
                                     </button>
@@ -352,7 +376,7 @@ const JornadasManager = {
                                     <button class="btn btn-outline-success btn-sm" onclick="JornadasManager.reutilizarCuestionario(${c.id}, ${jornada.id})" title="Reutilizar cuestionario">
                                         <i class="fas fa-recycle"></i>
                                     </button>
-                                `}
+                                `) : ''}
                                 ${JornadasManager.puedeEditar(jornada) ? `
                                     <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarCuestionarioDeJornada(${jornada.id}, ${c.id})" title="Borrar del slot">
                                         <i class="fas fa-trash"></i>
@@ -361,6 +385,12 @@ const JornadasManager = {
                             </div>
                         </div>
                         <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : (c.tematica || 'Sin temática')}</small>
+                        ${c.notasDireccion ? `
+                            <div class="mt-2 p-2 bg-light rounded" style="font-size: 0.85em;">
+                                <strong>Notas de dirección:</strong><br>
+                                <span style="color: #495057;">${c.notasDireccion}</span>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             } else {
@@ -372,7 +402,7 @@ const JornadasManager = {
                                     onclick="JornadasManager.seleccionarCuestionariosDirecto(${jornada.id})">
                                 <i class="fas fa-plus"></i> Añadir
                             </button>
-                        ` : `<div class="text-muted small text-center">Bloqueado</div>`}
+                        ` : `<div class="text-muted small text-center">Solo lectura</div>`}
                     </div>
                 `;
             }
@@ -406,7 +436,7 @@ const JornadasManager = {
                                 <button class="btn btn-outline-secondary btn-sm" onclick="JornadasManager.mostrarHistorialCombo(${c.id})" title="Ver historial">
                                     <i class="fas fa-history"></i>
                                 </button>
-                                ${esReutilizado ? `
+                                ${JornadasManager.puedeEditar(jornada) ? (esReutilizado ? `
                                     <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.quitarReutilizacionCombo(${c.id}, ${jornada.id})" title="Quitar reutilización">
                                         <i class="fas fa-undo"></i>
                                     </button>
@@ -414,7 +444,7 @@ const JornadasManager = {
                                     <button class="btn btn-outline-success btn-sm" onclick="JornadasManager.reutilizarCombo(${c.id}, ${jornada.id})" title="Reutilizar combo">
                                         <i class="fas fa-recycle"></i>
                                     </button>
-                                `}
+                                `) : ''}
                                 ${JornadasManager.puedeEditar(jornada) ? `
                                     <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarComboDeJornada(${jornada.id}, ${c.id})" title="Borrar del slot">
                                         <i class="fas fa-trash"></i>
@@ -423,6 +453,12 @@ const JornadasManager = {
                             </div>
                         </div>
                         <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : tipoNombre}</small>
+                        ${c.notasDireccion ? `
+                            <div class="mt-2 p-2 bg-light rounded" style="font-size: 0.85em;">
+                                <strong>Notas de dirección:</strong><br>
+                                <span style="color: #495057;">${c.notasDireccion}</span>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             } else {
@@ -434,7 +470,7 @@ const JornadasManager = {
                                     onclick="JornadasManager.seleccionarCombosDirecto(${jornada.id})">
                                 <i class="fas fa-plus"></i> Añadir
                             </button>
-                        ` : `<div class="text-muted small text-center">Bloqueado</div>`}
+                        ` : `<div class="text-muted small text-center">Solo lectura</div>`}
                     </div>
                 `;
             }
@@ -495,6 +531,13 @@ const JornadasManager = {
                     </div>
                 </div>
                 
+                ${jornada.notas ? `
+                    <div class="mt-3 mb-3 p-3 bg-info bg-opacity-10 border border-info rounded">
+                        <strong><i class="fas fa-sticky-note"></i> Notas de la jornada:</strong><br>
+                        <span style="color: #495057; white-space: pre-wrap;">${jornada.notas}</span>
+                    </div>
+                ` : ''}
+                
                 <!-- Línea divisoria con texto "CUESTIONARIOS" -->
                 <div class="mt-4 mb-3">
                     <hr style="border-color: #dee2e6; margin: 0;">
@@ -510,6 +553,30 @@ const JornadasManager = {
                     </div>
                 </div>
                 
+                <!-- Notas de dirección de cuestionarios -->
+                ${esVista3 ? `
+                    <!-- Vista 3: Recuadros individuales del mismo tamaño que los slots -->
+                    <div class="mt-3 mb-3">
+                        <label class="form-label fw-bold mb-2" style="font-size: 0.9em;">Notas de dirección (Cuestionarios):</label>
+                        <div class="cuestionarios-grid">
+                            ${this.generarNotasDireccionCuestionariosVista3(cuestionarios, jornada)}
+                        </div>
+                    </div>
+                ` : `
+                    <!-- Vista 2: Caja entera con todos -->
+                    <div class="mt-3 mb-3">
+                        <label class="form-label fw-bold" style="font-size: 0.9em;">Notas de dirección (Cuestionarios):</label>
+                        <textarea 
+                            class="form-control" 
+                            id="notas-direccion-cuestionarios-${jornada.id}" 
+                            rows="3" 
+                            placeholder="Escribe las notas de dirección para los cuestionarios..."
+                            ${this.puedeEditar(jornada) ? '' : 'readonly'}
+                            onblur="JornadasManager.guardarNotasDireccionCuestionariosVista2(${jornada.id}, this.value)"
+                        >${this.obtenerNotasDireccionCuestionariosVista2(cuestionarios)}</textarea>
+                    </div>
+                `}
+                
                 <!-- Línea divisoria con texto "COMBOS" -->
                 <div class="mt-4 mb-3">
                     <hr style="border-color: #dee2e6; margin: 0;">
@@ -524,8 +591,281 @@ const JornadasManager = {
                         ${combosHtml}
                     </div>
                 </div>
+                
+                <!-- Notas de dirección de combos -->
+                ${esVista3 ? `
+                    <!-- Vista 3: Recuadros individuales del mismo tamaño que los slots -->
+                    <div class="mt-3 mb-3">
+                        <label class="form-label fw-bold mb-2" style="font-size: 0.9em;">Notas de dirección (Combos):</label>
+                        <div class="combos-grid">
+                            ${this.generarNotasDireccionCombosVista3(combos, jornada)}
+                        </div>
+                    </div>
+                ` : `
+                    <!-- Vista 2: Caja entera con todos -->
+                    <div class="mt-3 mb-3">
+                        <label class="form-label fw-bold" style="font-size: 0.9em;">Notas de dirección (Combos):</label>
+                        <textarea 
+                            class="form-control" 
+                            id="notas-direccion-combos-${jornada.id}" 
+                            rows="3" 
+                            placeholder="Escribe las notas de dirección para los combos..."
+                            ${this.puedeEditar(jornada) ? '' : 'readonly'}
+                            onblur="JornadasManager.guardarNotasDireccionCombosVista2(${jornada.id}, this.value)"
+                        >${this.obtenerNotasDireccionCombosVista2(combos)}</textarea>
+                    </div>
+                `}
             </div>
         `;
+    },
+    
+    esVista3() {
+        // Verificar si estamos en vista 3 (j3-mode)
+        return document.body.classList.contains('j3-mode');
+    },
+    
+    generarNotasDireccionCuestionariosVista3(cuestionarios, jornada) {
+        // Vista 3: Generar recuadros del mismo tamaño que los slots de cuestionarios
+        let html = '';
+        for (let i = 0; i < 6; i++) {
+            if (i < cuestionarios.length) {
+                const c = cuestionarios[i];
+                const notas = c.notasDireccion || '';
+                html += `
+                    <div class="cuestionario-slot p-2 border rounded" style="background-color:#ffffff; border-color:#e9ecef !important;">
+                        <label class="form-label small fw-bold mb-1">Cuestionario ${c.id}:</label>
+                        <textarea 
+                            class="form-control form-control-sm border-0 p-0" 
+                            id="notas-direccion-cuestionario-${jornada.id}-${c.id}" 
+                            rows="3" 
+                            placeholder="Notas de dirección..."
+                            style="resize: none; background: transparent; min-height: 60px;"
+                            ${this.puedeEditar(jornada) ? '' : 'readonly'}
+                            onblur="JornadasManager.guardarNotasDireccionCuestionario(${c.id}, this.value)"
+                        >${notas}</textarea>
+                    </div>
+                `;
+            } else {
+                // Slot vacío
+                html += `
+                    <div class="cuestionario-slot empty-slot p-2 border rounded" style="background-color: #f8f9fa; border-color:#e9ecef !important; border-style: dashed !important;">
+                        <div class="text-muted small text-center">-</div>
+                    </div>
+                `;
+            }
+        }
+        return html;
+    },
+    
+    generarNotasDireccionCombosVista3(combos, jornada) {
+        // Vista 3: Generar recuadros del mismo tamaño que los slots de combos
+        let html = '';
+        for (let i = 0; i < 6; i++) {
+            if (i < combos.length) {
+                const c = combos[i];
+                const notas = c.notasDireccion || '';
+                html += `
+                    <div class="combo-slot p-2 border rounded" style="background-color:#ffffff; border-color:#e9ecef !important;">
+                        <label class="form-label small fw-bold mb-1">Combo ${c.id}:</label>
+                        <textarea 
+                            class="form-control form-control-sm border-0 p-0" 
+                            id="notas-direccion-combo-${jornada.id}-${c.id}" 
+                            rows="3" 
+                            placeholder="Notas de dirección..."
+                            style="resize: none; background: transparent; min-height: 60px;"
+                            ${this.puedeEditar(jornada) ? '' : 'readonly'}
+                            onblur="JornadasManager.guardarNotasDireccionCombo(${c.id}, this.value)"
+                        >${notas}</textarea>
+                    </div>
+                `;
+            } else {
+                // Slot vacío
+                html += `
+                    <div class="combo-slot empty-slot p-2 border rounded" style="background-color: #f8f9fa; border-color:#e9ecef !important; border-style: dashed !important;">
+                        <div class="text-muted small text-center">-</div>
+                    </div>
+                `;
+            }
+        }
+        return html;
+    },
+    
+    obtenerNotasDireccionCuestionariosVista2(cuestionarios) {
+        // Vista 2: Obtener todas las notas en formato texto
+        const notas = cuestionarios
+            .filter(c => c && c.id)
+            .map(c => {
+                const notasTexto = c.notasDireccion && c.notasDireccion.trim() ? c.notasDireccion.trim() : '';
+                return `Cuestionario ${c.id}: ${notasTexto}`;
+            })
+            .join('\n\n');
+        return notas || '';
+    },
+    
+    obtenerNotasDireccionCombosVista2(combos) {
+        // Vista 2: Obtener todas las notas en formato texto
+        const notas = combos
+            .filter(c => c && c.id)
+            .map(c => {
+                const notasTexto = c.notasDireccion && c.notasDireccion.trim() ? c.notasDireccion.trim() : '';
+                return `Combo ${c.id}: ${notasTexto}`;
+            })
+            .join('\n\n');
+        return notas || '';
+    },
+    
+    async guardarNotasDireccionCuestionariosVista2(jornadaId, textoCompleto) {
+        try {
+            // Obtener la jornada actual para acceder a los cuestionarios
+            const jornada = this.jornadas.find(j => j.id === jornadaId);
+            if (!jornada || !jornada.cuestionarios) return;
+            
+            // Parsear el texto para extraer las notas por cuestionario
+            const lineas = textoCompleto.split('\n\n');
+            const actualizaciones = [];
+            
+            for (const linea of lineas) {
+                const match = linea.match(/^Cuestionario (\d+):\s*(.*)$/s);
+                if (match) {
+                    const cuestionarioId = parseInt(match[1]);
+                    const notas = match[2] ? match[2].trim() : '';
+                    actualizaciones.push({ id: cuestionarioId, notas });
+                }
+            }
+            
+            // Actualizar cada cuestionario
+            for (const actualizacion of actualizaciones) {
+                await apiManager.put(`/api/cuestionarios/${actualizacion.id}/notas-direccion`, {
+                    notasDireccion: actualizacion.notas
+                });
+            }
+            
+            // Recargar la jornada para reflejar los cambios
+            await this.cargarJornadas();
+            
+            Toastify({
+                text: 'Notas de dirección de cuestionarios actualizadas',
+                duration: 2000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+            }).showToast();
+        } catch (error) {
+            console.error('Error al guardar notas de dirección de cuestionarios:', error);
+            Toastify({
+                text: 'Error al guardar notas: ' + (error.message || 'Error desconocido'),
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+        }
+    },
+    
+    async guardarNotasDireccionCombosVista2(jornadaId, textoCompleto) {
+        try {
+            // Obtener la jornada actual para acceder a los combos
+            const jornada = this.jornadas.find(j => j.id === jornadaId);
+            if (!jornada || !jornada.combos) return;
+            
+            // Parsear el texto para extraer las notas por combo
+            const lineas = textoCompleto.split('\n\n');
+            const actualizaciones = [];
+            
+            for (const linea of lineas) {
+                const match = linea.match(/^Combo (\d+):\s*(.*)$/s);
+                if (match) {
+                    const comboId = parseInt(match[1]);
+                    const notas = match[2] ? match[2].trim() : '';
+                    actualizaciones.push({ id: comboId, notas });
+                }
+            }
+            
+            // Actualizar cada combo
+            for (const actualizacion of actualizaciones) {
+                await apiManager.put(`/api/combos/${actualizacion.id}`, {
+                    notasDireccion: actualizacion.notas
+                });
+            }
+            
+            // Recargar la jornada para reflejar los cambios
+            await this.cargarJornadas();
+            
+            Toastify({
+                text: 'Notas de dirección de combos actualizadas',
+                duration: 2000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+            }).showToast();
+        } catch (error) {
+            console.error('Error al guardar notas de dirección de combos:', error);
+            Toastify({
+                text: 'Error al guardar notas: ' + (error.message || 'Error desconocido'),
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+        }
+    },
+    
+    async guardarNotasDireccionCuestionario(cuestionarioId, notas) {
+        try {
+            await apiManager.put(`/api/cuestionarios/${cuestionarioId}/notas-direccion`, {
+                notasDireccion: notas
+            });
+            
+            Toastify({
+                text: 'Notas de dirección actualizadas',
+                duration: 2000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+            }).showToast();
+        } catch (error) {
+            console.error('Error al guardar notas de dirección:', error);
+            Toastify({
+                text: 'Error al guardar notas: ' + (error.message || 'Error desconocido'),
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+        }
+    },
+    
+    async guardarNotasDireccionCombo(comboId, notas) {
+        try {
+            await apiManager.put(`/api/combos/${comboId}`, {
+                notasDireccion: notas
+            });
+            
+            Toastify({
+                text: 'Notas de dirección actualizadas',
+                duration: 2000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+            }).showToast();
+        } catch (error) {
+            console.error('Error al guardar notas de dirección:', error);
+            Toastify({
+                text: 'Error al guardar notas: ' + (error.message || 'Error desconocido'),
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+        }
     },
 
     async eliminarCuestionarioDeJornada(jornadaId, cuestionarioId) {
@@ -671,10 +1011,20 @@ const JornadasManager = {
     },
 
     puedeEditar(jornada) {
+        // Los guionistas no pueden editar
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        if (usuario.rol === 'ROLE_GUION') {
+            return false;
+        }
         return jornada.estado !== 'completada' && jornada.estado !== 'archivada';
     },
 
     puedeEliminar(jornada) {
+        // Los guionistas no pueden eliminar
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        if (usuario.rol === 'ROLE_GUION') {
+            return false;
+        }
         return jornada.estado !== 'en_grabacion';
     },
 

@@ -106,8 +106,21 @@ public class ComboController {
             if (dto.getPreguntasMultiplicadoras() == null || dto.getPreguntasMultiplicadoras().isEmpty()) {
                 return ResponseEntity.badRequest().body("Debe seleccionar las preguntas multiplicadoras para el combo");
             }
-            if (dto.getPreguntasMultiplicadoras().size() != 3) {
-                return ResponseEntity.badRequest().body("Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3)");
+            
+            // Obtener el estado del combo (por defecto "borrador" si no se especifica)
+            String estadoCombo = dto.getEstado();
+            if (estadoCombo == null || estadoCombo.trim().isEmpty()) {
+                estadoCombo = "borrador";
+            }
+            
+            // Si el estado NO es "borrador", exigir exactamente 3 preguntas
+            if (!"borrador".equalsIgnoreCase(estadoCombo) && dto.getPreguntasMultiplicadoras().size() != 3) {
+                return ResponseEntity.badRequest().body("Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para estados distintos de Borrador");
+            }
+            
+            // Si es borrador, permitir cualquier cantidad de preguntas (pero al menos 1)
+            if ("borrador".equalsIgnoreCase(estadoCombo) && dto.getPreguntasMultiplicadoras().size() == 0) {
+                return ResponseEntity.badRequest().body("Debe seleccionar al menos una pregunta multiplicadora para el combo");
             }
             
             // Validar tipo de combo
@@ -126,7 +139,8 @@ public class ComboController {
                 }
                 idsPreguntas.add(pm.getId());
             }
-            if (idsPreguntas.size() != 3) {
+            // Validar que no haya IDs duplicados comparando con el tamaño real de la lista
+            if (idsPreguntas.size() != dto.getPreguntasMultiplicadoras().size()) {
                 return ResponseEntity.badRequest().body("No se puede usar la misma pregunta para diferentes multiplicadores (PM1, PM2, PM3)");
             }
             
@@ -296,6 +310,7 @@ public class ComboController {
             @RequestParam(required = false) String tematica,
             @RequestParam(required = false) String subtema,
             @RequestParam(required = false) String id,
+            @RequestParam(required = false) String texto,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size
     ) {
@@ -306,7 +321,7 @@ public class ComboController {
             if (id != null && !id.isEmpty()) {
                 response = comboService.filtrarCombosPorId(id, page, size);
             } else {
-                response = comboService.filtrarCombos(estado, tipo, tematica, subtema, page, size);
+                response = comboService.filtrarCombos(estado, tipo, tematica, subtema, texto, page, size);
             }
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -329,6 +344,14 @@ public class ComboController {
             // Bloquear cambio si está asignado a una jornada
             if (comboService.estaAsignadoAJornada(id)) {
                 return ResponseEntity.status(409).body("Este combo está asignado a una jornada y su estado está bloqueado en 'adjudicado'.");
+            }
+
+            // Validar que si se intenta cambiar a un estado distinto de "borrador", el combo debe tener exactamente 3 preguntas
+            if (nuevoEstado != Combo.EstadoCombo.borrador) {
+                long cantidadPreguntas = comboService.contarPreguntasCombo(id);
+                if (cantidadPreguntas != 3) {
+                    return ResponseEntity.badRequest().body("No se puede cambiar el estado del combo a '" + nuevoEstado + "'. El combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3). Actualmente tiene " + cantidadPreguntas + " pregunta(s).");
+                }
             }
 
             // Verificar permisos para cambiar estado
@@ -381,7 +404,15 @@ public class ComboController {
             if (datos.containsKey("estado") && datos.get("estado") != null) {
                 String estadoStr = datos.get("estado").toString();
                 try {
-                    combo.setEstado(Combo.EstadoCombo.valueOf(estadoStr));
+                    Combo.EstadoCombo nuevoEstado = Combo.EstadoCombo.valueOf(estadoStr);
+                    // Validar que si se intenta cambiar a un estado distinto de "borrador", el combo debe tener exactamente 3 preguntas
+                    if (nuevoEstado != Combo.EstadoCombo.borrador) {
+                        long cantidadPreguntas = comboService.contarPreguntasCombo(id);
+                        if (cantidadPreguntas != 3) {
+                            return ResponseEntity.badRequest().body("No se puede cambiar el estado del combo a '" + nuevoEstado + "'. El combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3). Actualmente tiene " + cantidadPreguntas + " pregunta(s).");
+                        }
+                    }
+                    combo.setEstado(nuevoEstado);
                 } catch (IllegalArgumentException e) {
                     return ResponseEntity.badRequest().body("Estado de combo inválido: " + estadoStr);
                 }

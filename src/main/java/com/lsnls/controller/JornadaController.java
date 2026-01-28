@@ -77,7 +77,7 @@ public class JornadaController {
     }
 
     @PostMapping
-    @PreAuthorize("@authorizationService.canCreate()")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<JornadaDTO>> crear(@RequestBody JornadaDTO jornadaDTO) {
         try {
             // Validaciones específicas de campos requeridos
@@ -126,7 +126,7 @@ public class JornadaController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@authorizationService.canEdit()")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<JornadaDTO>> actualizar(@PathVariable Long id, @RequestBody JornadaDTO jornadaDTO) {
         try {
             JornadaDTO jornadaActualizada = jornadaService.actualizar(id, jornadaDTO);
@@ -159,7 +159,7 @@ public class JornadaController {
     }
 
     @PutMapping("/{id}/estado")
-    @PreAuthorize("@authorizationService.canEdit()")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<JornadaDTO>> cambiarEstado(@PathVariable Long id, @RequestBody Map<String, String> request) {
         try {
             String nuevoEstado = request.get("estado");
@@ -269,7 +269,7 @@ public class JornadaController {
     }
 
     @PostMapping("/{jornadaId}/reutilizar-cuestionario/{cuestionarioId}")
-    @PreAuthorize("@authorizationService.canEdit()")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<String>> reutilizarCuestionario(
             @PathVariable Long jornadaId, 
             @PathVariable Long cuestionarioId) {
@@ -298,7 +298,7 @@ public class JornadaController {
     }
 
     @PostMapping("/{jornadaId}/quitar-reutilizacion-cuestionario/{cuestionarioId}")
-    @PreAuthorize("@authorizationService.canEdit()")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<String>> quitarReutilizacionCuestionario(
             @PathVariable Long jornadaId,
             @PathVariable Long cuestionarioId) {
@@ -313,7 +313,7 @@ public class JornadaController {
     }
 
     @PostMapping("/{jornadaId}/reutilizar-combo/{comboId}")
-    @PreAuthorize("@authorizationService.canEdit()")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<String>> reutilizarCombo(
             @PathVariable Long jornadaId, 
             @PathVariable Long comboId) {
@@ -342,7 +342,7 @@ public class JornadaController {
     }
 
     @PostMapping("/{jornadaId}/quitar-reutilizacion-combo/{comboId}")
-    @PreAuthorize("@authorizationService.canEdit()")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<String>> quitarReutilizacionCombo(
             @PathVariable Long jornadaId,
             @PathVariable Long comboId) {
@@ -357,7 +357,7 @@ public class JornadaController {
     }
 
     @PostMapping("/{jornadaId}/reciclar-combo-entero/{comboId}")
-    @PreAuthorize("@authorizationService.canEdit()")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<String>> reciclarComboEntero(
             @PathVariable Long jornadaId, 
             @PathVariable Long comboId) {
@@ -386,7 +386,7 @@ public class JornadaController {
     }
 
     @PostMapping("/{jornadaId}/reciclar-combo-parcial/{comboId}")
-    @PreAuthorize("@authorizationService.canEdit()")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<String>> reciclarComboParcial(
             @PathVariable Long jornadaId, 
             @PathVariable Long comboId,

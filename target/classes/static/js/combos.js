@@ -157,7 +157,14 @@ const CombosManager = {
                 if (tipo) params.append('tipo', tipo);
                 if (tematica) params.append('tematica', tematica);
                 if (subtema) params.append('subtema', subtema);
-                if (busqueda) params.append('id', busqueda);
+                // Si la búsqueda es numérica, usar 'id', sino usar 'texto' para buscar en preguntas/respuestas
+                if (busqueda) {
+                    if (/^\d+$/.test(busqueda.trim())) {
+                        params.append('id', busqueda);
+                    } else {
+                        params.append('texto', busqueda);
+                    }
+                }
                 
                 console.log('🔄 [CARGAR MÁS COMBOS] Parámetros:', params.toString());
                 
@@ -603,7 +610,7 @@ window.filtrarCombos = async function(resetear = true) {
         if (tipo) params.append('tipo', tipo);
         if (tematica) params.append('tematica', tematica);
         if (subtema) params.append('subtema', subtema);
-        if (busqueda) params.append('id', busqueda);
+        if (busqueda) params.append('texto', busqueda); // Buscar en preguntas y respuestas
 
         console.log('🔍 [FILTRAR COMBOS] Parámetros de búsqueda:', params.toString());
 
@@ -1422,34 +1429,14 @@ async function guardarCombo() {
     
     console.log('[DEBUG] Preguntas multiplicadoras a enviar:', preguntasMultiplicadoras);
     
-    if (!valid) {
+    // Obtener el estado del combo antes de validar
+    const estadoCombo = document.getElementById('combo-estado')?.value || '';
+    console.log('[DEBUG] Estado del combo:', estadoCombo);
+    
+    // Si el estado es "borrador", permitir guardar aunque falten preguntas
+    if (!valid && estadoCombo !== 'borrador') {
         Toastify({
-            text: 'Debes seleccionar todas las preguntas multiplicadoras (Pregunta 1, 2, 3)',
-            duration: 3000,
-            close: true,
-            gravity: 'top',
-            position: 'right',
-            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
-        }).showToast();
-        return;
-    }
-    // Validaciones adicionales: IDs únicos y factores no vacíos y únicos
-    const idsSet = new Set(preguntasMultiplicadoras.map(pm => pm.id));
-    if (idsSet.size !== 3) {
-        Toastify({
-            text: 'No puedes usar la misma pregunta en varios multiplicadores (PM1, PM2, PM3)',
-            duration: 4000,
-            close: true,
-            gravity: 'top',
-            position: 'right',
-            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
-        }).showToast();
-        return;
-    }
-    const factores = preguntasMultiplicadoras.map(pm => (pm.factor || '').trim());
-    if (factores.some(f => !f)) {
-        Toastify({
-            text: 'Todas las preguntas multiplicadoras deben tener un factor (X2, X3, X)',
+            text: 'Para estados distintos de Borrador, debes seleccionar todas las preguntas multiplicadoras (Pregunta 1, 2, 3)',
             duration: 4000,
             close: true,
             gravity: 'top',
@@ -1459,8 +1446,54 @@ async function guardarCombo() {
         return;
     }
     
-    // Aviso 1: comprobar preguntas en estado VERIFICADA (se promocionarán a APROBADA)
-    try {
+    // Si es borrador y no hay ninguna pregunta, también es inválido
+    if (estadoCombo === 'borrador' && preguntasMultiplicadoras.length === 0) {
+        Toastify({
+            text: 'Debes seleccionar al menos una pregunta multiplicadora',
+            duration: 3000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        return;
+    }
+    
+    // Validaciones adicionales: IDs únicos y factores no vacíos y únicos (solo si hay más de 1 pregunta)
+    if (preguntasMultiplicadoras.length > 1) {
+        const idsSet = new Set(preguntasMultiplicadoras.map(pm => pm.id));
+        if (idsSet.size !== preguntasMultiplicadoras.length) {
+            Toastify({
+                text: 'No puedes usar la misma pregunta en varios multiplicadores',
+                duration: 4000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+            return;
+        }
+    }
+    
+    // Validar factores solo para las preguntas que existen
+    if (preguntasMultiplicadoras.length > 0) {
+        const factores = preguntasMultiplicadoras.map(pm => (pm.factor || '').trim());
+        if (factores.some(f => !f)) {
+            Toastify({
+                text: 'Todas las preguntas multiplicadoras deben tener un factor (X2, X3, X)',
+                duration: 4000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+            return;
+        }
+    }
+    
+    // Aviso 1: comprobar preguntas en estado VERIFICADA (se promocionarán a APROBADA) - solo si hay preguntas
+    if (preguntasMultiplicadoras.length > 0) {
+        try {
         const detallesPreguntas = await Promise.all(
             preguntasMultiplicadoras.map(async pm => {
                 try {
@@ -1572,6 +1605,7 @@ async function guardarCombo() {
         console.warn('No se pudo comprobar estado/nivel de las preguntas antes de guardar el combo:', e);
         // Seguimos igualmente: el backend seguirá validando
     }
+    } // Cierre del if (preguntasMultiplicadoras.length > 0)
 
     const comboId = document.getElementById('combo-id').value;
     const tematica = document.getElementById('combo-tematica').value;
@@ -1586,14 +1620,14 @@ async function guardarCombo() {
             resp = await fetch(`/api/combos/${comboId}`, {
             method: 'PUT',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica, notasDireccion })
+                body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica, notasDireccion, estado: estadoSeleccionado })
             });
         } else {
-            // POST para crear
+            // POST para crear - incluir el estado en el body
             resp = await fetch('/api/combos/nuevo', {
                 method: 'POST',
                 headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica, notasDireccion })
+                body: JSON.stringify({ preguntasMultiplicadoras, tipo, tematica, notasDireccion, estado: estadoSeleccionado })
             });
         }
         

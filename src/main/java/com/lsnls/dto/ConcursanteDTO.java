@@ -21,6 +21,8 @@ public class ConcursanteDTO {
     private String redesSociales;
     private Long cuestionarioId;
     private Long comboId;
+    private Boolean comboReciclado; // Indica si el combo ha sido reciclado
+    private String xusoker;
     private String factorX;
     private Integer resultado;
     private String notasGrabacion;

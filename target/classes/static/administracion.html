@@ -23,8 +23,8 @@
                         <a class="nav-link" href="cuestionarios.html">Cuestionarios</a>
                     </li>
                     <li class="nav-item"><a class="nav-link" href="combos.html">Combos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="concursantes.html">Concursantes</a></li>
                     <li class="nav-item"><a class="nav-link" href="jornadas.html">Jornadas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="concursantes.html">Concursantes</a></li>
                     <li class="nav-item"><a class="nav-link" href="programas.html">Programas</a></li>
                     <li class="nav-item"><a class="nav-link active" href="administracion.html">Administración</a></li>
                 </ul>
@@ -48,8 +48,24 @@
     <div class="container mt-4">
         <!-- Sección de Usuarios -->
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>👥 Administración de Usuarios</h2>
-            <button class="btn btn-success" onclick="crearUsuario()">➕ Nuevo Usuario</button>
+            <div class="d-flex align-items-center gap-2">
+                <h2 class="mb-0">👥 Administración de Usuarios</h2>
+                <button class="btn btn-success" onclick="crearUsuario()">➕ Nuevo Usuario</button>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        title="Deshacer (Ctrl+Z)"
+                        onclick="handleGlobalUndo()">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        title="Rehacer (Ctrl+Y)"
+                        onclick="handleGlobalRedo()">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
         </div>
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle">

@@ -37,7 +37,6 @@ public class AuthorizationService {
             .map(usuario -> 
                 usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
-                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
             .orElse(false);
     }
@@ -56,14 +55,14 @@ public class AuthorizationService {
                 switch (estado) {
                     case borrador:
                     case para_verificar:
+                    case revisar:
+                    case corregir:
                         // Niveles 2, 3 y 4 (GUION, VERIFICACION, DIRECCION)
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
                     case verificada:
-                    case revisar:
-                    case corregir:
                         // Niveles 3 y 4 (VERIFICACION, DIRECCION)
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;

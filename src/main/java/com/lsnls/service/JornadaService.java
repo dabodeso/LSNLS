@@ -567,6 +567,7 @@ public class JornadaService {
                 resumen.setNivel(c.getNivel().name());
                 resumen.setEstado(c.getEstado().name());
                 resumen.setTipo(c.getTipo() != null ? c.getTipo().name() : null);
+                resumen.setNotasDireccion(c.getNotasDireccion());
                 resumen.setTotalPreguntas(c.getPreguntas() != null ? c.getPreguntas().size() : 0);
                 try {
                     Long reutilizadoCount = entityManager.createNativeQuery(
@@ -878,6 +879,28 @@ public class JornadaService {
         if (estadoActual != Combo.EstadoCombo.adjudicado && estadoActual != Combo.EstadoCombo.grabado) {
             throw new IllegalArgumentException("El combo " + comboId + " no está en estado adjudicado ni grabado. Estado actual: " + estadoActual);
         }
+        
+        // Verificar que el combo no ha sido reciclado previamente para esta jornada
+        try {
+            Long count = entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND combo_id = :cid AND estado_asignacion = 'reaprovechado'")
+                .setParameter("jid", jornadaId)
+                .setParameter("cid", comboId)
+                .getSingleResult() instanceof Number ? ((Number) entityManager.createNativeQuery(
+                    "SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND combo_id = :cid AND estado_asignacion = 'reaprovechado'")
+                    .setParameter("jid", jornadaId)
+                    .setParameter("cid", comboId)
+                    .getSingleResult()).longValue() : 0L;
+            if (count != null && count > 0) {
+                throw new IllegalArgumentException("Este combo ya ha sido reciclado previamente para esta jornada. No se puede reciclar el mismo combo varias veces.");
+            }
+        } catch (IllegalArgumentException e) {
+            throw e; // Re-lanzar la excepción de validación
+        } catch (Exception e) {
+            System.err.println("⚠️ [JORNADA] Error al verificar historial de reciclaje: " + e.getMessage());
+            // Continuar si hay error en la verificación (no bloquear la operación)
+        }
+        
         System.out.println("🔍 [JORNADA] Reciclando combo " + comboId + " parcialmente. Estado actual: " + estadoActual);
         
         // Verificar que el combo tiene exactamente 3 preguntas
@@ -915,7 +938,8 @@ public class JornadaService {
         comboNuevo.setTipo(combo.getTipo());
         comboNuevo.setTematica(combo.getTematica());
         comboNuevo.setNotasDireccion("Combo derivado del combo " + comboId + " (reciclaje parcial) - " + (combo.getNotasDireccion() != null ? combo.getNotasDireccion() : ""));
-        comboNuevo.setEstado(Combo.EstadoCombo.aprobado);
+        // CORRECCIÓN: El combo nuevo con solo 2 preguntas debe estar en estado BORRADOR, no APROBADO
+        comboNuevo.setEstado(Combo.EstadoCombo.borrador);
         comboNuevo.setFechaCreacion(java.time.LocalDateTime.now());
         comboNuevo.setCreacionUsuario(combo.getCreacionUsuario());
         comboNuevo = comboRepository.save(comboNuevo);

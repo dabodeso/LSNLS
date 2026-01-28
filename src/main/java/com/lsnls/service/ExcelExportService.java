@@ -72,18 +72,11 @@ public class ExcelExportService {
             opciones = new HashMap<>();
         }
         
-        // Configurar anchos de columna
-		// Ajustes: devolver A como antes (4000) y B a tamaño normal (~2500),
-		// mantener C con -20% y D a la mitad como acordado
-		final int anchoA = 4000;
-		final int anchoB = 2500;
-		final int anchoC = (int) (22000 * 0.8); // 17600
-		final int anchoD = 16000 / 2;          // 8000
-
-		sheet.setColumnWidth(0, anchoA);  // ID PREGUNTA
-		sheet.setColumnWidth(1, anchoB);  // NIVEL (1ls, 2nls, ...)
-		sheet.setColumnWidth(2, anchoC);  // PREGUNTA
-		sheet.setColumnWidth(3, anchoD);  // RESPUESTA
+        // Configurar anchos de columna para CUESTIONARIOS: TEMÁTICA, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA, REC
+		sheet.setColumnWidth(0, 5500);  // TEMÁTICA (aumentado para que "NOTAS DIRECCION" no se corte)
+		sheet.setColumnWidth(1, 2000);  // NIVEL (1ls, 2nls, ...)
+		sheet.setColumnWidth(2, 18000); // PREGUNTA
+		sheet.setColumnWidth(3, 12000); // RESPUESTA
 		sheet.setColumnWidth(4, 10000); // DATOS EXTRA
 		sheet.setColumnWidth(5, 2000);  // REC (estrecha para marcar X)
         
@@ -131,9 +124,9 @@ public class ExcelExportService {
         celdaTituloCuest.setCellStyle(estiloSubtitulo);
         sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 0, 5));
         
-        // Encabezados de tabla
+        // Encabezados de tabla: TEMÁTICA, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA, REC
         Row filaEncabezados = sheet.createRow(filaActual++);
-		String[] encabezados = {"ID PREGUNTA", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
+		String[] encabezados = {"TEMÁTICA", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
         
         CellStyle estiloEncabezado = crearEstiloEncabezado(workbook);
         for (int i = 0; i < encabezados.length; i++) {
@@ -183,29 +176,49 @@ public class ExcelExportService {
                 Row filaPregunta = sheet.createRow(filaActual++);
                 Pregunta p = pc.getPregunta();
 
-				// Columna 0: ID PREGUNTA
+				// Columna 0: TEMÁTICA (del cuestionario o de la pregunta)
 				Cell c0 = filaPregunta.createCell(0);
-				if (p != null && p.getId() != null) {
-					c0.setCellValue(p.getId());
-				} else {
-					c0.setCellValue("");
-				}
+				String tematica = (cuestionario != null && cuestionario.getTematica() != null) 
+					? cuestionario.getTematica() 
+					: (p != null && p.getTematica() != null ? p.getTematica() : "");
+				c0.setCellValue(tematica);
 				c0.setCellStyle(estiloDatoPlano);
 
+                // Columna 1: NIVEL en formato corto: "1ls", "2nls", "3ls", "4nls"
                 Cell c1 = filaPregunta.createCell(1);
-				// Nivel en formato corto: "1ls", "2nls", etc. (en minúsculas)
 				if (p != null && p.getNivel() != null) {
-					String nivelName = p.getNivel().name(); // ej: _1LS, _2NLS, PM1...
-					String numerico = nivelName.replaceAll("\\D+", ""); // extraer dígitos
-					boolean esLS = nivelName.toUpperCase().contains("LS");
-					String sufijo = esLS ? "ls" : "nls";
-					String valor;
-					if (!numerico.isEmpty()) {
-						valor = numerico.toLowerCase() + sufijo; // p.ej. "1ls", "2nls"
+					String nivelName = p.getNivel().name(); // ej: _1LS, _2NLS, _3LS, _4NLS
+					String valor = "";
+					// Convertir el enum a formato corto en minúsculas
+					if (nivelName.equals("_1LS")) {
+						valor = "1ls";
+					} else if (nivelName.equals("_2NLS")) {
+						valor = "2nls";
+					} else if (nivelName.equals("_3LS")) {
+						valor = "3ls";
+					} else if (nivelName.equals("_4NLS")) {
+						valor = "4nls";
+					} else if (nivelName.equals("_5LS")) {
+						valor = "5ls";
+					} else if (nivelName.equals("_5NLS")) {
+						valor = "5nls";
+					} else if (nivelName.equals("_0")) {
+						valor = "0";
 					} else {
-						// Fallback para PM1/PM2/NORMAL a partir de name()
-						String val = p.getNivel().name(); // p.ej. "PM1" o "NORMAL"
-						valor = val != null ? val.toLowerCase() : "";
+						// Fallback: extraer número y determinar sufijo
+						String numerico = nivelName.replaceAll("\\D+", "");
+						if (!numerico.isEmpty()) {
+							// Verificar si contiene NLS (mayúsculas)
+							if (nivelName.contains("NLS")) {
+								valor = numerico + "nls";
+							} else if (nivelName.contains("LS")) {
+								valor = numerico + "ls";
+							} else {
+								valor = nivelName.toLowerCase().replace("_", "");
+							}
+						} else {
+							valor = nivelName.toLowerCase().replace("_", "");
+						}
 					}
 					c1.setCellValue(valor);
 				} else {
@@ -213,24 +226,28 @@ public class ExcelExportService {
 				}
                 c1.setCellStyle(estiloDatoPlano);
 
+                // Columna 2: PREGUNTA
                 Cell c2 = filaPregunta.createCell(2);
 				c2.setCellValue(p != null ? p.getPregunta() : "");
                 c2.setCellStyle(estiloDatoWrap);
 
+                // Columna 3: RESPUESTA
                 Cell c3 = filaPregunta.createCell(3);
 				c3.setCellValue(p != null ? p.getRespuesta() : "");
                 c3.setCellStyle(estiloDatoWrap);
 
+                // Columna 4: DATOS EXTRA
                 Cell c4 = filaPregunta.createCell(4);
 				c4.setCellValue(p != null && p.getDatosExtra() != null ? p.getDatosExtra() : "");
                 c4.setCellStyle(estiloDatoWrap);
 
+                // Columna 5: REC
                 Cell c5 = filaPregunta.createCell(5);
                 c5.setCellValue(""); // Campo REC editable
                 c5.setCellStyle(estiloDatoPlano);
 
-				// Altura doble (aprox. 2 líneas) para leer bien
-				filaPregunta.setHeightInPoints(36);
+				// Altura aumentada un 20% (36 * 1.2 = 43.2)
+				filaPregunta.setHeightInPoints(43.2f);
             }
         } else {
             // Cuestionario vacío - crear filas en blanco
@@ -241,8 +258,8 @@ public class ExcelExportService {
                     c.setCellValue("");
                     c.setCellStyle(crearEstiloDato(workbook, false));
                 }
-				// Altura doble para filas vacías también
-				filaVacia.setHeightInPoints(36);
+				// Altura aumentada un 20% para filas vacías también
+				filaVacia.setHeightInPoints(43.2f);
             }
         }
         
@@ -258,8 +275,8 @@ public class ExcelExportService {
 		CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
 		sheet.addMergedRegion(rgConc);
 		aplicarBordeRegion(sheet, rgConc);
-		// Altura aproximada a 2 líneas
-		filaConcursante.setHeightInPoints(36);
+		// Altura aumentada un 20%
+		filaConcursante.setHeightInPoints(43.2f);
         
         // RESULTADO  
         Row filaResultado = sheet.createRow(filaActual++);
@@ -270,7 +287,7 @@ public class ExcelExportService {
 		CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
 		sheet.addMergedRegion(rgRes);
 		aplicarBordeRegion(sheet, rgRes);
-		filaResultado.setHeightInPoints(36);
+		filaResultado.setHeightInPoints(43.2f);
         
         // GRABACIÓN
         Row filaGrabacion = sheet.createRow(filaActual++);
@@ -281,21 +298,33 @@ public class ExcelExportService {
 		CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
 		sheet.addMergedRegion(rgGrab);
 		aplicarBordeRegion(sheet, rgGrab);
-		filaGrabacion.setHeightInPoints(36);
+		filaGrabacion.setHeightInPoints(43.2f);
+        
+        // NOTAS DIRECCIÓN
+        Row filaNotasDireccion = sheet.createRow(filaActual++);
+        filaNotasDireccion.createCell(0).setCellValue("NOTAS DIRECCION:");
+        Cell celdaNotasDireccion = filaNotasDireccion.createCell(1);
+		// Mostrar las notas de dirección si existen (notasDireccion del cuestionario)
+		String notasDireccion = (cuestionario != null && cuestionario.getNotasDireccion() != null) ? cuestionario.getNotasDireccion() : "";
+		celdaNotasDireccion.setCellValue(notasDireccion);
+		celdaNotasDireccion.setCellStyle(crearEstiloDato(workbook, true));
+		CellRangeAddress rgND = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
+		sheet.addMergedRegion(rgND);
+		aplicarBordeRegion(sheet, rgND);
+		// Altura aumentada un 20%
+		filaNotasDireccion.setHeightInPoints(43.2f);
         
         // NOTAS GUION (sin tilde)
         Row filaNotasGuion = sheet.createRow(filaActual++);
         filaNotasGuion.createCell(0).setCellValue("NOTAS GUION:");
         Cell celdaNotasGuion = filaNotasGuion.createCell(1);
-		// Mostrar las notas de los guionistas si existen (notasDireccion del cuestionario)
-		String notasGuion = (cuestionario != null && cuestionario.getNotasDireccion() != null) ? cuestionario.getNotasDireccion() : "";
-		celdaNotasGuion.setCellValue(notasGuion);
+		celdaNotasGuion.setCellValue(""); // Campo editable que se extiende
 		celdaNotasGuion.setCellStyle(crearEstiloDato(workbook, true));
 		CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
 		sheet.addMergedRegion(rgNG);
 		aplicarBordeRegion(sheet, rgNG);
-		// Altura grande (aprox. 10 líneas)
-		filaNotasGuion.setHeightInPoints(150);
+		// Altura aumentada un 20% (150 * 1.2 = 180)
+		filaNotasGuion.setHeightInPoints(180f);
 
         // Salto de página para imprimir un cuestionario por página
         sheet.setRowBreak(filaActual);
@@ -322,22 +351,15 @@ public class ExcelExportService {
             opciones = new HashMap<>();
         }
         
-		// Configurar anchos de columna para COMBOS (7 columnas)
-		final int anchoAComb = 4000;            // ID COMBO
-		final int anchoBComb = 2500;            // TIPO
-		final int anchoCComb = 2500;            // FAC
-		final int anchoDComb = (int) (22000 * 0.8); // PREGUNTA (igual que cuestionarios)
-		final int anchoEComb = 16000 / 2;       // RESPUESTA (igual que cuestionarios)
-		final int anchoFComb = 10000;           // DATOS EXTRA
-		final int anchoGComb = 2000;            // REC
-
-		sheet.setColumnWidth(0, anchoAComb);
-		sheet.setColumnWidth(1, anchoBComb);
-		sheet.setColumnWidth(2, anchoCComb);
-		sheet.setColumnWidth(3, anchoDComb);
-		sheet.setColumnWidth(4, anchoEComb);
-		sheet.setColumnWidth(5, anchoFComb);
-		sheet.setColumnWidth(6, anchoGComb);
+		// Configurar anchos de columna para COMBOS: TEMÁTICA, TIPO, FAC, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA, REC (8 columnas)
+		sheet.setColumnWidth(0, 5500);  // TEMÁTICA (aumentado para que "NOTAS DIRECCION" no se corte)
+		sheet.setColumnWidth(1, 2000);  // TIPO
+		sheet.setColumnWidth(2, 2000);  // FAC
+		sheet.setColumnWidth(3, 2000);  // NIVEL
+		sheet.setColumnWidth(4, 15000); // PREGUNTA
+		sheet.setColumnWidth(5, 10000); // RESPUESTA
+		sheet.setColumnWidth(6, 8000);  // DATOS EXTRA
+		sheet.setColumnWidth(7, 2000);  // REC
         
         // Título de la jornada
         Row filaTitulo = sheet.createRow(filaActual++);
@@ -345,7 +367,7 @@ public class ExcelExportService {
         celdaTitulo.setCellValue("COMBOS - JORNADA: " + jornada.getNombre() + " - " + jornada.getFechaJornada());
         CellStyle estiloTitulo = crearEstiloTitulo(workbook);
         celdaTitulo.setCellStyle(estiloTitulo);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 6));
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 7));
         
         filaActual++; // Fila en blanco
         
@@ -375,17 +397,32 @@ public class ExcelExportService {
         // Título del combo
         Row filaTituloCombo = sheet.createRow(filaActual++);
         Cell celdaTituloCombo = filaTituloCombo.createCell(0);
-        String titulo = combo != null ? 
-            "COMBO " + numeroCombo + " (ID: " + combo.getId() + ")" :
-            "COMBO " + numeroCombo + " (VACÍO)";
+        String titulo;
+        if (combo != null) {
+            String nivelCombo = combo.getNivel() != null ? combo.getNivel().name() : "";
+            // Convertir nivel a formato corto
+            String nivelCorto = "";
+            if (nivelCombo.equals("_5LS")) {
+                nivelCorto = "5LS";
+            } else if (nivelCombo.equals("_5NLS")) {
+                nivelCorto = "5NLS";
+            } else if (nivelCombo.equals("NORMAL")) {
+                nivelCorto = "NORMAL";
+            } else {
+                nivelCorto = nivelCombo.replace("_", "");
+            }
+            titulo = "COMBO " + numeroCombo + " (ID: " + combo.getId() + " - NIVEL: " + nivelCorto + ")";
+        } else {
+            titulo = "COMBO " + numeroCombo + " (VACÍO)";
+        }
         celdaTituloCombo.setCellValue(titulo);
         CellStyle estiloSubtitulo = crearEstiloSubtitulo(workbook);
         celdaTituloCombo.setCellStyle(estiloSubtitulo);
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 0, 6));
+        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 0, 7));
         
-        // Encabezados de tabla (7 columnas)
+        // Encabezados de tabla: TEMÁTICA, TIPO, FAC, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA, REC (8 columnas)
         Row filaEncabezados = sheet.createRow(filaActual++);
-        String[] encabezados = {"ID COMBO", "TIPO", "FAC", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
+        String[] encabezados = {"TEMÁTICA", "TIPO", "FAC", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
         
         CellStyle estiloEncabezado = crearEstiloEncabezado(workbook);
         for (int i = 0; i < encabezados.length; i++) {
@@ -423,13 +460,12 @@ public class ExcelExportService {
                 Row filaPregunta = sheet.createRow(filaActual++);
                 Pregunta p = pc.getPregunta();
                 
-                // Columna 0: ID COMBO (repetido en cada fila)
+                // Columna 0: TEMÁTICA (del combo o de la pregunta)
                 Cell c0 = filaPregunta.createCell(0);
-                if (combo != null && combo.getId() != null) {
-                    c0.setCellValue(combo.getId());
-                } else {
-                    c0.setCellValue("");
-                }
+                String tematica = (combo != null && combo.getTematica() != null) 
+                    ? combo.getTematica() 
+                    : (p != null && p.getTematica() != null ? p.getTematica() : "");
+                c0.setCellValue(tematica);
                 c0.setCellStyle(estiloDatoPlano);
 
                 // Columna 1: TIPO
@@ -453,39 +489,81 @@ public class ExcelExportService {
                 c2.setCellValue(factorStr);
                 c2.setCellStyle(estiloDatoPlano);
 
-                // Columna 3: PREGUNTA
+                // Columna 3: NIVEL en formato corto: "1ls", "2nls", "3ls", "4nls"
                 Cell c3 = filaPregunta.createCell(3);
-                c3.setCellValue(p != null ? p.getPregunta() : "");
-                c3.setCellStyle(estiloDatoWrap);
+                if (p != null && p.getNivel() != null) {
+                    String nivelName = p.getNivel().name(); // ej: _1LS, _2NLS, _3LS, _4NLS
+                    String valor = "";
+                    // Convertir el enum a formato corto en minúsculas
+                    if (nivelName.equals("_1LS")) {
+                        valor = "1ls";
+                    } else if (nivelName.equals("_2NLS")) {
+                        valor = "2nls";
+                    } else if (nivelName.equals("_3LS")) {
+                        valor = "3ls";
+                    } else if (nivelName.equals("_4NLS")) {
+                        valor = "4nls";
+                    } else if (nivelName.equals("_5LS")) {
+                        valor = "5ls";
+                    } else if (nivelName.equals("_5NLS")) {
+                        valor = "5nls";
+                    } else if (nivelName.equals("_0")) {
+                        valor = "0";
+                    } else {
+                        // Fallback: extraer número y determinar sufijo
+                        String numerico = nivelName.replaceAll("\\D+", "");
+                        if (!numerico.isEmpty()) {
+                            // Verificar si contiene NLS (mayúsculas)
+                            if (nivelName.contains("NLS")) {
+                                valor = numerico + "nls";
+                            } else if (nivelName.contains("LS")) {
+                                valor = numerico + "ls";
+                            } else {
+                                valor = nivelName.toLowerCase().replace("_", "");
+                            }
+                        } else {
+                            valor = nivelName.toLowerCase().replace("_", "");
+                        }
+                    }
+                    c3.setCellValue(valor);
+                } else {
+                    c3.setCellValue("");
+                }
+                c3.setCellStyle(estiloDatoPlano);
 
-                // Columna 4: RESPUESTA
+                // Columna 4: PREGUNTA
                 Cell c4 = filaPregunta.createCell(4);
-                c4.setCellValue(p != null ? p.getRespuesta() : "");
+                c4.setCellValue(p != null ? p.getPregunta() : "");
                 c4.setCellStyle(estiloDatoWrap);
 
-                // Columna 5: DATOS EXTRA
+                // Columna 5: RESPUESTA
                 Cell c5 = filaPregunta.createCell(5);
-                c5.setCellValue(p != null && p.getDatosExtra() != null ? p.getDatosExtra() : "");
+                c5.setCellValue(p != null ? p.getRespuesta() : "");
                 c5.setCellStyle(estiloDatoWrap);
 
-                // Columna 6: REC
+                // Columna 6: DATOS EXTRA
                 Cell c6 = filaPregunta.createCell(6);
-                c6.setCellValue(""); // Campo REC editable
-                c6.setCellStyle(estiloDatoPlano);
+                c6.setCellValue(p != null && p.getDatosExtra() != null ? p.getDatosExtra() : "");
+                c6.setCellStyle(estiloDatoWrap);
 
-                // Altura doble como en cuestionarios
-                filaPregunta.setHeightInPoints(36);
+                // Columna 7: REC
+                Cell c7 = filaPregunta.createCell(7);
+                c7.setCellValue(""); // Campo REC editable
+                c7.setCellStyle(estiloDatoPlano);
+
+                // Altura aumentada un 20% como en cuestionarios
+                filaPregunta.setHeightInPoints(43.2f);
             }
         } else {
             // Combo vacío - crear filas en blanco
             for (int i = 0; i < 3; i++) {
                 Row filaVacia = sheet.createRow(filaActual++);
-                for (int j = 0; j < 7; j++) {
+                for (int j = 0; j < 8; j++) {
                     Cell c = filaVacia.createCell(j);
                     c.setCellValue("");
                     c.setCellStyle(crearEstiloDato(workbook, false));
                 }
-                filaVacia.setHeightInPoints(36);
+                filaVacia.setHeightInPoints(43.2f);
             }
         }
         
@@ -497,42 +575,58 @@ public class ExcelExportService {
         filaConcursante.createCell(0).setCellValue("CONCURSANTE:");
         Cell celdaConcursante = filaConcursante.createCell(1);
         celdaConcursante.setCellValue(""); // Campo editable que se extiende
-        CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 1, 6);
+        celdaConcursante.setCellStyle(crearEstiloDato(workbook, true));
+        CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);
         sheet.addMergedRegion(rgConc);
         aplicarBordeRegion(sheet, rgConc);
-        filaConcursante.setHeightInPoints(36);
+        filaConcursante.setHeightInPoints(43.2f);
         
         // RESULTADO  
         Row filaResultado = sheet.createRow(filaActual++);
         filaResultado.createCell(0).setCellValue("RESULTADO:");
         Cell celdaResultado = filaResultado.createCell(1);
         celdaResultado.setCellValue(""); // Campo editable que se extiende
-        CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 1, 6);
+        celdaResultado.setCellStyle(crearEstiloDato(workbook, true));
+        CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);
         sheet.addMergedRegion(rgRes);
         aplicarBordeRegion(sheet, rgRes);
-        filaResultado.setHeightInPoints(36);
+        filaResultado.setHeightInPoints(43.2f);
         
         // GRABACIÓN
         Row filaGrabacion = sheet.createRow(filaActual++);
         filaGrabacion.createCell(0).setCellValue("GRABACION:");
         Cell celdaGrabacion = filaGrabacion.createCell(1);
         celdaGrabacion.setCellValue(""); // Campo editable que se extiende
-        CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 1, 6);
+        celdaGrabacion.setCellStyle(crearEstiloDato(workbook, true));
+        CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);
         sheet.addMergedRegion(rgGrab);
         aplicarBordeRegion(sheet, rgGrab);
-        filaGrabacion.setHeightInPoints(36);
+        filaGrabacion.setHeightInPoints(43.2f);
+        
+        // NOTAS DIRECCIÓN
+        Row filaNotasDireccion = sheet.createRow(filaActual++);
+        filaNotasDireccion.createCell(0).setCellValue("NOTAS DIRECCION:");
+        Cell celdaNotasDireccion = filaNotasDireccion.createCell(1);
+        // Mostrar las notas de dirección si existen (notasDireccion del combo)
+        String notasDireccion = (combo != null && combo.getNotasDireccion() != null) ? combo.getNotasDireccion() : "";
+        celdaNotasDireccion.setCellValue(notasDireccion);
+        celdaNotasDireccion.setCellStyle(crearEstiloDato(workbook, true));
+        CellRangeAddress rgND = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);
+        sheet.addMergedRegion(rgND);
+        aplicarBordeRegion(sheet, rgND);
+        // Altura aumentada un 20%
+        filaNotasDireccion.setHeightInPoints(43.2f);
         
         // NOTAS GUION (sin tilde)
         Row filaNotasGuion = sheet.createRow(filaActual++);
         filaNotasGuion.createCell(0).setCellValue("NOTAS GUION:");
         Cell celdaNotasGuion = filaNotasGuion.createCell(1);
-        // Mostrar las notas de los guionistas si existen (notasDireccion del combo)
-        String notasGuion = (combo != null && combo.getNotasDireccion() != null) ? combo.getNotasDireccion() : "";
-        celdaNotasGuion.setCellValue(notasGuion); // Campo editable que se extiende
-        CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 1, 6);
+        celdaNotasGuion.setCellValue(""); // Campo editable que se extiende
+        celdaNotasGuion.setCellStyle(crearEstiloDato(workbook, true));
+        CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);
         sheet.addMergedRegion(rgNG);
         aplicarBordeRegion(sheet, rgNG);
-        filaNotasGuion.setHeightInPoints(150);
+        filaNotasGuion.setHeightInPoints(180f);
 
 
         // Salto de página por combo
@@ -600,8 +694,9 @@ public class ExcelExportService {
         sheet.setFitToPage(true);
         ps.setFitWidth((short) 1);
         ps.setFitHeight((short) 0);
-        sheet.setMargin(Sheet.LeftMargin, 0.3);
-        sheet.setMargin(Sheet.RightMargin, 0.3);
+        // Ajustar márgenes para mejor uso del espacio
+        sheet.setMargin(Sheet.LeftMargin, 0.25);
+        sheet.setMargin(Sheet.RightMargin, 0.25);
         sheet.setMargin(Sheet.TopMargin, 0.5);
         sheet.setMargin(Sheet.BottomMargin, 0.5);
         Header header = sheet.getHeader();

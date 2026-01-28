@@ -94,8 +94,11 @@
             z-index: 5;
             background: #fff;
         }
-        /* Asegurar contexto y scroll para sticky */
-        .table-responsive { position: relative; max-height: 80vh; overflow-y: auto; }
+        /* Asegurar contexto para sticky headers */
+        .table-responsive { 
+            position: relative; 
+            /* Eliminado max-height y overflow-y para usar scroll del navegador */
+        }
         /* Fila separadora entre cuestionarios */
         #tabla-cuestionarios-tabla tr.separador-cuestionario td {
             height: 24px;              /* Un pelín más grande */
@@ -148,10 +151,10 @@
                         <a class="nav-link" href="combos.html">Combos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="concursantes.html">Concursantes</a>
+                        <a class="nav-link" href="jornadas.html">Jornadas</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="jornadas.html">Jornadas</a>
+                        <a class="nav-link" href="concursantes.html">Concursantes</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="programas.html">Programas</a>
@@ -177,14 +180,28 @@
     </nav>
 
     <div class="container mt-4">
-        <div class="section-header">
-            <h2>Gestión de Cuestionarios</h2>
-            <button class="btn btn-primary" onclick="mostrarFormularioCuestionario()">
+        <div class="section-header d-flex align-items-center">
+            <h2 class="mb-0">Gestión de Cuestionarios</h2>
+            <button class="btn btn-primary ms-2" onclick="mostrarFormularioCuestionario()">
                 <i class="fas fa-plus"></i> Nuevo Cuestionario
             </button>
             <div class="btn-group btn-group-sm ms-2" role="group" aria-label="Vista de Cuestionarios">
                 <button type="button" id="btnVistaCuestActual" class="btn btn-outline-primary active" onclick="setVistaCuestionarios('actual')">Vista actual</button>
                 <button type="button" id="btnVistaCuest2" class="btn btn-outline-primary" onclick="setVistaCuestionarios('q2')">Cuestionarios 2</button>
+            </div>
+            <div class="ms-auto d-flex align-items-center gap-1">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        title="Deshacer (Ctrl+Z)"
+                        onclick="handleGlobalUndo()">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        title="Rehacer (Ctrl+Y)"
+                        onclick="handleGlobalRedo()">
+                    <i class="fas fa-redo"></i>
+                </button>
             </div>
         </div>
 
@@ -226,9 +243,9 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Buscar por ID:</label>
+                            <label class="form-label">Buscar:</label>
                             <input type="text" id="buscar-cuestionario" class="form-control form-control-sm" 
-                                   onkeyup="filtrarCuestionarios()" placeholder="Número de cuestionario...">
+                                   onkeyup="filtrarCuestionarios()" placeholder="Buscar en preguntas y respuestas...">
                         </div>
                     </div>
                 </div>
@@ -406,7 +423,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="table-responsive" style="max-height: 70vh;">
+                        <div class="table-responsive">
                             <table class="table table-bordered table-hover align-middle">
                                 <thead>
                                     <tr>
@@ -525,6 +542,7 @@
     <script src="js/utils.js"></script>
     <script src="js/api.js"></script>
     <script src="js/undo-manager.js"></script>
+    <script src="js/table-resizer.js?v=20260128-2"></script>
     <script src="js/cuestionarios.js"></script>
     <script>
         // Inicializar la página cuando se carga

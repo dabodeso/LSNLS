@@ -34,10 +34,10 @@
                         <a class="nav-link active" href="combos.html">Combos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="concursantes.html">Concursantes</a>
+                        <a class="nav-link" href="jornadas.html">Jornadas</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="jornadas.html">Jornadas</a>
+                        <a class="nav-link" href="concursantes.html">Concursantes</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="programas.html">Programas</a>
@@ -71,6 +71,20 @@
             <div class="btn-group btn-group-sm ms-2" role="group" aria-label="Vista de Combos">
                 <button type="button" id="btnVistaCombosActual" class="btn btn-outline-primary active" onclick="setVistaCombos('actual')">Vista actual</button>
                 <button type="button" id="btnVistaCombos2" class="btn btn-outline-primary" onclick="setVistaCombos('c2')">Combos 2</button>
+            </div>
+            <div class="ms-auto d-flex align-items-center gap-1">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        title="Deshacer (Ctrl+Z)"
+                        onclick="handleGlobalUndo()">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        title="Rehacer (Ctrl+Y)"
+                        onclick="handleGlobalRedo()">
+                    <i class="fas fa-redo"></i>
+                </button>
             </div>
         </div>
 
@@ -122,9 +136,9 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Buscar por ID:</label>
+                            <label class="form-label">Buscar:</label>
                             <input type="text" id="buscar-combo" class="form-control form-control-sm" 
-                                   onkeyup="filtrarCombos()" placeholder="Número...">
+                                   onkeyup="filtrarCombos()" placeholder="En preguntas y respuestas...">
                         </div>
                     </div>
                 </div>
@@ -290,7 +304,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="table-responsive" style="max-height: 70vh;">
+                        <div class="table-responsive">
                             <table class="table table-bordered table-hover align-middle">
                                 <thead>
                                     <tr>
@@ -407,6 +421,7 @@
     <script src="js/utils.js"></script>
     <script src="js/api.js"></script>
     <script src="js/undo-manager.js"></script>
+    <script src="js/table-resizer.js?v=20260128-2"></script>
     <script src="js/combos.js"></script>
     <style>
         /* Ocultar columna "Preguntas" (5ª) solo en la tabla principal */
@@ -425,7 +440,10 @@
         #tabla-combos-tabla tr.separador-combo td { height: 24px; border: none !important; padding: 0; }
         /* Cabecera fija de la tabla principal (no afecta subtablas) */
         #tabla-combos-tabla > thead > tr > th { position: sticky; top: 0; z-index: 5; background: #fff; }
-        .table-responsive { position: relative; max-height: 80vh; overflow-y: auto; }
+        .table-responsive { 
+            position: relative; 
+            /* Eliminado max-height y overflow-y para usar scroll del navegador */
+        }
         /* Vista Combos 2: contraste suave del área + tabla destacada, sin scroll lateral raro */
         body.c2-mode { background: #e3e8f3; }
         .c2-mode #tabla-combos-wrapper {

@@ -122,12 +122,119 @@ public class ComboService {
     }
     
     
-    public Map<String, Object> filtrarCombos(String estado, String tipo, String tematica, String subtema, int page, int size) {
+    public Map<String, Object> filtrarCombos(String estado, String tipo, String tematica, String subtema, String texto, int page, int size) {
         try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
         // Crear objeto Pageable para paginaci?n
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
         Page<Combo> paginaCombos;
+
+        // Si hay texto, buscar en preguntas y respuestas usando consulta nativa
+        if (texto != null && !texto.trim().isEmpty()) {
+            String textoBusqueda = "%" + texto.trim().toLowerCase() + "%";
+            
+            // Construir consulta nativa para buscar combos que tengan preguntas o respuestas con el texto
+            String sql = "SELECT DISTINCT c.id FROM combos c " +
+                        "INNER JOIN combos_preguntas cp ON c.id = cp.combo_id " +
+                        "INNER JOIN preguntas p ON cp.pregunta_id = p.id " +
+                        "WHERE (LOWER(p.pregunta) LIKE :texto OR LOWER(p.respuesta) LIKE :texto)";
+            
+            if (estado != null && !estado.isEmpty()) {
+                sql += " AND c.estado = :estado";
+            }
+            if (tipo != null && !tipo.isEmpty()) {
+                sql += " AND c.tipo = :tipo";
+            }
+            if (tematica != null && !tematica.isEmpty()) {
+                sql += " AND LOWER(c.tematica) LIKE :tematica";
+            }
+            if (subtema != null && !subtema.isEmpty()) {
+                sql += " AND LOWER(p.subtema) LIKE :subtema";
+            }
+            
+            sql += " ORDER BY c.id DESC";
+            
+            // Ejecutar consulta nativa
+            javax.persistence.Query query = entityManager.createNativeQuery(sql);
+            query.setParameter("texto", textoBusqueda);
+            if (estado != null && !estado.isEmpty()) {
+                query.setParameter("estado", estado);
+            }
+            if (tipo != null && !tipo.isEmpty()) {
+                query.setParameter("tipo", tipo);
+            }
+            if (tematica != null && !tematica.isEmpty()) {
+                query.setParameter("tematica", "%" + tematica.toLowerCase() + "%");
+            }
+            if (subtema != null && !subtema.isEmpty()) {
+                query.setParameter("subtema", "%" + subtema.toLowerCase() + "%");
+            }
+            query.setFirstResult((int) pageable.getOffset());
+            query.setMaxResults(pageable.getPageSize());
+            
+            @SuppressWarnings("unchecked")
+            List<Number> resultadoIds = query.getResultList();
+            
+            // Obtener el total de resultados
+            String countSql = "SELECT COUNT(DISTINCT c.id) FROM combos c " +
+                             "INNER JOIN combos_preguntas cp ON c.id = cp.combo_id " +
+                             "INNER JOIN preguntas p ON cp.pregunta_id = p.id " +
+                             "WHERE (LOWER(p.pregunta) LIKE :texto OR LOWER(p.respuesta) LIKE :texto)";
+            if (estado != null && !estado.isEmpty()) {
+                countSql += " AND c.estado = :estado";
+            }
+            if (tipo != null && !tipo.isEmpty()) {
+                countSql += " AND c.tipo = :tipo";
+            }
+            if (tematica != null && !tematica.isEmpty()) {
+                countSql += " AND LOWER(c.tematica) LIKE :tematica";
+            }
+            if (subtema != null && !subtema.isEmpty()) {
+                countSql += " AND LOWER(p.subtema) LIKE :subtema";
+            }
+            
+            javax.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
+            countQuery.setParameter("texto", textoBusqueda);
+            if (estado != null && !estado.isEmpty()) {
+                countQuery.setParameter("estado", estado);
+            }
+            if (tipo != null && !tipo.isEmpty()) {
+                countQuery.setParameter("tipo", tipo);
+            }
+            if (tematica != null && !tematica.isEmpty()) {
+                countQuery.setParameter("tematica", "%" + tematica.toLowerCase() + "%");
+            }
+            if (subtema != null && !subtema.isEmpty()) {
+                countQuery.setParameter("subtema", "%" + subtema.toLowerCase() + "%");
+            }
+            
+            long total = ((Number) countQuery.getSingleResult()).longValue();
+            
+            // Convertir resultados a combos
+            List<Combo> combos = new ArrayList<>();
+            for (Number id : resultadoIds) {
+                Optional<Combo> comboOpt = comboRepository.findById(id.longValue());
+                if (comboOpt.isPresent()) {
+                    combos.add(comboOpt.get());
+                }
+            }
+            
+            // Convertir a DTOs
+            List<Map<String, Object>> dtos = new ArrayList<>();
+            for (Combo c : combos) {
+                Map<String, Object> dto = obtenerComboConSlots(c.getId());
+                if (dto != null) dtos.add(dto);
+            }
+            
+            // Construir respuesta
+            Map<String, Object> response = new HashMap<>();
+            response.put("combos", dtos);
+            response.put("currentPage", page);
+            response.put("totalItems", total);
+            response.put("totalPages", (int) Math.ceil((double) total / size));
+            
+            return response;
+        }
 
         // Aplicar filtros y paginaci?n directamente en la consulta a la base de datos
         if (estado != null && !estado.isEmpty() && tipo != null && !tipo.isEmpty() && tematica != null && !tematica.isEmpty()) {
@@ -233,9 +340,20 @@ public class ComboService {
      * Obtiene combos disponibles para asignar: solo 'aprobado'.
      */
     public List<Combo> obtenerDisponiblesParaConcursantes() {
+        // Obtener combos aprobados, adjudicados o grabados (disponibles para asignar)
         List<Combo> aprobados = comboRepository.findByEstado(EstadoCombo.aprobado);
-        aprobados.sort((a, b) -> b.getId().compareTo(a.getId()));
-        return aprobados;
+        List<Combo> adjudicados = comboRepository.findByEstado(EstadoCombo.adjudicado);
+        List<Combo> grabados = comboRepository.findByEstado(EstadoCombo.grabado);
+        
+        // Combinar todas las listas - permitir cualquiera de estos estados
+        List<Combo> disponibles = new ArrayList<>();
+        disponibles.addAll(aprobados);
+        disponibles.addAll(adjudicados);
+        disponibles.addAll(grabados);
+        
+        // Ordenar por ID descendente (más recientes primero)
+        disponibles.sort((a, b) -> b.getId().compareTo(a.getId()));
+        return disponibles;
     }
 
     public List<Combo> obtenerPorUsuario(Usuario usuario) {
@@ -330,6 +448,15 @@ public class ComboService {
             return true;
         }
         return false;
+    }
+
+    public long contarPreguntasCombo(Long comboId) {
+        Optional<Combo> comboOpt = comboRepository.findById(comboId);
+        if (comboOpt.isEmpty()) {
+            return 0;
+        }
+        Combo combo = comboOpt.get();
+        return combo.getPreguntas() != null ? combo.getPreguntas().size() : 0;
     }
 
     public boolean quitarPregunta(Long comboId, Long preguntaId) {
@@ -847,7 +974,16 @@ public class ComboService {
         // PASO 3: Crear el combo (las preguntas ya est?n reservadas)
         Combo combo = new Combo();
         combo.setCreacionUsuario(usuario);
-        combo.setEstado(EstadoCombo.borrador);
+        // Usar el estado del DTO si se proporciona, sino usar "borrador" por defecto
+        if (dto.getEstado() != null && !dto.getEstado().trim().isEmpty()) {
+            try {
+                combo.setEstado(EstadoCombo.valueOf(dto.getEstado()));
+            } catch (IllegalArgumentException e) {
+                combo.setEstado(EstadoCombo.borrador); // Si el estado no es válido, usar borrador
+            }
+        } else {
+            combo.setEstado(EstadoCombo.borrador);
+        }
         combo.setNivel(NivelCombo.NORMAL);
         combo.setTipo(Combo.TipoCombo.valueOf(dto.getTipo()));
         combo.setTematica(dto.getTematica());

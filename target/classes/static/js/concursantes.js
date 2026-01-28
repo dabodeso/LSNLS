@@ -38,6 +38,7 @@ columnasVisibles: {
 'rr-ss': true,
 'cuest': true,
 'combo': true,
+'xusoker': true,
 'x': true,
 'resultado': true,
 'notas-grabacion': true,
@@ -57,8 +58,13 @@ columnasVisibles: {
 
 // Funciones de inicialización
 async function inicializarConcursantes() {
-// Detectar rol del usuario
+// Detectar rol del usuario (esto también carga la configuración guardada)
 detectarRolUsuario();
+
+// Asegurar que la configuración se haya cargado antes de continuar
+// cargarConfiguracionGuardada() ya se llama dentro de detectarRolUsuario(),
+// pero la llamamos de nuevo aquí para asegurarnos
+cargarConfiguracionGuardada();
 
 await cargarProgramas();
     await cargarConcursantes(true);
@@ -69,17 +75,104 @@ actualizarEncabezadosTabla();
 }
 
 function detectarRolUsuario() {
+// Obtener usuario actual
+const usuario = authManager.currentUser;
+const rol = usuario && usuario.rol ? usuario.rol.replace('ROLE_', '').toLowerCase() : null;
+
 // Mostrar siempre el botón de configuración
 const btnConfig = document.getElementById('btn-config-columnas');
 if (btnConfig) {
 btnConfig.style.display = 'block';
 btnConfig.querySelector('i')?.classList.add('me-1');
 }
+
+// Si el usuario es GUION, aplicar configuración de columnas predeterminada
+if (rol === 'guion') {
+    // Verificar si ya hay configuración guardada
+    const configGuardada = localStorage.getItem('configuracionColumnasConcursantes');
+    
+    // Solo aplicar configuración predeterminada si no hay configuración guardada
+    if (!configGuardada) {
+        // Configuración predeterminada para GUION: ocultar columnas avanzadas
+        configuracionColumnas.columnasVisibles = {
+            'numero-concur': true,
+            'jornada': true,
+            'dia-grabacion': true,
+            'lugar': true,
+            'nombre': true,
+            'foto': true,
+            'edad': true,
+            'ocupacion': true,
+            'rr-ss': true,
+            'cuest': true,
+            'combo': true,
+            'xusoker': true,
+            'x': true,
+            'resultado': true,
+            'notas-grabacion': true,
+            'guionista': true,
+            'valoracion-guionista': true,
+            'estado': true,
+            'momentos-destacados': false,  // Ocultar por defecto
+            'duracion': true,
+            'duracion-direccion': false,   // Ocultar por defecto
+            'duracion-final': false,        // Ocultar por defecto
+            'valoracion-final': false,      // Ocultar por defecto
+            'numero-pgm': false,            // Ocultar por defecto
+            'orden-escaleta': false,        // Ocultar por defecto
+            'bonico': false                 // Ocultar por defecto
+        };
+        // Guardar la configuración predeterminada
+        localStorage.setItem('configuracionColumnasConcursantes', JSON.stringify(configuracionColumnas));
+    }
+}
+
 // Cargar configuración guardada para cualquier usuario
 cargarConfiguracionGuardada();
 }
 
 function aplicarConfiguracionBasica() { /* sin uso, mantenido por compatibilidad */ }
+
+// Función para limitar estados del formulario según el rol
+function limitarEstadosSegunRol() {
+    const usuario = authManager.currentUser;
+    const rol = usuario && usuario.rol ? usuario.rol.replace('ROLE_', '').toLowerCase() : null;
+    const estadoSelect = document.getElementById('estado');
+    
+    if (!estadoSelect) return;
+    
+    // Si es GUION, limitar solo a 'borrador' y 'grabado'
+    if (rol === 'guion') {
+        // Guardar el valor actual
+        const valorActual = estadoSelect.value;
+        
+        // Limpiar opciones existentes
+        estadoSelect.innerHTML = '';
+        
+        // Agregar solo las opciones permitidas
+        const opcionVacia = document.createElement('option');
+        opcionVacia.value = '';
+        opcionVacia.textContent = 'Seleccionar estado';
+        estadoSelect.appendChild(opcionVacia);
+        
+        const opcionBorrador = document.createElement('option');
+        opcionBorrador.value = 'borrador';
+        opcionBorrador.textContent = 'Borrador';
+        estadoSelect.appendChild(opcionBorrador);
+        
+        const opcionGrabado = document.createElement('option');
+        opcionGrabado.value = 'grabado';
+        opcionGrabado.textContent = 'Grabado';
+        estadoSelect.appendChild(opcionGrabado);
+        
+        // Restaurar valor si es permitido, sino establecer borrador
+        if (valorActual === 'borrador' || valorActual === 'grabado') {
+            estadoSelect.value = valorActual;
+        } else {
+            estadoSelect.value = 'borrador';
+        }
+    }
+}
 
 // Carga de datos
 async function cargarConcursantes(resetear = true) {
@@ -412,9 +505,15 @@ celdas.push(`<td onclick="${concursante.cuestionarioId ? `verCuestionario(${conc
 
 // COMBO
 if (configuracionColumnas.columnasVisibles['combo']) {
-celdas.push(`<td onclick="${concursante.comboId ? `verCombo(${concursante.comboId}, ${concursante.id})` : `abrirSelectorComboParaConcursante(${concursante.id})`}" style="cursor: pointer; background-color: #f8f9fa;" title="${concursante.comboId ? 'Ver combo' : 'Seleccionar combo'}">
-               ${concursante.comboId && concursante.comboId !== 0 ? `<span class=\"badge bg-warning\">${concursante.comboId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
+    const badgeClass = concursante.comboReciclado ? 'bg-success' : 'bg-warning';
+    celdas.push(`<td onclick="${concursante.comboId ? `verCombo(${concursante.comboId}, ${concursante.id})` : `abrirSelectorComboParaConcursante(${concursante.id})`}" style="cursor: pointer; background-color: #f8f9fa;" title="${concursante.comboId ? (concursante.comboReciclado ? 'Combo reciclado' : 'Ver combo') : 'Seleccionar combo'}">
+               ${concursante.comboId && concursante.comboId !== 0 ? `<span class=\"badge ${badgeClass}\">${concursante.comboId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
+}
+
+// XUSÓKER
+if (configuracionColumnas.columnasVisibles['xusoker']) {
+celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'xusoker', this)">${concursante.xusoker || ''}</td>`);
 }
 
 // X
@@ -446,7 +545,22 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoraci
 
 // ESTADO
 if (configuracionColumnas.columnasVisibles['estado']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'estado', this)">${concursante.estado || ''}</td>`);
+    const estadosPosibles = ['', 'borrador','grabado','editado','programado','emitido','archivado'];
+    const estadoActual = (concursante.estado || '').toLowerCase();
+    const opcionesEstado = estadosPosibles.map(e => {
+        const selected = e === estadoActual ? ' selected' : '';
+        const label = e === '' 
+            ? 'Seleccionar estado'
+            : e.charAt(0).toUpperCase() + e.slice(1);
+        return `<option value="${e}"${selected}>${label}</option>`;
+    }).join('');
+    celdas.push(
+        `<td>
+            <select class="form-select form-select-sm estado-select" data-id="${concursante.id}">
+                ${opcionesEstado}
+            </select>
+        </td>`
+    );
 }
 
 // MOMENTOS DESTACADOS
@@ -544,6 +658,20 @@ document.getElementById('form-concursante').reset();
 document.getElementById('concursante-id').value = '';
 document.getElementById('cuestionario-id').value = '';
 document.getElementById('combo-id').value = '';
+document.getElementById('combo-id').dataset.comboId = '';
+// Ocultar botón de reciclar
+const btnReciclar = document.getElementById('btn-reciclar-combo');
+if (btnReciclar) {
+    btnReciclar.style.display = 'none';
+    btnReciclar.dataset.comboId = '';
+}
+// Establecer estado predeterminado a 'borrador'
+const estadoElement = document.getElementById('estado');
+if (estadoElement) {
+    estadoElement.value = 'borrador';
+}
+// Limitar estados según rol
+limitarEstadosSegunRol();
 // Cargar jornadas en el desplegable
 try { cargarJornadas(); } catch {}
 const modal = new bootstrap.Modal(document.getElementById('modal-concursante'));
@@ -608,8 +736,51 @@ document.getElementById('redes-sociales').value = concursanteActual.redesSociale
 document.getElementById('cuestionario-id').value = concursanteActual.cuestionarioId || '';
 
 // CORREGIR: usar comboId en lugar de combo.id
-document.getElementById('combo-id').value = concursanteActual.comboId || '';
+const comboId = concursanteActual.comboId || '';
+if (comboId) {
+    // Cargar información del combo para mostrar nombre
+    try {
+        const comboDetalle = await apiManager.get(`/api/combos/${comboId}`);
+        if (comboDetalle && comboDetalle.datos) {
+            const combo = comboDetalle.datos;
+            document.getElementById('combo-id').value = `Combo #${comboId}`;
+            document.getElementById('combo-id').dataset.comboId = comboId;
+            // Mostrar botón de reciclar
+            const btnReciclar = document.getElementById('btn-reciclar-combo');
+            if (btnReciclar) {
+                btnReciclar.style.display = 'inline-block';
+                btnReciclar.dataset.comboId = comboId;
+            }
+        } else {
+            document.getElementById('combo-id').value = `Combo #${comboId}`;
+            document.getElementById('combo-id').dataset.comboId = comboId;
+            const btnReciclar = document.getElementById('btn-reciclar-combo');
+            if (btnReciclar) {
+                btnReciclar.style.display = 'inline-block';
+                btnReciclar.dataset.comboId = comboId;
+            }
+        }
+    } catch (e) {
+        console.warn('No se pudo cargar detalle del combo:', e);
+        document.getElementById('combo-id').value = `Combo #${comboId}`;
+        document.getElementById('combo-id').dataset.comboId = comboId;
+        const btnReciclar = document.getElementById('btn-reciclar-combo');
+        if (btnReciclar) {
+            btnReciclar.style.display = 'inline-block';
+            btnReciclar.dataset.comboId = comboId;
+        }
+    }
+} else {
+    document.getElementById('combo-id').value = '';
+    document.getElementById('combo-id').dataset.comboId = '';
+    const btnReciclar = document.getElementById('btn-reciclar-combo');
+    if (btnReciclar) {
+        btnReciclar.style.display = 'none';
+        btnReciclar.dataset.comboId = '';
+    }
+}
 
+document.getElementById('xusoker').value = concursanteActual.xusoker || '';
 document.getElementById('factor-x').value = concursanteActual.factorX || '';
 document.getElementById('resultado').value = concursanteActual.resultado || '';
 document.getElementById('notas-grabacion').value = concursanteActual.notasGrabacion || '';
@@ -635,16 +806,32 @@ if (estadoElement) {
 estadoElement.value = concursanteActual.estado || '';
 }
 
+// Limitar estados según rol
+limitarEstadosSegunRol();
+
 // Premio (si existe el campo en el formulario)
 const premioElement = document.getElementById('premio');
 if (premioElement) {
 premioElement.value = concursanteActual.premio || '';
 }
 
-// Foto (si existe el campo en el formulario)
-const fotoElement = document.getElementById('foto');
-if (fotoElement) {
-fotoElement.value = concursanteActual.foto || '';
+// Foto (mostrar preview si existe)
+if (concursanteActual.foto) {
+    const fotoPreview = document.getElementById('foto-preview-img');
+    const fotoPreviewDiv = document.getElementById('foto-preview');
+    if (fotoPreview) {
+        fotoPreview.src = `/uploads/${concursanteActual.foto}`;
+        if (fotoPreviewDiv) {
+            fotoPreviewDiv.style.display = 'block';
+        }
+    }
+    document.getElementById('foto-nombre').value = concursanteActual.foto;
+} else {
+    const fotoPreviewDiv = document.getElementById('foto-preview');
+    if (fotoPreviewDiv) {
+        fotoPreviewDiv.style.display = 'none';
+    }
+    document.getElementById('foto-nombre').value = '';
 }
 
 // Créditos especiales (si existe el campo en el formulario)
@@ -678,9 +865,10 @@ nombre: document.getElementById('nombre-concursante').value,
 edad: document.getElementById('edad-concursante').value || null,
 ocupacion: document.getElementById('ocupacion').value || null,
 redesSociales: document.getElementById('redes-sociales').value || null,
-cuestionarioId: document.getElementById('cuestionario-id').value || null,
-comboId: document.getElementById('combo-id').value || null,
-factorX: document.getElementById('factor-x').value || null,
+    cuestionarioId: document.getElementById('cuestionario-id').value || null,
+    comboId: (document.getElementById('combo-id')?.dataset?.comboId || document.getElementById('combo-id')?.value?.replace(/[^0-9]/g, '')) || null,
+    xusoker: document.getElementById('xusoker').value || null,
+    factorX: document.getElementById('factor-x').value || null,
 resultado: document.getElementById('resultado').value || null,
 notasGrabacion: document.getElementById('notas-grabacion').value || null,
 guionista: document.getElementById('guionista').value || null,
@@ -789,9 +977,25 @@ if (response.ok) {
             datosConcursante.id = creadoId;
         }
 
+        // Subir foto si hay un archivo seleccionado
+        const fotoInput = document.getElementById('foto-concursante');
+        const idParaFoto = datosConcursante.id || (concursanteActual && concursanteActual.id) || null;
+        if (fotoInput && fotoInput.files && fotoInput.files.length > 0 && idParaFoto) {
+            try {
+                await subirFotoConcursante(idParaFoto, fotoInput.files[0]);
+                // Limpiar el input de foto después de subir
+                fotoInput.value = '';
+                document.getElementById('foto-nombre').value = '';
+                document.getElementById('foto-preview').style.display = 'none';
+            } catch (e) {
+                console.warn('Error al subir foto:', e);
+                // No bloquear el guardado si falla la foto
+            }
+        }
+        
         mostrarExito(esEdicion ? 'Concursante editado correctamente' : 'Concursante guardado correctamente');
         $('#modal-concursante').modal('hide');
-        const idEditado = datosConcursante.id || (concursanteActual && concursanteActual.id) || null;
+        const idEditado = datosConcursante.id || (concursanteActual && concursanteActual.id) || idParaFoto;
         const paginaAntes = esEdicion ? paginaActual : 0;
         console.info('🔄 [GUARDAR] Recargando lista', { idEditado, paginaAntes, sortByConcursantes, sortAscConcursantes });
         // Recargar y posicionar
@@ -862,15 +1066,38 @@ mostrarError('Error de red o inesperado: ' + err);
 $(document).on('change', '.estado-select', async function() {
     const id = $(this).data('id');
     const nuevoEstado = $(this).val();
+    const select = this;
     try {
         const snapshot = await apiManager.get(`/api/concursantes/${id}`);
         const estadoPrevio = snapshot && snapshot.estado ? snapshot.estado : null;
-        const doAction = async () => { await apiManager.put(`/api/concursantes/${id}/estado`, { estado: nuevoEstado }); await cargarConcursantes(true); };
-        const undoAction = async () => { if (estadoPrevio !== null) { await apiManager.put(`/api/concursantes/${id}/estado`, { estado: estadoPrevio }); await cargarConcursantes(true); } };
+        // Usamos el endpoint genérico de actualización de campo
+        const doAction = async () => {
+            await apiManager.patch(`/api/concursantes/${id}/campo`, { estado: nuevoEstado || null });
+            await cargarConcursantes(true);
+        };
+        const undoAction = async () => {
+            if (estadoPrevio !== null) {
+                await apiManager.patch(`/api/concursantes/${id}/campo`, { estado: estadoPrevio });
+                await cargarConcursantes(true);
+            }
+        };
         await doAction();
-        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Estado concursante ${id}` });
+        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Cambiar estado concursante ${id}` });
     } catch (e) {
-        mostrarError('Error al cambiar estado: ' + e.message);
+        console.error('Error al cambiar estado del concursante:', e);
+        // Restaurar valor previo en el select si lo conocemos
+        if (typeof estadoPrevio !== 'undefined' && estadoPrevio !== null && select) {
+            select.value = (estadoPrevio || '').toLowerCase();
+        }
+        // Mensaje más explicativo según tipo de error
+        const msg = (e && e.message) ? e.message : '';
+        if (msg.startsWith('404')) {
+            mostrarError('No se ha encontrado el concursante o el servicio de cambio de estado. Es posible que haya sido eliminado o que la URL del servicio haya cambiado.');
+        } else if (msg.startsWith('403')) {
+            mostrarError('No tienes permisos para cambiar el estado de este concursante.');
+        } else {
+            mostrarError('Error al cambiar el estado del concursante: ' + msg);
+        }
     }
 });
 
@@ -1093,6 +1320,7 @@ concursante.programa = prog ? { id: prog.id } : null;
             redesSociales: src?.redesSociales ?? null,
             cuestionarioId: src?.cuestionarioId ?? null,
             comboId: src?.comboId ?? null,
+            xusoker: src?.xusoker ?? null,
             factorX: src?.factorX ?? null,
             resultado: src?.resultado ?? null,
             notasGrabacion: src?.notasGrabacion ?? null,
@@ -1312,8 +1540,16 @@ async function iniciarReciclajeParcialDesdePreview() {
                 let jornadaId = null;
                 if (concursanteActual && concursanteActual.jornadaId) {
                     jornadaId = concursanteActual.jornadaId;
-                } else {
-                    // Si no estamos en edición, intentar leer de la fila seleccionada (no trivial); omitir
+                } else if (concursanteParaReemplazo) {
+                    // Si no estamos en edición, obtener el concursante por su ID
+                    try {
+                        const concursante = await apiManager.get(`/api/concursantes/${concursanteParaReemplazo}`);
+                        if (concursante && concursante.jornadaId) {
+                            jornadaId = concursante.jornadaId;
+                        }
+                    } catch (e) {
+                        console.error('Error al obtener concursante:', e);
+                    }
                 }
                 if (!jornadaId) { mostrarError('Este concursante no tiene jornada asignada'); return; }
                 const r = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-parcial/${comboId}`, { preguntaUsadaId });
@@ -1623,6 +1859,30 @@ concursanteParaReemplazo = null;
 } else {
 // Asignar al formulario
 document.getElementById('combo-id').value = id;
+// Obtener información del combo para mostrar nombre y habilitar botón reciclar
+try {
+    const comboDetalle = await apiManager.get(`/api/combos/${id}`);
+    if (comboDetalle && comboDetalle.datos) {
+        const combo = comboDetalle.datos;
+        const nombreCombo = `Combo #${id}`;
+        document.getElementById('combo-id').value = nombreCombo;
+        document.getElementById('combo-id').dataset.comboId = id;
+        // Mostrar botón de reciclar
+        const btnReciclar = document.getElementById('btn-reciclar-combo');
+        if (btnReciclar) {
+            btnReciclar.style.display = 'inline-block';
+            btnReciclar.dataset.comboId = id;
+        }
+    }
+} catch (e) {
+    console.warn('No se pudo cargar detalle del combo:', e);
+    // Mostrar botón de reciclar de todas formas
+    const btnReciclar = document.getElementById('btn-reciclar-combo');
+    if (btnReciclar) {
+        btnReciclar.style.display = 'inline-block';
+        btnReciclar.dataset.comboId = id;
+    }
+}
 }
 const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-combo'));
 modal.hide();
@@ -1790,6 +2050,172 @@ mostrarError('Error al cargar combos: ' + error.message);
 
 function limpiarSelectorCombo() {
 document.getElementById('combo-id').value = '';
+document.getElementById('combo-id').dataset.comboId = '';
+const btnReciclar = document.getElementById('btn-reciclar-combo');
+if (btnReciclar) {
+    btnReciclar.style.display = 'none';
+    btnReciclar.dataset.comboId = '';
+}
+}
+
+// Función para iniciar reciclaje de combo desde el formulario
+async function iniciarReciclajeComboDesdeFormulario() {
+    const comboIdInput = document.getElementById('combo-id');
+    const comboId = comboIdInput?.dataset?.comboId || comboIdInput?.value?.replace(/[^0-9]/g, '') || '';
+    
+    if (!comboId) {
+        mostrarError('No hay un combo seleccionado');
+        return;
+    }
+    
+    // Verificar que hay una jornada seleccionada
+    let jornadaId = document.getElementById('jornada-select')?.value;
+    
+    // Si no hay jornada seleccionada en el formulario, intentar obtenerla del concursante actual
+    if (!jornadaId) {
+        if (concursanteActual && concursanteActual.jornadaId) {
+            jornadaId = concursanteActual.jornadaId;
+        } else {
+            // Si estamos creando un nuevo concursante, necesitamos la jornada
+            mostrarError('Debe seleccionar una jornada antes de reciclar el combo');
+            return;
+        }
+    }
+    
+    try {
+        // Cargar preguntas del combo
+        const response = await apiManager.get(`/api/combos/${comboId}/preguntas`);
+        
+        if (!response || !response.exito || !Array.isArray(response.datos)) {
+            mostrarError('No se pudieron cargar las preguntas del combo');
+            return;
+        }
+        
+        const preguntas = response.datos;
+        
+        if (preguntas.length !== 3) {
+            mostrarError('El combo debe tener exactamente 3 preguntas para reciclaje parcial');
+            return;
+        }
+        
+        // Crear y mostrar modal para seleccionar pregunta usada
+        mostrarModalReciclajeCombo(comboId, preguntas, jornadaId);
+        
+    } catch (error) {
+        console.error('Error al cargar preguntas del combo:', error);
+        mostrarError('Error al cargar preguntas del combo: ' + error.message);
+    }
+}
+
+// Función para mostrar modal de reciclaje de combo
+function mostrarModalReciclajeCombo(comboId, preguntas, jornadaId) {
+    // Eliminar modal anterior si existe
+    const modalAnterior = document.getElementById('modal-reciclar-combo-formulario');
+    if (modalAnterior) {
+        modalAnterior.remove();
+    }
+    
+    // Crear modal
+    const modalHtml = `
+        <div class="modal fade" id="modal-reciclar-combo-formulario" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-recycle"></i> Reciclar Combo #${comboId}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Selecciona la pregunta que se usó en este combo:</strong><br>
+                            Se creará un nuevo combo con las 2 preguntas restantes.
+                        </div>
+                        <div id="preguntas-combo-reciclar" class="row">
+                            ${preguntas.map((p, i) => {
+                                const preguntaTexto = p.pregunta?.pregunta || p.pregunta || 'Sin texto';
+                                const respuesta = p.pregunta?.respuesta || p.respuesta || '';
+                                return `
+                                    <div class="col-md-12 mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="preguntaUsadaReciclar" id="pregUsada${p.pregunta?.id || p.id}" value="${p.pregunta?.id || p.id}">
+                                            <label class="form-check-label" for="pregUsada${p.pregunta?.id || p.id}">
+                                                <strong>Pregunta ${i + 1}:</strong> ${preguntaTexto.substring(0, 100)}${preguntaTexto.length > 100 ? '...' : ''}
+                                                ${respuesta ? `<br><small class="text-muted">Respuesta: ${respuesta}</small>` : ''}
+                                            </label>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-warning" id="btn-confirmar-reciclaje-formulario" onclick="confirmarReciclajeComboDesdeFormulario('${comboId}', '${jornadaId}')">
+                            <i class="fas fa-check"></i> Confirmar Reciclaje
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Insertar modal en el body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modal-reciclar-combo-formulario'));
+    modal.show();
+    
+    // Limpiar al cerrar
+    document.getElementById('modal-reciclar-combo-formulario').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+// Función para confirmar reciclaje de combo desde formulario
+async function confirmarReciclajeComboDesdeFormulario(comboId, jornadaId) {
+    const preguntaSeleccionada = document.querySelector('input[name="preguntaUsadaReciclar"]:checked');
+    
+    if (!preguntaSeleccionada) {
+        mostrarError('Debe seleccionar una pregunta usada');
+        return;
+    }
+    
+    const preguntaUsadaId = preguntaSeleccionada.value;
+    
+    try {
+        // Obtener usuario actual
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        const usuarioId = usuario.id;
+        
+        if (!usuarioId) {
+            mostrarError('No se pudo identificar al usuario');
+            return;
+        }
+        
+        // Llamar al endpoint de reciclaje parcial
+        const response = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-parcial/${comboId}`, {
+            preguntaUsadaId: preguntaUsadaId
+        });
+        
+        if (response && response.exito) {
+            mostrarExito('Combo reciclado correctamente. Se ha creado un nuevo combo con las 2 preguntas restantes.');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-combo-formulario'));
+            if (modal) modal.hide();
+            
+            // Opcional: actualizar el combo asignado al nuevo combo creado
+            // Por ahora, mantenemos el combo original asignado
+        } else {
+            mostrarError(response?.mensaje || 'Error al reciclar el combo');
+        }
+    } catch (error) {
+        console.error('Error al reciclar combo:', error);
+        mostrarError('Error al reciclar el combo: ' + (error.message || error));
+    }
 }
 
 // --- ORDENACIÓN POR COLUMNA con indicadores ---
@@ -2217,7 +2643,18 @@ throw new Error('Error al subir la foto');
 
 const resultado = await response.json();
 
-// Actualizar la vista
+// Actualizar la vista de la foto en el formulario si estamos editando
+if (concursanteActual && concursanteActual.id === concursanteId) {
+    // Actualizar la URL de la foto en el preview
+    const fotoPreview = document.getElementById('foto-preview-img');
+    const fotoPreviewDiv = document.getElementById('foto-preview');
+    if (fotoPreview && resultado && resultado.foto) {
+        fotoPreview.src = `/uploads/${resultado.foto}`;
+        fotoPreviewDiv.style.display = 'block';
+    }
+}
+
+// Actualizar la vista de la tabla
         await cargarConcursantes();
         // Reiniciar paginación y cargar desde el servidor
         paginaActual = 0;
@@ -2256,11 +2693,12 @@ const mapeoColumnas = {
 'foto': 'col-foto',
 'edad': 'col-edad',
 'ocupacion': 'col-ocupacion',
-'rr-ss': 'col-rr-ss',
-'cuest': 'col-cuest',
-'combo': 'col-combo',
-'x': 'col-x',
-'resultado': 'col-resultado',
+    'rr-ss': 'col-rr-ss',
+    'cuest': 'col-cuest',
+    'combo': 'col-combo',
+    'xusoker': 'col-xusoker',
+    'x': 'col-x',
+    'resultado': 'col-resultado',
 'notas-grabacion': 'col-notas-grabacion',
 'guionista': 'col-guionista',
 'valoracion-guionista': 'col-valoracion-guionista',
@@ -2296,11 +2734,12 @@ const mapeoColumnas = {
 'col-foto': 'foto',
 'col-edad': 'edad',
 'col-ocupacion': 'ocupacion',
-'col-rr-ss': 'rr-ss',
-'col-cuest': 'cuest',
-'col-combo': 'combo',
-'col-x': 'x',
-'col-resultado': 'resultado',
+    'col-rr-ss': 'rr-ss',
+    'col-cuest': 'cuest',
+    'col-combo': 'combo',
+    'col-xusoker': 'xusoker',
+    'col-x': 'x',
+    'col-resultado': 'resultado',
 'col-notas-grabacion': 'notas-grabacion',
 'col-guionista': 'guionista',
 'col-valoracion-guionista': 'valoracion-guionista',
@@ -2386,7 +2825,7 @@ encabezados.push('<th>ACCIONES</th>');
 
 thead.innerHTML = encabezados.join('');
 
-// Reasignar listeners de orden tras reconstruir encabezados
+// Reasignar listeners de orden y re-inicializar el resizer tras reconstruir encabezados
 const tabla = document.getElementById('tabla-concursantes-principal');
 if (tabla) {
 tabla.querySelectorAll('thead th').forEach((th, idx) => {
@@ -2399,6 +2838,16 @@ th.onclick = () => {
 // Actualizar flechas según último estado
 if (typeof actualizarIndicadoresOrdenamientoConcursantes === 'function') {
 actualizarIndicadoresOrdenamientoConcursantes();
+}
+
+// Muy importante: volver a inicializar TableResizer para que se apliquen
+// los anchos guardados y se vuelvan a crear los handles de redimensionado.
+try {
+    if (typeof TableResizer !== 'undefined') {
+        new TableResizer('tabla-concursantes-principal', { minWidth: 50, maxWidth: 600 });
+    }
+} catch (e) {
+    console.error('Error al re-inicializar TableResizer en concursantes:', e);
 }
 }
 }

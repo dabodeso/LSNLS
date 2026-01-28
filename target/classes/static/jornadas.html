@@ -256,10 +256,10 @@
                         <a class="nav-link" href="combos.html">Combos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="concursantes.html">Concursantes</a>
+                        <a class="nav-link active" href="jornadas.html">Jornadas</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="jornadas.html">Jornadas</a>
+                        <a class="nav-link" href="concursantes.html">Concursantes</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="programas.html">Programas</a>
@@ -296,9 +296,25 @@
                             <button type="button" id="btnVistaJ3" class="btn btn-outline-primary" onclick="setVistaJornadas('j3')">Jornadas 3</button>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="JornadasManager.mostrarModalCrear()">
-                        <i class="fas fa-plus"></i> Nueva Jornada
-                    </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-1">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    title="Deshacer (Ctrl+Z)"
+                                    onclick="handleGlobalUndo()">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    title="Rehacer (Ctrl+Y)"
+                                    onclick="handleGlobalRedo()">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </div>
+                        <button class="btn btn-primary" onclick="JornadasManager.mostrarModalCrear()">
+                            <i class="fas fa-plus"></i> Nueva Jornada
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Filtros -->
@@ -837,7 +853,7 @@
     <script src="js/api.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/undo-manager.js"></script>
-    <script src="js/jornadas.js?v=20250716-9"></script>
+    <script src="js/jornadas.js?v=20250127-1"></script>
     <script>
         // Verificar autenticación al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
@@ -959,6 +975,11 @@
                 modo = 'actual';
             }
             try { localStorage.setItem('vistaJornadas', modo); } catch {}
+            
+            // Recargar las jornadas para aplicar el nuevo formato
+            if (window.JornadasManager && typeof window.JornadasManager.mostrarJornadas === 'function') {
+                window.JornadasManager.mostrarJornadas();
+            }
         }
     </script>
 </body>

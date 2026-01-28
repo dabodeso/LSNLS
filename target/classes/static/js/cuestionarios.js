@@ -129,7 +129,14 @@ const CuestionariosManager = {
                 // Añadir filtros si existen
                 if (estado) params.append('estado', estado);
                 if (tematica) params.append('tematica', tematica);
-                if (busqueda) params.append('id', busqueda);
+                // Si la búsqueda es numérica, usar 'id', sino usar 'texto' para buscar en preguntas/respuestas
+                if (busqueda) {
+                    if (/^\d+$/.test(busqueda.trim())) {
+                        params.append('id', busqueda);
+                    } else {
+                        params.append('texto', busqueda);
+                    }
+                }
                 
                 console.log('🔄 [CARGAR MÁS] Parámetros:', params.toString());
                 
@@ -719,7 +726,8 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
                 pregunta.tematica,
                 pregunta.respuesta,
                 pregunta.subtema,
-                pregunta.estado
+                pregunta.estado,
+                pregunta.nivel
             );
         });
 
@@ -742,17 +750,18 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
     }
 }
 
-function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, estado = null) {
-    console.log('[FRONT] seleccionarPreguntaModal llamada con:', {id, pregunta, tematica, respuesta, subtema, selectorPreguntaContext});
+function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, estado = null, nivel = null) {
+    console.log('[FRONT] seleccionarPreguntaModal llamada con:', {id, pregunta, tematica, respuesta, subtema, estado, nivel, selectorPreguntaContext});
     // --- NUEVO: Si hay contexto de añadir pregunta a cuestionario, hacer petición AJAX ---
     if (window.contextoAnadirPregunta) {
-        const { cuestionarioId, nivel } = window.contextoAnadirPregunta;
-        // Determinar el factor según el nivel
+        const { cuestionarioId, nivel: nivelEsperado } = window.contextoAnadirPregunta;
+        // Determinar el factor según el nivel esperado
         let factorMultiplicacion = 1;
-        if (nivel === 'PM1') factorMultiplicacion = 2;
-        else if (nivel === 'PM2') factorMultiplicacion = 3;
-        else if (nivel === 'PM3') factorMultiplicacion = 1;
+        if (nivelEsperado === 'PM1') factorMultiplicacion = 2;
+        else if (nivelEsperado === 'PM2') factorMultiplicacion = 3;
+        else if (nivelEsperado === 'PM3') factorMultiplicacion = 1;
 
+        // Función para añadir la pregunta al cuestionario
         const doAdd = async () => {
             await apiManager.post(`/api/cuestionarios/${cuestionarioId}/preguntas`, { preguntaId: id, factorMultiplicacion }, { headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' } });
             await CuestionariosManager.cargarCuestionarios();
@@ -762,6 +771,81 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
             await CuestionariosManager.cargarCuestionarios();
         };
 
+        // Verificar si el nivel de la pregunta coincide con el nivel esperado
+        const nivelActual = nivel || '';
+        const esNivel5 = String(nivelActual).startsWith('_5');
+        const nivelEsperadoEspecifico = nivelEsperado; // _0, _1LS, _2NLS, _3LS, _4NLS, PM1, PM2, PM3
+        
+        // Si el nivel no coincide, mostrar warning y ofrecer cambiar automáticamente
+        if (nivelActual !== nivelEsperadoEspecifico && !esNivel5) {
+            const mensajeNivel = 
+                `Atención: La pregunta seleccionada tiene nivel "${nivelActual}" pero el hueco del cuestionario es "${nivelEsperadoEspecifico}".\n\n` +
+                `Pregunta: "${pregunta}"\n\n` +
+                `Si continúas, se cambiará automáticamente el nivel de esta pregunta a "${nivelEsperadoEspecifico}" para que sea consistente con el cuestionario.\n\n` +
+                `¿Quieres continuar y cambiar el nivel?`;
+            
+            const continuar = window.confirm(mensajeNivel);
+            if (!continuar) {
+                // Usuario canceló, cerrar modal y limpiar contexto
+                window.contextoAnadirPregunta = null;
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-pregunta'));
+                if (modal) modal.hide();
+                return;
+            }
+            
+            // Usuario aceptó, cambiar el nivel de la pregunta primero y luego añadirla
+            (async () => {
+                try {
+                    await fetch(`/api/preguntas/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            ...authManager.getAuthHeaders(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: id,
+                            nivel: nivelEsperadoEspecifico
+                        })
+                    });
+                    Toastify({ 
+                        text: `Nivel de la pregunta cambiado de "${nivelActual}" a "${nivelEsperadoEspecifico}"`, 
+                        duration: 3000, 
+                        close: true, 
+                        gravity: 'top', 
+                        position: 'right', 
+                        style: { background: 'linear-gradient(to right, #ffc107, #ff9800)' } 
+                    }).showToast();
+                    
+                    // Ahora añadir la pregunta
+                    await doAdd();
+                    
+                    if (window.UndoManager) {
+                        window.UndoManager.record({ do: doAdd, undo: undoDelete, label: `Añadir pregunta ${id} a cuestionario ${cuestionarioId}` });
+                    }
+                    Toastify({ text: 'Pregunta añadida al cuestionario', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
+                    if (estado && String(estado).toLowerCase() === 'verificada') {
+                        Toastify({ text: 'Aviso: La pregunta estaba VERIFICADA y se ha marcado como APROBADA automáticamente.', duration: 4000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ffc107, #ff9800)' } }).showToast();
+                    }
+                } catch (err) {
+                    console.error('Error al cambiar nivel o añadir pregunta', id, err);
+                    Toastify({
+                        text: `Error: ${err.message || err}`,
+                        duration: 4000,
+                        close: true,
+                        gravity: 'top',
+                        position: 'right',
+                        style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+                    }).showToast();
+                } finally {
+                    window.contextoAnadirPregunta = null;
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-pregunta'));
+                    if (modal) modal.hide();
+                }
+            })();
+            return;
+        }
+
+        // Nivel coincide, añadir directamente
         doAdd()
         .then(() => {
             if (window.UndoManager) {
@@ -1369,7 +1453,14 @@ window.filtrarCuestionarios = async function(resetear = true) {
         if (estado) params.append('estado', estado);
         if (tematica) params.append('tematica', tematica);
         if (subtema) params.append('subtema', subtema);
-        if (busqueda) params.append('id', busqueda);
+        // Si la búsqueda es numérica, usar 'id', sino usar 'texto' para buscar en preguntas/respuestas
+        if (busqueda) {
+            if (/^\d+$/.test(busqueda.trim())) {
+                params.append('id', busqueda);
+            } else {
+                params.append('texto', busqueda);
+            }
+        }
 
         console.log('🔍 [FILTRAR] Parámetros de búsqueda:', params.toString());
 

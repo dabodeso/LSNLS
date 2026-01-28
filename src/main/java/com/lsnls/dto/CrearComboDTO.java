@@ -7,6 +7,7 @@ public class CrearComboDTO {
     private String tipo;
     private String tematica;
     private String notasDireccion;
+    private String estado; // Estado opcional del combo
 
     public List<PreguntaMultiplicadoraDTO> getPreguntasMultiplicadoras() { 
         return preguntasMultiplicadoras; 
@@ -38,6 +39,14 @@ public class CrearComboDTO {
 
     public void setNotasDireccion(String notasDireccion) {
         this.notasDireccion = notasDireccion;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
     }
 
     public static class PreguntaMultiplicadoraDTO {

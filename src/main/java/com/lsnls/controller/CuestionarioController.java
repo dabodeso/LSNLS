@@ -107,8 +107,8 @@ public class CuestionarioController {
     public ResponseEntity<?> actualizarNotasDireccion(@PathVariable Long id, @RequestBody Map<String, String> datos) {
         try {
             String notasDireccion = datos.get("notasDireccion");
-            Cuestionario cuestionario = cuestionarioService.actualizarNotasDireccion(id, notasDireccion);
-            return ResponseEntity.ok(cuestionario);
+            cuestionarioService.actualizarNotasDireccion(id, notasDireccion);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Notas de dirección actualizadas correctamente"));
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El cuestionario ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
@@ -121,7 +121,9 @@ public class CuestionarioController {
     public ResponseEntity<Map<String, Object>> filtrarCuestionarios(
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String tematica,
+            @RequestParam(required = false) String subtema,
             @RequestParam(required = false) String id,
+            @RequestParam(required = false) String texto,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size
     ) {
@@ -132,7 +134,7 @@ public class CuestionarioController {
             if (id != null && !id.isEmpty()) {
                 response = cuestionarioService.filtrarCuestionariosPorId(id, page, size);
             } else {
-                response = cuestionarioService.filtrarCuestionarios(estado, tematica, page, size);
+                response = cuestionarioService.filtrarCuestionarios(estado, tematica, subtema, texto, page, size);
             }
             return ResponseEntity.ok(response);
         } catch (Exception e) {

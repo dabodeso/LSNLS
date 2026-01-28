@@ -185,9 +185,20 @@ public class CuestionarioService {
      * Obtiene cuestionarios disponibles para asignar: solo 'aprobado'.
      */
     public List<Cuestionario> obtenerDisponiblesParaConcursantes() {
+        // Obtener cuestionarios aprobados, adjudicados o grabados (disponibles para asignar)
         List<Cuestionario> aprobados = cuestionarioRepository.findByEstado(EstadoCuestionario.aprobado);
-        aprobados.sort((a, b) -> b.getId().compareTo(a.getId()));
-        return aprobados;
+        List<Cuestionario> adjudicados = cuestionarioRepository.findByEstado(EstadoCuestionario.adjudicado);
+        List<Cuestionario> grabados = cuestionarioRepository.findByEstado(EstadoCuestionario.grabado);
+        
+        // Combinar todas las listas - permitir cualquiera de estos estados
+        List<Cuestionario> disponibles = new ArrayList<>();
+        disponibles.addAll(aprobados);
+        disponibles.addAll(adjudicados);
+        disponibles.addAll(grabados);
+        
+        // Ordenar por ID descendente (más recientes primero)
+        disponibles.sort((a, b) -> b.getId().compareTo(a.getId()));
+        return disponibles;
     }
 
     public boolean agregarPregunta(Long cuestionarioId, Long preguntaId, Integer factorMultiplicacion) {
@@ -399,12 +410,107 @@ public class CuestionarioService {
         throw new RuntimeException("Cuestionario no encontrado con ID: " + id);
     }
 
-    public Map<String, Object> filtrarCuestionarios(String estado, String tematica, int page, int size) {
+    public Map<String, Object> filtrarCuestionarios(String estado, String tematica, String subtema, String texto, int page, int size) {
         try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
         // Crear objeto Pageable para paginación
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
         Page<Cuestionario> paginaCuestionarios;
+        
+        // Si hay texto, buscar en preguntas y respuestas usando consulta nativa
+        if (texto != null && !texto.trim().isEmpty()) {
+            String textoBusqueda = "%" + texto.trim().toLowerCase() + "%";
+            
+            // Construir consulta nativa para buscar cuestionarios que tengan preguntas o respuestas con el texto
+            String sql = "SELECT DISTINCT c.id FROM cuestionarios c " +
+                        "INNER JOIN cuestionarios_preguntas cp ON c.id = cp.cuestionario_id " +
+                        "INNER JOIN preguntas p ON cp.pregunta_id = p.id " +
+                        "WHERE (LOWER(p.pregunta) LIKE :texto OR LOWER(p.respuesta) LIKE :texto)";
+            
+            if (estado != null && !estado.isEmpty()) {
+                sql += " AND c.estado = :estado";
+            }
+            if (tematica != null && !tematica.isEmpty()) {
+                sql += " AND LOWER(c.tematica) LIKE :tematica";
+            }
+            if (subtema != null && !subtema.isEmpty()) {
+                sql += " AND LOWER(p.subtema) LIKE :subtema";
+            }
+            
+            sql += " ORDER BY c.id DESC";
+            
+            // Ejecutar consulta nativa
+            javax.persistence.Query query = entityManager.createNativeQuery(sql);
+            query.setParameter("texto", textoBusqueda);
+            if (estado != null && !estado.isEmpty()) {
+                query.setParameter("estado", estado);
+            }
+            if (tematica != null && !tematica.isEmpty()) {
+                query.setParameter("tematica", "%" + tematica.toLowerCase() + "%");
+            }
+            if (subtema != null && !subtema.isEmpty()) {
+                query.setParameter("subtema", "%" + subtema.toLowerCase() + "%");
+            }
+            query.setFirstResult((int) pageable.getOffset());
+            query.setMaxResults(pageable.getPageSize());
+            
+            @SuppressWarnings("unchecked")
+            List<Number> resultadoIds = query.getResultList();
+            
+            // Obtener el total de resultados
+            String countSql = "SELECT COUNT(DISTINCT c.id) FROM cuestionarios c " +
+                             "INNER JOIN cuestionarios_preguntas cp ON c.id = cp.cuestionario_id " +
+                             "INNER JOIN preguntas p ON cp.pregunta_id = p.id " +
+                             "WHERE (LOWER(p.pregunta) LIKE :texto OR LOWER(p.respuesta) LIKE :texto)";
+            if (estado != null && !estado.isEmpty()) {
+                countSql += " AND c.estado = :estado";
+            }
+            if (tematica != null && !tematica.isEmpty()) {
+                countSql += " AND LOWER(c.tematica) LIKE :tematica";
+            }
+            if (subtema != null && !subtema.isEmpty()) {
+                countSql += " AND LOWER(p.subtema) LIKE :subtema";
+            }
+            
+            javax.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
+            countQuery.setParameter("texto", textoBusqueda);
+            if (estado != null && !estado.isEmpty()) {
+                countQuery.setParameter("estado", estado);
+            }
+            if (tematica != null && !tematica.isEmpty()) {
+                countQuery.setParameter("tematica", "%" + tematica.toLowerCase() + "%");
+            }
+            if (subtema != null && !subtema.isEmpty()) {
+                countQuery.setParameter("subtema", "%" + subtema.toLowerCase() + "%");
+            }
+            
+            long total = ((Number) countQuery.getSingleResult()).longValue();
+            
+            // Convertir resultados a cuestionarios
+            List<Cuestionario> cuestionarios = new ArrayList<>();
+            for (Number id : resultadoIds) {
+                Optional<Cuestionario> cuestionarioOpt = cuestionarioRepository.findById(id.longValue());
+                if (cuestionarioOpt.isPresent()) {
+                    cuestionarios.add(cuestionarioOpt.get());
+                }
+            }
+            
+            // Convertir a DTOs
+            List<Map<String, Object>> dtos = new ArrayList<>();
+            for (Cuestionario c : cuestionarios) {
+                Map<String, Object> dto = obtenerCuestionarioConSlots(c.getId());
+                if (dto != null) dtos.add(dto);
+            }
+            
+            // Construir respuesta
+            Map<String, Object> response = new HashMap<>();
+            response.put("cuestionarios", dtos);
+            response.put("currentPage", page);
+            response.put("totalItems", total);
+            response.put("totalPages", (int) Math.ceil((double) total / size));
+            
+            return response;
+        }
         
         // Aplicar filtros y paginación directamente en la consulta a la base de datos
         if (estado != null && !estado.isEmpty() && tematica != null && !tematica.isEmpty()) {

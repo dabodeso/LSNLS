@@ -204,6 +204,7 @@ CREATE TABLE IF NOT EXISTS concursantes (
     redes_sociales VARCHAR(255),
     cuestionario_id BIGINT,
     combo_id BIGINT,
+    xusoker ENUM('NO USÓ', 'CONTINÚE', 'AL VERRÉS', 'RECICLA', 'LLAMADA'),
     factor_x VARCHAR(255),
     resultado INTEGER,
     notas_grabacion TEXT,

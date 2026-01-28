@@ -40,6 +40,7 @@ public class JornadaDTO {
         private String nivel;
         private String estado;
         private String tipo;
+        private String notasDireccion;
         private Integer totalPreguntas;
         private boolean reutilizado;
     }

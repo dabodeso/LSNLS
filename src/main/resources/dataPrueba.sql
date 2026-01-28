@@ -207,14 +207,14 @@ INSERT INTO jornadas_combos (jornada_id, combo_id) VALUES
 (@jid, @c1_id), (@jid, @c2_id), (@jid, @c3_id), (@jid, @c4_id), (@jid, @c5_id), (@jid, @c6_id);
 
 -- 6 concursantes con datos, todos en la misma jornada y asignados a Q/C correspondientes
-INSERT INTO concursantes (numero_concursante, jornada_id, dia_grabacion, lugar, nombre, edad, ocupacion, redes_sociales, cuestionario_id, combo_id, resultado, notas_grabacion, guionista, valoracion_guionista, momentos_destacados, duracion, valoracion_final, version)
+INSERT INTO concursantes (numero_concursante, jornada_id, dia_grabacion, lugar, nombre, edad, ocupacion, redes_sociales, cuestionario_id, combo_id, xusoker, resultado, notas_grabacion, guionista, valoracion_guionista, momentos_destacados, duracion, valoracion_final, version)
 VALUES
-(1, @jid, CURDATE(), 'SEGOVIA', 'ALICIA', 28, 'INGENIERA', '@alicia', @q1_id, @c1_id, 0, 'Muy resolutiva y simpática', 'admin', 'Bien', 'Gran presentación', '12:30', '1', 0),
-(2, @jid, CURDATE(), 'SEGOVIA', 'BRUNO', 35, 'ABOGADO', '@bruno', @q2_id, @c2_id, 0, 'Seguro en cámara', 'admin', 'Muy bien', 'Buen humor', '11:15', '1', 0),
-(3, @jid, CURDATE(), 'SEGOVIA', 'CARLA', 32, 'MÉDICA', '@carla', @q3_id, @c3_id, 0, 'Energía alta todo el rato', 'admin', 'Excelente', 'Momentazos', '13:05', '1', 0),
-(4, @jid, CURDATE(), 'SEGOVIA', 'DIEGO', 29, 'DOCENTE', '@diego', @q4_id, @c4_id, 0, 'Muy natural', 'admin', 'OK', 'Improvisación', '10:45', '1', 0),
-(5, @jid, CURDATE(), 'SEGOVIA', 'ELENA', 27, 'PERIODISTA', '@elena', @q5_id, @c5_id, 0, 'Comunicación clara', 'admin', 'Notable', 'Reacciones', '09:55', '1', 0),
-(6, @jid, CURDATE(), 'SEGOVIA', 'FERNANDO', 41, 'EMPRESARIO', '@fernando', @q6_id, @c6_id, 0, 'Carisma alto', 'admin', 'Top', 'Risas', '14:10', '1', 0);
+(1, @jid, CURDATE(), 'SEGOVIA', 'ALICIA', 28, 'INGENIERA', '@alicia', @q1_id, @c1_id, 'CONTINÚE', 0, 'Muy resolutiva y simpática', 'admin', 'Bien', 'Gran presentación', '12:30', '1', 0),
+(2, @jid, CURDATE(), 'SEGOVIA', 'BRUNO', 35, 'ABOGADO', '@bruno', @q2_id, @c2_id, 'NO USÓ', 0, 'Seguro en cámara', 'admin', 'Muy bien', 'Buen humor', '11:15', '1', 0),
+(3, @jid, CURDATE(), 'SEGOVIA', 'CARLA', 32, 'MÉDICA', '@carla', @q3_id, @c3_id, 'AL VERRÉS', 0, 'Energía alta todo el rato', 'admin', 'Excelente', 'Momentazos', '13:05', '1', 0),
+(4, @jid, CURDATE(), 'SEGOVIA', 'DIEGO', 29, 'DOCENTE', '@diego', @q4_id, @c4_id, 'RECICLA', 0, 'Muy natural', 'admin', 'OK', 'Improvisación', '10:45', '1', 0),
+(5, @jid, CURDATE(), 'SEGOVIA', 'ELENA', 27, 'PERIODISTA', '@elena', @q5_id, @c5_id, 'LLAMADA', 0, 'Comunicación clara', 'admin', 'Notable', 'Reacciones', '09:55', '1', 0),
+(6, @jid, CURDATE(), 'SEGOVIA', 'FERNANDO', 41, 'EMPRESARIO', '@fernando', @q6_id, @c6_id, 'CONTINÚE', 0, 'Carisma alto', 'admin', 'Top', 'Risas', '14:10', '1', 0);
 
 -- Marcar como USADAS las preguntas que están en cuestionarios o combos
 UPDATE preguntas

@@ -139,7 +139,8 @@
         
         /* Estilos específicos para campos editables en programas */
         .table-excel td input.campo-editable,
-        .table-excel td textarea.campo-editable {
+        .table-excel td textarea.campo-editable,
+        .table-excel td select.campo-editable {
             width: 100%;
             font-size: 0.93rem;
             padding: 4px 6px;
@@ -148,12 +149,14 @@
             background: transparent;
         }
         .table-excel td input.campo-editable:hover,
-        .table-excel td textarea.campo-editable:hover {
+        .table-excel td textarea.campo-editable:hover,
+        .table-excel td select.campo-editable:hover {
             background-color: #f8f9fa;
             border-color: #dee2e6;
         }
         .table-excel td input.campo-editable:focus,
-        .table-excel td textarea.campo-editable:focus {
+        .table-excel td textarea.campo-editable:focus,
+        .table-excel td select.campo-editable:focus {
             background-color: white;
             border-color: #007bff;
             outline: none;
@@ -177,9 +180,28 @@
         .concursantes-table .col-duracion { width: 6%; }
         .concursantes-table .col-foto { width: 12%; }
         .concursantes-table .col-momentos { width: 12%; }
+        .concursantes-table .col-xusoker { width: 7%; }
         .concursantes-table .col-factor-x { width: 4%; }
         .concursantes-table .col-valoracion { width: 8%; }
-        .concursantes-table .col-creditos { width: 12%; }
+        
+        /* Créditos especiales ahora van en cabecera del programa */
+        .programa-creditos-textarea {
+            width: 100%;
+            min-height: 44px;
+            resize: vertical;
+            text-align: left;
+            color: #ffffff;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 6px;
+            padding: 8px 10px;
+            line-height: 1.25;
+        }
+        .programa-creditos-textarea:focus {
+            background: rgba(255,255,255,0.18);
+            outline: none;
+            border-color: rgba(255,255,255,0.55);
+        }
         
         /* Estilo azul para encabezados de tabla de programas (igual que preguntas) */
         .table-excel thead th {
@@ -258,10 +280,10 @@
                         <a class="nav-link" href="combos.html">Combos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="concursantes.html">Concursantes</a>
+                        <a class="nav-link" href="jornadas.html">Jornadas</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="jornadas.html">Jornadas</a>
+                        <a class="nav-link" href="concursantes.html">Concursantes</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" href="programas.html">Programas</a>
@@ -287,11 +309,27 @@
     </nav>
 
     <div class="container-fluid mt-4">
-        <div class="section-header">
-            <h2>Gestión de Programas</h2>
-            <button class="btn btn-primary" onclick="mostrarFormularioPrograma()">
-                <i class="fas fa-plus"></i> Nuevo Programa
-            </button>
+        <div class="section-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <h2 class="mb-0">Gestión de Programas</h2>
+                <button class="btn btn-primary" onclick="mostrarFormularioPrograma()">
+                    <i class="fas fa-plus"></i> Nuevo Programa
+                </button>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        title="Deshacer (Ctrl+Z)"
+                        onclick="handleGlobalUndo()">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        title="Rehacer (Ctrl+Y)"
+                        onclick="handleGlobalRedo()">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Filtros (estética similar a preguntas) -->
@@ -439,6 +477,37 @@
                         <div class="mb-3">
                             <input type="text" class="form-control" id="buscar-concursante-disponible" placeholder="Buscar por nombre, lugar, ocupación..." onkeyup="debounceFiltrarConcursantes()">
                         </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label form-label-sm">Lugar</label>
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="filtro-lugar-concursante-disponible"
+                                       placeholder="Filtrar por lugar..."
+                                       onkeyup="onCambioFiltrosConcursantesDisponibles()">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label form-label-sm">Valoración final</label>
+                                <select class="form-select form-select-sm"
+                                        id="filtro-valoracion-final-concursante-disponible"
+                                        onchange="onCambioFiltrosConcursantesDisponibles()">
+                                    <option value="">Todas</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label form-label-sm">Estado</label>
+                                <select class="form-select form-select-sm"
+                                        id="filtro-estado-concursante-disponible"
+                                        onchange="onCambioFiltrosConcursantesDisponibles()">
+                                    <option value="">Grabado y Editado</option>
+                                    <option value="GRABADO">Grabado</option>
+                                    <option value="EDITADO">Editado</option>
+                                </select>
+                            </div>
+                        </div>
                         <div id="info-paginacion-concursantes" class="mb-2 text-muted small">
                             <!-- Información de paginación se mostrará aquí -->
                         </div>
@@ -478,11 +547,14 @@
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/utils.js"></script>
     <script src="js/undo-manager.js"></script>
-    <script src="js/programas.js"></script>
+    <script src="js/table-resizer.js?v=20260128-2"></script>
+    <script src="js/programas.js?v=20260128-1"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();
+            mostrarBotonAdminNavbar();
         });
     </script>
 </body>

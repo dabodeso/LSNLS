@@ -135,6 +135,27 @@
 
   // Exponer singleton global
   window.UndoManager = window.UndoManager || new UndoManagerImpl();
+
+  // Helpers globales para usar desde botones de cabecera
+  window.handleGlobalUndo = async function () {
+    try {
+      if (window.UndoManager && typeof window.UndoManager.undo === 'function') {
+        await window.UndoManager.undo();
+      }
+    } catch (e) {
+      console.error('[UndoManager] Error en handleGlobalUndo:', e);
+    }
+  };
+
+  window.handleGlobalRedo = async function () {
+    try {
+      if (window.UndoManager && typeof window.UndoManager.redo === 'function') {
+        await window.UndoManager.redo();
+      }
+    } catch (e) {
+      console.error('[UndoManager] Error en handleGlobalRedo:', e);
+    }
+  };
 })();
 
 

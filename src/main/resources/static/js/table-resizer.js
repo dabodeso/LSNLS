@@ -8,10 +8,13 @@ class TableResizer {
         this.table = document.getElementById(tableId);
         this.options = {
             minWidth: 50,
-            maxWidth: null, // Sin límite máximo
+            // Ancho máximo razonable para evitar columnas gigantes
+            maxWidth: 600,
             resizeHandleWidth: 4,
             ...options
         };
+        this._resizeObserver = null;
+        this._autoSaveTimer = null;
         
         if (!this.table) {
             console.error(`Tabla con ID '${tableId}' no encontrada`);
@@ -24,7 +27,107 @@ class TableResizer {
     init() {
         this.createResizeHandles();
         this.bindEvents();
-        this.setDefaultColumnWidths();
+        // Primero intentar cargar anchos guardados; si no hay, aplicar defaults
+        const loaded = this.loadColumnWidths();
+        if (!loaded) {
+            this.setDefaultColumnWidths();
+        }
+        // Guardado robusto: si el ancho cambia por CSS/JS/resize nativo, persistirlo igual
+        this.setupAutoSaveOnResize();
+    }
+
+    /**
+     * Observa cambios reales de tamaño en <th> y persiste automáticamente.
+     * Esto cubre casos donde el usuario cambia el ancho sin usar nuestros handles
+     * (por ejemplo, por CSS `resize: horizontal` o por scripts externos).
+     */
+    setupAutoSaveOnResize() {
+        try {
+            if (typeof ResizeObserver === 'undefined') return;
+            const thead = this.table.querySelector('thead tr');
+            if (!thead) return;
+
+            const columns = thead.querySelectorAll('th');
+            if (!columns || columns.length === 0) return;
+
+            // Desconectar si ya existía
+            if (this._resizeObserver) {
+                try { this._resizeObserver.disconnect(); } catch (e) { /* ignore */ }
+            }
+
+            const scheduleSave = () => {
+                if (this._autoSaveTimer) clearTimeout(this._autoSaveTimer);
+                this._autoSaveTimer = setTimeout(() => {
+                    this._autoSaveTimer = null;
+                    this.saveColumnWidths();
+                }, 150);
+            };
+
+            this._resizeObserver = new ResizeObserver(() => {
+                // Si la tabla ya no está en DOM, desconectar
+                if (!document.body || !document.body.contains(this.table)) {
+                    try { this._resizeObserver.disconnect(); } catch (e) { /* ignore */ }
+                    this._resizeObserver = null;
+                    return;
+                }
+                scheduleSave();
+            });
+
+            columns.forEach((th) => {
+                try { this._resizeObserver.observe(th); } catch (e) { /* ignore */ }
+            });
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    /**
+     * Determina una clave de vista estable para separar preferencias
+     * entre "vista actual", "vista 2", "vista 3", etc.
+     */
+    getViewKey() {
+        try {
+            const body = document.body;
+            const path = (globalThis?.location?.pathname) ? globalThis.location.pathname : '';
+            // Jornadas: j2 / j3
+            if (body && body.classList.contains('j3-mode')) return 'j3';
+            if (body && body.classList.contains('j2-mode')) return 'j2';
+            // Cuestionarios: q2
+            if (body && body.classList.contains('q2-mode')) return 'q2';
+            // Combos: c2
+            if (body && body.classList.contains('c2-mode')) return 'c2';
+
+            // Importante: NO mezclar claves de vistas de otras pantallas.
+            // Solo usar estas preferencias si estamos en la ruta correspondiente.
+            if (path.includes('jornadas')) {
+                const vJ = localStorage.getItem('vistaJornadas');
+                if (vJ) return vJ;
+            }
+            if (path.includes('cuestionarios')) {
+                const vQ = localStorage.getItem('vistaCuestionarios');
+                if (vQ) return vQ;
+            }
+            if (path.includes('combos')) {
+                const vC = localStorage.getItem('vistaCombos');
+                if (vC) return vC;
+            }
+        } catch (e) {
+            // ignore
+        }
+        return 'default';
+    }
+
+    /**
+     * Clave única para almacenar/restaurar anchos de columnas
+     * separando por ruta + tabla + vista.
+     */
+    getStorageKey() {
+        const tableId = this.table.id;
+        const resizerKey = (this.table && this.table.dataset) ? this.table.dataset.resizerKey : null;
+        const tableKey = (resizerKey && String(resizerKey).trim()) ? String(resizerKey).trim() : tableId;
+        const path = (window && window.location && window.location.pathname) ? window.location.pathname : '';
+        const view = this.getViewKey();
+        return `table_${path}__${tableKey}__${view}__column_widths_v2`;
     }
     
     /**
@@ -126,7 +229,6 @@ class TableResizer {
             let startX = 0;
             let startWidth = 0;
             let currentColumn = null;
-            let nextColumn = null;
             
             handle.addEventListener('mousedown', (e) => {
                 e.preventDefault();
@@ -136,7 +238,6 @@ class TableResizer {
                 isResizing = true;
                 startX = e.clientX;
                 currentColumn = handle.parentElement;
-                nextColumn = currentColumn.nextElementSibling;
                 startWidth = currentColumn.offsetWidth;
                 
                 // Prevenir selección de texto
@@ -158,26 +259,17 @@ class TableResizer {
                 if (!isResizing) return;
                 
                 const deltaX = e.clientX - startX;
-                const newWidth = Math.max(
-                    this.options.minWidth,
-                    startWidth + deltaX
-                );
+                let newWidth = startWidth + deltaX;
+                // Aplicar límites mínimo y máximo
+                newWidth = Math.max(this.options.minWidth, newWidth);
+                if (this.options.maxWidth && typeof this.options.maxWidth === 'number') {
+                    newWidth = Math.min(this.options.maxWidth, newWidth);
+                }
                 
                 // Actualizar ancho de la columna actual
                 currentColumn.style.width = newWidth + 'px';
                 currentColumn.style.minWidth = newWidth + 'px';
                 // No establecer maxWidth para permitir expansión ilimitada
-                
-                // Si hay una columna siguiente, ajustar su ancho para mantener el ancho total
-                if (nextColumn && nextColumn.tagName === 'TH') {
-                    const nextNewWidth = Math.max(
-                        this.options.minWidth,
-                        nextColumn.offsetWidth - deltaX
-                    );
-                    nextColumn.style.width = nextNewWidth + 'px';
-                    nextColumn.style.minWidth = nextNewWidth + 'px';
-                    // No establecer maxWidth para permitir expansión ilimitada
-                }
             });
             
             document.addEventListener('mouseup', () => {
@@ -212,53 +304,77 @@ class TableResizer {
         const thead = this.table.querySelector('thead tr');
         if (!thead) return;
         
-        const columnWidths = {};
         const columns = thead.querySelectorAll('th');
-        
+        const widths = [];
         columns.forEach((th, index) => {
-            const columnName = th.textContent.trim();
-            columnWidths[columnName] = th.offsetWidth;
+            const w = th.getBoundingClientRect ? th.getBoundingClientRect().width : th.offsetWidth;
+            widths[index] = Math.round(w);
         });
-        
-        const tableId = this.table.id;
-        localStorage.setItem(`table_${tableId}_column_widths`, JSON.stringify(columnWidths));
+
+        try {
+            localStorage.setItem(this.getStorageKey(), JSON.stringify({ v: 2, widths }));
+        } catch (e) {
+            console.error('Error al guardar anchos de columnas:', e);
+        }
     }
     
     /**
      * Carga los anchos de las columnas desde localStorage
      */
     loadColumnWidths() {
-        const tableId = this.table.id;
-        const savedWidths = localStorage.getItem(`table_${tableId}_column_widths`);
+        const savedWidths = localStorage.getItem(this.getStorageKey());
         
-        if (!savedWidths) return;
+        if (!savedWidths) return false;
         
         try {
-            const columnWidths = JSON.parse(savedWidths);
+            const parsed = JSON.parse(savedWidths);
             const thead = this.table.querySelector('thead tr');
-            if (!thead) return;
+            if (!thead) return false;
             
             const columns = thead.querySelectorAll('th');
-            columns.forEach((th, index) => {
-                const columnName = th.textContent.trim();
-                if (columnWidths[columnName]) {
-                    const width = columnWidths[columnName];
-                    th.style.width = width + 'px';
-                    th.style.minWidth = width + 'px';
-                    // No establecer maxWidth para permitir expansión ilimitada
-                }
-            });
+            // Formato nuevo (v2): array por índice
+            if (parsed && parsed.v === 2 && Array.isArray(parsed.widths)) {
+                columns.forEach((th, index) => {
+                    let width = parsed.widths[index];
+                    if (typeof width === 'number' && width > 0) {
+                        // Aplicar también el límite máximo configurado
+                        if (this.options.maxWidth && typeof this.options.maxWidth === 'number') {
+                            width = Math.min(this.options.maxWidth, width);
+                        }
+                        th.style.width = width + 'px';
+                        th.style.minWidth = width + 'px';
+                    }
+                });
+                return true;
+            }
+
+            // Compatibilidad retro: formato anterior por nombre de columna
+            if (parsed && typeof parsed === 'object') {
+                columns.forEach((th) => {
+                    const columnName = th.textContent.trim();
+                    const width = parsed[columnName];
+                    if (typeof width === 'number' && width > 0) {
+                        th.style.width = width + 'px';
+                        th.style.minWidth = width + 'px';
+                    }
+                });
+                return true;
+            }
         } catch (error) {
             console.error('Error al cargar anchos de columnas:', error);
         }
+        return false;
     }
     
     /**
      * Resetea los anchos de las columnas a los valores por defecto
      */
     resetColumnWidths() {
-        const tableId = this.table.id;
-        localStorage.removeItem(`table_${tableId}_column_widths`);
+        try {
+            localStorage.removeItem(this.getStorageKey());
+        } catch (e) {
+            // ignore
+        }
         this.setDefaultColumnWidths();
     }
     
@@ -295,26 +411,43 @@ function initTableResizer(tableId, options = {}) {
     return new TableResizer(tableId, options);
 }
 
-// Auto-inicialización para tablas comunes
-document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar para tabla de preguntas
-    const preguntasTable = document.getElementById('tabla-preguntas');
-    if (preguntasTable) {
-        const resizer = new TableResizer('tabla-preguntas', {
-            minWidth: 50,
-            maxWidth: 1000
+function _autoInitTableResizers() {
+    try {
+        const tables = document.querySelectorAll('table.table-excel[id], table[id].table-excel, table[id][data-resizable="true"]');
+        tables.forEach((t) => {
+            const id = t.id;
+            if (!id) return;
+            // Evitar doble init (re-render de tablas dinámicas)
+            if (t.dataset && t.dataset.resizerInit === '1') return;
+            if (t.querySelector('.resize-handle')) return;
+            // Marcar antes para evitar bucles si el init muta el DOM
+            if (t.dataset) t.dataset.resizerInit = '1';
+            new TableResizer(id, { minWidth: 50, maxWidth: 1000 });
         });
-        resizer.loadColumnWidths();
+    } catch (e) {
+        console.error('Error al auto-inicializar TableResizer:', e);
     }
-    
-    // Inicializar para tabla de concursantes
-    const concursantesTable = document.getElementById('tabla-concursantes-principal');
-    if (concursantesTable) {
-        const resizer = new TableResizer('tabla-concursantes-principal', {
-            minWidth: 50,
-            maxWidth: 1000
+}
+
+// Auto-inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    _autoInitTableResizers();
+
+    // Observa inserciones dinámicas (Programas/Combos/Cuestionarios renderizan tablas tras cargar datos)
+    try {
+        const obs = new MutationObserver(() => {
+            // Throttle simple: agrupar mutaciones y ejecutar una vez por tick
+            if (window.__tableResizerAutoInitPending) return;
+            window.__tableResizerAutoInitPending = true;
+            setTimeout(() => {
+                window.__tableResizerAutoInitPending = false;
+                _autoInitTableResizers();
+            }, 0);
         });
-        resizer.loadColumnWidths();
+        obs.observe(document.body, { childList: true, subtree: true });
+        window.__tableResizerObserver = obs;
+    } catch (e) {
+        // ignore
     }
 });
 
@@ -335,3 +468,4 @@ function isTableResizing(tableId) {
 window.TableResizer = TableResizer;
 window.initTableResizer = initTableResizer;
 window.isTableResizing = isTableResizing;
+window.autoInitTableResizers = _autoInitTableResizers;

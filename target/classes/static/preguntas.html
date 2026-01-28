@@ -197,10 +197,10 @@
                         <a class="nav-link" href="combos.html">Combos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="concursantes.html">Concursantes</a>
+                        <a class="nav-link" href="jornadas.html">Jornadas</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="jornadas.html">Jornadas</a>
+                        <a class="nav-link" href="concursantes.html">Concursantes</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="programas.html">Programas</a>
@@ -226,13 +226,26 @@
     </nav>
 
     <div class="container-fluid mt-4">
-        <div class="section-header">
-            <h2>Gestión de Preguntas</h2>
-            <div class="d-flex gap-2">
+        <div class="section-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <h2 class="mb-0">Gestión de Preguntas</h2>
                 <button class="btn btn-primary" onclick="mostrarFormularioPregunta()">
                     <i class="fas fa-plus"></i> Nueva Pregunta
                 </button>
-                
+            </div>
+            <div class="d-flex align-items-center gap-1">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        title="Deshacer (Ctrl+Z)"
+                        onclick="handleGlobalUndo()">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        title="Rehacer (Ctrl+Y)"
+                        onclick="handleGlobalRedo()">
+                    <i class="fas fa-redo"></i>
+                </button>
             </div>
         </div>
 
@@ -276,8 +289,10 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Autoría:</label>
-                            <input type="text" id="filtro-autoria" class="form-control form-control-sm" 
-                                   onkeyup="filtrarPreguntas()" placeholder="Buscar autoría...">
+                            <select id="filtro-autoria" class="form-select form-select-sm" onchange="filtrarPreguntas()">
+                                <option value="">Todos</option>
+                                <!-- Las opciones se cargarán dinámicamente -->
+                            </select>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Nivel:</label>
@@ -333,7 +348,7 @@
 
         <!-- Tabla de Preguntas -->
         <div class="table-responsive" style="width: 100%; margin: 0 auto;" id="tabla-preguntas-container">
-            <table class="table table-excel table-preguntas">
+            <table class="table table-excel table-preguntas" id="tabla-preguntas-principal">
                 <thead>
                     <tr>
                         <th class="sortable-header" data-column="id">ID<span class="sort-indicator inactive"></span></th>
@@ -679,8 +694,8 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/undo-manager.js"></script>
-    <script src="js/table-resizer.js"></script>
     <script src="js/preguntas.js"></script>
+    <script src="js/table-resizer.js?v=20260128-2"></script>
     <script>
     // Variables globales para ordenamiento de preguntas
     let currentSortColumnPreguntas = null;
@@ -702,6 +717,15 @@
         if (typeof TemasManager !== 'undefined') {
             TemasManager.cargarTemas();
             TemasManager.cargarSubtemas();
+        }
+        // Asegurar inicialización del resizer en esta tabla concreta
+        try {
+            const tabla = document.getElementById('tabla-preguntas-principal');
+            if (tabla && typeof TableResizer !== 'undefined' && !tabla.querySelector('.resize-handle')) {
+                new TableResizer('tabla-preguntas-principal', { minWidth: 50, maxWidth: 600 });
+            }
+        } catch (e) {
+            console.error('Error al inicializar TableResizer en preguntas:', e);
         }
         document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
             e.preventDefault();

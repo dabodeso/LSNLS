@@ -139,9 +139,9 @@ function mostrarProgramas() {
                     <td class="col-duracion"></td>
                     <td class="col-foto"></td>
                     <td class="col-momentos"></td>
+                    <td class="col-xusoker"></td>
                     <td class="col-factor-x"></td>
                     <td class="col-valoracion"></td>
-                    <td class="col-creditos"></td>
                     <td class="col-acciones"></td>
                 </tr>
             `);
@@ -213,11 +213,21 @@ function mostrarProgramas() {
                             </button>
                         </div>
                     </div>
+                    <div class="programa-creditos mt-2">
+                        <div class="programa-info-label" style="text-align:left; margin-bottom:6px;">CRÉDITOS ESPECIALES (Programa)</div>
+                        <textarea class="editable-field programa-creditos-textarea"
+                                  rows="2"
+                                  placeholder="Créditos especiales del programa..."
+                                  onblur="actualizarCreditosEspecialesPrograma(${programa.id}, this.value)">${programa.creditosEspeciales || ''}</textarea>
+                    </div>
                 </div>
                 
                 <div class="concursantes-table">
                     <div class="table-responsive">
-                        <table class="table table-excel table-striped">
+                        <table id="tabla-programa-${programa.id}-concursantes"
+                               class="table table-excel table-striped"
+                               data-resizable="true"
+                               data-resizer-key="programas_concursantes">
                             <thead>
                                 <tr>
                                     <th class="col-numero">Nº CONC</th>
@@ -230,9 +240,9 @@ function mostrarProgramas() {
                                     <th class="col-duracion">DUR CONC</th>
                                     <th class="col-foto">FOTO</th>
                                     <th class="col-momentos">MOM. DESTACADOS</th>
+                                    <th class="col-xusoker">XUSÓKER</th>
                                     <th class="col-factor-x">X</th>
                                     <th class="col-valoracion">VAL</th>
-                                    <th class="col-creditos">CRÉDITOS ESPECIALES</th>
                                     <th style="width: 5%;">ACC</th>
                                 </tr>
                             </thead>
@@ -269,6 +279,18 @@ function mostrarProgramas() {
                                                       placeholder="Momentos destacados"
                                                       rows="2">${concursante.momentosDestacados || ''}</textarea>
                                         </td>
+                                        <td class="col-xusoker">
+                                            <select class="campo-editable"
+                                                    onchange="actualizarCampoConcursante(${concursante.id}, 'xusoker', this.value)"
+                                                    onclick="event.stopPropagation()">
+                                                <option value=""></option>
+                                                <option value="NO USÓ" ${concursante.xusoker === 'NO USÓ' ? 'selected' : ''}>NO USÓ</option>
+                                                <option value="CONTINÚE" ${concursante.xusoker === 'CONTINÚE' ? 'selected' : ''}>CONTINÚE</option>
+                                                <option value="AL VERRÉS" ${concursante.xusoker === 'AL VERRÉS' ? 'selected' : ''}>AL VERRÉS</option>
+                                                <option value="RECICLA" ${concursante.xusoker === 'RECICLA' ? 'selected' : ''}>RECICLA</option>
+                                                <option value="LLAMADA" ${concursante.xusoker === 'LLAMADA' ? 'selected' : ''}>LLAMADA</option>
+                                            </select>
+                                        </td>
                                         <td class="col-factor-x">
                                             <input type="text" class="campo-editable" 
                                                    value="${concursante.factorX || ''}" 
@@ -282,13 +304,6 @@ function mostrarProgramas() {
                                                       onclick="event.stopPropagation()"
                                                       placeholder="Valoración"
                                                       rows="2">${concursante.valoracionFinal || ''}</textarea>
-                                        </td>
-                                        <td class="col-creditos">
-                                            <textarea class="campo-editable" 
-                                                      onchange="actualizarCampoConcursante(${concursante.id}, 'creditosEspeciales', this.value)"
-                                                      onclick="event.stopPropagation()"
-                                                      placeholder="Créditos especiales"
-                                                      rows="2">${concursante.creditosEspeciales || ''}</textarea>
                                         </td>
                                         <td class="col-acciones">
                                             <button class="btn btn-sm btn-danger" onclick="quitarConcursanteDePrograma(${concursante.id}, event)" title="Quitar del programa">
@@ -313,6 +328,19 @@ function mostrarProgramas() {
     
     // Renderizar controles de paginación
     renderizarPaginacion();
+}
+
+async function actualizarCreditosEspecialesPrograma(programaId, creditos) {
+    try {
+        const valor = (creditos != null && String(creditos).trim() !== '') ? String(creditos) : null;
+        await apiManager.patch(`/api/programas/${programaId}/campo`, { creditosEspeciales: valor });
+        // Mantener estado local para evitar recargar toda la vista
+        const p = (programas || []).find(x => x.id === programaId);
+        if (p) p.creditosEspeciales = valor;
+        mostrarExito('Créditos especiales actualizados');
+    } catch (error) {
+        mostrarError('Error al actualizar créditos especiales: ' + (error?.message || error));
+    }
 }
 
 function autoResizeTextareasEnProgramas() {
@@ -1024,12 +1052,68 @@ let paginaConcursantesDisponibles = 0;
 let totalPaginasConcursantesDisponibles = 1;
 let debounceTimer = null;
 
+// Aplica filtros de lugar, valoración final y estado sobre la lista en memoria
+function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
+    const soloEstadosPermitidos = ['GRABADO', 'EDITADO'];
+    const lugarInput = document.getElementById('filtro-lugar-concursante-disponible');
+    const valoracionSelect = document.getElementById('filtro-valoracion-final-concursante-disponible');
+    const estadoSelect = document.getElementById('filtro-estado-concursante-disponible');
+
+    const lugarFiltro = (lugarInput?.value || '').trim().toLowerCase();
+    const valoracionFiltro = (valoracionSelect?.value || '').trim();
+    const estadoFiltro = (estadoSelect?.value || '').trim().toUpperCase();
+
+    return (concursantesDisponibles || []).filter(c => {
+        const estado = (c.estado || '').toUpperCase();
+
+        // Siempre limitar a Grabado / Editado
+        if (!soloEstadosPermitidos.includes(estado)) {
+            return false;
+        }
+
+        // Filtro de estado explícito
+        if (estadoFiltro && estado !== estadoFiltro) {
+            return false;
+        }
+
+        // Filtro de lugar (contiene)
+        if (lugarFiltro) {
+            const lugar = (c.lugar || '').toLowerCase();
+            if (!lugar.includes(lugarFiltro)) {
+                return false;
+            }
+        }
+
+        // Filtro de valoración final exacta (1,2,3)
+        if (valoracionFiltro) {
+            const val = (c.valoracionFinal != null ? String(c.valoracionFinal).trim() : '');
+            if (val !== valoracionFiltro) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+}
+
+// Re-renderiza la tabla cuando cambian los filtros del modal
+function onCambioFiltrosConcursantesDisponibles() {
+    renderizarConcursantesDisponibles();
+}
+
 async function mostrarConcursantesDisponibles(programaId) {
     try {
         document.getElementById('programa-seleccionado-id').value = programaId;
         
         // Limpiar filtro de búsqueda
-        document.getElementById('buscar-concursante-disponible').value = '';
+        const inputBusqueda = document.getElementById('buscar-concursante-disponible');
+        if (inputBusqueda) inputBusqueda.value = '';
+        const filtroLugar = document.getElementById('filtro-lugar-concursante-disponible');
+        const filtroValoracion = document.getElementById('filtro-valoracion-final-concursante-disponible');
+        const filtroEstado = document.getElementById('filtro-estado-concursante-disponible');
+        if (filtroLugar) filtroLugar.value = '';
+        if (filtroValoracion) filtroValoracion.value = '';
+        if (filtroEstado) filtroEstado.value = '';
         
         // Cargar concursantes disponibles con paginación (10 por página)
         const response = await apiManager.get('/api/concursantes/disponibles?page=0&size=10');
@@ -1057,8 +1141,9 @@ function renderizarConcursantesDisponibles() {
     
     // Mostrar información de paginación
     const infoPaginacion = document.getElementById('info-paginacion-concursantes');
+    const listaFiltrada = aplicarFiltrosConcursantesDisponiblesEnMemoria();
     if (infoPaginacion) {
-        infoPaginacion.innerHTML = `Mostrando ${concursantesDisponibles.length} de ${totalConcursantesDisponibles} concursantes (Página ${paginaConcursantesDisponibles + 1} de ${totalPaginasConcursantesDisponibles})`;
+        infoPaginacion.innerHTML = `Mostrando ${listaFiltrada.length} de ${totalConcursantesDisponibles} concursantes (solo estados Grabado/Editado) (Página ${paginaConcursantesDisponibles + 1} de ${totalPaginasConcursantesDisponibles})`;
     }
     
     lista.innerHTML = `
@@ -1066,29 +1151,21 @@ function renderizarConcursantesDisponibles() {
             <table class="table table-hover">
                 <thead>
                     <tr>
+                        <th>Lugar</th>
                         <th>Nombre</th>
                         <th>Edad</th>
-                        <th>Ocupación</th>
-                        <th>Lugar</th>
-                        <th>Estado</th>
-                        <th>Acción</th>
+                        <th>Premio</th>
+                        <th>Valoración final</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${concursantesDisponibles.map(concursante => `
-                        <tr>
+                    ${listaFiltrada.map(concursante => `
+                        <tr style="cursor: pointer;" onclick="asignarConcursanteAPrograma(${concursante.id})">
+                            <td>${concursante.lugar || ''}</td>
                             <td><strong>${concursante.nombre || ''}</strong></td>
                             <td>${concursante.edad || ''}</td>
-                            <td>${concursante.ocupacion || ''}</td>
-                            <td>${concursante.lugar || ''}</td>
-                            <td>
-                                <span class="badge bg-success">${concursante.estado || 'Disponible'}</span>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="asignarConcursanteAPrograma(${concursante.id})">
-                                    <i class="fas fa-plus"></i> Añadir
-                                </button>
-                            </td>
+                            <td>${concursante.premio != null && concursante.premio !== '' ? concursante.premio : ''}</td>
+                            <td>${concursante.valoracionFinal || ''}</td>
                         </tr>
                     `).join('')}
                 </tbody>

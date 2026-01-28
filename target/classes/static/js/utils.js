@@ -215,12 +215,17 @@ function truncateText(text, maxLength) {
 }
 
 function mostrarBotonAdminNavbar() {
-    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
     const navAdmin = document.getElementById('nav-admin');
     if (usuario && usuario.rol === 'ROLE_ADMIN' && navAdmin) {
         navAdmin.style.display = '';
     } else if (navAdmin) {
         navAdmin.style.display = 'none';
+    }
+    // Mostrar nombre de usuario
+    const usuarioActual = document.getElementById('usuario-actual');
+    if (usuarioActual && usuario && usuario.nombre) {
+        usuarioActual.textContent = usuario.nombre;
     }
 }
 

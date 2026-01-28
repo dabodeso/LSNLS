@@ -326,7 +326,19 @@ async function iniciarSesion(event) {
 }
 
 function cerrarSesion() {
-    localStorage.clear();
+    // Guardar configuración de columnas antes de limpiar
+    const configColumnas = localStorage.getItem('configuracionColumnasConcursantes');
+    
+    // Limpiar solo los datos de autenticación
+    localStorage.removeItem('token');
+    localStorage.removeItem('usuario');
+    localStorage.removeItem('rol');
+    
+    // Restaurar configuración de columnas si existía
+    if (configColumnas) {
+        localStorage.setItem('configuracionColumnasConcursantes', configColumnas);
+    }
+    
     window.location.href = 'login.html';
 }
 

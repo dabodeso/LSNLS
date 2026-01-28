@@ -57,7 +57,7 @@ public class ProgramaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> create(@RequestBody ProgramaDTO programaDTO) {
         try {
             // Validaciones específicas de campos requeridos
@@ -78,7 +78,7 @@ public class ProgramaController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ProgramaDTO programaDTO) {
         try {
             // Verificar que el programa existe
@@ -105,7 +105,7 @@ public class ProgramaController {
     }
 
     @PatchMapping("/{id}/duracion-objetivo")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> updateDuracionObjetivo(@PathVariable Long id, @RequestBody Map<String, String> request) {
         try {
             String duracionObjetivo = request.get("duracionObjetivo");
@@ -121,7 +121,7 @@ public class ProgramaController {
     }
 
     @PatchMapping("/{id}/campo")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> updateCampo(@PathVariable Long id, @RequestBody Map<String, Object> campo) {
         try {
             // Verificar que el programa existe
@@ -147,7 +147,7 @@ public class ProgramaController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             // Verificar que el programa existe

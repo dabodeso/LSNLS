@@ -53,6 +53,8 @@ public class Concursante {
     @JsonIgnoreProperties({"preguntas", "creacionUsuario"})
     private Combo combo;
 
+    private String xusoker;
+
     @Column(name = "factor_x")
     private String factorX;
 
