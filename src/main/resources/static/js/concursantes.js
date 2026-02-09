@@ -3,6 +3,26 @@ let concursantes = [];
 let programas = [];
 let concursanteActual = null;
 
+// Valoraciones permitidas para guionista y dirección (solo front, no BBDD)
+const VALORACIONES_PERMITIDAS = ['1', '1+', '2-', '2', '2+', '3-', '3', '3+'];
+
+function setSelectValoracion(selectId, value) {
+    const sel = document.getElementById(selectId);
+    if (!sel || sel.tagName !== 'SELECT') return;
+    const v = (value || '').trim();
+    // Quitar opciones "extra" que no están en la lista (de ediciones anteriores con valor legacy)
+    Array.from(sel.options).forEach(opt => {
+        if (opt.value !== '' && !VALORACIONES_PERMITIDAS.includes(opt.value)) opt.remove();
+    });
+    if (v && !VALORACIONES_PERMITIDAS.includes(v)) {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        sel.appendChild(opt);
+    }
+    sel.value = v;
+}
+
 // Variables de paginación
 let paginaActual = 0;
 let tamanioPagina = 25;
@@ -805,7 +825,7 @@ document.getElementById('factor-x').value = concursanteActual.factorX || '';
 document.getElementById('resultado').value = concursanteActual.resultado || '';
 document.getElementById('notas-grabacion').value = concursanteActual.notasGrabacion || '';
 document.getElementById('guionista').value = concursanteActual.guionista || '';
-document.getElementById('valoracion-guionista').value = concursanteActual.valoracionGuionista || '';
+setSelectValoracion('valoracion-guionista', concursanteActual.valoracionGuionista);
 document.getElementById('momentos-destacados').value = concursanteActual.momentosDestacados || '';
         document.getElementById('duracion').value = concursanteActual.duracion || '';
         document.getElementById('duracion-direccion').value = concursanteActual.duracionDireccion || '';
@@ -814,7 +834,7 @@ document.getElementById('momentos-destacados').value = concursanteActual.momento
                 document.getElementById('duracion').value = concursanteActual.duracion || '';
                 document.getElementById('duracion-direccion').value = concursanteActual.duracionDireccion || '';
                 document.getElementById('duracion-final').value = concursanteActual.duracionFinal || '';
-document.getElementById('valoracion-final').value = concursanteActual.valoracionFinal || '';
+setSelectValoracion('valoracion-final', concursanteActual.valoracionFinal);
 document.getElementById('numero-programa').value = concursanteActual.numeroPrograma || '';
 document.getElementById('orden-escaleta').value = concursanteActual.ordenEscaleta || '';
 document.getElementById('bonico').value = concursanteActual.bonico || '';
@@ -1235,20 +1255,44 @@ async function eliminarConcursante(id) {
     }
 }
 
+function crearSelectValoracion(valorActual) {
+    const select = document.createElement('select');
+    select.className = 'form-control form-control-sm';
+    const optVacio = document.createElement('option');
+    optVacio.value = '';
+    optVacio.textContent = '—';
+    select.appendChild(optVacio);
+    VALORACIONES_PERMITIDAS.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        if (v === valorActual) opt.selected = true;
+        select.appendChild(opt);
+    });
+    if (!VALORACIONES_PERMITIDAS.includes(valorActual) && valorActual) {
+        const optActual = document.createElement('option');
+        optActual.value = valorActual;
+        optActual.textContent = valorActual;
+        optActual.selected = true;
+        select.appendChild(optActual);
+    }
+    return select;
+}
+
 async function editarCeldaConcursante(id, campo, td) {
 if (td.querySelector('input,select')) return;
-const valorOriginal = td.innerText;
+const valorOriginal = (td.innerText || '').trim();
 let input;
 
-// Todos los campos usan input de texto (incluyendo estado)
-{
+if (campo === 'valoracionGuionista' || campo === 'valoracionFinal') {
+    input = crearSelectValoracion(valorOriginal);
+} else {
 // Input normal para otros campos
 input = document.createElement('input');
 input.type = 'text';
 input.value = valorOriginal;
 input.className = 'form-control form-control-sm';
 
-// Configurar input según el tipo de campo
 if (campo === 'duracion') {
 input.placeholder = 'MM:SS (ej: 25:08)';
 input.type = 'text';
@@ -1275,11 +1319,15 @@ td.innerHTML = valorOriginal;
 }
 });
 
-
+if (input.tagName === 'SELECT') {
+    input.addEventListener('change', async function() {
+        await guardarCeldaConcursante(id, campo, input, td, valorOriginal);
+    });
+}
 }
 
 async function guardarCeldaConcursante(id, campo, input, td, valorOriginal) {
-const nuevoValor = input.value.trim();
+const nuevoValor = (input.tagName === 'SELECT' ? input.value : input.value.trim());
 if (nuevoValor === valorOriginal) {
 td.innerHTML = valorOriginal;
 return;

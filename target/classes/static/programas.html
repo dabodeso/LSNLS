@@ -184,6 +184,45 @@
         .concursantes-table .col-factor-x { width: 4%; }
         .concursantes-table .col-valoracion { width: 8%; }
         
+        /* Cabecera fija sin barra de scroll: solo el cuerpo tiene scroll horizontal */
+        .concursantes-table-header-wrapper {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .concursantes-table-header-wrapper::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+        .concursantes-table-body-wrapper {
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        .concursantes-table-body-wrapper::-webkit-scrollbar {
+            height: 10px;
+        }
+        .concursantes-table-body-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .concursantes-table-body-wrapper::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .concursantes-table-body-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .concursantes-table-header-wrapper .tabla-header,
+        .concursantes-table-body-wrapper .table-excel {
+            min-width: 1400px;
+        }
+        /* Sin barras de redimensionar en los títulos de columna */
+        .concursantes-table .resize-handle {
+            display: none !important;
+        }
+        
         /* Créditos especiales ahora van en cabecera del programa */
         .programa-creditos-textarea {
             width: 100%;
@@ -237,27 +276,8 @@
             table-layout: fixed;
         }
         
-        /* Scroll horizontal automático con cursor */
         .concursantes-table {
             position: relative;
-            overflow-x: auto;
-            transition: all 0.2s ease;
-        }
-        
-        /* Indicador visual para scroll automático */
-        .concursantes-table.scrolling-left {
-            border-left: 3px solid #007bff;
-            box-shadow: inset 5px 0 10px rgba(0, 123, 255, 0.2);
-        }
-        
-        .concursantes-table.scrolling-right {
-            border-right: 3px solid #007bff;
-            box-shadow: inset -5px 0 10px rgba(0, 123, 255, 0.2);
-        }
-        
-        /* Cursor personalizado para indicar scroll automático */
-        .concursantes-table:hover {
-            cursor: default;
         }
     </style>
 </head>
@@ -493,8 +513,13 @@
                                         onchange="onCambioFiltrosConcursantesDisponibles()">
                                     <option value="">Todas</option>
                                     <option value="1">1</option>
+                                    <option value="1+">1+</option>
+                                    <option value="2-">2-</option>
                                     <option value="2">2</option>
+                                    <option value="2+">2+</option>
+                                    <option value="3-">3-</option>
                                     <option value="3">3</option>
+                                    <option value="3+">3+</option>
                                 </select>
                             </div>
                             <div class="col-md-4">

@@ -1,6 +1,9 @@
 let programas = [];
 let concursantesPorPrograma = {};
 
+// Valoraciones permitidas (guionista/dirección) - solo front
+const VALORACIONES_PERMITIDAS = ['1', '1+', '2-', '2', '2+', '3-', '3', '3+'];
+
 // Variables para paginación
 let paginaActual = 0;
 let totalPaginas = 0;
@@ -222,30 +225,35 @@ function mostrarProgramas() {
                     </div>
                 </div>
                 
-                <div class="concursantes-table">
-                    <div class="table-responsive">
+                <div class="concursantes-table" data-programa-id="${programa.id}">
+                    <div class="concursantes-table-header-wrapper">
+                        <div class="concursantes-table-header">
+                            <table id="tabla-programa-${programa.id}-concursantes-header"
+                                   class="table table-excel table-striped tabla-header">
+                                <thead>
+                                    <tr>
+                                        <th class="col-numero">Nº CONC</th>
+                                        <th class="col-lugar">LUGAR</th>
+                                        <th class="col-nombre">NOMBRE</th>
+                                        <th class="col-edad">EDAD</th>
+                                        <th class="col-ocupacion">OCUPACIÓN</th>
+                                        <th class="col-rrss">RR SS</th>
+                                        <th class="col-resultado">RESULTADO</th>
+                                        <th class="col-duracion">DUR CONC</th>
+                                        <th class="col-foto">FOTO</th>
+                                        <th class="col-momentos">MOM. DESTACADOS</th>
+                                        <th class="col-xusoker">XUSÓKER</th>
+                                        <th class="col-factor-x">X</th>
+                                        <th class="col-valoracion">VAL</th>
+                                        <th class="col-acciones" style="width: 5%;">ACC</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="concursantes-table-body-wrapper">
                         <table id="tabla-programa-${programa.id}-concursantes"
-                               class="table table-excel table-striped"
-                               data-resizable="true"
-                               data-resizer-key="programas_concursantes">
-                            <thead>
-                                <tr>
-                                    <th class="col-numero">Nº CONC</th>
-                                    <th class="col-lugar">LUGAR</th>
-                                    <th class="col-nombre">NOMBRE</th>
-                                    <th class="col-edad">EDAD</th>
-                                    <th class="col-ocupacion">OCUPACIÓN</th>
-                                    <th class="col-rrss">RR SS</th>
-                                    <th class="col-resultado">RESULTADO</th>
-                                    <th class="col-duracion">DUR CONC</th>
-                                    <th class="col-foto">FOTO</th>
-                                    <th class="col-momentos">MOM. DESTACADOS</th>
-                                    <th class="col-xusoker">XUSÓKER</th>
-                                    <th class="col-factor-x">X</th>
-                                    <th class="col-valoracion">VAL</th>
-                                    <th style="width: 5%;">ACC</th>
-                                </tr>
-                            </thead>
+                               class="table table-excel table-striped">
                             <tbody>
                                 ${concursantes.map(concursante => `
                                     <tr class="concursante-row" onclick="irAConcursante(${concursante.id})">
@@ -299,11 +307,12 @@ function mostrarProgramas() {
                                                    placeholder="Factor X">
                                         </td>
                                         <td class="col-valoracion">
-                                            <textarea class="campo-editable" 
-                                                      onchange="actualizarCampoConcursante(${concursante.id}, 'valoracionFinal', this.value)"
-                                                      onclick="event.stopPropagation()"
-                                                      placeholder="Valoración"
-                                                      rows="2">${concursante.valoracionFinal || ''}</textarea>
+                                            <select class="campo-editable"
+                                                    onchange="actualizarCampoConcursante(${concursante.id}, 'valoracionFinal', this.value)"
+                                                    onclick="event.stopPropagation()">
+                                                <option value="">—</option>
+                                                ${VALORACIONES_PERMITIDAS.map(v => `<option value="${v}" ${(concursante.valoracionFinal || '') === v ? 'selected' : ''}>${v}</option>`).join('')}
+                                            </select>
                                         </td>
                                         <td class="col-acciones">
                                             <button class="btn btn-sm btn-danger" onclick="quitarConcursanteDePrograma(${concursante.id}, event)" title="Quitar del programa">
@@ -1328,187 +1337,66 @@ async function eliminarPrograma(programaId) {
     }
 }
 
-// Función para configurar scroll automático en las tablas de concursantes
+// Función para configurar scroll en las tablas de concursantes (barra horizontal; cabecera sin barra)
 function configurarScrollTablas() {
-    console.log('🔧 [SCROLL] Configurando scroll en tablas existentes...');
-    
-    // Buscar todos los contenedores de tablas de concursantes
-    const contenedores = document.querySelectorAll('.concursantes-table');
-    console.log(`🔧 [SCROLL] Encontrados ${contenedores.length} contenedores de tablas`);
-    
-    contenedores.forEach((contenedor, index) => {
-        console.log(`🔧 [SCROLL] Configurando scroll para tabla ${index + 1}`);
-        configurarScrollEnTabla(contenedor);
+    document.querySelectorAll('.concursantes-table').forEach(configurarScrollEnTabla);
+}
+
+// Sincroniza anchos de columna de la tabla de cabecera a la tabla de cuerpo (mismo programa)
+function sincronizarAnchosCabeceraCuerpo(contenedor) {
+    const headerTable = contenedor.querySelector('.concursantes-table-header-wrapper table');
+    const bodyTable = contenedor.querySelector('.concursantes-table-body-wrapper table');
+    if (!headerTable || !bodyTable) return;
+    const headerCells = headerTable.querySelectorAll('thead tr th');
+    if (!headerCells.length) return;
+    headerCells.forEach((th, colIndex) => {
+        const w = th.offsetWidth || (th.style.width && Number.parseInt(th.style.width, 10));
+        if (!w) return;
+        const px = (typeof w === 'number' ? w : Number.parseInt(w, 10)) + 'px';
+        bodyTable.querySelectorAll('tbody tr').forEach((tr) => {
+            const cell = tr.cells[colIndex];
+            if (cell) cell.style.width = px;
+        });
     });
 }
 
-// Función para configurar scroll en una tabla específica
+// Función para configurar scroll en una tabla específica (barra horizontal; cabecera sincronizada sin barra)
 function configurarScrollEnTabla(contenedor) {
-    if (!contenedor) {
-        console.error('❌ [SCROLL] Contenedor no válido');
-        return;
-    }
+    if (!contenedor) return;
+    if (contenedor.dataset.scrollConfigurado === 'true') return;
     
-    // Evitar configurar múltiples veces la misma tabla
-    if (contenedor.dataset.scrollConfigurado === 'true') {
-        console.log('🔧 [SCROLL] Tabla ya configurada, saltando...');
-        return;
-    }
+    const bodyWrapper = contenedor.querySelector('.concursantes-table-body-wrapper');
+    const headerWrapper = contenedor.querySelector('.concursantes-table-header-wrapper');
+    if (!bodyWrapper || !headerWrapper) return;
     
-    // Buscar el contenedor real del scroll (table-responsive dentro de concursantes-table)
-    const scrollContainer = contenedor.querySelector('.table-responsive');
-    if (!scrollContainer) {
-        console.error('❌ [SCROLL] No se encontró .table-responsive dentro del contenedor');
-        return;
-    }
-    
-    console.log('✅ [SCROLL] Configurando scroll para tabla:', contenedor);
-    console.log('✅ [SCROLL] Contenedor de scroll real:', scrollContainer);
-    console.log(`📏 [SCROLL] Dimensiones: Width=${scrollContainer.scrollWidth}, Client=${scrollContainer.clientWidth}, ScrollLeft=${scrollContainer.scrollLeft}`);
-    
-    // OPCIÓN 1: Scroll automático con cursor (mejorado)
-    let scrollInterval = null;
-    let scrollDirection = null;
-    
-    contenedor.addEventListener('mousemove', function(e) {
-        const borde = 100; // px desde el borde para activar scroll (aumentado)
-        const { left, right } = contenedor.getBoundingClientRect();
-        const x = e.clientX;
-        const scrollSpeed = 20; // px por frame (aumentado para más velocidad)
-        clearInterval(scrollInterval);
-        
-        // Debug: mostrar información del cursor
-        const distanciaIzquierda = x - left;
-        const distanciaDerecha = right - x;
-        console.log(`🖱️ [CURSOR] Posición: ${x}, Izq: ${distanciaIzquierda}px, Der: ${distanciaDerecha}px, Borde: ${borde}px`);
-        
-        if (x - left < borde) {
-            // Scroll hacia la izquierda (mostrar columnas ocultas de la izquierda)
-            console.log('🔄 [SCROLL] Activando scroll hacia la izquierda');
-            scrollDirection = 'left';
-            contenedor.style.cursor = 'w-resize';
-            contenedor.classList.add('scrolling-left');
-            contenedor.classList.remove('scrolling-right');
-            scrollInterval = setInterval(() => {
-                const oldScroll = scrollContainer.scrollLeft;
-                const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-                scrollContainer.scrollLeft -= scrollSpeed;
-                console.log(`🔄 [SCROLL] Scroll: ${oldScroll} → ${scrollContainer.scrollLeft} (Max: ${maxScroll}, Width: ${scrollContainer.scrollWidth}, Client: ${scrollContainer.clientWidth})`);
-            }, 16);
-        } else if (right - x < borde) {
-            // Scroll hacia la derecha (mostrar columnas ocultas de la derecha)
-            console.log('🔄 [SCROLL] Activando scroll hacia la derecha');
-            scrollDirection = 'right';
-            contenedor.style.cursor = 'e-resize';
-            contenedor.classList.add('scrolling-right');
-            contenedor.classList.remove('scrolling-left');
-            scrollInterval = setInterval(() => {
-                const oldScroll = scrollContainer.scrollLeft;
-                const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-                scrollContainer.scrollLeft += scrollSpeed;
-                console.log(`🔄 [SCROLL] Scroll: ${oldScroll} → ${scrollContainer.scrollLeft} (Max: ${maxScroll}, Width: ${scrollContainer.scrollWidth}, Client: ${scrollContainer.clientWidth})`);
-            }, 16);
-        } else {
-            // Cursor normal cuando no está en los bordes
-            contenedor.style.cursor = 'default';
-            contenedor.classList.remove('scrolling-left', 'scrolling-right');
-            scrollDirection = null;
-        }
+    // Sincronizar cabecera con el scroll del cuerpo (cabecera sin barra visible)
+    bodyWrapper.addEventListener('scroll', function() {
+        headerWrapper.scrollLeft = bodyWrapper.scrollLeft;
     });
     
-    contenedor.addEventListener('mouseleave', function() {
-        clearInterval(scrollInterval);
-        contenedor.style.cursor = 'default';
-        contenedor.classList.remove('scrolling-left', 'scrolling-right');
-        scrollDirection = null;
-    });
+    // Sincronizar anchos de columna cabecera -> cuerpo (tras TableResizer o al cargar)
+    const runSync = () => sincronizarAnchosCabeceraCuerpo(contenedor);
+    setTimeout(runSync, 100);
+    setTimeout(runSync, 500);
+    const headerTable = headerWrapper.querySelector('table');
+    if (headerTable && typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => runSync());
+        headerTable.querySelectorAll('thead tr th').forEach((th) => ro.observe(th));
+    }
     
-    // OPCIÓN 2: Botones de navegación
-    crearBotonesNavegacion(contenedor, scrollContainer);
-    
-    // OPCIÓN 3: Scroll con rueda del mouse (horizontal) - DESHABILITADO
-    // contenedor.addEventListener('wheel', function(e) {
-    //     if (e.deltaY !== 0) {
-    //         e.preventDefault();
-    //         scrollContainer.scrollLeft += e.deltaY;
-    //     }
-    // });
-    
-    // OPCIÓN 4: Scroll con teclado
+    // Scroll con teclado (opcional)
+    contenedor.setAttribute('tabindex', '0');
     contenedor.addEventListener('keydown', function(e) {
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
-            scrollContainer.scrollLeft -= 50;
+            bodyWrapper.scrollLeft -= 50;
         } else if (e.key === 'ArrowRight') {
             e.preventDefault();
-            scrollContainer.scrollLeft += 50;
+            bodyWrapper.scrollLeft += 50;
         }
     });
     
-    // Hacer el contenedor focusable para el scroll con teclado
-    contenedor.setAttribute('tabindex', '0');
-    
-    // Marcar como configurado para evitar configuraciones múltiples
     contenedor.dataset.scrollConfigurado = 'true';
-    
-    console.log('✅ [SCROLL] Todas las opciones de scroll configuradas para esta tabla');
-}
-
-// Función para crear botones de navegación
-function crearBotonesNavegacion(contenedor, scrollContainer) {
-    console.log('🔧 [BOTONES] Creando botones de navegación...');
-    
-    // Crear contenedor de botones
-    const botonesContainer = document.createElement('div');
-    botonesContainer.className = 'd-flex justify-content-center gap-2 mb-2';
-    botonesContainer.style.marginTop = '10px';
-    
-    // Botón izquierda
-    const btnIzquierda = document.createElement('button');
-    btnIzquierda.className = 'btn btn-outline-primary btn-sm';
-    btnIzquierda.innerHTML = '<i class="fas fa-chevron-left"></i> ←';
-    btnIzquierda.title = 'Desplazar hacia la izquierda';
-    btnIzquierda.onclick = () => {
-        scrollContainer.scrollLeft -= 200;
-    };
-    
-    // Botón derecha
-    const btnDerecha = document.createElement('button');
-    btnDerecha.className = 'btn btn-outline-primary btn-sm';
-    btnDerecha.innerHTML = '→ <i class="fas fa-chevron-right"></i>';
-    btnDerecha.title = 'Desplazar hacia la derecha';
-    btnDerecha.onclick = () => {
-        scrollContainer.scrollLeft += 200;
-    };
-    
-    // Botón inicio
-    const btnInicio = document.createElement('button');
-    btnInicio.className = 'btn btn-outline-secondary btn-sm';
-    btnInicio.innerHTML = '<i class="fas fa-home"></i> Inicio';
-    btnInicio.title = 'Ir al inicio de la tabla';
-    btnInicio.onclick = () => {
-        scrollContainer.scrollLeft = 0;
-    };
-    
-    // Botón final
-    const btnFinal = document.createElement('button');
-    btnFinal.className = 'btn btn-outline-secondary btn-sm';
-    btnFinal.innerHTML = 'Final <i class="fas fa-home"></i>';
-    btnFinal.title = 'Ir al final de la tabla';
-    btnFinal.onclick = () => {
-        scrollContainer.scrollLeft = scrollContainer.scrollWidth;
-    };
-    
-    // Agregar botones al contenedor
-    botonesContainer.appendChild(btnInicio);
-    botonesContainer.appendChild(btnIzquierda);
-    botonesContainer.appendChild(btnDerecha);
-    botonesContainer.appendChild(btnFinal);
-    
-    // Insertar botones después del contenedor de la tabla
-    contenedor.parentNode.insertBefore(botonesContainer, contenedor.nextSibling);
-    
-    console.log('✅ [BOTONES] Botones de navegación creados');
 }
 
 // Función para cargar más concursantes disponibles

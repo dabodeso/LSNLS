@@ -352,8 +352,13 @@ line-height: 1.2;
 <select id="filtro-valoracion-final" class="form-select form-select-sm">
 <option value="">Todas</option>
 <option value="1">1</option>
+<option value="1+">1+</option>
+<option value="2-">2-</option>
 <option value="2">2</option>
+<option value="2+">2+</option>
+<option value="3-">3-</option>
 <option value="3">3</option>
+<option value="3+">3+</option>
 </select>
 </div>
 <div class="col-md-2">
@@ -605,15 +610,35 @@ line-height: 1.2;
 </div>
 <div class="mb-3">
 <label class="form-label">Valoración Guionista:</label>
-<textarea class="form-control" id="valoracion-guionista" rows="3" placeholder="Evaluación del guionista..."></textarea>
+<select class="form-control" id="valoracion-guionista">
+<option value="">—</option>
+<option value="1">1</option>
+<option value="1+">1+</option>
+<option value="2-">2-</option>
+<option value="2">2</option>
+<option value="2+">2+</option>
+<option value="3-">3-</option>
+<option value="3">3</option>
+<option value="3+">3+</option>
+</select>
 </div>
 <div class="mb-3">
 <label class="form-label">Momentos Destacados:</label>
 <textarea class="form-control" id="momentos-destacados" rows="3" placeholder="Momentos más destacados del concursante..."></textarea>
 </div>
 <div class="mb-3">
-<label class="form-label">Valoración Final:</label>
-<textarea class="form-control" id="valoracion-final" rows="3" placeholder="Valoración final del concursante..."></textarea>
+<label class="form-label">Valoración Final (dirección):</label>
+<select class="form-control" id="valoracion-final">
+<option value="">—</option>
+<option value="1">1</option>
+<option value="1+">1+</option>
+<option value="2-">2-</option>
+<option value="2">2</option>
+<option value="2+">2+</option>
+<option value="3-">3-</option>
+<option value="3">3</option>
+<option value="3+">3+</option>
+</select>
 </div>
 </div>
 
