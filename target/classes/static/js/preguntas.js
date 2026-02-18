@@ -359,6 +359,11 @@ const PreguntasManager = {
             tbody.appendChild(tr);
         });
         
+        // Sincronizar anchos de columna cabecera → cuerpo (cabecera fija)
+        if (typeof window.sincronizarAnchosTablaPreguntas === 'function') {
+            window.sincronizarAnchosTablaPreguntas();
+        }
+        
         // Restaurar posición del scroll
         setTimeout(() => {
             window.scrollTo({ top: this.lastScrollY || scrollPosition || 0, behavior: 'auto' });
@@ -779,7 +784,7 @@ const PreguntasManager = {
         console.log('🔄 [ORDEN] Estado actual - columna:', this.orden.columna, 'asc:', this.orden.asc);
         
         // Verificar si se está redimensionando una columna
-        if (typeof isTableResizing === 'function' && isTableResizing('tabla-preguntas')) {
+        if (typeof isTableResizing === 'function' && isTableResizing('tabla-preguntas-header')) {
             console.log('❌ [ORDEN] Se está redimensionando una columna, abortando ordenamiento...');
             return;
         }
@@ -1701,7 +1706,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         th.addEventListener('click', (e) => {
             // Verificar si se está redimensionando
-            if (typeof isTableResizing === 'function' && isTableResizing('tabla-preguntas')) {
+            if (typeof isTableResizing === 'function' && isTableResizing('tabla-preguntas-header')) {
                 console.log('❌ [ORDEN] Click bloqueado - se está redimensionando');
                 e.preventDefault();
                 e.stopPropagation();

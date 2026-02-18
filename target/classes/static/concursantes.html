@@ -29,31 +29,22 @@ overflow-x: hidden; /* ocultar scroll horizontal nativo */
 position: relative;
 }
 
-/* Asegurar scroll en el contenedor específico de concursantes */
-#tabla-concursantes-container {
-max-height: 80vh;
-overflow-y: auto !important;
-overflow-x: hidden;
-position: relative;
+/* Cabecera fija: header y body en bloques separados (como en preguntas) */
+.tabla-sticky-wrapper { width: 100%; position: relative; }
+.tabla-sticky-header-wrapper {
+overflow-x: auto;
+overflow-y: hidden;
+scrollbar-width: none;
+-ms-overflow-style: none;
 }
-
-/* Asegurar encabezados sticky en esta tabla */
-#tabla-concursantes-principal thead th {
-position: sticky;
-top: 0;
-z-index: 20;
-background-color: #f8f9fa !important;
-}
-
-/* Encabezado fijo */
-.table-preguntas thead th {
-position: sticky;
-top: 0;
-background-color: #f8f9fa !important;
-color: #000 !important;
-z-index: 10;
-border-bottom: 2px solid #dee2e6;
-font-weight: bold;
+.tabla-sticky-header-wrapper::-webkit-scrollbar { display: none; }
+.tabla-sticky-body-wrapper { overflow: auto; max-height: 80vh; }
+.tabla-sticky-body-wrapper .table-preguntas { margin-top: 0; }
+#tabla-concursantes-container .table-preguntas thead th {
+background: linear-gradient(180deg, #e3f0fc 0%, #cbe6fa 100%) !important;
+color: #1976d2 !important;
+border-bottom: 2px solid #b6d4f7;
+font-weight: 600;
 }
 
 /* Encabezados ordenables con indicador */
@@ -172,7 +163,7 @@ font-size: 0.7em;
 line-height: 1.2;
 }
         /* Estilos para la columna de notas de grabación */
-        #tabla-concursantes-principal th:nth-child(14),
+        #tabla-concursantes-header th:nth-child(14),
         #tabla-concursantes-principal td:nth-child(14) {
             min-width: 800px; /* doble por defecto */
             max-width: none;
@@ -212,11 +203,11 @@ line-height: 1.2;
         }
         
         /* Estilos para las columnas de duración */
-        #tabla-concursantes-principal th:nth-of-type(19),
+        #tabla-concursantes-header th:nth-of-type(19),
         #tabla-concursantes-principal td:nth-of-type(19),
-        #tabla-concursantes-principal th:nth-of-type(20),
+        #tabla-concursantes-header th:nth-of-type(20),
         #tabla-concursantes-principal td:nth-of-type(20),
-        #tabla-concursantes-principal th:nth-of-type(21),
+        #tabla-concursantes-header th:nth-of-type(21),
         #tabla-concursantes-principal td:nth-of-type(21) {
             min-width: 80px;
             text-align: center;
@@ -374,9 +365,10 @@ line-height: 1.2;
 </div>
 </div>
 
-<!-- Tabla de Concursantes -->
-<div class="table-responsive" id="tabla-concursantes-container" style="width: 100%; margin: 0 auto;">
-<table class="table table-excel table-preguntas" id="tabla-concursantes-principal">
+<!-- Tabla de Concursantes (cabecera fija: header y body en bloques separados) -->
+<div class="tabla-sticky-wrapper" id="tabla-concursantes-container" style="width: 100%; margin: 0 auto;">
+<div class="tabla-sticky-header-wrapper" id="tabla-concursantes-header-wrapper">
+<table class="table table-excel table-preguntas" id="tabla-concursantes-header">
 <thead>
 <tr>
 <th class="sortable-header" data-tipo="number">Nº CONCUR<span class="sort-indicator inactive"></span></th>
@@ -408,17 +400,21 @@ line-height: 1.2;
 <th>ACCIONES</th>
 </tr>
 </thead>
+</table>
+</div>
+<div class="tabla-sticky-body-wrapper" id="tabla-concursantes-body-wrapper">
+<table class="table table-excel table-preguntas" id="tabla-concursantes-principal">
 <tbody id="tabla-concursantes">
 <!-- Los concursantes se cargarán dinámicamente aquí -->
 </tbody>
 </table>
 </div>
-
 <!-- Barra de scroll horizontal personalizada -->
 <div class="custom-scrollbar" id="scrollbar-concursantes">
     <div class="custom-scrollbar-track">
         <div class="custom-scrollbar-thumb" id="thumb-concursantes"></div>
     </div>
+</div>
 </div>
 
 <!-- Paginación -->
@@ -1015,11 +1011,29 @@ document.addEventListener('DOMContentLoaded', function() {
 inicializarConcursantes();
 mostrarBotonAdminNavbar();
 inicializarScrollbarPersonalizadaConcursantes();
-// Asegurar inicialización del resizer en esta tabla concreta
+// Resizer en la tabla de cabecera; sincronizar anchos al body (cabecera fija)
 try {
-    const tabla = document.getElementById('tabla-concursantes-principal');
-    if (tabla && typeof TableResizer !== 'undefined' && !tabla.querySelector('.resize-handle')) {
-        new TableResizer('tabla-concursantes-principal', { minWidth: 50, maxWidth: 600 });
+    const headerTable = document.getElementById('tabla-concursantes-header');
+    const bodyTable = document.getElementById('tabla-concursantes-principal');
+    if (headerTable && bodyTable && typeof TableResizer !== 'undefined' && !headerTable.querySelector('.resize-handle')) {
+        new TableResizer('tabla-concursantes-header', { minWidth: 50, maxWidth: 600 });
+        function sincronizarAnchosConcursantes() {
+            var ths = headerTable.querySelectorAll('thead tr th');
+            ths.forEach(function(th, i) {
+                var w = th.offsetWidth || (th.style.width && parseInt(th.style.width, 10));
+                if (!w) return;
+                var px = (typeof w === 'number' ? w : parseInt(String(w), 10)) + 'px';
+                bodyTable.querySelectorAll('tbody tr').forEach(function(tr) {
+                    var cell = tr.cells[i];
+                    if (cell) cell.style.width = px;
+                });
+            });
+        }
+        sincronizarAnchosConcursantes();
+        if (typeof ResizeObserver !== 'undefined') {
+            headerTable.querySelectorAll('thead tr th').forEach(function(th) { new ResizeObserver(sincronizarAnchosConcursantes).observe(th); });
+        }
+        window.sincronizarAnchosTablaConcursantes = sincronizarAnchosConcursantes;
     }
 } catch (e) {
     console.error('Error al inicializar TableResizer en concursantes:', e);

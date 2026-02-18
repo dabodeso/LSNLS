@@ -27,29 +27,39 @@
             overflow-x: auto !important;
         }
         
-        /* Encabezado fijo para la tabla de preguntas */
-        .table-preguntas thead th {
-            position: sticky;
-            top: 0;
-            background-color: #f8f9fa !important; /* Fondo claro */
-            color: #000 !important; /* Texto negro */
-            z-index: 10;
-            border-bottom: 2px solid #dee2e6;
+        /* Cabecera fija: estructura con header y body separados */
+        .tabla-sticky-wrapper {
+            width: 100%;
+            position: relative;
+        }
+        .tabla-sticky-header-wrapper {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .tabla-sticky-header-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+        .tabla-sticky-body-wrapper {
+            overflow: auto;
+            max-height: 80vh;
+        }
+        .tabla-sticky-body-wrapper .table-preguntas {
+            margin-top: 0;
+        }
+        #tabla-preguntas-container .table-preguntas thead th {
+            background: linear-gradient(180deg, #e3f0fc 0%, #cbe6fa 100%) !important;
+            color: #1976d2 !important;
+            border-bottom: 2px solid #b6d4f7;
             font-weight: bold;
         }
         
-        /* Asegurar que el contenedor de la tabla permita scroll vertical */
         .table-responsive {
             max-height: 80vh;
             overflow-y: auto;
-            overflow-x: hidden; /* Ocultar scroll horizontal nativo */
+            overflow-x: hidden;
             position: relative;
-        }
-        
-        /* Desactivar scroll horizontal nativo con rueda dentro del contenedor; usar barra personalizada */
-        #tabla-preguntas-container {
-            overscroll-behavior-x: none;
-            touch-action: pan-y; /* Permitir solo desplazamiento vertical en táctil/trackpad */
         }
         
         /* Barra de scroll horizontal personalizada */
@@ -346,31 +356,37 @@
             </div>
         </div>
 
-        <!-- Tabla de Preguntas -->
-        <div class="table-responsive" style="width: 100%; margin: 0 auto;" id="tabla-preguntas-container">
-            <table class="table table-excel table-preguntas" id="tabla-preguntas-principal">
-                <thead>
-                    <tr>
-                        <th class="sortable-header" data-column="id">ID<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="creacionUsuario">Autoría<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="nivel">Nivel<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="tematica">Temática<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="subtema">Subtemas<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="pregunta">Pregunta<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="respuesta">Respuesta<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="datosExtra">Datos Extra<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="fuentes">Fuentes<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="verificacionUsuario">Verificación<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="notasVerificacion">Notas Verificación<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="notasDireccion">Notas Dirección<span class="sort-indicator inactive"></span></th>
-                        <th class="sortable-header" data-column="estado">Estado<span class="sort-indicator inactive"></span></th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-preguntas">
-                    <!-- Las preguntas se cargarán dinámicamente aquí -->
-                </tbody>
-            </table>
+        <!-- Tabla de Preguntas (cabecera fija: header y body en bloques separados) -->
+        <div class="tabla-sticky-wrapper" id="tabla-preguntas-container" style="width: 100%; margin: 0 auto;">
+            <div class="tabla-sticky-header-wrapper" id="tabla-preguntas-header-wrapper">
+                <table class="table table-excel table-preguntas" id="tabla-preguntas-header">
+                    <thead>
+                        <tr>
+                            <th class="sortable-header" data-column="id">ID<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="creacionUsuario">Autoría<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="nivel">Nivel<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="tematica">Temática<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="subtema">Subtemas<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="pregunta">Pregunta<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="respuesta">Respuesta<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="datosExtra">Datos Extra<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="fuentes">Fuentes<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="verificacionUsuario">Verificación<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="notasVerificacion">Notas Verificación<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="notasDireccion">Notas Dirección<span class="sort-indicator inactive"></span></th>
+                            <th class="sortable-header" data-column="estado">Estado<span class="sort-indicator inactive"></span></th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+            <div class="tabla-sticky-body-wrapper" id="tabla-preguntas-body-wrapper">
+                <table class="table table-excel table-preguntas" id="tabla-preguntas-principal">
+                    <tbody id="tabla-preguntas">
+                        <!-- Las preguntas se cargarán dinámicamente aquí -->
+                    </tbody>
+                </table>
+            </div>
             <!-- Barra de scroll horizontal personalizada -->
             <div class="custom-scrollbar" id="scrollbar-preguntas">
                 <div class="custom-scrollbar-track">
@@ -718,11 +734,29 @@
             TemasManager.cargarTemas();
             TemasManager.cargarSubtemas();
         }
-        // Asegurar inicialización del resizer en esta tabla concreta
+        // Resizer en la tabla de cabecera; sincronizar anchos al body
         try {
-            const tabla = document.getElementById('tabla-preguntas-principal');
-            if (tabla && typeof TableResizer !== 'undefined' && !tabla.querySelector('.resize-handle')) {
-                new TableResizer('tabla-preguntas-principal', { minWidth: 50, maxWidth: 600 });
+            const headerTable = document.getElementById('tabla-preguntas-header');
+            const bodyTable = document.getElementById('tabla-preguntas-principal');
+            if (headerTable && bodyTable && typeof TableResizer !== 'undefined' && !headerTable.querySelector('.resize-handle')) {
+                new TableResizer('tabla-preguntas-header', { minWidth: 50, maxWidth: 600 });
+                function sincronizarAnchosPreguntas() {
+                    const ths = headerTable.querySelectorAll('thead tr th');
+                    ths.forEach(function(th, i) {
+                        const w = th.offsetWidth || (th.style.width && parseInt(th.style.width, 10));
+                        if (!w) return;
+                        const px = (typeof w === 'number' ? w : parseInt(String(w), 10)) + 'px';
+                        bodyTable.querySelectorAll('tbody tr').forEach(function(tr) {
+                            var cell = tr.cells[i];
+                            if (cell) cell.style.width = px;
+                        });
+                    });
+                }
+                sincronizarAnchosPreguntas();
+                if (typeof ResizeObserver !== 'undefined') {
+                    headerTable.querySelectorAll('thead tr th').forEach(function(th) { new ResizeObserver(sincronizarAnchosPreguntas).observe(th); });
+                }
+                window.sincronizarAnchosTablaPreguntas = sincronizarAnchosPreguntas;
             }
         } catch (e) {
             console.error('Error al inicializar TableResizer en preguntas:', e);
@@ -765,13 +799,21 @@
         });
     });
     
-    // Función para inicializar la barra de scroll personalizada en preguntas
+    // Función para inicializar la barra de scroll personalizada en preguntas (scroll en el body; cabecera fija)
     function inicializarScrollbarPersonalizadaPreguntas() {
-        const container = document.getElementById('tabla-preguntas-container');
+        const container = document.getElementById('tabla-preguntas-body-wrapper');
+        const headerWrapper = document.getElementById('tabla-preguntas-header-wrapper');
         const scrollbar = document.getElementById('scrollbar-preguntas');
         const thumb = document.getElementById('thumb-preguntas');
         
         if (!container || !scrollbar || !thumb) return;
+        
+        // Sincronizar scroll horizontal: cuando se mueve el body, mover la cabecera para que columnas coincidan
+        if (headerWrapper) {
+            container.addEventListener('scroll', function() {
+                headerWrapper.scrollLeft = container.scrollLeft;
+            });
+        }
         
         // Función para actualizar la posición del thumb
         function actualizarThumb() {

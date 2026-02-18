@@ -660,7 +660,9 @@ return `<tr data-id="${concursante.id}" oncontextmenu="showContextMenu(event, ${
     
     tbody.innerHTML = htmlGenerado;
     
-    // Eliminar verificación de depuración
+    if (typeof window.sincronizarAnchosTablaConcursantes === 'function') {
+        window.sincronizarAnchosTablaConcursantes();
+    }
 // Resaltado y scroll si hay id en la URL
 const params = new URLSearchParams(window.location.search);
 const idDestacado = params.get('id');
@@ -2329,8 +2331,9 @@ async function confirmarReciclajeComboDesdeFormulario(comboId, jornadaId) {
 // --- ORDENACIÓN POR COLUMNA con indicadores ---
 function actualizarIndicadoresOrdenamientoConcursantes() {
     const tabla = document.getElementById('tabla-concursantes-principal');
-    if (!tabla) return;
-    const headers = tabla.querySelectorAll('thead th');
+    const headerTable = document.getElementById('tabla-concursantes-header');
+    if (!tabla || !headerTable) return;
+    const headers = headerTable.querySelectorAll('thead th');
     headers.forEach((th, idx) => {
         const indicator = th.querySelector('.sort-indicator');
         if (!indicator) return;
@@ -2344,10 +2347,12 @@ function actualizarIndicadoresOrdenamientoConcursantes() {
 
 function ordenarTablaConcursantes(colIndex, tipo = 'string') {
 const tabla = document.getElementById('tabla-concursantes-principal');
+const headerTable = document.getElementById('tabla-concursantes-header');
+if (!tabla || !headerTable) return;
 const asc = tabla.dataset.ordenCol == colIndex ? tabla.dataset.ordenAsc !== 'true' : true;
 
-// Mapear índice a sortBy del backend
-const headerMap = Array.from(tabla.querySelectorAll('thead th')).map(th => th.textContent.trim());
+// Mapear índice a sortBy del backend (encabezados en la tabla de cabecera)
+const headerMap = Array.from(headerTable.querySelectorAll('thead th')).map(th => th.textContent.trim());
 const header = headerMap[colIndex] || '';
 const mapSortBy = {
     'Nº CONCUR': 'numeroConcursante',
@@ -2389,15 +2394,15 @@ paginaActual = 0;
 cargarConcursantes(true);
 }
 
-// Añadir listeners a los th
+// Añadir listeners a los th (cabecera está en tabla-concursantes-header)
 setTimeout(() => {
-const tabla = document.getElementById('tabla-concursantes-principal');
+const tabla = document.getElementById('tabla-concursantes-header');
 if (tabla) {
 tabla.querySelectorAll('thead th').forEach((th, idx) => {
 th.style.cursor = 'pointer';
 th.onclick = (e) => {
     // Evitar conflicto si se está redimensionando
-    if (typeof isTableResizing === 'function' && isTableResizing('tabla-concursantes-principal')) return;
+    if (typeof isTableResizing === 'function' && isTableResizing('tabla-concursantes-header')) return;
     ordenarTablaConcursantes(idx, th.dataset.tipo || 'string');
 };
 });
@@ -2405,12 +2410,19 @@ actualizarIndicadoresOrdenamientoConcursantes();
 }
 }, 500);
 
-// --- AUTO-SCROLL HORIZONTAL EN TABLA DE CONCURSANTES ---
+// --- AUTO-SCROLL HORIZONTAL EN TABLA DE CONCURSANTES (scroll en body; cabecera fija) ---
 function inicializarScrollbarPersonalizadaConcursantes() {
-    const container = document.getElementById('tabla-concursantes-container');
+    const container = document.getElementById('tabla-concursantes-body-wrapper');
+    const headerWrapper = document.getElementById('tabla-concursantes-header-wrapper');
     const scrollbar = document.getElementById('scrollbar-concursantes');
     const thumb = document.getElementById('thumb-concursantes');
     if (!container || !scrollbar || !thumb) return;
+
+    if (headerWrapper) {
+        container.addEventListener('scroll', function() {
+            headerWrapper.scrollLeft = container.scrollLeft;
+        });
+    }
 
     function actualizarThumb() {
         const scrollLeft = container.scrollLeft;
@@ -2885,7 +2897,7 @@ mostrarExito('Configuración de columnas aplicada correctamente');
 }
 
 function actualizarEncabezadosTabla() {
-const thead = document.querySelector('#tabla-concursantes-principal thead tr');
+const thead = document.querySelector('#tabla-concursantes-header thead tr');
 if (!thead) return;
 
 const encabezados = [];
@@ -2934,26 +2946,25 @@ encabezados.push('<th>ACCIONES</th>');
 
 thead.innerHTML = encabezados.join('');
 
-// Reasignar listeners de orden y re-inicializar el resizer tras reconstruir encabezados
-const tabla = document.getElementById('tabla-concursantes-principal');
-if (tabla) {
-tabla.querySelectorAll('thead th').forEach((th, idx) => {
+// Reasignar listeners de orden y re-inicializar el resizer en la tabla de cabecera
+const tablaHeader = document.getElementById('tabla-concursantes-header');
+if (tablaHeader) {
+tablaHeader.querySelectorAll('thead th').forEach((th, idx) => {
 th.style.cursor = 'pointer';
 th.onclick = () => {
-    if (typeof isTableResizing === 'function' && isTableResizing('tabla-concursantes-principal')) return;
+    if (typeof isTableResizing === 'function' && isTableResizing('tabla-concursantes-header')) return;
     ordenarTablaConcursantes(idx, th.dataset.tipo || 'string');
 };
 });
-// Actualizar flechas según último estado
 if (typeof actualizarIndicadoresOrdenamientoConcursantes === 'function') {
 actualizarIndicadoresOrdenamientoConcursantes();
 }
-
-// Muy importante: volver a inicializar TableResizer para que se apliquen
-// los anchos guardados y se vuelvan a crear los handles de redimensionado.
 try {
     if (typeof TableResizer !== 'undefined') {
-        new TableResizer('tabla-concursantes-principal', { minWidth: 50, maxWidth: 600 });
+        new TableResizer('tabla-concursantes-header', { minWidth: 50, maxWidth: 600 });
+    }
+    if (typeof window.sincronizarAnchosTablaConcursantes === 'function') {
+        window.sincronizarAnchosTablaConcursantes();
     }
 } catch (e) {
     console.error('Error al re-inicializar TableResizer en concursantes:', e);
