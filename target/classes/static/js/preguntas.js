@@ -561,13 +561,10 @@ const PreguntasManager = {
         console.log('💾 [GUARDAR] ID de edición:', editId);
         console.log('💾 [GUARDAR] Datos del formulario inicial:', preguntaData);
         
-        // Obtener subtemas seleccionados como array
-        const subtemasSelect = document.getElementById('subtemas-pregunta');
-        if (subtemasSelect) {
-            const subtemas = Array.from(subtemasSelect.selectedOptions).map(opt => opt.value);
-            preguntaData.subtema = subtemas.join(',');
-            console.log('💾 [GUARDAR] Subtemas procesados:', subtemas, '→', preguntaData.subtema);
-        }
+        // Obtener subtemas seleccionados del picker
+        const subtemasSeleccionadosList = SubtemasPicker.getSeleccionados();
+        preguntaData.subtema = subtemasSeleccionadosList.join(',');
+        console.log('💾 [GUARDAR] Subtemas procesados:', subtemasSeleccionadosList, '→', preguntaData.subtema);
         
         // IMPORTANTE: Verificar explícitamente el estado
         const estadoSelect = document.getElementById('estado-pregunta');
@@ -1271,68 +1268,21 @@ const PreguntasManager = {
             console.log('📋 [EDITAR] Temas disponibles:', TemasManager.temas);
             console.log('📋 [EDITAR] Subtemas disponibles:', TemasManager.subtemas);
             
-            // Rellenar select de temática con temas dinámicos
+            // Inicializar el picker de temática con el valor de la pregunta
             const tematicas = TemasManager.temas.length > 0 ? TemasManager.temas : ['Geografía','Historia','Deportes','Ciencia','Arte'];
-            const selectTematica = document.getElementById('tematica-pregunta');
-            if (selectTematica) {
-                console.log('🎯 [EDITAR] Llenando select de temática...');
-                console.log('🎯 [EDITAR] Temática de la pregunta:', pregunta.tematica);
-                
-                // Limpiar select
-                selectTematica.innerHTML = '';
-                
-                // Añadir opción vacía por defecto
-                const optionVacia = document.createElement('option');
-                optionVacia.value = '';
-                optionVacia.textContent = 'Seleccionar temática';
-                selectTematica.appendChild(optionVacia);
-                
-                // Añadir todas las temáticas
-                tematicas.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t;
-                    opt.textContent = t;
-                    // Preseleccionar si coincide con la temática de la pregunta
-                    if (pregunta.tematica && t === pregunta.tematica) {
-                        opt.selected = true;
-                        console.log('✅ [EDITAR] Opción preseleccionada:', t);
-                    }
-                    selectTematica.appendChild(opt);
-                });
-                
-                console.log('📝 [EDITAR] Opciones creadas. Valor final del select:', selectTematica.value);
-            } else {
-                console.error('❌ [EDITAR] No se encontró el elemento tematica-pregunta');
-            }
+            console.log('🎯 [EDITAR] Temática de la pregunta:', pregunta.tematica);
+            TematicaPicker.init(tematicas, pregunta.tematica || null);
+            console.log('✅ [EDITAR] Temática cargada en picker');
             
-            // Rellenar select de subtemas con subtemas dinámicos
+            // Inicializar el picker de subtemas con los valores de la pregunta
             const subtemas = TemasManager.subtemas.length > 0 ? TemasManager.subtemas : ['Geografía','Historia','Deportes','Ciencia','Arte'];
-            const selectSubtemas = document.getElementById('subtemas-pregunta');
-            if (selectSubtemas) {
-                console.log('🎯 [EDITAR] Llenando select de subtemas...');
-                selectSubtemas.innerHTML = '';
-                
-                // Obtener subtemas seleccionados de la pregunta
-                const subtemasSeleccionados = pregunta.subtema ? 
-                    pregunta.subtema.split(',').map(s => s.trim()) : [];
-                
-                console.log('📝 [EDITAR] Subtemas a seleccionar:', subtemasSeleccionados);
-                
-                subtemas.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t;
-                    opt.textContent = t;
-                    selectSubtemas.appendChild(opt);
-                });
-                
-                // DESPUÉS de añadir todas las opciones, seleccionar las correctas
-                if (subtemasSeleccionados.length > 0) {
-                    Array.from(selectSubtemas.options).forEach(option => {
-                        option.selected = subtemasSeleccionados.includes(option.value);
-                    });
-                    console.log('✅ [EDITAR] Subtemas seleccionados');
-                }
-            }
+            const subtemasSeleccionados = pregunta.subtema
+                ? pregunta.subtema.split(',').map(s => s.trim()).filter(Boolean)
+                : [];
+            console.log('📝 [EDITAR] Subtemas a seleccionar:', subtemasSeleccionados);
+            SubtemasPicker.init(subtemas);
+            SubtemasPicker.setSeleccionados(subtemasSeleccionados);
+            console.log('✅ [EDITAR] Subtemas cargados en picker');
             
             // Rellenar el resto del formulario con los datos de la pregunta
             document.getElementById('nivel-pregunta').value = pregunta.nivel || '';
@@ -1906,31 +1856,13 @@ window.mostrarFormularioPregunta = function() {
         form.reset();
         delete form.dataset.editId;
         
-        // Rellenar select de temática con temas dinámicos
+        // Inicializar el picker de temática para nueva pregunta
         const tematicas = TemasManager.temas.length > 0 ? TemasManager.temas : ['Geografía','Historia','Deportes','Ciencia','Arte'];
-        const selectTematica = document.getElementById('tematica-pregunta');
-        if (selectTematica) {
-            selectTematica.innerHTML = '';
-            tematicas.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t;
-                opt.textContent = t;
-                selectTematica.appendChild(opt);
-            });
-        }
-        // Rellenar select de subtemas con subtemas dinámicos
+        TematicaPicker.init(tematicas);
+        // Inicializar el picker de subtemas para nueva pregunta
         const subtemas = TemasManager.subtemas.length > 0 ? TemasManager.subtemas : ['Geografía','Historia','Deportes','Ciencia','Arte'];
-        const selectSubtemas = document.getElementById('subtemas-pregunta');
-        if (selectSubtemas) {
-            selectSubtemas.innerHTML = '';
-            subtemas.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t;
-                opt.textContent = t;
-                selectSubtemas.appendChild(opt);
-            });
-        }
-        
+        SubtemasPicker.init(subtemas);
+
         // Inicializar el select de estado con "borrador" por defecto
         const selectEstado = document.getElementById('estado-pregunta');
         if (selectEstado) {
@@ -1967,6 +1899,222 @@ window.limpiarFiltros = function() {
 
 window.filtrarPreguntas = function() {
     PreguntasManager.filtrarPreguntas();
+};
+
+// ─── Selector de subtemas con búsqueda y multi-selección ───────────────────
+const SubtemasPicker = {
+    _subtemas: [],
+    _seleccionados: [],
+
+    init(subtemas) {
+        this._subtemas = subtemas || [];
+        this._seleccionados = [];
+        this._bindEvents();
+        this._renderTags();
+        this._renderOpciones('');
+        const input = document.getElementById('subtemas-busqueda');
+        const dropdown = document.getElementById('subtemas-dropdown');
+        if (input) input.value = '';
+        if (dropdown) dropdown.style.display = 'none';
+    },
+
+    _bindEvents() {
+        const input = document.getElementById('subtemas-busqueda');
+        const dropdown = document.getElementById('subtemas-dropdown');
+        if (!input || !dropdown) return;
+
+        input.oninput = () => {
+            this._renderOpciones(input.value);
+            dropdown.style.display = 'block';
+        };
+        input.onfocus = () => {
+            this._renderOpciones(input.value);
+            dropdown.style.display = 'block';
+        };
+
+        document._subtemasPickerOutsideHandler && document.removeEventListener('mousedown', document._subtemasPickerOutsideHandler);
+        document._subtemasPickerOutsideHandler = (e) => {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        };
+        document.addEventListener('mousedown', document._subtemasPickerOutsideHandler);
+    },
+
+    _renderOpciones(filtro) {
+        const cont = document.getElementById('subtemas-opciones');
+        if (!cont) return;
+        const texto = (filtro || '').trim().toLowerCase();
+        const filtrados = this._subtemas
+            .filter(s => s.toLowerCase().includes(texto))
+            .slice(0, 10);
+
+        if (filtrados.length === 0) {
+            cont.innerHTML = '<div class="px-3 py-2 text-muted small">Sin resultados</div>';
+            return;
+        }
+        cont.innerHTML = filtrados.map(s => {
+            const sel = this._seleccionados.includes(s);
+            const sEsc = s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            return `<div class="subtemas-picker-opcion px-3 py-1 d-flex align-items-center gap-2${sel ? ' selected' : ''}"
+                         style="cursor:pointer;" onmousedown="event.preventDefault(); SubtemasPicker.toggle('${sEsc}')">
+                        <i class="fas ${sel ? 'fa-check-square' : 'fa-square'}" style="font-size:0.85em; width:14px;"></i>
+                        <span>${s}</span>
+                    </div>`;
+        }).join('');
+    },
+
+    _renderTags() {
+        const cont = document.getElementById('subtemas-seleccionados');
+        if (!cont) return;
+        cont.innerHTML = this._seleccionados.map(s => {
+            const sEsc = s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            return `<span class="badge bg-primary d-inline-flex align-items-center gap-1" style="font-size:0.82em; padding:4px 8px;">
+                        ${s}
+                        <button type="button" class="btn-close btn-close-white ms-1"
+                                style="font-size:0.6em;" onmousedown="event.preventDefault(); SubtemasPicker.toggle('${sEsc}')"></button>
+                    </span>`;
+        }).join('');
+    },
+
+    toggle(subtema) {
+        const idx = this._seleccionados.indexOf(subtema);
+        if (idx >= 0) {
+            this._seleccionados.splice(idx, 1);
+        } else {
+            this._seleccionados.push(subtema);
+        }
+        this._renderTags();
+        const input = document.getElementById('subtemas-busqueda');
+        const dropdown = document.getElementById('subtemas-dropdown');
+        this._renderOpciones(input ? input.value : '');
+        // Mantener el dropdown abierto tras seleccionar (el re-render desvincula e.target del DOM
+        // y el listener exterior lo cerraría erróneamente)
+        if (dropdown) dropdown.style.display = 'block';
+        if (input) input.focus();
+    },
+
+    getSeleccionados() {
+        return [...this._seleccionados];
+    },
+
+    setSeleccionados(arr) {
+        this._seleccionados = arr ? [...arr] : [];
+        this._renderTags();
+        const input = document.getElementById('subtemas-busqueda');
+        this._renderOpciones(input ? input.value : '');
+    }
+};
+
+// ─── Selector de temática con búsqueda (selección única) ───────────────────
+const TematicaPicker = {
+    _tematicas: [],
+    _seleccionada: null,
+
+    init(tematicas, valorInicial = null) {
+        this._tematicas = tematicas || [];
+        this._seleccionada = valorInicial || null;
+        this._bindEvents();
+        this._renderTag();
+        this._renderOpciones('');
+        const input = document.getElementById('tematica-busqueda');
+        const dropdown = document.getElementById('tematica-dropdown');
+        if (input) input.value = '';
+        if (dropdown) dropdown.style.display = 'none';
+        this._updateHidden();
+    },
+
+    _bindEvents() {
+        const input = document.getElementById('tematica-busqueda');
+        const dropdown = document.getElementById('tematica-dropdown');
+        if (!input || !dropdown) return;
+
+        input.oninput = () => {
+            this._renderOpciones(input.value);
+            dropdown.style.display = 'block';
+        };
+        input.onfocus = () => {
+            this._renderOpciones(input.value);
+            dropdown.style.display = 'block';
+        };
+
+        document._tematicaPickerOutsideHandler && document.removeEventListener('mousedown', document._tematicaPickerOutsideHandler);
+        document._tematicaPickerOutsideHandler = (e) => {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        };
+        document.addEventListener('mousedown', document._tematicaPickerOutsideHandler);
+    },
+
+    _renderOpciones(filtro) {
+        const cont = document.getElementById('tematica-opciones');
+        if (!cont) return;
+        const texto = (filtro || '').trim().toLowerCase();
+        const filtrados = this._tematicas
+            .filter(t => t.toLowerCase().includes(texto))
+            .slice(0, 10);
+
+        if (filtrados.length === 0) {
+            cont.innerHTML = '<div class="px-3 py-2 text-muted small">Sin resultados</div>';
+            return;
+        }
+        cont.innerHTML = filtrados.map(t => {
+            const sel = this._seleccionada === t;
+            const tEsc = t.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            return `<div class="subtemas-picker-opcion px-3 py-1 d-flex align-items-center gap-2${sel ? ' selected' : ''}"
+                         style="cursor:pointer;" onmousedown="event.preventDefault(); TematicaPicker.seleccionar('${tEsc}')">
+                        <i class="fas ${sel ? 'fa-dot-circle' : 'fa-circle'}" style="font-size:0.85em; width:14px;"></i>
+                        <span>${t}</span>
+                    </div>`;
+        }).join('');
+    },
+
+    _renderTag() {
+        const cont = document.getElementById('tematica-seleccionada');
+        if (!cont) return;
+        if (this._seleccionada) {
+            const tEsc = this._seleccionada.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            cont.innerHTML = `<span class="badge bg-success d-inline-flex align-items-center gap-1" style="font-size:0.82em; padding:4px 8px;">
+                                  ${this._seleccionada}
+                                  <button type="button" class="btn-close btn-close-white ms-1"
+                                          style="font-size:0.6em;" onmousedown="event.preventDefault(); TematicaPicker.limpiar()"></button>
+                              </span>`;
+        } else {
+            cont.innerHTML = '';
+        }
+    },
+
+    _updateHidden() {
+        const hidden = document.getElementById('tematica-pregunta');
+        if (hidden) hidden.value = this._seleccionada || '';
+    },
+
+    seleccionar(tematica) {
+        this._seleccionada = tematica;
+        this._renderTag();
+        this._updateHidden();
+        const input = document.getElementById('tematica-busqueda');
+        const dropdown = document.getElementById('tematica-dropdown');
+        if (input) input.value = '';
+        this._renderOpciones('');
+        if (dropdown) dropdown.style.display = 'none';
+    },
+
+    limpiar() {
+        this._seleccionada = null;
+        this._renderTag();
+        this._updateHidden();
+        const input = document.getElementById('tematica-busqueda');
+        const dropdown = document.getElementById('tematica-dropdown');
+        this._renderOpciones('');
+        if (input) { input.value = ''; input.focus(); }
+        if (dropdown) dropdown.style.display = 'block';
+    },
+
+    getSeleccionada() {
+        return this._seleccionada;
+    }
 };
 
 // Gestión de Temas y Subtemas

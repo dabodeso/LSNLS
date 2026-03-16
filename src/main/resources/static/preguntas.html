@@ -15,6 +15,25 @@
     <link href="css/styles.css" rel="stylesheet">
     <link href="css/pagination.css" rel="stylesheet">
     <style>
+        /* ── Subtemas Picker ── */
+        .subtemas-picker-opcion {
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.1s;
+        }
+        .subtemas-picker-opcion:last-child {
+            border-bottom: none;
+        }
+        .subtemas-picker-opcion:hover {
+            background-color: #e8f0fe !important;
+        }
+        .subtemas-picker-opcion.selected {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .subtemas-picker-opcion.selected:hover {
+            background-color: #0b5ed7 !important;
+        }
+
         /* Hacer la tabla más ancha y permitir redimensionamiento */
         .table-preguntas {
             width: 100% !important;
@@ -430,16 +449,25 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label for="tematica-pregunta" class="form-label">Temática</label>
-                                <select id="tematica-pregunta" name="tematica" class="form-control" required>
-                                    <!-- Opciones por JS -->
-                                </select>
+                                <label class="form-label">Temática <span class="text-danger">*</span></label>
+                                <input type="hidden" id="tematica-pregunta" name="tematica">
+                                <div id="tematica-seleccionada" class="mb-2" style="min-height:24px;"></div>
+                                <input type="text" id="tematica-busqueda" class="form-control"
+                                       placeholder="Escribe para buscar temática..." autocomplete="off">
+                                <div id="tematica-dropdown" class="border rounded mt-1"
+                                     style="display:none; max-height:250px; overflow-y:auto; background:white; position:relative; z-index:1055;">
+                                    <div id="tematica-opciones"></div>
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label for="subtemas-pregunta" class="form-label">Subtemas</label>
-                                <select id="subtemas-pregunta" name="subtema" class="form-control" multiple>
-                                    <!-- Opciones por JS -->
-                                </select>
+                                <label class="form-label">Subtemas</label>
+                                <div id="subtemas-seleccionados" class="d-flex flex-wrap gap-1 mb-2" style="min-height:24px;"></div>
+                                <input type="text" id="subtemas-busqueda" class="form-control"
+                                       placeholder="Escribe para buscar subtemas..." autocomplete="off">
+                                <div id="subtemas-dropdown" class="border rounded mt-1"
+                                     style="display:none; max-height:250px; overflow-y:auto; background:white; position:relative; z-index:1055;">
+                                    <div id="subtemas-opciones"></div>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label for="pregunta-pregunta" class="form-label">Pregunta</label>

@@ -1,6 +1,28 @@
 let programas = [];
 let concursantesPorPrograma = {};
 
+let rolUsuarioActual = null;
+
+function puedeEditarCamposPrograma() {
+    return ['ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+}
+
+function puedeCrearPrograma() {
+    return ['ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+}
+
+function puedeEliminarPrograma() {
+    return ['ROLE_ADMIN', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+}
+
+function puedeGestionarConcursantesPrograma() {
+    return ['ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+}
+
+function puedeEditarCamposConcursante() {
+    return ['ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+}
+
 // Valoraciones permitidas (guionista/dirección) - solo front
 const VALORACIONES_PERMITIDAS = ['1', '1+', '2-', '2', '2+', '3-', '3', '3+'];
 
@@ -12,15 +34,19 @@ let totalItems = 0;
 let lastScrollYProgramas = 0;
 
 async function inicializarProgramas() {
-    // Mostrar enlace de administración solo para admins
     const usuario = JSON.parse(localStorage.getItem('usuario'));
+    rolUsuarioActual = usuario ? usuario.rol : null;
+
     if (usuario && usuario.rol === 'ROLE_ADMIN') {
         const navAdmin = document.getElementById('nav-admin');
-        if (navAdmin) {
-            navAdmin.style.display = 'block';
-        }
+        if (navAdmin) navAdmin.style.display = 'block';
     }
-    
+
+    if (!puedeCrearPrograma()) {
+        const btnNuevo = document.querySelector('[onclick="mostrarFormularioPrograma()"]');
+        if (btnNuevo) btnNuevo.style.display = 'none';
+    }
+
     await cargarProgramas();
 }
 
@@ -107,6 +133,11 @@ function mostrarProgramas() {
         </div>`;
     }
     
+    const editProg = puedeEditarCamposPrograma();
+    const editConc = puedeEditarCamposConcursante();
+    const gestionConc = puedeGestionarConcursantesPrograma();
+    const elimProg = puedeEliminarPrograma();
+
     contenedor.innerHTML = infoPaginacion + visibles.map(programa => {
         const concursantes = concursantesPorPrograma[programa.id] || [];
         const fechaFormateada = formatearFechaPrograma(programa.fechaEmision);
@@ -157,8 +188,10 @@ function mostrarProgramas() {
                         <div class="programa-info-item">
                             <div class="programa-info-label">Temporada</div>
                             <div class="programa-info-value">
-                                <input type="number" class="form-control form-control-sm" min="1" value="${programa.temporada || ''}"
-                                       onchange="actualizarTemporadaPrograma(${programa.id}, this.value)" style="width: 80px;">
+                                ${editProg
+                                    ? `<input type="number" class="form-control form-control-sm" min="1" value="${programa.temporada || ''}"
+                                               onchange="actualizarTemporadaPrograma(${programa.id}, this.value)" style="width: 80px;">`
+                                    : `<span class="programa-info-readonly">${programa.temporada || '—'}</span>`}
                             </div>
                         </div>
                         <div class="programa-info-item" style="min-width: 80px;">
@@ -168,21 +201,25 @@ function mostrarProgramas() {
                         <div class="programa-info-item">
                             <div class="programa-info-label">Estado</div>
                             <div class="programa-info-value">
-                                <select class="form-select form-select-sm" style="min-width: 140px;"
-                                        onchange="actualizarEstadoPrograma(${programa.id}, this.value)">
-                                    ${renderOpcionEstado(programa.estado, 'borrador', 'Borrador')}
-                                    ${renderOpcionEstado(programa.estado, 'grabado', 'Grabado')}
-                                    ${renderOpcionEstado(programa.estado, 'editado', 'Editado')}
-                                    ${renderOpcionEstado(programa.estado, 'programado', 'Programado')}
-                                    ${renderOpcionEstado(programa.estado, 'emitido', 'Emitido')}
-                                </select>
+                                ${editProg
+                                    ? `<select class="form-select form-select-sm" style="min-width: 140px;"
+                                               onchange="actualizarEstadoPrograma(${programa.id}, this.value)">
+                                           ${renderOpcionEstado(programa.estado, 'borrador', 'Borrador')}
+                                           ${renderOpcionEstado(programa.estado, 'grabado', 'Grabado')}
+                                           ${renderOpcionEstado(programa.estado, 'editado', 'Editado')}
+                                           ${renderOpcionEstado(programa.estado, 'programado', 'Programado')}
+                                           ${renderOpcionEstado(programa.estado, 'emitido', 'Emitido')}
+                                       </select>`
+                                    : `<span class="programa-info-readonly">${programa.estado || '—'}</span>`}
                             </div>
                         </div>
                         <div class="programa-info-item">
                             <div class="programa-info-label">Fecha de emisión</div>
                             <div class="programa-info-value">
-                                <input type="date" class="form-control form-control-sm" value="${programa.fechaEmision || ''}"
-                                       onchange="actualizarFechaEmision(${programa.id}, this.value)" style="width: 150px;">
+                                ${editProg
+                                    ? `<input type="date" class="form-control form-control-sm" value="${programa.fechaEmision || ''}"
+                                               onchange="actualizarFechaEmision(${programa.id}, this.value)" style="width: 150px;">`
+                                    : `<span class="programa-info-readonly">${fechaFormateada}</span>`}
                             </div>
                         </div>
                         <div class="programa-info-item">
@@ -194,11 +231,13 @@ function mostrarProgramas() {
                         <div class="programa-info-item">
                             <div class="programa-info-label">Duración Objetivo</div>
                             <div class="programa-info-value">
-                                <input type="text" class="form-control form-control-sm" 
-                                       value="${duracionObjetivo}" 
-                                       onchange="actualizarDuracionObjetivoPrograma(${programa.id}, this.value)"
-                                       placeholder="1h 5m"
-                                       style="width: 80px; font-size: 0.9em;">
+                                ${editProg
+                                    ? `<input type="text" class="form-control form-control-sm"
+                                               value="${duracionObjetivo}"
+                                               onchange="actualizarDuracionObjetivoPrograma(${programa.id}, this.value)"
+                                               placeholder="1h 5m"
+                                               style="width: 80px; font-size: 0.9em;">`
+                                    : `<span class="programa-info-readonly">${duracionObjetivo}</span>`}
                             </div>
                         </div>
                         <div class="programa-info-item">
@@ -208,20 +247,22 @@ function mostrarProgramas() {
                             </div>
                         </div>
                         <div class="programa-acciones">
-                            <button class="btn btn-success" onclick="mostrarConcursantesDisponibles(${programa.id})" title="Añadir concursante">
+                            ${gestionConc ? `<button class="btn btn-success" onclick="mostrarConcursantesDisponibles(${programa.id})" title="Añadir concursante">
                                 <i class="fas fa-user-plus"></i>
-                            </button>
-                            <button class="btn btn-danger" onclick="eliminarPrograma(${programa.id})" title="Borrar programa">
+                            </button>` : ''}
+                            ${elimProg ? `<button class="btn btn-danger" onclick="eliminarPrograma(${programa.id})" title="Borrar programa">
                                 <i class="fas fa-trash"></i>
-                            </button>
+                            </button>` : ''}
                         </div>
                     </div>
                     <div class="programa-creditos mt-2">
                         <div class="programa-info-label" style="text-align:left; margin-bottom:6px;">CRÉDITOS ESPECIALES (Programa)</div>
-                        <textarea class="editable-field programa-creditos-textarea"
-                                  rows="2"
-                                  placeholder="Créditos especiales del programa..."
-                                  onblur="actualizarCreditosEspecialesPrograma(${programa.id}, this.value)">${programa.creditosEspeciales || ''}</textarea>
+                        ${editProg
+                            ? `<textarea class="editable-field programa-creditos-textarea"
+                                         rows="2"
+                                         placeholder="Créditos especiales del programa..."
+                                         onblur="actualizarCreditosEspecialesPrograma(${programa.id}, this.value)">${programa.creditosEspeciales || ''}</textarea>`
+                            : `<p class="editable-field programa-creditos-textarea" style="cursor:default; pointer-events:none; min-height:44px; margin:0;">${programa.creditosEspeciales || ''}</p>`}
                     </div>
                 </div>
                 
@@ -264,60 +305,75 @@ function mostrarProgramas() {
                                         <td class="col-ocupacion">${concursante.ocupacion || ''}</td>
                                         <td class="col-rrss">${concursante.redesSociales || ''}</td>
                                         <td class="col-resultado">
-                                            <input type="text" class="campo-editable" 
-                                                   value="${concursante.resultado || ''}" 
-                                                   onchange="actualizarCampoConcursante(${concursante.id}, 'resultado', this.value)"
-                                                   onclick="event.stopPropagation()"
-                                                   placeholder="0€">
+                                            ${editConc
+                                                ? `<input type="text" class="campo-editable"
+                                                           value="${concursante.resultado || ''}"
+                                                           onchange="actualizarCampoConcursante(${concursante.id}, 'resultado', this.value)"
+                                                           onclick="event.stopPropagation()"
+                                                           placeholder="0€">`
+                                                : `<span>${concursante.resultado || ''}</span>`}
                                         </td>
                                         <td class="col-duracion">${obtenerDuracionConcursante(concursante)}</td>
                                         <td class="col-foto">
-                                            ${concursante.foto ? 
-                                                `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para cambiar foto">` : 
-                                                `<div class="campo-foto-vacio" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para añadir foto">
-                                                    <i class="fas fa-camera"></i>
-                                                    <span>Añadir foto</span>
-                                                 </div>`
-                                            }
+                                            ${concursante.foto
+                                                ? (gestionConc
+                                                    ? `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para cambiar foto">`
+                                                    : `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto">`)
+                                                : (gestionConc
+                                                    ? `<div class="campo-foto-vacio" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para añadir foto">
+                                                           <i class="fas fa-camera"></i>
+                                                           <span>Añadir foto</span>
+                                                       </div>`
+                                                    : '')}
                                         </td>
                                         <td class="col-momentos">
-                                            <textarea class="campo-editable" 
-                                                      onchange="actualizarCampoConcursante(${concursante.id}, 'momentosDestacados', this.value)"
-                                                      onclick="event.stopPropagation()"
-                                                      placeholder="Momentos destacados"
-                                                      rows="2">${concursante.momentosDestacados || ''}</textarea>
+                                            ${editConc
+                                                ? `<textarea class="campo-editable"
+                                                             onchange="actualizarCampoConcursante(${concursante.id}, 'momentosDestacados', this.value)"
+                                                             onclick="event.stopPropagation()"
+                                                             placeholder="Momentos destacados"
+                                                             rows="2">${concursante.momentosDestacados || ''}</textarea>`
+                                                : `<span>${concursante.momentosDestacados || ''}</span>`}
                                         </td>
                                         <td class="col-xusoker">
-                                            <select class="campo-editable"
-                                                    onchange="actualizarCampoConcursante(${concursante.id}, 'xusoker', this.value)"
-                                                    onclick="event.stopPropagation()">
-                                                <option value=""></option>
-                                                <option value="NO USÓ" ${concursante.xusoker === 'NO USÓ' ? 'selected' : ''}>NO USÓ</option>
-                                                <option value="CONTINÚE" ${concursante.xusoker === 'CONTINÚE' ? 'selected' : ''}>CONTINÚE</option>
-                                                <option value="AL VERRÉS" ${concursante.xusoker === 'AL VERRÉS' ? 'selected' : ''}>AL VERRÉS</option>
-                                                <option value="RECICLA" ${concursante.xusoker === 'RECICLA' ? 'selected' : ''}>RECICLA</option>
-                                                <option value="LLAMADA" ${concursante.xusoker === 'LLAMADA' ? 'selected' : ''}>LLAMADA</option>
-                                            </select>
+                                            ${editConc
+                                                ? `<select class="campo-editable"
+                                                           onchange="actualizarCampoConcursante(${concursante.id}, 'xusoker', this.value)"
+                                                           onclick="event.stopPropagation()">
+                                                       <option value=""></option>
+                                                       <option value="NO USÓ" ${concursante.xusoker === 'NO USÓ' ? 'selected' : ''}>NO USÓ</option>
+                                                       <option value="CONTINÚE" ${concursante.xusoker === 'CONTINÚE' ? 'selected' : ''}>CONTINÚE</option>
+                                                       <option value="AL VERRÉS" ${concursante.xusoker === 'AL VERRÉS' ? 'selected' : ''}>AL VERRÉS</option>
+                                                       <option value="RECICLA" ${concursante.xusoker === 'RECICLA' ? 'selected' : ''}>RECICLA</option>
+                                                       <option value="LLAMADA" ${concursante.xusoker === 'LLAMADA' ? 'selected' : ''}>LLAMADA</option>
+                                                   </select>`
+                                                : `<span>${concursante.xusoker || ''}</span>`}
                                         </td>
                                         <td class="col-factor-x">
-                                            <input type="text" class="campo-editable" 
-                                                   value="${concursante.factorX || ''}" 
-                                                   onchange="actualizarCampoConcursante(${concursante.id}, 'factorX', this.value)"
-                                                   onclick="event.stopPropagation()"
-                                                   placeholder="Factor X">
+                                            ${editConc
+                                                ? `<input type="text" class="campo-editable"
+                                                           value="${concursante.factorX || ''}"
+                                                           onchange="actualizarCampoConcursante(${concursante.id}, 'factorX', this.value)"
+                                                           onclick="event.stopPropagation()"
+                                                           placeholder="Factor X">`
+                                                : `<span>${concursante.factorX || ''}</span>`}
                                         </td>
                                         <td class="col-valoracion">
-                                            <select class="campo-editable"
-                                                    onchange="actualizarCampoConcursante(${concursante.id}, 'valoracionFinal', this.value)"
-                                                    onclick="event.stopPropagation()">
-                                                <option value="">—</option>
-                                                ${VALORACIONES_PERMITIDAS.map(v => `<option value="${v}" ${(concursante.valoracionFinal || '') === v ? 'selected' : ''}>${v}</option>`).join('')}
-                                            </select>
+                                            ${editConc
+                                                ? `<select class="campo-editable"
+                                                           onchange="actualizarCampoConcursante(${concursante.id}, 'valoracionFinal', this.value)"
+                                                           onclick="event.stopPropagation()">
+                                                       <option value="">—</option>
+                                                       ${VALORACIONES_PERMITIDAS.map(v => `<option value="${v}" ${(concursante.valoracionFinal || '') === v ? 'selected' : ''}>${v}</option>`).join('')}
+                                                   </select>`
+                                                : `<span>${concursante.valoracionFinal || ''}</span>`}
                                         </td>
                                         <td class="col-acciones">
-                                            <button class="btn btn-sm btn-danger" onclick="quitarConcursanteDePrograma(${concursante.id}, event)" title="Quitar del programa">
-                                                <i class="fas fa-times"></i>
-                                            </button>
+                                            ${gestionConc
+                                                ? `<button class="btn btn-sm btn-danger" onclick="quitarConcursanteDePrograma(${concursante.id}, event)" title="Quitar del programa">
+                                                       <i class="fas fa-times"></i>
+                                                   </button>`
+                                                : ''}
                                         </td>
                                     </tr>
                                 `).join('')}

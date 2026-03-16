@@ -67,6 +67,10 @@ public class AuthorizationService {
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
+                    case para_aprobar:
+                        // Solo nivel 4 (DIRECCION) puede gestionar preguntas pendientes de aprobación
+                        return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+
                     case rechazada:
                     case aprobada:
                         // Solo nivel 4 (DIRECCION)
