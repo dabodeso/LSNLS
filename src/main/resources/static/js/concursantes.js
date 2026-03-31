@@ -3,6 +3,9 @@ let concursantes = [];
 let programas = [];
 let concursanteActual = null;
 
+// Solo ADMIN y DIRECCION pueden editar concursantes
+let puedeEditarConcursantes = false;
+
 // Valoraciones permitidas para guionista y dirección (solo front, no BBDD)
 const VALORACIONES_PERMITIDAS = ['1', '1+', '2-', '2', '2+', '3-', '3', '3+'];
 
@@ -33,9 +36,9 @@ let lastScrollYConcursantes = 0;
 // Jornada activa para filtrar cuestionarios/combos en los selectores (si procede)
 let jornadaFiltroSeleccion = null;
 
-// Estado de ordenación (server-side)
-let sortByConcursantes = 'id';
-let sortAscConcursantes = false;
+// Estado de ordenación (server-side) — por defecto Nº CONCUR ascendente
+let sortByConcursantes = 'numeroConcursante';
+let sortAscConcursantes = true;
 
 // Paginación de selectores (cuestionario/combo)
 let modalCuestPagina = 1;
@@ -98,6 +101,13 @@ function detectarRolUsuario() {
 // Obtener usuario actual
 const usuario = authManager.currentUser;
 const rol = usuario && usuario.rol ? usuario.rol.replace('ROLE_', '').toLowerCase() : null;
+
+// Solo ADMIN y DIRECCION pueden editar
+puedeEditarConcursantes = (rol === 'admin' || rol === 'direccion');
+
+// Ocultar "Nuevo Concursante" si no puede editar
+const btnNuevo = document.getElementById('btn-nuevo-concursante');
+if (btnNuevo) btnNuevo.style.display = puedeEditarConcursantes ? '' : 'none';
 
 // Mostrar siempre el botón de configuración
 const btnConfig = document.getElementById('btn-config-columnas');
@@ -518,7 +528,11 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'redesSoc
 
 // CUEST
 if (configuracionColumnas.columnasVisibles['cuest']) {
-celdas.push(`<td onclick="${concursante.cuestionarioId ? `verCuestionario(${concursante.cuestionarioId}, ${concursante.id})` : `abrirSelectorCuestionarioParaConcursante(${concursante.id})`}" style="cursor: pointer; background-color: #f8f9fa;" title="${concursante.cuestionarioId ? 'Ver cuestionario' : 'Seleccionar cuestionario'}">
+const cuéstOnclick = concursante.cuestionarioId
+    ? `verCuestionario(${concursante.cuestionarioId}, ${concursante.id})`
+    : (puedeEditarConcursantes ? `abrirSelectorCuestionarioParaConcursante(${concursante.id})` : '');
+const cuéstTitle = concursante.cuestionarioId ? 'Ver cuestionario' : (puedeEditarConcursantes ? 'Seleccionar cuestionario' : '');
+celdas.push(`<td ${cuéstOnclick ? `onclick="${cuéstOnclick}"` : ''} style="cursor: ${cuéstOnclick ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${cuéstTitle}">
                ${concursante.cuestionarioId && concursante.cuestionarioId !== 0 ? `<span class=\"badge bg-primary\">${concursante.cuestionarioId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
 }
@@ -526,7 +540,11 @@ celdas.push(`<td onclick="${concursante.cuestionarioId ? `verCuestionario(${conc
 // COMBO
 if (configuracionColumnas.columnasVisibles['combo']) {
     const badgeClass = concursante.comboReciclado ? 'bg-success' : 'bg-warning';
-    celdas.push(`<td onclick="${concursante.comboId ? `verCombo(${concursante.comboId}, ${concursante.id})` : `abrirSelectorComboParaConcursante(${concursante.id})`}" style="cursor: pointer; background-color: #f8f9fa;" title="${concursante.comboId ? (concursante.comboReciclado ? 'Combo reciclado' : 'Ver combo') : 'Seleccionar combo'}">
+    const comboOnclick = concursante.comboId
+        ? `verCombo(${concursante.comboId}, ${concursante.id})`
+        : (puedeEditarConcursantes ? `abrirSelectorComboParaConcursante(${concursante.id})` : '');
+    const comboTitle = concursante.comboId ? (concursante.comboReciclado ? 'Combo reciclado' : 'Ver combo') : (puedeEditarConcursantes ? 'Seleccionar combo' : '');
+    celdas.push(`<td ${comboOnclick ? `onclick="${comboOnclick}"` : ''} style="cursor: ${comboOnclick ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${comboTitle}">
                ${concursante.comboId && concursante.comboId !== 0 ? `<span class=\"badge ${badgeClass}\">${concursante.comboId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
 }
@@ -549,7 +567,7 @@ if (configuracionColumnas.columnasVisibles['xusoker']) {
     }).join('');
     celdas.push(
         `<td>
-            <select class="form-select form-select-sm xusoker-select" data-id="${concursante.id}">
+            <select class="form-select form-select-sm xusoker-select" data-id="${concursante.id}"${puedeEditarConcursantes ? '' : ' disabled'}>
                 ${htmlOpcionesXusoker}
             </select>
         </td>`
@@ -596,7 +614,7 @@ if (configuracionColumnas.columnasVisibles['estado']) {
     }).join('');
     celdas.push(
         `<td>
-            <select class="form-select form-select-sm estado-select" data-id="${concursante.id}">
+            <select class="form-select form-select-sm estado-select" data-id="${concursante.id}"${puedeEditarConcursantes ? '' : ' disabled'}>
                 ${opcionesEstado}
             </select>
         </td>`
@@ -645,12 +663,13 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'bonico',
 
 // ACCIONES (siempre visible)
 celdas.push(`<td>
+           ${puedeEditarConcursantes ? `
            <button class="btn btn-sm btn-primary" onclick="editarConcursante(${concursante.id})">
                <i class="fas fa-edit"></i>
            </button>
            <button class="btn btn-sm btn-danger" onclick="eliminarConcursante(${concursante.id})">
                <i class="fas fa-trash"></i>
-           </button>
+           </button>` : ''}
        </td>`);
 
 return `<tr data-id="${concursante.id}" oncontextmenu="showContextMenu(event, ${concursante.id}, 'concursante')">
@@ -659,10 +678,6 @@ return `<tr data-id="${concursante.id}" oncontextmenu="showContextMenu(event, ${
     }).join('');
     
     tbody.innerHTML = htmlGenerado;
-    
-    if (typeof window.sincronizarAnchosTablaConcursantes === 'function') {
-        window.sincronizarAnchosTablaConcursantes();
-    }
 // Resaltado y scroll si hay id en la URL
 const params = new URLSearchParams(window.location.search);
 const idDestacado = params.get('id');
@@ -694,6 +709,7 @@ function limpiarFiltrosConcursantes() {
 }
 
 function mostrarFormularioConcursante() {
+if (!puedeEditarConcursantes) return;
 concursanteActual = null;
 document.getElementById('modal-concursante-titulo').textContent = 'Nuevo Concursante';
 document.getElementById('form-concursante').reset();
@@ -721,6 +737,7 @@ modal.show();
 }
 
 async function editarConcursante(id) {
+if (!puedeEditarConcursantes) return;
 try {
 concursanteActual = await apiManager.get(`/api/concursantes/${id}`);
 document.getElementById('modal-concursante-titulo').textContent = 'Editar Concursante';
@@ -1011,9 +1028,7 @@ if (response.ok) {
                     console.warn('⚠️ [GUARDAR] Error asignando jornada tras crear', e);
                 }
             }
-            // Forzar orden por ID desc y primera página para ver el recién creado
-            sortByConcursantes = 'id';
-            sortAscConcursantes = false;
+            // Mantener orden por Nº CONCUR; ir a primera página para ver el recién creado
             paginaActual = 0;
             // Guardar el id creado para resaltarlo después
             datosConcursante.id = creadoId;
@@ -1184,6 +1199,7 @@ $(document).on('change', '.xusoker-select', async function() {
 });
 
 async function eliminarConcursante(id) {
+    if (!puedeEditarConcursantes) return;
     try {
         const c = (concursantes || []).find(x => x && x.id === id);
         if (c && c.jornadaId) {
@@ -1282,6 +1298,7 @@ function crearSelectValoracion(valorActual) {
 }
 
 async function editarCeldaConcursante(id, campo, td) {
+if (!puedeEditarConcursantes) return;
 if (td.querySelector('input,select')) return;
 const valorOriginal = (td.innerText || '').trim();
 let input;
@@ -2330,10 +2347,9 @@ async function confirmarReciclajeComboDesdeFormulario(comboId, jornadaId) {
 
 // --- ORDENACIÓN POR COLUMNA con indicadores ---
 function actualizarIndicadoresOrdenamientoConcursantes() {
-    const tabla = document.getElementById('tabla-concursantes-principal');
-    const headerTable = document.getElementById('tabla-concursantes-header');
-    if (!tabla || !headerTable) return;
-    const headers = headerTable.querySelectorAll('thead th');
+    const tabla = document.getElementById('tabla-concursantes-header');
+    if (!tabla) return;
+    const headers = tabla.querySelectorAll('thead th');
     headers.forEach((th, idx) => {
         const indicator = th.querySelector('.sort-indicator');
         if (!indicator) return;
@@ -2346,13 +2362,12 @@ function actualizarIndicadoresOrdenamientoConcursantes() {
 }
 
 function ordenarTablaConcursantes(colIndex, tipo = 'string') {
-const tabla = document.getElementById('tabla-concursantes-principal');
-const headerTable = document.getElementById('tabla-concursantes-header');
-if (!tabla || !headerTable) return;
+const tabla = document.getElementById('tabla-concursantes-header');
+if (!tabla) return;
 const asc = tabla.dataset.ordenCol == colIndex ? tabla.dataset.ordenAsc !== 'true' : true;
 
 // Mapear índice a sortBy del backend (encabezados en la tabla de cabecera)
-const headerMap = Array.from(headerTable.querySelectorAll('thead th')).map(th => th.textContent.trim());
+const headerMap = Array.from(tabla.querySelectorAll('thead th')).map(th => th.textContent.trim());
 const header = headerMap[colIndex] || '';
 const mapSortBy = {
     'Nº CONCUR': 'numeroConcursante',
@@ -2410,19 +2425,12 @@ actualizarIndicadoresOrdenamientoConcursantes();
 }
 }, 500);
 
-// --- AUTO-SCROLL HORIZONTAL EN TABLA DE CONCURSANTES (scroll en body; cabecera fija) ---
+// --- AUTO-SCROLL HORIZONTAL EN TABLA DE CONCURSANTES ---
 function inicializarScrollbarPersonalizadaConcursantes() {
     const container = document.getElementById('tabla-concursantes-body-wrapper');
-    const headerWrapper = document.getElementById('tabla-concursantes-header-wrapper');
     const scrollbar = document.getElementById('scrollbar-concursantes');
     const thumb = document.getElementById('thumb-concursantes');
     if (!container || !scrollbar || !thumb) return;
-
-    if (headerWrapper) {
-        container.addEventListener('scroll', function() {
-            headerWrapper.scrollLeft = container.scrollLeft;
-        });
-    }
 
     function actualizarThumb() {
         const scrollLeft = container.scrollLeft;
@@ -2962,9 +2970,6 @@ actualizarIndicadoresOrdenamientoConcursantes();
 try {
     if (typeof TableResizer !== 'undefined') {
         new TableResizer('tabla-concursantes-header', { minWidth: 50, maxWidth: 600 });
-    }
-    if (typeof window.sincronizarAnchosTablaConcursantes === 'function') {
-        window.sincronizarAnchosTablaConcursantes();
     }
 } catch (e) {
     console.error('Error al re-inicializar TableResizer en concursantes:', e);

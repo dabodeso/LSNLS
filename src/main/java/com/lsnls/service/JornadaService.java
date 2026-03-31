@@ -951,12 +951,21 @@ public class JornadaService {
             nuevoId.setComboId(comboNuevo.getId());
             nuevoId.setPreguntaId(pcOriginal.getPregunta().getId());
             
-            // Crear la relación PreguntaCombo
+            // Crear la relación PreguntaCombo preservando la posicion original (PM1/PM2/PM3)
+            // Si posicion es null (combo legacy), inferirla desde el factor convencional
+            Integer posicion = pcOriginal.getPosicion();
+            if (posicion == null) {
+                String f = pcOriginal.getFactorMultiplicacion();
+                if ("2".equals(f)) posicion = 1;
+                else if ("3".equals(f)) posicion = 2;
+                else posicion = 3; // "0", "1", "X", etc. → PM3
+            }
             PreguntaCombo pcNuevo = new PreguntaCombo();
             pcNuevo.setId(nuevoId);
             pcNuevo.setCombo(comboNuevo);
             pcNuevo.setPregunta(pcOriginal.getPregunta());
             pcNuevo.setFactorMultiplicacion(pcOriginal.getFactorMultiplicacion());
+            pcNuevo.setPosicion(posicion);
             preguntaComboRepository.save(pcNuevo);
         }
         

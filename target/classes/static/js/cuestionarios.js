@@ -774,8 +774,11 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
         // Verificar si el nivel de la pregunta coincide con el nivel esperado
         const nivelActual = nivel || '';
         const esNivel5 = String(nivelActual).startsWith('_5');
-        const nivelEsperadoEspecifico = nivelEsperado; // _0, _1LS, _2NLS, _3LS, _4NLS, PM1, PM2, PM3
-        
+        // Los slots usan '1LS','2NLS',... pero las preguntas usan '_1LS','_2NLS',...
+        // Convertir el nombre del slot al formato enum de la pregunta para comparar correctamente
+        const slotToEnum = { '1LS': '_1LS', '2NLS': '_2NLS', '3LS': '_3LS', '4NLS': '_4NLS' };
+        const nivelEsperadoEspecifico = slotToEnum[nivelEsperado] || nivelEsperado;
+
         // Si el nivel no coincide, mostrar warning y ofrecer cambiar automáticamente
         if (nivelActual !== nivelEsperadoEspecifico && !esNivel5) {
             const mensajeNivel = 

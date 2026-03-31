@@ -29,8 +29,8 @@ public class ConcursanteController {
     public ResponseEntity<?> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(defaultValue = "numeroConcursante") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String jornada,
             @RequestParam(required = false) String lugar,
@@ -41,10 +41,12 @@ public class ConcursanteController {
             @RequestParam(required = false) String bonico,
             @RequestParam(required = false) String busqueda) {
         try {
-            Pageable pageable = PageRequest.of(page, size, 
-                sortDir.equalsIgnoreCase("desc") ? 
-                Sort.by(sortBy).descending() :
-                Sort.by(sortBy).ascending());
+            // Para numeroConcursante (y en general) los NULLs van siempre al final
+            boolean asc = !sortDir.equalsIgnoreCase("desc");
+            Sort.Order order = asc
+                ? Sort.Order.asc(sortBy).nullsLast()
+                : Sort.Order.desc(sortBy).nullsLast();
+            Pageable pageable = PageRequest.of(page, size, Sort.by(order));
             
             Page<ConcursanteDTO> concursantes = concursanteService.findAllPaginatedWithFilters(
                 pageable, estado, jornada, lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico, busqueda);

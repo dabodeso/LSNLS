@@ -383,7 +383,7 @@ public class ComboService {
         return count != null && count > 0;
     }
 
-    public boolean agregarPregunta(Long comboId, Long preguntaId, Integer factorMultiplicacion) {
+    public boolean agregarPregunta(Long comboId, Long preguntaId, Integer factorMultiplicacion, Integer posicion) {
         Optional<Combo> comboOpt = comboRepository.findById(comboId);
         Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
         
@@ -435,6 +435,7 @@ public class ComboService {
             pc.setPregunta(pregunta);
             pc.setCombo(combo);
             pc.setFactorMultiplicacion(factorMultiplicacion != null ? factorMultiplicacion.toString() : "1");
+            pc.setPosicion(posicion);
             
             // Guardar la relaci?n en la base de datos
             preguntaComboRepository.save(pc);
@@ -670,77 +671,54 @@ public class ComboService {
         // Mapear preguntas a slots PM1, PM2, PM3
         java.util.Map<String, Object> mapPorSlot = new java.util.HashMap<>();
         
-        // Primero, mapear las preguntas existentes a su slot
-        for (PreguntaCombo pc : c.getPreguntas()) {
-            Object pcdto = new java.util.HashMap<>();
-            Pregunta p = pc.getPregunta();
-            ((Map<String, Object>) pcdto).put("pregunta", mapPreguntaToDTO(p));
-            ((Map<String, Object>) pcdto).put("factorMultiplicacion", pc.getFactorMultiplicacion());
-            
-            // Determinar slot seg?n factor - ahora con manejo m?s flexible para factores personalizados
-            String slot = null;
-            String factor = pc.getFactorMultiplicacion();
-            
-            // Asignaci?n simplificada basada en la posici?n
-            if (factor != null) {
-                // Determinamos el slot seg?n la posici?n en la lista
-                int preguntaIndex = 0;
-                for (PreguntaCombo pcTemp : c.getPreguntas()) {
-                    if (pcTemp.getPregunta().getId().equals(pc.getPregunta().getId())) {
-                        break;
-                    }
-                    preguntaIndex++;
-                }
-                
-                // Asignamos slot seg?n su posici?n (c?clica entre PM1, PM2, PM3)
-                int slotIndex = preguntaIndex % 3;
-                slot = "PM" + (slotIndex + 1);
-            }
-            
-            ((Map<String, Object>) pcdto).put("slot", slot);
-            mapPorSlot.put(slot, pcdto);
-        }
-        
-        // Verificar si hay preguntas sin asignar debido a colisiones
-        boolean pm1Asignado = mapPorSlot.containsKey("PM1");
-        boolean pm2Asignado = mapPorSlot.containsKey("PM2");
-        boolean pm3Asignado = mapPorSlot.containsKey("PM3");
-        
-        // Reorganizar slots si es necesario (asegurar un slot por pregunta)
-        if (c.getPreguntas().size() > 0 && (!pm1Asignado || !pm2Asignado || !pm3Asignado)) {
-            // Crear mapa temporal con todas las preguntas
-            java.util.List<Map<String, Object>> todasLasPreguntas = new java.util.ArrayList<>();
+        // Mapear preguntas a su slot usando la posicion almacenada (si existe)
+        // o fallback por orden de ID para datos legacy sin posicion
+        boolean todosConPosicion = c.getPreguntas().stream()
+            .allMatch(pc -> pc.getPosicion() != null);
+
+        if (todosConPosicion) {
+            // Camino principal: usar posicion persistida — garantiza orden estable
             for (PreguntaCombo pc : c.getPreguntas()) {
-                Map<String, Object> pregMap = new java.util.HashMap<>();
-                pregMap.put("id", pc.getPregunta().getId());
-                pregMap.put("texto", pc.getPregunta().getPregunta());
-                pregMap.put("factor", pc.getFactorMultiplicacion());
-                pregMap.put("preguntaCombo", pc);
-                todasLasPreguntas.add(pregMap);
-            }
-            
-            // Ordenamos por ID para tener un orden estable y determinista
-            java.util.Collections.sort(todasLasPreguntas, (a, b) -> {
-                Long idA = (Long)a.get("id");
-                Long idB = (Long)b.get("id");
-                return idA.compareTo(idB);
-            });
-            
-            // Resetear el mapa de slots
-            mapPorSlot.clear();
-            
-            // Asignar preguntas a slots en orden
-            java.util.List<String> slots = java.util.Arrays.asList("PM1", "PM2", "PM3");
-            for (int i = 0; i < Math.min(todasLasPreguntas.size(), slots.size()); i++) {
-                Map<String, Object> pregInfo = todasLasPreguntas.get(i);
-                PreguntaCombo pc = (PreguntaCombo)pregInfo.get("preguntaCombo");
-                
+                String slot = "PM" + pc.getPosicion();
                 Object pcdto = new java.util.HashMap<>();
                 ((Map<String, Object>) pcdto).put("pregunta", mapPreguntaToDTO(pc.getPregunta()));
                 ((Map<String, Object>) pcdto).put("factorMultiplicacion", pc.getFactorMultiplicacion());
-                ((Map<String, Object>) pcdto).put("slot", slots.get(i));
-                
-                mapPorSlot.put(slots.get(i), pcdto);
+                ((Map<String, Object>) pcdto).put("slot", slot);
+                mapPorSlot.put(slot, pcdto);
+            }
+        } else {
+            // Fallback legacy: inferir slot desde el factor convencional (PM1=X2, PM2=X3, PM3=X/0)
+            // antes de caer en orden por ID
+            for (PreguntaCombo pc : c.getPreguntas()) {
+                int pos = posicionDesdeFactor(pc.getFactorMultiplicacion());
+                String slot = "PM" + pos;
+                if (!mapPorSlot.containsKey(slot)) {
+                    Object pcdto = new java.util.HashMap<>();
+                    ((Map<String, Object>) pcdto).put("pregunta", mapPreguntaToDTO(pc.getPregunta()));
+                    ((Map<String, Object>) pcdto).put("factorMultiplicacion", pc.getFactorMultiplicacion());
+                    ((Map<String, Object>) pcdto).put("slot", slot);
+                    mapPorSlot.put(slot, pcdto);
+                }
+            }
+            // Si tras inferir por factor quedan colisiones sin resolver, asignar por ID
+            if (mapPorSlot.size() < c.getPreguntas().size()) {
+                java.util.List<PreguntaCombo> sinSlot = new java.util.ArrayList<>();
+                for (PreguntaCombo pc : c.getPreguntas()) {
+                    int pos = posicionDesdeFactor(pc.getFactorMultiplicacion());
+                    if (!mapPorSlot.containsKey("PM" + pos)) sinSlot.add(pc);
+                }
+                sinSlot.sort((a, b) -> a.getPregunta().getId().compareTo(b.getPregunta().getId()));
+                java.util.List<String> libres = new java.util.ArrayList<>(java.util.Arrays.asList("PM1","PM2","PM3"));
+                libres.removeAll(mapPorSlot.keySet());
+                for (int i = 0; i < Math.min(sinSlot.size(), libres.size()); i++) {
+                    PreguntaCombo pc = sinSlot.get(i);
+                    String slot = libres.get(i);
+                    Object pcdto = new java.util.HashMap<>();
+                    ((Map<String, Object>) pcdto).put("pregunta", mapPreguntaToDTO(pc.getPregunta()));
+                    ((Map<String, Object>) pcdto).put("factorMultiplicacion", pc.getFactorMultiplicacion());
+                    ((Map<String, Object>) pcdto).put("slot", slot);
+                    mapPorSlot.put(slot, pcdto);
+                }
             }
         }
         
@@ -991,10 +969,16 @@ public class ComboService {
         combo = comboRepository.save(combo);
 
         // PASO 4: Crear las relaciones pregunta-combo (preguntas ya reservadas)
+        // Iteramos sobre la lista del DTO para preservar el orden y asignar posicion 1,2,3
         try {
-            for (Map.Entry<Long, Integer> entry : preguntaIdsConFactores.entrySet()) {
-                Long preguntaId = entry.getKey();
-                Integer factor = entry.getValue();
+            java.util.List<CrearComboDTO.PreguntaMultiplicadoraDTO> pmList = dto.getPreguntasMultiplicadoras();
+            for (int idx = 0; idx < pmList.size(); idx++) {
+                CrearComboDTO.PreguntaMultiplicadoraDTO pmDto = pmList.get(idx);
+                Long preguntaId = pmDto.getId();
+                String factorStr = pmDto.getFactor();
+                if (factorStr == null || factorStr.trim().isEmpty()) factorStr = "1";
+                String numeroFactor = factorStr.replaceAll("[^0-9]", "");
+                if (numeroFactor.isEmpty()) numeroFactor = "1";
                 
                 Pregunta pregunta = preguntaRepository.findById(preguntaId)
                     .orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada: " + preguntaId));
@@ -1007,7 +991,8 @@ public class ComboService {
                 pc.setId(id);
                 pc.setPregunta(pregunta);
                 pc.setCombo(combo);
-                pc.setFactorMultiplicacion(factor.toString());
+                pc.setFactorMultiplicacion(numeroFactor);
+                pc.setPosicion(idx + 1); // PM1=1, PM2=2, PM3=3
                 
                 preguntaComboRepository.save(pc);
                 // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasComboAtomico()
@@ -1020,6 +1005,24 @@ public class ComboService {
             comboRepository.deleteById(combo.getId());
             throw new RuntimeException("Error al crear relaciones pregunta-combo: " + e.getMessage());
         }
+    }
+
+    /**
+     * Infiere la posicion (1=PM1, 2=PM2, 3=PM3) a partir del factor almacenado.
+     * Convención: PM1=X2 ("2"), PM2=X3 ("3"), PM3=X ("0" o "1").
+     */
+    private int posicionDesdeFactor(String factor) {
+        if (factor == null) return 3;
+        String f = factor.trim();
+        // Formato numérico directo ("2", "3", "0", "1")
+        if ("2".equals(f)) return 1;
+        if ("3".equals(f)) return 2;
+        if ("0".equals(f) || "1".equals(f)) return 3;
+        // Formato texto ("X2", "X3", "X")
+        String num = f.replaceAll("[^0-9]", "");
+        if ("2".equals(num)) return 1;
+        if ("3".equals(num)) return 2;
+        return 3; // "X" sin número → PM3
     }
 
     /**

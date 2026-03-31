@@ -2183,7 +2183,7 @@ const JornadasManager = {
                                     ${jornada.combos ? jornada.combos.map(c => `
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <div>
-                                                <strong>Combo #${c.id}</strong> - ${c.nivel} - <span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span>
+                                                <strong>Combo #${c.id}</strong> - ${c.nivel} - ${Utils.formatearEstadoCombo(c.estado)}
                                                 ${c.tipo ? `<br><small>Tipo: ${c.tipo}</small>` : ''}
                                             </div>
                                             <button class="btn btn-sm btn-outline-info" onclick="JornadasManager.verPreguntasCombo(${c.id})">
@@ -2294,8 +2294,9 @@ const JornadasManager = {
             html = '<tr><td colspan="3" class="text-center text-muted">No hay preguntas disponibles</td></tr>';
         }
         tbody.innerHTML = html;
-        const modal = new bootstrap.Modal(document.getElementById('modalVerPreguntasCuestionario'));
-        modal.show();
+        const modalEl = document.getElementById('modalVerPreguntasCuestionario');
+        const modal = new bootstrap.Modal(modalEl);
+        this._mostrarModalSobreOtro(modalEl, modal);
     },
 
     mostrarModalPreguntasCombo(combo) {
@@ -2358,8 +2359,29 @@ const JornadasManager = {
             html = '<tr><td colspan="3" class="text-center text-muted">No hay preguntas disponibles</td></tr>';
         }
         tbody.innerHTML = html;
-        const modal = new bootstrap.Modal(document.getElementById('modalVerPreguntasCombo'));
-        modal.show();
+        const modalEl = document.getElementById('modalVerPreguntasCombo');
+        const modal = new bootstrap.Modal(modalEl);
+        this._mostrarModalSobreOtro(modalEl, modal);
+    },
+
+    /** Abre un modal por encima de cualquier otro modal ya abierto, elevando su z-index y el backdrop */
+    _mostrarModalSobreOtro(modalEl, bsModal) {
+        // Elevar el modal por encima de los demás (Bootstrap usa 1055 por defecto)
+        modalEl.style.zIndex = '1075';
+        bsModal.show();
+        // En cuanto el backdrop nuevo esté en el DOM, subirlo también
+        modalEl.addEventListener('shown.bs.modal', function handler() {
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 0) {
+                backdrops[backdrops.length - 1].style.zIndex = '1070';
+            }
+            modalEl.removeEventListener('shown.bs.modal', handler);
+        });
+        // Al cerrarse, restablecer el z-index para usos futuros
+        modalEl.addEventListener('hidden.bs.modal', function resetZ() {
+            modalEl.style.zIndex = '';
+            modalEl.removeEventListener('hidden.bs.modal', resetZ);
+        });
     },
 
     async actualizarFactorDesdeModal(comboId, preguntaId, valor) {

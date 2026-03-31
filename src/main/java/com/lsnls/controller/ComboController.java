@@ -191,8 +191,10 @@ public class ComboController {
             Long preguntaId = Long.valueOf(request.get("preguntaId").toString());
             Integer factorMultiplicacion = request.get("factorMultiplicacion") != null ? 
                 Integer.valueOf(request.get("factorMultiplicacion").toString()) : 1;
+            Integer posicion = request.get("posicion") != null ?
+                Integer.valueOf(request.get("posicion").toString()) : null;
             
-            boolean exito = comboService.agregarPregunta(comboId, preguntaId, factorMultiplicacion);
+            boolean exito = comboService.agregarPregunta(comboId, preguntaId, factorMultiplicacion, posicion);
             
             if (exito) {
                 return ResponseEntity.ok(Map.of("message", "Pregunta agregada exitosamente"));

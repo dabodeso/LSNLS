@@ -32,6 +32,10 @@ public class PreguntaCombo {
     @Column(name = "factor_multiplicacion")
     private String factorMultiplicacion;
 
+    /** Posición del slot dentro del combo: 1=PM1, 2=PM2, 3=PM3 */
+    @Column(name = "posicion")
+    private Integer posicion;
+
     // Clase embebida para la clave compuesta
     @Embeddable
     @Getter

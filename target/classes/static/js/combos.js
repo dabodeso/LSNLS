@@ -1339,14 +1339,15 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
     // Si hay contexto de añadir pregunta a combo, hacer petición AJAX
     if (window.contextoAnadirPregunta) {
         const { comboId, nivel } = window.contextoAnadirPregunta;
-        // Determinar el factor según el nivel
+        // Determinar el factor y la posicion (1=PM1, 2=PM2, 3=PM3) según el slot
         let factorMultiplicacion = 1;
         if (nivel === 'PM1') factorMultiplicacion = 2;
         else if (nivel === 'PM2') factorMultiplicacion = 3;
         else if (nivel === 'PM3') factorMultiplicacion = 0;
+        const posicion = nivel === 'PM1' ? 1 : nivel === 'PM2' ? 2 : 3;
         
         const doAdd = async () => {
-            await apiManager.post(`/api/combos/${comboId}/preguntas`, { preguntaId: id, factorMultiplicacion }, { headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' } });
+            await apiManager.post(`/api/combos/${comboId}/preguntas`, { preguntaId: id, factorMultiplicacion, posicion }, { headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' } });
             await CombosManager.cargarCombos();
         };
         const undoDelete = async () => {

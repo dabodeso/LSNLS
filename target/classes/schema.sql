@@ -134,6 +134,7 @@ CREATE TABLE IF NOT EXISTS combos_preguntas (
     combo_id BIGINT NOT NULL,
     pregunta_id BIGINT NOT NULL,
     factor_multiplicacion VARCHAR(10),
+    posicion INT,
     PRIMARY KEY (combo_id, pregunta_id)
 );
 
