@@ -96,7 +96,7 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
            "  AND (:subtema IS NULL OR LOWER(p.subtema) LIKE LOWER(CONCAT('%', :subtema, '%'))) " +
            "  AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%'))) " +
            "  AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%'))) " +
-           "  AND (:autoria IS NULL OR LOWER(p.autor) LIKE LOWER(CONCAT('%', :autoria, '%'))) " +
+           "  AND (:autoria IS NULL OR LOWER(COALESCE(p.autor, p.creacionUsuario.nombre, '')) LIKE LOWER(CONCAT('%', :autoria, '%'))) " +
            "  AND (:texto IS NULL OR (LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :texto, '%')) OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :texto, '%')))) " +
            "ORDER BY p.id DESC")
     List<Pregunta> filtrarTodas(
@@ -118,7 +118,7 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
            "  AND (:subtema IS NULL OR LOWER(p.subtema) LIKE LOWER(CONCAT('%', :subtema, '%'))) " +
            "  AND (:pregunta IS NULL OR LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :pregunta, '%'))) " +
            "  AND (:respuesta IS NULL OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :respuesta, '%'))) " +
-           "  AND (:autoria IS NULL OR LOWER(p.autor) LIKE LOWER(CONCAT('%', :autoria, '%'))) " +
+           "  AND (:autoria IS NULL OR LOWER(COALESCE(p.autor, p.creacionUsuario.nombre, '')) LIKE LOWER(CONCAT('%', :autoria, '%'))) " +
            "  AND (:texto IS NULL OR (LOWER(p.pregunta) LIKE LOWER(CONCAT('%', :texto, '%')) OR LOWER(p.respuesta) LIKE LOWER(CONCAT('%', :texto, '%')))) " +
            "  AND (COALESCE(:estados) IS NULL OR p.estado IN :estados) " +
            "ORDER BY p.id DESC")

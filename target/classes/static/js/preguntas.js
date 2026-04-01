@@ -333,7 +333,7 @@ const PreguntasManager = {
             tr.innerHTML = `
                 <td>${pregunta.id ?? ''}</td>
                 <td style="background-color: #f8f9fa; font-style: italic;">${pregunta.autor ?? pregunta.creacionUsuarioNombre ?? ''}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'nivel', this)"><span class="${this.getNivelColor(pregunta.nivel)}">${pregunta.nivel ?? ''}</span></td>
+                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'nivel', this)"><span class="${this.getNivelColor(pregunta.nivel)}">${Utils.formatearNivel(pregunta.nivel)}</span></td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'tematica', this)">${pregunta.tematica ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'subtema', this)">${(pregunta.subtema ?? '').split(',').map(s => s.trim()).filter(Boolean).join(', ')}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'pregunta', this)" style="white-space:pre-line; word-break:break-word; max-width:300px;">${pregunta.pregunta ?? ''}</td>
@@ -358,11 +358,6 @@ const PreguntasManager = {
             `;
             tbody.appendChild(tr);
         });
-        
-        // Sincronizar anchos de columna cabecera → cuerpo (cabecera fija)
-        if (typeof window.sincronizarAnchosTablaPreguntas === 'function') {
-            window.sincronizarAnchosTablaPreguntas();
-        }
         
         // Restaurar posición del scroll
         setTimeout(() => {
@@ -1026,7 +1021,7 @@ const PreguntasManager = {
             ['_0','_1LS','_2NLS','_3LS','_4NLS','_5LS','_5NLS'].forEach(opt => {
                 const option = document.createElement('option');
                 option.value = opt;
-                option.text = opt === '_0' ? 'Sin nivel (0)' : opt;
+                option.text = opt === '_0' ? 'Sin nivel (0)' : Utils.formatearNivel(opt);
                 if (valorOriginal === opt) option.selected = true;
                 input.appendChild(option);
             });

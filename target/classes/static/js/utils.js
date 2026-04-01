@@ -91,6 +91,14 @@ class Utils {
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
 
+    // Formatear niveles para UI sin el "_" interno de la BBDD
+    static formatearNivel(nivel) {
+        if (nivel == null) return '';
+        const valor = String(nivel);
+        if (valor === '_0') return '0';
+        return valor.replace(/^_+/, '');
+    }
+
     // Obtener clase CSS para badges de estado optimizado
     static getEstadoBadgeClass(estado, tipo = 'pregunta') {
         const classes = {

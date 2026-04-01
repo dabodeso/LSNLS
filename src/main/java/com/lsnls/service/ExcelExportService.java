@@ -72,30 +72,19 @@ public class ExcelExportService {
             opciones = new HashMap<>();
         }
         
-        // Configurar anchos de columna para CUESTIONARIOS: TEMÁTICA, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA, REC
-		sheet.setColumnWidth(0, 5500);  // TEMÁTICA (aumentado para que "NOTAS DIRECCION" no se corte)
-		sheet.setColumnWidth(1, 2000);  // NIVEL (1ls, 2nls, ...)
-		sheet.setColumnWidth(2, 18000); // PREGUNTA
-		sheet.setColumnWidth(3, 12000); // RESPUESTA
-		sheet.setColumnWidth(4, 10000); // DATOS EXTRA
-		sheet.setColumnWidth(5, 2000);  // REC (estrecha para marcar X)
-        
-        // Título de la jornada
-        Row filaTitulo = sheet.createRow(filaActual++);
-        Cell celdaTitulo = filaTitulo.createCell(0);
-        celdaTitulo.setCellValue("JORNADA: " + jornada.getNombre() + " - " + jornada.getFechaJornada());
-        CellStyle estiloTitulo = crearEstiloTitulo(workbook);
-        celdaTitulo.setCellStyle(estiloTitulo);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 5));
-        
-        filaActual++; // Fila en blanco
+        // Configurar anchos exactos en unidades Excel
+		sheet.setColumnWidth(0, excelWidth(6.22));   // cuestionario
+		sheet.setColumnWidth(1, excelWidth(7));      // nivel
+		sheet.setColumnWidth(2, excelWidth(49.78));  // pregunta
+		sheet.setColumnWidth(3, excelWidth(18.78));  // respuesta
+		sheet.setColumnWidth(4, excelWidth(43.56));  // datos extra
+		sheet.setColumnWidth(5, excelWidth(7.67));   // rec
         
         // Procesar cada cuestionario
         List<Cuestionario> cuestionarios = jornada.getCuestionarios().stream().collect(java.util.stream.Collectors.toList());
         for (int i = 0; i < 6; i++) {
             Cuestionario cuestionario = i < cuestionarios.size() ? cuestionarios.get(i) : null;
             filaActual = crearTablaCuestionario(sheet, cuestionario, i + 1, filaActual, workbook, opciones);
-            filaActual += 2; // Espacio entre cuestionarios
         }
     }
 
@@ -113,20 +102,9 @@ public class ExcelExportService {
             opciones = new HashMap<>();
         }
         
-        // Título del cuestionario
-        Row filaTituloCuest = sheet.createRow(filaActual++);
-        Cell celdaTituloCuest = filaTituloCuest.createCell(0);
-        String titulo = cuestionario != null ? 
-            "CUESTIONARIO " + numeroCuestionario + " (ID: " + cuestionario.getId() + ")" :
-            "CUESTIONARIO " + numeroCuestionario + " (VACÍO)";
-        celdaTituloCuest.setCellValue(titulo);
-        CellStyle estiloSubtitulo = crearEstiloSubtitulo(workbook);
-        celdaTituloCuest.setCellStyle(estiloSubtitulo);
-        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 0, 5));
-        
-        // Encabezados de tabla: TEMÁTICA, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA, REC
+        // Encabezados de tabla: Nº CUEST, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA, REC
         Row filaEncabezados = sheet.createRow(filaActual++);
-		String[] encabezados = {"TEMÁTICA", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
+		String[] encabezados = {"CUEST", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
         
         CellStyle estiloEncabezado = crearEstiloEncabezado(workbook);
         for (int i = 0; i < encabezados.length; i++) {
@@ -134,6 +112,7 @@ public class ExcelExportService {
             celda.setCellValue(encabezados[i]);
             celda.setCellStyle(estiloEncabezado);
         }
+        filaEncabezados.setHeightInPoints(15f);
         
         // Datos de las preguntas
         if (cuestionario != null && cuestionario.getPreguntas() != null) {
@@ -168,6 +147,7 @@ public class ExcelExportService {
             // Estilos de datos
             CellStyle estiloDatoWrap = crearEstiloDato(workbook, true);
             CellStyle estiloDatoPlano = crearEstiloDato(workbook, false);
+            CellStyle estiloPrimeraColumna = crearEstiloPrimeraColumna(workbook);
 
 			// Limitar a 4 preguntas por cuestionario
 			int limite = Math.min(4, preguntas.size());
@@ -176,13 +156,10 @@ public class ExcelExportService {
                 Row filaPregunta = sheet.createRow(filaActual++);
                 Pregunta p = pc.getPregunta();
 
-				// Columna 0: TEMÁTICA (del cuestionario o de la pregunta)
+				// Columna 0: Nº cuestionario
 				Cell c0 = filaPregunta.createCell(0);
-				String tematica = (cuestionario != null && cuestionario.getTematica() != null) 
-					? cuestionario.getTematica() 
-					: (p != null && p.getTematica() != null ? p.getTematica() : "");
-				c0.setCellValue(tematica);
-				c0.setCellStyle(estiloDatoPlano);
+				c0.setCellValue(cuestionario != null && cuestionario.getId() != null ? cuestionario.getId() : numeroCuestionario);
+				c0.setCellStyle(estiloPrimeraColumna);
 
                 // Columna 1: NIVEL en formato corto: "1ls", "2nls", "3ls", "4nls"
                 Cell c1 = filaPregunta.createCell(1);
@@ -246,85 +223,99 @@ public class ExcelExportService {
                 c5.setCellValue(""); // Campo REC editable
                 c5.setCellStyle(estiloDatoPlano);
 
-				// Altura aumentada un 20% (36 * 1.2 = 43.2)
-				filaPregunta.setHeightInPoints(43.2f);
+				filaPregunta.setHeightInPoints(39.6f);
             }
+            // Añadir una fila vacía adicional
+            Row filaSeparadora = sheet.createRow(filaActual++);
+            for (int j = 0; j < 6; j++) {
+                Cell c = filaSeparadora.createCell(j);
+                c.setCellValue("");
+                c.setCellStyle(j == 0 ? estiloPrimeraColumna : crearEstiloDato(workbook, false));
+            }
+            filaSeparadora.setHeightInPoints(39.6f);
         } else {
-            // Cuestionario vacío - crear filas en blanco
-            for (int i = 0; i < 4; i++) {
+            // Cuestionario vacío - crear 4 filas en blanco + 1 fila vacía adicional
+            CellStyle estiloPrimeraColumna = crearEstiloPrimeraColumna(workbook);
+            for (int i = 0; i < 5; i++) {
                 Row filaVacia = sheet.createRow(filaActual++);
                 for (int j = 0; j < 6; j++) {
                     Cell c = filaVacia.createCell(j);
                     c.setCellValue("");
-                    c.setCellStyle(crearEstiloDato(workbook, false));
+                    c.setCellStyle(j == 0 ? estiloPrimeraColumna : crearEstiloDato(workbook, false));
                 }
-				// Altura aumentada un 20% para filas vacías también
-				filaVacia.setHeightInPoints(43.2f);
+				filaVacia.setHeightInPoints(39.6f);
             }
         }
-        
-        // Campos adicionales debajo del cuestionario - organizados verticalmente
-        filaActual++; // Fila en blanco
-        
+
+        // Campos adicionales debajo del cuestionario - sin fila extra de separación
         // CONCURSANTE
         Row filaConcursante = sheet.createRow(filaActual++);
-        filaConcursante.createCell(0).setCellValue("CONCURSANTE:");
-        Cell celdaConcursante = filaConcursante.createCell(1);
+        CellStyle estiloPrimeraColumna = crearEstiloPrimeraColumna(workbook);
+        Cell cellTituloConc = filaConcursante.createCell(0);
+        cellTituloConc.setCellValue("CONCURSANTE");
+        cellTituloConc.setCellStyle(estiloPrimeraColumna);
+        filaConcursante.createCell(1).setCellValue("");
+        CellRangeAddress rgLblConc = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);
+        sheet.addMergedRegion(rgLblConc);
+        aplicarBordeRegion(sheet, rgLblConc);
+        Cell celdaConcursante = filaConcursante.createCell(2);
 		celdaConcursante.setCellValue(""); // Campo editable que se extiende
 		celdaConcursante.setCellStyle(crearEstiloDato(workbook, true));
-		CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
+		CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);
 		sheet.addMergedRegion(rgConc);
 		aplicarBordeRegion(sheet, rgConc);
-		// Altura aumentada un 20%
-		filaConcursante.setHeightInPoints(43.2f);
+		filaConcursante.setHeightInPoints(33f);
         
         // RESULTADO  
         Row filaResultado = sheet.createRow(filaActual++);
-        filaResultado.createCell(0).setCellValue("RESULTADO:");
-        Cell celdaResultado = filaResultado.createCell(1);
+        Cell cellTituloRes = filaResultado.createCell(0);
+        cellTituloRes.setCellValue("RESULTADO");
+        cellTituloRes.setCellStyle(estiloPrimeraColumna);
+        filaResultado.createCell(1).setCellValue("");
+        CellRangeAddress rgLblRes = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);
+        sheet.addMergedRegion(rgLblRes);
+        aplicarBordeRegion(sheet, rgLblRes);
+        Cell celdaResultado = filaResultado.createCell(2);
 		celdaResultado.setCellValue(""); // Campo editable que se extiende
 		celdaResultado.setCellStyle(crearEstiloDato(workbook, true));
-		CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
+		CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);
 		sheet.addMergedRegion(rgRes);
 		aplicarBordeRegion(sheet, rgRes);
-		filaResultado.setHeightInPoints(43.2f);
+		filaResultado.setHeightInPoints(33f);
         
         // GRABACIÓN
         Row filaGrabacion = sheet.createRow(filaActual++);
-		filaGrabacion.createCell(0).setCellValue("GRABACION:");
-        Cell celdaGrabacion = filaGrabacion.createCell(1);
+        Cell cellTituloGrab = filaGrabacion.createCell(0);
+		cellTituloGrab.setCellValue("GRABACION");
+        cellTituloGrab.setCellStyle(estiloPrimeraColumna);
+        filaGrabacion.createCell(1).setCellValue("");
+        CellRangeAddress rgLblGrab = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);
+        sheet.addMergedRegion(rgLblGrab);
+        aplicarBordeRegion(sheet, rgLblGrab);
+        Cell celdaGrabacion = filaGrabacion.createCell(2);
 		celdaGrabacion.setCellValue(""); // Campo editable que se extiende
 		celdaGrabacion.setCellStyle(crearEstiloDato(workbook, true));
-		CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
+		CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);
 		sheet.addMergedRegion(rgGrab);
 		aplicarBordeRegion(sheet, rgGrab);
-		filaGrabacion.setHeightInPoints(43.2f);
+		filaGrabacion.setHeightInPoints(33f);
         
-        // NOTAS DIRECCIÓN
-        Row filaNotasDireccion = sheet.createRow(filaActual++);
-        filaNotasDireccion.createCell(0).setCellValue("NOTAS DIRECCION:");
-        Cell celdaNotasDireccion = filaNotasDireccion.createCell(1);
-		// Mostrar las notas de dirección si existen (notasDireccion del cuestionario)
-		String notasDireccion = (cuestionario != null && cuestionario.getNotasDireccion() != null) ? cuestionario.getNotasDireccion() : "";
-		celdaNotasDireccion.setCellValue(notasDireccion);
-		celdaNotasDireccion.setCellStyle(crearEstiloDato(workbook, true));
-		CellRangeAddress rgND = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
-		sheet.addMergedRegion(rgND);
-		aplicarBordeRegion(sheet, rgND);
-		// Altura aumentada un 20%
-		filaNotasDireccion.setHeightInPoints(43.2f);
-        
-        // NOTAS GUION (sin tilde)
+        // NOTAS GUION
         Row filaNotasGuion = sheet.createRow(filaActual++);
-        filaNotasGuion.createCell(0).setCellValue("NOTAS GUION:");
-        Cell celdaNotasGuion = filaNotasGuion.createCell(1);
+        Cell cellTituloNotas = filaNotasGuion.createCell(0);
+        cellTituloNotas.setCellValue("NOTAS GUION");
+        cellTituloNotas.setCellStyle(estiloPrimeraColumna);
+        filaNotasGuion.createCell(1).setCellValue("");
+        CellRangeAddress rgLblNG = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);
+        sheet.addMergedRegion(rgLblNG);
+        aplicarBordeRegion(sheet, rgLblNG);
+        Cell celdaNotasGuion = filaNotasGuion.createCell(2);
 		celdaNotasGuion.setCellValue(""); // Campo editable que se extiende
 		celdaNotasGuion.setCellStyle(crearEstiloDato(workbook, true));
-		CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 1, 5);
+		CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);
 		sheet.addMergedRegion(rgNG);
 		aplicarBordeRegion(sheet, rgNG);
-		// Altura aumentada un 20% (150 * 1.2 = 180)
-		filaNotasGuion.setHeightInPoints(180f);
+		filaNotasGuion.setHeightInPoints(216f);
 
         // Salto de página para imprimir un cuestionario por página
         sheet.setRowBreak(filaActual);
@@ -665,14 +656,34 @@ public class ExcelExportService {
         Font fuente = workbook.createFont();
         fuente.setBold(true);
         fuente.setFontHeightInPoints((short) 10);
+        fuente.setColor(IndexedColors.WHITE.getIndex());
         estilo.setFont(fuente);
         estilo.setAlignment(HorizontalAlignment.CENTER);
-        estilo.setFillForegroundColor(IndexedColors.LIGHT_CORNFLOWER_BLUE.getIndex());
+        estilo.setVerticalAlignment(VerticalAlignment.CENTER);
+        estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());
         estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         estilo.setBorderBottom(BorderStyle.THIN);
         estilo.setBorderTop(BorderStyle.THIN);
         estilo.setBorderRight(BorderStyle.THIN);
         estilo.setBorderLeft(BorderStyle.THIN);
+        return estilo;
+    }
+
+    private CellStyle crearEstiloPrimeraColumna(Workbook workbook) {
+        CellStyle estilo = workbook.createCellStyle();
+        Font fuente = workbook.createFont();
+        fuente.setBold(true);
+        fuente.setColor(IndexedColors.WHITE.getIndex());
+        estilo.setFont(fuente);
+        estilo.setAlignment(HorizontalAlignment.LEFT);
+        estilo.setVerticalAlignment(VerticalAlignment.CENTER);
+        estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());
+        estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        estilo.setBorderBottom(BorderStyle.THIN);
+        estilo.setBorderTop(BorderStyle.THIN);
+        estilo.setBorderRight(BorderStyle.THIN);
+        estilo.setBorderLeft(BorderStyle.THIN);
+        estilo.setWrapText(true);
         return estilo;
     }
 
@@ -686,6 +697,10 @@ public class ExcelExportService {
         estilo.setBorderLeft(BorderStyle.THIN);
         estilo.setWrapText(wrap);
         return estilo;
+    }
+
+    private int excelWidth(double width) {
+        return (int) Math.round(width * 256);
     }
 
     private void configurarPagina(Sheet sheet, String tituloCabecera) {

@@ -831,7 +831,16 @@ window.mostrarGestionTematicas = function() {
                         body: JSON.stringify({ tematica: nombre })
                     });
                     if (!resp.ok) {
-                        const txt = await resp.text();
+                        let txt = await resp.text();
+                        if (resp.status === 403) {
+                            throw new Error('No tienes permisos para añadir temáticas en combos. Esta acción está permitida solo para los roles autorizados.');
+                        }
+                        try {
+                            const parsed = JSON.parse(txt);
+                            txt = parsed.message || parsed.error || txt;
+                        } catch (parseError) {
+                            console.debug('No se pudo parsear el error de añadir temática:', parseError);
+                        }
                         throw new Error(txt || 'Error al añadir temática');
                     }
                     Toastify({ text: 'Temática añadida', duration: 2000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
@@ -1560,14 +1569,14 @@ async function guardarCombo() {
 
         if (desajustesNivel.length > 0) {
             const listaNiveles = desajustesNivel
-                .map(m => `- Pregunta ${m.id}: "${m.pregunta}" (nivel actual: ${m.actualNivel || 'null'}, necesario: nivel 5 para combos)`)
+                .map(m => `- Pregunta ${m.id}: "${m.pregunta}" (nivel actual: ${Utils.formatearNivel(m.actualNivel || 'null')}, necesario: nivel 5 para combos)`)
                 .join('\n');
 
             const mensajeNiveles =
                 'Atención: algunas preguntas que estás usando en el COMBO no son de nivel 5 (recomendado para combos):\n\n' +
                 listaNiveles +
                 '\n\n' +
-                'Si continúas, se cambiará automáticamente el NIVEL de esas preguntas a un nivel 5 (_5LS/_5NLS) compatible.\n\n' +
+                'Si continúas, se cambiará automáticamente el NIVEL de esas preguntas a un nivel 5 (5LS/5NLS) compatible.\n\n' +
                 '¿Quieres continuar y cambiar el nivel de esas preguntas?';
 
             const continuarNiveles = window.confirm(mensajeNiveles);

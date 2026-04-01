@@ -80,6 +80,7 @@ C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\entit
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\service\JwtService.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\service\AuthService.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\controller\PreguntaController.java
+C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\config\GlobalExceptionHandler.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\controller\CuestionarioController.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\repository\PreguntaRepository.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\controller\ConfiguracionGlobalController.java

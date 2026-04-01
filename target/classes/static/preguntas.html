@@ -46,80 +46,104 @@
             overflow-x: auto !important;
         }
         
-        /* Cabecera fija: estructura con header y body separados */
+        /* Cabecera fija: tabla única con thead sticky */
         .tabla-sticky-wrapper {
             width: 100%;
             position: relative;
         }
-        .tabla-sticky-header-wrapper {
+        #tabla-preguntas-body-wrapper {
             overflow-x: auto;
-            overflow-y: hidden;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+            overflow-y: visible; /* una sola barra vertical: la de la página */
+            max-height: none;
+            -ms-overflow-style: none; /* IE/Edge */
+            scrollbar-width: none; /* Firefox: ocultar barra nativa */
         }
-        .tabla-sticky-header-wrapper::-webkit-scrollbar {
+        #tabla-preguntas-body-wrapper::-webkit-scrollbar {
+            height: 0; /* WebKit: ocultar barra nativa */
             display: none;
         }
-        .tabla-sticky-body-wrapper {
-            overflow: auto;
-            max-height: 80vh;
-        }
-        .tabla-sticky-body-wrapper .table-preguntas {
-            margin-top: 0;
+        /* En tablas anchas, sticky es más estable con border-collapse separado */
+        #tabla-preguntas-header {
+            border-collapse: separate;
+            border-spacing: 0;
         }
         #tabla-preguntas-container .table-preguntas thead th {
             background: linear-gradient(180deg, #e3f0fc 0%, #cbe6fa 100%) !important;
             color: #1976d2 !important;
             border-bottom: 2px solid #b6d4f7;
             font-weight: bold;
+            position: static;
+            z-index: 1;
+            overflow: visible !important; /* evita conflictos con resize global */
+            resize: none !important;
+        }
+        /* Cabecera flotante sincronizada (fallback robusto de sticky) */
+        #tabla-preguntas-header-floating {
+            position: fixed;
+            display: none;
+            overflow: hidden;
+            z-index: 1300;
+            pointer-events: none;
+        }
+        #tabla-preguntas-header-floating table {
+            margin: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+            pointer-events: none;
+        }
+        #tabla-preguntas-header-floating th {
+            background: linear-gradient(180deg, #e3f0fc 0%, #cbe6fa 100%) !important;
+            color: #1976d2 !important;
+            border-bottom: 2px solid #b6d4f7;
+            font-weight: bold;
+            resize: none !important;
+            overflow: visible !important;
+            pointer-events: none;
         }
         
         .table-responsive {
-            max-height: 80vh;
-            overflow-y: auto;
-            overflow-x: hidden;
+            overflow-x: auto;
             position: relative;
         }
         
-        /* Barra de scroll horizontal personalizada */
+        /* Barra horizontal fija siempre visible */
         .custom-scrollbar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            height: 20px;
-            background: rgba(0, 0, 0, 0.1);
-            border-top: 1px solid rgba(0, 0, 0, 0.2);
-            z-index: 1000;
+            height: 14px;
+            background: #e9ecef;
+            border-top: 1px solid #cfd4da;
+            z-index: 1200;
         }
         
         .custom-scrollbar-track {
             position: relative;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            margin: 2px;
+            background: #e9ecef;
         }
         
         .custom-scrollbar-thumb {
             position: absolute;
-            top: 2px;
+            top: 1px;
             left: 0;
-            height: 16px;
-            background: rgba(0, 123, 255, 0.7);
-            border-radius: 8px;
+            height: 10px;
+            background: #6c757d;
+            border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.2s ease;
             min-width: 20px;
         }
         
         .custom-scrollbar-thumb:hover {
-            background: rgba(0, 123, 255, 0.9);
+            background: #495057;
         }
         
         .custom-scrollbar-thumb:active {
-            background: rgba(0, 123, 255, 1);
+            background: #343a40;
         }
         
         /* Estilos para indicadores de ordenamiento */
@@ -375,9 +399,9 @@
             </div>
         </div>
 
-        <!-- Tabla de Preguntas (cabecera fija: header y body en bloques separados) -->
+        <!-- Tabla de Preguntas (tabla única con cabecera sticky) -->
         <div class="tabla-sticky-wrapper" id="tabla-preguntas-container" style="width: 100%; margin: 0 auto;">
-            <div class="tabla-sticky-header-wrapper" id="tabla-preguntas-header-wrapper">
+            <div id="tabla-preguntas-body-wrapper">
                 <table class="table table-excel table-preguntas" id="tabla-preguntas-header">
                     <thead>
                         <tr>
@@ -397,16 +421,13 @@
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                </table>
-            </div>
-            <div class="tabla-sticky-body-wrapper" id="tabla-preguntas-body-wrapper">
-                <table class="table table-excel table-preguntas" id="tabla-preguntas-principal">
                     <tbody id="tabla-preguntas">
                         <!-- Las preguntas se cargarán dinámicamente aquí -->
                     </tbody>
                 </table>
             </div>
-            <!-- Barra de scroll horizontal personalizada -->
+            <div id="tabla-preguntas-header-floating" aria-hidden="true"></div>
+            <!-- Barra horizontal fija siempre visible -->
             <div class="custom-scrollbar" id="scrollbar-preguntas">
                 <div class="custom-scrollbar-track">
                     <div class="custom-scrollbar-thumb" id="thumb-preguntas"></div>
@@ -440,12 +461,12 @@
                                 <label for="nivel-pregunta" class="form-label">Nivel</label>
                                 <select id="nivel-pregunta" name="nivel" class="form-control" required>
                                     <option value="_0">Sin nivel (0)</option>
-                                    <option value="_1LS">_1LS</option>
-                                    <option value="_2NLS">_2NLS</option>
-                                    <option value="_3LS">_3LS</option>
-                                    <option value="_4NLS">_4NLS</option>
-                                    <option value="_5LS">_5LS</option>
-                                    <option value="_5NLS">_5NLS</option>
+                                    <option value="_1LS">1LS</option>
+                                    <option value="_2NLS">2NLS</option>
+                                    <option value="_3LS">3LS</option>
+                                    <option value="_4NLS">4NLS</option>
+                                    <option value="_5LS">5LS</option>
+                                    <option value="_5NLS">5NLS</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -755,6 +776,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         mostrarBotonAdminNavbar();
         inicializarScrollbarPersonalizadaPreguntas();
+        inicializarCabeceraFlotantePreguntas();
         inicializarContadorCaracteres();
         // inicializarOrdenamientoPreguntas(); // Ya no es necesario - se maneja en preguntas.js
         // Cargar Temas/Subtemas para autocompletar de filtros
@@ -762,29 +784,11 @@
             TemasManager.cargarTemas();
             TemasManager.cargarSubtemas();
         }
-        // Resizer en la tabla de cabecera; sincronizar anchos al body
+        // Resizer de columnas en tabla única
         try {
             const headerTable = document.getElementById('tabla-preguntas-header');
-            const bodyTable = document.getElementById('tabla-preguntas-principal');
-            if (headerTable && bodyTable && typeof TableResizer !== 'undefined' && !headerTable.querySelector('.resize-handle')) {
+            if (headerTable && typeof TableResizer !== 'undefined' && !headerTable.querySelector('.resize-handle')) {
                 new TableResizer('tabla-preguntas-header', { minWidth: 50, maxWidth: 600 });
-                function sincronizarAnchosPreguntas() {
-                    const ths = headerTable.querySelectorAll('thead tr th');
-                    ths.forEach(function(th, i) {
-                        const w = th.offsetWidth || (th.style.width && parseInt(th.style.width, 10));
-                        if (!w) return;
-                        const px = (typeof w === 'number' ? w : parseInt(String(w), 10)) + 'px';
-                        bodyTable.querySelectorAll('tbody tr').forEach(function(tr) {
-                            var cell = tr.cells[i];
-                            if (cell) cell.style.width = px;
-                        });
-                    });
-                }
-                sincronizarAnchosPreguntas();
-                if (typeof ResizeObserver !== 'undefined') {
-                    headerTable.querySelectorAll('thead tr th').forEach(function(th) { new ResizeObserver(sincronizarAnchosPreguntas).observe(th); });
-                }
-                window.sincronizarAnchosTablaPreguntas = sincronizarAnchosPreguntas;
             }
         } catch (e) {
             console.error('Error al inicializar TableResizer en preguntas:', e);
@@ -827,115 +831,150 @@
         });
     });
     
-    // Función para inicializar la barra de scroll personalizada en preguntas (scroll en el body; cabecera fija)
+    // Función para inicializar la barra de scroll personalizada en preguntas
     function inicializarScrollbarPersonalizadaPreguntas() {
         const container = document.getElementById('tabla-preguntas-body-wrapper');
-        const headerWrapper = document.getElementById('tabla-preguntas-header-wrapper');
         const scrollbar = document.getElementById('scrollbar-preguntas');
         const thumb = document.getElementById('thumb-preguntas');
-        
         if (!container || !scrollbar || !thumb) return;
-        
-        // Sincronizar scroll horizontal: cuando se mueve el body, mover la cabecera para que columnas coincidan
-        if (headerWrapper) {
-            container.addEventListener('scroll', function() {
-                headerWrapper.scrollLeft = container.scrollLeft;
-            });
-        }
-        
-        // Función para actualizar la posición del thumb
+
         function actualizarThumb() {
-            const scrollLeft = container.scrollLeft;
             const scrollWidth = container.scrollWidth;
             const clientWidth = container.clientWidth;
-            
-            if (scrollWidth <= clientWidth) {
-                scrollbar.style.display = 'none';
-                return;
-            }
-            
-            scrollbar.style.display = 'block';
-            const thumbWidth = (clientWidth / scrollWidth) * 100;
-            const thumbLeft = (scrollLeft / (scrollWidth - clientWidth)) * (100 - thumbWidth);
-            
-            thumb.style.width = thumbWidth + '%';
-            thumb.style.left = thumbLeft + '%';
+            const maxScrollLeft = Math.max(1, scrollWidth - clientWidth);
+            const scrollLeft = container.scrollLeft;
+
+            const thumbWidthPx = Math.max(20, (clientWidth / Math.max(scrollWidth, 1)) * scrollbar.clientWidth);
+            const maxThumbLeft = Math.max(0, scrollbar.clientWidth - thumbWidthPx);
+            const thumbLeft = (scrollLeft / maxScrollLeft) * maxThumbLeft;
+
+            thumb.style.width = `${thumbWidthPx}px`;
+            thumb.style.left = `${thumbLeft}px`;
         }
-        
-        // Función para ocultar la barra cuando no estemos en la página
-        function verificarVisibilidad() {
-            const rect = container.getBoundingClientRect();
-            const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-            if (!isVisible) {
-                scrollbar.style.display = 'none';
-            } else {
-                actualizarThumb();
-            }
-        }
-        
-        // Event listeners para el scroll del contenedor
+
         container.addEventListener('scroll', actualizarThumb);
         window.addEventListener('resize', actualizarThumb);
-        window.addEventListener('scroll', verificarVisibilidad);
-        
-        // Bloquear desplazamiento horizontal con la rueda/trackpad; usar solo la barra personalizada
-        container.addEventListener('wheel', function(e) {
-            if (e.shiftKey || Math.abs(e.deltaX) > 0) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-        
-        // Event listeners para el thumb
-        let isDragging = false;
+
+        let dragging = false;
         let startX = 0;
-        let startScrollLeft = 0;
-        
-        thumb.addEventListener('mousedown', function(e) {
-            isDragging = true;
+        let startLeft = 0;
+
+        thumb.addEventListener('mousedown', function (e) {
+            dragging = true;
             startX = e.clientX;
-            startScrollLeft = container.scrollLeft;
+            startLeft = Number.parseFloat(thumb.style.left || '0');
             e.preventDefault();
         });
-        
-        document.addEventListener('mousemove', function(e) {
-            if (!isDragging) return;
-            
-            const deltaX = e.clientX - startX;
-            const scrollWidth = container.scrollWidth;
-            const clientWidth = container.clientWidth;
-            const maxScrollLeft = scrollWidth - clientWidth;
-            const thumbWidth = thumb.offsetWidth;
-            const trackWidth = thumb.parentElement.offsetWidth;
-            
-            const deltaScroll = (deltaX / (trackWidth - thumbWidth)) * maxScrollLeft;
-            container.scrollLeft = startScrollLeft + deltaScroll;
+
+        document.addEventListener('mousemove', function (e) {
+            if (!dragging) return;
+            const delta = e.clientX - startX;
+            const newLeft = startLeft + delta;
+            const maxLeft = Math.max(0, scrollbar.clientWidth - thumb.clientWidth);
+            const clampedLeft = Math.max(0, Math.min(newLeft, maxLeft));
+            thumb.style.left = `${clampedLeft}px`;
+
+            const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+            container.scrollLeft = maxLeft > 0 ? (clampedLeft / maxLeft) * maxScrollLeft : 0;
         });
-        
-        document.addEventListener('mouseup', function() {
-            isDragging = false;
+
+        document.addEventListener('mouseup', function () {
+            dragging = false;
         });
-        
-        // Click en el track para mover el scroll
-        thumb.parentElement.addEventListener('click', function(e) {
+
+        scrollbar.addEventListener('click', function (e) {
             if (e.target === thumb) return;
-            
-            const rect = this.getBoundingClientRect();
+            const rect = scrollbar.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
-            const trackWidth = rect.width;
-            const thumbWidth = thumb.offsetWidth;
-            const thumbLeft = thumb.offsetLeft;
-            
-            if (clickX < thumbLeft) {
-                // Click a la izquierda del thumb
-                container.scrollLeft -= container.clientWidth * 0.5;
-            } else if (clickX > thumbLeft + thumbWidth) {
-                // Click a la derecha del thumb
-                container.scrollLeft += container.clientWidth * 0.5;
-            }
+            const targetLeft = clickX - (thumb.clientWidth / 2);
+            const maxLeft = Math.max(0, scrollbar.clientWidth - thumb.clientWidth);
+            const clampedLeft = Math.max(0, Math.min(targetLeft, maxLeft));
+            thumb.style.left = `${clampedLeft}px`;
+
+            const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+            container.scrollLeft = maxLeft > 0 ? (clampedLeft / maxLeft) * maxScrollLeft : 0;
         });
-        
-        // Inicializar
+
+        // Evitar que la barra fija tape el final de la página
+        document.body.style.paddingBottom = '16px';
         actualizarThumb();
+    }
+
+    function inicializarCabeceraFlotantePreguntas() {
+        const container = document.getElementById('tabla-preguntas-body-wrapper');
+        const table = document.getElementById('tabla-preguntas-header');
+        const thead = table ? table.querySelector('thead') : null;
+        const floating = document.getElementById('tabla-preguntas-header-floating');
+        if (!container || !table || !thead || !floating) return;
+
+        const cloneTable = document.createElement('table');
+        cloneTable.className = table.className;
+        const cloneHead = thead.cloneNode(true);
+        cloneTable.appendChild(cloneHead);
+        floating.innerHTML = '';
+        floating.appendChild(cloneTable);
+
+        function getTopOffset() {
+            const navbar = document.querySelector('.navbar');
+            return navbar ? Math.max(0, navbar.getBoundingClientRect().bottom) : 0;
+        }
+
+        function syncWidthsAndPosition() {
+            const originalTh = thead.querySelectorAll('th');
+            const cloneTh = cloneHead.querySelectorAll('th');
+            if (!originalTh.length || originalTh.length !== cloneTh.length) return;
+
+            const containerRect = container.getBoundingClientRect();
+            floating.style.left = `${containerRect.left}px`;
+            floating.style.width = `${container.clientWidth}px`;
+            floating.style.top = `${getTopOffset()}px`;
+
+            let totalWidth = 0;
+            originalTh.forEach((th, i) => {
+                const width = th.getBoundingClientRect().width;
+                cloneTh[i].style.width = `${width}px`;
+                cloneTh[i].style.minWidth = `${width}px`;
+                cloneTh[i].style.maxWidth = `${width}px`;
+                totalWidth += width;
+            });
+
+            cloneTable.style.width = `${Math.max(totalWidth, table.getBoundingClientRect().width)}px`;
+            cloneTable.style.transform = `translateX(${-container.scrollLeft}px)`;
+        }
+
+        function updateVisibility() {
+            const tableRect = table.getBoundingClientRect();
+            const topOffset = getTopOffset();
+            const headHeight = thead.getBoundingClientRect().height || 0;
+            const mustShow = tableRect.top < topOffset && tableRect.bottom > (topOffset + headHeight + 4);
+            floating.style.display = mustShow ? 'block' : 'none';
+            if (mustShow) {
+                syncWidthsAndPosition();
+            }
+        }
+
+        container.addEventListener('scroll', syncWidthsAndPosition);
+        window.addEventListener('resize', () => {
+            syncWidthsAndPosition();
+            updateVisibility();
+        });
+        window.addEventListener('scroll', updateVisibility);
+
+        if (typeof ResizeObserver !== 'undefined') {
+            const ro = new ResizeObserver(() => {
+                syncWidthsAndPosition();
+                updateVisibility();
+            });
+            ro.observe(container);
+            ro.observe(table);
+            ro.observe(thead);
+        }
+
+        // Primer pintado y repintado tras render dinámico de filas/anchos
+        syncWidthsAndPosition();
+        updateVisibility();
+        setTimeout(() => { syncWidthsAndPosition(); updateVisibility(); }, 150);
+        setTimeout(() => { syncWidthsAndPosition(); updateVisibility(); }, 600);
     }
     
     // Función para inicializar el ordenamiento de preguntas

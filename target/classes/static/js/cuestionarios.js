@@ -782,9 +782,9 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
         // Si el nivel no coincide, mostrar warning y ofrecer cambiar automáticamente
         if (nivelActual !== nivelEsperadoEspecifico && !esNivel5) {
             const mensajeNivel = 
-                `Atención: La pregunta seleccionada tiene nivel "${nivelActual}" pero el hueco del cuestionario es "${nivelEsperadoEspecifico}".\n\n` +
+                `Atención: La pregunta seleccionada tiene nivel "${Utils.formatearNivel(nivelActual)}" pero el hueco del cuestionario es "${Utils.formatearNivel(nivelEsperadoEspecifico)}".\n\n` +
                 `Pregunta: "${pregunta}"\n\n` +
-                `Si continúas, se cambiará automáticamente el nivel de esta pregunta a "${nivelEsperadoEspecifico}" para que sea consistente con el cuestionario.\n\n` +
+                `Si continúas, se cambiará automáticamente el nivel de esta pregunta a "${Utils.formatearNivel(nivelEsperadoEspecifico)}" para que sea consistente con el cuestionario.\n\n` +
                 `¿Quieres continuar y cambiar el nivel?`;
             
             const continuar = window.confirm(mensajeNivel);
@@ -811,7 +811,7 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
                         })
                     });
                     Toastify({ 
-                        text: `Nivel de la pregunta cambiado de "${nivelActual}" a "${nivelEsperadoEspecifico}"`, 
+                        text: `Nivel de la pregunta cambiado de "${Utils.formatearNivel(nivelActual)}" a "${Utils.formatearNivel(nivelEsperadoEspecifico)}"`, 
                         duration: 3000, 
                         close: true, 
                         gravity: 'top', 
@@ -1004,7 +1004,7 @@ async function guardarCuestionario() {
 
         if (desajustesNivel.length > 0) {
             const listaNiveles = desajustesNivel
-                .map(m => `- Pregunta ${m.id}: "${m.pregunta}" (nivel actual: ${m.actualNivel}, hueco: ${m.targetNivel})`)
+                .map(m => `- Pregunta ${m.id}: "${m.pregunta}" (nivel actual: ${Utils.formatearNivel(m.actualNivel)}, hueco: ${Utils.formatearNivel(m.targetNivel)})`)
                 .join('\n');
 
             const mensajeNiveles =
@@ -1753,8 +1753,17 @@ const TematicasManager = {
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText);
+                let errorText = await response.text();
+                if (response.status === 403) {
+                    throw new Error('No tienes permisos para añadir temáticas en cuestionarios. Esta acción está permitida solo para los roles autorizados.');
+                }
+                try {
+                    const parsed = JSON.parse(errorText);
+                    errorText = parsed.message || parsed.error || errorText;
+                } catch (parseError) {
+                    console.debug('No se pudo parsear el error de añadir temática:', parseError);
+                }
+                throw new Error(errorText || 'No se pudo añadir la temática');
             }
 
             const result = await response.json();

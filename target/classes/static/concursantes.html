@@ -18,8 +18,20 @@
 /* Ancho y diseño general de la tabla (como en preguntas) */
 .table-preguntas {
 width: 100% !important;
-min-width: 2000px !important; /* más ancha por defecto */
+min-width: 3000px !important; /* más ancha por defecto */
 table-layout: fixed;
+}
+/* Dar más aire general para legibilidad */
+#tabla-concursantes-header {
+    min-width: 3000px !important;
+}
+#tabla-concursantes-header th,
+#tabla-concursantes-header td {
+    padding: 10px 12px !important;
+}
+#tabla-concursantes-header th {
+    min-width: 130px;
+    font-size: 0.85rem;
 }
 
 .table-responsive {
@@ -32,17 +44,61 @@ position: relative;
 /* Cabecera fija: tabla única con thead sticky */
 .tabla-sticky-wrapper { width: 100%; position: relative; }
 #tabla-concursantes-body-wrapper {
-    overflow: auto;
-    max-height: 80vh;
+    overflow-x: auto;
+    overflow-y: visible; /* una sola barra vertical: la de la página */
+    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Firefox: ocultar barra nativa horizontal/vertical */
+    max-height: none;
+}
+#tabla-concursantes-body-wrapper::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none; /* WebKit: ocultar barra nativa */
 }
 #tabla-concursantes-container .table-preguntas thead th {
 background: linear-gradient(180deg, #e3f0fc 0%, #cbe6fa 100%) !important;
 color: #1976d2 !important;
 border-bottom: 2px solid #b6d4f7;
 font-weight: 600;
-position: sticky;
-top: 0;
-z-index: 10;
+position: static;
+z-index: 1;
+overflow: hidden !important;
+resize: none !important;
+white-space: nowrap;
+text-overflow: ellipsis;
+}
+
+/* Cabecera flotante sincronizada (fallback robusto) */
+#tabla-concursantes-header-floating {
+position: fixed;
+display: none;
+overflow: hidden;
+z-index: 1300;
+pointer-events: none;
+}
+#tabla-concursantes-header-floating table {
+margin: 0;
+border-collapse: separate;
+border-spacing: 0;
+table-layout: fixed;
+pointer-events: none;
+}
+#tabla-concursantes-header-floating th {
+background: linear-gradient(180deg, #e3f0fc 0%, #cbe6fa 100%) !important;
+color: #1976d2 !important;
+border-bottom: 2px solid #b6d4f7;
+font-weight: 600;
+overflow: hidden !important;
+resize: none !important;
+pointer-events: none;
+white-space: nowrap;
+text-overflow: ellipsis;
+position: relative;
+padding: 10px 12px !important;
+font-size: 0.85rem;
+}
+#tabla-concursantes-header-floating .sort-indicator {
+display: none !important; /* evita iconos duplicados/superpuestos en el clon */
 }
 
 /* Encabezados ordenables con indicador */
@@ -90,35 +146,33 @@ position: fixed;
 bottom: 0;
 left: 0;
 right: 0;
-height: 20px;
-background: rgba(0, 0, 0, 0.1);
-border-top: 1px solid rgba(0, 0, 0, 0.2);
-z-index: 1000;
+height: 14px;
+background: #e9ecef;
+border-top: 1px solid #cfd4da;
+z-index: 1200;
 }
 
 .custom-scrollbar-track {
 position: relative;
 width: 100%;
 height: 100%;
-background: rgba(255, 255, 255, 0.1);
-border-radius: 10px;
-margin: 2px;
+background: #e9ecef;
 }
 
 .custom-scrollbar-thumb {
 position: absolute;
-top: 2px;
+top: 1px;
 left: 0;
-height: 16px;
-background: rgba(0, 123, 255, 0.7);
-border-radius: 8px;
+height: 10px;
+background: #6c757d;
+border-radius: 6px;
 cursor: pointer;
 transition: background-color 0.2s ease;
 min-width: 20px;
 }
 
-.custom-scrollbar-thumb:hover { background: rgba(0, 123, 255, 0.9); }
-.custom-scrollbar-thumb:active { background: rgba(0, 123, 255, 1); }
+.custom-scrollbar-thumb:hover { background: #495057; }
+.custom-scrollbar-thumb:active { background: #343a40; }
 
 .foto-concursante {
 max-width: 80px;
@@ -209,6 +263,16 @@ line-height: 1.2;
         #tabla-concursantes-principal td:nth-of-type(22) {
             min-width: 80px;
             text-align: center;
+        }
+        /* Asegurar espacio suficiente para la última columna de acciones */
+        #tabla-concursantes-header th:last-child,
+        #tabla-concursantes-principal td:last-child,
+        #tabla-concursantes-header-floating th:last-child {
+            min-width: 180px !important;
+            width: 180px !important;
+            max-width: 180px !important;
+            text-align: center;
+            white-space: nowrap;
         }
 </style>
 </head>
@@ -369,7 +433,7 @@ line-height: 1.2;
 <table class="table table-excel table-preguntas" id="tabla-concursantes-header">
 <thead>
 <tr>
-<th class="sortable-header" data-tipo="number">Nº CONCUR<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header" data-tipo="number">ID<span class="sort-indicator inactive"></span></th>
 <th class="sortable-header">JORNADA<span class="sort-indicator inactive"></span></th>
 <th class="sortable-header">DÍA GRABACIÓN<span class="sort-indicator inactive"></span></th>
 <th class="sortable-header">LUGAR<span class="sort-indicator inactive"></span></th>
@@ -403,6 +467,7 @@ line-height: 1.2;
 </tbody>
 </table>
 </div>
+<div id="tabla-concursantes-header-floating" aria-hidden="true"></div>
 <!-- Barra de scroll horizontal personalizada -->
 <div class="custom-scrollbar" id="scrollbar-concursantes">
     <div class="custom-scrollbar-track">
@@ -764,7 +829,7 @@ line-height: 1.2;
 <div class="col-md-6">
 <div class="form-check mb-2">
 <input class="form-check-input" type="checkbox" id="col-numero-concur" checked>
-<label class="form-check-label" for="col-numero-concur">Nº CONCUR</label>
+<label class="form-check-label" for="col-numero-concur">ID</label>
 </div>
 <div class="form-check mb-2">
 <input class="form-check-input" type="checkbox" id="col-jornada" checked>
@@ -1005,6 +1070,7 @@ document.addEventListener('DOMContentLoaded', function() {
 inicializarConcursantes();
 mostrarBotonAdminNavbar();
 inicializarScrollbarPersonalizadaConcursantes();
+inicializarCabeceraFlotanteConcursantes();
 // Resizer de columnas
 try {
     if (typeof TableResizer !== 'undefined') {

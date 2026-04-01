@@ -20,6 +20,7 @@ com\lsnls\entity\PreguntaCombo.class
 com\lsnls\service\UserDetailsServiceImpl.class
 com\lsnls\service\ConcursanteService.class
 com\lsnls\entity\Cuestionario$EstadoCuestionario.class
+com\lsnls\config\GlobalExceptionHandler.class
 com\lsnls\service\TimeoutOperationService.class
 com\lsnls\entity\Pregunta$FactorPregunta.class
 com\lsnls\dto\PreguntaCreateDTO.class

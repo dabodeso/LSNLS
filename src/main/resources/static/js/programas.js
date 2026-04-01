@@ -16,15 +16,51 @@ function puedeEliminarPrograma() {
 }
 
 function puedeGestionarConcursantesPrograma() {
-    return ['ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+    return ['ROLE_ADMIN', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
 }
 
 function puedeEditarCamposConcursante() {
-    return ['ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+    return ['ROLE_ADMIN', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
 }
 
 // Valoraciones permitidas (guionista/dirección) - solo front
 const VALORACIONES_PERMITIDAS = ['1', '1+', '2-', '2', '2+', '3-', '3', '3+'];
+
+const TAMANO_MAX_FOTO_BYTES = 10 * 1024 * 1024; // 10MB
+
+function obtenerMensajeErrorProgramas(error, accion = 'operación') {
+    const raw = String(error?.message || error || '');
+    const m = raw.match(/^(\d{3}):\s*([\s\S]*)$/);
+    const status = m ? Number(m[1]) : null;
+    const detalle = (m ? m[2] : raw).trim();
+    const d = detalle.toLowerCase();
+
+    if (d.includes('maximum upload size exceeded') || d.includes('filesizelimitexceededexception') || status === 413) {
+        return 'La foto es demasiado grande. El tamaño máximo permitido es 10MB.';
+    }
+    if (d.includes('unauthorized') || status === 401) {
+        return 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
+    }
+    if (status === 403 || d.includes('forbidden') || d.includes('no tienes permisos')) {
+        return 'No tienes permisos para realizar esta acción.';
+    }
+    if (status === 404 || d.includes('no encontrado')) {
+        return 'No se ha encontrado el recurso solicitado.';
+    }
+    if (status === 409 || d.includes('conflicto') || d.includes('ocupad')) {
+        return detalle || 'Hay un conflicto con los datos actuales. Recarga e inténtalo de nuevo.';
+    }
+    if (status === 400 || d.includes('validaci') || d.includes('inválid') || d.includes('inval')) {
+        return detalle || 'Los datos no son válidos. Revisa los campos e inténtalo de nuevo.';
+    }
+    if (d.includes('failed to fetch') || d.includes('networkerror') || d.includes('network request failed')) {
+        return 'Error de conexión con el servidor. Revisa tu red e inténtalo de nuevo.';
+    }
+    if (status && status >= 500) {
+        return 'Error interno del servidor. Inténtalo de nuevo en unos minutos.';
+    }
+    return detalle || `Ha fallado la ${accion}.`;
+}
 
 // Variables para paginación
 let paginaActual = 0;
@@ -57,7 +93,7 @@ async function cargarProgramas() {
         if (error && error.message && error.message.startsWith('401')) {
             return;
         }
-        mostrarError('Error al cargar programas: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'carga de programas'));
     }
 }
 
@@ -88,7 +124,7 @@ async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden 
         if (error && error.message && error.message.startsWith('401')) {
             return;
         }
-        mostrarError('Error al cargar programas: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'carga de programas'));
     }
 }
 
@@ -158,28 +194,24 @@ function mostrarProgramas() {
         
         const estadoColor = estadoColores[programa.estado] || '#6c757d';
         
-        // Crear 3 filas vacías si hay menos de 3 concursantes
-        const filasVacias = [];
-        for (let i = concursantes.length; i < 3; i++) {
-            filasVacias.push(`
-                <tr class="fila-vacia">
-                    <td class="col-numero"></td>
-                    <td class="col-lugar"></td>
-                    <td class="col-nombre"><em style="color: #999;">Hueco disponible</em></td>
-                    <td class="col-edad"></td>
-                    <td class="col-ocupacion"></td>
-                    <td class="col-rrss"></td>
-                    <td class="col-resultado"></td>
-                    <td class="col-duracion"></td>
-                    <td class="col-foto"></td>
-                    <td class="col-momentos"></td>
-                    <td class="col-xusoker"></td>
-                    <td class="col-factor-x"></td>
-                    <td class="col-valoracion"></td>
-                    <td class="col-acciones"></td>
-                </tr>
-            `);
-        }
+        // Render por slots fijos 1..3 para mantener huecos al borrar
+        const puedeQuitarConc = gestionConc && editConc;
+        const concursantePorSlot = { 1: null, 2: null, 3: null };
+        const sinSlot = [];
+        (concursantes || []).forEach(c => {
+            const slot = Number(c.numeroConcursante);
+            if (slot >= 1 && slot <= 3 && !concursantePorSlot[slot]) {
+                concursantePorSlot[slot] = c;
+            } else {
+                sinSlot.push(c);
+            }
+        });
+        // Compatibilidad por si llega algún concursante legacy sin slot válido
+        [1, 2, 3].forEach(slot => {
+            if (!concursantePorSlot[slot] && sinSlot.length > 0) {
+                concursantePorSlot[slot] = sinSlot.shift();
+            }
+        });
         
         return `
             <div class="programa-container" data-programa-id="${programa.id}">
@@ -247,7 +279,7 @@ function mostrarProgramas() {
                             </div>
                         </div>
                         <div class="programa-acciones">
-                            ${gestionConc ? `<button class="btn btn-success" onclick="mostrarConcursantesDisponibles(${programa.id})" title="Añadir concursante">
+                            ${(gestionConc && editConc) ? `<button class="btn btn-success" onclick="mostrarConcursantesDisponibles(${programa.id})" title="Añadir concursante">
                                 <i class="fas fa-user-plus"></i>
                             </button>` : ''}
                             ${elimProg ? `<button class="btn btn-danger" onclick="eliminarPrograma(${programa.id})" title="Borrar programa">
@@ -296,88 +328,112 @@ function mostrarProgramas() {
                         <table id="tabla-programa-${programa.id}-concursantes"
                                class="table table-excel table-striped">
                             <tbody>
-                                ${concursantes.map(concursante => `
-                                    <tr class="concursante-row" onclick="irAConcursante(${concursante.id})">
-                                        <td class="col-numero">${concursante.numeroConcursante || ''}</td>
-                                        <td class="col-lugar">${concursante.lugar || ''}</td>
-                                        <td class="col-nombre"><strong>${concursante.nombre || ''}</strong></td>
-                                        <td class="col-edad">${concursante.edad || ''}</td>
-                                        <td class="col-ocupacion">${concursante.ocupacion || ''}</td>
-                                        <td class="col-rrss">${concursante.redesSociales || ''}</td>
-                                        <td class="col-resultado">
-                                            ${editConc
-                                                ? `<input type="text" class="campo-editable"
-                                                           value="${concursante.resultado || ''}"
-                                                           onchange="actualizarCampoConcursante(${concursante.id}, 'resultado', this.value)"
-                                                           onclick="event.stopPropagation()"
-                                                           placeholder="0€">`
-                                                : `<span>${concursante.resultado || ''}</span>`}
-                                        </td>
-                                        <td class="col-duracion">${obtenerDuracionConcursante(concursante)}</td>
-                                        <td class="col-foto">
-                                            ${concursante.foto
-                                                ? (gestionConc
-                                                    ? `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para cambiar foto">`
-                                                    : `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto">`)
-                                                : (gestionConc
-                                                    ? `<div class="campo-foto-vacio" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para añadir foto">
-                                                           <i class="fas fa-camera"></i>
-                                                           <span>Añadir foto</span>
-                                                       </div>`
-                                                    : '')}
-                                        </td>
-                                        <td class="col-momentos">
-                                            ${editConc
-                                                ? `<textarea class="campo-editable"
-                                                             onchange="actualizarCampoConcursante(${concursante.id}, 'momentosDestacados', this.value)"
-                                                             onclick="event.stopPropagation()"
-                                                             placeholder="Momentos destacados"
-                                                             rows="2">${concursante.momentosDestacados || ''}</textarea>`
-                                                : `<span>${concursante.momentosDestacados || ''}</span>`}
-                                        </td>
-                                        <td class="col-xusoker">
-                                            ${editConc
-                                                ? `<select class="campo-editable"
-                                                           onchange="actualizarCampoConcursante(${concursante.id}, 'xusoker', this.value)"
-                                                           onclick="event.stopPropagation()">
-                                                       <option value=""></option>
-                                                       <option value="NO USÓ" ${concursante.xusoker === 'NO USÓ' ? 'selected' : ''}>NO USÓ</option>
-                                                       <option value="CONTINÚE" ${concursante.xusoker === 'CONTINÚE' ? 'selected' : ''}>CONTINÚE</option>
-                                                       <option value="AL VERRÉS" ${concursante.xusoker === 'AL VERRÉS' ? 'selected' : ''}>AL VERRÉS</option>
-                                                       <option value="RECICLA" ${concursante.xusoker === 'RECICLA' ? 'selected' : ''}>RECICLA</option>
-                                                       <option value="LLAMADA" ${concursante.xusoker === 'LLAMADA' ? 'selected' : ''}>LLAMADA</option>
-                                                   </select>`
-                                                : `<span>${concursante.xusoker || ''}</span>`}
-                                        </td>
-                                        <td class="col-factor-x">
-                                            ${editConc
-                                                ? `<input type="text" class="campo-editable"
-                                                           value="${concursante.factorX || ''}"
-                                                           onchange="actualizarCampoConcursante(${concursante.id}, 'factorX', this.value)"
-                                                           onclick="event.stopPropagation()"
-                                                           placeholder="Factor X">`
-                                                : `<span>${concursante.factorX || ''}</span>`}
-                                        </td>
-                                        <td class="col-valoracion">
-                                            ${editConc
-                                                ? `<select class="campo-editable"
-                                                           onchange="actualizarCampoConcursante(${concursante.id}, 'valoracionFinal', this.value)"
-                                                           onclick="event.stopPropagation()">
-                                                       <option value="">—</option>
-                                                       ${VALORACIONES_PERMITIDAS.map(v => `<option value="${v}" ${(concursante.valoracionFinal || '') === v ? 'selected' : ''}>${v}</option>`).join('')}
-                                                   </select>`
-                                                : `<span>${concursante.valoracionFinal || ''}</span>`}
-                                        </td>
-                                        <td class="col-acciones">
-                                            ${gestionConc
-                                                ? `<button class="btn btn-sm btn-danger" onclick="quitarConcursanteDePrograma(${concursante.id}, event)" title="Quitar del programa">
-                                                       <i class="fas fa-times"></i>
-                                                   </button>`
-                                                : ''}
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                                ${filasVacias.join('')}
+                                ${[1, 2, 3].map(slot => {
+                                    const concursante = concursantePorSlot[slot];
+                                    if (!concursante) {
+                                        return `
+                                            <tr class="fila-vacia" ${puedeQuitarConc ? `onclick="mostrarConcursantesDisponibles(${programa.id}, ${slot})" style="cursor:pointer;" title="Añadir concursante en hueco ${slot}"` : ''}>
+                                                <td class="col-numero">${slot}</td>
+                                                <td class="col-lugar"></td>
+                                                <td class="col-nombre"><em style="color: #999;">Hueco disponible</em></td>
+                                                <td class="col-edad"></td>
+                                                <td class="col-ocupacion"></td>
+                                                <td class="col-rrss"></td>
+                                                <td class="col-resultado"></td>
+                                                <td class="col-duracion"></td>
+                                                <td class="col-foto"></td>
+                                                <td class="col-momentos"></td>
+                                                <td class="col-xusoker"></td>
+                                                <td class="col-factor-x"></td>
+                                                <td class="col-valoracion"></td>
+                                                <td class="col-acciones">
+                                                    ${puedeQuitarConc ? `<button class="btn btn-sm btn-success" onclick="mostrarConcursantesDisponibles(${programa.id}, ${slot}); event.stopPropagation();" title="Añadir en hueco ${slot}"><i class="fas fa-plus"></i></button>` : ''}
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }
+                                    return `
+                                        <tr class="concursante-row" onclick="irAConcursante(${concursante.id})">
+                                            <td class="col-numero">${slot}</td>
+                                            <td class="col-lugar">${concursante.lugar || ''}</td>
+                                            <td class="col-nombre"><strong>${concursante.nombre || ''}</strong></td>
+                                            <td class="col-edad">${concursante.edad || ''}</td>
+                                            <td class="col-ocupacion">${concursante.ocupacion || ''}</td>
+                                            <td class="col-rrss">${concursante.redesSociales || ''}</td>
+                                            <td class="col-resultado">
+                                                ${editConc
+                                                    ? `<input type="text" class="campo-editable"
+                                                               value="${concursante.resultado || ''}"
+                                                               onchange="actualizarCampoConcursante(${concursante.id}, 'resultado', this.value)"
+                                                               onclick="event.stopPropagation()"
+                                                               placeholder="0€">`
+                                                    : `<span>${concursante.resultado || ''}</span>`}
+                                            </td>
+                                            <td class="col-duracion">${obtenerDuracionConcursante(concursante)}</td>
+                                            <td class="col-foto">
+                                                ${concursante.foto
+                                                    ? (gestionConc
+                                                        ? `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para cambiar foto">`
+                                                        : `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto">`)
+                                                    : (gestionConc
+                                                        ? `<div class="campo-foto-vacio" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para añadir foto">
+                                                               <i class="fas fa-camera"></i>
+                                                               <span>Añadir foto</span>
+                                                           </div>`
+                                                        : '')}
+                                            </td>
+                                            <td class="col-momentos">
+                                                ${editConc
+                                                    ? `<textarea class="campo-editable"
+                                                                 onchange="actualizarCampoConcursante(${concursante.id}, 'momentosDestacados', this.value)"
+                                                                 onclick="event.stopPropagation()"
+                                                                 placeholder="Momentos destacados"
+                                                                 rows="2">${concursante.momentosDestacados || ''}</textarea>`
+                                                    : `<span>${concursante.momentosDestacados || ''}</span>`}
+                                            </td>
+                                            <td class="col-xusoker">
+                                                ${editConc
+                                                    ? `<select class="campo-editable"
+                                                               onchange="actualizarCampoConcursante(${concursante.id}, 'xusoker', this.value)"
+                                                               onclick="event.stopPropagation()">
+                                                           <option value=""></option>
+                                                           <option value="NO USÓ" ${concursante.xusoker === 'NO USÓ' ? 'selected' : ''}>NO USÓ</option>
+                                                           <option value="CONTINÚE" ${concursante.xusoker === 'CONTINÚE' ? 'selected' : ''}>CONTINÚE</option>
+                                                           <option value="AL VERRÉS" ${concursante.xusoker === 'AL VERRÉS' ? 'selected' : ''}>AL VERRÉS</option>
+                                                           <option value="RECICLA" ${concursante.xusoker === 'RECICLA' ? 'selected' : ''}>RECICLA</option>
+                                                           <option value="LLAMADA" ${concursante.xusoker === 'LLAMADA' ? 'selected' : ''}>LLAMADA</option>
+                                                       </select>`
+                                                    : `<span>${concursante.xusoker || ''}</span>`}
+                                            </td>
+                                            <td class="col-factor-x">
+                                                ${editConc
+                                                    ? `<input type="text" class="campo-editable"
+                                                               value="${concursante.factorX || ''}"
+                                                               onchange="actualizarCampoConcursante(${concursante.id}, 'factorX', this.value)"
+                                                               onclick="event.stopPropagation()"
+                                                               placeholder="Factor X">`
+                                                    : `<span>${concursante.factorX || ''}</span>`}
+                                            </td>
+                                            <td class="col-valoracion">
+                                                ${editConc
+                                                    ? `<select class="campo-editable"
+                                                               onchange="actualizarCampoConcursante(${concursante.id}, 'valoracionFinal', this.value)"
+                                                               onclick="event.stopPropagation()">
+                                                           <option value="">—</option>
+                                                           ${VALORACIONES_PERMITIDAS.map(v => `<option value="${v}" ${(concursante.valoracionFinal || '') === v ? 'selected' : ''}>${v}</option>`).join('')}
+                                                       </select>`
+                                                    : `<span>${concursante.valoracionFinal || ''}</span>`}
+                                            </td>
+                                            <td class="col-acciones">
+                                                ${puedeQuitarConc
+                                                    ? `<button class="btn btn-sm btn-danger" onclick="quitarConcursanteDePrograma(${concursante.id}, event)" title="Quitar del programa">
+                                                           <i class="fas fa-times"></i>
+                                                       </button>`
+                                                    : ''}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -404,7 +460,7 @@ async function actualizarCreditosEspecialesPrograma(programaId, creditos) {
         if (p) p.creditosEspeciales = valor;
         mostrarExito('Créditos especiales actualizados');
     } catch (error) {
-        mostrarError('Error al actualizar créditos especiales: ' + (error?.message || error));
+        mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de créditos especiales'));
     }
 }
 
@@ -715,7 +771,7 @@ async function actualizarCampoConcursante(concursanteId, campo, valor) {
         }
         
     } catch (error) {
-        mostrarError('Error al actualizar campo: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de campo'));
     }
 }
 
@@ -755,7 +811,7 @@ async function actualizarDuracionObjetivoPrograma(programaId, nuevaDuracion) {
         await recargarProgramas();
         
     } catch (error) {
-        mostrarError('Error al actualizar duración objetivo: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de duración objetivo'));
     }
 }
 
@@ -795,7 +851,7 @@ async function cargarProgramasFiltrados() {
         if (error && error.message && error.message.startsWith('401')) {
             return;
         }
-        mostrarError('Error al cargar programas filtrados: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'carga de programas filtrados'));
     }
 }
 
@@ -966,7 +1022,7 @@ async function guardarPrograma() {
         await recargarProgramas();
         
     } catch (error) {
-        mostrarError('Error al guardar programa: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'guardado del programa'));
     }
 }
 
@@ -1001,6 +1057,14 @@ function abrirExploradorFoto(concursanteId, event) {
 // Función para subir la foto del concursante
 async function subirFotoConcursante(concursanteId, file) {
     try {
+        if (!file) {
+            mostrarError('No se ha seleccionado ningún archivo.');
+            return;
+        }
+        if (file.size > TAMANO_MAX_FOTO_BYTES) {
+            mostrarError('La foto es demasiado grande. El tamaño máximo permitido es 10MB.');
+            return;
+        }
         // Mostrar indicador de carga
         mostrarMensaje('Subiendo foto...', 'info');
         
@@ -1018,7 +1082,8 @@ async function subirFotoConcursante(concursanteId, file) {
         });
         
         if (!response.ok) {
-            throw new Error('Error al subir la foto');
+            const errText = await response.text();
+            throw new Error(`${response.status}: ${errText}`);
         }
         
         const resultado = await response.json();
@@ -1029,7 +1094,7 @@ async function subirFotoConcursante(concursanteId, file) {
         
     } catch (error) {
         console.error('Error al subir foto:', error);
-        mostrarError('Error al subir la foto: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'subida de foto'));
     }
 }
 
@@ -1075,7 +1140,7 @@ async function actualizarEstadoPrograma(programaId, nuevoEstado) {
         await cargarProgramas();
         mostrarExito('Estado del programa actualizado');
     } catch (error) {
-        mostrarError('Error al actualizar el estado: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'actualización del estado'));
     }
 }
 
@@ -1095,7 +1160,7 @@ async function actualizarTemporadaPrograma(programaId, nuevaTemporada) {
         mostrarExito('Temporada actualizada');
         await cargarProgramas();
     } catch (error) {
-        mostrarError('No se pudo actualizar la temporada');
+        mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de temporada'));
     }
 }
 
@@ -1106,7 +1171,7 @@ async function actualizarFechaEmision(programaId, fechaISO) {
         mostrarExito('Fecha de emisión actualizada');
         await cargarProgramas();
     } catch (error) {
-        mostrarError('No se pudo actualizar la fecha de emisión');
+        mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de fecha de emisión'));
     }
 }
 
@@ -1116,6 +1181,7 @@ let totalConcursantesDisponibles = 0;
 let paginaConcursantesDisponibles = 0;
 let totalPaginasConcursantesDisponibles = 1;
 let debounceTimer = null;
+let posicionPreferidaPrograma = null;
 
 // Aplica filtros de lugar, valoración final y estado sobre la lista en memoria
 function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
@@ -1166,9 +1232,14 @@ function onCambioFiltrosConcursantesDisponibles() {
     renderizarConcursantesDisponibles();
 }
 
-async function mostrarConcursantesDisponibles(programaId) {
+async function mostrarConcursantesDisponibles(programaId, posicionPreferida = null) {
+    if (!puedeGestionarConcursantesPrograma()) {
+        mostrarError('No tienes permisos para añadir concursantes a programas.');
+        return;
+    }
     try {
         document.getElementById('programa-seleccionado-id').value = programaId;
+        posicionPreferidaPrograma = posicionPreferida;
         
         // Limpiar filtro de búsqueda
         const inputBusqueda = document.getElementById('buscar-concursante-disponible');
@@ -1192,7 +1263,7 @@ async function mostrarConcursantesDisponibles(programaId) {
         const modal = new bootstrap.Modal(document.getElementById('modal-añadir-concursantes'));
         modal.show();
     } catch (error) {
-        mostrarError('Error al cargar concursantes disponibles: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'carga de concursantes disponibles'));
     }
 }
 
@@ -1267,15 +1338,20 @@ async function filtrarConcursantesDisponibles() {
         
         renderizarConcursantesDisponibles();
     } catch (error) {
-        mostrarError('Error al filtrar concursantes: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'filtrado de concursantes'));
     }
 }
 
 async function asignarConcursanteAPrograma(concursanteId) {
+    if (!puedeGestionarConcursantesPrograma()) {
+        mostrarError('No tienes permisos para añadir concursantes a programas.');
+        return;
+    }
     try {
         const programaId = document.getElementById('programa-seleccionado-id').value;
-        
-        await apiManager.postUndoable(`/api/concursantes/${concursanteId}/asignar-programa/${programaId}`, {}, {
+
+        const queryPos = (posicionPreferidaPrograma != null) ? `?posicion=${encodeURIComponent(posicionPreferidaPrograma)}` : '';
+        await apiManager.postUndoable(`/api/concursantes/${concursanteId}/asignar-programa/${programaId}${queryPos}`, {}, {
             label: `Asignar programa ${programaId} a concursante ${concursanteId}`,
             idExtractor: () => concursanteId,
             deleteEndpointBuilder: () => `/api/concursantes/${concursanteId}/desasignar-programa`
@@ -1284,18 +1360,24 @@ async function asignarConcursanteAPrograma(concursanteId) {
         // Cerrar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('modal-añadir-concursantes'));
         modal.hide();
+        posicionPreferidaPrograma = null;
         
         // Recargar programas
         await recargarProgramas();
         
         mostrarMensaje('Concursante añadido al programa correctamente', 'success');
     } catch (error) {
-        mostrarError('Error al asignar concursante: ' + error.message);
+        posicionPreferidaPrograma = null;
+        mostrarError(obtenerMensajeErrorProgramas(error, 'asignación de concursante'));
     }
 }
 
 async function quitarConcursanteDePrograma(concursanteId, event) {
     event.stopPropagation();
+    if (!(puedeGestionarConcursantesPrograma() && puedeEditarCamposConcursante())) {
+        mostrarError('No tienes permisos para quitar concursantes de programas.');
+        return;
+    }
     
     if (!confirm('¿Estás seguro de que quieres quitar este concursante del programa?')) {
         return;
@@ -1309,7 +1391,7 @@ async function quitarConcursanteDePrograma(concursanteId, event) {
         
         mostrarMensaje('Concursante quitado del programa correctamente', 'success');
     } catch (error) {
-        mostrarError('Error al quitar concursante: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'desasignación de concursante'));
     }
 }
 
@@ -1324,7 +1406,7 @@ async function editarPrograma(programaId) {
         const modal = new bootstrap.Modal(document.getElementById('modal-programa'));
         modal.show();
     } catch (error) {
-        mostrarError('Error al cargar datos del programa para editar: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'carga de datos del programa'));
     }
 }
 
@@ -1480,7 +1562,7 @@ async function cargarMasConcursantesDisponibles() {
         
         renderizarConcursantesDisponibles();
     } catch (error) {
-        mostrarError('Error al cargar más concursantes: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'carga de más concursantes'));
     }
 }
 
@@ -1502,6 +1584,6 @@ async function cargarPaginaConcursantesDisponibles(pagina) {
         
         renderizarConcursantesDisponibles();
     } catch (error) {
-        mostrarError('Error al cargar página de concursantes: ' + error.message);
+        mostrarError(obtenerMensajeErrorProgramas(error, 'carga de página de concursantes'));
     }
 }

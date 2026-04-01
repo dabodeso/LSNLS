@@ -36,8 +36,8 @@ let lastScrollYConcursantes = 0;
 // Jornada activa para filtrar cuestionarios/combos en los selectores (si procede)
 let jornadaFiltroSeleccion = null;
 
-// Estado de ordenación (server-side) — por defecto Nº CONCUR ascendente
-let sortByConcursantes = 'numeroConcursante';
+// Estado de ordenación (server-side) — por defecto ID ascendente
+let sortByConcursantes = 'id';
 let sortAscConcursantes = true;
 
 // Paginación de selectores (cuestionario/combo)
@@ -471,9 +471,9 @@ const tbody = document.getElementById('tabla-concursantes');
     const htmlGenerado = lista.map(concursante => {
 const celdas = [];
 
-// Nº CONCUR
+// ID
 if (configuracionColumnas.columnasVisibles['numero-concur']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroConcursante', this)">${concursante.numeroConcursante || ''}</td>`);
+celdas.push(`<td>${concursante.id || ''}</td>`);
 }
 
 // JORNADA
@@ -1028,7 +1028,7 @@ if (response.ok) {
                     console.warn('⚠️ [GUARDAR] Error asignando jornada tras crear', e);
                 }
             }
-            // Mantener orden por Nº CONCUR; ir a primera página para ver el recién creado
+            // Mantener orden por ID; ir a primera página para ver el recién creado
             paginaActual = 0;
             // Guardar el id creado para resaltarlo después
             datosConcursante.id = creadoId;
@@ -2370,7 +2370,7 @@ const asc = tabla.dataset.ordenCol == colIndex ? tabla.dataset.ordenAsc !== 'tru
 const headerMap = Array.from(tabla.querySelectorAll('thead th')).map(th => th.textContent.trim());
 const header = headerMap[colIndex] || '';
 const mapSortBy = {
-    'Nº CONCUR': 'numeroConcursante',
+    'ID': 'id',
     'JORNADA': 'jornadaNombre',
     'DÍA GRABACIÓN': 'diaGrabacion',
     'LUGAR': 'lugar',
@@ -2433,26 +2433,22 @@ function inicializarScrollbarPersonalizadaConcursantes() {
     if (!container || !scrollbar || !thumb) return;
 
     function actualizarThumb() {
-        const scrollLeft = container.scrollLeft;
         const scrollWidth = container.scrollWidth;
         const clientWidth = container.clientWidth;
-        if (scrollWidth <= clientWidth) {
-            scrollbar.style.display = 'none';
-            return;
-        }
-        scrollbar.style.display = 'block';
-        const thumbWidth = (clientWidth / scrollWidth) * 100;
-        const thumbLeft = (scrollLeft / (scrollWidth - clientWidth)) * (100 - thumbWidth);
-        thumb.style.width = thumbWidth + '%';
-        thumb.style.left = thumbLeft + '%';
+        const maxScrollLeft = Math.max(1, scrollWidth - clientWidth);
+        const scrollLeft = container.scrollLeft;
+        const thumbWidthPx = Math.max(20, (clientWidth / Math.max(scrollWidth, 1)) * scrollbar.clientWidth);
+        const maxThumbLeft = Math.max(0, scrollbar.clientWidth - thumbWidthPx);
+        const thumbLeft = (scrollLeft / maxScrollLeft) * maxThumbLeft;
+        thumb.style.width = `${thumbWidthPx}px`;
+        thumb.style.left = `${thumbLeft}px`;
     }
 
     function verificarVisibilidad() {
         const rect = container.getBoundingClientRect();
         const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-        if (!isVisible) {
-            scrollbar.style.display = 'none';
-        } else {
+        scrollbar.style.display = isVisible ? 'block' : 'none';
+        if (isVisible) {
             actualizarThumb();
         }
     }
@@ -2462,44 +2458,117 @@ function inicializarScrollbarPersonalizadaConcursantes() {
     window.addEventListener('scroll', verificarVisibilidad);
 
     // Drag del thumb
-    let isDragging = false;
+    let dragging = false;
     let startX = 0;
-    let startScrollLeft = 0;
+    let startLeft = 0;
     thumb.addEventListener('mousedown', function(e) {
-        isDragging = true;
+        dragging = true;
         startX = e.clientX;
-        startScrollLeft = container.scrollLeft;
+        startLeft = Number.parseFloat(thumb.style.left || '0');
         e.preventDefault();
     });
     document.addEventListener('mousemove', function(e) {
-        if (!isDragging) return;
-        const deltaX = e.clientX - startX;
-        const scrollWidth = container.scrollWidth;
-        const clientWidth = container.clientWidth;
-        const maxScrollLeft = scrollWidth - clientWidth;
-        const thumbWidth = thumb.offsetWidth;
-        const trackWidth = thumb.parentElement.offsetWidth;
-        const deltaScroll = (deltaX / (trackWidth - thumbWidth)) * maxScrollLeft;
-        container.scrollLeft = startScrollLeft + deltaScroll;
+        if (!dragging) return;
+        const delta = e.clientX - startX;
+        const newLeft = startLeft + delta;
+        const maxLeft = Math.max(0, scrollbar.clientWidth - thumb.clientWidth);
+        const clampedLeft = Math.max(0, Math.min(newLeft, maxLeft));
+        thumb.style.left = `${clampedLeft}px`;
+
+        const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+        container.scrollLeft = maxLeft > 0 ? (clampedLeft / maxLeft) * maxScrollLeft : 0;
     });
-    document.addEventListener('mouseup', function() { isDragging = false; });
+    document.addEventListener('mouseup', function() { dragging = false; });
 
     // Click en track
-    thumb.parentElement.addEventListener('click', function(e) {
+    scrollbar.addEventListener('click', function(e) {
         if (e.target === thumb) return;
-        const rect = this.getBoundingClientRect();
+        const rect = scrollbar.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
-        const trackWidth = rect.width;
-        const thumbWidth = thumb.offsetWidth;
-        const thumbLeft = thumb.offsetLeft;
-        if (clickX < thumbLeft) {
-            container.scrollLeft -= container.clientWidth * 0.5;
-        } else if (clickX > thumbLeft + thumbWidth) {
-            container.scrollLeft += container.clientWidth * 0.5;
-        }
+        const targetLeft = clickX - (thumb.clientWidth / 2);
+        const maxLeft = Math.max(0, scrollbar.clientWidth - thumb.clientWidth);
+        const clampedLeft = Math.max(0, Math.min(targetLeft, maxLeft));
+        thumb.style.left = `${clampedLeft}px`;
+
+        const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+        container.scrollLeft = maxLeft > 0 ? (clampedLeft / maxLeft) * maxScrollLeft : 0;
     });
 
+    document.body.style.paddingBottom = '16px';
+    verificarVisibilidad();
     actualizarThumb();
+}
+
+function inicializarCabeceraFlotanteConcursantes() {
+    const container = document.getElementById('tabla-concursantes-body-wrapper');
+    const table = document.getElementById('tabla-concursantes-header');
+    const thead = table ? table.querySelector('thead') : null;
+    const floating = document.getElementById('tabla-concursantes-header-floating');
+    if (!container || !table || !thead || !floating) return;
+
+    const cloneTable = document.createElement('table');
+    cloneTable.className = table.className;
+    const cloneHead = thead.cloneNode(true);
+    cloneTable.appendChild(cloneHead);
+    floating.innerHTML = '';
+    floating.appendChild(cloneTable);
+
+    function getTopOffset() {
+        const navbar = document.querySelector('.navbar');
+        return navbar ? Math.max(0, navbar.getBoundingClientRect().bottom) : 0;
+    }
+
+    function syncWidthsAndPosition() {
+        const originalTh = thead.querySelectorAll('th');
+        const cloneTh = cloneHead.querySelectorAll('th');
+        if (!originalTh.length || originalTh.length !== cloneTh.length) return;
+
+        const containerRect = container.getBoundingClientRect();
+        floating.style.left = `${containerRect.left}px`;
+        floating.style.width = `${container.clientWidth}px`;
+        floating.style.top = `${getTopOffset()}px`;
+
+        originalTh.forEach((th, i) => {
+            const width = th.getBoundingClientRect().width;
+            cloneTh[i].style.width = `${width}px`;
+            cloneTh[i].style.minWidth = `${width}px`;
+            cloneTh[i].style.maxWidth = `${width}px`;
+        });
+
+        cloneTable.style.width = `${table.scrollWidth}px`;
+        cloneTable.style.transform = `translateX(${-container.scrollLeft}px)`;
+    }
+
+    function updateVisibility() {
+        const tableRect = table.getBoundingClientRect();
+        const topOffset = getTopOffset();
+        const headHeight = thead.getBoundingClientRect().height || 0;
+        const mustShow = tableRect.top < topOffset && tableRect.bottom > (topOffset + headHeight + 4);
+        floating.style.display = mustShow ? 'block' : 'none';
+        if (mustShow) syncWidthsAndPosition();
+    }
+
+    container.addEventListener('scroll', syncWidthsAndPosition);
+    window.addEventListener('resize', () => {
+        syncWidthsAndPosition();
+        updateVisibility();
+    });
+    window.addEventListener('scroll', updateVisibility);
+
+    if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => {
+            syncWidthsAndPosition();
+            updateVisibility();
+        });
+        ro.observe(container);
+        ro.observe(table);
+        ro.observe(thead);
+    }
+
+    syncWidthsAndPosition();
+    updateVisibility();
+    setTimeout(() => { syncWidthsAndPosition(); updateVisibility(); }, 150);
+    setTimeout(() => { syncWidthsAndPosition(); updateVisibility(); }, 600);
 }
 
 window.cambiarPassword = function() {
@@ -2912,7 +2981,7 @@ const encabezados = [];
 
 // Mapear columnas a encabezados
 const mapeoEncabezados = {
-'numero-concur': 'Nº CONCUR',
+'numero-concur': 'ID',
 'jornada': 'JORNADA',
 'dia-grabacion': 'DÍA GRABACIÓN',
 'lugar': 'LUGAR',

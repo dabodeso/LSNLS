@@ -167,6 +167,7 @@ public class PreguntaController {
             pregunta.setDatosExtra(dto.datosExtra);
             pregunta.setFuentes(dto.fuentes);
             pregunta.setCreacionUsuario(currentUser);
+            pregunta.setAutor(currentUser.getNombre());
             pregunta.setEstado(Pregunta.EstadoPregunta.borrador);
             pregunta.setNotasVerificacion(dto.notasVerificacion);
             pregunta.setNotasDireccion(dto.notasDireccion);

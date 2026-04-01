@@ -433,7 +433,7 @@ public class ConcursanteService {
 
     public List<ConcursanteDTO> findByProgramaId(Long programaId) {
         Integer numeroPrograma = programaId != null ? programaId.intValue() : null;
-        return concursanteRepository.findByNumeroPrograma(numeroPrograma).stream()
+        return concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(numeroPrograma).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -456,10 +456,45 @@ public class ConcursanteService {
 
     @Transactional
     public ConcursanteDTO asignarAPrograma(Long concursanteId, Long programaId) {
+        return asignarAPrograma(concursanteId, programaId, null);
+    }
+
+    @Transactional
+    public ConcursanteDTO asignarAPrograma(Long concursanteId, Long programaId, Integer posicion) {
         Concursante concursante = concursanteRepository.findById(concursanteId)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
-        
-        concursante.setNumeroPrograma(programaId.intValue());
+
+        Integer numeroPrograma = programaId.intValue();
+        Integer posicionAsignada = posicion;
+
+        if (posicionAsignada != null) {
+            if (posicionAsignada < 1 || posicionAsignada > 3) {
+                throw new RuntimeException("La posición debe estar entre 1 y 3");
+            }
+            long ocupada = concursanteRepository.countByNumeroProgramaAndNumeroConcursante(numeroPrograma, posicionAsignada);
+            if (ocupada > 0) {
+                throw new RuntimeException("La posición " + posicionAsignada + " ya está ocupada en este programa");
+            }
+        } else {
+            // Fallback: asignar primer hueco libre entre 1..3
+            java.util.Set<Integer> usadas = concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(numeroPrograma)
+                .stream()
+                .map(Concursante::getNumeroConcursante)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+            for (int i = 1; i <= 3; i++) {
+                if (!usadas.contains(i)) {
+                    posicionAsignada = i;
+                    break;
+                }
+            }
+            if (posicionAsignada == null) {
+                throw new RuntimeException("El programa ya tiene ocupadas las 3 posiciones de concursante");
+            }
+        }
+
+        concursante.setNumeroPrograma(numeroPrograma);
+        concursante.setNumeroConcursante(posicionAsignada);
         concursante = concursanteRepository.save(concursante);
         return convertToDTO(concursante);
     }

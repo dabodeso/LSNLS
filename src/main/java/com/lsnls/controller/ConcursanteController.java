@@ -182,10 +182,13 @@ public class ConcursanteController {
     }
 
     @PostMapping("/{concursanteId}/asignar-programa/{programaId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
-    public ResponseEntity<?> asignarAPrograma(@PathVariable Long concursanteId, @PathVariable Long programaId) {
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> asignarAPrograma(
+            @PathVariable Long concursanteId,
+            @PathVariable Long programaId,
+            @RequestParam(required = false) Integer posicion) {
         try {
-            ConcursanteDTO concursante = concursanteService.asignarAPrograma(concursanteId, programaId);
+            ConcursanteDTO concursante = concursanteService.asignarAPrograma(concursanteId, programaId, posicion);
             return ResponseEntity.ok(concursante);
         } catch (RuntimeException e) {
             String mensaje = e.getMessage();
@@ -199,7 +202,7 @@ public class ConcursanteController {
     }
 
     @DeleteMapping("/{concursanteId}/desasignar-programa")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<?> desasignarDePrograma(@PathVariable Long concursanteId) {
         try {
             ConcursanteDTO concursante = concursanteService.desasignarDePrograma(concursanteId);

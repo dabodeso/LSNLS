@@ -14,6 +14,10 @@ import java.util.List;
 public interface ConcursanteRepository extends JpaRepository<Concursante, Long>, JpaSpecificationExecutor<Concursante> {
     List<Concursante> findByEstado(String estado); // Cambio de EstadoConcursante a String
     List<Concursante> findByNumeroPrograma(Integer numeroPrograma);
+    @Query("SELECT c FROM Concursante c WHERE c.numeroPrograma = :numeroPrograma " +
+           "ORDER BY CASE WHEN c.numeroConcursante IS NULL THEN 1 ELSE 0 END, c.numeroConcursante ASC, c.id ASC")
+    List<Concursante> findByNumeroProgramaOrderByNumeroConcursanteAsc(@Param("numeroPrograma") Integer numeroPrograma);
+    long countByNumeroProgramaAndNumeroConcursante(Integer numeroPrograma, Integer numeroConcursante);
     List<Concursante> findByNumeroProgramaIsNull();
     Page<Concursante> findByNumeroProgramaIsNull(Pageable pageable);
     
