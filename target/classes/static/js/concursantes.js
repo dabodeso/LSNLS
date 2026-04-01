@@ -2506,6 +2506,8 @@ function inicializarCabeceraFlotanteConcursantes() {
     const floating = document.getElementById('tabla-concursantes-header-floating');
     if (!container || !table || !thead || !floating) return;
 
+    const debugCabecera = (...args) => console.debug('[CABECERA CONCURSANTES]', ...args);
+
     const cloneTable = document.createElement('table');
     cloneTable.className = table.className;
     const cloneHead = thead.cloneNode(true);
@@ -2515,13 +2517,19 @@ function inicializarCabeceraFlotanteConcursantes() {
 
     function getTopOffset() {
         const navbar = document.querySelector('.navbar');
-        if (!navbar) return 0;
+        if (!navbar) {
+            debugCabecera('Navbar no encontrada, topOffset=0');
+            return 0;
+        }
         const rect = navbar.getBoundingClientRect();
         // Si la navbar ya salió de la vista, pegar la cabecera arriba del todo.
         if (rect.bottom <= 0 || rect.top < 0) {
+            debugCabecera('Navbar fuera de vista, topOffset=0', { top: rect.top, bottom: rect.bottom });
             return 0;
         }
-        return Math.max(0, rect.bottom - 2);
+        const topOffset = Math.max(0, rect.bottom - 2);
+        debugCabecera('Navbar visible, topOffset calculado', { top: rect.top, bottom: rect.bottom, topOffset });
+        return topOffset;
     }
 
     function syncWidthsAndPosition() {
@@ -2533,6 +2541,14 @@ function inicializarCabeceraFlotanteConcursantes() {
         floating.style.left = `${containerRect.left}px`;
         floating.style.width = `${container.clientWidth}px`;
         floating.style.top = `${getTopOffset()}px`;
+
+        debugCabecera('syncWidthsAndPosition', {
+            containerLeft: containerRect.left,
+            containerTop: containerRect.top,
+            containerWidth: container.clientWidth,
+            containerScrollLeft: container.scrollLeft,
+            floatingTop: floating.style.top
+        });
 
         originalTh.forEach((th, i) => {
             const width = th.getBoundingClientRect().width;
@@ -2550,19 +2566,35 @@ function inicializarCabeceraFlotanteConcursantes() {
         const topOffset = getTopOffset();
         const headHeight = thead.getBoundingClientRect().height || 0;
         const mustShow = tableRect.top < topOffset && tableRect.bottom > (topOffset + headHeight + 4);
+        debugCabecera('updateVisibility', {
+            tableTop: tableRect.top,
+            tableBottom: tableRect.bottom,
+            topOffset,
+            headHeight,
+            mustShow,
+            scrollY: window.scrollY
+        });
         floating.style.display = mustShow ? 'block' : 'none';
         if (mustShow) syncWidthsAndPosition();
     }
 
-    container.addEventListener('scroll', syncWidthsAndPosition);
+    container.addEventListener('scroll', () => {
+        debugCabecera('scroll horizontal contenedor', { scrollLeft: container.scrollLeft });
+        syncWidthsAndPosition();
+    });
     window.addEventListener('resize', () => {
+        debugCabecera('window resize');
         syncWidthsAndPosition();
         updateVisibility();
     });
-    window.addEventListener('scroll', updateVisibility);
+    window.addEventListener('scroll', () => {
+        debugCabecera('window scroll', { scrollY: window.scrollY });
+        updateVisibility();
+    });
 
     if (typeof ResizeObserver !== 'undefined') {
         const ro = new ResizeObserver(() => {
+            debugCabecera('ResizeObserver disparado');
             syncWidthsAndPosition();
             updateVisibility();
         });
@@ -2573,8 +2605,16 @@ function inicializarCabeceraFlotanteConcursantes() {
 
     syncWidthsAndPosition();
     updateVisibility();
-    setTimeout(() => { syncWidthsAndPosition(); updateVisibility(); }, 150);
-    setTimeout(() => { syncWidthsAndPosition(); updateVisibility(); }, 600);
+    setTimeout(() => {
+        debugCabecera('recalculo diferido 150ms');
+        syncWidthsAndPosition();
+        updateVisibility();
+    }, 150);
+    setTimeout(() => {
+        debugCabecera('recalculo diferido 600ms');
+        syncWidthsAndPosition();
+        updateVisibility();
+    }, 600);
 }
 
 window.cambiarPassword = function() {
