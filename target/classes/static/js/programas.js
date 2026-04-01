@@ -249,7 +249,7 @@ function mostrarProgramas() {
                             <div class="programa-info-label">Fecha de emisión</div>
                             <div class="programa-info-value">
                                 ${editProg
-                                    ? `<input type="date" class="form-control form-control-sm" value="${programa.fechaEmision || ''}"
+                                    ? `<input type="date" class="form-control form-control-sm" value="${normalizarFechaProgramaISO(programa.fechaEmision)}"
                                                onchange="actualizarFechaEmision(${programa.id}, this.value)" style="width: 150px;">`
                                     : `<span class="programa-info-readonly">${fechaFormateada}</span>`}
                             </div>
@@ -476,37 +476,57 @@ function autoResizeTextareasEnProgramas() {
 }
 
 
-function formatearFechaPrograma(fecha) {
-    if (!fecha) return 'N/A';
-    
-    try {
-        // Manejar fecha en formato ISO (YYYY-MM-DD)
-        let fechaObj;
-        if (fecha.includes('-')) {
-            // Formato ISO: 2023-04-01
-            const partes = fecha.split('-');
-            if (partes.length === 3) {
-                const año = parseInt(partes[0]);
-                const mes = parseInt(partes[1]) - 1; // Los meses en JavaScript van de 0-11
-                const dia = parseInt(partes[2]);
-                fechaObj = new Date(año, mes, dia);
-            } else {
-                fechaObj = new Date(fecha);
-            }
-        } else {
-            fechaObj = new Date(fecha);
+function normalizarFechaProgramaISO(fecha) {
+    if (fecha == null || fecha === '') return '';
+
+    if (Array.isArray(fecha) && fecha.length >= 3) {
+        const [año, mes, dia] = fecha;
+        return `${String(año).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    }
+
+    if (typeof fecha === 'object') {
+        const año = fecha.year ?? fecha.año;
+        const mes = fecha.monthValue ?? fecha.month ?? fecha.mes;
+        const dia = fecha.dayOfMonth ?? fecha.day ?? fecha.dia;
+        if (año != null && mes != null && dia != null) {
+            return `${String(año).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
         }
-        
-        // Verificar si la fecha es válida
+    }
+
+    const valor = String(fecha).trim();
+    const matchIso = valor.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (matchIso) {
+        const [, año, mes, dia] = matchIso;
+        return `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    }
+
+    const matchCsv = valor.match(/^(\d{4}),\s*(\d{1,2}),\s*(\d{1,2})$/);
+    if (matchCsv) {
+        const [, año, mes, dia] = matchCsv;
+        return `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    }
+
+    return valor;
+}
+
+function formatearFechaPrograma(fecha) {
+    const fechaIso = normalizarFechaProgramaISO(fecha);
+    if (!fechaIso) return 'N/A';
+
+    try {
+        const partes = fechaIso.split('-');
+        if (partes.length !== 3) return 'Fecha inválida';
+
+        const año = parseInt(partes[0], 10);
+        const mes = parseInt(partes[1], 10) - 1;
+        const dia = parseInt(partes[2], 10);
+        const fechaObj = new Date(año, mes, dia);
+
         if (isNaN(fechaObj.getTime())) {
             return 'Fecha inválida';
         }
-        
-        const dia = fechaObj.getDate().toString().padStart(2, '0');
-        const mes = (fechaObj.getMonth() + 1).toString().padStart(2, '0');
-        const año = fechaObj.getFullYear();
-        
-        return `${dia}/${mes}/${año}`;
+
+        return `${String(dia).padStart(2, '0')}/${String(mes + 1).padStart(2, '0')}/${año}`;
     } catch (error) {
         console.error('Error al formatear fecha:', fecha, error);
         return 'Error en fecha';
@@ -1164,9 +1184,23 @@ async function actualizarTemporadaPrograma(programaId, nuevaTemporada) {
 async function actualizarFechaEmision(programaId, fechaISO) {
     try {
         const valor = (fechaISO && fechaISO.trim() !== '') ? fechaISO : null;
-        await apiManager.patch(`/api/programas/${programaId}/campo`, { fechaEmision: valor });
+        const programaActualizado = await apiManager.patch(`/api/programas/${programaId}/campo`, { fechaEmision: valor });
+        if (programaActualizado && typeof programaActualizado === 'object') {
+            const indicePrograma = programas.findIndex(programa => programa.id === programaId);
+            if (indicePrograma !== -1) {
+                programas[indicePrograma] = {
+                    ...programas[indicePrograma],
+                    ...programaActualizado,
+                    fechaEmision: programaActualizado.fechaEmision ?? valor
+                };
+            }
+            mostrarProgramas();
+            configurarScrollTablas();
+            renderizarPaginacion();
+        } else {
+            await cargarProgramasPaginados(paginaActual);
+        }
         mostrarExito('Fecha de emisión actualizada');
-        await cargarProgramas();
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de fecha de emisión'));
     }
@@ -1397,7 +1431,7 @@ async function editarPrograma(programaId) {
         const programa = await apiManager.get(`/api/programas/${programaId}`);
         document.getElementById('programa-id').value = programa.id;
         document.getElementById('temporada-programa').value = programa.temporada;
-        document.getElementById('fecha-emision').value = programa.fechaEmision || '';
+        document.getElementById('fecha-emision').value = normalizarFechaProgramaISO(programa.fechaEmision);
         document.getElementById('modal-programa-titulo').textContent = 'Editar Programa';
 
         const modal = new bootstrap.Modal(document.getElementById('modal-programa'));
