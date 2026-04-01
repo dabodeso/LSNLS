@@ -2515,7 +2515,7 @@ function inicializarCabeceraFlotanteConcursantes() {
 
     function getTopOffset() {
         const navbar = document.querySelector('.navbar');
-        return navbar ? Math.max(0, navbar.getBoundingClientRect().bottom) : 0;
+        return navbar ? Math.max(0, navbar.getBoundingClientRect().bottom - 2) : 0;
     }
 
     function syncWidthsAndPosition() {
