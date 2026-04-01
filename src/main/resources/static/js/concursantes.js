@@ -2516,20 +2516,8 @@ function inicializarCabeceraFlotanteConcursantes() {
     floating.appendChild(cloneTable);
 
     function getTopOffset() {
-        const navbar = document.querySelector('.navbar');
-        if (!navbar) {
-            debugCabecera('Navbar no encontrada, topOffset=0');
-            return 0;
-        }
-        const rect = navbar.getBoundingClientRect();
-        // Si la navbar ya salió de la vista, pegar la cabecera arriba del todo.
-        if (rect.bottom <= 0 || rect.top < 0) {
-            debugCabecera('Navbar fuera de vista, topOffset=0', { top: rect.top, bottom: rect.bottom });
-            return 0;
-        }
-        const topOffset = Math.max(0, rect.bottom - 2);
-        debugCabecera('Navbar visible, topOffset calculado', { top: rect.top, bottom: rect.bottom, topOffset });
-        return topOffset;
+        debugCabecera('TopOffset forzado a 0');
+        return 0;
     }
 
     function syncWidthsAndPosition() {
