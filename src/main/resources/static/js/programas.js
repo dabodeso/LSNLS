@@ -279,9 +279,6 @@ function mostrarProgramas() {
                             </div>
                         </div>
                         <div class="programa-acciones">
-                            ${(gestionConc && editConc) ? `<button class="btn btn-success" onclick="mostrarConcursantesDisponibles(${programa.id})" title="Añadir concursante">
-                                <i class="fas fa-user-plus"></i>
-                            </button>` : ''}
                             ${elimProg ? `<button class="btn btn-danger" onclick="eliminarPrograma(${programa.id})" title="Borrar programa">
                                 <i class="fas fa-trash"></i>
                             </button>` : ''}
