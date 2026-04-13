@@ -175,15 +175,17 @@ min-width: 20px;
 .custom-scrollbar-thumb:active { background: #343a40; }
 
 .foto-concursante {
-max-width: 80px;
-max-height: 80px;
+display: block;
+width: 100%;
+max-width: 240px;
+aspect-ratio: 1 / 1;
 object-fit: cover;
 border-radius: 4px;
 cursor: pointer;
 }
 .foto-concursante:hover {
 opacity: 0.8;
-transform: scale(1.05);
+transform: scale(1.02);
 transition: all 0.2s ease;
 }
 .campo-foto-vacio {
@@ -191,8 +193,10 @@ display: flex;
 flex-direction: column;
 align-items: center;
 justify-content: center;
-width: 80px;
-height: 80px;
+width: 100%;
+min-width: 80px;
+aspect-ratio: 1 / 1;
+max-width: 240px;
 border: 2px dashed #ccc;
 border-radius: 4px;
 cursor: pointer;

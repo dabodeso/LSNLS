@@ -326,30 +326,8 @@ const JornadasManager = {
         // Preparar los cuestionarios y combos (asegurar que existan arrays)
         const cuestionarios = jornada.cuestionarios || [];
         const combos = jornada.combos || [];
-        // Detectar la vista actual - verificar tanto la clase como el localStorage
-        const tieneClaseJ3 = document.body && document.body.classList.contains('j3-mode');
-        const vistaGuardada = localStorage.getItem('vistaJornadas');
-        const esVista3 = tieneClaseJ3 || vistaGuardada === 'j3';
-        // Debug: mostrar en consola para verificar que se ejecuta
-        if (jornada.id === (this.jornadas && this.jornadas[0] ? this.jornadas[0].id : null)) {
-            console.log('[JORNADAS DEBUG] Primera jornada - Detección de vista:', { 
-                tieneClaseJ3, 
-                vistaGuardada, 
-                esVista3, 
-                bodyClasses: document.body ? document.body.className : 'no body',
-                timestamp: new Date().toISOString()
-            });
-        }
         // Mapear estado backend -> etiquetas del front
-        const estadoFront = (estado) => {
-            switch (estado) {
-                case 'preparacion': return 'borrador';
-                case 'completada': return 'completa';
-                case 'archivada': return 'grabada';
-                default: return estado;
-            }
-        };
-        const estadoVista = estadoFront(jornada.estado);
+        const estadoVista = jornada.estado || 'preparacion';
         
         // Generar slots de cuestionarios (6 en total)
         let cuestionariosHtml = '';
@@ -385,12 +363,6 @@ const JornadasManager = {
                             </div>
                         </div>
                         <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : (c.tematica || 'Sin temática')}</small>
-                        ${c.notasDireccion ? `
-                            <div class="mt-2 p-2 bg-light rounded" style="font-size: 0.85em;">
-                                <strong>Notas de dirección:</strong><br>
-                                <span style="color: #495057;">${c.notasDireccion}</span>
-                            </div>
-                        ` : ''}
                     </div>
                 `;
             } else {
@@ -453,12 +425,6 @@ const JornadasManager = {
                             </div>
                         </div>
                         <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : tipoNombre}</small>
-                        ${c.notasDireccion ? `
-                            <div class="mt-2 p-2 bg-light rounded" style="font-size: 0.85em;">
-                                <strong>Notas de dirección:</strong><br>
-                                <span style="color: #495057;">${c.notasDireccion}</span>
-                            </div>
-                        ` : ''}
                     </div>
                 `;
             } else {
@@ -481,11 +447,13 @@ const JornadasManager = {
         
         // Selector de estado (solo se muestra si el usuario puede gestionar el estado)
         const selectorEstado = this.puedeGestionarEstado(jornada) ? `
-            <select class=\"form-select form-select-sm\" style=\"width: auto; min-width: 120px\" 
+            <select class=\"form-select form-select-sm\" style=\"width: auto; min-width: 130px\" 
                     onchange=\"JornadasManager.cambiarEstado(${jornada.id}, this.value)\">\n\
-                <option value=\"borrador\" ${estadoVista === 'borrador' ? 'selected' : ''}>Borrador</option>\n\
-                <option value=\"completa\" ${estadoVista === 'completa' ? 'selected' : ''}>Completa</option>\n\
-                <option value=\"grabada\" ${estadoVista === 'grabada' ? 'selected' : ''}>Grabada</option>\n\
+                <option value=\"preparacion\" ${estadoVista === 'preparacion' ? 'selected' : ''}>Preparación</option>\n\
+                <option value=\"lista\" ${estadoVista === 'lista' ? 'selected' : ''}>Lista</option>\n\
+                <option value=\"en_grabacion\" ${estadoVista === 'en_grabacion' ? 'selected' : ''}>En Grabación</option>\n\
+                <option value=\"completada\" ${estadoVista === 'completada' ? 'selected' : ''}>Completada</option>\n\
+                <option value=\"archivada\" ${estadoVista === 'archivada' ? 'selected' : ''}>Archivada</option>\n\
             </select>
         ` : estadoBadge;
         
@@ -531,13 +499,6 @@ const JornadasManager = {
                     </div>
                 </div>
                 
-                ${jornada.notas ? `
-                    <div class="mt-3 mb-3 p-3 bg-info bg-opacity-10 border border-info rounded">
-                        <strong><i class="fas fa-sticky-note"></i> Notas de la jornada:</strong><br>
-                        <span style="color: #495057; white-space: pre-wrap;">${jornada.notas}</span>
-                    </div>
-                ` : ''}
-                
                 <!-- Línea divisoria con texto "CUESTIONARIOS" -->
                 <div class="mt-4 mb-3">
                     <hr style="border-color: #dee2e6; margin: 0;">
@@ -554,28 +515,12 @@ const JornadasManager = {
                 </div>
                 
                 <!-- Notas de dirección de cuestionarios -->
-                ${esVista3 ? `
-                    <!-- Vista 3: Recuadros individuales del mismo tamaño que los slots -->
-                    <div class="mt-3 mb-3">
-                        <label class="form-label fw-bold mb-2" style="font-size: 0.9em;">Notas de dirección (Cuestionarios):</label>
-                        <div class="cuestionarios-grid">
-                            ${this.generarNotasDireccionCuestionariosVista3(cuestionarios, jornada)}
-                        </div>
+                <div class="mt-3 mb-3">
+                    <label class="form-label fw-bold mb-2" style="font-size: 0.9em;">Notas de dirección (Cuestionarios):</label>
+                    <div class="cuestionarios-grid">
+                        ${this.generarNotasDireccionCuestionariosVista3(cuestionarios, jornada)}
                     </div>
-                ` : `
-                    <!-- Vista 2: Caja entera con todos -->
-                    <div class="mt-3 mb-3">
-                        <label class="form-label fw-bold" style="font-size: 0.9em;">Notas de dirección (Cuestionarios):</label>
-                        <textarea 
-                            class="form-control" 
-                            id="notas-direccion-cuestionarios-${jornada.id}" 
-                            rows="3" 
-                            placeholder="Escribe las notas de dirección para los cuestionarios..."
-                            ${this.puedeEditar(jornada) ? '' : 'readonly'}
-                            onblur="JornadasManager.guardarNotasDireccionCuestionariosVista2(${jornada.id}, this.value)"
-                        >${this.obtenerNotasDireccionCuestionariosVista2(cuestionarios)}</textarea>
-                    </div>
-                `}
+                </div>
                 
                 <!-- Línea divisoria con texto "COMBOS" -->
                 <div class="mt-4 mb-3">
@@ -593,39 +538,18 @@ const JornadasManager = {
                 </div>
                 
                 <!-- Notas de dirección de combos -->
-                ${esVista3 ? `
-                    <!-- Vista 3: Recuadros individuales del mismo tamaño que los slots -->
-                    <div class="mt-3 mb-3">
-                        <label class="form-label fw-bold mb-2" style="font-size: 0.9em;">Notas de dirección (Combos):</label>
-                        <div class="combos-grid">
-                            ${this.generarNotasDireccionCombosVista3(combos, jornada)}
-                        </div>
+                <div class="mt-3 mb-3">
+                    <label class="form-label fw-bold mb-2" style="font-size: 0.9em;">Notas de dirección (Combos):</label>
+                    <div class="combos-grid">
+                        ${this.generarNotasDireccionCombosVista3(combos, jornada)}
                     </div>
-                ` : `
-                    <!-- Vista 2: Caja entera con todos -->
-                    <div class="mt-3 mb-3">
-                        <label class="form-label fw-bold" style="font-size: 0.9em;">Notas de dirección (Combos):</label>
-                        <textarea 
-                            class="form-control" 
-                            id="notas-direccion-combos-${jornada.id}" 
-                            rows="3" 
-                            placeholder="Escribe las notas de dirección para los combos..."
-                            ${this.puedeEditar(jornada) ? '' : 'readonly'}
-                            onblur="JornadasManager.guardarNotasDireccionCombosVista2(${jornada.id}, this.value)"
-                        >${this.obtenerNotasDireccionCombosVista2(combos)}</textarea>
-                    </div>
-                `}
+                </div>
             </div>
         `;
     },
     
-    esVista3() {
-        // Verificar si estamos en vista 3 (j3-mode)
-        return document.body.classList.contains('j3-mode');
-    },
-    
     generarNotasDireccionCuestionariosVista3(cuestionarios, jornada) {
-        // Vista 3: Generar recuadros del mismo tamaño que los slots de cuestionarios
+        // Generar recuadros del mismo tamaño que los slots de cuestionarios
         let html = '';
         for (let i = 0; i < 6; i++) {
             if (i < cuestionarios.length) {
@@ -637,9 +561,9 @@ const JornadasManager = {
                         <textarea 
                             class="form-control form-control-sm border-0 p-0" 
                             id="notas-direccion-cuestionario-${jornada.id}-${c.id}" 
-                            rows="3" 
+                            rows="6" 
                             placeholder="Notas de dirección..."
-                            style="resize: none; background: transparent; min-height: 60px;"
+                            style="resize: vertical; background: transparent; min-height: 120px;"
                             ${this.puedeEditar(jornada) ? '' : 'readonly'}
                             onblur="JornadasManager.guardarNotasDireccionCuestionario(${c.id}, this.value)"
                         >${notas}</textarea>
@@ -670,9 +594,9 @@ const JornadasManager = {
                         <textarea 
                             class="form-control form-control-sm border-0 p-0" 
                             id="notas-direccion-combo-${jornada.id}-${c.id}" 
-                            rows="3" 
+                            rows="6" 
                             placeholder="Notas de dirección..."
-                            style="resize: none; background: transparent; min-height: 60px;"
+                            style="resize: vertical; background: transparent; min-height: 120px;"
                             ${this.puedeEditar(jornada) ? '' : 'readonly'}
                             onblur="JornadasManager.guardarNotasDireccionCombo(${c.id}, this.value)"
                         >${notas}</textarea>
@@ -688,130 +612,6 @@ const JornadasManager = {
             }
         }
         return html;
-    },
-    
-    obtenerNotasDireccionCuestionariosVista2(cuestionarios) {
-        // Vista 2: Obtener todas las notas en formato texto
-        const notas = cuestionarios
-            .filter(c => c && c.id)
-            .map(c => {
-                const notasTexto = c.notasDireccion && c.notasDireccion.trim() ? c.notasDireccion.trim() : '';
-                return `Cuestionario ${c.id}: ${notasTexto}`;
-            })
-            .join('\n\n');
-        return notas || '';
-    },
-    
-    obtenerNotasDireccionCombosVista2(combos) {
-        // Vista 2: Obtener todas las notas en formato texto
-        const notas = combos
-            .filter(c => c && c.id)
-            .map(c => {
-                const notasTexto = c.notasDireccion && c.notasDireccion.trim() ? c.notasDireccion.trim() : '';
-                return `Combo ${c.id}: ${notasTexto}`;
-            })
-            .join('\n\n');
-        return notas || '';
-    },
-    
-    async guardarNotasDireccionCuestionariosVista2(jornadaId, textoCompleto) {
-        try {
-            // Obtener la jornada actual para acceder a los cuestionarios
-            const jornada = this.jornadas.find(j => j.id === jornadaId);
-            if (!jornada || !jornada.cuestionarios) return;
-            
-            // Parsear el texto para extraer las notas por cuestionario
-            const lineas = textoCompleto.split('\n\n');
-            const actualizaciones = [];
-            
-            for (const linea of lineas) {
-                const match = linea.match(/^Cuestionario (\d+):\s*(.*)$/s);
-                if (match) {
-                    const cuestionarioId = parseInt(match[1]);
-                    const notas = match[2] ? match[2].trim() : '';
-                    actualizaciones.push({ id: cuestionarioId, notas });
-                }
-            }
-            
-            // Actualizar cada cuestionario
-            for (const actualizacion of actualizaciones) {
-                await apiManager.put(`/api/cuestionarios/${actualizacion.id}/notas-direccion`, {
-                    notasDireccion: actualizacion.notas
-                });
-            }
-            
-            // Recargar la jornada para reflejar los cambios
-            await this.cargarJornadas();
-            
-            Toastify({
-                text: 'Notas de dirección de cuestionarios actualizadas',
-                duration: 2000,
-                close: true,
-                gravity: 'top',
-                position: 'right',
-                style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
-            }).showToast();
-        } catch (error) {
-            console.error('Error al guardar notas de dirección de cuestionarios:', error);
-            Toastify({
-                text: 'Error al guardar notas: ' + (error.message || 'Error desconocido'),
-                duration: 3000,
-                close: true,
-                gravity: 'top',
-                position: 'right',
-                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
-            }).showToast();
-        }
-    },
-    
-    async guardarNotasDireccionCombosVista2(jornadaId, textoCompleto) {
-        try {
-            // Obtener la jornada actual para acceder a los combos
-            const jornada = this.jornadas.find(j => j.id === jornadaId);
-            if (!jornada || !jornada.combos) return;
-            
-            // Parsear el texto para extraer las notas por combo
-            const lineas = textoCompleto.split('\n\n');
-            const actualizaciones = [];
-            
-            for (const linea of lineas) {
-                const match = linea.match(/^Combo (\d+):\s*(.*)$/s);
-                if (match) {
-                    const comboId = parseInt(match[1]);
-                    const notas = match[2] ? match[2].trim() : '';
-                    actualizaciones.push({ id: comboId, notas });
-                }
-            }
-            
-            // Actualizar cada combo
-            for (const actualizacion of actualizaciones) {
-                await apiManager.put(`/api/combos/${actualizacion.id}`, {
-                    notasDireccion: actualizacion.notas
-                });
-            }
-            
-            // Recargar la jornada para reflejar los cambios
-            await this.cargarJornadas();
-            
-            Toastify({
-                text: 'Notas de dirección de combos actualizadas',
-                duration: 2000,
-                close: true,
-                gravity: 'top',
-                position: 'right',
-                style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
-            }).showToast();
-        } catch (error) {
-            console.error('Error al guardar notas de dirección de combos:', error);
-            Toastify({
-                text: 'Error al guardar notas: ' + (error.message || 'Error desconocido'),
-                duration: 3000,
-                close: true,
-                gravity: 'top',
-                position: 'right',
-                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
-            }).showToast();
-        }
     },
     
     async guardarNotasDireccionCuestionario(cuestionarioId, notas) {
@@ -996,17 +796,19 @@ const JornadasManager = {
 
     getEstadoBadge(estado) {
         const badges = {
-            'borrador': 'badge bg-secondary',
-            'completa': 'badge bg-success',
-            'grabada': 'badge bg-dark'
+            'preparacion':  'badge bg-secondary',
+            'lista':        'badge bg-info text-dark',
+            'en_grabacion': 'badge bg-warning text-dark',
+            'completada':   'badge bg-success',
+            'archivada':    'badge bg-dark'
         };
-
         const nombres = {
-            'borrador': 'Borrador',
-            'completa': 'Completa',
-            'grabada': 'Grabada'
+            'preparacion':  'Preparación',
+            'lista':        'Lista',
+            'en_grabacion': 'En Grabación',
+            'completada':   'Completada',
+            'archivada':    'Archivada'
         };
-
         return `<span class=\"${badges[estado] || 'badge bg-secondary'}\">${nombres[estado] || estado}</span>`;
     },
 
@@ -1172,18 +974,7 @@ const JornadasManager = {
         if (!nuevoEstado) return;
 
         try {
-            // Mapear estados del front a los del backend
-            const mapFrontToBack = (estado) => {
-                switch (estado) {
-                    case 'borrador': return 'preparacion';
-                    case 'completa': return 'completada';
-                    case 'grabada': return 'archivada';
-                    default: return estado; // permitir enviar estados backend tal cual
-                }
-            };
-            const estadoBackend = mapFrontToBack(nuevoEstado);
-
-            await apiManager.putUndoable(`/api/jornadas/${id}/estado`, { estado: estadoBackend }, { label: `Estado jornada ${id}` , snapshotEndpoint: `/api/jornadas/${id}`});
+            await apiManager.putUndoable(`/api/jornadas/${id}/estado`, { estado: nuevoEstado }, { label: `Estado jornada ${id}`, snapshotEndpoint: `/api/jornadas/${id}` });
             Utils.showAlert('Estado actualizado exitosamente', 'success');
             
             await this.cargarDatos(true);
@@ -2133,7 +1924,7 @@ const JornadasManager = {
         try {
             const response = await apiManager.get(`/api/jornadas/${id}`);
             const jornada = response.datos;
-            const estadoVista = jornada.estado === 'preparacion' ? 'borrador' : (jornada.estado === 'completada' ? 'completa' : (jornada.estado === 'archivada' ? 'grabada' : jornada.estado));
+            const estadoVista = jornada.estado || 'preparacion';
             
             let detalleHtml = `
                 <div class="modal fade" id="modalDetalle" tabindex="-1">

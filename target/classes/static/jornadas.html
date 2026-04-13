@@ -184,50 +184,17 @@
             background: #ffffff;
         }
 
-        /* Modo Jornadas 2: la tarjeta es el recuadro */
-        .j2-mode .jornada-card {
-            border: 2px solid #0d6efd !important;
-            border-left: 2px solid #0d6efd !important; /* anula el inline del card */
-            border-radius: 6px;
-            box-shadow: 0 6px 18px rgba(108, 117, 125, 0.25);
-            background: #ffffff;
-        }
-
-        /* Ocultar gestión de historial solo en vista 2 */
-        .j2-mode #historialGestionCard {
-            display: none !important;
-        }
-
-        /* Vista 2: tarjetas pegadas sin espacio entre medias */
-        .j2-mode #listaJornadas .jornada-card {
-            margin: 0 !important;             /* sin separación vertical */
-            border-radius: 0 !important;      /* bordes rectos para pegarse */
-        }
-        .j2-mode #listaJornadas .jornada-card + .jornada-card {
-            border-top-width: 0;              /* evita línea doble entre tarjetas */
-        }
-        /* Opcional: redondear solo la primera y última si se desea */
-        .j2-mode #listaJornadas .jornada-card:first-child {
-            border-top-left-radius: 6px !important;
-            border-top-right-radius: 6px !important;
-        }
-        .j2-mode #listaJornadas .jornada-card:last-child {
-            border-bottom-left-radius: 6px !important;
-            border-bottom-right-radius: 6px !important;
-        }
-
-        /* Vista 3: fondo suave y tarjetas blancas sin bordes, con sombra sutil */
-        /* Vista 3: aplicar color de fondo solo al área de las tarjetas */
-        body.j3-mode {
+        /* Estilos globales de jornadas (anteriormente vista 3) */
+        body {
             background-color: #ffffff;
         }
-        .j3-mode #listaJornadas {
+        #listaJornadas {
             background-color: #e3e8f3 !important;
             border-radius: 10px;
             padding: 16px;
             box-shadow: 0 3px 10px rgba(16, 24, 40, 0.08);
         }
-        .j3-mode .jornada-card {
+        .jornada-card {
             background: #ffffff !important;
             border: none !important;
             border-left: none !important;
@@ -290,11 +257,6 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div class="d-flex align-items-center gap-3">
                         <h2 class="mb-0"><i class="fas fa-calendar-day"></i> Gestión de Jornadas</h2>
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Vista de Jornadas">
-                            <button type="button" id="btnVistaActual" class="btn btn-outline-primary active" onclick="setVistaJornadas('actual')">Ventana actual</button>
-                            <button type="button" id="btnVistaJ2" class="btn btn-outline-primary" onclick="setVistaJornadas('j2')">Jornadas 2</button>
-                            <button type="button" id="btnVistaJ3" class="btn btn-outline-primary" onclick="setVistaJornadas('j3')">Jornadas 3</button>
-                        </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <div class="d-flex align-items-center gap-1">
@@ -414,6 +376,10 @@
                                 <label class="form-label">Lugar:</label>
                                 <input type="text" class="form-control" id="jornadaLugar">
                             </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notas:</label>
+                            <textarea class="form-control" id="jornadaNotas" rows="3" placeholder="Notas de la jornada..."></textarea>
                         </div>
                         <!-- Selección de Cuestionarios -->
                         <div class="mt-4">
@@ -861,12 +827,6 @@
             // Cargar datos iniciales
             JornadasManager.init();
 
-            // Aplicar vista preferida (actual / j2)
-            try {
-                const preferida = localStorage.getItem('vistaJornadas') || 'actual';
-                setVistaJornadas(preferida);
-            } catch {}
-
             // Event listener para cambiar contraseña
             document.getElementById('form-cambiar-password').addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -938,41 +898,6 @@
         function cambiarPassword() {
             const modal = new bootstrap.Modal(document.getElementById('modal-cambiar-password'));
             modal.show();
-        }
-
-        // Conmutar vista “Ventana actual” vs “Jornadas 2/3”
-        function setVistaJornadas(modo) {
-            const bActual = document.getElementById('btnVistaActual');
-            const bJ2 = document.getElementById('btnVistaJ2');
-            const bJ3 = document.getElementById('btnVistaJ3');
-            if (!bActual || !bJ2 || !bJ3) return;
-
-            if (modo === 'j2') {
-                document.body.classList.add('j2-mode');
-                document.body.classList.remove('j3-mode');
-                bJ2.classList.add('active');
-                bActual.classList.remove('active');
-                bJ3.classList.remove('active');
-            } else if (modo === 'j3') {
-                document.body.classList.add('j3-mode');
-                document.body.classList.remove('j2-mode');
-                bJ3.classList.add('active');
-                bActual.classList.remove('active');
-                bJ2.classList.remove('active');
-            } else {
-                document.body.classList.remove('j2-mode');
-                document.body.classList.remove('j3-mode');
-                bActual.classList.add('active');
-                bJ2.classList.remove('active');
-                bJ3.classList.remove('active');
-                modo = 'actual';
-            }
-            try { localStorage.setItem('vistaJornadas', modo); } catch {}
-            
-            // Recargar las jornadas para aplicar el nuevo formato
-            if (window.JornadasManager && typeof window.JornadasManager.mostrarJornadas === 'function') {
-                window.JornadasManager.mostrarJornadas();
-            }
         }
     </script>
 </body>
