@@ -1,2 +1,8 @@
 # Subidas de la aplicación (imágenes y otros ficheros de usuario)
 /uploads/
+
+# Fotos estáticas / migradas bajo resources (no versionar binarios)
+/src/main/resources/static/uploads/
+
+# Copia en salida de compilación (Maven copia resources aquí)
+target/classes/static/uploads/
