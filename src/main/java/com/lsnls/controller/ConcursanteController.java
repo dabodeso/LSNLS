@@ -128,11 +128,6 @@ public class ConcursanteController {
                 return ResponseEntity.badRequest().body("El campo 'nombre' es obligatorio para crear un concursante");
             }
 
-            // Validar edad si se proporciona
-            if (concursanteDTO.getEdad() != null && (concursanteDTO.getEdad() < 18 || concursanteDTO.getEdad() > 99)) {
-                return ResponseEntity.badRequest().body("La edad debe estar entre 18 y 99 años");
-            }
-
             // Validar duración si se proporciona
             if (concursanteDTO.getDuracion() != null && !concursanteDTO.getDuracion().trim().isEmpty()) {
                 if (!concursanteDTO.getDuracion().matches("^\\d{1,2}:\\d{2}$")) {
