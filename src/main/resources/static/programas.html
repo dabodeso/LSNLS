@@ -97,8 +97,10 @@
             background-color: #f8f9fa;
         }
         .foto-concursante {
-            max-width: 120px;
-            max-height: 120px;
+            display: block;
+            width: 100%;
+            max-width: 360px;
+            aspect-ratio: 1 / 1;
             object-fit: cover;
             border-radius: 4px;
             cursor: pointer;
@@ -113,8 +115,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 120px;
-            height: 120px;
+            width: 100%;
+            max-width: 360px;
+            aspect-ratio: 1 / 1;
             border: 2px dashed #ccc;
             border-radius: 4px;
             cursor: pointer;
@@ -178,7 +181,7 @@
         .concursantes-table .col-rrss { width: 8%; }
         .concursantes-table .col-resultado { width: 6%; }
         .concursantes-table .col-duracion { width: 6%; }
-        .concursantes-table .col-foto { width: 12%; }
+        .concursantes-table .col-foto { width: 36%; }
         .concursantes-table .col-momentos { width: 12%; }
         .concursantes-table .col-xusoker { width: 7%; }
         .concursantes-table .col-factor-x { width: 4%; }
@@ -405,6 +408,16 @@
         <!-- Contenedor de Programas -->
         <div id="contenedor-programas">
             <!-- Los programas se cargarán dinámicamente aquí -->
+        </div>
+
+        <!-- Paginación de programas -->
+        <div class="d-flex flex-column align-items-center mb-3" id="seccion-paginacion-programas" style="display:none;">
+            <div class="pagination-info mb-2">
+                <span id="info-paginacion-programas" class="text-muted"></span>
+            </div>
+            <nav aria-label="Paginación de programas">
+                <ul class="pagination mb-0" id="paginacion-programas"></ul>
+            </nav>
         </div>
 
         <!-- Modal para Crear/Editar Programa -->

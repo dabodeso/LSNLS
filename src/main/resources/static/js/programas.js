@@ -154,27 +154,24 @@ function mostrarProgramas() {
         return;
     }
     
-    // Añadir información de paginación
-    let infoPaginacion = '';
-    if (totalItems > 0) {
+    // Actualizar información de paginación en el bloque estático
+    const infoEl = document.getElementById('info-paginacion-programas');
+    const seccionPag = document.getElementById('seccion-paginacion-programas');
+    if (infoEl && totalItems > 0) {
         const inicio = paginaActual * tamañoPagina + 1;
         const fin = Math.min((paginaActual + 1) * tamañoPagina, totalItems);
-        infoPaginacion = `<div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="text-muted">
-                Mostrando ${inicio}-${fin} de ${totalItems} programas
-            </div>
-            <div id="paginacion-programas" class="btn-group">
-                <!-- Los botones de paginación se insertarán aquí -->
-            </div>
-        </div>`;
+        infoEl.textContent = `Mostrando ${inicio}-${fin} de ${totalItems} programas`;
+        if (seccionPag) seccionPag.style.display = '';
+    } else if (seccionPag) {
+        seccionPag.style.display = 'none';
     }
-    
+
     const editProg = puedeEditarCamposPrograma();
     const editConc = puedeEditarCamposConcursante();
     const gestionConc = puedeGestionarConcursantesPrograma();
     const elimProg = puedeEliminarPrograma();
 
-    contenedor.innerHTML = infoPaginacion + visibles.map(programa => {
+    contenedor.innerHTML = visibles.map(programa => {
         const concursantes = concursantesPorPrograma[programa.id] || [];
         const fechaFormateada = formatearFechaPrograma(programa.fechaEmision);
         const totalResultados = calcularTotalResultados(concursantes);
@@ -908,38 +905,55 @@ function mostrarProgramasFiltrados() {
 
 // Renderizar paginación para resultados filtrados
 function renderizarPaginacionFiltrada() {
-    const paginacion = document.getElementById('paginacion-programas');
-    if (!paginacion) return;
-    
-    if (totalPaginas <= 1) {
-        paginacion.innerHTML = '';
-        return;
+    const paginacionEl = document.getElementById('paginacion-programas');
+    const seccionPag = document.getElementById('seccion-paginacion-programas');
+    if (!paginacionEl) return;
+
+    // Actualizar info de paginación
+    const infoEl = document.getElementById('info-paginacion-programas');
+    if (infoEl && totalItems > 0) {
+        const inicio = paginaActual * 5 + 1;
+        const fin = Math.min((paginaActual + 1) * 5, totalItems);
+        infoEl.textContent = `Mostrando ${inicio}-${fin} de ${totalItems} programas`;
+        if (seccionPag) seccionPag.style.display = '';
     }
-    
-    let html = '<nav aria-label="Paginación de programas"><ul class="pagination justify-content-center">';
-    
-    // Botón anterior
-    html += `<li class="page-item ${paginaActual === 0 ? 'disabled' : ''}">
-        <a class="page-link" href="#" onclick="cambiarPaginaFiltrada(${paginaActual - 1})">Anterior</a>
-    </li>`;
-    
+
+    paginacionEl.innerHTML = '';
+    if (totalPaginas <= 1) return;
+
+    // Primera
+    const primera = document.createElement('li');
+    primera.className = `page-item ${paginaActual === 0 ? 'disabled' : ''}`;
+    primera.innerHTML = `<a class="page-link" href="#" onclick="cambiarPaginaFiltrada(0); return false;">Primera</a>`;
+    paginacionEl.appendChild(primera);
+
+    // Anterior
+    const anterior = document.createElement('li');
+    anterior.className = `page-item ${paginaActual === 0 ? 'disabled' : ''}`;
+    anterior.innerHTML = `<a class="page-link" href="#" onclick="cambiarPaginaFiltrada(${paginaActual - 1}); return false;">Anterior</a>`;
+    paginacionEl.appendChild(anterior);
+
     // Números de página
     const inicioPagina = Math.max(0, paginaActual - 2);
-    const finPagina = Math.min(totalPaginas, inicioPagina + 5);
-    
-    for (let i = inicioPagina; i < finPagina; i++) {
-        html += `<li class="page-item ${i === paginaActual ? 'active' : ''}">
-            <a class="page-link" href="#" onclick="cambiarPaginaFiltrada(${i})">${i + 1}</a>
-        </li>`;
+    const finPagina = Math.min(totalPaginas - 1, paginaActual + 2);
+    for (let i = inicioPagina; i <= finPagina; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === paginaActual ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" onclick="cambiarPaginaFiltrada(${i}); return false;">${i + 1}</a>`;
+        paginacionEl.appendChild(li);
     }
-    
-    // Botón siguiente
-    html += `<li class="page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}">
-        <a class="page-link" href="#" onclick="cambiarPaginaFiltrada(${paginaActual + 1})">Siguiente</a>
-    </li>`;
-    
-    html += '</ul></nav>';
-    paginacion.innerHTML = html;
+
+    // Siguiente
+    const siguiente = document.createElement('li');
+    siguiente.className = `page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}`;
+    siguiente.innerHTML = `<a class="page-link" href="#" onclick="cambiarPaginaFiltrada(${paginaActual + 1}); return false;">Siguiente</a>`;
+    paginacionEl.appendChild(siguiente);
+
+    // Última
+    const ultima = document.createElement('li');
+    ultima.className = `page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}`;
+    ultima.innerHTML = `<a class="page-link" href="#" onclick="cambiarPaginaFiltrada(${totalPaginas - 1}); return false;">Última</a>`;
+    paginacionEl.appendChild(ultima);
 }
 
 // Cambiar página en resultados filtrados
@@ -1448,24 +1462,49 @@ async function editarPrograma(programaId) {
 
 // Función para renderizar los controles de paginación
 function renderizarPaginacion() {
-    const paginacionDiv = document.getElementById('paginacion-programas');
-    if (!paginacionDiv) return;
-    
-    let html = '';
-    
-    // Botón Anterior
-    html += `<button class="btn btn-outline-primary" ${paginaActual <= 0 ? 'disabled' : ''} 
-            onclick="cambiarPagina(${paginaActual - 1})">
-            <i class="fas fa-chevron-left"></i> Anterior
-        </button>`;
-    
-    // Botón Siguiente
-    html += `<button class="btn btn-outline-primary" ${paginaActual >= totalPaginas - 1 ? 'disabled' : ''} 
-            onclick="cambiarPagina(${paginaActual + 1})">
-            Siguiente <i class="fas fa-chevron-right"></i>
-        </button>`;
-    
-    paginacionDiv.innerHTML = html;
+    const paginacionEl = document.getElementById('paginacion-programas');
+    const seccionPag = document.getElementById('seccion-paginacion-programas');
+    if (!paginacionEl) return;
+
+    paginacionEl.innerHTML = '';
+    if (totalPaginas <= 1) {
+        if (seccionPag && totalItems <= tamañoPagina) seccionPag.style.display = 'none';
+        return;
+    }
+
+    // Primera
+    const primera = document.createElement('li');
+    primera.className = `page-item ${paginaActual === 0 ? 'disabled' : ''}`;
+    primera.innerHTML = `<a class="page-link" href="#" onclick="cambiarPagina(0); return false;">Primera</a>`;
+    paginacionEl.appendChild(primera);
+
+    // Anterior
+    const anterior = document.createElement('li');
+    anterior.className = `page-item ${paginaActual === 0 ? 'disabled' : ''}`;
+    anterior.innerHTML = `<a class="page-link" href="#" onclick="cambiarPagina(${paginaActual - 1}); return false;">Anterior</a>`;
+    paginacionEl.appendChild(anterior);
+
+    // Números de página
+    const inicioR = Math.max(0, paginaActual - 2);
+    const finR = Math.min(totalPaginas - 1, paginaActual + 2);
+    for (let i = inicioR; i <= finR; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === paginaActual ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" onclick="cambiarPagina(${i}); return false;">${i + 1}</a>`;
+        paginacionEl.appendChild(li);
+    }
+
+    // Siguiente
+    const siguiente = document.createElement('li');
+    siguiente.className = `page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}`;
+    siguiente.innerHTML = `<a class="page-link" href="#" onclick="cambiarPagina(${paginaActual + 1}); return false;">Siguiente</a>`;
+    paginacionEl.appendChild(siguiente);
+
+    // Última
+    const ultima = document.createElement('li');
+    ultima.className = `page-item ${paginaActual === totalPaginas - 1 ? 'disabled' : ''}`;
+    ultima.innerHTML = `<a class="page-link" href="#" onclick="cambiarPagina(${totalPaginas - 1}); return false;">Última</a>`;
+    paginacionEl.appendChild(ultima);
 }
 
 // Función para cambiar de página
@@ -1530,6 +1569,13 @@ function sincronizarAnchosCabeceraCuerpo(contenedor) {
         bodyTable.querySelectorAll('tbody tr').forEach((tr) => {
             const cell = tr.cells[colIndex];
             if (cell) cell.style.width = px;
+        });
+    });
+    // Re-ajustar altura de textareas tras cambio de anchos de columna
+    requestAnimationFrame(() => {
+        bodyTable.querySelectorAll('textarea.campo-editable').forEach(ta => {
+            ta.style.height = 'auto';
+            ta.style.height = ta.scrollHeight + 'px';
         });
     });
 }

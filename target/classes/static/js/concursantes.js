@@ -40,6 +40,9 @@ let jornadaFiltroSeleccion = null;
 let sortByConcursantes = 'id';
 let sortAscConcursantes = true;
 
+// Flag para evitar bucles durante la búsqueda de página por URL ?id=
+let buscandoConcursantePorId = false;
+
 // Paginación de selectores (cuestionario/combo)
 let modalCuestPagina = 1;
 const modalCuestPorPagina = 25;
@@ -682,14 +685,45 @@ return `<tr data-id="${concursante.id}" oncontextmenu="showContextMenu(event, ${
 const params = new URLSearchParams(window.location.search);
 const idDestacado = params.get('id');
 if (idDestacado) {
-setTimeout(() => {
-const fila = tbody.querySelector(`tr[data-id='${idDestacado}']`);
-if (fila) {
-fila.classList.add('table-warning');
-fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+        const fila = tbody.querySelector(`tr[data-id='${idDestacado}']`);
+        if (fila) {
+            fila.classList.add('table-warning');
+            fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (!buscandoConcursantePorId) {
+            navegarAlConcursante(parseInt(idDestacado, 10));
+        }
+    }, 300);
 }
-}, 500);
 }
+
+// Busca en qué página del servidor está el concursante con el id dado y navega a ella
+async function navegarAlConcursante(idBuscado) {
+    if (buscandoConcursantePorId) return;
+    buscandoConcursantePorId = true;
+    try {
+        for (let pagina = 0; pagina < totalPaginas; pagina++) {
+            if (pagina === paginaActual) continue;
+            const p = new URLSearchParams({
+                page: pagina,
+                size: tamanioPagina,
+                sortBy: sortByConcursantes || 'id',
+                sortDir: sortAscConcursantes ? 'asc' : 'desc'
+            });
+            const resp = await fetch(`/api/concursantes?${p}`, { headers: authManager.getAuthHeaders() });
+            if (!resp.ok) continue;
+            const data = await resp.json();
+            const found = (data.content || []).some(c => String(c.id) === String(idBuscado));
+            if (found) {
+                paginaActual = pagina;
+                await cargarConcursantes(true);
+                return;
+            }
+        }
+        console.warn('[CONCURSANTES] ID', idBuscado, 'no encontrado en ninguna página');
+    } finally {
+        buscandoConcursantePorId = false;
+    }
 }
 
 function filtrarConcursantes() {
