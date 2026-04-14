@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS concursantes (
     dia_grabacion DATE,
     lugar VARCHAR(255),
     nombre VARCHAR(255),
-    edad INTEGER,
+    edad VARCHAR(20),
     ocupacion VARCHAR(255),
     redes_sociales VARCHAR(255),
     cuestionario_id BIGINT,

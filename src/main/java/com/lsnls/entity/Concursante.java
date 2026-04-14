@@ -35,7 +35,7 @@ public class Concursante {
 
     private String lugar;
     private String nombre;
-    private Integer edad;
+    private String edad;
     private String ocupacion;
 
     @Column(name = "redes_sociales")

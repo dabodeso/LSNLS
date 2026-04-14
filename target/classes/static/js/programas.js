@@ -650,7 +650,12 @@ function calcularDuracionReal(concursantes) {
         
         if (duracionAUsar) {
             const partes = duracionAUsar.split(':');
-            if (partes.length === 2) {
+            if (partes.length === 3) {
+                const horas   = parseInt(partes[0]) || 0;
+                const minutos = parseInt(partes[1]) || 0;
+                const segundos = parseInt(partes[2]) || 0;
+                totalSegundos += horas * 3600 + minutos * 60 + segundos;
+            } else if (partes.length === 2) {
                 const minutos = parseInt(partes[0]) || 0;
                 const segundos = parseInt(partes[1]) || 0;
                 totalSegundos += minutos * 60 + segundos;

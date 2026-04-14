@@ -1316,7 +1316,10 @@ if (campo === 'duracion') {
 input.placeholder = 'MM:SS (ej: 25:08)';
 input.type = 'text';
 input.pattern = '\\d{1,3}:\\d{2}';
-} else if (['numeroConcursante', 'edad', 'concursantesPorJornada', 'numeroPrograma', 'ordenEscaleta'].includes(campo)) {
+} else if (campo === 'edad') {
+input.placeholder = 'ej: 35 o 35 28';
+input.type = 'text';
+} else if (['numeroConcursante', 'concursantesPorJornada', 'numeroPrograma', 'ordenEscaleta'].includes(campo)) {
 input.placeholder = 'Ingrese un número';
 input.type = 'number';
 }
@@ -1383,8 +1386,8 @@ valorConvertido = nuevoValor; // Mantener como string
                 console.log('⏱️ DEBUG - Duración validada correctamente:', valorConvertido);
 }
 }
-// Campos numéricos enteros (excluyendo duracion)
-else if (['numeroConcursante', 'edad', 'concursantesPorJornada', 'numeroPrograma', 'ordenEscaleta', 'resultado'].includes(campo)) {
+// Campos numéricos enteros (excluyendo duracion y edad que ya es string)
+else if (['numeroConcursante', 'concursantesPorJornada', 'numeroPrograma', 'ordenEscaleta', 'resultado'].includes(campo)) {
 if (nuevoValor === '' || nuevoValor === null) {
 valorConvertido = null;
 } else {
@@ -3046,7 +3049,7 @@ const mapeoEncabezados = {
 // Construir encabezados visibles (ordenables con indicador)
 Object.keys(mapeoEncabezados).forEach(columna => {
 if (configuracionColumnas.columnasVisibles[columna]) {
-const esNumero = ['numero-concur','edad','resultado','numero-pgm','orden-escaleta','cuest','combo'].includes(columna);
+const esNumero = ['numero-concur','resultado','numero-pgm','orden-escaleta','cuest','combo'].includes(columna);
 const attrTipo = esNumero ? ' data-tipo="number"' : '';
 encabezados.push(`<th class="sortable-header"${attrTipo}>${mapeoEncabezados[columna]}<span class="sort-indicator inactive"></span></th>`);
 }
