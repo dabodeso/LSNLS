@@ -8,6 +8,7 @@ import java.util.Set;
 @Data
 public class PreguntaDTO {
     private Long id;
+    private Long version;
     private String tematica;
     private String pregunta;
     private String respuesta;

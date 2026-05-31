@@ -8,6 +8,7 @@ import java.time.LocalTime;
 @Data
 public class ProgramaDTO {
     private Long id;
+    private Long version;
     private Integer temporada;
     private LocalTime duracionAcumulada;
     private String duracionObjetivo;

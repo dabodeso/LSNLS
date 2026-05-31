@@ -391,7 +391,11 @@ public class ComboController {
             }
             
             Combo combo = comboOpt.get();
-            
+
+            if (datos.containsKey("version") && datos.get("version") != null) {
+                combo.setVersion(Long.parseLong(datos.get("version").toString()));
+            }
+
             // Actualizar tipo si se proporciona
             if (datos.containsKey("tipo") && datos.get("tipo") != null) {
                 String tipoStr = datos.get("tipo").toString();

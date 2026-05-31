@@ -234,6 +234,7 @@ public class ProgramaService {
     private Programa convertToEntity(ProgramaDTO dto) {
         Programa programa = new Programa();
         programa.setId(dto.getId());
+        programa.setVersion(dto.getVersion());
         programa.setTemporada(dto.getTemporada());
         programa.setDuracionAcumulada(dto.getDuracionAcumulada());
         programa.setDuracionObjetivo(dto.getDuracionObjetivo());

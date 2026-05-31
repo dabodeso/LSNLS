@@ -824,6 +824,10 @@ public class CuestionarioService {
         }
         Cuestionario cuestionario = optCuestionario.get();
 
+        if (dto.getVersion() != null) {
+            cuestionario.setVersion(dto.getVersion());
+        }
+
         // Conjuntos para calcular diferencias
         Set<Long> actualesIds = new HashSet<>();
         for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {

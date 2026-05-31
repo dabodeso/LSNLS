@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 @Data
 public class ConcursanteDTO {
     private Long id;
+    private Long version;
     private Integer numeroConcursante;
     
     // Relación con jornada

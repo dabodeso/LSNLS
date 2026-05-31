@@ -3,11 +3,14 @@ package com.lsnls.dto;
 import java.util.List;
 
 public class CrearCuestionarioDTO {
+    private Long version;
     private List<Long> preguntasNormales;
     private List<PreguntaMultiplicadoraDTO> preguntasMultiplicadoras;
     private String tematica;
     private String notasDireccion;
 
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
     public List<Long> getPreguntasNormales() { return preguntasNormales; }
     public void setPreguntasNormales(List<Long> preguntasNormales) { this.preguntasNormales = preguntasNormales; }
     public List<PreguntaMultiplicadoraDTO> getPreguntasMultiplicadoras() { return preguntasMultiplicadoras; }

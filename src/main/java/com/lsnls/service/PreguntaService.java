@@ -507,6 +507,10 @@ public class PreguntaService {
 
     public Pregunta actualizarDesdeDTO(Long id, PreguntaDTO dto) {
         Pregunta pregunta = preguntaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada"));
+
+        if (dto.getVersion() != null) {
+            pregunta.setVersion(dto.getVersion());
+        }
         
         System.out.println("✅ [ACTUALIZAR] Iniciando actualización de pregunta ID: " + id);
         System.out.println("✅ [ACTUALIZAR] Estado actual: " + pregunta.getEstado() + ", Estado solicitado: " + dto.getEstado());

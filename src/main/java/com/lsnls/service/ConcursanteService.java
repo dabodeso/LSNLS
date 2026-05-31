@@ -252,7 +252,10 @@ public class ConcursanteService {
         // Obtener el combo anterior para comparar
         Combo comboAnterior = concursante.getCombo();
         
-        BeanUtils.copyProperties(concursanteDTO, concursante, "id");
+        BeanUtils.copyProperties(concursanteDTO, concursante, "id", "version");
+        if (concursanteDTO.getVersion() != null) {
+            concursante.setVersion(concursanteDTO.getVersion());
+        }
         
         // Si se asignó un cuestionario nuevo, cambiar su estado a grabado
         if (concursante.getCuestionario() != null && 
