@@ -1,6 +1,8 @@
 // Módulo de gestión de cuestionarios
 const CuestionariosManager = {
     cuestionarios: [],
+    ultimoListado: [],
+    tematicasGestionadas: [],
     paginaActual: 0,
     tamanioPagina: 25,
     totalCuestionarios: 0,
@@ -272,66 +274,117 @@ const CuestionariosManager = {
         }
     },
 
-    // (sin uso)
-    
-    
-    async mostrarCuestionarios(cuestionarios) {
-        const tbody = document.getElementById('tabla-cuestionarios');
-        if (!tbody) {
-            console.error('No se encontró el elemento tabla-cuestionarios');
-            return;
-        }
-        
-        // Cargar temáticas gestionadas del backend
-        let tematicasGestionadas = [];
-        try {
-            const response = await fetch('/api/cuestionarios/tematicas', {
-                headers: authManager.getAuthHeaders()
-            });
-            if (response.ok) {
-                tematicasGestionadas = await response.json();
-                
-                // Llenar el filtro de temáticas
-                const filtroTematica = document.getElementById('filtro-tematica-cuestionario');
-                if (filtroTematica) {
-                    const valorSeleccionado = filtroTematica.value || '';
-                    // Mantener la primera opción "Todas"
-                    filtroTematica.innerHTML = '<option value="">Todas</option>';
-                    
-                    // Añadir las temáticas
-                    tematicasGestionadas.forEach(tematica => {
-                        const option = document.createElement('option');
-                        option.value = tematica;
-                        option.textContent = tematica;
-                        filtroTematica.appendChild(option);
-                    });
+    obtenerFiltrosActivos() {
+        const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
+        const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
+        const subtema = document.getElementById('filtro-subtema-cuestionario')?.value || '';
+        const busqueda = document.getElementById('buscar-cuestionario')?.value || '';
+        return { estado, tematica, subtema, busqueda, hayFiltros: !!(estado || tematica || subtema || busqueda) };
+    },
 
-                    // Restaurar selección previa si existe
-                    if (valorSeleccionado) {
-                        filtroTematica.value = valorSeleccionado;
-                        // Si no existe en la lista (temática no gestionada), mantener "Todas"
-                        if (filtroTematica.value !== valorSeleccionado) {
-                            filtroTematica.value = '';
-                        }
-                    }
+    normalizarEstado(estado) {
+        return typeof estado === 'string' ? estado : (estado?.name || '');
+    },
+
+    aplicarParcheEnMemoria(id, parche) {
+        const merge = (arr) => {
+            if (!Array.isArray(arr)) return;
+            const idx = arr.findIndex(x => x.id === id);
+            if (idx >= 0) arr[idx] = { ...arr[idx], ...parche };
+        };
+        merge(this.cuestionarios);
+        merge(this.ultimoListado);
+    },
+
+    aplicarEnMemoria(id, cuestionario) {
+        const replace = (arr) => {
+            if (!Array.isArray(arr)) return;
+            const idx = arr.findIndex(x => x.id === id);
+            if (idx >= 0) arr[idx] = cuestionario;
+            else arr.unshift(cuestionario);
+        };
+        replace(this.cuestionarios);
+        replace(this.ultimoListado);
+    },
+
+    cumpleFiltrosBasicos(cuestionario, filtros) {
+        if (filtros.estado && this.normalizarEstado(cuestionario.estado) !== filtros.estado) return false;
+        if (filtros.tematica && (cuestionario.tematica || '') !== filtros.tematica) return false;
+        if (filtros.busqueda && /^\d+$/.test(filtros.busqueda.trim())) {
+            return String(cuestionario.id) === filtros.busqueda.trim();
+        }
+        return true;
+    },
+
+    async sigueEnFiltro(cuestionario, filtros) {
+        if (!filtros.hayFiltros) return true;
+        if (!this.cumpleFiltrosBasicos(cuestionario, filtros)) return false;
+        if (!filtros.subtema && !(filtros.busqueda && !/^\d+$/.test(filtros.busqueda.trim()))) return true;
+        const params = new URLSearchParams({ page: 0, size: 100 });
+        if (filtros.estado) params.append('estado', filtros.estado);
+        if (filtros.tematica) params.append('tematica', filtros.tematica);
+        if (filtros.subtema) params.append('subtema', filtros.subtema);
+        if (filtros.busqueda && !/^\d+$/.test(filtros.busqueda.trim())) params.append('texto', filtros.busqueda);
+        const response = await fetch(`/api/cuestionarios/filtrar?${params}`, { headers: authManager.getAuthHeaders() });
+        if (!response.ok) return true;
+        const data = await response.json();
+        return (data.cuestionarios || []).some(c => c.id === cuestionario.id);
+    },
+
+    eliminarFilasDom(id) {
+        document.querySelectorAll(
+            `tr.fila-cuestionario[data-id="${id}"], tr.cuestionario-subtabla[data-cuestionario-id="${id}"], tr.separador-cuestionario[data-cuestionario-id="${id}"]`
+        ).forEach(el => el.remove());
+    },
+
+    quitarDeListado(id) {
+        this.cuestionarios = (this.cuestionarios || []).filter(c => c.id !== id);
+        this.ultimoListado = (this.ultimoListado || []).filter(c => c.id !== id);
+        if (this.totalCuestionarios > 0) this.totalCuestionarios--;
+        this.actualizarPaginacion();
+        this.eliminarFilasDom(id);
+    },
+
+    engancharEventosSubtablaCuestionario(subtr) {
+        setTimeout(() => {
+            const filas = subtr.querySelectorAll('tbody tr[data-id]');
+            filas.forEach(fila => {
+                fila.addEventListener('click', function() {
+                    const pid = this.getAttribute('data-id');
+                    if (pid) window.open(`preguntas.html?id=${pid}`, '_blank');
+                });
+            });
+        }, 0);
+    },
+
+    async cargarTematicasGestionadas() {
+        try {
+            const response = await fetch('/api/cuestionarios/tematicas', { headers: authManager.getAuthHeaders() });
+            if (!response.ok) return this.tematicasGestionadas;
+            this.tematicasGestionadas = await response.json();
+            const filtroTematica = document.getElementById('filtro-tematica-cuestionario');
+            if (filtroTematica) {
+                const valorSeleccionado = filtroTematica.value || '';
+                filtroTematica.innerHTML = '<option value="">Todas</option>';
+                this.tematicasGestionadas.forEach(tematica => {
+                    const option = document.createElement('option');
+                    option.value = tematica;
+                    option.textContent = tematica;
+                    filtroTematica.appendChild(option);
+                });
+                if (valorSeleccionado) {
+                    filtroTematica.value = valorSeleccionado;
+                    if (filtroTematica.value !== valorSeleccionado) filtroTematica.value = '';
                 }
             }
         } catch (error) {
             console.error('Error al cargar temáticas:', error);
         }
-        
+        return this.tematicasGestionadas;
+    },
 
-        
-        tbody.innerHTML = '';
-        if (!Array.isArray(cuestionarios) || cuestionarios.length === 0) {
-            const tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="5" class="text-center">No hay cuestionarios</td>';
-            tbody.appendChild(tr);
-            return;
-        }
-        
-        cuestionarios.forEach(c => {
-            // Determinar si hay huecos usando slot - solo niveles 1-4
+    renderCuestionarioEnTbody(tbody, c) {
+        const tematicasGestionadas = this.tematicasGestionadas || [];
             const niveles = ['1LS','2NLS','3LS','4NLS'];
             const preguntasPorSlot = {};
             if (Array.isArray(c.preguntas)) {
@@ -399,6 +452,7 @@ const CuestionariosManager = {
             // Subtabla de preguntas con la estética de la tabla de preguntas
             const subtr = document.createElement('tr');
             subtr.classList.add('cuestionario-subtabla');
+            subtr.setAttribute('data-cuestionario-id', c.id);
             const puedeEditarNotas = authManager.hasRole('ROLE_ADMIN') || authManager.hasRole('ROLE_DIRECCION');
             
             // Generar exactamente 4 filas para las preguntas del cuestionario
@@ -456,28 +510,99 @@ const CuestionariosManager = {
             // Añadir separador de espacio entre cuestionarios
             const sep = document.createElement('tr');
             sep.classList.add('separador-cuestionario');
+            sep.setAttribute('data-cuestionario-id', c.id);
             sep.innerHTML = '<td colspan="6"></td>';
             tbody.appendChild(sep);
-            // Añadir evento de click a filas con pregunta para redirigir
-            setTimeout(() => {
-                const filas = subtr.querySelectorAll('tbody tr[data-id]');
-                filas.forEach(fila => {
-                    fila.addEventListener('click', function() {
-                        const id = this.getAttribute('data-id');
-                        if (id) window.open(`preguntas.html?id=${id}`, '_blank');
-                    });
-                });
-            }, 0);
-        });
-        // Delegación para enlaces de preguntas
+            this.engancharEventosSubtablaCuestionario(subtr);
+    },
+
+    async reemplazarFilasDom(id, cuestionario) {
+        const tbody = document.getElementById('tabla-cuestionarios');
+        if (!tbody) return;
+        const existente = tbody.querySelector(`tr.fila-cuestionario[data-id="${id}"]`);
+        let insertBefore = null;
+        if (existente) {
+            let node = existente;
+            if (node.nextElementSibling?.classList.contains('cuestionario-subtabla')) node = node.nextElementSibling;
+            if (node.nextElementSibling?.classList.contains('separador-cuestionario')) node = node.nextElementSibling;
+            insertBefore = node.nextElementSibling;
+            this.eliminarFilasDom(id);
+        }
+        const temp = document.createElement('tbody');
+        this.renderCuestionarioEnTbody(temp, cuestionario);
+        const frag = document.createDocumentFragment();
+        while (temp.firstChild) frag.appendChild(temp.firstChild);
+        if (insertBefore) tbody.insertBefore(frag, insertBefore);
+        else tbody.appendChild(frag);
+    },
+
+    async refrescarFila(id) {
+        try {
+            const response = await fetch(`/api/cuestionarios/${id}`, { headers: authManager.getAuthHeaders() });
+            if (!response.ok) throw new Error('No se pudo obtener el cuestionario');
+            const cuestionario = await response.json();
+            this.aplicarEnMemoria(id, cuestionario);
+            const filtros = this.obtenerFiltrosActivos();
+            if (filtros.hayFiltros && !(await this.sigueEnFiltro(cuestionario, filtros))) {
+                this.quitarDeListado(id);
+                return;
+            }
+            await this.reemplazarFilasDom(id, cuestionario);
+        } catch (error) {
+            console.error('Error al refrescar fila de cuestionario:', error);
+        }
+    },
+
+    async insertarOActualizarFila(id) {
+        const tbody = document.getElementById('tabla-cuestionarios');
+        if (!tbody) return;
+        if (tbody.querySelector(`tr.fila-cuestionario[data-id="${id}"]`)) {
+            await this.refrescarFila(id);
+            return;
+        }
+        try {
+            const response = await fetch(`/api/cuestionarios/${id}`, { headers: authManager.getAuthHeaders() });
+            if (!response.ok) return;
+            const cuestionario = await response.json();
+            const filtros = this.obtenerFiltrosActivos();
+            if (filtros.hayFiltros && !(await this.sigueEnFiltro(cuestionario, filtros))) return;
+            this.aplicarEnMemoria(id, cuestionario);
+            const temp = document.createElement('tbody');
+            this.renderCuestionarioEnTbody(temp, cuestionario);
+            const frag = document.createDocumentFragment();
+            while (temp.firstChild) frag.appendChild(temp.firstChild);
+            const vacio = tbody.querySelector('tr td.text-center');
+            if (vacio && vacio.textContent.includes('No hay cuestionarios')) vacio.closest('tr')?.remove();
+            tbody.insertBefore(frag, tbody.firstChild);
+            this.totalCuestionarios++;
+            this.actualizarPaginacion();
+        } catch (error) {
+            console.error('Error al insertar fila de cuestionario:', error);
+        }
+    },
+
+    async mostrarCuestionarios(cuestionarios) {
+        const tbody = document.getElementById('tabla-cuestionarios');
+        if (!tbody) {
+            console.error('No se encontró el elemento tabla-cuestionarios');
+            return;
+        }
+        await this.cargarTematicasGestionadas();
+        tbody.innerHTML = '';
+        if (!Array.isArray(cuestionarios) || cuestionarios.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = '<td colspan="5" class="text-center">No hay cuestionarios</td>';
+            tbody.appendChild(tr);
+            return;
+        }
+        cuestionarios.forEach(c => this.renderCuestionarioEnTbody(tbody, c));
         tbody.querySelectorAll('.enlace-pregunta').forEach(a => {
             a.addEventListener('click', function(e) {
                 e.preventDefault();
-                const id = this.dataset.id;
-                window.open(`preguntas.html?id=${id}`, '_blank');
+                const pid = this.dataset.id;
+                window.open(`preguntas.html?id=${pid}`, '_blank');
             });
         });
-        // Resaltar y hacer scroll si hay id en la URL
         const params = new URLSearchParams(window.location.search);
         const idDestacado = params.get('id');
         if (idDestacado) {
@@ -489,9 +614,9 @@ const CuestionariosManager = {
                 }
             }, 500);
         }
-        // Restaurar posición/foco
-        setTimeout(() => CuestionariosManager.restoreScrollOrFocus(), 0);
+        setTimeout(() => this.restoreScrollOrFocus(), 0);
     },
+
     getNivelColor(nivel) {
         if (["_2NLS", "_4NLS", "_5NLS", "2NLS", "4NLS"].includes(nivel)) return 'text-danger fw-bold';
         if (["_1LS", "_3LS", "_5LS", "1LS", "3LS"].includes(nivel)) return 'text-success fw-bold';
@@ -764,11 +889,11 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
         // Función para añadir la pregunta al cuestionario
         const doAdd = async () => {
             await apiManager.post(`/api/cuestionarios/${cuestionarioId}/preguntas`, { preguntaId: id, factorMultiplicacion }, { headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' } });
-            await CuestionariosManager.cargarCuestionarios();
+            await CuestionariosManager.refrescarFila(cuestionarioId);
         };
         const undoDelete = async () => {
             await apiManager.delete(`/api/cuestionarios/${cuestionarioId}/preguntas/${id}`, { headers: authManager.getAuthHeaders() });
-            await CuestionariosManager.cargarCuestionarios();
+            await CuestionariosManager.refrescarFila(cuestionarioId);
         };
 
         // Verificar si el nivel de la pregunta coincide con el nivel esperado
@@ -1159,7 +1284,8 @@ async function guardarCuestionario() {
         } catch (e) {
             console.warn('No se pudo aplicar el estado seleccionado tras guardar:', e);
         }
-        await CuestionariosManager.cargarCuestionarios();
+        const idFinalGuardado = (data && (data.id || data.ID)) || (cuestionarioId || null);
+        if (idFinalGuardado) await CuestionariosManager.insertarOActualizarFila(Number(idFinalGuardado));
         CuestionariosManager.restoreScrollOrFocus();
     } catch (error) {
         console.error('❌ [FRONTEND] Error al guardar:', error);
@@ -1177,6 +1303,7 @@ async function guardarCuestionario() {
 // --- EDICIÓN Y ELIMINACIÓN DE CUESTIONARIOS ---
 window.editarCuestionario = async function(id) {
     try {
+        await EditLockManager.tryAcquire('CUESTIONARIO', id);
         CuestionariosManager.lastFocusCuestionarioId = id;
         const resp = await fetch(`/api/cuestionarios/${id}`, { headers: authManager.getAuthHeaders() });
         if (!resp.ok) throw new Error('No se pudo cargar el cuestionario');
@@ -1284,6 +1411,12 @@ window.editarCuestionario = async function(id) {
         if (modalElement) {
             const modal = new bootstrap.Modal(modalElement);
             modal.show();
+            EditLockManager.startSession({
+                entityType: 'CUESTIONARIO',
+                entityId: id,
+                modalSelector: '#modal-cuestionario',
+                onExpire: () => guardarCuestionario()
+            });
         }
     } catch (e) {
         console.error('Error en editarCuestionario:', e);
@@ -1332,7 +1465,7 @@ window.eliminarCuestionario = async function(id) {
         }
         
         Toastify({ text: 'Cuestionario eliminado', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
-        await CuestionariosManager.cargarCuestionarios();
+        CuestionariosManager.quitarDeListado(id);
         CuestionariosManager.restoreScrollOrFocus();
     } catch (e) {
         console.error('Error al eliminar cuestionario:', e);
@@ -1383,12 +1516,12 @@ window.eliminarPreguntaDeCuestionario = async function(cuestionarioId, slot) {
         }
         const doDelete = async () => {
             await apiManager.delete(`/api/cuestionarios/${cuestionarioId}/preguntas/slot/${slot}`, { headers: authManager.getAuthHeaders() });
-            await CuestionariosManager.cargarCuestionarios();
+            await CuestionariosManager.refrescarFila(cuestionarioId);
         };
         const undoAdd = async () => {
             if (preguntaId) {
                 await apiManager.post(`/api/cuestionarios/${cuestionarioId}/preguntas`, { preguntaId, factorMultiplicacion: 1 }, { headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' } });
-                await CuestionariosManager.cargarCuestionarios();
+                await CuestionariosManager.refrescarFila(cuestionarioId);
             }
         };
         await doDelete();
@@ -1396,7 +1529,6 @@ window.eliminarPreguntaDeCuestionario = async function(cuestionarioId, slot) {
             window.UndoManager.record({ do: doDelete, undo: undoAdd, label: `Quitar pregunta slot ${slot} de cuestionario ${cuestionarioId}` });
         }
         Toastify({ text: 'Pregunta eliminada del cuestionario', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
-        await CuestionariosManager.cargarCuestionarios();
         CuestionariosManager.restoreScrollOrFocus();
     } catch (e) {
         Toastify({ text: 'Error al quitar pregunta: ' + e.message, duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
@@ -1410,11 +1542,18 @@ window.anadirPreguntaACuestionario = function(cuestionarioId, nivel) {
 }
 
 // Guardar el último listado de cuestionarios para búsquedas rápidas
-CuestionariosManager.ultimoListado = [];
 const _oldMostrar = CuestionariosManager.mostrarCuestionarios;
 CuestionariosManager.mostrarCuestionarios = function(cuestionarios) {
     CuestionariosManager.ultimoListado = cuestionarios;
     _oldMostrar.call(this, cuestionarios);
+    if (typeof SyncMonitor !== 'undefined' && Array.isArray(cuestionarios)) {
+        SyncMonitor.resetFromVisible(cuestionarios.map(c => ({
+            entityType: 'CUESTIONARIO',
+            entityId: c.id,
+            version: c.version || 0,
+            label: `Cuestionario ${c.id}`
+        })));
+    }
 }
 
 // Funciones de filtrado
@@ -1537,11 +1676,11 @@ window.actualizarNotasDireccion = async function(cuestionarioId, notas) {
         const notasPrevias = previo ? (previo.notasDireccion || '') : '';
         const doAction = async () => {
             await apiManager.put(`/api/cuestionarios/${cuestionarioId}/notas-direccion`, { notasDireccion: notas });
-            await CuestionariosManager.cargarCuestionarios();
+            CuestionariosManager.aplicarParcheEnMemoria(cuestionarioId, { notasDireccion: notas });
         };
         const undoAction = async () => {
             await apiManager.put(`/api/cuestionarios/${cuestionarioId}/notas-direccion`, { notasDireccion: notasPrevias });
-            await CuestionariosManager.cargarCuestionarios();
+            CuestionariosManager.aplicarParcheEnMemoria(cuestionarioId, { notasDireccion: notasPrevias });
         };
         await doAction();
         if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Notas dirección cuestionario ${cuestionarioId}` });
@@ -1617,17 +1756,16 @@ window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
         const estadoPrevio = previo ? previo.estado : null;
         const doAction = async () => {
             await apiManager.put(`/api/cuestionarios/${id}/estado?nuevoEstado=${encodeURIComponent(nuevoEstado)}`, null);
-            await CuestionariosManager.cargarCuestionarios();
+            await CuestionariosManager.refrescarFila(id);
         };
         const undoAction = async () => {
             if (estadoPrevio) {
                 await apiManager.put(`/api/cuestionarios/${id}/estado?nuevoEstado=${encodeURIComponent(estadoPrevio)}`, null);
-                await CuestionariosManager.cargarCuestionarios();
+                await CuestionariosManager.refrescarFila(id);
             }
         };
         await doAction();
         if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Estado cuestionario ${id}` });
-        await CuestionariosManager.cargarCuestionarios();
         
         Toastify({
             text: `Estado cambiado a: ${nuevoEstado}`,
@@ -1658,15 +1796,14 @@ window.cambiarTematicaCuestionario = async function(id, nuevaTematica) {
         const tematicaPrevia = previo ? (previo.tematica || '') : '';
         const doAction = async () => {
             await apiManager.put(`/api/cuestionarios/${id}/tematica`, { tematica: nuevaTematica });
-            await CuestionariosManager.cargarCuestionarios();
+            await CuestionariosManager.refrescarFila(id);
         };
         const undoAction = async () => {
             await apiManager.put(`/api/cuestionarios/${id}/tematica`, { tematica: tematicaPrevia });
-            await CuestionariosManager.cargarCuestionarios();
+            await CuestionariosManager.refrescarFila(id);
         };
         await doAction();
         if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Temática cuestionario ${id}` });
-        await CuestionariosManager.cargarCuestionarios();
         
         Toastify({
             text: `Temática cambiada a: ${nuevaTematica || 'Genérico'}`,

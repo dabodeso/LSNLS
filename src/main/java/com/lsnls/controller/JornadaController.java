@@ -2,8 +2,10 @@ package com.lsnls.controller;
 
 import com.lsnls.dto.ApiResponse;
 import com.lsnls.dto.JornadaDTO;
+import com.lsnls.entity.AuditLog;
 import com.lsnls.entity.Usuario;
 import com.lsnls.service.AuthorizationService;
+import com.lsnls.service.EditLockService;
 import com.lsnls.service.JornadaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -33,6 +35,9 @@ public class JornadaController {
 
     @Autowired
     private AuthorizationService authService;
+
+    @Autowired
+    private EditLockService editLockService;
 
     @GetMapping
     @PreAuthorize("@authorizationService.canRead()")
@@ -129,7 +134,9 @@ public class JornadaController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<JornadaDTO>> actualizar(@PathVariable Long id, @RequestBody JornadaDTO jornadaDTO) {
         try {
+            editLockService.assertCanEdit(AuditLog.EntityType.JORNADA, id);
             JornadaDTO jornadaActualizada = jornadaService.actualizar(id, jornadaDTO);
+            editLockService.logEntityUpdate(AuditLog.EntityType.JORNADA, id, "Actualización de jornada");
             return ResponseEntity.ok(ApiResponse.exitoso("Jornada actualizada exitosamente", jornadaActualizada));
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409)
@@ -168,7 +175,9 @@ public class JornadaController {
                     .body(ApiResponse.error("El estado es requerido"));
             }
             
+            editLockService.assertCanEdit(AuditLog.EntityType.JORNADA, id);
             JornadaDTO jornadaActualizada = jornadaService.cambiarEstado(id, nuevoEstado);
+            editLockService.logEntityUpdate(AuditLog.EntityType.JORNADA, id, "Cambio de estado de jornada");
             return ResponseEntity.ok(ApiResponse.exitoso("Estado actualizado exitosamente", jornadaActualizada));
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409)

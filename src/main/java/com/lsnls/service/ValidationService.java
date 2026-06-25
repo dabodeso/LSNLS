@@ -182,11 +182,10 @@ public class ValidationService {
     public ValidationResult validarIntegridadCombo(Combo combo) {
         ValidationResult result = new ValidationResult();
         
-        // Validar que tenga exactamente 3 preguntas
         if (combo.getPreguntas() != null) {
             int totalPreguntas = combo.getPreguntas().size();
-            if (totalPreguntas != 3) {
-                result.addError("Un combo debe tener exactamente 3 preguntas, actual: " + totalPreguntas);
+            if (totalPreguntas == 0) {
+                result.addError("Un combo debe tener al menos una pregunta");
             }
             
             // Validar factores únicos
@@ -218,14 +217,6 @@ public class ValidationService {
                     factoresPresentes[2] = true;
                 } else {
                     // No validamos otros valores ya que ahora el factor es texto libre
-                }
-            }
-            
-            // Validar que todos los factores estén presentes
-            String[] nombreFactores = {"X2 (factor 2)", "X3 (factor 3)", "X (factor 0)"};
-            for (int i = 0; i < 3; i++) {
-                if (!factoresPresentes[i]) {
-                    result.addError("Falta pregunta con " + nombreFactores[i]);
                 }
             }
         }

@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.lsnls.dto.CrearCuestionarioDTO;
+import com.lsnls.entity.AuditLog;
+import com.lsnls.service.EditLockService;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.List;
@@ -42,6 +44,9 @@ public class CuestionarioController {
     
     @Autowired
     private AuthorizationService authorizationService;
+
+    @Autowired
+    private EditLockService editLockService;
 
     @GetMapping
     @PreAuthorize("@authorizationService.canRead()")
@@ -107,7 +112,9 @@ public class CuestionarioController {
     public ResponseEntity<?> actualizarNotasDireccion(@PathVariable Long id, @RequestBody Map<String, String> datos) {
         try {
             String notasDireccion = datos.get("notasDireccion");
+            editLockService.assertCanEdit(AuditLog.EntityType.CUESTIONARIO, id);
             cuestionarioService.actualizarNotasDireccion(id, notasDireccion);
+            editLockService.logEntityUpdate(AuditLog.EntityType.CUESTIONARIO, id, "Actualización de notas de dirección");
             return ResponseEntity.ok(Map.of("success", true, "message", "Notas de dirección actualizadas correctamente"));
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El cuestionario ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
@@ -180,10 +187,12 @@ public class CuestionarioController {
             
             try {
                 log.info("[ACTUALIZAR CUESTIONARIO] Llamando a servicio actualizarDesdeDTO");
+                editLockService.assertCanEdit(AuditLog.EntityType.CUESTIONARIO, id);
                 Cuestionario actualizado = cuestionarioService.actualizarDesdeDTO(id, dto);
                 if (actualizado != null) {
                     log.info("[ACTUALIZAR CUESTIONARIO] Actualización exitosa - ID: {} - Preguntas: {}", 
                             actualizado.getId(), actualizado.getPreguntas().size());
+                    editLockService.logEntityUpdate(AuditLog.EntityType.CUESTIONARIO, id, "Actualización de cuestionario");
                     return ResponseEntity.ok(Map.of(
                         "id", actualizado.getId(),
                         "message", "Cuestionario actualizado correctamente con " + dto.getPreguntasNormales().size() + " preguntas"
@@ -237,7 +246,9 @@ public class CuestionarioController {
                 return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado de este cuestionario. Tu rol actual no permite editar cuestionarios en estado '" + estadoDescripcion + "'.");
             }
 
+            editLockService.assertCanEdit(AuditLog.EntityType.CUESTIONARIO, id);
             Cuestionario cuestionarioActualizado = cuestionarioService.cambiarEstado(id, nuevoEstado);
+            editLockService.logEntityUpdate(AuditLog.EntityType.CUESTIONARIO, id, "Cambio de estado de cuestionario");
             // Devolver payload ligero para evitar problemas de serialización con proxies LAZY
             return ResponseEntity.ok(Map.of(
                 "id", cuestionarioActualizado.getId(),
@@ -265,7 +276,9 @@ public class CuestionarioController {
             }
 
             String nuevaTematica = datos.get("tematica");
+            editLockService.assertCanEdit(AuditLog.EntityType.CUESTIONARIO, id);
             Cuestionario cuestionarioActualizado = cuestionarioService.cambiarTematica(id, nuevaTematica);
+            editLockService.logEntityUpdate(AuditLog.EntityType.CUESTIONARIO, id, "Cambio de temática de cuestionario");
             // Devolver payload ligero para evitar problemas de serialización con proxies LAZY
             return ResponseEntity.ok(Map.of(
                 "id", cuestionarioActualizado.getId(),

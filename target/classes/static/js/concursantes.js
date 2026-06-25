@@ -1659,6 +1659,52 @@ async function iniciarReciclajeParcialDesdePreview() {
             return;
         }
         const preguntas = resp.datos;
+
+        if (preguntas.length === 0) {
+            mostrarError('El combo no tiene preguntas');
+            return;
+        }
+
+        let jornadaId = null;
+        if (concursanteActual && concursanteActual.jornadaId) {
+            jornadaId = concursanteActual.jornadaId;
+        } else if (concursanteParaReemplazo) {
+            try {
+                const concursante = await apiManager.get(`/api/concursantes/${concursanteParaReemplazo}`);
+                if (concursante && concursante.jornadaId) {
+                    jornadaId = concursante.jornadaId;
+                }
+            } catch (e) {
+                console.error('Error al obtener concursante:', e);
+            }
+        }
+        if (!jornadaId) {
+            mostrarError('Este concursante no tiene jornada asignada');
+            return;
+        }
+
+        if (preguntas.length === 1) {
+            const confirmacion = confirm(
+                'Este combo solo tiene 1 pregunta.\n\nSe reaprovechará completo.\n\n¿Continuar?'
+            );
+            if (!confirmacion) return;
+            const r = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-entero/${comboId}`);
+            if (r && r.exito) {
+                mostrarExito('Combo reaprovechado correctamente.');
+                const prev = bootstrap.Modal.getInstance(document.getElementById('modal-preview-combo'));
+                if (prev) prev.hide();
+                await cargarConcursantes(true);
+            } else {
+                mostrarError(r?.mensaje || 'No se pudo reaprovechar el combo');
+            }
+            return;
+        }
+
+        if (preguntas.length < 2) {
+            mostrarError('Se necesitan al menos 2 preguntas para elegir cuál se usó');
+            return;
+        }
+
         // Construir un modal ligero para seleccionar la usada
         const html = `
             <div class="modal fade" id="modal-reciclar-desde-preview" tabindex="-1">
@@ -1700,25 +1746,13 @@ async function iniciarReciclajeParcialDesdePreview() {
                 const sel = document.querySelector('input[name="preguntaUsada"]:checked');
                 if (!sel) { mostrarError('Selecciona la pregunta usada'); return; }
                 const preguntaUsadaId = sel.value;
-                // Necesitamos la jornada del concursante para el endpoint
-                let jornadaId = null;
-                if (concursanteActual && concursanteActual.jornadaId) {
-                    jornadaId = concursanteActual.jornadaId;
-                } else if (concursanteParaReemplazo) {
-                    // Si no estamos en edición, obtener el concursante por su ID
-                    try {
-                        const concursante = await apiManager.get(`/api/concursantes/${concursanteParaReemplazo}`);
-                        if (concursante && concursante.jornadaId) {
-                            jornadaId = concursante.jornadaId;
-                        }
-                    } catch (e) {
-                        console.error('Error al obtener concursante:', e);
-                    }
-                }
-                if (!jornadaId) { mostrarError('Este concursante no tiene jornada asignada'); return; }
                 const r = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-parcial/${comboId}`, { preguntaUsadaId });
                 if (r && r.exito) {
-                    Utils.showAlert('Reciclaje parcial aplicado. Otras dos preguntas quedan reciclables.', 'success');
+                    const restantes = preguntas.length - 1;
+                    const msg = restantes === 1
+                        ? 'Reciclaje parcial aplicado. La pregunta restante quedó en un combo nuevo.'
+                        : `Reciclaje parcial aplicado. Las ${restantes} preguntas restantes quedaron en un combo nuevo.`;
+                    Utils.showAlert(msg, 'success');
                     bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-desde-preview')).hide();
                     // Cerrar preview y recargar lista para refrescar estados
                     const prev = bootstrap.Modal.getInstance(document.getElementById('modal-preview-combo'));
@@ -2257,12 +2291,33 @@ async function iniciarReciclajeComboDesdeFormulario() {
         
         const preguntas = response.datos;
         
-        if (preguntas.length !== 3) {
-            mostrarError('El combo debe tener exactamente 3 preguntas para reciclaje parcial');
+        if (preguntas.length === 0) {
+            mostrarError('El combo no tiene preguntas');
+            return;
+        }
+
+        // 1 pregunta → reaprovechado entero
+        if (preguntas.length === 1) {
+            const confirmacion = confirm(
+                'Este combo solo tiene 1 pregunta.\n\nSe reaprovechará completo y quedará disponible para otras jornadas.\n\n¿Continuar?'
+            );
+            if (!confirmacion) return;
+
+            const reciclaje = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-entero/${comboId}`);
+            if (reciclaje && reciclaje.exito) {
+                mostrarExito('Combo reaprovechado correctamente.');
+            } else {
+                mostrarError(reciclaje?.mensaje || 'Error al reaprovechar el combo');
+            }
+            return;
+        }
+
+        if (preguntas.length < 2) {
+            mostrarError('Se necesitan al menos 2 preguntas para elegir cuál se usó');
             return;
         }
         
-        // Crear y mostrar modal para seleccionar pregunta usada
+        // 2+ preguntas → elegir cuál se usó
         mostrarModalReciclajeCombo(comboId, preguntas, jornadaId);
         
     } catch (error) {
@@ -2273,6 +2328,11 @@ async function iniciarReciclajeComboDesdeFormulario() {
 
 // Función para mostrar modal de reciclaje de combo
 function mostrarModalReciclajeCombo(comboId, preguntas, jornadaId) {
+    const restantes = preguntas.length - 1;
+    const textoRestantes = restantes === 1
+        ? 'Se creará un nuevo combo con la pregunta restante.'
+        : `Se creará un nuevo combo con las ${restantes} preguntas restantes.`;
+
     // Eliminar modal anterior si existe
     const modalAnterior = document.getElementById('modal-reciclar-combo-formulario');
     if (modalAnterior) {
@@ -2294,17 +2354,18 @@ function mostrarModalReciclajeCombo(comboId, preguntas, jornadaId) {
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i>
                             <strong>Selecciona la pregunta que se usó en este combo:</strong><br>
-                            Se creará un nuevo combo con las 2 preguntas restantes.
+                            ${textoRestantes}
                         </div>
                         <div id="preguntas-combo-reciclar" class="row">
                             ${preguntas.map((p, i) => {
-                                const preguntaTexto = p.pregunta?.pregunta || p.pregunta || 'Sin texto';
-                                const respuesta = p.pregunta?.respuesta || p.respuesta || '';
+                                const preguntaId = p.id || p.pregunta?.id;
+                                const preguntaTexto = (typeof p.pregunta === 'string' ? p.pregunta : p.pregunta?.pregunta) || 'Sin texto';
+                                const respuesta = p.respuesta || p.pregunta?.respuesta || '';
                                 return `
                                     <div class="col-md-12 mb-3">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="preguntaUsadaReciclar" id="pregUsada${p.pregunta?.id || p.id}" value="${p.pregunta?.id || p.id}">
-                                            <label class="form-check-label" for="pregUsada${p.pregunta?.id || p.id}">
+                                            <input class="form-check-input" type="radio" name="preguntaUsadaReciclar" id="pregUsada${preguntaId}" value="${preguntaId}">
+                                            <label class="form-check-label" for="pregUsada${preguntaId}">
                                                 <strong>Pregunta ${i + 1}:</strong> ${preguntaTexto.substring(0, 100)}${preguntaTexto.length > 100 ? '...' : ''}
                                                 ${respuesta ? `<br><small class="text-muted">Respuesta: ${respuesta}</small>` : ''}
                                             </label>
@@ -2365,7 +2426,13 @@ async function confirmarReciclajeComboDesdeFormulario(comboId, jornadaId) {
         });
         
         if (response && response.exito) {
-            mostrarExito('Combo reciclado correctamente. Se ha creado un nuevo combo con las 2 preguntas restantes.');
+            const restantes = document.querySelectorAll('input[name="preguntaUsadaReciclar"]').length - 1;
+            const msg = restantes === 1
+                ? 'Combo reciclado correctamente. Se ha creado un nuevo combo con la pregunta restante.'
+                : restantes > 1
+                    ? `Combo reciclado correctamente. Se ha creado un nuevo combo con las ${restantes} preguntas restantes.`
+                    : 'Combo reciclado correctamente.';
+            mostrarExito(msg);
             
             // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-combo-formulario'));

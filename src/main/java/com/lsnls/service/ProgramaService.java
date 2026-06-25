@@ -228,6 +228,7 @@ public class ProgramaService {
         dto.setGap(programa.getGap());
         dto.setTotalConcursantes(programa.getTotalConcursantes());
         dto.setCreditosEspeciales(programa.getCreditosEspeciales());
+        dto.setVersion(programa.getVersion());
         return dto;
     }
 

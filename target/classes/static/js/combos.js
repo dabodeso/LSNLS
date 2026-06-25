@@ -294,28 +294,93 @@ const CombosManager = {
         }
     },
 
-    async mostrarCombos(combos) {
-        const tbody = document.getElementById('tabla-combos');
-        if (!tbody) {
-            console.error('No se encontró el elemento tabla-combos');
-            return;
-        }
-        
-        // Cargar temáticas para el filtro
-        await cargarOpcionesTematicas();
-        
+    obtenerFiltrosActivos() {
+        const estado = document.getElementById('filtro-estado-combo')?.value || '';
+        const tipo = document.getElementById('filtro-tipo-combo')?.value || '';
+        const tematica = document.getElementById('filtro-tematica-combo')?.value || '';
+        const subtema = document.getElementById('filtro-subtema-combo')?.value || '';
+        const busqueda = document.getElementById('buscar-combo')?.value || '';
+        return { estado, tipo, tematica, subtema, busqueda, hayFiltros: !!(estado || tipo || tematica || subtema || busqueda) };
+    },
 
-        
-        tbody.innerHTML = '';
-        if (!Array.isArray(combos) || combos.length === 0) {
-            const tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="5" class="text-center">No hay combos</td>';
-            tbody.appendChild(tr);
-            return;
+    normalizarEstado(estado) {
+        return typeof estado === 'string' ? estado : (estado?.name || '');
+    },
+
+    aplicarParcheEnMemoria(id, parche) {
+        const merge = (arr) => {
+            if (!Array.isArray(arr)) return;
+            const idx = arr.findIndex(x => x.id === id);
+            if (idx >= 0) arr[idx] = { ...arr[idx], ...parche };
+        };
+        merge(this.combos);
+        merge(this.ultimoListado);
+    },
+
+    aplicarEnMemoria(id, combo) {
+        const replace = (arr) => {
+            if (!Array.isArray(arr)) return;
+            const idx = arr.findIndex(x => x.id === id);
+            if (idx >= 0) arr[idx] = combo;
+            else arr.unshift(combo);
+        };
+        replace(this.combos);
+        replace(this.ultimoListado);
+    },
+
+    cumpleFiltrosBasicos(combo, filtros) {
+        if (filtros.estado && this.normalizarEstado(combo.estado) !== filtros.estado) return false;
+        if (filtros.tipo && (combo.tipo || '') !== filtros.tipo) return false;
+        if (filtros.tematica && (combo.tematica || '') !== filtros.tematica) return false;
+        if (filtros.busqueda && /^\d+$/.test(filtros.busqueda.trim())) {
+            return String(combo.id) === filtros.busqueda.trim();
         }
-        combos.forEach(c => {
-            
-            // Determinar si hay huecos usando slot
+        return true;
+    },
+
+    async sigueEnFiltro(combo, filtros) {
+        if (!filtros.hayFiltros) return true;
+        if (!this.cumpleFiltrosBasicos(combo, filtros)) return false;
+        if (!filtros.subtema && !(filtros.busqueda && !/^\d+$/.test(filtros.busqueda.trim()))) return true;
+        const params = new URLSearchParams({ page: 0, size: 100 });
+        if (filtros.estado) params.append('estado', filtros.estado);
+        if (filtros.tipo) params.append('tipo', filtros.tipo);
+        if (filtros.tematica) params.append('tematica', filtros.tematica);
+        if (filtros.subtema) params.append('subtema', filtros.subtema);
+        if (filtros.busqueda && !/^\d+$/.test(filtros.busqueda.trim())) params.append('texto', filtros.busqueda);
+        const response = await fetch(`/api/combos/filtrar?${params}`, { headers: authManager.getAuthHeaders() });
+        if (!response.ok) return true;
+        const data = await response.json();
+        return (data.combos || []).some(c => c.id === combo.id);
+    },
+
+    eliminarFilasDom(id) {
+        document.querySelectorAll(
+            `tr.fila-combo[data-id="${id}"], tr.cuestionario-subtabla[data-combo-id="${id}"], tr.separador-combo[data-combo-id="${id}"]`
+        ).forEach(el => el.remove());
+    },
+
+    quitarDeListado(id) {
+        this.combos = (this.combos || []).filter(c => c.id !== id);
+        this.ultimoListado = (this.ultimoListado || []).filter(c => c.id !== id);
+        if (this.totalCombos > 0) this.totalCombos--;
+        this.actualizarPaginacion();
+        this.eliminarFilasDom(id);
+    },
+
+    engancharEventosSubtablaCombo(subtr) {
+        setTimeout(() => {
+            const filas = subtr.querySelectorAll('tbody tr[data-id]');
+            filas.forEach(fila => {
+                fila.addEventListener('click', function() {
+                    const pid = this.getAttribute('data-id');
+                    if (pid) window.open(`preguntas.html?id=${pid}`, '_blank');
+                });
+            });
+        }, 0);
+    },
+
+    renderComboEnTbody(tbody, c) {
             const niveles = ['PM1','PM2','PM3'];
             const preguntasPorSlot = {};
             const preguntasAsignadas = new Set(); // Para controlar qué preguntas ya se han asignado
@@ -404,6 +469,7 @@ const CombosManager = {
             // Subtabla de preguntas con la estética de cuestionarios
             const subtr = document.createElement('tr');
             subtr.classList.add('cuestionario-subtabla');
+            subtr.setAttribute('data-combo-id', c.id);
             
             // Generar exactamente 3 filas para las preguntas del combo
             let filasPreguntas = '';
@@ -519,20 +585,92 @@ const CombosManager = {
             // Separador entre combos
             const sep = document.createElement('tr');
             sep.classList.add('separador-combo');
+            sep.setAttribute('data-combo-id', c.id);
             sep.innerHTML = '<td colspan="7"></td>';
             tbody.appendChild(sep);
-            // Añadir evento de click a filas con pregunta para redirigir
-                setTimeout(() => {
-                const filas = subtr.querySelectorAll('tbody tr[data-id]');
-                filas.forEach(fila => {
-                    fila.addEventListener('click', function() {
-                        const id = this.getAttribute('data-id');
-                        if (id) window.open(`preguntas.html?id=${id}`, '_blank');
-                    });
-                });
-            }, 0);
-        });
-        // Resaltar y hacer scroll si hay id en la URL
+            this.engancharEventosSubtablaCombo(subtr);
+    },
+
+    async reemplazarFilasDom(id, combo) {
+        const tbody = document.getElementById('tabla-combos');
+        if (!tbody) return;
+        const existente = tbody.querySelector(`tr.fila-combo[data-id="${id}"]`);
+        let insertBefore = null;
+        if (existente) {
+            let node = existente;
+            if (node.nextElementSibling?.classList.contains('cuestionario-subtabla')) node = node.nextElementSibling;
+            if (node.nextElementSibling?.classList.contains('separador-combo')) node = node.nextElementSibling;
+            insertBefore = node.nextElementSibling;
+            this.eliminarFilasDom(id);
+        }
+        const temp = document.createElement('tbody');
+        this.renderComboEnTbody(temp, combo);
+        const frag = document.createDocumentFragment();
+        while (temp.firstChild) frag.appendChild(temp.firstChild);
+        if (insertBefore) tbody.insertBefore(frag, insertBefore);
+        else tbody.appendChild(frag);
+    },
+
+    async refrescarFila(id) {
+        try {
+            const response = await fetch(`/api/combos/${id}`, { headers: authManager.getAuthHeaders() });
+            if (!response.ok) throw new Error('No se pudo obtener el combo');
+            const combo = await response.json();
+            this.aplicarEnMemoria(id, combo);
+            const filtros = this.obtenerFiltrosActivos();
+            if (filtros.hayFiltros && !(await this.sigueEnFiltro(combo, filtros))) {
+                this.quitarDeListado(id);
+                return;
+            }
+            await this.reemplazarFilasDom(id, combo);
+        } catch (error) {
+            console.error('Error al refrescar fila de combo:', error);
+        }
+    },
+
+    async insertarOActualizarFila(id) {
+        const tbody = document.getElementById('tabla-combos');
+        if (!tbody) return;
+        if (tbody.querySelector(`tr.fila-combo[data-id="${id}"]`)) {
+            await this.refrescarFila(id);
+            return;
+        }
+        try {
+            const response = await fetch(`/api/combos/${id}`, { headers: authManager.getAuthHeaders() });
+            if (!response.ok) return;
+            const combo = await response.json();
+            const filtros = this.obtenerFiltrosActivos();
+            if (filtros.hayFiltros && !(await this.sigueEnFiltro(combo, filtros))) return;
+            this.aplicarEnMemoria(id, combo);
+            const temp = document.createElement('tbody');
+            this.renderComboEnTbody(temp, combo);
+            const frag = document.createDocumentFragment();
+            while (temp.firstChild) frag.appendChild(temp.firstChild);
+            const vacio = tbody.querySelector('tr td.text-center');
+            if (vacio && vacio.textContent.includes('No hay combos')) vacio.closest('tr')?.remove();
+            tbody.insertBefore(frag, tbody.firstChild);
+            this.totalCombos++;
+            this.actualizarPaginacion();
+        } catch (error) {
+            console.error('Error al insertar fila de combo:', error);
+        }
+    },
+
+    async mostrarCombos(combos) {
+        const tbody = document.getElementById('tabla-combos');
+        if (!tbody) {
+            console.error('No se encontró el elemento tabla-combos');
+            return;
+        }
+        await cargarOpcionesTematicas();
+        tbody.innerHTML = '';
+        if (!Array.isArray(combos) || combos.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = '<td colspan="5" class="text-center">No hay combos</td>';
+            tbody.appendChild(tr);
+            return;
+        }
+        combos.forEach(c => this.renderComboEnTbody(tbody, c));
         const params = new URLSearchParams(window.location.search);
         const idDestacado = params.get('id');
         if (idDestacado) {
@@ -544,7 +682,6 @@ const CombosManager = {
                 }
             }, 500);
         }
-        // Restaurar posición o foco
         setTimeout(() => this.restoreScrollOrFocus(), 0);
     },
 
@@ -566,11 +703,18 @@ const CombosManager = {
 };
 
 // Guardar el último listado de combos para búsquedas rápidas
-CombosManager.ultimoListado = [];
 const _oldMostrarCombos = CombosManager.mostrarCombos;
 CombosManager.mostrarCombos = function(combos) {
     CombosManager.ultimoListado = combos;
     _oldMostrarCombos.call(this, combos);
+    if (typeof SyncMonitor !== 'undefined' && Array.isArray(combos)) {
+        SyncMonitor.resetFromVisible(combos.map(c => ({
+            entityType: 'COMBO',
+            entityId: c.id,
+            version: c.version || 0,
+            label: `Combo ${c.id}`
+        })));
+    }
 }
 
 // Funciones de filtrado
@@ -673,7 +817,7 @@ window.limpiarFiltrosCombos = async function() {
     await CombosManager.cargarCombos();
 }
 
-// Función para actualizar tipo o estado de combo
+// Función para actualizar tipo o temática de combo
 window.actualizarCombo = async function(comboId, campo, valor) {
     try {
         CombosManager.rememberScroll();
@@ -681,40 +825,32 @@ window.actualizarCombo = async function(comboId, campo, valor) {
         const datos = {};
         datos[campo] = valor;
         
-        console.log(`🔄 [ACTUALIZAR COMBO] Actualizando combo ${comboId}, campo: ${campo}, valor: ${valor}`);
-        console.log('📤 [ACTUALIZAR COMBO] Datos a enviar:', datos);
-        
         const previo = (CombosManager.ultimoListado || []).find(c => c.id === comboId);
         const valorPrevio = previo ? previo[campo] : null;
-        const doAction = async () => { await apiManager.put(`/api/combos/${comboId}`, datos); await CombosManager.cargarCombos(); };
+        const doAction = async () => {
+            await apiManager.put(`/api/combos/${comboId}`, datos);
+            await CombosManager.refrescarFila(comboId);
+        };
         const undoAction = async () => {
             if (valorPrevio !== null && valorPrevio !== undefined) {
                 const back = {}; back[campo] = valorPrevio;
                 await apiManager.put(`/api/combos/${comboId}`, back);
-                await CombosManager.cargarCombos();
+                await CombosManager.refrescarFila(comboId);
             }
         };
         await doAction();
         if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar combo ${comboId} - ${campo}` });
         
-        const mensaje = 'Campo actualizado correctamente' || 
-            (campo === 'tipo' ? 'Tipo actualizado correctamente' :
-             campo === 'tematica' ? 'Temática actualizada correctamente' :
-             'Campo actualizado correctamente');
-        
         Toastify({
-            text: mensaje,
+            text: campo === 'tipo' ? 'Tipo actualizado correctamente' :
+                  campo === 'tematica' ? 'Temática actualizada correctamente' :
+                  'Campo actualizado correctamente',
             duration: 2000,
             close: true,
             gravity: 'top',
             position: 'right',
             style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
         }).showToast();
-        
-        // Recargar la lista para reflejar el cambio
-        console.log('🔄 [ACTUALIZAR COMBO] Recargando lista de combos...');
-        await CombosManager.cargarCombos();
-        console.log('✅ [ACTUALIZAR COMBO] Lista de combos recargada');
         CombosManager.restoreScrollOrFocus();
         
     } catch (error) {
@@ -727,9 +863,7 @@ window.actualizarCombo = async function(comboId, campo, valor) {
             position: 'right',
             style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
         }).showToast();
-        
-        // Recargar para revertir el cambio visual
-        await CombosManager.cargarCombos();
+        await CombosManager.refrescarFila(comboId);
     }
 };
 
@@ -938,6 +1072,7 @@ async function cargarTematicasEnModal() {
 
 async function editarCombo(id) {
     try {
+        await EditLockManager.tryAcquire('COMBO', id);
         CombosManager.lastFocusComboId = id;
         console.log(`[DEBUG_EDIT] Iniciando edición del combo ${id}`);
         const response = await fetch(`/api/combos/${id}`, {
@@ -1035,6 +1170,12 @@ async function editarCombo(id) {
         // Mostrar el modal
         const modal = new bootstrap.Modal(document.getElementById('modal-combo'));
         modal.show();
+        EditLockManager.startSession({
+            entityType: 'COMBO',
+            entityId: id,
+            modalSelector: '#modal-combo',
+            onExpire: () => guardarCombo()
+        });
         
     } catch (error) {
         Toastify({
@@ -1357,11 +1498,11 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
         
         const doAdd = async () => {
             await apiManager.post(`/api/combos/${comboId}/preguntas`, { preguntaId: id, factorMultiplicacion, posicion }, { headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' } });
-            await CombosManager.cargarCombos();
+            await CombosManager.refrescarFila(comboId);
         };
         const undoDelete = async () => {
             await apiManager.delete(`/api/combos/${comboId}/preguntas/${id}`, { headers: authManager.getAuthHeaders() });
-            await CombosManager.cargarCombos();
+            await CombosManager.refrescarFila(comboId);
         };
         doAdd()
         .then(async () => {
@@ -1424,7 +1565,6 @@ async function guardarCombo() {
         return;
     }
 
-    let valid = true;
     let preguntasMultiplicadoras = [];
     pms.forEach((pm, idx) => {
         const id = document.getElementById(`pm-${pm.id}`).value;
@@ -1433,31 +1573,15 @@ async function guardarCombo() {
         
         console.log(`[DEBUG] PM${idx + 1}: ID=${id}, Factor=${factor}, FactorInput=${factorInput ? factorInput.value : 'null'}`);
         
-        if (!id) valid = false;
-        else preguntasMultiplicadoras.push({ id: Number(id), factor: factor, slot: pm.id });
+        if (id) preguntasMultiplicadoras.push({ id: Number(id), factor: factor, slot: pm.id });
     });
     
     console.log('[DEBUG] Preguntas multiplicadoras a enviar:', preguntasMultiplicadoras);
     
-    // Obtener el estado del combo antes de validar
     const estadoCombo = document.getElementById('combo-estado')?.value || '';
     console.log('[DEBUG] Estado del combo:', estadoCombo);
     
-    // Si el estado es "borrador", permitir guardar aunque falten preguntas
-    if (!valid && estadoCombo !== 'borrador') {
-        Toastify({
-            text: 'Para estados distintos de Borrador, debes seleccionar todas las preguntas multiplicadoras (Pregunta 1, 2, 3)',
-            duration: 4000,
-            close: true,
-            gravity: 'top',
-            position: 'right',
-            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
-        }).showToast();
-        return;
-    }
-    
-    // Si es borrador y no hay ninguna pregunta, también es inválido
-    if (estadoCombo === 'borrador' && preguntasMultiplicadoras.length === 0) {
+    if (preguntasMultiplicadoras.length === 0) {
         Toastify({
             text: 'Debes seleccionar al menos una pregunta multiplicadora',
             duration: 3000,
@@ -1661,9 +1785,9 @@ async function guardarCombo() {
         modal.hide();
         // Aplicar estado si procede
         try {
-            const idFinal = (data && (data.id || data.ID)) || (comboId || null);
-            if (idFinal && estadoSeleccionado && estadoSeleccionado !== 'borrador') {
-                await fetch(`/api/combos/${idFinal}/estado?nuevoEstado=${encodeURIComponent(estadoSeleccionado)}`, {
+            const idParaEstado = (data && (data.id || data.ID)) || (comboId || null);
+            if (idParaEstado && estadoSeleccionado && estadoSeleccionado !== 'borrador') {
+                await fetch(`/api/combos/${idParaEstado}/estado?nuevoEstado=${encodeURIComponent(estadoSeleccionado)}`, {
                     method: 'PUT',
                     headers: authManager.getAuthHeaders()
                 });
@@ -1682,7 +1806,8 @@ async function guardarCombo() {
         } catch (e) {
             console.warn('No se pudo aplicar el estado seleccionado tras guardar combo:', e);
         }
-        await CombosManager.cargarCombos();
+        const idFinal = (data && (data.id || data.ID)) || (comboId || null);
+        if (idFinal) await CombosManager.insertarOActualizarFila(Number(idFinal));
         CombosManager.restoreScrollOrFocus();
     } catch (error) {
         Toastify({
@@ -1730,7 +1855,7 @@ window.eliminarCombo = async function(id) {
         }
         
         Toastify({ text: 'Combo eliminado', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
-        await CombosManager.cargarCombos();
+        CombosManager.quitarDeListado(id);
         CombosManager.restoreScrollOrFocus();
     } catch (e) {
         console.error('Error al eliminar combo:', e);
@@ -1772,18 +1897,17 @@ window.eliminarPreguntaDeCombo = async function(comboId, slot) {
         // Acciones do/undo
         const doDelete = async () => {
             await apiManager.delete(`/api/combos/${comboId}/preguntas/${preguntaId}`, { headers: authManager.getAuthHeaders() });
-            await CombosManager.cargarCombos();
+            await CombosManager.refrescarFila(comboId);
         };
         const undoAdd = async () => {
             await apiManager.post(`/api/combos/${comboId}/preguntas`, { preguntaId, factorMultiplicacion: factorMultiplicacion ?? 1 }, { headers: authManager.getAuthHeaders() });
-            await CombosManager.cargarCombos();
+            await CombosManager.refrescarFila(comboId);
         };
         await doDelete();
         if (window.UndoManager) {
             window.UndoManager.record({ do: doDelete, undo: undoAdd, label: `Quitar pregunta ${preguntaId} de combo ${comboId}` });
         }
         Toastify({ text: 'Pregunta eliminada del combo', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
-        await CombosManager.cargarCombos();
         CombosManager.restoreScrollOrFocus();
     } catch (e) {
         console.error(`[DEBUG] Error al eliminar pregunta:`, e);
@@ -1819,11 +1943,23 @@ window.actualizarFactorPregunta = async function(comboId, preguntaId, nuevoFacto
         }
         const doAction = async () => {
             await apiManager.put(`/api/combos/${comboId}/preguntas/${preguntaId}/factor`, { factorMultiplicacion: nuevoFactor });
-            await CombosManager.cargarCombos();
+            CombosManager.aplicarParcheEnMemoria(comboId, {
+                preguntas: (combo.preguntas || []).map(pc => (
+                    pc && pc.pregunta && pc.pregunta.id === preguntaId
+                        ? { ...pc, factorMultiplicacion: nuevoFactor }
+                        : pc
+                ))
+            });
         };
         const undoAction = async () => {
             await apiManager.put(`/api/combos/${comboId}/preguntas/${preguntaId}/factor`, { factorMultiplicacion: factorPrevio || 'X' });
-            await CombosManager.cargarCombos();
+            CombosManager.aplicarParcheEnMemoria(comboId, {
+                preguntas: (combo.preguntas || []).map(pc => (
+                    pc && pc.pregunta && pc.pregunta.id === preguntaId
+                        ? { ...pc, factorMultiplicacion: factorPrevio || 'X' }
+                        : pc
+                ))
+            });
         };
         await doAction();
         if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Factor pregunta ${preguntaId} combo ${comboId}` });
@@ -1865,8 +2001,14 @@ window.actualizarNotasDireccionCombo = async function(comboId, notas) {
     try {
         const previo = (CombosManager.ultimoListado || []).find(c => c.id === comboId);
         const notasPrevias = previo ? (previo.notasDireccion || '') : '';
-        const doAction = async () => { await apiManager.put(`/api/combos/${comboId}`, { notasDireccion: notas }); };
-        const undoAction = async () => { await apiManager.put(`/api/combos/${comboId}`, { notasDireccion: notasPrevias }); };
+        const doAction = async () => {
+            await apiManager.put(`/api/combos/${comboId}`, { notasDireccion: notas });
+            CombosManager.aplicarParcheEnMemoria(comboId, { notasDireccion: notas });
+        };
+        const undoAction = async () => {
+            await apiManager.put(`/api/combos/${comboId}`, { notasDireccion: notasPrevias });
+            CombosManager.aplicarParcheEnMemoria(comboId, { notasDireccion: notasPrevias });
+        };
         await doAction();
         if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Notas combo ${comboId}` });
         Toastify({
@@ -1890,14 +2032,6 @@ window.actualizarNotasDireccionCombo = async function(comboId, notas) {
 }
 
 
-
-// Guardar el último listado de combos para búsquedas rápidas
-CombosManager.ultimoListado = [];
-const _oldMostrar = CombosManager.mostrarCombos;
-CombosManager.mostrarCombos = function(combos) {
-    CombosManager.ultimoListado = combos;
-    _oldMostrar.call(this, combos);
-}
 
 window.cambiarPassword = function() {
     document.getElementById('form-cambiar-password').reset();
@@ -1960,17 +2094,16 @@ window.cambiarEstadoCombo = async function(id, nuevoEstado) {
         const estadoPrevio = previo ? previo.estado : null;
         const doAction = async () => {
             await apiManager.put(`/api/combos/${id}/estado?nuevoEstado=${encodeURIComponent(nuevoEstado)}`, null);
-            await CombosManager.cargarCombos();
+            await CombosManager.refrescarFila(id);
         };
         const undoAction = async () => {
             if (estadoPrevio) {
                 await apiManager.put(`/api/combos/${id}/estado?nuevoEstado=${encodeURIComponent(estadoPrevio)}`, null);
-                await CombosManager.cargarCombos();
+                await CombosManager.refrescarFila(id);
             }
         };
         await doAction();
         if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Estado combo ${id}` });
-        await CombosManager.cargarCombos();
         
         Toastify({
             text: `Estado cambiado a: ${nuevoEstado}`,

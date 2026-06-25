@@ -26,6 +26,8 @@ import java.util.List;
 
 import com.lsnls.dto.PreguntaCreateDTO;
 import com.lsnls.dto.PreguntaDTO;
+import com.lsnls.entity.AuditLog;
+import com.lsnls.service.EditLockService;
 
 @RestController
 @RequestMapping("/api/preguntas")
@@ -42,6 +44,9 @@ public class PreguntaController {
 
     @Autowired
     private DataTransformationService dataTransformationService;
+
+    @Autowired
+    private EditLockService editLockService;
 
     @GetMapping
     @PreAuthorize("@authorizationService.canRead()")
@@ -225,9 +230,12 @@ public class PreguntaController {
                 }
             }
             
+            editLockService.assertCanEdit(AuditLog.EntityType.PREGUNTA, id);
+
             // Actualizar la pregunta
             Pregunta preguntaActualizada = preguntaService.actualizarDesdeDTO(id, dto);
             log.info("[ACTUALIZAR] Pregunta actualizada exitosamente. Nuevo estado: {}", preguntaActualizada.getEstado());
+            editLockService.logEntityUpdate(AuditLog.EntityType.PREGUNTA, id, "Actualización de pregunta");
             
             return ResponseEntity.ok(preguntaActualizada);
         } catch (IllegalArgumentException e) {
@@ -278,6 +286,8 @@ public class PreguntaController {
                 return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado a '" + estadoDescripcion + "'. Tu rol actual no permite esta transición de estado.");
             }
 
+            editLockService.assertCanEdit(AuditLog.EntityType.PREGUNTA, id);
+
             Optional<Usuario> usuarioActualOpt = authService.getCurrentUser();
             Usuario usuarioActual = usuarioActualOpt.orElse(null);
             
@@ -285,6 +295,7 @@ public class PreguntaController {
             preguntaService.cambiarEstadoAtomico(id, estadoActual, nuevoEstado, usuarioActual);
             log.info("[CAMBIO ESTADO] Estado cambiado exitosamente para pregunta ID: {} - {} → {}", 
                     id, estadoActual, nuevoEstado);
+            editLockService.logEntityUpdate(AuditLog.EntityType.PREGUNTA, id, "Cambio de estado de pregunta");
             
             // Obtener la pregunta actualizada para devolverla
             Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(pregunta);

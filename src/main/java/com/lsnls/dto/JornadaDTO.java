@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 public class JornadaDTO {
     private Long id;
+    private Long version;
     private String nombre;
     private LocalDate fechaJornada;
     private String lugar;

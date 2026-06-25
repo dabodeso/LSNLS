@@ -1,6 +1,8 @@
 package com.lsnls.controller;
 
 import com.lsnls.dto.ProgramaDTO;
+import com.lsnls.entity.AuditLog;
+import com.lsnls.service.EditLockService;
 import com.lsnls.service.ProgramaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,9 @@ public class ProgramaController {
     @Autowired
     private ProgramaService programaService;
 
+    @Autowired
+    private EditLockService editLockService;
+
     @GetMapping
     public ResponseEntity<List<ProgramaDTO>> findAll() {
         return ResponseEntity.ok(programaService.findAllDTO());
@@ -34,7 +39,7 @@ public class ProgramaController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir) {
         
         Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
@@ -93,7 +98,9 @@ public class ProgramaController {
             }
             // fechaEmision puede ser null
 
+            editLockService.assertCanEdit(AuditLog.EntityType.PROGRAMA, id);
             ProgramaDTO programaActualizado = programaService.updateFromDTO(id, programaDTO);
+            editLockService.logEntityUpdate(AuditLog.EntityType.PROGRAMA, id, "Actualización de programa");
             return ResponseEntity.ok(programaActualizado);
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");

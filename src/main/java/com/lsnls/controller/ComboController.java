@@ -18,6 +18,8 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.lsnls.dto.CrearComboDTO;
+import com.lsnls.entity.AuditLog;
+import com.lsnls.service.EditLockService;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +43,9 @@ public class ComboController {
 
     @Autowired
     private ComboRepository comboRepository;
+
+    @Autowired
+    private EditLockService editLockService;
 
     @GetMapping
     @PreAuthorize("@authorizationService.canRead()")
@@ -113,15 +118,6 @@ public class ComboController {
                 estadoCombo = "borrador";
             }
             
-            // Si el estado NO es "borrador", exigir exactamente 3 preguntas
-            if (!"borrador".equalsIgnoreCase(estadoCombo) && dto.getPreguntasMultiplicadoras().size() != 3) {
-                return ResponseEntity.badRequest().body("Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para estados distintos de Borrador");
-            }
-            
-            // Si es borrador, permitir cualquier cantidad de preguntas (pero al menos 1)
-            if ("borrador".equalsIgnoreCase(estadoCombo) && dto.getPreguntasMultiplicadoras().size() == 0) {
-                return ResponseEntity.badRequest().body("Debe seleccionar al menos una pregunta multiplicadora para el combo");
-            }
             
             // Validar tipo de combo
             if (dto.getTipo() == null || dto.getTipo().trim().isEmpty()) {
@@ -165,7 +161,7 @@ public class ComboController {
             }
             
             return ResponseEntity.ok(Map.of(
-                "message", "Combo tipo " + dto.getTipo() + " creado correctamente con 3 preguntas multiplicadoras", 
+                "message", "Combo tipo " + dto.getTipo() + " creado correctamente",
                 "id", combo.getId()
             ));
         } catch (Exception e) {
@@ -348,22 +344,17 @@ public class ComboController {
                 return ResponseEntity.status(409).body("Este combo está asignado a una jornada y su estado está bloqueado en 'adjudicado'.");
             }
 
-            // Validar que si se intenta cambiar a un estado distinto de "borrador", el combo debe tener exactamente 3 preguntas
-            if (nuevoEstado != Combo.EstadoCombo.borrador) {
-                long cantidadPreguntas = comboService.contarPreguntasCombo(id);
-                if (cantidadPreguntas != 3) {
-                    return ResponseEntity.badRequest().body("No se puede cambiar el estado del combo a '" + nuevoEstado + "'. El combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3). Actualmente tiene " + cantidadPreguntas + " pregunta(s).");
-                }
-            }
-
             // Verificar permisos para cambiar estado
             if (!authService.canEditCombo(combo.getEstado())) {
                 String estadoDescripcion = combo.getEstado().toString();
                 return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado de este combo. Tu rol actual no permite editar combos en estado '" + estadoDescripcion + "'.");
             }
 
+            editLockService.assertCanEdit(AuditLog.EntityType.COMBO, id);
+
             Combo comboActualizado = comboService.cambiarEstado(id, nuevoEstado);
             if (comboActualizado != null) {
+                editLockService.logEntityUpdate(AuditLog.EntityType.COMBO, id, "Cambio de estado de combo");
                 return ResponseEntity.ok(Map.of(
                     "message", "Estado del combo cambiado exitosamente",
                     "estado", nuevoEstado
@@ -411,13 +402,6 @@ public class ComboController {
                 String estadoStr = datos.get("estado").toString();
                 try {
                     Combo.EstadoCombo nuevoEstado = Combo.EstadoCombo.valueOf(estadoStr);
-                    // Validar que si se intenta cambiar a un estado distinto de "borrador", el combo debe tener exactamente 3 preguntas
-                    if (nuevoEstado != Combo.EstadoCombo.borrador) {
-                        long cantidadPreguntas = comboService.contarPreguntasCombo(id);
-                        if (cantidadPreguntas != 3) {
-                            return ResponseEntity.badRequest().body("No se puede cambiar el estado del combo a '" + nuevoEstado + "'. El combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3). Actualmente tiene " + cantidadPreguntas + " pregunta(s).");
-                        }
-                    }
                     combo.setEstado(nuevoEstado);
                 } catch (IllegalArgumentException e) {
                     return ResponseEntity.badRequest().body("Estado de combo inválido: " + estadoStr);
@@ -435,9 +419,12 @@ public class ComboController {
                 String notas = datos.get("notasDireccion") != null ? datos.get("notasDireccion").toString() : null;
                 combo.setNotasDireccion(notas);
             }
+
+            editLockService.assertCanEdit(AuditLog.EntityType.COMBO, id);
             
             Combo comboActualizado = comboService.actualizar(id, combo);
             if (comboActualizado != null) {
+                editLockService.logEntityUpdate(AuditLog.EntityType.COMBO, id, "Actualización de combo");
                 return ResponseEntity.ok(Map.of("message", "Combo actualizado correctamente"));
             } else {
                 return ResponseEntity.badRequest().body("Error al actualizar combo");

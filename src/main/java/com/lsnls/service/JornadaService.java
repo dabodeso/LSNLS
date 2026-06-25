@@ -517,6 +517,7 @@ public class JornadaService {
     private JornadaDTO convertirADTO(Jornada jornada) {
         JornadaDTO dto = new JornadaDTO();
         dto.setId(jornada.getId());
+        dto.setVersion(jornada.getVersion());
         dto.setNombre(jornada.getNombre());
         dto.setFechaJornada(jornada.getFechaJornada());
         dto.setLugar(jornada.getLugar());
@@ -903,9 +904,9 @@ public class JornadaService {
         
         System.out.println("🔍 [JORNADA] Reciclando combo " + comboId + " parcialmente. Estado actual: " + estadoActual);
         
-        // Verificar que el combo tiene exactamente 3 preguntas
-        if (combo.getPreguntas() == null || combo.getPreguntas().size() != 3) {
-            throw new IllegalArgumentException("El combo debe tener exactamente 3 preguntas para reciclaje parcial");
+        int totalPreguntas = combo.getPreguntas() == null ? 0 : combo.getPreguntas().size();
+        if (totalPreguntas < 2) {
+            throw new IllegalArgumentException("El combo debe tener al menos 2 preguntas para reciclaje parcial. Con 1 pregunta use reciclaje entero.");
         }
         
         // Verificar que la pregunta usada existe en el combo
@@ -921,8 +922,8 @@ public class JornadaService {
             throw new IllegalArgumentException("La pregunta " + preguntaUsadaId + " no pertenece al combo " + comboId);
         }
         
-        // El combo original se mantiene en la jornada con sus 3 preguntas completas
-        // Se crea un COMBO NUEVO con las 2 preguntas no usadas para poder reutilizarlas en otras jornadas
+        // El combo original se mantiene en la jornada con todas sus preguntas.
+        // Se crea un combo nuevo con las preguntas no usadas para reutilizarlas en otras jornadas.
         
         // 1) Recopilar las preguntas no usadas y sus factores
         java.util.List<PreguntaCombo> preguntasNoUsadas = new java.util.ArrayList<>();
@@ -932,7 +933,11 @@ public class JornadaService {
             }
         }
         
-        // 2) CREAR UN COMBO NUEVO con las 2 preguntas no usadas
+        if (preguntasNoUsadas.isEmpty()) {
+            throw new IllegalArgumentException("Debe quedar al menos una pregunta sin usar para crear el combo derivado");
+        }
+        
+        // 2) Crear un combo nuevo con las preguntas no usadas
         Combo comboNuevo = new Combo();
         comboNuevo.setNivel(combo.getNivel());
         comboNuevo.setTipo(combo.getTipo());
@@ -944,7 +949,7 @@ public class JornadaService {
         comboNuevo.setCreacionUsuario(combo.getCreacionUsuario());
         comboNuevo = comboRepository.save(comboNuevo);
         
-        // 3) Agregar las 2 preguntas al combo nuevo
+        // 3) Agregar las preguntas no usadas al combo nuevo
         for (PreguntaCombo pcOriginal : preguntasNoUsadas) {
             // Crear la clave compuesta primero
             PreguntaCombo.PreguntaComboId nuevoId = new PreguntaCombo.PreguntaComboId();
@@ -969,9 +974,7 @@ public class JornadaService {
             preguntaComboRepository.save(pcNuevo);
         }
         
-        // 4) Mantener el combo original intacto (con sus 3 preguntas) y también su estado actual
-        //    (normalmente 'adjudicado' o 'grabado'), ya que sigue perteneciendo a esta jornada.
-        //    Solo las preguntas no usadas se copian al combo nuevo para poder reutilizarlas en otras jornadas.
+        // 4) Mantener el combo original intacto en la jornada con su estado actual
         System.out.println("🔄🔄🔄 [RECICLAR PARCIAL] Manteniendo estado del combo original " + comboId + ": " + estadoActual);
         comboRepository.save(combo);
         
@@ -982,8 +985,8 @@ public class JornadaService {
         registrarHistorialComboHijo(jornada, comboNuevo, comboId, usuarioId);
 
         System.out.println("✅✅✅ [RECICLAR PARCIAL] Combo " + comboId + " reciclado parcialmente:");
-        System.out.println("   - Combo original " + comboId + ": estado=" + combo.getEstado() + ", preguntas=3 (incluida usada=" + preguntaUsadaId + ")");
-        System.out.println("   - Combo nuevo " + comboNuevo.getId() + ": estado=aprobado, preguntas=" + preguntasNoUsadas.size() + " (copias de no usadas)");
+        System.out.println("   - Combo original " + comboId + ": estado=" + combo.getEstado() + ", preguntas=" + totalPreguntas + " (usada=" + preguntaUsadaId + ")");
+        System.out.println("   - Combo nuevo " + comboNuevo.getId() + ": estado=borrador, preguntas=" + preguntasNoUsadas.size());
         System.out.println("♻️♻️♻️ [RECICLAR PARCIAL] Reciclaje parcial completado para combo " + comboId);
     }
 
@@ -998,7 +1001,7 @@ public class JornadaService {
                 .setParameter(2, comboHijo.getId())
                 .setParameter(3, "COMBO")
                 .setParameter(4, "asignado")
-                .setParameter(5, "Combo hijo creado desde combo padre " + comboPadreId + " - contiene 2 preguntas no usadas")
+                .setParameter(5, "Combo hijo creado desde combo padre " + comboPadreId + " - contiene preguntas no usadas")
                 .executeUpdate();
                 
         } catch (Exception e) {

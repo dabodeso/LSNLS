@@ -363,6 +363,15 @@ const PreguntasManager = {
         setTimeout(() => {
             window.scrollTo({ top: this.lastScrollY || scrollPosition || 0, behavior: 'auto' });
         }, 0);
+
+        if (typeof SyncMonitor !== 'undefined') {
+            SyncMonitor.resetFromVisible(this.preguntas.map(p => ({
+                entityType: 'PREGUNTA',
+                entityId: p.id,
+                version: p.version || 0,
+                label: `Pregunta ${p.id}`
+            })));
+        }
     },
 
     // Convertir URLs en enlaces clicables, manteniendo texto no-URL intacto
@@ -665,7 +674,7 @@ const PreguntasManager = {
             
             // Recargar las preguntas manteniendo filtros activos
             await this.recargarConFiltros();
-            $('#modal-pregunta').modal('hide');
+            PreguntasManager.ocultarModalPregunta();
             
             Toastify({
                 text: esEdicion ? "Pregunta editada exitosamente" : "Pregunta creada exitosamente",
@@ -1231,8 +1240,22 @@ const PreguntasManager = {
         }
     },
 
+    mostrarModalPregunta() {
+        const el = document.getElementById('modal-pregunta');
+        if (!el) return;
+        bootstrap.Modal.getOrCreateInstance(el).show();
+    },
+
+    ocultarModalPregunta() {
+        const el = document.getElementById('modal-pregunta');
+        if (!el) return;
+        const inst = bootstrap.Modal.getInstance(el);
+        if (inst) inst.hide();
+    },
+
     async editarPregunta(id) {
         try {
+            await EditLockManager.tryAcquire('PREGUNTA', id);
             console.log('🔍 [EDITAR] Iniciando edición de pregunta ID:', id);
             
             const response = await fetch(`/api/preguntas/${id}`, {
@@ -1324,7 +1347,18 @@ const PreguntasManager = {
             console.log('💾 [EDITAR] ID guardado en el formulario:', form.dataset.editId);
             
             // Mostrar el modal
-            $('#modal-pregunta').modal('show');
+            PreguntasManager.mostrarModalPregunta();
+            EditLockManager.startSession({
+                entityType: 'PREGUNTA',
+                entityId: id,
+                modalSelector: '#modal-pregunta',
+                onExpire: async () => {
+                    const form = document.getElementById('formCrearPregunta');
+                    if (form) {
+                        await PreguntasManager.crearPregunta({ preventDefault: () => {}, target: form });
+                    }
+                }
+            });
             
             console.log('✅ [EDITAR] Modal abierto');
             
@@ -1840,10 +1874,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 window.mostrarFormularioPregunta = function() {
-    // Si hay un modal de Bootstrap para crear pregunta, mostrarlo
     const modal = document.getElementById('modal-pregunta');
-    if (modal && typeof $ !== 'undefined') {
-        // Resetear título para nueva pregunta
+    if (modal) {
         document.getElementById('modal-pregunta-titulo').textContent = 'Nueva Pregunta';
         
         // Limpiar formulario
@@ -1876,7 +1908,7 @@ window.mostrarFormularioPregunta = function() {
             });
         }
         
-        $(modal).modal('show');
+        PreguntasManager.mostrarModalPregunta();
     } else {
         alert('Funcionalidad de crear pregunta no implementada o modal no encontrado.');
     }

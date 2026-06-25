@@ -320,6 +320,15 @@ const JornadasManager = {
         html += `</div>`;
         
         container.innerHTML = html;
+
+        if (typeof SyncMonitor !== 'undefined') {
+            SyncMonitor.resetFromVisible(this.jornadas.map(j => ({
+                entityType: 'JORNADA',
+                entityId: j.id,
+                version: j.version || 0,
+                label: j.nombre || `Jornada ${j.id}`
+            })));
+        }
     },
 
     generarCardJornada(jornada) {
@@ -854,6 +863,7 @@ const JornadasManager = {
 
     async editarJornada(id) {
         try {
+            await EditLockManager.tryAcquire('JORNADA', id);
             const response = await apiManager.get(`/api/jornadas/${id}`);
             const jornada = response.datos;
             
@@ -873,6 +883,12 @@ const JornadasManager = {
             
             const modal = new bootstrap.Modal(document.getElementById('modalJornada'));
             modal.show();
+            EditLockManager.startSession({
+                entityType: 'JORNADA',
+                entityId: id,
+                modalSelector: '#modalJornada',
+                onExpire: () => this.guardarJornada()
+            });
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al cargar jornada:', error);
@@ -2737,39 +2753,73 @@ const JornadasManager = {
     comboReciclajeActual: null,
     jornadaReciclajeActual: null,
     preguntaSeleccionada: null,
+    preguntasReciclajeCount: 0,
 
-    // Función para reutilizar un combo (ahora abre el modal de reciclaje)
+    // Función para reutilizar un combo (modal de reciclaje según nº de preguntas)
     async reutilizarCombo(comboId, jornadaId) {
         try {
-            console.log(`🔄 [JORNADAS] Abriendo modal de reciclaje para combo ${comboId} de jornada ${jornadaId}`);
+            console.log(`🔄 [JORNADAS] Reciclaje combo ${comboId} de jornada ${jornadaId}`);
             
-            // Guardar información del combo actual
             this.comboReciclajeActual = comboId;
             this.jornadaReciclajeActual = jornadaId;
             this.preguntaSeleccionada = null;
-            // Reset UI del modal para evitar arrastrar estado previo
-            const modalEl = document.getElementById('modalReciclajeCombo');
-            const paso1 = document.getElementById('pasoReciclaje');
-            const paso2 = document.getElementById('pasoSeleccionPregunta');
-            const btnConfirmar = document.getElementById('btnConfirmarReciclaje');
-            const cont = document.getElementById('preguntasCombo');
-            if (cont) cont.innerHTML = '';
-            if (paso1) paso1.style.display = 'block';
-            if (paso2) paso2.style.display = 'none';
-            if (btnConfirmar) btnConfirmar.style.display = 'none';
-            if (modalEl) {
-                modalEl.querySelectorAll('.pregunta-card').forEach(card => {
-                    card.classList.remove('border-primary', 'border-3');
-                });
+
+            const response = await apiManager.get(`/api/combos/${comboId}/preguntas`);
+            if (!response.exito || !Array.isArray(response.datos)) {
+                Utils.showAlert('No se pudieron cargar las preguntas del combo', 'error');
+                return;
             }
-            
-            // Mostrar el modal de reciclaje
+
+            const preguntas = response.datos;
+            if (preguntas.length === 0) {
+                Utils.showAlert('El combo no tiene preguntas', 'error');
+                return;
+            }
+
+            // 1 pregunta → reaprovechado entero automático
+            if (preguntas.length === 1) {
+                const confirmacion = confirm(
+                    `Este combo solo tiene 1 pregunta.\n\nSe reaprovechará completo y quedará disponible para otras jornadas.\n\n¿Continuar?`
+                );
+                if (!confirmacion) return;
+                await this.ejecutarReciclajeEntero();
+                return;
+            }
+
+            this.resetModalReciclaje();
+
+            // 2 preguntas → elegir cuál se usó (reciclaje parcial directo)
+            if (preguntas.length === 2) {
+                const modal = new bootstrap.Modal(document.getElementById('modalReciclajeCombo'));
+                modal.show();
+                this.mostrarPreguntasParaSeleccion(preguntas);
+                return;
+            }
+
+            // 3+ preguntas → modal con opción entero o parcial
             const modal = new bootstrap.Modal(document.getElementById('modalReciclajeCombo'));
             modal.show();
             
         } catch (error) {
-            console.error('❌ [JORNADAS] Error al abrir modal de reciclaje:', error);
-            Utils.showAlert('Error al abrir modal de reciclaje', 'error');
+            console.error('❌ [JORNADAS] Error al abrir reciclaje:', error);
+            Utils.showAlert('Error al abrir reciclaje de combo', 'error');
+        }
+    },
+
+    resetModalReciclaje() {
+        const paso1 = document.getElementById('pasoReciclaje');
+        const paso2 = document.getElementById('pasoSeleccionPregunta');
+        const btnConfirmar = document.getElementById('btnConfirmarReciclaje');
+        const cont = document.getElementById('preguntasCombo');
+        if (cont) cont.innerHTML = '';
+        if (paso1) paso1.style.display = 'block';
+        if (paso2) paso2.style.display = 'none';
+        if (btnConfirmar) btnConfirmar.style.display = 'none';
+        const modalEl = document.getElementById('modalReciclajeCombo');
+        if (modalEl) {
+            modalEl.querySelectorAll('.pregunta-card').forEach(card => {
+                card.classList.remove('border-primary', 'border-3');
+            });
         }
     },
     async quitarReutilizacionCombo(comboId, jornadaId) {
@@ -2801,24 +2851,25 @@ const JornadasManager = {
         }
     },
 
-    // Reciclar combo entero (marcar como liberado)
+    // Reciclar combo entero (reaprovechado completo)
     async reciclarComboEntero() {
+        const confirmacion = confirm(
+            `¿Reciclar el combo ${this.comboReciclajeActual} completo?\n\nQuedará reaprovechado y disponible para otras jornadas.`
+        );
+        if (!confirmacion) return;
+        await this.ejecutarReciclajeEntero();
+    },
+
+    async ejecutarReciclajeEntero() {
         try {
             console.log(`🔄 [JORNADAS] Reciclando combo entero ${this.comboReciclajeActual} de jornada ${this.jornadaReciclajeActual}`);
-            
-            // Confirmar la acción
-            const confirmacion = confirm(`¿Estás seguro de que quieres reciclar el combo ${this.comboReciclajeActual} completo?\n\nEsto marcará el combo como liberado.`);
-            
-            if (!confirmacion) {
-                return;
-            }
 
-            // Llamar al endpoint para reciclar el combo entero
             const doAction = async () => await apiManager.post(`/api/jornadas/${this.jornadaReciclajeActual}/reciclar-combo-entero/${this.comboReciclajeActual}`);
             const undoAction = async () => await apiManager.post(`/api/jornadas/${this.jornadaReciclajeActual}/quitar-reutilizacion-combo/${this.comboReciclajeActual}`);
             const doWrapped = async () => {
                 const r = await doAction();
-                bootstrap.Modal.getInstance(document.getElementById('modalReciclajeCombo')).hide();
+                const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalReciclajeCombo'));
+                if (modalInst) modalInst.hide();
                 await this.cargarDatos();
                 this.mostrarJornadas();
                 return r;
@@ -2832,9 +2883,7 @@ const JornadasManager = {
             
             if (response.exito) {
                 if (window.UndoManager) window.UndoManager.record({ do: doWrapped, undo: undoWrapped, label: `Reciclar combo entero ${this.comboReciclajeActual}` });
-                Utils.showAlert(`Combo ${this.comboReciclajeActual} reciclado completamente. Marcado como liberado.`, 'success');
-                
-                // UI recargada por doWrapped
+                Utils.showAlert(`Combo ${this.comboReciclajeActual} reaprovechado correctamente.`, 'success');
             } else {
                 Utils.showAlert(`Error al reciclar combo: ${response.mensaje}`, 'error');
             }
@@ -2861,8 +2910,8 @@ const JornadasManager = {
             if (response.exito && response.datos) {
                 const preguntas = response.datos;
                 
-                if (preguntas.length !== 3) {
-                    Utils.showAlert('El combo debe tener exactamente 3 preguntas para reciclaje parcial', 'error');
+                if (preguntas.length < 2) {
+                    Utils.showAlert('Se necesitan al menos 2 preguntas para reciclaje parcial', 'error');
                     return;
                 }
                 
@@ -2881,10 +2930,24 @@ const JornadasManager = {
 
     // Mostrar preguntas para selección
     mostrarPreguntasParaSeleccion(preguntas) {
+        this.preguntasReciclajeCount = preguntas.length;
         // Ocultar paso 1 y mostrar paso 2
         document.getElementById('pasoReciclaje').style.display = 'none';
         document.getElementById('pasoSeleccionPregunta').style.display = 'block';
         document.getElementById('btnConfirmarReciclaje').style.display = 'block';
+
+        const restantes = preguntas.length - 1;
+        const textoRestantes = restantes === 1
+            ? 'Se creará un nuevo combo con la pregunta restante.'
+            : `Se creará un nuevo combo con las ${restantes} preguntas restantes.`;
+        const alertInfo = document.querySelector('#pasoSeleccionPregunta .alert-info');
+        if (alertInfo) {
+            alertInfo.innerHTML = `
+                <i class="fas fa-info-circle"></i>
+                <strong>Selecciona la pregunta que se usó en este combo:</strong><br>
+                ${textoRestantes}
+            `;
+        }
         
         // Generar HTML para las preguntas
         const container = document.getElementById('preguntasCombo');
@@ -2940,7 +3003,13 @@ const JornadasManager = {
             });
             
             if (response.exito) {
-                Utils.showAlert(`Combo reciclado parcialmente. Se creó un nuevo combo con las 2 preguntas restantes.`, 'success');
+                const restantes = Math.max(0, this.preguntasReciclajeCount - 1);
+                const msg = restantes === 1
+                    ? 'Combo reciclado parcialmente. Se creó un nuevo combo con la pregunta restante.'
+                    : restantes > 1
+                        ? `Combo reciclado parcialmente. Se creó un nuevo combo con las ${restantes} preguntas restantes.`
+                        : 'Combo reciclado parcialmente.';
+                Utils.showAlert(msg, 'success');
                 
                 // Cerrar modal y recargar datos
                 bootstrap.Modal.getInstance(document.getElementById('modalReciclajeCombo')).hide();

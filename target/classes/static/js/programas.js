@@ -103,7 +103,7 @@ async function recargarProgramas() {
     configurarScrollTablas();
 }
 
-async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden = 'asc') {
+async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden = 'desc') {
     try {
         lastScrollYProgramas = window.scrollY || window.pageYOffset || 0;
         const response = await apiManager.get(
@@ -443,6 +443,15 @@ function mostrarProgramas() {
     
     // Renderizar controles de paginación
     renderizarPaginacion();
+
+    if (typeof SyncMonitor !== 'undefined') {
+        SyncMonitor.resetFromVisible(visibles.map(p => ({
+            entityType: 'PROGRAMA',
+            entityId: p.id,
+            version: p.version || 0,
+            label: `Programa T${p.temporada} #${p.id}`
+        })));
+    }
 }
 
 async function actualizarCreditosEspecialesPrograma(programaId, creditos) {
@@ -856,8 +865,9 @@ async function cargarProgramasFiltrados() {
         const response = await apiManager.get('/api/programas');
         const todosLosProgramas = response;
         
-        // Aplicar filtros
-        programasFiltrados = aplicarFiltros(todosLosProgramas);
+        // Aplicar filtros y ordenar de mayor a menor id
+        programasFiltrados = aplicarFiltros(todosLosProgramas)
+            .sort((a, b) => b.id - a.id);
         
         // Cargar concursantes para los programas filtrados
         await cargarConcursantesParaProgramasFiltrados();
@@ -1447,6 +1457,7 @@ async function quitarConcursanteDePrograma(concursanteId, event) {
 
 async function editarPrograma(programaId) {
     try {
+        await EditLockManager.tryAcquire('PROGRAMA', programaId);
         const programa = await apiManager.get(`/api/programas/${programaId}`);
         document.getElementById('programa-id').value = programa.id;
         document.getElementById('temporada-programa').value = programa.temporada;
@@ -1455,6 +1466,12 @@ async function editarPrograma(programaId) {
 
         const modal = new bootstrap.Modal(document.getElementById('modal-programa'));
         modal.show();
+        EditLockManager.startSession({
+            entityType: 'PROGRAMA',
+            entityId: programaId,
+            modalSelector: '#modal-programa',
+            onExpire: () => guardarPrograma()
+        });
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'carga de datos del programa'));
     }

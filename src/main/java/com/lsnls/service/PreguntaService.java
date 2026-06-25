@@ -890,6 +890,7 @@ public class PreguntaService {
         dto.setFechaCreacion(p.getFechaCreacion() != null ? p.getFechaCreacion().toString() : null);
         dto.setFechaVerificacion(p.getFechaVerificacion() != null ? p.getFechaVerificacion().toString() : null);
         dto.setEstado(p.getEstado() != null ? p.getEstado().name() : null);
+        dto.setVersion(p.getVersion());
         
         return dto;
     }

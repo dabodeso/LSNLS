@@ -627,6 +627,7 @@ public class ComboService {
         Combo c = opt.get();
         Map<String, Object> dto = new java.util.HashMap<>();
         dto.put("id", c.getId());
+        dto.put("version", c.getVersion());
         dto.put("estado", c.getEstado());
         dto.put("tipo", c.getTipo());
         dto.put("tematica", c.getTematica());

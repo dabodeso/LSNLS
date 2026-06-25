@@ -906,6 +906,7 @@ public class CuestionarioService {
         Cuestionario c = opt.get();
         Map<String, Object> dto = new java.util.HashMap<>();
         dto.put("id", c.getId());
+        dto.put("version", c.getVersion());
         dto.put("estado", c.getEstado());
         dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
         // Campos visibles en la tabla
