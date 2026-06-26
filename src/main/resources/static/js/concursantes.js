@@ -940,18 +940,60 @@ mostrarError('Error al cargar concursante: ' + error.message);
 }
 }
 
+/** Jornada del formulario: distingue "Sin asignar" explícito vs select vacío por opción perdida. */
+function leerJornadaIdDesdeFormulario(esEdicion) {
+    const sel = document.getElementById('jornada-select');
+    if (!sel) {
+        return esEdicion && concursanteActual?.jornadaId ? String(concursanteActual.jornadaId) : '';
+    }
+    const valorSelect = (sel.value || '').trim();
+    if (valorSelect) {
+        return valorSelect;
+    }
+    if (!esEdicion || !concursanteActual?.jornadaId) {
+        return '';
+    }
+    const jid = String(concursanteActual.jornadaId);
+    const existeOpcionJornada = Array.from(sel.options).some(o => String(o.value) === jid);
+    // Si la jornada original sigue en el desplegable y está en "Sin asignar", fue elección del usuario
+    if (sel.selectedIndex === 0 && existeOpcionJornada) {
+        return '';
+    }
+    // Select vacío porque la opción no estaba (p. ej. solo 5 jornadas recientes): conservar
+    return jid;
+}
+
+/** Foto: usa foto-nombre; null si limpiada o en creación (la subida va aparte). */
+function leerFotoParaGuardar(esEdicion) {
+    if (!esEdicion) {
+        return null;
+    }
+    const fotoNombre = (document.getElementById('foto-nombre')?.value || '').trim();
+    const hayArchivoNuevo = (document.getElementById('foto-concursante')?.files?.length || 0) > 0;
+    if (!fotoNombre) {
+        return null;
+    }
+    if (concursanteActual?.foto) {
+        if (hayArchivoNuevo || fotoNombre === concursanteActual.foto) {
+            return concursanteActual.foto;
+        }
+    }
+    return null;
+}
+
 // Guardar concursante con gestión de errores mejorada
 async function guardarConcursante() {
 const form = document.getElementById('form-concursante');
 
 // Detectar si es edición por la presencia de ID
 const esEdicion = document.getElementById('concursante-id').value;
+const jornadaIdFormulario = leerJornadaIdDesdeFormulario(esEdicion);
+const fotoFormulario = leerFotoParaGuardar(esEdicion);
 
 // Recoge todos los campos del formulario
 const datosConcursante = {
 id: document.getElementById('concursante-id').value || null,
-// Tomar jornada seleccionada del desplegable (prioritario)
-jornadaId: (document.getElementById('jornada-select') && document.getElementById('jornada-select').value) ? document.getElementById('jornada-select').value : (esEdicion && concursanteActual ? concursanteActual.jornadaId : null),
+jornadaId: jornadaIdFormulario || null,
 diaGrabacion: document.getElementById('dia-grabacion').value || null,
 lugar: document.getElementById('lugar-concursante').value || null,
 nombre: document.getElementById('nombre-concursante').value,
@@ -978,7 +1020,7 @@ bonico: document.getElementById('bonico').value || null,
 estado: document.getElementById('estado') ? document.getElementById('estado').value || null : null,
 // AÑADIR: campos faltantes si existen en el formulario
 premio: document.getElementById('premio') ? document.getElementById('premio').value || null : null,
-foto: document.getElementById('foto') ? document.getElementById('foto').value || null : null,
+foto: fotoFormulario,
 creditosEspeciales: document.getElementById('creditos-especiales') ? document.getElementById('creditos-especiales').value || null : null
 };
 
@@ -991,13 +1033,14 @@ try {
 try {
 const token = localStorage.getItem('token');
 let response;
-    const selectedJornadaId = (document.getElementById('jornada-select') && document.getElementById('jornada-select').value) ? document.getElementById('jornada-select').value : '';
+    const selectedJornadaId = jornadaIdFormulario;
     console.info('🔧 [GUARDAR] selectedJornadaId', selectedJornadaId);
 
+    let snapshotPrevio = null;
     if (esEdicion) {
         // Editar concursante existente (manual do/undo con refresco UI)
         console.info('📤 [GUARDAR] PUT (manual do/undo)', `/api/concursantes/${datosConcursante.id}`);
-        const snapshotPrevio = await apiManager.get(`/api/concursantes/${datosConcursante.id}`);
+        snapshotPrevio = await apiManager.get(`/api/concursantes/${datosConcursante.id}`);
         const doAction = async () => { await apiManager.put(`/api/concursantes/${datosConcursante.id}`, datosConcursante); await cargarConcursantes(true); };
         const undoAction = async () => { await apiManager.put(`/api/concursantes/${datosConcursante.id}`, snapshotPrevio); await cargarConcursantes(true); };
         await doAction();
@@ -1020,8 +1063,8 @@ if (response.ok) {
         console.info('✅ [GUARDAR] Respuesta OK', response.status);
         // Sincronizar jornada explícitamente con endpoints dedicados
         if (esEdicion) {
-            const prevJornada = (concursanteActual && concursanteActual.jornadaId) ? String(concursanteActual.jornadaId) : '';
-            const nuevaJornada = String(selectedJornadaId || '');
+            const prevJornada = snapshotPrevio?.jornadaId != null ? String(snapshotPrevio.jornadaId) : '';
+            const nuevaJornada = selectedJornadaId ? String(selectedJornadaId) : '';
             if (nuevaJornada !== prevJornada) {
                 try {
                     if (nuevaJornada) {
@@ -2779,9 +2822,23 @@ jornadas = lista;
 const sel = document.getElementById('jornada-select');
 if (sel) {
     const valorPrevio = sel.value;
+    const idsRecientes = new Set(jornadas.map(j => String(j.id)));
+    const opcionesExtra = Array.from(sel.options)
+        .filter(o => o.value && !idsRecientes.has(String(o.value)))
+        .map(o => ({ value: o.value, text: o.textContent }));
     sel.innerHTML = '<option value="">Sin asignar</option>' +
         jornadas.map(j => `<option value="${j.id}">${j.nombre || ('Jornada ' + j.id)}${j.fechaJornada ? ' - ' + new Date(j.fechaJornada).toLocaleDateString('es-ES') : ''}</option>`).join('');
-    if (valorPrevio) sel.value = valorPrevio;
+    for (const extra of opcionesExtra) {
+        if (!Array.from(sel.options).some(o => String(o.value) === String(extra.value))) {
+            const opt = document.createElement('option');
+            opt.value = extra.value;
+            opt.textContent = extra.text;
+            sel.insertBefore(opt, sel.options[1] || null);
+        }
+    }
+    if (valorPrevio) {
+        sel.value = valorPrevio;
+    }
 }
 } catch (error) {
 console.error('Error al cargar jornadas:', error);

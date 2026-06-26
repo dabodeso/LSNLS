@@ -672,8 +672,8 @@ public class PreguntaController {
             @RequestParam(defaultValue = "desc") String sortDir
     ) {
         try {
-            log.info("[FILTRAR] Parámetros recibidos - page: {}, size: {}, sortBy: {}, sortDir: {}", 
-                page, size, sortBy, sortDir);
+            log.info("[FILTRAR] Parámetros recibidos - page: {}, size: {}, sortBy: {}, sortDir: {}, estado: {}, tematica: {}, autoria: {}, nivel: {}, texto: {}", 
+                page, size, sortBy, sortDir, estado, tematica, autoria, nivel, texto);
             
             Pageable pageable = PageRequest.of(page, size, 
                 sortDir.equalsIgnoreCase("desc") ? 

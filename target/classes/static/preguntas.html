@@ -322,7 +322,7 @@
                     <div class="row g-3">
                         <div class="col-md-2">
                             <label class="form-label">Estado:</label>
-                            <select id="filtro-estado" class="form-select form-select-sm" onchange="filtrarPreguntas()">
+                            <select id="filtro-estado" class="form-select form-select-sm">
                                 <option value="">Todos</option>
                                 <option value="borrador">Borrador</option>
                                 <option value="para_verificar">Para verificar</option>
@@ -338,18 +338,18 @@
                         <div class="col-md-2">
                             <label class="form-label">Pregunta o respuesta:</label>
                             <input type="text" id="filtro-texto" class="form-control form-control-sm" 
-                                   onkeyup="filtrarPreguntas()" placeholder="Buscar en pregunta o respuesta...">
+                                   placeholder="Buscar en pregunta o respuesta...">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Autoría:</label>
-                            <select id="filtro-autoria" class="form-select form-select-sm" onchange="filtrarPreguntas()">
+                            <select id="filtro-autoria" class="form-select form-select-sm">
                                 <option value="">Todos</option>
                                 <!-- Las opciones se cargarán dinámicamente -->
                             </select>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Nivel:</label>
-                            <select id="filtro-nivel" class="form-select form-select-sm" onchange="filtrarPreguntas()">
+                            <select id="filtro-nivel" class="form-select form-select-sm">
                                 <option value="">Todos</option>
                                 <option value="_0">0</option>
                                 <option value="_1LS">1LS</option>

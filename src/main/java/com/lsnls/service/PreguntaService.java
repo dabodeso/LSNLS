@@ -10,6 +10,10 @@ import com.lsnls.repository.PreguntaComboRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -685,187 +689,141 @@ public class PreguntaService {
 
     public List<PreguntaDTO> filtrarPreguntasCompleto(String nivel, String factor, String estado, 
                                                      String tematica, String subtema, String pregunta, String respuesta, String autoria, String texto) {
-        // Convertir strings a enums
-        Pregunta.NivelPregunta nivelEnum = null;
-        Pregunta.FactorPregunta factorEnum = null;
-        Pregunta.EstadoPregunta estadoEnum = null;
-        
-        try {
-            if (nivel != null && !nivel.isBlank()) {
-                nivelEnum = Pregunta.NivelPregunta.valueOf(nivel.startsWith("_") ? nivel : ("_"+nivel));
-            }
-        } catch (Exception ignored) {}
-        
-        try {
-            if (factor != null && !factor.isBlank()) {
-                factorEnum = Pregunta.FactorPregunta.valueOf(factor);
-            }
-        } catch (Exception ignored) {}
-        
-        try {
-            if (estado != null && !estado.isBlank()) {
-                estadoEnum = Pregunta.EstadoPregunta.valueOf(estado);
-            }
-        } catch (Exception ignored) {}
-        
-        // Usar el nuevo método del repository
-        List<Pregunta> preguntas = preguntaRepository.filtrarTodas(
-            nivelEnum,
-            factorEnum,
-            estadoEnum,
-            (tematica != null && !tematica.isBlank()) ? tematica : null,
-            (subtema != null && !subtema.isBlank()) ? subtema : null,
-            (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
-            (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
-            (autoria != null && !autoria.isBlank()) ? autoria : null,
-            (texto != null && !texto.isBlank()) ? texto : null
-        );
-        
-        return preguntas.stream().map(this::mapPreguntaToDTO).collect(java.util.stream.Collectors.toList());
+        Specification<Pregunta> spec = buildFiltrarSpecification(
+            parseNivel(nivel), parseFactor(factor), estado,
+            tematica, subtema, pregunta, respuesta, autoria, texto);
+
+        List<Pregunta> preguntas = preguntaRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "id"));
+        return preguntas.stream().map(this::mapPreguntaToDTO).collect(Collectors.toList());
     }
 
     public Page<PreguntaDTO> filtrarPreguntasCompletoPaginado(String nivel, String factor, String estado, 
                                                              String tematica, String subtema, String pregunta, String respuesta, 
                                                              String autoria, String texto, Pageable pageable) {
-        // Convertir strings a enums
-        Pregunta.NivelPregunta nivelEnum = null;
-        Pregunta.FactorPregunta factorEnum = null;
-        Pregunta.EstadoPregunta estadoEnum = null;
-        
-        try {
-            if (nivel != null && !nivel.isBlank()) {
-                nivelEnum = Pregunta.NivelPregunta.valueOf(nivel.startsWith("_") ? nivel : ("_"+nivel));
-            }
-        } catch (Exception ignored) {}
-        
-        try {
-            if (factor != null && !factor.isBlank()) {
-                factorEnum = Pregunta.FactorPregunta.valueOf(factor);
-            }
-        } catch (Exception ignored) {}
-        
-        try {
-            if (estado != null && !estado.isBlank()) {
-                estadoEnum = Pregunta.EstadoPregunta.valueOf(estado);
-            }
-        } catch (Exception ignored) {}
-        
-        // Soporte multi-estado: si llega 'estado' con CSV (ej: aprobada,verificada), dividir y mapear
-        List<Pregunta> todasLasPreguntas;
-        if (estado != null && estado.contains(",")) {
-            java.util.List<com.lsnls.entity.Pregunta.EstadoPregunta> estadosEnum = new java.util.ArrayList<>();
-            for (String s : estado.split(",")) {
-                String v = s.trim();
-                if (!v.isEmpty()) {
-                    try { estadosEnum.add(com.lsnls.entity.Pregunta.EstadoPregunta.valueOf(v)); } catch (Exception ignored) {}
-                }
-            }
-            todasLasPreguntas = preguntaRepository.filtrarPorEstados(
-                nivelEnum, factorEnum, estadosEnum.isEmpty() ? null : estadosEnum,
-                (tematica != null && !tematica.isBlank()) ? tematica : null,
-                (subtema != null && !subtema.isBlank()) ? subtema : null,
-                (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
-                (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
-                (autoria != null && !autoria.isBlank()) ? autoria : null,
-                (texto != null && !texto.isBlank()) ? texto : null
-            );
-        } else {
-            // Obtener todas las preguntas filtradas
-            todasLasPreguntas = preguntaRepository.filtrarTodas(
-                nivelEnum,
-                factorEnum,
-                estadoEnum,
-                (tematica != null && !tematica.isBlank()) ? tematica : null,
-                (subtema != null && !subtema.isBlank()) ? subtema : null,
-                (pregunta != null && !pregunta.isBlank()) ? pregunta : null,
-                (respuesta != null && !respuesta.isBlank()) ? respuesta : null,
-                (autoria != null && !autoria.isBlank()) ? autoria : null,
-                (texto != null && !texto.isBlank()) ? texto : null
-            );
-        }
-        
-        // Aplicar ordenamiento del Pageable
-        if (pageable.getSort().isSorted()) {
-            log.info("[FILTRAR] Aplicando ordenamiento: {}", pageable.getSort());
-            todasLasPreguntas.sort((a, b) -> {
-                for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
-                    String property = order.getProperty();
-                    org.springframework.data.domain.Sort.Direction direction = order.getDirection();
-                    
-                    Comparable<Object> valueA = getFieldValue(a, property);
-                    Comparable<Object> valueB = getFieldValue(b, property);
-                    
-                    if (valueA == null && valueB == null) continue;
-                    if (valueA == null) return direction == org.springframework.data.domain.Sort.Direction.ASC ? -1 : 1;
-                    if (valueB == null) return direction == org.springframework.data.domain.Sort.Direction.ASC ? 1 : -1;
-                    
-                    int comparison = valueA.compareTo(valueB);
-                    if (comparison != 0) {
-                        return direction == org.springframework.data.domain.Sort.Direction.ASC ? comparison : -comparison;
-                    }
-                }
-                return 0;
-            });
-        }
-        
-        // Aplicar paginación manualmente
-        int total = todasLasPreguntas.size();
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), total);
-        
-        if (start > total) {
-            return org.springframework.data.domain.Page.empty(pageable);
-        }
-        
-        List<Pregunta> preguntasPaginadas = todasLasPreguntas.subList(start, end);
-        List<PreguntaDTO> dtos = preguntasPaginadas.stream().map(this::mapPreguntaToDTO).collect(java.util.stream.Collectors.toList());
-        
-        return new org.springframework.data.domain.PageImpl<>(dtos, pageable, total);
+        log.info("[FILTRAR] Filtros recibidos - estado: {}, tematica: {}, subtema: {}, autoria: {}, nivel: {}, texto: {}",
+            estado, tematica, subtema, autoria, nivel, texto);
+
+        Specification<Pregunta> spec = buildFiltrarSpecification(
+            parseNivel(nivel), parseFactor(factor), estado,
+            tematica, subtema, pregunta, respuesta, autoria, texto);
+
+        Page<Pregunta> page = preguntaRepository.findAll(spec, pageable);
+        log.info("[FILTRAR] Resultado tras filtrar - total: {}, pagina: {}, tamPagina: {}",
+            page.getTotalElements(), pageable.getPageNumber(), pageable.getPageSize());
+
+        return page.map(this::mapPreguntaToDTO);
     }
 
-    // Método auxiliar para obtener el valor de un campo por reflexión
-    @SuppressWarnings("unchecked")
-    private Comparable<Object> getFieldValue(Pregunta pregunta, String fieldName) {
-        try {
-            switch (fieldName) {
-                case "id":
-                    return (Comparable<Object>) (Object) pregunta.getId();
-                case "autor":
-                    return (Comparable<Object>) (Object) pregunta.getAutor();
-                case "nivel":
-                    return (Comparable<Object>) (Object) (pregunta.getNivel() != null ? pregunta.getNivel().name() : null);
-                case "tematica":
-                    return (Comparable<Object>) (Object) pregunta.getTematica();
-                case "subtema":
-                    return (Comparable<Object>) (Object) pregunta.getSubtema();
-                case "pregunta":
-                    return (Comparable<Object>) (Object) pregunta.getPregunta();
-                case "respuesta":
-                    return (Comparable<Object>) (Object) pregunta.getRespuesta();
-                case "datosExtra":
-                    return (Comparable<Object>) (Object) pregunta.getDatosExtra();
-                case "fuentes":
-                    return (Comparable<Object>) (Object) pregunta.getFuentes();
-                case "verificacion":
-                    return (Comparable<Object>) (Object) pregunta.getVerificacion();
-                case "notasVerificacion":
-                    return (Comparable<Object>) (Object) pregunta.getNotasVerificacion();
-                case "notasDireccion":
-                    return (Comparable<Object>) (Object) pregunta.getNotasDireccion();
-                case "estado":
-                    return (Comparable<Object>) (Object) (pregunta.getEstado() != null ? pregunta.getEstado().name() : null);
-                case "fechaCreacion":
-                    return (Comparable<Object>) (Object) pregunta.getFechaCreacion();
-                case "fechaVerificacion":
-                    return (Comparable<Object>) (Object) pregunta.getFechaVerificacion();
-                default:
-                    log.warn("[FILTRAR] Campo no reconocido para ordenamiento: {}", fieldName);
-                    return null;
-            }
-        } catch (Exception e) {
-            log.error("[FILTRAR] Error al obtener valor del campo {}: {}", fieldName, e.getMessage());
+    private Pregunta.NivelPregunta parseNivel(String nivel) {
+        if (nivel == null || nivel.isBlank()) {
             return null;
         }
+        try {
+            return Pregunta.NivelPregunta.valueOf(nivel.startsWith("_") ? nivel : ("_" + nivel));
+        } catch (Exception e) {
+            log.warn("[FILTRAR] Nivel no reconocido: '{}'", nivel);
+            return null;
+        }
+    }
+
+    private Pregunta.FactorPregunta parseFactor(String factor) {
+        if (factor == null || factor.isBlank()) {
+            return null;
+        }
+        try {
+            return Pregunta.FactorPregunta.valueOf(factor);
+        } catch (Exception e) {
+            log.warn("[FILTRAR] Factor no reconocido: '{}'", factor);
+            return null;
+        }
+    }
+
+    private Specification<Pregunta> buildFiltrarSpecification(
+            Pregunta.NivelPregunta nivel,
+            Pregunta.FactorPregunta factor,
+            String estadoRaw,
+            String tematica,
+            String subtema,
+            String pregunta,
+            String respuesta,
+            String autoria,
+            String texto) {
+
+        Specification<Pregunta> spec = Specification.where(null);
+
+        if (nivel != null) {
+            spec = spec.and((root, cq, cb) -> cb.equal(root.get("nivel"), nivel));
+        }
+        if (factor != null) {
+            spec = spec.and((root, cq, cb) -> cb.equal(root.get("factor"), factor));
+        }
+
+        if (estadoRaw != null && !estadoRaw.isBlank()) {
+            if (estadoRaw.contains(",")) {
+                List<Pregunta.EstadoPregunta> estados = new ArrayList<>();
+                for (String s : estadoRaw.split(",")) {
+                    String v = s.trim();
+                    if (!v.isEmpty()) {
+                        try {
+                            estados.add(parseEstadoPregunta(v));
+                        } catch (Exception e) {
+                            log.warn("[FILTRAR] Estado CSV no reconocido: '{}'", v);
+                        }
+                    }
+                }
+                if (!estados.isEmpty()) {
+                    spec = spec.and((root, cq, cb) -> root.get("estado").in(estados));
+                }
+            } else {
+                try {
+                    Pregunta.EstadoPregunta estado = parseEstadoPregunta(estadoRaw);
+                    spec = spec.and((root, cq, cb) -> cb.equal(root.get("estado"), estado));
+                } catch (Exception e) {
+                    log.warn("[FILTRAR] Estado no reconocido: '{}'", estadoRaw);
+                }
+            }
+        }
+
+        if (tematica != null && !tematica.isBlank()) {
+            final String like = "%" + tematica.toLowerCase() + "%";
+            spec = spec.and((root, cq, cb) -> cb.like(cb.lower(root.get("tematica")), like));
+        }
+        if (subtema != null && !subtema.isBlank()) {
+            final String like = "%" + subtema.toLowerCase() + "%";
+            spec = spec.and((root, cq, cb) -> cb.like(cb.lower(root.get("subtema")), like));
+        }
+        if (pregunta != null && !pregunta.isBlank()) {
+            final String like = "%" + pregunta.toLowerCase() + "%";
+            spec = spec.and((root, cq, cb) -> cb.like(cb.lower(root.get("pregunta")), like));
+        }
+        if (respuesta != null && !respuesta.isBlank()) {
+            final String like = "%" + respuesta.toLowerCase() + "%";
+            spec = spec.and((root, cq, cb) -> cb.like(cb.lower(root.get("respuesta")), like));
+        }
+        if (autoria != null && !autoria.isBlank()) {
+            final String like = "%" + autoria.toLowerCase() + "%";
+            spec = spec.and((root, cq, cb) -> {
+                Join<Pregunta, Usuario> creacionUsuario = root.join("creacionUsuario", JoinType.LEFT);
+                return cb.like(
+                    cb.lower(cb.coalesce(root.get("autor"), cb.coalesce(creacionUsuario.get("nombre"), cb.literal("")))),
+                    like
+                );
+            });
+        }
+        if (texto != null && !texto.isBlank()) {
+            final String like = "%" + texto.toLowerCase() + "%";
+            spec = spec.and((root, cq, cb) -> cb.or(
+                cb.like(cb.lower(root.get("pregunta")), like),
+                cb.like(cb.lower(root.get("respuesta")), like)
+            ));
+        }
+
+        return spec;
+    }
+
+    private Pregunta.EstadoPregunta parseEstadoPregunta(String raw) {
+        String normalized = raw.trim().toLowerCase().replace(' ', '_');
+        return Pregunta.EstadoPregunta.valueOf(normalized);
     }
 
     // --- MÉTODO DE MAPEADO DTO ---

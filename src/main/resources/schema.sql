@@ -224,7 +224,7 @@ CREATE TABLE IF NOT EXISTS concursantes (
     foto VARCHAR(255),
     creditos_especiales TEXT,
     version BIGINT DEFAULT 0
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Las claves foráneas ya están definidas en las tablas con FOREIGN KEY
 -- No es necesario añadirlas con ALTER TABLE ya que se crean automáticamente
@@ -246,6 +246,39 @@ CREATE TABLE IF NOT EXISTS historial_jornadas (
     FOREIGN KEY (cuestionario_id) REFERENCES cuestionarios (id),
     FOREIGN KEY (combo_id) REFERENCES combos (id),
     FOREIGN KEY (pregunta_usada_id) REFERENCES preguntas (id)
+);
+
+-- Bloqueos exclusivos de edición (modal / sincronización entre usuarios)
+CREATE TABLE IF NOT EXISTS edit_locks (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    entity_type VARCHAR(40) NOT NULL,
+    entity_id BIGINT NOT NULL,
+    usuario_id BIGINT NOT NULL,
+    usuario_nombre VARCHAR(100) NOT NULL,
+    expires_at datetime(6) NOT NULL,
+    created_at datetime(6) NOT NULL,
+    updated_at datetime(6) NOT NULL,
+    UNIQUE KEY uk_edit_locks_entity (entity_type, entity_id)
+);
+
+-- Registro de auditoría de operaciones críticas
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id BIGINT,
+    usuario_nombre VARCHAR(100),
+    timestamp datetime(6) NOT NULL,
+    operation_type VARCHAR(50) NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id BIGINT,
+    description VARCHAR(1000),
+    old_values TEXT,
+    new_values TEXT,
+    ip_address VARCHAR(45),
+    user_agent VARCHAR(500),
+    result VARCHAR(50) NOT NULL,
+    error_message VARCHAR(1000),
+    duration_ms BIGINT,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
 -- Actualizar enum de estados de combos para incluir 'reaprovechado' y 'liberado'

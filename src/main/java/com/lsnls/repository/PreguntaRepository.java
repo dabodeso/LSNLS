@@ -5,6 +5,7 @@ import com.lsnls.entity.Pregunta.EstadoPregunta;
 import com.lsnls.entity.Pregunta.EstadoDisponibilidad;
 import com.lsnls.entity.Pregunta.NivelPregunta;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
@@ -14,7 +15,7 @@ import org.springframework.data.repository.query.Param;
 import com.lsnls.entity.Usuario;
 
 @Repository
-public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
+public interface PreguntaRepository extends JpaRepository<Pregunta, Long>, JpaSpecificationExecutor<Pregunta> {
     @Query("SELECT DISTINCT p.tematica FROM Pregunta p WHERE p.tematica IS NOT NULL AND p.tematica <> '' ORDER BY p.tematica ASC")
     List<String> findDistinctTematicas();
     List<Pregunta> findByEstado(EstadoPregunta estado);
