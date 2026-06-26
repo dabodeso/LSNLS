@@ -173,10 +173,31 @@ public class PreguntaController {
             pregunta.setFuentes(dto.fuentes);
             pregunta.setCreacionUsuario(currentUser);
             pregunta.setAutor(currentUser.getNombre());
-            pregunta.setEstado(Pregunta.EstadoPregunta.borrador);
             pregunta.setNotasVerificacion(dto.notasVerificacion);
             pregunta.setNotasDireccion(dto.notasDireccion);
             pregunta.setSubtema(dto.subtema);
+
+            Pregunta.EstadoPregunta estadoInicial = Pregunta.EstadoPregunta.borrador;
+            if (dto.estado != null && !dto.estado.isBlank()) {
+                try {
+                    estadoInicial = Pregunta.EstadoPregunta.valueOf(dto.estado.trim());
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body("Estado inválido: " + dto.estado);
+                }
+            }
+            if (estadoInicial == Pregunta.EstadoPregunta.para_verificar) {
+                preguntaService.validarRequisitosParaVerificar(
+                    dto.tematica, dto.pregunta, dto.respuesta, dto.fuentes);
+                if (!authService.canChangeEstadoPregunta(
+                        Pregunta.EstadoPregunta.borrador, Pregunta.EstadoPregunta.para_verificar)) {
+                    return ResponseEntity.status(403).body(
+                        "No tienes permisos para crear preguntas en estado 'para verificar'");
+                }
+            } else if (estadoInicial != Pregunta.EstadoPregunta.borrador) {
+                return ResponseEntity.badRequest().body(
+                    "Solo se puede crear en estado 'borrador' o 'para_verificar'");
+            }
+            pregunta.setEstado(estadoInicial);
 
             try {
                 Pregunta nuevaPregunta = preguntaService.crear(pregunta);
@@ -188,6 +209,20 @@ public class PreguntaController {
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error interno al crear pregunta: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/restaurar")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> restaurarEliminada(@RequestBody PreguntaDTO snapshot) {
+        try {
+            Pregunta restaurada = preguntaService.restaurarDesdeSnapshot(snapshot);
+            return ResponseEntity.ok(preguntaService.mapPreguntaToDTO(restaurada));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            log.error("Error al restaurar pregunta: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body("Error al restaurar pregunta: " + e.getMessage());
         }
     }
 

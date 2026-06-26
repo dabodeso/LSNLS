@@ -843,6 +843,11 @@ public class JornadaService {
         }
 
         // Mantener el combo en la jornada pero marcarlo como disponible para nuevas jornadas
+        int totalPreguntas = combo.getPreguntas() == null ? 0 : combo.getPreguntas().size();
+        if (totalPreguntas != 3) {
+            throw new IllegalArgumentException("Solo se pueden reciclar combos con exactamente 3 preguntas");
+        }
+
         System.out.println("🔄🔄🔄 [RECICLAR ENTERO] Combo " + comboId + " | Estado actual: " + estadoActual + " | Jornada: " + jornadaId);
         combo.setEstado(Combo.EstadoCombo.aprobado);
         comboRepository.save(combo);
@@ -905,8 +910,8 @@ public class JornadaService {
         System.out.println("🔍 [JORNADA] Reciclando combo " + comboId + " parcialmente. Estado actual: " + estadoActual);
         
         int totalPreguntas = combo.getPreguntas() == null ? 0 : combo.getPreguntas().size();
-        if (totalPreguntas < 2) {
-            throw new IllegalArgumentException("El combo debe tener al menos 2 preguntas para reciclaje parcial. Con 1 pregunta use reciclaje entero.");
+        if (totalPreguntas != 3) {
+            throw new IllegalArgumentException("Solo se pueden reciclar combos con exactamente 3 preguntas");
         }
         
         // Verificar que la pregunta usada existe en el combo

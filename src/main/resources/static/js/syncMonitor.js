@@ -105,9 +105,9 @@ const SyncMonitor = {
     async refreshEntity(type, id, newVersion) {
         const handlers = {
             PREGUNTA: () => window.PreguntasManager?.recargarConFiltros?.(),
-            COMBO: () => CombosManager?.refrescarFila?.(id),
-            CUESTIONARIO: () => CuestionariosManager?.refrescarFila?.(id),
-            JORNADA: () => window.JornadasManager?.cargarDatos?.(),
+            COMBO: () => window.CombosManager?.recargarConFiltros?.(),
+            CUESTIONARIO: () => window.CuestionariosManager?.recargarConFiltros?.(),
+            JORNADA: () => window.JornadasManager?.recargarConFiltros?.(),
             PROGRAMA: () => typeof recargarProgramas === 'function' ? recargarProgramas() : null
         };
         const fn = handlers[type];

@@ -63,8 +63,9 @@ public class AuthorizationService {
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
                     case verificada:
-                        // Niveles 3 y 4 (VERIFICACION, DIRECCION)
-                        return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
+                        // Guion puede consultar/editar tras verificar; verificación y dirección también
+                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
+                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
                     case para_aprobar:
@@ -110,10 +111,10 @@ public class AuthorizationService {
                         break;
                         
                     case para_verificar:
-                        // Para Verificar -> Verificada o Revisar (por Verificación/Guion)
-                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.verificada && 
-                                           (isVerificacion || isDireccion)) || 
-                                          (nuevoEstado == Pregunta.EstadoPregunta.revisar && 
+                        // Para Verificar -> Verificada o Revisar (por Guion, Verificación o Dirección)
+                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.verificada &&
+                                           (isGuion || isVerificacion || isDireccion)) ||
+                                          (nuevoEstado == Pregunta.EstadoPregunta.revisar &&
                                            (isVerificacion || isGuion));
                         break;
                         
@@ -227,7 +228,8 @@ public class AuthorizationService {
      */
     public boolean canCreateConcursante() {
         return getCurrentUser()
-            .map(usuario -> 
+            .map(usuario ->
+                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)

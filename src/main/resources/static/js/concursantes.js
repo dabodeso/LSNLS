@@ -3,8 +3,10 @@ let concursantes = [];
 let programas = [];
 let concursanteActual = null;
 
-// Solo ADMIN y DIRECCION pueden editar concursantes
+// Solo ADMIN, GUION y DIRECCION pueden crear/editar concursantes; eliminar solo ADMIN/DIRECCION
 let puedeEditarConcursantes = false;
+let puedeCrearConcursante = false;
+let puedeEliminarConcursante = false;
 
 // Valoraciones permitidas para guionista y dirección (solo front, no BBDD)
 const VALORACIONES_PERMITIDAS = ['1', '1+', '2-', '2', '2+', '3-', '3', '3+'];
@@ -48,6 +50,122 @@ let modalCuestPagina = 1;
 const modalCuestPorPagina = 25;
 let modalComboPagina = 1;
 const modalComboPorPagina = 25;
+
+/** Payload PUT compatible con el backend para do/undo de concursante. */
+function buildConcursantePayload(src, id) {
+    const concursanteId = id ?? src?.id ?? null;
+    return {
+        id: concursanteId,
+        jornadaId: src?.jornadaId ?? null,
+        diaGrabacion: src?.diaGrabacion ?? null,
+        lugar: src?.lugar ?? null,
+        nombre: src?.nombre ?? null,
+        edad: src?.edad ?? null,
+        ocupacion: src?.ocupacion ?? null,
+        redesSociales: src?.redesSociales ?? null,
+        cuestionarioId: src?.cuestionarioId ?? null,
+        comboId: src?.comboId ?? null,
+        xusoker: src?.xusoker ?? null,
+        factorX: src?.factorX ?? null,
+        resultado: src?.resultado ?? null,
+        notasGrabacion: src?.notasGrabacion ?? null,
+        guionista: src?.guionista ?? null,
+        valoracionGuionista: src?.valoracionGuionista ?? null,
+        momentosDestacados: src?.momentosDestacados ?? null,
+        duracion: src?.duracion ?? null,
+        duracionDireccion: src?.duracionDireccion ?? null,
+        duracionFinal: src?.duracionFinal ?? null,
+        valoracionFinal: src?.valoracionFinal ?? null,
+        numeroPrograma: src?.numeroPrograma ?? null,
+        ordenEscaleta: src?.ordenEscaleta ?? null,
+        bonico: src?.bonico ?? null,
+        estado: src?.estado ?? null,
+        premio: src?.premio ?? null,
+        foto: src?.foto ?? null,
+        creditosEspeciales: src?.creditosEspeciales ?? null,
+        numeroConcursante: src?.numeroConcursante ?? null
+    };
+}
+
+async function refrescarListaConcursantes(paginaAntes) {
+    await cargarConcursantes(true);
+    if (paginaAntes !== undefined && paginaAntes !== null) {
+        paginaActual = paginaAntes;
+    }
+}
+
+async function sincronizarJornadaConcursante(concursanteId, jornadaId) {
+    const objetivo = jornadaId != null && jornadaId !== '' ? jornadaId : null;
+    const actual = await apiManager.get(`/api/concursantes/${concursanteId}`);
+    const actualId = actual?.jornadaId ?? null;
+    if (String(actualId || '') === String(objetivo || '')) return;
+    if (objetivo) {
+        await apiManager.post(`/api/concursantes/${concursanteId}/asignar-jornada/${objetivo}`, {});
+    } else {
+        await apiManager.delete(`/api/concursantes/${concursanteId}/desasignar-jornada`);
+    }
+}
+
+async function ejecutarAccionConcursanteUndoable({ doAction, undoAction, label }) {
+    await doAction();
+    if (window.UndoManager) {
+        window.UndoManager.record({ do: doAction, undo: undoAction, label });
+    }
+}
+
+async function registrarUndoPutConcursante(concursanteId, buildNextPayload, label, paginaAntes) {
+    const snapshot = await apiManager.get(`/api/concursantes/${concursanteId}`);
+    const prevPayload = buildConcursantePayload(snapshot, concursanteId);
+    const nextPayload = typeof buildNextPayload === 'function'
+        ? buildNextPayload(prevPayload, snapshot)
+        : buildNextPayload;
+
+    const aplicar = async (payload) => {
+        await apiManager.put(`/api/concursantes/${concursanteId}`, payload);
+        await refrescarListaConcursantes(paginaAntes);
+    };
+
+    await ejecutarAccionConcursanteUndoable({
+        doAction: async () => aplicar(nextPayload),
+        undoAction: async () => aplicar(prevPayload),
+        label
+    });
+}
+
+async function registrarUndoJornadaConcursante(concursanteId, nuevaJornadaId, label, paginaAntes) {
+    const snapshot = await apiManager.get(`/api/concursantes/${concursanteId}`);
+    const jornadaPrev = snapshot?.jornadaId ?? null;
+    const jornadaNueva = nuevaJornadaId != null && nuevaJornadaId !== '' ? nuevaJornadaId : null;
+
+    const aplicarJornada = async (jornadaId) => {
+        await sincronizarJornadaConcursante(concursanteId, jornadaId);
+        await refrescarListaConcursantes(paginaAntes);
+    };
+
+    await ejecutarAccionConcursanteUndoable({
+        doAction: async () => aplicarJornada(jornadaNueva),
+        undoAction: async () => aplicarJornada(jornadaPrev),
+        label
+    });
+}
+
+async function desasignarCuestionarioConcursante(concursanteId, paginaAntes) {
+    await registrarUndoPutConcursante(
+        concursanteId,
+        (prev) => ({ ...prev, cuestionarioId: null }),
+        `Desasignar cuestionario de concursante ${concursanteId}`,
+        paginaAntes
+    );
+}
+
+async function desasignarComboConcursante(concursanteId, paginaAntes) {
+    await registrarUndoPutConcursante(
+        concursanteId,
+        (prev) => ({ ...prev, comboId: null }),
+        `Desasignar combo de concursante ${concursanteId}`,
+        paginaAntes
+    );
+}
 
 // Configuración de columnas por rol
 let configuracionColumnas = {
@@ -105,12 +223,14 @@ function detectarRolUsuario() {
 const usuario = authManager.currentUser;
 const rol = usuario && usuario.rol ? usuario.rol.replace('ROLE_', '').toLowerCase() : null;
 
-// Solo ADMIN y DIRECCION pueden editar
-puedeEditarConcursantes = (rol === 'admin' || rol === 'direccion');
+// ADMIN, GUION y DIRECCION pueden crear/editar; eliminar solo ADMIN/DIRECCION
+puedeCrearConcursante = (rol === 'admin' || rol === 'guion' || rol === 'direccion');
+puedeEditarConcursantes = puedeCrearConcursante;
+puedeEliminarConcursante = (rol === 'admin' || rol === 'direccion');
 
-// Ocultar "Nuevo Concursante" si no puede editar
+// Ocultar "Nuevo Concursante" si no puede crear
 const btnNuevo = document.getElementById('btn-nuevo-concursante');
-if (btnNuevo) btnNuevo.style.display = puedeEditarConcursantes ? '' : 'none';
+if (btnNuevo) btnNuevo.style.display = puedeCrearConcursante ? '' : 'none';
 
 // Mostrar siempre el botón de configuración
 const btnConfig = document.getElementById('btn-config-columnas');
@@ -669,7 +789,8 @@ celdas.push(`<td>
            ${puedeEditarConcursantes ? `
            <button class="btn btn-sm btn-primary" onclick="editarConcursante(${concursante.id})">
                <i class="fas fa-edit"></i>
-           </button>
+           </button>` : ''}
+           ${puedeEliminarConcursante ? `
            <button class="btn btn-sm btn-danger" onclick="eliminarConcursante(${concursante.id})">
                <i class="fas fa-trash"></i>
            </button>` : ''}
@@ -831,38 +952,7 @@ document.getElementById('cuestionario-id').value = concursanteActual.cuestionari
 // CORREGIR: usar comboId en lugar de combo.id
 const comboId = concursanteActual.comboId || '';
 if (comboId) {
-    // Cargar información del combo para mostrar nombre
-    try {
-        const comboDetalle = await apiManager.get(`/api/combos/${comboId}`);
-        if (comboDetalle && comboDetalle.datos) {
-            const combo = comboDetalle.datos;
-            document.getElementById('combo-id').value = `Combo #${comboId}`;
-            document.getElementById('combo-id').dataset.comboId = comboId;
-            // Mostrar botón de reciclar
-            const btnReciclar = document.getElementById('btn-reciclar-combo');
-            if (btnReciclar) {
-                btnReciclar.style.display = 'inline-block';
-                btnReciclar.dataset.comboId = comboId;
-            }
-        } else {
-            document.getElementById('combo-id').value = `Combo #${comboId}`;
-            document.getElementById('combo-id').dataset.comboId = comboId;
-            const btnReciclar = document.getElementById('btn-reciclar-combo');
-            if (btnReciclar) {
-                btnReciclar.style.display = 'inline-block';
-                btnReciclar.dataset.comboId = comboId;
-            }
-        }
-    } catch (e) {
-        console.warn('No se pudo cargar detalle del combo:', e);
-        document.getElementById('combo-id').value = `Combo #${comboId}`;
-        document.getElementById('combo-id').dataset.comboId = comboId;
-        const btnReciclar = document.getElementById('btn-reciclar-combo');
-        if (btnReciclar) {
-            btnReciclar.style.display = 'inline-block';
-            btnReciclar.dataset.comboId = comboId;
-        }
-    }
+    actualizarComboEnFormulario(comboId);
 } else {
     document.getElementById('combo-id').value = '';
     document.getElementById('combo-id').dataset.comboId = '';
@@ -963,6 +1053,46 @@ function leerJornadaIdDesdeFormulario(esEdicion) {
     return jid;
 }
 
+function obtenerJornadaIdParaReciclaje() {
+    const sel = document.getElementById('jornada-select');
+    if (sel?.value) {
+        return String(sel.value);
+    }
+    if (jornadaFiltroSeleccion) {
+        return String(jornadaFiltroSeleccion);
+    }
+    if (concursanteActual?.jornadaId) {
+        return String(concursanteActual.jornadaId);
+    }
+    return null;
+}
+
+function actualizarComboEnFormulario(comboId) {
+    const id = String(comboId);
+    const input = document.getElementById('combo-id');
+    if (!input) return;
+    input.value = `Combo #${id}`;
+    input.dataset.comboId = id;
+    const btnReciclar = document.getElementById('btn-reciclar-combo');
+    if (btnReciclar) {
+        btnReciclar.style.display = 'inline-block';
+        btnReciclar.dataset.comboId = id;
+    }
+}
+
+async function reciclarComboDesdeSelector(comboId) {
+    actualizarComboEnFormulario(comboId);
+    await iniciarReciclajeComboDesdeFormulario(comboId);
+}
+
+function validarComboReciclable(preguntas) {
+    if (!preguntas || preguntas.length !== 3) {
+        mostrarError('Solo se pueden reciclar combos con exactamente 3 preguntas');
+        return false;
+    }
+    return true;
+}
+
 /** Foto: usa foto-nombre; null si limpiada o en creación (la subida va aparte). */
 function leerFotoParaGuardar(esEdicion) {
     if (!esEdicion) {
@@ -1041,8 +1171,20 @@ let response;
         // Editar concursante existente (manual do/undo con refresco UI)
         console.info('📤 [GUARDAR] PUT (manual do/undo)', `/api/concursantes/${datosConcursante.id}`);
         snapshotPrevio = await apiManager.get(`/api/concursantes/${datosConcursante.id}`);
-        const doAction = async () => { await apiManager.put(`/api/concursantes/${datosConcursante.id}`, datosConcursante); await cargarConcursantes(true); };
-        const undoAction = async () => { await apiManager.put(`/api/concursantes/${datosConcursante.id}`, snapshotPrevio); await cargarConcursantes(true); };
+        const prevJornada = snapshotPrevio?.jornadaId ?? null;
+        const nuevaJornada = selectedJornadaId || null;
+        const doAction = async () => {
+            await apiManager.put(`/api/concursantes/${datosConcursante.id}`, datosConcursante);
+            if (String(nuevaJornada || '') !== String(prevJornada || '')) {
+                await sincronizarJornadaConcursante(datosConcursante.id, nuevaJornada);
+            }
+            await cargarConcursantes(true);
+        };
+        const undoAction = async () => {
+            await apiManager.put(`/api/concursantes/${datosConcursante.id}`, snapshotPrevio);
+            await sincronizarJornadaConcursante(datosConcursante.id, prevJornada);
+            await cargarConcursantes(true);
+        };
         await doAction();
         if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar concursante ${datosConcursante.id}` });
         // Simular objeto Response OK para flujo existente
@@ -1061,28 +1203,7 @@ let response;
 
 if (response.ok) {
         console.info('✅ [GUARDAR] Respuesta OK', response.status);
-        // Sincronizar jornada explícitamente con endpoints dedicados
-        if (esEdicion) {
-            const prevJornada = snapshotPrevio?.jornadaId != null ? String(snapshotPrevio.jornadaId) : '';
-            const nuevaJornada = selectedJornadaId ? String(selectedJornadaId) : '';
-            if (nuevaJornada !== prevJornada) {
-                try {
-                    if (nuevaJornada) {
-                        console.info('🔗 [GUARDAR] Asignando jornada (edición)', { id: datosConcursante.id, nuevaJornada });
-                        await apiManager.postUndoable(`/api/concursantes/${datosConcursante.id}/asignar-jornada/${nuevaJornada}`, {}, {
-                            label: `Asignar jornada a concursante ${datosConcursante.id}`,
-                            idExtractor: () => datosConcursante.id,
-                            deleteEndpointBuilder: () => `/api/concursantes/${datosConcursante.id}/desasignar-jornada`
-                        });
-                    } else {
-                        console.info('🔗 [GUARDAR] Desasignando jornada (edición)', { id: datosConcursante.id });
-                        await apiManager.deleteUndoable(`/api/concursantes/${datosConcursante.id}/desasignar-jornada`, { label: `Desasignar jornada de concursante ${datosConcursante.id}`, snapshotEndpoint: `/api/concursantes/${datosConcursante.id}` });
-                    }
-                } catch (e) {
-                    console.warn('No se pudo sincronizar la jornada del concursante:', e);
-                }
-            }
-        } else {
+        if (!esEdicion) {
             // Creación: obtener ID creado y asignar jornada si procede
             let creadoId = null;
             try {
@@ -1096,11 +1217,12 @@ if (response.ok) {
             if (selectedJornadaId && creadoId) {
                 try {
                     console.info('🔗 [GUARDAR] Asignando jornada tras crear', { creadoId, selectedJornadaId });
-                    await apiManager.postUndoable(`/api/concursantes/${creadoId}/asignar-jornada/${selectedJornadaId}`, {}, {
-                        label: `Asignar jornada a concursante ${creadoId}`,
-                        idExtractor: () => creadoId,
-                        deleteEndpointBuilder: () => `/api/concursantes/${creadoId}/desasignar-jornada`
-                    });
+                    await registrarUndoJornadaConcursante(
+                        creadoId,
+                        selectedJornadaId,
+                        `Asignar jornada a concursante ${creadoId}`,
+                        0
+                    );
                 } catch (e) {
                     console.warn('⚠️ [GUARDAR] Error asignando jornada tras crear', e);
                 }
@@ -1276,7 +1398,7 @@ $(document).on('change', '.xusoker-select', async function() {
 });
 
 async function eliminarConcursante(id) {
-    if (!puedeEditarConcursantes) return;
+    if (!puedeEliminarConcursante) return;
     try {
         const c = (concursantes || []).find(x => x && x.id === id);
         if (c && c.jornadaId) {
@@ -1516,41 +1638,9 @@ concursante.programa = prog ? { id: prog.id } : null;
 
         // Construir payloads prev/next para do/undo y refrescar UI sin F5
         const snapshot = await apiManager.get(`/api/concursantes/${id}`);
-        const buildPayload = (src) => ({
-            id: id,
-            jornadaId: src?.jornadaId ?? null,
-            diaGrabacion: src?.diaGrabacion ?? null,
-            lugar: src?.lugar ?? null,
-            nombre: src?.nombre ?? null,
-            edad: src?.edad ?? null,
-            ocupacion: src?.ocupacion ?? null,
-            redesSociales: src?.redesSociales ?? null,
-            cuestionarioId: src?.cuestionarioId ?? null,
-            comboId: src?.comboId ?? null,
-            xusoker: src?.xusoker ?? null,
-            factorX: src?.factorX ?? null,
-            resultado: src?.resultado ?? null,
-            notasGrabacion: src?.notasGrabacion ?? null,
-            guionista: src?.guionista ?? null,
-            valoracionGuionista: src?.valoracionGuionista ?? null,
-            momentosDestacados: src?.momentosDestacados ?? null,
-            duracion: src?.duracion ?? null,
-            duracionDireccion: src?.duracionDireccion ?? null,
-            duracionFinal: src?.duracionFinal ?? null,
-            valoracionFinal: src?.valoracionFinal ?? null,
-            numeroPrograma: src?.numeroPrograma ?? null,
-            ordenEscaleta: src?.ordenEscaleta ?? null,
-            bonico: src?.bonico ?? null,
-            estado: src?.estado ?? null,
-            premio: src?.premio ?? null,
-            foto: src?.foto ?? null,
-            creditosEspeciales: src?.creditosEspeciales ?? null,
-            numeroConcursante: src?.numeroConcursante ?? null
-        });
-
-        const prevPayload = buildPayload(snapshot);
+        const prevPayload = buildConcursantePayload(snapshot, id);
         const nextSource = { ...snapshot, [campo]: valorConvertido };
-        const nextPayload = buildPayload(nextSource);
+        const nextPayload = buildConcursantePayload(nextSource, id);
 
         const doAction = async () => { await apiManager.put(`/api/concursantes/${id}`, nextPayload); await cargarConcursantes(true); };
         const undoAction = async () => { await apiManager.put(`/api/concursantes/${id}`, prevPayload); await cargarConcursantes(true); };
@@ -1703,48 +1793,23 @@ async function iniciarReciclajeParcialDesdePreview() {
         }
         const preguntas = resp.datos;
 
-        if (preguntas.length === 0) {
-            mostrarError('El combo no tiene preguntas');
-            return;
-        }
-
-        let jornadaId = null;
-        if (concursanteActual && concursanteActual.jornadaId) {
-            jornadaId = concursanteActual.jornadaId;
-        } else if (concursanteParaReemplazo) {
+        let jornadaId = obtenerJornadaIdParaReciclaje();
+        if (!jornadaId && concursanteParaReemplazo) {
             try {
                 const concursante = await apiManager.get(`/api/concursantes/${concursanteParaReemplazo}`);
                 if (concursante && concursante.jornadaId) {
-                    jornadaId = concursante.jornadaId;
+                    jornadaId = String(concursante.jornadaId);
                 }
             } catch (e) {
                 console.error('Error al obtener concursante:', e);
             }
         }
         if (!jornadaId) {
-            mostrarError('Este concursante no tiene jornada asignada');
+            mostrarError('Selecciona una jornada en el formulario antes de reciclar el combo');
             return;
         }
 
-        if (preguntas.length === 1) {
-            const confirmacion = confirm(
-                'Este combo solo tiene 1 pregunta.\n\nSe reaprovechará completo.\n\n¿Continuar?'
-            );
-            if (!confirmacion) return;
-            const r = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-entero/${comboId}`);
-            if (r && r.exito) {
-                mostrarExito('Combo reaprovechado correctamente.');
-                const prev = bootstrap.Modal.getInstance(document.getElementById('modal-preview-combo'));
-                if (prev) prev.hide();
-                await cargarConcursantes(true);
-            } else {
-                mostrarError(r?.mensaje || 'No se pudo reaprovechar el combo');
-            }
-            return;
-        }
-
-        if (preguntas.length < 2) {
-            mostrarError('Se necesitan al menos 2 preguntas para elegir cuál se usó');
+        if (!validarComboReciclable(preguntas)) {
             return;
         }
 
@@ -1791,11 +1856,7 @@ async function iniciarReciclajeParcialDesdePreview() {
                 const preguntaUsadaId = sel.value;
                 const r = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-parcial/${comboId}`, { preguntaUsadaId });
                 if (r && r.exito) {
-                    const restantes = preguntas.length - 1;
-                    const msg = restantes === 1
-                        ? 'Reciclaje parcial aplicado. La pregunta restante quedó en un combo nuevo.'
-                        : `Reciclaje parcial aplicado. Las ${restantes} preguntas restantes quedaron en un combo nuevo.`;
-                    Utils.showAlert(msg, 'success');
+                    mostrarExito('Reciclaje parcial aplicado. Las 2 preguntas restantes quedaron en un combo nuevo.');
                     bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-desde-preview')).hide();
                     // Cerrar preview y recargar lista para refrescar estados
                     const prev = bootstrap.Modal.getInstance(document.getElementById('modal-preview-combo'));
@@ -2053,18 +2114,15 @@ modal.show();
 
 async function seleccionarCuestionarioModal(id) {
 if (concursanteParaAsignar) {
-// Asignar directamente al concursante
 try {
-const concursante = concursantes.find(c => c.id === concursanteParaAsignar);
-if (concursante) {
-concursante.cuestionarioId = id;
-await apiManager.putUndoable(`/api/concursantes/${concursanteParaAsignar}`, concursante, { label: `Actualizar concursante ${concursanteParaAsignar}` });
-                // Refrescar fila en pantalla sin perder contexto
-                const paginaAntes = paginaActual;
-                await cargarConcursantes(true);
-                paginaActual = paginaAntes;
+const paginaAntes = paginaActual;
+await registrarUndoPutConcursante(
+    concursanteParaAsignar,
+    (prev) => ({ ...prev, cuestionarioId: id }),
+    `Asignar cuestionario ${id} a concursante ${concursanteParaAsignar}`,
+    paginaAntes
+);
 mostrarExito('Cuestionario asignado correctamente');
-}
 } catch (error) {
 mostrarError('Error al asignar cuestionario: ' + error.message);
 }
@@ -2080,50 +2138,23 @@ modal.hide();
 
 async function seleccionarComboModal(id) {
 if (concursanteParaAsignar) {
-// Asignar directamente al concursante
 try {
-const concursante = concursantes.find(c => c.id === concursanteParaAsignar);
-if (concursante) {
-concursante.comboId = id;
-await apiManager.putUndoable(`/api/concursantes/${concursanteParaAsignar}`, concursante, { label: `Actualizar concursante ${concursanteParaAsignar}` });
-                // Refrescar fila en pantalla sin perder contexto
-                const paginaAntes = paginaActual;
-                await cargarConcursantes(true);
-                paginaActual = paginaAntes;
+const paginaAntes = paginaActual;
+await registrarUndoPutConcursante(
+    concursanteParaAsignar,
+    (prev) => ({ ...prev, comboId: id }),
+    `Asignar combo ${id} a concursante ${concursanteParaAsignar}`,
+    paginaAntes
+);
 mostrarExito('Combo asignado correctamente');
-}
 } catch (error) {
 mostrarError('Error al asignar combo: ' + error.message);
 }
 concursanteParaAsignar = null;
 concursanteParaReemplazo = null;
 } else {
-// Asignar al formulario
-document.getElementById('combo-id').value = id;
-// Obtener información del combo para mostrar nombre y habilitar botón reciclar
-try {
-    const comboDetalle = await apiManager.get(`/api/combos/${id}`);
-    if (comboDetalle && comboDetalle.datos) {
-        const combo = comboDetalle.datos;
-        const nombreCombo = `Combo #${id}`;
-        document.getElementById('combo-id').value = nombreCombo;
-        document.getElementById('combo-id').dataset.comboId = id;
-        // Mostrar botón de reciclar
-        const btnReciclar = document.getElementById('btn-reciclar-combo');
-        if (btnReciclar) {
-            btnReciclar.style.display = 'inline-block';
-            btnReciclar.dataset.comboId = id;
-        }
-    }
-} catch (e) {
-    console.warn('No se pudo cargar detalle del combo:', e);
-    // Mostrar botón de reciclar de todas formas
-    const btnReciclar = document.getElementById('btn-reciclar-combo');
-    if (btnReciclar) {
-        btnReciclar.style.display = 'inline-block';
-        btnReciclar.dataset.comboId = id;
-    }
-}
+// Asignar al formulario (nuevo concursante o edición sin guardar aún)
+    actualizarComboEnFormulario(id);
 }
 const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-combo'));
 modal.hide();
@@ -2131,6 +2162,64 @@ modal.hide();
 
 function limpiarSelectorCuestionario() {
 document.getElementById('cuestionario-id').value = '';
+}
+
+async function desasignarCuestionarioModal() {
+    if (!concursanteParaAsignar) return;
+    try {
+        const paginaAntes = paginaActual;
+        await desasignarCuestionarioConcursante(concursanteParaAsignar, paginaAntes);
+        mostrarExito('Cuestionario desasignado correctamente');
+    } catch (error) {
+        mostrarError('Error al desasignar cuestionario: ' + error.message);
+    }
+    concursanteParaAsignar = null;
+    concursanteParaReemplazo = null;
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-cuestionario'));
+    if (modal) modal.hide();
+}
+
+async function desasignarComboModal() {
+    if (!concursanteParaAsignar) return;
+    try {
+        const paginaAntes = paginaActual;
+        await desasignarComboConcursante(concursanteParaAsignar, paginaAntes);
+        mostrarExito('Combo desasignado correctamente');
+    } catch (error) {
+        mostrarError('Error al desasignar combo: ' + error.message);
+    }
+    concursanteParaAsignar = null;
+    concursanteParaReemplazo = null;
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-combo'));
+    if (modal) modal.hide();
+}
+
+async function desasignarCuestionarioDesdePreview() {
+    if (!concursanteParaReemplazo) return;
+    try {
+        const paginaAntes = paginaActual;
+        await desasignarCuestionarioConcursante(concursanteParaReemplazo, paginaAntes);
+        mostrarExito('Cuestionario desasignado correctamente');
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modal-preview-cuestionario'));
+        if (modal) modal.hide();
+        concursanteParaReemplazo = null;
+    } catch (error) {
+        mostrarError('Error al desasignar cuestionario: ' + error.message);
+    }
+}
+
+async function desasignarComboDesdePreview() {
+    if (!concursanteParaReemplazo) return;
+    try {
+        const paginaAntes = paginaActual;
+        await desasignarComboConcursante(concursanteParaReemplazo, paginaAntes);
+        mostrarExito('Combo desasignado correctamente');
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modal-preview-combo'));
+        if (modal) modal.hide();
+        concursanteParaReemplazo = null;
+    } catch (error) {
+        mostrarError('Error al desasignar combo: ' + error.message);
+    }
 }
 
 // Funciones para selector de combos
@@ -2213,27 +2302,36 @@ if (!pageItems.length) {
 tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay combos disponibles</td></tr>';
 } else {
 pageItems.forEach(c => {
+const comboId = c.id ?? c.datos?.id;
+if (!comboId) return;
 const tr = document.createElement('tr');
 let preguntasResumen = '';
 // Diferido
-const resumenId = `resumen-combo-${c.id}`;
+const resumenId = `resumen-combo-${comboId}`;
 preguntasResumen = `<em id="${resumenId}">Cargando…</em>`;
+const jornadaReciclaje = obtenerJornadaIdParaReciclaje();
+const btnReciclarSelector = jornadaReciclaje
+    ? `<button type="button" class="btn btn-sm btn-warning ms-1" onclick="reciclarComboDesdeSelector(${comboId})" title="Reciclar combo"><i class="fas fa-recycle"></i></button>`
+    : '';
 tr.innerHTML = `
-               <td><strong>${c.id}</strong></td>
+               <td><strong>${comboId}</strong></td>
                <td><span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span></td>
                <td>${c.fechaCreacion ? formatFechaFlexible(c.fechaCreacion) : ''}</td>
                <td style="max-width: 350px; font-size: 0.85em;">${preguntasResumen}</td>
-               <td><button class="btn btn-sm btn-success" onclick="seleccionarComboModal(${c.id})">Seleccionar</button></td>
+               <td class="text-nowrap">
+                   <button type="button" class="btn btn-sm btn-success" onclick="seleccionarComboModal(${comboId})">Seleccionar</button>
+                   ${btnReciclarSelector}
+               </td>
            `;
 tbody.appendChild(tr);
 
 // Cargar resumen de preguntas del combo (primeras 3)
 setTimeout(async () => {
     try {
-        console.info('[SELECTOR][COMBO] Cargando detalle', c.id);
-        const det = await apiManager.get(`/api/combos/${c.id}`);
+        console.info('[SELECTOR][COMBO] Cargando detalle', comboId);
+        const det = await apiManager.get(`/api/combos/${comboId}`);
         const items = Array.isArray(det?.preguntas) ? det.preguntas : [];
-        console.info('[SELECTOR][COMBO] Detalle recibido', { id: c.id, len: items.length });
+        console.info('[SELECTOR][COMBO] Detalle recibido', { id: comboId, len: items.length });
         const textos = items.slice(0,3).map(it => {
             const q = it.pregunta ? it.pregunta : (it.pregunta?.pregunta ? it.pregunta : it);
             const nivel = q?.nivel ? String(q.nivel).replace('_','') : '';
@@ -2246,7 +2344,7 @@ setTimeout(async () => {
         const el = document.getElementById(resumenId);
         if (el) el.innerHTML = textos.length ? textos.join('<br>') : '<em>Sin preguntas</em>';
     } catch (e) {
-        console.error('[SELECTOR][COMBO] Error cargando detalle', c.id, e);
+        console.error('[SELECTOR][COMBO] Error cargando detalle', comboId, e);
         const el = document.getElementById(resumenId);
         if (el) el.innerHTML = '<em>Error al cargar</em>';
     }
@@ -2299,28 +2397,22 @@ if (btnReciclar) {
 }
 }
 
-// Función para iniciar reciclaje de combo desde el formulario
-async function iniciarReciclajeComboDesdeFormulario() {
-    const comboIdInput = document.getElementById('combo-id');
-    const comboId = comboIdInput?.dataset?.comboId || comboIdInput?.value?.replace(/[^0-9]/g, '') || '';
+// Función para iniciar reciclaje de combo desde el formulario o selector
+async function iniciarReciclajeComboDesdeFormulario(comboIdOverride) {
+    const comboId = comboIdOverride
+        || document.getElementById('combo-id')?.dataset?.comboId
+        || document.getElementById('combo-id')?.value?.replace(/[^0-9]/g, '')
+        || '';
     
     if (!comboId) {
         mostrarError('No hay un combo seleccionado');
         return;
     }
     
-    // Verificar que hay una jornada seleccionada
-    let jornadaId = document.getElementById('jornada-select')?.value;
-    
-    // Si no hay jornada seleccionada en el formulario, intentar obtenerla del concursante actual
+    const jornadaId = obtenerJornadaIdParaReciclaje();
     if (!jornadaId) {
-        if (concursanteActual && concursanteActual.jornadaId) {
-            jornadaId = concursanteActual.jornadaId;
-        } else {
-            // Si estamos creando un nuevo concursante, necesitamos la jornada
-            mostrarError('Debe seleccionar una jornada antes de reciclar el combo');
-            return;
-        }
+        mostrarError('Debe seleccionar una jornada antes de reciclar el combo');
+        return;
     }
     
     try {
@@ -2334,33 +2426,10 @@ async function iniciarReciclajeComboDesdeFormulario() {
         
         const preguntas = response.datos;
         
-        if (preguntas.length === 0) {
-            mostrarError('El combo no tiene preguntas');
-            return;
-        }
-
-        // 1 pregunta → reaprovechado entero
-        if (preguntas.length === 1) {
-            const confirmacion = confirm(
-                'Este combo solo tiene 1 pregunta.\n\nSe reaprovechará completo y quedará disponible para otras jornadas.\n\n¿Continuar?'
-            );
-            if (!confirmacion) return;
-
-            const reciclaje = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-entero/${comboId}`);
-            if (reciclaje && reciclaje.exito) {
-                mostrarExito('Combo reaprovechado correctamente.');
-            } else {
-                mostrarError(reciclaje?.mensaje || 'Error al reaprovechar el combo');
-            }
-            return;
-        }
-
-        if (preguntas.length < 2) {
-            mostrarError('Se necesitan al menos 2 preguntas para elegir cuál se usó');
+        if (!validarComboReciclable(preguntas)) {
             return;
         }
         
-        // 2+ preguntas → elegir cuál se usó
         mostrarModalReciclajeCombo(comboId, preguntas, jornadaId);
         
     } catch (error) {
@@ -2371,10 +2440,7 @@ async function iniciarReciclajeComboDesdeFormulario() {
 
 // Función para mostrar modal de reciclaje de combo
 function mostrarModalReciclajeCombo(comboId, preguntas, jornadaId) {
-    const restantes = preguntas.length - 1;
-    const textoRestantes = restantes === 1
-        ? 'Se creará un nuevo combo con la pregunta restante.'
-        : `Se creará un nuevo combo con las ${restantes} preguntas restantes.`;
+    const textoRestantes = 'Se creará un nuevo combo con las 2 preguntas restantes.';
 
     // Eliminar modal anterior si existe
     const modalAnterior = document.getElementById('modal-reciclar-combo-formulario');
@@ -2469,13 +2535,7 @@ async function confirmarReciclajeComboDesdeFormulario(comboId, jornadaId) {
         });
         
         if (response && response.exito) {
-            const restantes = document.querySelectorAll('input[name="preguntaUsadaReciclar"]').length - 1;
-            const msg = restantes === 1
-                ? 'Combo reciclado correctamente. Se ha creado un nuevo combo con la pregunta restante.'
-                : restantes > 1
-                    ? `Combo reciclado correctamente. Se ha creado un nuevo combo con las ${restantes} preguntas restantes.`
-                    : 'Combo reciclado correctamente.';
-            mostrarExito(msg);
+            mostrarExito('Combo reciclado correctamente. Se ha creado un nuevo combo con las 2 preguntas restantes.');
             
             // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-combo-formulario'));
@@ -2944,15 +3004,13 @@ document.body.insertAdjacentHTML('beforeend', modalHTML);
 async function seleccionarJornadaModal(jornadaId) {
 if (concursanteParaAsignarJornada) {
 try {
-await apiManager.postUndoable(`/api/concursantes/${concursanteParaAsignarJornada}/asignar-jornada/${jornadaId}`, {}, {
-    label: `Asignar jornada a concursante ${concursanteParaAsignarJornada}`,
-    idExtractor: () => concursanteParaAsignarJornada,
-    deleteEndpointBuilder: () => `/api/concursantes/${concursanteParaAsignarJornada}/desasignar-jornada`
-});
-            await cargarConcursantes();
-            // Reiniciar paginación y cargar desde el servidor
-            paginaActual = 0;
-            await cargarConcursantes(true);
+const paginaAntes = paginaActual;
+await registrarUndoJornadaConcursante(
+    concursanteParaAsignarJornada,
+    jornadaId,
+    `Asignar jornada ${jornadaId} a concursante ${concursanteParaAsignarJornada}`,
+    paginaAntes
+);
 mostrarExito('Jornada asignada correctamente');
 } catch (error) {
 mostrarError('Error al asignar jornada: ' + error.message);
@@ -2967,11 +3025,13 @@ modal.hide();
 async function desasignarJornadaModal() {
 if (concursanteParaAsignarJornada) {
 try {
-await apiManager.deleteUndoable(`/api/concursantes/${concursanteParaAsignarJornada}/desasignar-jornada`, { label: `Desasignar jornada de concursante ${concursanteParaAsignarJornada}`, snapshotEndpoint: `/api/concursantes/${concursanteParaAsignarJornada}` });
-            await cargarConcursantes();
-            // Reiniciar paginación y cargar desde el servidor
-            paginaActual = 0;
-            await cargarConcursantes(true);
+const paginaAntes = paginaActual;
+await registrarUndoJornadaConcursante(
+    concursanteParaAsignarJornada,
+    null,
+    `Desasignar jornada de concursante ${concursanteParaAsignarJornada}`,
+    paginaAntes
+);
 mostrarExito('Jornada desasignada correctamente');
 } catch (error) {
 mostrarError('Error al desasignar jornada: ' + error.message);

@@ -16,7 +16,29 @@ const PreguntasManager = {
     },
     orden: {
         columna: null,
-        asc: true
+        asc: false
+    },
+
+    /** Mismo orden que el filtro #filtro-estado en preguntas.html */
+    ORDEN_ESTADOS_PREGUNTA: [
+        'borrador', 'para_verificar', 'verificada', 'revisar', 'corregir',
+        'para_aprobar', 'rechazada', 'aprobada', 'usada'
+    ],
+
+    formatearEstadoPregunta(estado) {
+        if (estado === 'para_verificar') return 'Para verificar';
+        if (estado === 'para_aprobar') return 'Para aprobar';
+        if (!estado) return '';
+        return estado.charAt(0).toUpperCase() + estado.slice(1);
+    },
+
+    ordenarEstadosPregunta(estados) {
+        const unicos = [...new Set(estados)];
+        return unicos.sort((a, b) => {
+            const ia = this.ORDEN_ESTADOS_PREGUNTA.indexOf(a);
+            const ib = this.ORDEN_ESTADOS_PREGUNTA.indexOf(b);
+            return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        });
     },
 
     leerFiltrosDesdeDom() {
@@ -60,8 +82,8 @@ const PreguntasManager = {
             // Inicializar estado de ordenamiento si no existe
             if (!this.orden.columna) {
                 this.orden.columna = 'id';
-                this.orden.asc = true;
-                console.log('🔄 [CARGAR] Inicializando ordenamiento por defecto - columna: id, asc: true');
+                this.orden.asc = false;
+                console.log('🔄 [CARGAR] Inicializando ordenamiento por defecto - columna: id, asc: false (más recientes primero)');
             }
             
             if (!authManager.isAuthenticated()) {
@@ -520,6 +542,120 @@ const PreguntasManager = {
         }
     },
 
+    normalizarEnumSnapshot(valor) {
+        if (valor == null) return null;
+        if (typeof valor === 'string') return valor;
+        if (typeof valor === 'object' && valor.name) return valor.name;
+        return String(valor);
+    },
+
+    buildPayloadCrearDesdeSnapshot(snapshot) {
+        const nivel = this.normalizarEnumSnapshot(snapshot?.nivel);
+        return {
+            nivel: nivel || '_0',
+            tematica: snapshot?.tematica || 'General',
+            pregunta: snapshot?.pregunta || '',
+            respuesta: snapshot?.respuesta || '',
+            datosExtra: snapshot?.datosExtra ?? null,
+            fuentes: snapshot?.fuentes ?? null,
+            subtema: snapshot?.subtema ?? null,
+            notasVerificacion: snapshot?.notasVerificacion ?? null,
+            notasDireccion: snapshot?.notasDireccion ?? null,
+        };
+    },
+
+    buildPayloadPutDesdeSnapshot(snapshot, id, version) {
+        const nivel = this.normalizarEnumSnapshot(snapshot?.nivel);
+        const estado = this.normalizarEnumSnapshot(snapshot?.estado);
+        const factor = this.normalizarEnumSnapshot(snapshot?.factor);
+        return {
+            id,
+            version: version ?? snapshot?.version ?? 0,
+            tematica: snapshot?.tematica ?? null,
+            pregunta: snapshot?.pregunta ?? null,
+            respuesta: snapshot?.respuesta ?? null,
+            datosExtra: snapshot?.datosExtra ?? null,
+            fuentes: snapshot?.fuentes ?? null,
+            nivel: nivel ?? null,
+            subtema: snapshot?.subtema ?? null,
+            autor: snapshot?.autor ?? null,
+            notas: snapshot?.notas ?? null,
+            factor: factor ?? null,
+            notasVerificacion: snapshot?.notasVerificacion ?? null,
+            notasDireccion: snapshot?.notasDireccion ?? null,
+            verificacion: snapshot?.verificacion ?? null,
+            estado: estado ?? null,
+        };
+    },
+
+    resaltarFilaPregunta(fila) {
+        if (!fila) return;
+        fila.classList.add('table-warning');
+        fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
+
+    async irAPreguntaPorId(idPregunta) {
+        if (!idPregunta) return false;
+
+        try {
+            const resp = await fetch(`/api/preguntas/buscar?id=${encodeURIComponent(idPregunta)}&page=0&size=1`, {
+                headers: authManager.getAuthHeaders()
+            });
+            if (!resp.ok) return false;
+            const data = await resp.json();
+            const encontrada = (data.content || []).find(p => p.id === Number(idPregunta));
+            if (!encontrada) return false;
+
+            this.preguntas = [encontrada];
+            this.paginaActual = 0;
+            this.totalPaginas = 1;
+            this.totalPreguntas = 1;
+            this.mostrarPreguntas();
+            const fila = document.querySelector(`#tabla-preguntas tr[data-id='${idPregunta}']`);
+            if (fila) {
+                this.resaltarFilaPregunta(fila);
+                return true;
+            }
+        } catch (e) {
+            console.warn('[UNDO] No se pudo localizar la pregunta restaurada:', e);
+        }
+        return false;
+    },
+
+    async restaurarPreguntaEliminada(snapshot) {
+        const payload = { ...snapshot };
+        if (payload.nivel) payload.nivel = this.normalizarEnumSnapshot(payload.nivel);
+        if (payload.estado) payload.estado = this.normalizarEnumSnapshot(payload.estado);
+        if (payload.factor) payload.factor = this.normalizarEnumSnapshot(payload.factor);
+        if (!payload.id) {
+            throw new Error('No se puede restaurar la pregunta sin ID');
+        }
+
+        const crearResp = await fetch('/api/preguntas/restaurar', {
+            method: 'POST',
+            headers: {
+                ...authManager.getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!crearResp.ok) {
+            let msg = 'No se pudo deshacer la eliminación';
+            try {
+                const errText = await crearResp.text();
+                if (errText) msg = errText;
+            } catch {}
+            throw new Error(msg);
+        }
+
+        const creada = await crearResp.json();
+        const idRestaurado = creada?.id ?? payload.id;
+        if (!idRestaurado) {
+            throw new Error('No se pudo obtener el ID de la pregunta restaurada');
+        }
+        return idRestaurado;
+    },
+
     // Función para cargar los usuarios en el filtro de autoría
     async cargarUsuariosEnFiltro() {
         try {
@@ -554,6 +690,17 @@ const PreguntasManager = {
         }
     },
 
+    validarRequisitosParaVerificar(datos) {
+        const faltantes = [];
+        if (!datos?.tematica?.trim()) faltantes.push('temática');
+        if (!datos?.pregunta?.trim()) faltantes.push('pregunta');
+        if (!datos?.respuesta?.trim()) faltantes.push('respuesta');
+        if (!datos?.fuentes?.trim()) faltantes.push('fuente');
+        if (faltantes.length) {
+            throw new Error(`Para pasar a "para verificar" son obligatorios: ${faltantes.join(', ')}`);
+        }
+    },
+
     async crearPregunta(event) {
         event.preventDefault();
         const formData = new FormData(event.target);
@@ -584,6 +731,22 @@ const PreguntasManager = {
         }
         
         console.log('💾 [GUARDAR] Datos finales a enviar:', preguntaData);
+
+        if (preguntaData.estado === 'para_verificar') {
+            try {
+                this.validarRequisitosParaVerificar(preguntaData);
+            } catch (validationError) {
+                Toastify({
+                    text: validationError.message,
+                    duration: 5000,
+                    close: true,
+                    gravity: 'top',
+                    position: 'right',
+                    style: { background: 'linear-gradient(to right, #ff9966, #ff5e62)' }
+                }).showToast();
+                return;
+            }
+        }
         
         try {
             if (!authManager.isAuthenticated()) {
@@ -811,11 +974,10 @@ const PreguntasManager = {
                 break;
         }
         
-        // Si el usuario es admin o dirección, permitir todos los estados
+        // Si el usuario es admin o dirección, permitir todos los estados (orden del filtro)
         const usuario = JSON.parse(localStorage.getItem('usuario'));
         if (usuario && (usuario.rol === 'ROLE_ADMIN' || usuario.rol === 'ROLE_DIRECCION')) {
-            return ['borrador', 'para_verificar', 'verificada', 'revisar', 'corregir', 
-                   'rechazada', 'aprobada', 'para_aprobar', 'usada'];
+            return this.ordenarEstadosPregunta(this.ORDEN_ESTADOS_PREGUNTA);
         }
         
         // Filtrar por rol para mostrar solo transiciones que el usuario puede ejecutar
@@ -826,7 +988,7 @@ const PreguntasManager = {
                     case 'ROLE_GUION':
                         switch (from) {
                             case 'borrador': return to === 'para_verificar';
-                            case 'para_verificar': return to === 'revisar';
+                            case 'para_verificar': return to === 'verificada' || to === 'revisar';
                             case 'revisar': return to === 'para_verificar' || to === 'para_aprobar' || to === 'rechazada';
                             case 'corregir': return to === 'para_aprobar' || to === 'para_verificar';
                             default: return false;
@@ -852,10 +1014,10 @@ const PreguntasManager = {
 
             // Mantener el estado actual como primera opción y filtrar el resto
             const estadosFiltrados = estados.filter((estado, index) => index === 0 || puedeTransicionar(estadoActual, estado, rol));
-            return estadosFiltrados;
+            return this.ordenarEstadosPregunta(estadosFiltrados);
         }
 
-        return estados;
+        return this.ordenarEstadosPregunta(estados);
     },
 
     async editarCelda(id, campo, td) {
@@ -915,9 +1077,7 @@ const PreguntasManager = {
             estadosPermitidos.forEach(opt => {
                 const option = document.createElement('option');
                 option.value = opt;
-                option.text = opt === 'para_verificar' ? 'Para verificar' : 
-                             opt === 'para_aprobar' ? 'Para aprobar' : 
-                             opt.charAt(0).toUpperCase() + opt.slice(1);
+                option.text = this.formatearEstadoPregunta(opt);
                 if (valorOriginal === opt) option.selected = true;
                 input.appendChild(option);
             });
@@ -977,6 +1137,22 @@ const PreguntasManager = {
             if (campo === 'estado') {
                 const prevEstadoObj = this.preguntas.find(p => p.id === id);
                 const estadoAnterior = prevEstadoObj ? prevEstadoObj.estado : (valorOriginal || '');
+                if (nuevoValor === 'para_verificar') {
+                    try {
+                        this.validarRequisitosParaVerificar(prevEstadoObj || {});
+                    } catch (validationError) {
+                        td.innerHTML = `<span class="badge ${this.getEstadoColor(estadoAnterior)}">${estadoAnterior}</span>`;
+                        Toastify({
+                            text: validationError.message,
+                            duration: 5000,
+                            close: true,
+                            gravity: 'top',
+                            position: 'right',
+                            style: { background: 'linear-gradient(to right, #ff9966, #ff5e62)' }
+                        }).showToast();
+                        return;
+                    }
+                }
                 // Usar endpoint especial para cambio de estado
                 console.log('📤 [FRONTEND] Enviando cambio de estado a:', `/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`);
                 response = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`, {
@@ -1165,9 +1341,7 @@ const PreguntasManager = {
                 estadosPermitidos.forEach(estado => {
                     const option = document.createElement('option');
                     option.value = estado;
-                    option.text = estado === 'para_verificar' ? 'Para verificar' : 
-                                 estado === 'para_aprobar' ? 'Para aprobar' : 
-                                 estado.charAt(0).toUpperCase() + estado.slice(1);
+                    option.text = this.formatearEstadoPregunta(estado);
                     if (pregunta.estado === estado) {
                         option.selected = true;
                         console.log('✅ [EDITAR] Opción seleccionada:', estado);
@@ -1247,47 +1421,55 @@ const PreguntasManager = {
                 throw new Error(msg);
             }
 
-            // Registrar undo/redo para eliminación (restaurando por POST)
+            // Registrar undo/redo para eliminación (restaurar y mostrar la pregunta)
             if (window.UndoManager && snapshot) {
-                let recreatedId = null;
-                const payloadRestaurar = { ...snapshot };
-                // Evitar enviar id al crear de nuevo
-                try { delete payloadRestaurar.id; } catch {}
+                const estadoUndo = { recreatedId: null, idOriginal: id };
 
                 const undoAction = async () => {
-                    const r = await fetch('/api/preguntas', {
-                        method: 'POST',
-                        headers: {
-                            ...authManager.getAuthHeaders(),
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payloadRestaurar)
-                    });
-                    if (!r.ok) throw new Error('No se pudo deshacer la eliminación');
-                    try {
-                        const creada = await r.json();
-                        recreatedId = creada?.id || recreatedId;
-                    } catch {}
-                    await this.recargarConFiltros();
+                    const idRestaurado = await PreguntasManager.restaurarPreguntaEliminada(snapshot);
+                    estadoUndo.recreatedId = idRestaurado;
+                    await PreguntasManager.recargarConFiltros();
+                    const fila = document.querySelector(`#tabla-preguntas tr[data-id='${idRestaurado}']`);
+                    if (fila) PreguntasManager.resaltarFilaPregunta(fila);
+                    Toastify({
+                        text: `Pregunta #${idRestaurado} restaurada`,
+                        duration: 4000,
+                        close: true,
+                        gravity: 'top',
+                        position: 'right',
+                        style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
+                    }).showToast();
                 };
+
                 const doAction = async () => {
-                    if (!recreatedId) {
-                        // Si no hay id recreado aún, intentar localizar por contenido mínimo (pregunta+respuesta)
+                    let targetId = estadoUndo.recreatedId;
+                    if (!targetId) {
                         try {
                             await this.recargarConFiltros();
-                            const match = (this.preguntas || []).find(p => p.pregunta === snapshot.pregunta && p.respuesta === snapshot.respuesta);
-                            if (match) recreatedId = match.id;
+                            const match = (this.preguntas || []).find(
+                                p => p.pregunta === snapshot.pregunta && p.respuesta === snapshot.respuesta
+                            );
+                            if (match) targetId = match.id;
                         } catch {}
                     }
-                    if (!recreatedId) return; // nada que borrar
-                    const r = await fetch(`/api/preguntas/${recreatedId}`, {
+                    if (!targetId) return;
+                    const r = await fetch(`/api/preguntas/${targetId}`, {
                         method: 'DELETE',
                         headers: authManager.getAuthHeaders()
                     });
                     if (!r.ok) throw new Error('No se pudo rehacer la eliminación');
+                    estadoUndo.recreatedId = null;
                     await this.recargarConFiltros();
                 };
-                window.UndoManager.record({ do: doAction, undo: undoAction, label: `Eliminar pregunta ${id}` });
+
+                window.UndoManager.record({
+                    do: doAction,
+                    undo: undoAction,
+                    label: `Eliminar pregunta ${id}`,
+                    skipPageRefresh: true
+                });
+            } else if (!snapshot) {
+                console.warn('⚠️ [UNDO] Sin snapshot previo; no se puede deshacer la eliminación');
             }
 
             await this.recargarConFiltros();
@@ -1740,12 +1922,11 @@ window.mostrarFormularioPregunta = function() {
         if (selectEstado) {
             selectEstado.innerHTML = '';
             // Para una nueva pregunta, solo permitir "borrador" y "para_verificar"
-            const estadosPermitidos = ['borrador', 'para_verificar'];
+            const estadosPermitidos = PreguntasManager.ordenarEstadosPregunta(['borrador', 'para_verificar']);
             estadosPermitidos.forEach(estado => {
                 const opt = document.createElement('option');
                 opt.value = estado;
-                opt.text = estado === 'para_verificar' ? 'Para verificar' : 
-                          estado.charAt(0).toUpperCase() + estado.slice(1);
+                opt.text = PreguntasManager.formatearEstadoPregunta(estado);
                 if (estado === 'borrador') {
                     opt.selected = true;
                 }

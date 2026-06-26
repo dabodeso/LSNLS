@@ -117,8 +117,12 @@ public class ComboController {
             if (estadoCombo == null || estadoCombo.trim().isEmpty()) {
                 estadoCombo = "borrador";
             }
-            
-            
+
+            if ("aprobado".equalsIgnoreCase(estadoCombo) && dto.getPreguntasMultiplicadoras().size() != 3) {
+                return ResponseEntity.badRequest().body(
+                    "Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para pasar a aprobado");
+            }
+
             // Validar tipo de combo
             if (dto.getTipo() == null || dto.getTipo().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("El campo 'tipo' es obligatorio. Tipos permitidos: P (Premio), A (Asequible), D (Difícil)");
@@ -352,7 +356,12 @@ public class ComboController {
 
             editLockService.assertCanEdit(AuditLog.EntityType.COMBO, id);
 
-            Combo comboActualizado = comboService.cambiarEstado(id, nuevoEstado);
+            Combo comboActualizado;
+            try {
+                comboActualizado = comboService.cambiarEstado(id, nuevoEstado);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(e.getMessage());
+            }
             if (comboActualizado != null) {
                 editLockService.logEntityUpdate(AuditLog.EntityType.COMBO, id, "Cambio de estado de combo");
                 return ResponseEntity.ok(Map.of(
@@ -402,8 +411,16 @@ public class ComboController {
                 String estadoStr = datos.get("estado").toString();
                 try {
                     Combo.EstadoCombo nuevoEstado = Combo.EstadoCombo.valueOf(estadoStr);
+                    if (nuevoEstado == Combo.EstadoCombo.aprobado) {
+                        Combo comboConPreguntas = comboService.obtenerConPreguntas(id)
+                            .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado"));
+                        comboService.validarCompletoParaAprobar(comboConPreguntas);
+                    }
                     combo.setEstado(nuevoEstado);
                 } catch (IllegalArgumentException e) {
+                    if (e.getMessage() != null && !e.getMessage().startsWith("No enum constant")) {
+                        return ResponseEntity.badRequest().body(e.getMessage());
+                    }
                     return ResponseEntity.badRequest().body("Estado de combo inválido: " + estadoStr);
                 }
             }

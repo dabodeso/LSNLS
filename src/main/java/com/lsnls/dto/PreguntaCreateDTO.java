@@ -12,4 +12,5 @@ public class PreguntaCreateDTO {
     public String subtema;
     public String notasVerificacion;
     public String notasDireccion;
+    public String estado;
 } 

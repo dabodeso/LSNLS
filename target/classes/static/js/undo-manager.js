@@ -4,10 +4,8 @@
 //   UndoManager.undo()
 //   UndoManager.redo()
 //   UndoManager.clear()
+//   UndoManager.canUndo() / canRedo()
 //   UndoManager.enabled = true/false
-// Notas:
-// - Sólo registra acciones tras éxito (llamar record después de actualizar UI y backend)
-// - Ignora atajos en inputs/textarea/select y contentEditable
 
 (function () {
   const isEditableElement = (el) => {
@@ -17,6 +15,25 @@
     if (el.isContentEditable) return true;
     return false;
   };
+
+  function notificarUndo(mensaje, esError = false) {
+    if (typeof Toastify === 'function') {
+      Toastify({
+        text: mensaje,
+        duration: 2500,
+        close: true,
+        gravity: 'top',
+        position: 'right',
+        style: {
+          background: esError
+            ? 'linear-gradient(to right, #ff5f6d, #ffc371)'
+            : 'linear-gradient(to right, #11998e, #38ef7d)'
+        }
+      }).showToast();
+    } else {
+      console.log('[UndoManager]', mensaje);
+    }
+  }
 
   class Stack {
     constructor() {
@@ -44,62 +61,92 @@
       this.undoStack = new Stack();
       this.redoStack = new Stack();
       this.enabled = true;
-      this.maxEntries = 500; // límite razonable
+      this.maxEntries = 500;
+      this._busy = false;
       this._installGlobalShortcuts();
+    }
+
+    canUndo() {
+      return this.enabled && this.undoStack.length > 0;
+    }
+
+    canRedo() {
+      return this.enabled && this.redoStack.length > 0;
     }
 
     record(action) {
       if (!this.enabled || !action || typeof action.undo !== 'function') return;
-      // Al registrar nueva acción, se invalida el redo
       this.redoStack.clear();
       this.undoStack.push(action);
-      // Recortar si excede límite
       if (this.undoStack.length > this.maxEntries) {
         this.undoStack.items.shift();
       }
-      console.log(`📚 [UndoManager] Acción registrada. Stack undo: ${this.undoStack.length}, Stack redo: ${this.redoStack.length}`);
+      console.log(`📚 [UndoManager] Acción registrada. Stack undo: ${this.undoStack.length}`);
       console.log(`📚 [UndoManager] Última acción:`, action.label || 'sin label');
     }
 
     async undo() {
-      if (!this.enabled) return;
-      console.log(`📚 [UndoManager] UNDO solicitado. Stack undo antes: ${this.undoStack.length}, Stack redo antes: ${this.redoStack.length}`);
+      if (!this.enabled || this._busy) return false;
       const last = this.undoStack.pop();
       if (!last) {
-        console.log('📚 [UndoManager] No hay acciones para deshacer');
-        return;
+        notificarUndo('No hay nada que deshacer', true);
+        return false;
       }
+      this._busy = true;
       console.log(`📚 [UndoManager] Deshaciendo:`, last.label || 'sin label');
+      let ok = false;
       try {
         await last.undo();
-        // Permitir rehacer con la operación inversa original (si existe .do)
         this.redoStack.push(last);
-        console.log(`📚 [UndoManager] UNDO exitoso. Stack undo después: ${this.undoStack.length}, Stack redo después: ${this.redoStack.length}`);
+        notificarUndo(`Deshecho: ${last.label || 'última acción'}`);
+        ok = true;
+        return true;
       } catch (e) {
         console.error('[UndoManager] Error al deshacer:', e);
-        // Si falla el undo, NO volver a meter la acción al stack (se perdió)
-        // Esto evita que se quede atascado intentando deshacer algo que falla
-        console.warn('[UndoManager] Acción descartada por error. No se puede deshacer.');
+        this.undoStack.push(last);
+        notificarUndo('No se pudo deshacer el cambio', true);
+        return false;
+      } finally {
+        this._busy = false;
+        if (ok && !last.skipPageRefresh) {
+          await this._refreshAfterChange();
+        }
       }
     }
 
     async redo() {
-      if (!this.enabled) return;
+      if (!this.enabled || this._busy) return false;
       const next = this.redoStack.pop();
-      if (!next) return;
+      if (!next) {
+        notificarUndo('No hay nada que rehacer', true);
+        return false;
+      }
+      this._busy = true;
+      let ok = false;
       try {
         if (typeof next.do === 'function') {
           await next.do();
         } else if (typeof next.redo === 'function') {
           await next.redo();
         } else {
-          // Si no hay do/redo, re-aplicar llamando al inverso otra vez es inseguro
           console.warn('[UndoManager] Acción no tiene do/redo; cancelado');
-          return;
+          this.redoStack.push(next);
+          return false;
         }
         this.undoStack.push(next);
+        notificarUndo(`Rehecho: ${next.label || 'última acción'}`);
+        ok = true;
+        return true;
       } catch (e) {
         console.error('[UndoManager] Error al rehacer:', e);
+        this.redoStack.push(next);
+        notificarUndo('No se pudo rehacer el cambio', true);
+        return false;
+      } finally {
+        this._busy = false;
+        if (ok && !next.skipPageRefresh) {
+          await this._refreshAfterChange();
+        }
       }
     }
 
@@ -108,17 +155,53 @@
       this.redoStack.clear();
     }
 
+    async _refreshAfterChange() {
+      if (typeof window.refrescarPaginaActual === 'function') {
+        try {
+          await window.refrescarPaginaActual();
+        } catch (e) {
+          console.warn('[UndoManager] Error refrescando vista:', e);
+        }
+      }
+    }
+
     _installGlobalShortcuts() {
       document.addEventListener('keydown', (e) => {
-        // Evitar interferir cuando usuario escribe en un campo editable
-        if (isEditableElement(e.target)) return;
-
-        const isCtrl = e.ctrlKey || e.metaKey; // Soporte Cmd en Mac
+        const isCtrl = e.ctrlKey || e.metaKey;
         if (!isCtrl) return;
 
-        // Ctrl+Z => undo, Ctrl+Y => redo, Ctrl+Shift+Z => redo (estándar Mac)
         const key = (e.key || '').toLowerCase();
+
+        // Si hay historial de la app, Ctrl+Z/Y tienen prioridad sobre el navegador
+        if (key === 'z' && !e.shiftKey && this.canUndo()) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.undo();
+          return;
+        }
+        if ((key === 'y' || (key === 'z' && e.shiftKey)) && this.canRedo()) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.redo();
+          return;
+        }
+
+        // Sin historial: no interferir en textos libres salvo selects/fechas
         if (key === 'z') {
+          if (isEditableElement(e.target)) {
+            const tag = e.target.tagName ? e.target.tagName.toLowerCase() : '';
+            if (tag === 'select') {
+              e.preventDefault();
+              this.undo();
+            } else {
+              const type = (e.target.type || '').toLowerCase();
+              if (['date', 'number', 'checkbox', 'radio', 'time', 'datetime-local'].includes(type)) {
+                e.preventDefault();
+                this.undo();
+              }
+            }
+            return;
+          }
           e.preventDefault();
           if (e.shiftKey) {
             this.redo();
@@ -126,17 +209,16 @@
             this.undo();
           }
         } else if (key === 'y') {
+          if (isEditableElement(e.target)) return;
           e.preventDefault();
           this.redo();
         }
-      });
+      }, true);
     }
   }
 
-  // Exponer singleton global
   window.UndoManager = window.UndoManager || new UndoManagerImpl();
 
-  // Helpers globales para usar desde botones de cabecera
   window.handleGlobalUndo = async function () {
     try {
       if (window.UndoManager && typeof window.UndoManager.undo === 'function') {
@@ -157,5 +239,3 @@
     }
   };
 })();
-
-

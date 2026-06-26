@@ -368,11 +368,62 @@ public class ComboService {
         return null;
     }
 
+    public void validarCompletoParaAprobar(Combo combo) {
+        if (combo == null) {
+            throw new IllegalArgumentException("Combo no encontrado");
+        }
+        Set<PreguntaCombo> preguntas = combo.getPreguntas();
+        int total = preguntas == null ? 0 : preguntas.size();
+        if (total != 3) {
+            throw new IllegalArgumentException(
+                "Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para pasar a aprobado. Actual: " + total);
+        }
+        boolean factorX2 = false;
+        boolean factorX3 = false;
+        boolean factorX = false;
+        Set<Integer> posiciones = new HashSet<>();
+        for (PreguntaCombo pc : preguntas) {
+            if (pc.getPregunta() == null || pc.getPregunta().getNivel() == null) {
+                throw new IllegalArgumentException("El combo tiene preguntas incompletas");
+            }
+            if (!pc.getPregunta().getNivel().name().startsWith("_5")) {
+                throw new IllegalArgumentException("Todas las preguntas del combo deben ser de nivel 5");
+            }
+            if (pc.getPosicion() != null) {
+                posiciones.add(pc.getPosicion());
+            }
+            String factor = pc.getFactorMultiplicacion();
+            if (factor == null) {
+                throw new IllegalArgumentException("Todas las preguntas del combo deben tener factor (X2, X3, X)");
+            }
+            if ("X2".equals(factor) || "2".equals(factor)) {
+                factorX2 = true;
+            } else if ("X3".equals(factor) || "3".equals(factor)) {
+                factorX3 = true;
+            } else if ("X".equals(factor) || "0".equals(factor) || "1".equals(factor)) {
+                factorX = true;
+            }
+        }
+        if (posiciones.size() == 3 && posiciones.contains(1) && posiciones.contains(2) && posiciones.contains(3)) {
+            return;
+        }
+        if (!factorX2 || !factorX3 || !factorX) {
+            throw new IllegalArgumentException(
+                "El combo debe tener las tres preguntas multiplicadoras (PM1/X2, PM2/X3, PM3/X) para pasar a aprobado");
+        }
+    }
+
     public Combo cambiarEstado(Long id, EstadoCombo nuevoEstado) {
-        return comboRepository.findById(id).map(combo -> {
-            combo.setEstado(nuevoEstado);
-            return comboRepository.save(combo);
-        }).orElse(null);
+        Optional<Combo> conPreguntas = obtenerConPreguntas(id);
+        if (conPreguntas.isEmpty()) {
+            return null;
+        }
+        Combo combo = conPreguntas.get();
+        if (nuevoEstado == EstadoCombo.aprobado) {
+            validarCompletoParaAprobar(combo);
+        }
+        combo.setEstado(nuevoEstado);
+        return comboRepository.save(combo);
     }
 
     public boolean estaAsignadoAJornada(Long comboId) {

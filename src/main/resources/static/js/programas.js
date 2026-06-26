@@ -68,6 +68,39 @@ let totalPaginas = 0;
 let tamañoPagina = 5;
 let totalItems = 0;
 let lastScrollYProgramas = 0;
+let cargandoProgramas = false;
+let filtrarProgramasTimeout = null;
+
+function mostrarEstadoCargaProgramas(mensaje = 'Cargando programas...', porcentaje = null) {
+    const indicador = document.getElementById('indicador-carga-programas');
+    const mensajeEl = indicador?.querySelector('.carga-programas-mensaje');
+    const barra = document.getElementById('barra-carga-programas');
+    if (indicador) {
+        indicador.classList.remove('d-none');
+    }
+    if (mensajeEl) {
+        mensajeEl.textContent = mensaje;
+    }
+    if (barra && porcentaje !== null) {
+        const pct = Math.max(0, Math.min(100, porcentaje));
+        barra.style.width = `${pct}%`;
+        barra.setAttribute('aria-valuenow', String(pct));
+    }
+}
+
+function ocultarEstadoCargaProgramas() {
+    document.getElementById('indicador-carga-programas')?.classList.add('d-none');
+    const barra = document.getElementById('barra-carga-programas');
+    if (barra) {
+        barra.style.width = '0%';
+        barra.setAttribute('aria-valuenow', '0');
+    }
+}
+
+function actualizarProgresoCargaProgramas(actual, total, mensaje) {
+    const pct = total > 0 ? Math.round((actual / total) * 100) : 100;
+    mostrarEstadoCargaProgramas(mensaje, pct);
+}
 
 async function inicializarProgramas() {
     const usuario = JSON.parse(localStorage.getItem('usuario'));
@@ -103,7 +136,42 @@ async function recargarProgramas() {
     configurarScrollTablas();
 }
 
+async function refrescarVistaProgramas() {
+    while (cargandoProgramas) {
+        await new Promise(resolve => setTimeout(resolve, 40));
+    }
+    if (aplicandoFiltros) {
+        await cargarProgramasFiltrados();
+    } else {
+        await cargarProgramasPaginados(paginaActual);
+    }
+}
+
+function actualizarEstadoProgramaEnDom(programaId, nuevoEstado) {
+    if (!nuevoEstado) return;
+    const programa = programas.find(p => p.id === programaId);
+    if (programa) programa.estado = nuevoEstado;
+    const contenedor = document.querySelector(`[data-programa-id="${programaId}"]`);
+    const select = contenedor?.querySelector('select[onchange*="actualizarEstadoPrograma"]');
+    if (select) {
+        select.value = nuevoEstado;
+    }
+}
+
+function mapRevertCampoPrograma(key, raw) {
+    if (key === 'fechaEmision') {
+        if (raw == null || raw === '') return null;
+        return normalizarFechaProgramaISO(raw) || null;
+    }
+    return raw ?? null;
+}
+
 async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden = 'desc') {
+    if (cargandoProgramas) {
+        return;
+    }
+    cargandoProgramas = true;
+    mostrarEstadoCargaProgramas('Cargando programas...', 15);
     try {
         lastScrollYProgramas = window.scrollY || window.pageYOffset || 0;
         const response = await apiManager.get(
@@ -115,6 +183,7 @@ async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden 
         totalItems = response.totalItems;
         totalPaginas = response.totalPages;
         
+        mostrarEstadoCargaProgramas('Cargando concursantes...', 50);
         await cargarConcursantesPorPrograma();
         mostrarProgramas();
         configurarScrollTablas(); // Configurar scroll automático en las tablas
@@ -125,6 +194,9 @@ async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden 
             return;
         }
         mostrarError(obtenerMensajeErrorProgramas(error, 'carga de programas'));
+    } finally {
+        cargandoProgramas = false;
+        ocultarEstadoCargaProgramas();
     }
 }
 
@@ -148,7 +220,7 @@ function mostrarProgramas() {
         return;
     }
     
-    const visibles = aplicarFiltros(programas);
+    const visibles = aplicandoFiltros ? programas : aplicarFiltros(programas);
     if (visibles.length === 0) {
         contenedor.innerHTML = '<div class="alert alert-warning">No hay programas que coincidan con los filtros.</div>';
         return;
@@ -457,10 +529,15 @@ function mostrarProgramas() {
 async function actualizarCreditosEspecialesPrograma(programaId, creditos) {
     try {
         const valor = (creditos != null && String(creditos).trim() !== '') ? String(creditos) : null;
-        await apiManager.patch(`/api/programas/${programaId}/campo`, { creditosEspeciales: valor });
-        // Mantener estado local para evitar recargar toda la vista
-        const p = (programas || []).find(x => x.id === programaId);
-        if (p) p.creditosEspeciales = valor;
+        await apiManager.patchUndoable(
+            `/api/programas/${programaId}/campo`,
+            { creditosEspeciales: valor },
+            {
+                label: `Créditos especiales programa ${programaId}`,
+                snapshotEndpoint: `/api/programas/${programaId}`,
+                onAfter: refrescarVistaProgramas
+            }
+        );
         mostrarExito('Créditos especiales actualizados');
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de créditos especiales'));
@@ -512,7 +589,30 @@ function normalizarFechaProgramaISO(fecha) {
         return `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
     }
 
+    const matchIsoPrefix = valor.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (matchIsoPrefix) {
+        const [, año, mes, dia] = matchIsoPrefix;
+        return `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    }
+
     return valor;
+}
+
+function coincideFechaPrograma(programa, fechaFiltro) {
+    if (!fechaFiltro) return true;
+    const fechaPrograma = normalizarFechaProgramaISO(programa.fechaEmision);
+    return fechaPrograma !== '' && fechaPrograma === fechaFiltro;
+}
+
+function obtenerTotalPremiosPrograma(programa) {
+    const concursantes = concursantesPorPrograma[programa.id];
+    if (Array.isArray(concursantes) && concursantes.length > 0) {
+        return calcularTotalPremiosNumero(concursantes);
+    }
+    if (programa.totalPremios != null && programa.totalPremios !== '') {
+        return Number(programa.totalPremios) || 0;
+    }
+    return 0;
 }
 
 function formatearFechaPrograma(fecha) {
@@ -739,65 +839,78 @@ function parsearDuracion(duracion) {
 
 async function actualizarCampoConcursante(concursanteId, campo, valor) {
     try {
+        const snapshot = await apiManager.get(`/api/concursantes/${concursanteId}`);
         const data = {};
         data[campo] = valor;
-        
-        await apiManager.patch(`/api/concursantes/${concursanteId}/campo`, data);
-        mostrarExito('Campo actualizado correctamente');
-        
-        // Actualizar el concursante en la lista local y encontrar el programa
-        let programaId = null;
-        for (const pId in concursantesPorPrograma) {
-            const concursante = concursantesPorPrograma[pId].find(c => c.id === concursanteId);
-            if (concursante) {
-                concursante[campo] = valor;
-                programaId = pId;
-                break;
-            }
-        }
-        
-        // Si se actualiza el resultado o cualquier campo de duración, recalcular valores del programa
-        if (programaId && (campo === 'resultado' || campo === 'duracion' || campo === 'duracionDireccion' || campo === 'duracionFinal')) {
-            const programaContainer = document.querySelector(`[data-programa-id="${programaId}"]`);
-            if (programaContainer) {
-                const concursantes = concursantesPorPrograma[programaId] || [];
-                const duracionReal = calcularDuracionReal(concursantes);
-                const programa = programas.find(p => p.id === programaId);
-                const duracionObjetivo = programa ? (programa.duracionObjetivo || '1h 5m') : '1h 5m';
-                const gap = calcularGap(duracionObjetivo, duracionReal);
-                programaContainer.querySelector('.programa-info-item:nth-child(8) .programa-info-readonly').textContent = gap;
-                
-                // Recalcular total de resultados si se actualiza un resultado
-                if (campo === 'resultado') {
-                    const nuevoTotalResultados = calcularTotalResultados(concursantes);
-                    const premiosElement = programaContainer.querySelector('.programa-info-item:nth-child(6) .programa-info-readonly');
-                    if (premiosElement) {
-                        premiosElement.textContent = nuevoTotalResultados + '€';
-                    }
+
+        const aplicarCambioLocal = async () => {
+            await apiManager.patch(`/api/concursantes/${concursanteId}/campo`, data);
+            mostrarExito('Campo actualizado correctamente');
+
+            let programaId = null;
+            for (const pId in concursantesPorPrograma) {
+                const concursante = concursantesPorPrograma[pId].find(c => c.id === concursanteId);
+                if (concursante) {
+                    concursante[campo] = valor;
+                    programaId = pId;
+                    break;
                 }
-                
-                // Si se actualiza un campo de duración, actualizar la celda de duración en la tabla
-                if (campo === 'duracion' || campo === 'duracionDireccion' || campo === 'duracionFinal') {
-                    const concursanteActualizado = concursantes.find(c => c.id === concursanteId);
-                    if (concursanteActualizado) {
-                        const nuevaDuracion = obtenerDuracionConcursante(concursanteActualizado);
-                        const filaConcursante = programaContainer.querySelector(`tr[onclick*="${concursanteId}"]`);
-                        if (filaConcursante) {
-                            const celdaDuracion = filaConcursante.querySelector('.col-duracion');
-                            if (celdaDuracion) {
-                                celdaDuracion.textContent = nuevaDuracion;
+            }
+
+            if (programaId && (campo === 'resultado' || campo === 'duracion' || campo === 'duracionDireccion' || campo === 'duracionFinal')) {
+                const programaContainer = document.querySelector(`[data-programa-id="${programaId}"]`);
+                if (programaContainer) {
+                    const concursantes = concursantesPorPrograma[programaId] || [];
+                    const duracionReal = calcularDuracionReal(concursantes);
+                    const programa = programas.find(p => p.id === programaId);
+                    const duracionObjetivo = programa ? (programa.duracionObjetivo || '1h 5m') : '1h 5m';
+                    const gap = calcularGap(duracionObjetivo, duracionReal);
+                    programaContainer.querySelector('.programa-info-item:nth-child(8) .programa-info-readonly').textContent = gap;
+
+                    if (campo === 'resultado') {
+                        const nuevoTotalResultados = calcularTotalResultados(concursantes);
+                        const premiosElement = programaContainer.querySelector('.programa-info-item:nth-child(6) .programa-info-readonly');
+                        if (premiosElement) {
+                            premiosElement.textContent = nuevoTotalResultados + '€';
+                        }
+                    }
+
+                    if (campo === 'duracion' || campo === 'duracionDireccion' || campo === 'duracionFinal') {
+                        const concursanteActualizado = concursantes.find(c => c.id === concursanteId);
+                        if (concursanteActualizado) {
+                            const nuevaDuracion = obtenerDuracionConcursante(concursanteActualizado);
+                            const filaConcursante = programaContainer.querySelector(`tr[onclick*="${concursanteId}"]`);
+                            if (filaConcursante) {
+                                const celdaDuracion = filaConcursante.querySelector('.col-duracion');
+                                if (celdaDuracion) {
+                                    celdaDuracion.textContent = nuevaDuracion;
+                                }
                             }
                         }
                     }
-                }
-                
-                // Actualizar estado del programa automáticamente según los datos
-                if (campo === 'resultado' || campo === 'duracion' || campo === 'duracionDireccion' || campo === 'duracionFinal') {
-                    await actualizarEstadoProgramaAutomatico(programaId);
+
+                    if (campo === 'resultado' || campo === 'duracion' || campo === 'duracionDireccion' || campo === 'duracionFinal') {
+                        await actualizarEstadoProgramaAutomatico(programaId, { registrarUndo: false, refrescar: false });
+                    }
                 }
             }
+        };
+
+        const revertirCambio = async () => {
+            const revert = { [campo]: snapshot[campo] ?? null };
+            await apiManager.patch(`/api/concursantes/${concursanteId}/campo`, revert);
+            await refrescarVistaProgramas();
+        };
+
+        await aplicarCambioLocal();
+        if (window.UndoManager) {
+            window.UndoManager.record({
+                do: aplicarCambioLocal,
+                undo: revertirCambio,
+                label: `Actualizar concursante ${concursanteId} - ${campo}`
+            });
         }
-        
+
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de campo'));
     }
@@ -805,46 +918,28 @@ async function actualizarCampoConcursante(concursanteId, campo, valor) {
 
 async function actualizarDuracionObjetivoPrograma(programaId, nuevaDuracion) {
     try {
-        // Validar formato de duración (opcional: 1h 5m, 65m, etc.)
         if (!nuevaDuracion || nuevaDuracion.trim() === '') {
             nuevaDuracion = '1h 5m';
         }
-        
-        // Actualizar en el backend
-        await apiManager.patch(`/api/programas/${programaId}/duracion-objetivo`, { duracionObjetivo: nuevaDuracion });
-        
-        // Actualizar en la lista local
-        const programa = programas.find(p => p.id === programaId);
-        if (programa) {
-            programa.duracionObjetivo = nuevaDuracion;
-        }
-        
-        // Recalcular GAP
-        const concursantes = concursantesPorPrograma[programaId] || [];
-        const duracionReal = calcularDuracionReal(concursantes);
-        const nuevoGap = calcularGap(nuevaDuracion, duracionReal);
-        
-        // Actualizar en la UI
-        const programaContainer = document.querySelector(`[data-programa-id="${programaId}"]`);
-        if (programaContainer) {
-            // El GAP está en el bloque con label "GAP" dentro de .programa-info-item
-            const gapWrapper = Array.from(programaContainer.querySelectorAll('.programa-info-item'))
-              .find(item => item.querySelector('.programa-info-label')?.textContent?.trim().toUpperCase() === 'GAP');
-            const gapElement = gapWrapper?.querySelector('.programa-info-readonly');
-            if (gapElement) gapElement.textContent = nuevoGap;
-            // actualizar fecha emisión visible si cambiara por backend (no aplica aquí, pero refrescamos listados)
-        }
-        
+
+        await apiManager.patchUndoable(
+            `/api/programas/${programaId}/duracion-objetivo`,
+            { duracionObjetivo: nuevaDuracion },
+            {
+                label: `Duración objetivo programa ${programaId}`,
+                snapshotEndpoint: `/api/programas/${programaId}`,
+                mapRevert: (_key, raw) => raw ?? '1h 5m',
+                onAfter: refrescarVistaProgramas
+            }
+        );
         mostrarExito('Duración objetivo actualizada');
-        await recargarProgramas();
-        
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de duración objetivo'));
     }
 }
 
 function irAConcursante(concursanteId) {
-    window.location.href = `concursantes.html?id=${concursanteId}`;
+    Utils.abrirEnNuevaPestana(`concursantes.html?id=${concursanteId}`);
 }
 
 // Variables para filtros globales
@@ -852,42 +947,58 @@ let programasFiltrados = [];
 let aplicandoFiltros = false;
 
 function filtrarProgramas() {
-    // Reiniciar a la primera página al aplicar filtros
     paginaActual = 0;
     aplicandoFiltros = true;
-    cargarProgramasFiltrados();
+    clearTimeout(filtrarProgramasTimeout);
+    filtrarProgramasTimeout = setTimeout(() => cargarProgramasFiltrados(), 400);
 }
 
 // Nueva función para cargar programas con filtros aplicados
 async function cargarProgramasFiltrados() {
+    if (cargandoProgramas) {
+        return;
+    }
+    cargandoProgramas = true;
+    mostrarEstadoCargaProgramas('Obteniendo programas...', 10);
     try {
-        // Obtener todos los programas sin paginación
         const response = await apiManager.get('/api/programas');
         const todosLosProgramas = response;
-        
-        // Aplicar filtros y ordenar de mayor a menor id
+
+        mostrarEstadoCargaProgramas('Aplicando filtros...', 30);
         programasFiltrados = aplicarFiltros(todosLosProgramas)
             .sort((a, b) => b.id - a.id);
-        
-        // Cargar concursantes para los programas filtrados
+
         await cargarConcursantesParaProgramasFiltrados();
-        
-        // Mostrar solo los primeros 5 programas filtrados
+
         mostrarProgramasFiltrados();
         renderizarPaginacionFiltrada();
-        
+
     } catch (error) {
         if (error && error.message && error.message.startsWith('401')) {
             return;
         }
         mostrarError(obtenerMensajeErrorProgramas(error, 'carga de programas filtrados'));
+    } finally {
+        cargandoProgramas = false;
+        ocultarEstadoCargaProgramas();
     }
 }
 
 // Cargar concursantes solo para los programas filtrados
 async function cargarConcursantesParaProgramasFiltrados() {
     concursantesPorPrograma = {};
-    for (const programa of programasFiltrados) {
+    const total = programasFiltrados.length;
+    if (total === 0) {
+        actualizarProgresoCargaProgramas(1, 1, 'Sin resultados');
+        return;
+    }
+    for (let i = 0; i < programasFiltrados.length; i++) {
+        const programa = programasFiltrados[i];
+        actualizarProgresoCargaProgramas(
+            i + 1,
+            total,
+            `Cargando concursantes (${i + 1}/${total})...`
+        );
         try {
             const concursantes = await apiManager.get(`/api/concursantes/programa/${programa.id}`);
             concursantesPorPrograma[programa.id] = concursantes;
@@ -996,13 +1107,12 @@ function aplicarFiltros(lista) {
         if (programaIdFiltro && String(programa.id) !== String(programaIdFiltro)) {
             return false;
         }
-        // Fecha de emisión exacta (ISO)
-        if (fechaFiltro && (!programa.fechaEmision || programa.fechaEmision !== fechaFiltro)) {
+        // Fecha de emisión exacta (normalizada a YYYY-MM-DD)
+        if (!coincideFechaPrograma(programa, fechaFiltro)) {
             return false;
         }
         // Total de premios (min/máx)
-        const concursantes = concursantesPorPrograma[programa.id] || [];
-        const totalPremios = calcularTotalPremiosNumero(concursantes);
+        const totalPremios = obtenerTotalPremiosPrograma(programa);
         if (premiosMin && totalPremios < Number(premiosMin)) {
             return false;
         }
@@ -1171,10 +1281,39 @@ function mostrarMensaje(mensaje, tipo = 'info') {
 }
 
 // Función para actualizar el estado del programa automáticamente
-async function actualizarEstadoProgramaAutomatico(programaId) {
+async function actualizarEstadoProgramaAutomatico(programaId, opciones = {}) {
+    const { registrarUndo = true, refrescar = true } = opciones;
     try {
-        await apiManager.putUndoable(`/api/programas/${programaId}/actualizar-estado`, {}, { label: `Actualizar estado programa ${programaId}`, snapshotEndpoint: `/api/programas/${programaId}` });
-        await cargarProgramas();
+        const snapshot = registrarUndo ? await apiManager.get(`/api/programas/${programaId}`) : null;
+        const actualizado = await apiManager.put(`/api/programas/${programaId}/actualizar-estado`, {});
+
+        if (actualizado && typeof actualizado === 'object') {
+            const idx = programas.findIndex(p => p.id === programaId);
+            if (idx !== -1) {
+                programas[idx] = { ...programas[idx], ...actualizado };
+            }
+            actualizarEstadoProgramaEnDom(programaId, actualizado.estado);
+        }
+
+        if (registrarUndo && snapshot && window.UndoManager) {
+            const doAction = async () => {
+                await apiManager.put(`/api/programas/${programaId}/actualizar-estado`, {});
+                await refrescarVistaProgramas();
+            };
+            const undoAction = async () => {
+                await apiManager.put(`/api/programas/${programaId}`, snapshot);
+                await refrescarVistaProgramas();
+            };
+            window.UndoManager.record({
+                do: doAction,
+                undo: undoAction,
+                label: `Actualizar estado programa ${programaId}`
+            });
+        }
+
+        if (refrescar) {
+            await refrescarVistaProgramas();
+        }
     } catch (error) {
         console.error('Error al actualizar estado del programa:', error);
     }
@@ -1182,8 +1321,15 @@ async function actualizarEstadoProgramaAutomatico(programaId) {
 
 async function actualizarEstadoPrograma(programaId, nuevoEstado) {
     try {
-        await apiManager.patch(`/api/programas/${programaId}/campo`, { estado: nuevoEstado });
-        await cargarProgramas();
+        await apiManager.patchUndoable(
+            `/api/programas/${programaId}/campo`,
+            { estado: nuevoEstado },
+            {
+                label: `Estado programa ${programaId}`,
+                snapshotEndpoint: `/api/programas/${programaId}`,
+                onAfter: refrescarVistaProgramas
+            }
+        );
         mostrarExito('Estado del programa actualizado');
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización del estado'));
@@ -1202,9 +1348,16 @@ async function actualizarTemporadaPrograma(programaId, nuevaTemporada) {
             mostrarError('La temporada debe ser un número mayor o igual a 1');
             return;
         }
-        await apiManager.patch(`/api/programas/${programaId}/campo`, { temporada: numero });
+        await apiManager.patchUndoable(
+            `/api/programas/${programaId}/campo`,
+            { temporada: numero },
+            {
+                label: `Temporada programa ${programaId}`,
+                snapshotEndpoint: `/api/programas/${programaId}`,
+                onAfter: refrescarVistaProgramas
+            }
+        );
         mostrarExito('Temporada actualizada');
-        await cargarProgramas();
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de temporada'));
     }
@@ -1213,22 +1366,16 @@ async function actualizarTemporadaPrograma(programaId, nuevaTemporada) {
 async function actualizarFechaEmision(programaId, fechaISO) {
     try {
         const valor = (fechaISO && fechaISO.trim() !== '') ? fechaISO : null;
-        const programaActualizado = await apiManager.patch(`/api/programas/${programaId}/campo`, { fechaEmision: valor });
-        if (programaActualizado && typeof programaActualizado === 'object') {
-            const indicePrograma = programas.findIndex(programa => programa.id === programaId);
-            if (indicePrograma !== -1) {
-                programas[indicePrograma] = {
-                    ...programas[indicePrograma],
-                    ...programaActualizado,
-                    fechaEmision: programaActualizado.fechaEmision ?? valor
-                };
+        await apiManager.patchUndoable(
+            `/api/programas/${programaId}/campo`,
+            { fechaEmision: valor },
+            {
+                label: `Fecha emisión programa ${programaId}`,
+                snapshotEndpoint: `/api/programas/${programaId}`,
+                mapRevert: mapRevertCampoPrograma,
+                onAfter: refrescarVistaProgramas
             }
-            mostrarProgramas();
-            configurarScrollTablas();
-            renderizarPaginacion();
-        } else {
-            await cargarProgramasPaginados(paginaActual);
-        }
+        );
         mostrarExito('Fecha de emisión actualizada');
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de fecha de emisión'));

@@ -247,7 +247,15 @@ public class CuestionarioController {
             }
 
             editLockService.assertCanEdit(AuditLog.EntityType.CUESTIONARIO, id);
-            Cuestionario cuestionarioActualizado = cuestionarioService.cambiarEstado(id, nuevoEstado);
+            Cuestionario cuestionarioActualizado;
+            try {
+                cuestionarioActualizado = cuestionarioService.cambiarEstado(id, nuevoEstado);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(e.getMessage());
+            }
+            if (cuestionarioActualizado == null) {
+                return ResponseEntity.notFound().build();
+            }
             editLockService.logEntityUpdate(AuditLog.EntityType.CUESTIONARIO, id, "Cambio de estado de cuestionario");
             // Devolver payload ligero para evitar problemas de serialización con proxies LAZY
             return ResponseEntity.ok(Map.of(

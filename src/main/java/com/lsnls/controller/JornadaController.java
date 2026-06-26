@@ -366,7 +366,7 @@ public class JornadaController {
     }
 
     @PostMapping("/{jornadaId}/reciclar-combo-entero/{comboId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<String>> reciclarComboEntero(
             @PathVariable Long jornadaId, 
             @PathVariable Long comboId) {
@@ -395,7 +395,7 @@ public class JornadaController {
     }
 
     @PostMapping("/{jornadaId}/reciclar-combo-parcial/{comboId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<String>> reciclarComboParcial(
             @PathVariable Long jornadaId, 
             @PathVariable Long comboId,

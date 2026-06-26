@@ -303,6 +303,16 @@ const CombosManager = {
         return { estado, tipo, tematica, subtema, busqueda, hayFiltros: !!(estado || tipo || tematica || subtema || busqueda) };
     },
 
+    async recargarConFiltros() {
+        const filtros = this.obtenerFiltrosActivos();
+        if (filtros.hayFiltros) {
+            this.combos = [];
+            await window.filtrarCombos(false);
+        } else {
+            await this.cargarCombos(true, true);
+        }
+    },
+
     normalizarEstado(estado) {
         return typeof estado === 'string' ? estado : (estado?.name || '');
     },
@@ -369,15 +379,14 @@ const CombosManager = {
     },
 
     engancharEventosSubtablaCombo(subtr) {
-        setTimeout(() => {
-            const filas = subtr.querySelectorAll('tbody tr[data-id]');
-            filas.forEach(fila => {
-                fila.addEventListener('click', function() {
-                    const pid = this.getAttribute('data-id');
-                    if (pid) window.open(`preguntas.html?id=${pid}`, '_blank');
-                });
+        const filas = subtr.querySelectorAll('tbody tr[data-id]');
+        filas.forEach(fila => {
+            fila.addEventListener('click', (e) => {
+                if (e.target.closest('button, input, select, textarea, a')) return;
+                const pid = fila.getAttribute('data-id');
+                if (pid) Utils.abrirEnNuevaPestana(`preguntas.html?id=${pid}`);
             });
-        }, 0);
+        });
     },
 
     renderComboEnTbody(tbody, c) {
@@ -1580,6 +1589,18 @@ async function guardarCombo() {
     
     const estadoCombo = document.getElementById('combo-estado')?.value || '';
     console.log('[DEBUG] Estado del combo:', estadoCombo);
+
+    if (estadoCombo === 'aprobado' && preguntasMultiplicadoras.length !== 3) {
+        Toastify({
+            text: 'No se puede aprobar: el combo debe tener las 3 preguntas multiplicadoras (PM1, PM2, PM3)',
+            duration: 4000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        return;
+    }
     
     if (preguntasMultiplicadoras.length === 0) {
         Toastify({
@@ -2086,12 +2107,31 @@ function getOpcionesTematicaCombo(tematicaActual) {
     return opciones;
 }
 
+function comboCompletoParaAprobar(combo) {
+    const total = (combo?.preguntas && combo.preguntas.length) || 0;
+    return total === 3;
+}
+
 window.cambiarEstadoCombo = async function(id, nuevoEstado) {
     try {
         CombosManager.rememberScroll();
         CombosManager.lastFocusComboId = id;
         const previo = (CombosManager.ultimoListado || []).find(c => c.id === id);
         const estadoPrevio = previo ? previo.estado : null;
+
+        if (nuevoEstado === 'aprobado' && !comboCompletoParaAprobar(previo)) {
+            Toastify({
+                text: 'No se puede aprobar: el combo debe tener las 3 preguntas multiplicadoras (PM1, PM2, PM3)',
+                duration: 4000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+            await CombosManager.refrescarFila(id);
+            return;
+        }
+
         const doAction = async () => {
             await apiManager.put(`/api/combos/${id}/estado?nuevoEstado=${encodeURIComponent(nuevoEstado)}`, null);
             await CombosManager.refrescarFila(id);
@@ -2115,6 +2155,7 @@ window.cambiarEstadoCombo = async function(id, nuevoEstado) {
         }).showToast();
         CombosManager.restoreScrollOrFocus();
     } catch (error) {
+        await CombosManager.refrescarFila(id);
         Toastify({
             text: `Error: ${error.message}`,
             duration: 4000,

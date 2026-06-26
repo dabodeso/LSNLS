@@ -178,7 +178,7 @@ min-width: 20px;
 display: block;
 width: 100%;
 max-width: 240px;
-aspect-ratio: 1 / 1;
+aspect-ratio: 16 / 9;
 object-fit: cover;
 border-radius: 4px;
 cursor: pointer;
@@ -194,8 +194,8 @@ flex-direction: column;
 align-items: center;
 justify-content: center;
 width: 100%;
-min-width: 80px;
-aspect-ratio: 1 / 1;
+min-width: 120px;
+aspect-ratio: 16 / 9;
 max-width: 240px;
 border: 2px dashed #ccc;
 border-radius: 4px;
@@ -213,6 +213,14 @@ background-color: #f8f9fa;
 .campo-foto-vacio i {
 font-size: 1.5em;
 margin-bottom: 4px;
+}
+.foto-preview-form {
+display: block;
+width: 100%;
+max-width: 240px;
+aspect-ratio: 16 / 9;
+object-fit: cover;
+border-radius: 4px;
 }
 .campo-foto-vacio span {
 font-size: 0.7em;
@@ -531,7 +539,7 @@ line-height: 1.2;
 </button>
 </div>
 <div id="foto-preview" class="mt-2" style="display: none;">
-<img id="foto-preview-img" style="max-width: 150px; max-height: 150px; border-radius: 4px;">
+<img id="foto-preview-img" class="foto-preview-form" alt="Vista previa de la foto">
 </div>
 </div>
 </div>
@@ -782,6 +790,12 @@ line-height: 1.2;
 </table>
 </div>
 </div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="button" class="btn btn-danger" onclick="desasignarCuestionarioModal()">
+<i class="fas fa-times"></i> Desasignar
+</button>
+</div>
 </div>
 </div>
 </div>
@@ -814,6 +828,12 @@ line-height: 1.2;
 <tbody id="tabla-selector-combo"></tbody>
 </table>
 </div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+<button type="button" class="btn btn-danger" onclick="desasignarComboModal()">
+<i class="fas fa-times"></i> Desasignar
+</button>
 </div>
 </div>
 </div>
@@ -1029,6 +1049,7 @@ Borrar
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-danger" onclick="desasignarCuestionarioDesdePreview()">Desasignar</button>
                     <button type="button" class="btn btn-primary" onclick="abrirSelectorCuestionarioDesdePreview()">Reemplazar…</button>
                 </div>
             </div>
@@ -1049,6 +1070,7 @@ Borrar
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
                     <button type="button" class="btn btn-outline-warning" onclick="iniciarReciclajeParcialDesdePreview()">Reciclar…</button>
+                    <button type="button" class="btn btn-danger" onclick="desasignarComboDesdePreview()">Desasignar</button>
                     <button type="button" class="btn btn-primary" onclick="abrirSelectorComboDesdePreview()">Reemplazar…</button>
                 </div>
             </div>
@@ -1064,10 +1086,10 @@ Borrar
 <!-- Custom JS -->
 <script src="js/auth.js"></script>
 <script src="js/utils.js"></script>
-<script src="js/api.js"></script>
-<script src="js/undo-manager.js"></script>
+<script src="js/api.js?v=20260626-1"></script>
+    <script src="js/undo-manager.js?v=20260626-3"></script>
 <script src="js/table-resizer.js?v=20260128-2"></script>
-<script src="js/concursantes.js"></script>
+    <script src="js/concursantes.js?v=20260626-5"></script>
 <script>
 // Inicializar la página cuando se carga
 document.addEventListener('DOMContentLoaded', function() {

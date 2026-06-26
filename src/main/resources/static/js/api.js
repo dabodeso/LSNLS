@@ -139,8 +139,9 @@ class ApiManager {
             const result = await this.put(endpoint, data);
 
             if (window.UndoManager && previous) {
+                const restoreUrl = snapshotEndpoint || endpoint;
                 const hacer = async () => { await this.put(endpoint, data); };
-                const deshacer = async () => { await this.put(endpoint, previous); };
+                const deshacer = async () => { await this.put(restoreUrl, previous); };
                 window.UndoManager.record({ do: hacer, undo: deshacer, label: label || `PUT ${endpoint}` });
             }
 
@@ -203,6 +204,50 @@ class ApiManager {
             body: JSON.stringify(data),
             ...options
         });
+    }
+
+    // PATCH deshaciente: snapshot previo (GET) y revierte solo los campos tocados
+    async patchUndoable(endpoint, data, { label, snapshotEndpoint, onAfter, mapRevert } = {}) {
+        if (!snapshotEndpoint) {
+            console.warn('[Undoable PATCH] snapshotEndpoint requerido; ejecutando PATCH sin undo');
+            return this.patch(endpoint, data);
+        }
+
+        let previous = null;
+        try {
+            previous = await this.get(snapshotEndpoint);
+        } catch (e) {
+            console.warn('[Undoable PATCH] No se pudo obtener snapshot previo:', e);
+        }
+
+        const result = await this.patch(endpoint, data);
+
+        if (onAfter) {
+            await onAfter(data, previous, 'initial');
+        }
+
+        if (window.UndoManager && previous) {
+            const buildRevert = () => {
+                const revert = {};
+                for (const key of Object.keys(data)) {
+                    const raw = previous[key] ?? null;
+                    revert[key] = typeof mapRevert === 'function' ? mapRevert(key, raw, previous) : raw;
+                }
+                return revert;
+            };
+
+            const hacer = async () => {
+                await this.patch(endpoint, data);
+                if (onAfter) await onAfter(data, previous, 'do');
+            };
+            const deshacer = async () => {
+                await this.patch(endpoint, buildRevert());
+                if (onAfter) await onAfter(buildRevert(), previous, 'undo');
+            };
+            window.UndoManager.record({ do: hacer, undo: deshacer, label: label || `PATCH ${endpoint}` });
+        }
+
+        return result;
     }
 
     async delete(endpoint, options = {}) {

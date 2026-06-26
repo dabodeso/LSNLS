@@ -120,7 +120,7 @@ public class ConcursanteController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("@authorizationService.canCreateConcursante()")
     public ResponseEntity<?> create(@RequestBody ConcursanteDTO concursanteDTO) {
         try {
             // Validaciones específicas de campos requeridos

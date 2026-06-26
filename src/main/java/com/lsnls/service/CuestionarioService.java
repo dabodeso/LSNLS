@@ -143,11 +143,41 @@ public class CuestionarioService {
         return null;
     }
 
+    public void validarCompletoParaAprobar(Cuestionario cuestionario) {
+        if (cuestionario == null) {
+            throw new IllegalArgumentException("Cuestionario no encontrado");
+        }
+        Set<PreguntaCuestionario> preguntas = cuestionario.getPreguntas();
+        int total = preguntas == null ? 0 : preguntas.size();
+        if (total != 4) {
+            throw new IllegalArgumentException(
+                "Un cuestionario debe tener exactamente 4 preguntas (1LS, 2NLS, 3LS, 4NLS) para pasar a aprobado. Actual: " + total);
+        }
+        Set<String> nivelesRequeridos = Set.of("_1LS", "_2NLS", "_3LS", "_4NLS");
+        Set<String> nivelesPresentes = new HashSet<>();
+        for (PreguntaCuestionario pc : preguntas) {
+            if (pc.getPregunta() == null || pc.getPregunta().getNivel() == null) {
+                throw new IllegalArgumentException("El cuestionario tiene preguntas incompletas");
+            }
+            nivelesPresentes.add(pc.getPregunta().getNivel().name());
+        }
+        if (!nivelesPresentes.containsAll(nivelesRequeridos)) {
+            throw new IllegalArgumentException(
+                "El cuestionario debe tener una pregunta en cada nivel (1LS, 2NLS, 3LS, 4NLS) para pasar a aprobado");
+        }
+    }
+
     public Cuestionario cambiarEstado(Long id, EstadoCuestionario nuevoEstado) {
-        return cuestionarioRepository.findById(id).map(cuestionario -> {
-            cuestionario.setEstado(nuevoEstado);
-            return cuestionarioRepository.save(cuestionario);
-        }).orElse(null);
+        Optional<Cuestionario> conPreguntas = obtenerConPreguntas(id);
+        if (conPreguntas.isEmpty()) {
+            return null;
+        }
+        Cuestionario cuestionario = conPreguntas.get();
+        if (nuevoEstado == EstadoCuestionario.aprobado) {
+            validarCompletoParaAprobar(cuestionario);
+        }
+        cuestionario.setEstado(nuevoEstado);
+        return cuestionarioRepository.save(cuestionario);
     }
 
     public Cuestionario cambiarTematica(Long id, String nuevaTematica) {
@@ -948,53 +978,17 @@ public class CuestionarioService {
             System.err.println("[DTO-CUEST] ERROR al buscar historial para cuest " + id);
         }
         
-        // Mapear preguntas a slots según su nivel real
-        java.util.Map<String, PreguntaCuestionarioDTO> mapPorSlot = new java.util.HashMap<>();
-        
-        // Mapear cada pregunta a su slot correspondiente según su nivel
-        for (PreguntaCuestionario pc : c.getPreguntas()) {
-            PreguntaCuestionarioDTO pcdto = new PreguntaCuestionarioDTO();
-            Pregunta p = pc.getPregunta();
-            pcdto.setPregunta(mapPreguntaToDTO(p));
-            pcdto.setFactorMultiplicacion(pc.getFactorMultiplicacion());
-            
-            // Determinar slot basado en el nivel real de la pregunta
-            String slot = null;
-            if (pc.getFactorMultiplicacion() == null || pc.getFactorMultiplicacion() == 1) {
-                // Mapear según el nivel real de la pregunta
-                String nivelPregunta = p.getNivel().name();
-                switch (nivelPregunta) {
-                    case "_1LS":
-                        slot = "1LS";
-                        break;
-                    case "_2NLS":
-                        slot = "2NLS";
-                        break;
-                    case "_3LS":
-                        slot = "3LS";
-                        break;
-                    case "_4NLS":
-                        slot = "4NLS";
-                        break;
-                    default:
-                        // Si no es un nivel válido para cuestionarios, no asignar slot
-                        continue;
-                }
-            }
-            
-            pcdto.setSlot(slot);
-            if (slot != null) {
-                mapPorSlot.put(slot, pcdto);
-            }
-        }
-        
-        // Asegurar los 4 slots en orden correcto
+        java.util.Map<String, PreguntaCuestionario> mapPorSlot = mapearPreguntasPorSlot(c);
         java.util.List<PreguntaCuestionarioDTO> preguntasDTO = new java.util.ArrayList<>();
-        for (String slot : new String[]{"1LS","2NLS","3LS","4NLS"}) {
-            if (mapPorSlot.containsKey(slot)) {
-                preguntasDTO.add(mapPorSlot.get(slot));
+        for (String slot : new String[]{"1LS", "2NLS", "3LS", "4NLS"}) {
+            PreguntaCuestionario pc = mapPorSlot.get(slot);
+            if (pc != null) {
+                PreguntaCuestionarioDTO pcdto = new PreguntaCuestionarioDTO();
+                pcdto.setPregunta(mapPreguntaToDTO(pc.getPregunta()));
+                pcdto.setFactorMultiplicacion(pc.getFactorMultiplicacion());
+                pcdto.setSlot(slot);
+                preguntasDTO.add(pcdto);
             } else {
-                // Slot vacío
                 PreguntaCuestionarioDTO vacio = new PreguntaCuestionarioDTO();
                 vacio.setSlot(slot);
                 vacio.setPregunta(null);
@@ -1004,6 +998,29 @@ public class CuestionarioService {
         }
         dto.put("preguntas", preguntasDTO);
         return dto;
+    }
+
+    private java.util.Map<String, PreguntaCuestionario> mapearPreguntasPorSlot(Cuestionario c) {
+        java.util.Map<String, PreguntaCuestionario> map = new java.util.HashMap<>();
+        for (PreguntaCuestionario pc : c.getPreguntas()) {
+            Pregunta p = pc.getPregunta();
+            if (p == null || p.getNivel() == null) continue;
+            String slot = slotNormalDesdeNivel(p.getNivel().name());
+            if (slot != null && !map.containsKey(slot)) {
+                map.put(slot, pc);
+            }
+        }
+        return map;
+    }
+
+    private String slotNormalDesdeNivel(String nivel) {
+        switch (nivel) {
+            case "_1LS": return "1LS";
+            case "_2NLS": return "2NLS";
+            case "_3LS": return "3LS";
+            case "_4NLS": return "4NLS";
+            default: return null;
+        }
     }
 
     private PreguntaDTO mapPreguntaToDTO(Pregunta p) {
@@ -1031,38 +1048,14 @@ public class CuestionarioService {
         if (cuestionarioOpt.isEmpty()) {
             return false;
         }
-        
+
         Cuestionario cuestionario = cuestionarioOpt.get();
-        
-        // Buscar la pregunta en el slot especificado
-        for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {
-            Pregunta p = pc.getPregunta();
-            String nivelPregunta = p.getNivel().name();
-            String slotPregunta = null;
-            
-            // Mapear nivel a slot
-            switch (nivelPregunta) {
-                case "_1LS":
-                    slotPregunta = "1LS";
-                    break;
-                case "_2NLS":
-                    slotPregunta = "2NLS";
-                    break;
-                case "_3LS":
-                    slotPregunta = "3LS";
-                    break;
-                case "_4NLS":
-                    slotPregunta = "4NLS";
-                    break;
-            }
-            
-            if (slot.equals(slotPregunta)) {
-                // Encontramos la pregunta en el slot, la eliminamos
-                return quitarPregunta(cuestionarioId, p.getId());
-            }
+        java.util.Map<String, PreguntaCuestionario> mapPorSlot = mapearPreguntasPorSlot(cuestionario);
+        PreguntaCuestionario pc = mapPorSlot.get(slot);
+        if (pc != null && pc.getPregunta() != null) {
+            return quitarPregunta(cuestionarioId, pc.getPregunta().getId());
         }
-        
-        return false; // No se encontró pregunta en ese slot
+        return false;
     }
 
     /**

@@ -282,6 +282,16 @@ const CuestionariosManager = {
         return { estado, tematica, subtema, busqueda, hayFiltros: !!(estado || tematica || subtema || busqueda) };
     },
 
+    async recargarConFiltros() {
+        const filtros = this.obtenerFiltrosActivos();
+        if (filtros.hayFiltros) {
+            this.cuestionarios = [];
+            await window.filtrarCuestionarios(false);
+        } else {
+            await this.cargarCuestionarios(true, true);
+        }
+    },
+
     normalizarEstado(estado) {
         return typeof estado === 'string' ? estado : (estado?.name || '');
     },
@@ -346,15 +356,14 @@ const CuestionariosManager = {
     },
 
     engancharEventosSubtablaCuestionario(subtr) {
-        setTimeout(() => {
-            const filas = subtr.querySelectorAll('tbody tr[data-id]');
-            filas.forEach(fila => {
-                fila.addEventListener('click', function() {
-                    const pid = this.getAttribute('data-id');
-                    if (pid) window.open(`preguntas.html?id=${pid}`, '_blank');
-                });
+        const filas = subtr.querySelectorAll('tbody tr[data-id]');
+        filas.forEach(fila => {
+            fila.addEventListener('click', (e) => {
+                if (e.target.closest('button, input, select, textarea, a')) return;
+                const pid = fila.getAttribute('data-id');
+                if (pid) Utils.abrirEnNuevaPestana(`preguntas.html?id=${pid}`);
             });
-        }, 0);
+        });
     },
 
     async cargarTematicasGestionadas() {
@@ -383,15 +392,44 @@ const CuestionariosManager = {
         return this.tematicasGestionadas;
     },
 
+    mapearPreguntasPorSlot(c) {
+        const preguntasPorSlot = {};
+        const slotFromNivel = { '_1LS': '1LS', '_2NLS': '2NLS', '_3LS': '3LS', '_4NLS': '4NLS' };
+        if (!Array.isArray(c?.preguntas)) return preguntasPorSlot;
+        c.preguntas.forEach(pc => {
+            if (!pc) return;
+            if (pc.slot && ['1LS', '2NLS', '3LS', '4NLS'].includes(pc.slot)) {
+                if (pc.pregunta) preguntasPorSlot[pc.slot] = pc.pregunta;
+                return;
+            }
+            const p = pc.pregunta;
+            if (!p) return;
+            const nivel = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.name || '');
+            const slot = slotFromNivel[nivel];
+            if (slot && !preguntasPorSlot[slot]) preguntasPorSlot[slot] = p;
+        });
+        return preguntasPorSlot;
+    },
+
+    contarPreguntasAsignadas(c) {
+        return Object.keys(this.mapearPreguntasPorSlot(c)).length;
+    },
+
+    async obtenerCuestionarioDto(id) {
+        const response = await fetch(`/api/cuestionarios/filtrar?page=0&size=1&id=${id}`, {
+            headers: authManager.getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('No se pudo obtener el cuestionario');
+        const data = await response.json();
+        const cuestionario = (data.cuestionarios || []).find(c => c.id === id) ?? (data.cuestionarios || [])[0];
+        if (!cuestionario) throw new Error('Cuestionario no encontrado');
+        return cuestionario;
+    },
+
     renderCuestionarioEnTbody(tbody, c) {
         const tematicasGestionadas = this.tematicasGestionadas || [];
             const niveles = ['1LS','2NLS','3LS','4NLS'];
-            const preguntasPorSlot = {};
-            if (Array.isArray(c.preguntas)) {
-                c.preguntas.forEach(pc => {
-                    if (pc && pc.slot) preguntasPorSlot[pc.slot] = pc.pregunta;
-                });
-            }
+            const preguntasPorSlot = this.mapearPreguntasPorSlot(c);
             const tieneHuecos = niveles.some(nivel => !preguntasPorSlot[nivel]);
             const estadoMostrar = c.estado ?? '';
             const tr = document.createElement('tr');
@@ -436,7 +474,7 @@ const CuestionariosManager = {
                         ${getOpcionesEstadoCuestionario(estadoActual)}
                     </select>${iconoReutilizado}`}
                 </td>
-                <td>${(c.preguntas && c.preguntas.length) || 0}</td>
+                <td>${this.contarPreguntasAsignadas(c)}</td>
                 <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
                 <td>
                     <button class="btn btn-sm btn-primary me-1" onclick="editarCuestionario(${c.id})" title="Editar cuestionario">
@@ -458,11 +496,10 @@ const CuestionariosManager = {
             // Generar exactamente 4 filas para las preguntas del cuestionario
             let filasPreguntas = '';
             for (let i = 1; i <= 4; i++) {
-                const slotNivel = niveles[i-1]; // '1LS', '2NLS', '3LS', '4NLS'
+                const slotNivel = niveles[i - 1];
                 const p = preguntasPorSlot[slotNivel];
                 
                 if (p) {
-                    // Fila con pregunta
                     filasPreguntas += `<tr data-id="${p.id}" data-nivel="${slotNivel}" style="cursor:pointer;">
                         <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(p.nivel) : ''}'>${slotNivel}</span></td>
                         <td>${p.pregunta ?? ''}</td>
@@ -471,7 +508,6 @@ const CuestionariosManager = {
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCuestionario(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
                     </tr>`;
                 } else {
-                    // Fila vacía con botón añadir
                     filasPreguntas += `<tr data-nivel="${slotNivel}">
                         <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(slotNivel) : ''}'>${slotNivel}</span></td>
                         <td class="text-center text-muted">(Vacío)</td>
@@ -538,9 +574,7 @@ const CuestionariosManager = {
 
     async refrescarFila(id) {
         try {
-            const response = await fetch(`/api/cuestionarios/${id}`, { headers: authManager.getAuthHeaders() });
-            if (!response.ok) throw new Error('No se pudo obtener el cuestionario');
-            const cuestionario = await response.json();
+            const cuestionario = await this.obtenerCuestionarioDto(id);
             this.aplicarEnMemoria(id, cuestionario);
             const filtros = this.obtenerFiltrosActivos();
             if (filtros.hayFiltros && !(await this.sigueEnFiltro(cuestionario, filtros))) {
@@ -561,9 +595,7 @@ const CuestionariosManager = {
             return;
         }
         try {
-            const response = await fetch(`/api/cuestionarios/${id}`, { headers: authManager.getAuthHeaders() });
-            if (!response.ok) return;
-            const cuestionario = await response.json();
+            const cuestionario = await this.obtenerCuestionarioDto(id);
             const filtros = this.obtenerFiltrosActivos();
             if (filtros.hayFiltros && !(await this.sigueEnFiltro(cuestionario, filtros))) return;
             this.aplicarEnMemoria(id, cuestionario);
@@ -600,7 +632,7 @@ const CuestionariosManager = {
             a.addEventListener('click', function(e) {
                 e.preventDefault();
                 const pid = this.dataset.id;
-                window.open(`preguntas.html?id=${pid}`, '_blank');
+                if (pid) Utils.abrirEnNuevaPestana(`preguntas.html?id=${pid}`);
             });
         });
         const params = new URLSearchParams(window.location.search);
@@ -880,11 +912,7 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
     // --- NUEVO: Si hay contexto de añadir pregunta a cuestionario, hacer petición AJAX ---
     if (window.contextoAnadirPregunta) {
         const { cuestionarioId, nivel: nivelEsperado } = window.contextoAnadirPregunta;
-        // Determinar el factor según el nivel esperado
-        let factorMultiplicacion = 1;
-        if (nivelEsperado === 'PM1') factorMultiplicacion = 2;
-        else if (nivelEsperado === 'PM2') factorMultiplicacion = 3;
-        else if (nivelEsperado === 'PM3') factorMultiplicacion = 1;
+        const factorMultiplicacion = 1;
 
         // Función para añadir la pregunta al cuestionario
         const doAdd = async () => {
@@ -896,16 +924,12 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
             await CuestionariosManager.refrescarFila(cuestionarioId);
         };
 
-        // Verificar si el nivel de la pregunta coincide con el nivel esperado
         const nivelActual = nivel || '';
-        const esNivel5 = String(nivelActual).startsWith('_5');
-        // Los slots usan '1LS','2NLS',... pero las preguntas usan '_1LS','_2NLS',...
-        // Convertir el nombre del slot al formato enum de la pregunta para comparar correctamente
         const slotToEnum = { '1LS': '_1LS', '2NLS': '_2NLS', '3LS': '_3LS', '4NLS': '_4NLS' };
         const nivelEsperadoEspecifico = slotToEnum[nivelEsperado] || nivelEsperado;
 
-        // Si el nivel no coincide, mostrar warning y ofrecer cambiar automáticamente
-        if (nivelActual !== nivelEsperadoEspecifico && !esNivel5) {
+        // Si el nivel no coincide (incluye 5LS/5NLS), avisar y cambiar al del hueco elegido
+        if (nivelActual !== nivelEsperadoEspecifico) {
             const mensajeNivel = 
                 `Atención: La pregunta seleccionada tiene nivel "${Utils.formatearNivel(nivelActual)}" pero el hueco del cuestionario es "${Utils.formatearNivel(nivelEsperadoEspecifico)}".\n\n` +
                 `Pregunta: "${pregunta}"\n\n` +
@@ -1748,12 +1772,37 @@ function getOpcionesEstadoCuestionario(estadoActual) {
     return opciones;
 }
 
+function cuestionarioCompletoParaAprobar(cuestionario) {
+    const normales = ['1LS', '2NLS', '3LS', '4NLS'];
+    const porSlot = CuestionariosManager.mapearPreguntasPorSlot(cuestionario || {});
+    return normales.every(slot => !!porSlot[slot]);
+}
+
+function comboCompletoParaAprobar(combo) {
+    const total = (combo?.preguntas && combo.preguntas.length) || 0;
+    return total === 3;
+}
+
 window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
     try {
         CuestionariosManager.rememberScroll();
         CuestionariosManager.lastFocusCuestionarioId = id;
         const previo = (CuestionariosManager.ultimoListado || []).find(c => c.id === id);
         const estadoPrevio = previo ? previo.estado : null;
+
+        if (nuevoEstado === 'aprobado' && !cuestionarioCompletoParaAprobar(previo)) {
+            Toastify({
+                text: 'No se puede aprobar: el cuestionario debe tener las 4 preguntas (1LS, 2NLS, 3LS, 4NLS)',
+                duration: 4000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+            await CuestionariosManager.refrescarFila(id);
+            return;
+        }
+
         const doAction = async () => {
             await apiManager.put(`/api/cuestionarios/${id}/estado?nuevoEstado=${encodeURIComponent(nuevoEstado)}`, null);
             await CuestionariosManager.refrescarFila(id);
@@ -1777,6 +1826,7 @@ window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
         }).showToast();
         CuestionariosManager.restoreScrollOrFocus();
     } catch (error) {
+        await CuestionariosManager.refrescarFila(id);
         Toastify({
             text: `Error: ${error.message}`,
             duration: 4000,

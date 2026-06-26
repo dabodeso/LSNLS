@@ -17,6 +17,9 @@ import javax.persistence.criteria.JoinType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -71,9 +74,166 @@ public class PreguntaService {
         }
         
         pregunta.setFechaCreacion(LocalDateTime.now());
-        pregunta.setEstado(EstadoPregunta.borrador);
-        pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.disponible);
+        if (pregunta.getEstado() == null) {
+            pregunta.setEstado(EstadoPregunta.borrador);
+        }
+        if (pregunta.getEstadoDisponibilidad() == null) {
+            pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.disponible);
+        }
         return preguntaRepository.save(pregunta);
+    }
+
+    /**
+     * Comprueba que la pregunta tiene los campos mínimos para pasar a "para verificar".
+     */
+    public void validarRequisitosParaVerificar(String tematica, String pregunta, String respuesta, String fuentes) {
+        List<String> faltantes = new ArrayList<>();
+        if (tematica == null || tematica.trim().isEmpty()) {
+            faltantes.add("temática");
+        }
+        if (pregunta == null || pregunta.trim().isEmpty()) {
+            faltantes.add("pregunta");
+        }
+        if (respuesta == null || respuesta.trim().isEmpty()) {
+            faltantes.add("respuesta");
+        }
+        if (fuentes == null || fuentes.trim().isEmpty()) {
+            faltantes.add("fuente");
+        }
+        if (!faltantes.isEmpty()) {
+            throw new IllegalArgumentException(
+                "Para pasar a 'para verificar' son obligatorios: " + String.join(", ", faltantes));
+        }
+    }
+
+    /**
+     * Restaura una pregunta eliminada recreándola con el mismo ID del snapshot (undo).
+     */
+    public Pregunta restaurarDesdeSnapshot(PreguntaDTO dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("Snapshot de pregunta vacío");
+        }
+        if (dto.getId() == null) {
+            throw new IllegalArgumentException("El ID es obligatorio para restaurar la pregunta");
+        }
+        if (preguntaRepository.existsById(dto.getId())) {
+            throw new IllegalArgumentException("Ya existe una pregunta con ID " + dto.getId());
+        }
+        if (dto.getNivel() == null) {
+            throw new IllegalArgumentException("El nivel es obligatorio para restaurar");
+        }
+        if (dto.getTematica() == null || dto.getTematica().trim().isEmpty()) {
+            throw new IllegalArgumentException("La temática es obligatoria para restaurar");
+        }
+        if (dto.getPregunta() == null || dto.getPregunta().trim().isEmpty()) {
+            throw new IllegalArgumentException("El texto de la pregunta es obligatorio para restaurar");
+        }
+        if (dto.getRespuesta() == null || dto.getRespuesta().trim().isEmpty()) {
+            throw new IllegalArgumentException("La respuesta es obligatoria para restaurar");
+        }
+
+        Long id = dto.getId();
+        String tematica = dataTransformationService.normalizarTematica(dto.getTematica());
+        String pregunta = dataTransformationService.normalizarPregunta(dto.getPregunta());
+        String respuesta = dataTransformationService.normalizarRespuesta(dto.getRespuesta());
+
+        DataTransformationService.ValidationResult validation =
+            dataTransformationService.validarPreguntaCompleta(pregunta, respuesta, tematica);
+        if (!validation.isValid()) {
+            throw new IllegalArgumentException("Datos no válidos: " + validation.getErrorsAsString());
+        }
+
+        EstadoPregunta estado = EstadoPregunta.borrador;
+        if (dto.getEstado() != null && !dto.getEstado().isBlank()) {
+            estado = EstadoPregunta.valueOf(dto.getEstado().trim());
+        }
+        EstadoDisponibilidad estadoDisponibilidad = estado == EstadoPregunta.usada
+            ? EstadoDisponibilidad.usada
+            : EstadoDisponibilidad.disponible;
+
+        LocalDateTime fechaCreacion = parseSnapshotDateTime(dto.getFechaCreacion()).orElse(LocalDateTime.now());
+        LocalDateTime fechaVerificacion = parseSnapshotDateTime(dto.getFechaVerificacion()).orElse(null);
+        Long version = dto.getVersion() != null ? dto.getVersion() : 0L;
+
+        entityManager.createNativeQuery(
+            "INSERT INTO preguntas (" +
+            "id, version, creacion_usuario_id, fecha_creacion, fecha_verificacion, " +
+            "verificacion_usuario_id, respuesta, tematica, pregunta, subtema, " +
+            "datos_extra, fuentes, autor, notas, notas_verificacion, notas_direccion, " +
+            "verificacion, estado, estado_disponibilidad, factor, nivel" +
+            ") VALUES (" +
+            ":id, :version, :creacionUsuarioId, :fechaCreacion, :fechaVerificacion, " +
+            ":verificacionUsuarioId, :respuesta, :tematica, :pregunta, :subtema, " +
+            ":datosExtra, :fuentes, :autor, :notas, :notasVerificacion, :notasDireccion, " +
+            ":verificacion, :estado, :estadoDisponibilidad, :factor, :nivel" +
+            ")"
+        )
+        .setParameter("id", id)
+        .setParameter("version", version)
+        .setParameter("creacionUsuarioId", dto.getCreacionUsuarioId())
+        .setParameter("fechaCreacion", Timestamp.valueOf(fechaCreacion))
+        .setParameter("fechaVerificacion", fechaVerificacion != null ? Timestamp.valueOf(fechaVerificacion) : null)
+        .setParameter("verificacionUsuarioId", null)
+        .setParameter("respuesta", respuesta)
+        .setParameter("tematica", tematica)
+        .setParameter("pregunta", pregunta)
+        .setParameter("subtema", dto.getSubtema())
+        .setParameter("datosExtra", dto.getDatosExtra())
+        .setParameter("fuentes", dto.getFuentes())
+        .setParameter("autor", dto.getAutor())
+        .setParameter("notas", dto.getNotas())
+        .setParameter("notasVerificacion", dto.getNotasVerificacion())
+        .setParameter("notasDireccion", dto.getNotasDireccion())
+        .setParameter("verificacion", dto.getVerificacion())
+        .setParameter("estado", estado.name())
+        .setParameter("estadoDisponibilidad", estadoDisponibilidad.name())
+        .setParameter("factor", dto.getFactor() != null ? dto.getFactor().name() : null)
+        .setParameter("nivel", dto.getNivel().name())
+        .executeUpdate();
+
+        sincronizarAutoIncrementPreguntas();
+        entityManager.flush();
+        entityManager.clear();
+
+        return preguntaRepository.findById(id)
+            .orElseThrow(() -> new IllegalStateException("No se pudo cargar la pregunta restaurada con ID " + id));
+    }
+
+    private Optional<LocalDateTime> parseSnapshotDateTime(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(LocalDateTime.parse(raw));
+        } catch (DateTimeParseException e) {
+            try {
+                return Optional.of(LocalDateTime.parse(raw, DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            } catch (DateTimeParseException e2) {
+                log.warn("[RESTAURAR] Fecha no parseable: '{}'", raw);
+                return Optional.empty();
+            }
+        }
+    }
+
+    private void sincronizarAutoIncrementPreguntas() {
+        Number maxId = (Number) entityManager.createNativeQuery(
+            "SELECT COALESCE(MAX(id), 0) FROM preguntas"
+        ).getSingleResult();
+        long nextId = maxId.longValue() + 1;
+        entityManager.createNativeQuery(
+            "ALTER TABLE preguntas AUTO_INCREMENT = " + nextId
+        ).executeUpdate();
+    }
+
+    private Optional<Usuario> obtenerUsuarioActual() {
+        try {
+            org.springframework.security.core.Authentication auth =
+                SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()) && usuarioService != null) {
+                return usuarioService.obtenerPorNombre(auth.getName());
+            }
+        } catch (Exception ignored) {}
+        return Optional.empty();
     }
 
     public List<Pregunta> obtenerTodas() {
@@ -269,6 +429,14 @@ public class PreguntaService {
     @Transactional
     public boolean cambiarEstadoAtomico(Long id, EstadoPregunta estadoActualEsperado, 
                                        EstadoPregunta nuevoEstado, Usuario usuarioActual) {
+
+        if (nuevoEstado == EstadoPregunta.para_verificar
+            && estadoActualEsperado != EstadoPregunta.para_verificar) {
+            Pregunta pregunta = preguntaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pregunta con ID " + id + " no encontrada"));
+            validarRequisitosParaVerificar(
+                pregunta.getTematica(), pregunta.getPregunta(), pregunta.getRespuesta(), pregunta.getFuentes());
+        }
         
         // Construir query base
         StringBuilder query = new StringBuilder("UPDATE preguntas SET estado = ?");
@@ -564,6 +732,12 @@ public class PreguntaService {
         if (dto.getNotasVerificacion() != null) pregunta.setNotasVerificacion(dto.getNotasVerificacion());
         if (dto.getNotasDireccion() != null) pregunta.setNotasDireccion(dto.getNotasDireccion());
         if (dto.getSubtema() != null) pregunta.setSubtema(dto.getSubtema());
+
+        if (pregunta.getEstado() == EstadoPregunta.para_verificar
+            && estadoAnterior != EstadoPregunta.para_verificar) {
+            validarRequisitosParaVerificar(
+                pregunta.getTematica(), pregunta.getPregunta(), pregunta.getRespuesta(), pregunta.getFuentes());
+        }
         
         // Manejar actualización del campo verificacion SOLO cuando se cambia a estado verificada
         if (dto.getEstado() != null && 

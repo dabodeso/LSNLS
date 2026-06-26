@@ -207,6 +207,12 @@ class Utils {
         temp.textContent = str;
         return temp.innerHTML;
     }
+
+    /** Abre una ruta relativa en una pestaña nueva sin perder la vista actual. */
+    static abrirEnNuevaPestana(ruta) {
+        if (!ruta) return;
+        window.open(ruta, '_blank', 'noopener,noreferrer');
+    }
 }
 
 // Funciones globales para compatibilidad
@@ -246,4 +252,46 @@ function mostrarExito(mensaje) {
     Utils.showAlert(mensaje, 'success', 3000);
 }
 
-console.log('🛠️ Utils cargado y optimizado'); 
+console.log('🛠️ Utils cargado y optimizado');
+
+/**
+ * Recarga la vista de la página actual manteniendo filtros y paginación activos.
+ */
+window.refrescarPaginaActual = async function refrescarPaginaActual() {
+    const path = (window.location.pathname || '').toLowerCase();
+    try {
+        if (path.includes('pregunta')) {
+            if (window.PreguntasManager?.recargarConFiltros) {
+                await PreguntasManager.recargarConFiltros();
+            }
+        } else if (path.includes('cuestionario')) {
+            if (window.CuestionariosManager?.recargarConFiltros) {
+                await CuestionariosManager.recargarConFiltros();
+            }
+        } else if (path.includes('combo')) {
+            if (window.CombosManager?.recargarConFiltros) {
+                await CombosManager.recargarConFiltros();
+            }
+        } else if (path.includes('concursante')) {
+            if (typeof cargarConcursantes === 'function') {
+                await cargarConcursantes(false);
+            }
+        } else if (path.includes('programa')) {
+            if (typeof refrescarVistaProgramas === 'function') {
+                await refrescarVistaProgramas();
+            } else if (typeof recargarProgramas === 'function') {
+                await recargarProgramas();
+            }
+        } else if (path.includes('jornada')) {
+            if (window.JornadasManager?.recargarConFiltros) {
+                await JornadasManager.recargarConFiltros();
+            }
+        } else if (path.includes('administracion')) {
+            if (typeof cargarUsuarios === 'function') {
+                await cargarUsuarios();
+            }
+        }
+    } catch (e) {
+        console.error('[refrescarPaginaActual] Error:', e);
+    }
+};

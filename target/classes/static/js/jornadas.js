@@ -9,6 +9,37 @@ const JornadasManager = {
     lastScrollY: 0,
     lastFocusJornadaId: null,
     reabrirEditarTrasSeleccion: false,
+
+    normalizeId(id) {
+        const n = Number(id);
+        return Number.isFinite(n) ? n : id;
+    },
+
+    idEnLista(lista, id) {
+        const target = this.normalizeId(id);
+        return (lista || []).findIndex(x => this.normalizeId(x) === target);
+    },
+
+    incluyeId(lista, id) {
+        return this.idEnLista(lista, id) >= 0;
+    },
+
+    reabrirModalJornadaTrasSeleccion() {
+        if (!this.reabrirEditarTrasSeleccion) return;
+        const jid = document.getElementById('jornadaId')?.value;
+        if (jid && jid !== 'Auto') {
+            this.editarJornada(Number(jid));
+        } else {
+            const modalEl = document.getElementById('modalJornada');
+            if (modalEl) {
+                const inst = bootstrap.Modal.getInstance(modalEl);
+                if (inst) inst.show();
+                else new bootstrap.Modal(modalEl).show();
+            }
+        }
+        this.reabrirEditarTrasSeleccion = false;
+    },
+
     // Variables de paginación
     paginaActual: 0,
     tamanioPagina: 10,
@@ -27,6 +58,10 @@ const JornadasManager = {
             console.error('❌ [JORNADAS] Error en inicialización:', error);
             Utils.showAlert('Error al cargar datos de jornadas', 'error');
         }
+    },
+
+    async recargarConFiltros() {
+        await this.cargarDatos(false);
     },
 
     configurarPermisos() {
@@ -106,7 +141,7 @@ const JornadasManager = {
                 page: this.paginaActual,
                 size: this.tamanioPagina,
                 sortBy: 'id',
-                sortDir: 'desc' // Ordenar por ID más alto primero
+                sortDir: 'desc'
             });
 
             // Agregar filtros a los parámetros si tienen valor
@@ -181,6 +216,23 @@ const JornadasManager = {
         if (filtCoTem) {
             filtCoTem.addEventListener('change', () => this.mostrarCombosDisponibles());
         }
+
+        this.configurarReaperturaSelectores();
+    },
+
+    configurarReaperturaSelectores() {
+        const enlazar = (id) => {
+            const el = document.getElementById(id);
+            if (!el || el.dataset.reabrirTrasHide) return;
+            el.dataset.reabrirTrasHide = '1';
+            el.addEventListener('hidden.bs.modal', () => {
+                if (this.reabrirEditarTrasSeleccion) {
+                    this.reabrirModalJornadaTrasSeleccion();
+                }
+            });
+        };
+        enlazar('modalSelectorCuestionarios');
+        enlazar('modalSelectorCombos');
     },
 
 
@@ -1171,7 +1223,7 @@ const JornadasManager = {
         });
 
         lista.forEach(cuestionario => {
-            const isSelected = this.cuestionariosSeleccionados.includes(cuestionario.id);
+            const isSelected = this.incluyeId(this.cuestionariosSeleccionados, cuestionario.id);
             html += `
                 <div class="list-group-item ${isSelected ? 'active' : ''}" 
                      onclick="JornadasManager.toggleCuestionario(${cuestionario.id})"
@@ -1221,7 +1273,7 @@ const JornadasManager = {
         });
 
         lista.forEach(combo => {
-            const isSelected = this.combosSeleccionados.includes(combo.id);
+            const isSelected = this.incluyeId(this.combosSeleccionados, combo.id);
             html += `
                 <div class="list-group-item ${isSelected ? 'active' : ''}" 
                      onclick="JornadasManager.toggleCombo(${combo.id})"
@@ -1260,7 +1312,7 @@ const JornadasManager = {
         console.log('🎯 [AÑADIR] jornadaEditando.id:', this.jornadaEditando?.id);
         
         // Límite visual
-        if (this.cuestionariosSeleccionados.length >= 6 && !this.cuestionariosSeleccionados.includes(id)) {
+        if (this.cuestionariosSeleccionados.length >= 6 && !this.incluyeId(this.cuestionariosSeleccionados, id)) {
             Utils.showAlert('Máximo 6 cuestionarios por jornada', 'error');
             return;
         }
@@ -1339,19 +1391,15 @@ const JornadasManager = {
         }
 
         // Flujo en creación de jornada (modal de crear/editar abierto pero sin id persistido)
-        if (!this.cuestionariosSeleccionados.includes(id)) this.cuestionariosSeleccionados.push(id);
+        id = this.normalizeId(id);
+        if (!this.incluyeId(this.cuestionariosSeleccionados, id)) {
+            this.cuestionariosSeleccionados.push(id);
+        }
         this.actualizarSlotsVisual();
         const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios'));
         modalInst && modalInst.hide();
-        if (this.reabrirEditarTrasSeleccion) {
-            const jid = document.getElementById('jornadaId')?.value;
-            if (jid && jid !== 'Auto') this.editarJornada(Number(jid));
-            else {
-                const modal = new bootstrap.Modal(document.getElementById('modalJornada'));
-                modal.show();
-                this.reabrirEditarTrasSeleccion = false;
-            }
-        }
+        this.reabrirModalJornadaTrasSeleccion();
+        Utils.showAlert(`Cuestionario ${id} añadido`, 'success');
     },
 
     seleccionarComboDirecto(id) {
@@ -1360,7 +1408,7 @@ const JornadasManager = {
         console.log('🎯 [AÑADIR] jornadaEditando.id:', this.jornadaEditando?.id);
         
         // Límite visual
-        if (this.combosSeleccionados.length >= 6 && !this.combosSeleccionados.includes(id)) {
+        if (this.combosSeleccionados.length >= 6 && !this.incluyeId(this.combosSeleccionados, id)) {
             Utils.showAlert('Máximo 6 combos por jornada', 'error');
             return;
         }
@@ -1439,23 +1487,20 @@ const JornadasManager = {
         }
 
         // Flujo en creación de jornada (modal de crear/editar abierto pero sin id persistido)
-        if (!this.combosSeleccionados.includes(id)) this.combosSeleccionados.push(id);
+        id = this.normalizeId(id);
+        if (!this.incluyeId(this.combosSeleccionados, id)) {
+            this.combosSeleccionados.push(id);
+        }
         this.actualizarSlotsVisual();
         const modalInst2 = bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos'));
         modalInst2 && modalInst2.hide();
-        if (this.reabrirEditarTrasSeleccion) {
-            const jid = document.getElementById('jornadaId')?.value;
-            if (jid && jid !== 'Auto') this.editarJornada(Number(jid));
-            else {
-                const modal = new bootstrap.Modal(document.getElementById('modalJornada'));
-                modal.show();
-                this.reabrirEditarTrasSeleccion = false;
-            }
-        }
+        this.reabrirModalJornadaTrasSeleccion();
+        Utils.showAlert(`Combo ${id} añadido`, 'success');
     },
 
     toggleCuestionario(id) {
-        const index = this.cuestionariosSeleccionados.indexOf(id);
+        id = this.normalizeId(id);
+        const index = this.idEnLista(this.cuestionariosSeleccionados, id);
         if (index > -1) {
             this.cuestionariosSeleccionados.splice(index, 1);
         } else {
@@ -1469,7 +1514,8 @@ const JornadasManager = {
     },
 
     toggleCombo(id) {
-        const index = this.combosSeleccionados.indexOf(id);
+        id = this.normalizeId(id);
+        const index = this.idEnLista(this.combosSeleccionados, id);
         if (index > -1) {
             this.combosSeleccionados.splice(index, 1);
         } else {
@@ -1483,23 +1529,43 @@ const JornadasManager = {
     },
 
     confirmarSeleccionCuestionarios() {
+        const count = this.cuestionariosSeleccionados.length;
         this.actualizarSlotsVisual();
-        bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios')).hide();
-        
-        // Si estamos editando una jornada existente, guardar los cambios
-        if (this.jornadaEditando) {
+        bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios'))?.hide();
+
+        if (this.jornadaEditando?.id) {
             this.guardarCambiosCuestionarios();
+        } else {
+            this.reabrirModalJornadaTrasSeleccion();
+            if (count > 0) {
+                Utils.showAlert(`${count} cuestionario(s) seleccionado(s)`, 'success');
+            }
         }
     },
 
     confirmarSeleccionCombos() {
+        const count = this.combosSeleccionados.length;
         this.actualizarSlotsVisual();
-        bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos')).hide();
-        
-        // Si estamos editando una jornada existente, guardar los cambios
-        if (this.jornadaEditando) {
+        bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos'))?.hide();
+
+        if (this.jornadaEditando?.id) {
             this.guardarCambiosCombos();
+        } else {
+            this.reabrirModalJornadaTrasSeleccion();
+            if (count > 0) {
+                Utils.showAlert(`${count} combo(s) seleccionado(s)`, 'success');
+            }
         }
+    },
+
+    cerrarSelectorCuestionarios() {
+        bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios'))?.hide();
+        this.reabrirModalJornadaTrasSeleccion();
+    },
+
+    cerrarSelectorCombos() {
+        bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos'))?.hide();
+        this.reabrirModalJornadaTrasSeleccion();
     },
 
     actualizarSlotsVisual() {
@@ -1682,7 +1748,7 @@ const JornadasManager = {
     },
 
     quitarCuestionario(id) {
-        const index = this.cuestionariosSeleccionados.indexOf(id);
+        const index = this.idEnLista(this.cuestionariosSeleccionados, id);
         if (index > -1) {
             this.cuestionariosSeleccionados.splice(index, 1);
             this.actualizarSlotsVisual();
@@ -1796,7 +1862,7 @@ const JornadasManager = {
     },
 
     quitarCombo(id) {
-        const index = this.combosSeleccionados.indexOf(id);
+        const index = this.idEnLista(this.combosSeleccionados, id);
         if (index > -1) {
             this.combosSeleccionados.splice(index, 1);
             this.actualizarSlotsVisual();
@@ -2771,32 +2837,13 @@ const JornadasManager = {
             }
 
             const preguntas = response.datos;
-            if (preguntas.length === 0) {
-                Utils.showAlert('El combo no tiene preguntas', 'error');
-                return;
-            }
-
-            // 1 pregunta → reaprovechado entero automático
-            if (preguntas.length === 1) {
-                const confirmacion = confirm(
-                    `Este combo solo tiene 1 pregunta.\n\nSe reaprovechará completo y quedará disponible para otras jornadas.\n\n¿Continuar?`
-                );
-                if (!confirmacion) return;
-                await this.ejecutarReciclajeEntero();
+            if (preguntas.length !== 3) {
+                Utils.showAlert('Solo se pueden reciclar combos con exactamente 3 preguntas', 'error');
                 return;
             }
 
             this.resetModalReciclaje();
 
-            // 2 preguntas → elegir cuál se usó (reciclaje parcial directo)
-            if (preguntas.length === 2) {
-                const modal = new bootstrap.Modal(document.getElementById('modalReciclajeCombo'));
-                modal.show();
-                this.mostrarPreguntasParaSeleccion(preguntas);
-                return;
-            }
-
-            // 3+ preguntas → modal con opción entero o parcial
             const modal = new bootstrap.Modal(document.getElementById('modalReciclajeCombo'));
             modal.show();
             
@@ -2910,8 +2957,8 @@ const JornadasManager = {
             if (response.exito && response.datos) {
                 const preguntas = response.datos;
                 
-                if (preguntas.length < 2) {
-                    Utils.showAlert('Se necesitan al menos 2 preguntas para reciclaje parcial', 'error');
+                if (preguntas.length !== 3) {
+                    Utils.showAlert('Solo se pueden reciclar combos con exactamente 3 preguntas', 'error');
                     return;
                 }
                 
@@ -2936,10 +2983,7 @@ const JornadasManager = {
         document.getElementById('pasoSeleccionPregunta').style.display = 'block';
         document.getElementById('btnConfirmarReciclaje').style.display = 'block';
 
-        const restantes = preguntas.length - 1;
-        const textoRestantes = restantes === 1
-            ? 'Se creará un nuevo combo con la pregunta restante.'
-            : `Se creará un nuevo combo con las ${restantes} preguntas restantes.`;
+        const textoRestantes = 'Se creará un nuevo combo con las 2 preguntas restantes.';
         const alertInfo = document.querySelector('#pasoSeleccionPregunta .alert-info');
         if (alertInfo) {
             alertInfo.innerHTML = `
@@ -3003,13 +3047,7 @@ const JornadasManager = {
             });
             
             if (response.exito) {
-                const restantes = Math.max(0, this.preguntasReciclajeCount - 1);
-                const msg = restantes === 1
-                    ? 'Combo reciclado parcialmente. Se creó un nuevo combo con la pregunta restante.'
-                    : restantes > 1
-                        ? `Combo reciclado parcialmente. Se creó un nuevo combo con las ${restantes} preguntas restantes.`
-                        : 'Combo reciclado parcialmente.';
-                Utils.showAlert(msg, 'success');
+                Utils.showAlert('Combo reciclado parcialmente. Se creó un nuevo combo con las 2 preguntas restantes.', 'success');
                 
                 // Cerrar modal y recargar datos
                 bootstrap.Modal.getInstance(document.getElementById('modalReciclajeCombo')).hide();
