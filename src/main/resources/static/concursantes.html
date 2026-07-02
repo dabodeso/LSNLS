@@ -125,19 +125,20 @@ pointer-events: none;
 .sort-indicator.desc::after { content: '▼'; color: #007bff; }
 .sort-indicator.inactive::after { content: '↕'; color: #6c757d; }
 
-/* Notas de grabación: truncado a 3 líneas */
-.notas-trunc {
-display: -webkit-box;
--webkit-line-clamp: 3;
--webkit-box-orient: vertical;
-overflow: hidden;
-white-space: pre-wrap;
+/* Notas de grabación en tabla: cuadro de texto redimensionable */
+.col-notas-grabacion {
+    min-width: 280px;
+    vertical-align: top;
+    padding: 4px 6px;
+    white-space: normal;
 }
 
-.notas-leer-mas {
-display: inline-block;
-margin-top: 4px;
-font-size: 0.85em;
+.notas-grabacion-textarea {
+    width: 100%;
+    min-width: 200px;
+    resize: vertical;
+    font-size: inherit;
+    line-height: 1.4;
 }
 
 /* Barra de scroll horizontal personalizada */
@@ -226,44 +227,12 @@ border-radius: 4px;
 font-size: 0.7em;
 line-height: 1.2;
 }
-        /* Estilos para la columna de notas de grabación (posición 15) */
-        #tabla-concursantes-header th:nth-child(15),
-        #tabla-concursantes-principal td:nth-child(15) {
-            min-width: 800px;
-            max-width: none;
+        /* Columna notas de grabación */
+        #tabla-concursantes-header th.col-notas-grabacion,
+        #tabla-concursantes-principal td.col-notas-grabacion,
+        #tabla-concursantes-header-floating th.col-notas-grabacion {
+            min-width: 280px;
             white-space: normal;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: inherit;
-            line-height: inherit;
-        }
-        /* Limitar la altura para evitar filas demasiado altas */
-        #tabla-concursantes-principal td:nth-child(15) {
-            max-height: 80px;
-            overflow-y: auto;
-            position: relative;
-            cursor: pointer;
-            padding: 4px 8px;
-        }
-        
-        /* Indicador de expandir */
-        #tabla-concursantes-principal td:nth-child(15)::after {
-            content: '\f065';
-            font-family: 'Font Awesome 5 Free';
-            font-weight: 900;
-            position: absolute;
-            bottom: 3px;
-            right: 3px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 2px;
-            padding: 1px 3px;
-            font-size: 0.7em;
-            color: #007bff;
-            opacity: 0.6;
-        }
-        
-        #tabla-concursantes-principal td:nth-child(15):hover::after {
-            opacity: 1;
         }
         
         /* Estilos para las columnas de duración (posiciones 20, 21, 22) */
@@ -921,40 +890,40 @@ line-height: 1.2;
 <input class="form-check-input" type="checkbox" id="col-valoracion-guionista" checked>
 <label class="form-check-label" for="col-valoracion-guionista">VALORACIÓN GUIONISTA</label>
 </div>
-<div class="form-check mb-2">
+<div class="form-check mb-2 col-solo-direccion">
 <input class="form-check-input" type="checkbox" id="col-estado" checked>
 <label class="form-check-label" for="col-estado">ESTADO</label>
 </div>
-<div class="form-check mb-2">
-<input class="form-check-input" type="checkbox" id="col-momentos-destacados">
+<div class="form-check mb-2 col-solo-direccion">
+<input class="form-check-input" type="checkbox" id="col-momentos-destacados" checked>
 <label class="form-check-label" for="col-momentos-destacados">MOMENTOS DESTACADOS</label>
 </div>
-<div class="form-check mb-2">
+<div class="form-check mb-2 col-solo-direccion">
 <input class="form-check-input" type="checkbox" id="col-duracion" checked>
 <label class="form-check-label" for="col-duracion">DURACIÓN</label>
 </div>
-<div class="form-check mb-2">
-<input class="form-check-input" type="checkbox" id="col-duracion-direccion">
+<div class="form-check mb-2 col-solo-direccion">
+<input class="form-check-input" type="checkbox" id="col-duracion-direccion" checked>
 <label class="form-check-label" for="col-duracion-direccion">DUR. DIRECCIÓN</label>
 </div>
-<div class="form-check mb-2">
-<input class="form-check-input" type="checkbox" id="col-duracion-final">
+<div class="form-check mb-2 col-solo-direccion">
+<input class="form-check-input" type="checkbox" id="col-duracion-final" checked>
 <label class="form-check-label" for="col-duracion-final">DUR. FINAL</label>
 </div>
-<div class="form-check mb-2">
-<input class="form-check-input" type="checkbox" id="col-valoracion-final">
+<div class="form-check mb-2 col-solo-direccion">
+<input class="form-check-input" type="checkbox" id="col-valoracion-final" checked>
 <label class="form-check-label" for="col-valoracion-final">VALORACIÓN FINAL</label>
 </div>
-<div class="form-check mb-2">
-<input class="form-check-input" type="checkbox" id="col-numero-pgm">
+<div class="form-check mb-2 col-solo-direccion">
+<input class="form-check-input" type="checkbox" id="col-numero-pgm" checked>
 <label class="form-check-label" for="col-numero-pgm">Nº PGM</label>
 </div>
-<div class="form-check mb-2">
-<input class="form-check-input" type="checkbox" id="col-orden-escaleta">
+<div class="form-check mb-2 col-solo-direccion">
+<input class="form-check-input" type="checkbox" id="col-orden-escaleta" checked>
 <label class="form-check-label" for="col-orden-escaleta">ORDEN ESCALETA</label>
 </div>
-<div class="form-check mb-2">
-<input class="form-check-input" type="checkbox" id="col-bonico">
+<div class="form-check mb-2 col-solo-direccion">
+<input class="form-check-input" type="checkbox" id="col-bonico" checked>
 <label class="form-check-label" for="col-bonico">BONICO</label>
 </div>
 </div>
@@ -1089,7 +1058,7 @@ Borrar
 <script src="js/api.js?v=20260626-1"></script>
     <script src="js/undo-manager.js?v=20260626-3"></script>
 <script src="js/table-resizer.js?v=20260128-2"></script>
-    <script src="js/concursantes.js?v=20260626-5"></script>
+    <script src="js/concursantes.js?v=20260626-9"></script>
 <script>
 // Inicializar la página cuando se carga
 document.addEventListener('DOMContentLoaded', function() {

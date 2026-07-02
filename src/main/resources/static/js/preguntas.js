@@ -7,6 +7,7 @@ const PreguntasManager = {
     totalPaginas: 0,
     cargando: false,
     lastScrollY: 0,
+    modoDestacado: false,
     filtros: {
         tematica: '',
         nivel: '',
@@ -39,6 +40,50 @@ const PreguntasManager = {
             const ib = this.ORDEN_ESTADOS_PREGUNTA.indexOf(b);
             return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
         });
+    },
+
+    obtenerIdDesdeUrl() {
+        const id = new URLSearchParams(window.location.search).get('id');
+        if (!id || !/^\d+$/.test(String(id).trim())) return null;
+        return parseInt(id, 10);
+    },
+
+    limpiarIdUrl() {
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('id');
+            window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+        } catch (_) {}
+    },
+
+    mostrarAvisoDestacado(id) {
+        let aviso = document.getElementById('aviso-pregunta-destacada');
+        if (!aviso) {
+            const contenedor = document.getElementById('tabla-preguntas-container');
+            if (!contenedor) return;
+            aviso = document.createElement('div');
+            aviso.id = 'aviso-pregunta-destacada';
+            aviso.className = 'alert alert-info d-flex justify-content-between align-items-center py-2 mb-2';
+            contenedor.parentElement?.insertBefore(aviso, contenedor);
+        }
+        aviso.innerHTML = `
+            <span><i class="fas fa-link me-1"></i> Vista directa de la pregunta <strong>#${id}</strong></span>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="PreguntasManager.salirModoDestacado()">Ver listado completo</button>
+        `;
+        aviso.style.display = '';
+    },
+
+    ocultarAvisoDestacado() {
+        const aviso = document.getElementById('aviso-pregunta-destacada');
+        if (aviso) aviso.style.display = 'none';
+    },
+
+    salirModoDestacado() {
+        this.modoDestacado = false;
+        this.ocultarAvisoDestacado();
+        this.limpiarIdUrl();
+        this.paginaActual = 0;
+        return this.cargarPreguntas(true);
     },
 
     leerFiltrosDesdeDom() {
@@ -75,6 +120,11 @@ const PreguntasManager = {
 
     async cargarPreguntas(resetear = true) {
         try {
+            if (this.modoDestacado && resetear) {
+                this.modoDestacado = false;
+                this.ocultarAvisoDestacado();
+                this.limpiarIdUrl();
+            }
             this.lastScrollY = window.scrollY || window.pageYOffset || 0;
             console.log('🔄 [CARGAR] Iniciando carga de preguntas, resetear:', resetear);
             console.log('🔄 [CARGAR] Estado actual - paginaActual:', this.paginaActual, 'preguntas.length:', this.preguntas.length);
@@ -188,6 +238,12 @@ const PreguntasManager = {
             console.log('❌ [PAGINACIÓN] Ya está cargando, abortando...');
             return;
         }
+
+        if (this.modoDestacado) {
+            this.modoDestacado = false;
+            this.ocultarAvisoDestacado();
+            this.limpiarIdUrl();
+        }
         
         if (pagina < 0 || pagina >= this.totalPaginas) {
             console.log('❌ [PAGINACIÓN] Página inválida:', pagina);
@@ -285,6 +341,14 @@ const PreguntasManager = {
         
         if (!paginacionContainer) {
             console.error('❌ [PAGINACION] Contenedor de paginación no encontrado');
+            return;
+        }
+
+        if (this.modoDestacado && this.preguntas.length === 1) {
+            if (infoPaginacion) {
+                infoPaginacion.textContent = `Pregunta #${this.preguntas[0].id} (vista directa)`;
+            }
+            paginacionContainer.innerHTML = '';
             return;
         }
 
@@ -439,6 +503,12 @@ const PreguntasManager = {
     async filtrarPreguntas() {
         if (this.cargando) {
             return;
+        }
+
+        if (this.modoDestacado) {
+            this.modoDestacado = false;
+            this.ocultarAvisoDestacado();
+            this.limpiarIdUrl();
         }
 
         try {
@@ -598,26 +668,24 @@ const PreguntasManager = {
         if (!idPregunta) return false;
 
         try {
-            const resp = await fetch(`/api/preguntas/buscar?id=${encodeURIComponent(idPregunta)}&page=0&size=1`, {
-                headers: authManager.getAuthHeaders()
-            });
-            if (!resp.ok) return false;
-            const data = await resp.json();
-            const encontrada = (data.content || []).find(p => p.id === Number(idPregunta));
-            if (!encontrada) return false;
+            const pregunta = await apiManager.get(`/api/preguntas/${idPregunta}`);
+            if (!pregunta?.id) return false;
 
-            this.preguntas = [encontrada];
+            this.modoDestacado = true;
+            this.preguntas = [pregunta];
             this.paginaActual = 0;
             this.totalPaginas = 1;
             this.totalPreguntas = 1;
+            this.mostrarAvisoDestacado(idPregunta);
             this.mostrarPreguntas();
+            this.actualizarPaginacion();
             const fila = document.querySelector(`#tabla-preguntas tr[data-id='${idPregunta}']`);
             if (fila) {
                 this.resaltarFilaPregunta(fila);
                 return true;
             }
         } catch (e) {
-            console.warn('[UNDO] No se pudo localizar la pregunta restaurada:', e);
+            console.warn('[PREGUNTAS] No se pudo cargar la pregunta por id:', e);
         }
         return false;
     },
@@ -781,9 +849,9 @@ const PreguntasManager = {
                         console.log('✅ [GUARDAR] Pregunta actualizada en la lista local');
                     }
                 } else {
-                    const errorText = await response.text();
-                    console.error('❌ [GUARDAR] Error del servidor:', errorText);
-                    throw new Error('Error al editar la pregunta: ' + errorText);
+                    const msg = await Utils.mensajeDesdeResponse(response, 'editar preguntas');
+                    console.error('❌ [GUARDAR] Error del servidor:', msg);
+                    throw new Error(msg);
                 }
             } else {
                 // Crear nueva pregunta
@@ -800,7 +868,7 @@ const PreguntasManager = {
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('❌ [GUARDAR] Error del servidor:', errorText);
-                    throw new Error('Error al crear la pregunta: ' + errorText);
+                    throw new Error(Utils.mensajeErrorHttp(response.status, Utils.extraerDetalleErrorCuerpo(errorText), 'crear preguntas'));
                 }
                 
                 // Registrar undo/redo para creación
@@ -841,16 +909,7 @@ const PreguntasManager = {
             await this.recargarConFiltros();
             PreguntasManager.ocultarModalPregunta();
             
-            Toastify({
-                text: esEdicion ? "Pregunta editada exitosamente" : "Pregunta creada exitosamente",
-                duration: 3000,
-                close: true,
-                gravity: "top",
-                position: "right",
-                style: {
-                    background: "linear-gradient(to right, #00b09b, #96c93d)",
-                }
-            }).showToast();
+            Utils.mostrarToastExito(esEdicion ? 'Pregunta editada exitosamente' : 'Pregunta creada exitosamente');
             
             // Limpiar el dataset de edición
             delete event.target.dataset.editId;
@@ -1209,13 +1268,7 @@ const PreguntasManager = {
             }
             
             if (!response.ok) {
-                let errorMsg = 'Error al actualizar';
-                try {
-                    const data = await response.json();
-                    if (data && data.message) errorMsg = data.message;
-                    else if (typeof data === 'string') errorMsg = data;
-                } catch {}
-                throw new Error(errorMsg);
+                throw new Error(await Utils.mensajeDesdeResponse(response, 'editar preguntas'));
             }
             
             // Registrar acción de deshacer/rehacer para cualquier campo distinto de 'estado'
@@ -1413,12 +1466,7 @@ const PreguntasManager = {
                 headers: authManager.getAuthHeaders()
             });
             if (!response.ok) {
-                let msg = 'Error al borrar la pregunta';
-                try {
-                    const data = await response.json();
-                    if (typeof data === 'string') msg = data;
-                } catch {}
-                throw new Error(msg);
+                throw new Error(await Utils.mensajeDesdeResponse(response, 'eliminar preguntas'));
             }
 
             // Registrar undo/redo para eliminación (restaurar y mostrar la pregunta)
@@ -1431,14 +1479,7 @@ const PreguntasManager = {
                     await PreguntasManager.recargarConFiltros();
                     const fila = document.querySelector(`#tabla-preguntas tr[data-id='${idRestaurado}']`);
                     if (fila) PreguntasManager.resaltarFilaPregunta(fila);
-                    Toastify({
-                        text: `Pregunta #${idRestaurado} restaurada`,
-                        duration: 4000,
-                        close: true,
-                        gravity: 'top',
-                        position: 'right',
-                        style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
-                    }).showToast();
+                    Utils.mostrarToastExito(`Pregunta #${idRestaurado} restaurada`, 4000);
                 };
 
                 const doAction = async () => {
@@ -1473,17 +1514,10 @@ const PreguntasManager = {
             }
 
             await this.recargarConFiltros();
-            Toastify({
-                text: 'Pregunta eliminada',
-                duration: 3000,
-                close: true,
-                gravity: 'top',
-                position: 'right',
-                style: { background: 'linear-gradient(to right, #ff5f6d, #ffc371)' }
-            }).showToast();
+            Utils.mostrarToastExito('Pregunta eliminada');
         } catch (error) {
             Toastify({
-                text: error.message,
+                text: Utils.mensajeErrorApi(error, 'eliminar preguntas'),
                 duration: 4000,
                 close: true,
                 gravity: 'top',
@@ -1583,6 +1617,11 @@ const PreguntasManager = {
     },
 
     limpiarFiltros() {
+        if (this.modoDestacado) {
+            this.modoDestacado = false;
+            this.ocultarAvisoDestacado();
+            this.limpiarIdUrl();
+        }
         document.getElementById('filtro-estado').value = '';
         document.getElementById('filtro-nivel').value = '';
         document.getElementById('filtro-tematica').value = '';
@@ -1681,16 +1720,24 @@ const PreguntasManager = {
 
 // Inicialización cuando el documento está listo
 document.addEventListener('DOMContentLoaded', async () => {
-    // Cargar usuarios para el filtro de autoría
-    await PreguntasManager.cargarUsuariosEnFiltro();
-    
-    // Cargar preguntas directamente (la autenticación ya se verifica en auth.js)
-    await PreguntasManager.cargarPreguntas();
-    
-    // Cargar temas y subtemas para tenerlos disponibles
-    await TemasManager.cargarTemas();
-    await TemasManager.cargarSubtemas();
+    const paramsUrl = new URLSearchParams(window.location.search);
+    const idDestacadoUrl = paramsUrl.get('id');
 
+    await PreguntasManager.cargarUsuariosEnFiltro();
+
+    if (idDestacadoUrl && /^\d+$/.test(String(idDestacadoUrl).trim())) {
+        const ok = await PreguntasManager.irAPreguntaPorId(Number(idDestacadoUrl));
+        if (!ok) {
+            await PreguntasManager.cargarPreguntas();
+        }
+        TemasManager.cargarTemas().catch(e => console.warn('[PREGUNTAS] Temas en background:', e));
+        TemasManager.cargarSubtemas().catch(e => console.warn('[PREGUNTAS] Subtemas en background:', e));
+    } else {
+        await PreguntasManager.cargarPreguntas();
+        await TemasManager.cargarTemas();
+        await TemasManager.cargarSubtemas();
+    }
+    
     // Añadir eventos de ordenación a las cabeceras
         const headers = [
         { id: 'id', idx: 0 },
@@ -1754,148 +1801,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Event listener para el formulario de crear pregunta (si existe)
     document.querySelector('#formCrearPregunta')?.addEventListener('submit', (e) => PreguntasManager.crearPregunta(e));
-
-    // --- NUEVO: Resaltar y hacer scroll a la pregunta si hay id en la URL ---
-    const params = new URLSearchParams(window.location.search);
-    const idDestacado = params.get('id');
-    console.log(`🔍 [URL] URL completa: ${window.location.href}`);
-    console.log(`🔍 [URL] Parámetros de búsqueda: ${window.location.search}`);
-    console.log(`🔍 [URL] ID encontrado: ${idDestacado}`);
-    
-    if (idDestacado) {
-        console.log(`🎯 [REDIRECT] Iniciando búsqueda de pregunta ${idDestacado}...`);
-        setTimeout(async () => {
-            console.log(`🔍 [REDIRECT] Buscando fila con data-id='${idDestacado}'...`);
-            let fila = document.querySelector(`#tabla-preguntas tr[data-id='${idDestacado}']`);
-            console.log(`🔍 [REDIRECT] Fila encontrada:`, fila);
-            
-            // Si no se encuentra en la página actual, buscar en todas las páginas
-            if (!fila) {
-                console.log(`🔍 [REDIRECT] Pregunta ${idDestacado} no encontrada en página actual, buscando en todas las páginas...`);
-                await buscarPreguntaEnTodasLasPaginas(idDestacado);
-            } else {
-                console.log(`✅ [REDIRECT] Pregunta ${idDestacado} encontrada en página actual, resaltando...`);
-                // Si se encuentra en la página actual, resaltarla
-                fila.classList.add('table-warning');
-                fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }, 500);
-    } else {
-        console.log(`⚠️ [URL] No se encontró parámetro 'id' en la URL`);
-    }
-
-    // Función para buscar una pregunta en todas las páginas
-    async function buscarPreguntaEnTodasLasPaginas(idPregunta) {
-        try {
-            console.log(`🔍 [BUSCAR] Buscando pregunta ${idPregunta} con consulta directa...`);
-            
-            // Primero verificar que la pregunta existe
-            console.log(`🔍 [BUSCAR] Verificando existencia de pregunta ${idPregunta}...`);
-            const response = await apiManager.get(`/api/preguntas/${idPregunta}`);
-            console.log(`🔍 [BUSCAR] Respuesta de API:`, response);
-            
-            if (!response || !response.id) {
-                console.error(`❌ [BUSCAR] Pregunta ${idPregunta} no encontrada en la base de datos`);
-                return;
-            }
-            
-            console.log(`✅ [BUSCAR] Pregunta ${idPregunta} existe, calculando página objetivo...`);
-            console.log(`📊 [BUSCAR] Tamaño de página: ${PreguntasManager.tamanioPagina}`);
-            console.log(`📊 [BUSCAR] Total páginas: ${PreguntasManager.totalPaginas}`);
-            
-            // Calcular la página que debería contener esta pregunta
-            // Asumiendo que las preguntas están ordenadas por ID
-            const paginaObjetivo = Math.floor((idPregunta - 1) / PreguntasManager.tamanioPagina);
-            console.log(`📄 [BUSCAR] Pregunta ${idPregunta} debería estar en la página ${paginaObjetivo}`);
-            console.log(`📄 [BUSCAR] Rango de IDs en página ${paginaObjetivo}: ${paginaObjetivo * PreguntasManager.tamanioPagina + 1} - ${(paginaObjetivo + 1) * PreguntasManager.tamanioPagina}`);
-            
-            // Cargar la página calculada
-            console.log(`🔄 [BUSCAR] Estableciendo página objetivo: ${paginaObjetivo}`);
-            PreguntasManager.paginaActual = paginaObjetivo;
-            console.log(`🔄 [BUSCAR] Página actual antes de cargar: ${PreguntasManager.paginaActual}`);
-            await PreguntasManager.cargarPreguntas(false); // NO resetear para mantener la página
-            console.log(`🔄 [BUSCAR] Página actual después de cargar: ${PreguntasManager.paginaActual}`);
-            
-            // Esperar a que se cargue
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Buscar la pregunta en esta página
-            console.log(`🔍 [BUSCAR] Buscando pregunta ${idPregunta} en página ${paginaObjetivo}...`);
-            const fila = document.querySelector(`#tabla-preguntas tr[data-id='${idPregunta}']`);
-            
-            // Mostrar qué preguntas están en esta página
-            const todasLasFilas = document.querySelectorAll('#tabla-preguntas tr[data-id]');
-            const idsEnPagina = Array.from(todasLasFilas).map(f => f.getAttribute('data-id'));
-            console.log(`📋 [BUSCAR] IDs en página ${paginaObjetivo}:`, idsEnPagina);
-            console.log(`🔍 [BUSCAR] Fila encontrada:`, fila);
-            
-            if (fila) {
-                console.log(`✅ [BUSCAR] Pregunta ${idPregunta} encontrada en la página ${paginaObjetivo}`);
-                
-                // Resaltar la pregunta
-                fila.classList.add('table-warning');
-                fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
-                // Actualizar la paginación visual
-                PreguntasManager.renderizarPaginacion();
-                
-                return;
-            }
-            
-            // Si no se encuentra en la página calculada, buscar en páginas cercanas
-            console.log(`⚠️ [BUSCAR] No encontrada en página calculada, buscando en páginas cercanas...`);
-            
-            const rangos = [
-                { inicio: Math.max(0, paginaObjetivo - 2), fin: Math.min(PreguntasManager.totalPaginas - 1, paginaObjetivo + 2) },
-                { inicio: 0, fin: Math.min(10, PreguntasManager.totalPaginas - 1) }, // Primeras 10 páginas
-                { inicio: Math.max(0, PreguntasManager.totalPaginas - 10), fin: PreguntasManager.totalPaginas - 1 } // Últimas 10 páginas
-            ];
-            
-            for (const rango of rangos) {
-                console.log(`🔍 [BUSCAR] Buscando en rango ${rango.inicio}-${rango.fin}...`);
-                
-                for (let pagina = rango.inicio; pagina <= rango.fin; pagina++) {
-                    console.log(`🔍 [BUSCAR] Buscando en página ${pagina}...`);
-                    
-                    // Cargar la página
-                    console.log(`🔄 [BUSCAR] Estableciendo página en búsqueda: ${pagina}`);
-                    PreguntasManager.paginaActual = pagina;
-                    console.log(`🔄 [BUSCAR] Página actual antes de cargar: ${PreguntasManager.paginaActual}`);
-                    await PreguntasManager.cargarPreguntas(false); // NO resetear para mantener la página
-                    console.log(`🔄 [BUSCAR] Página actual después de cargar: ${PreguntasManager.paginaActual}`);
-                    
-                    // Esperar un momento para que se cargue
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    
-                    // Buscar la pregunta en esta página
-                    const fila = document.querySelector(`#tabla-preguntas tr[data-id='${idPregunta}']`);
-                    
-                    // Mostrar qué preguntas están en esta página
-                    const todasLasFilas = document.querySelectorAll('#tabla-preguntas tr[data-id]');
-                    const idsEnPagina = Array.from(todasLasFilas).map(f => f.getAttribute('data-id'));
-                    console.log(`📋 [BUSCAR] IDs en página ${pagina}:`, idsEnPagina.slice(0, 5), idsEnPagina.length > 5 ? '...' : '');
-                    
-                    if (fila) {
-                        console.log(`✅ [BUSCAR] Pregunta ${idPregunta} encontrada en la página ${pagina}`);
-                        
-                        // Resaltar la pregunta
-                        fila.classList.add('table-warning');
-                        fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        
-                        // Actualizar la paginación visual
-                        PreguntasManager.renderizarPaginacion();
-                        
-                        return; // Salir cuando se encuentra
-                    }
-                }
-            }
-            
-            console.error(`❌ [BUSCAR] Pregunta ${idPregunta} no encontrada en ninguna página`);
-            
-        } catch (error) {
-            console.error(`❌ [BUSCAR] Error al buscar pregunta ${idPregunta}:`, error);
-        }
-    }
 
     // Auto-scroll por acercar el cursor a los bordes deshabilitado: se usará solo la barra personalizada
 });

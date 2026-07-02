@@ -65,12 +65,17 @@ class ApiManager {
                     headers: Object.fromEntries(response.headers.entries())
                 });
                 
-                // Para errores 401, lanzar una excepción específica en lugar de redirigir automáticamente
                 if (response.status === 401) {
                     throw new Error('UNAUTHORIZED: Token expirado o inválido');
                 }
-                
-                throw new Error(`${response.status}: ${errorText}`);
+
+                const detalle = typeof Utils !== 'undefined' && Utils.extraerDetalleErrorCuerpo
+                    ? Utils.extraerDetalleErrorCuerpo(errorText)
+                    : errorText.trim();
+                const mensaje = typeof Utils !== 'undefined' && Utils.mensajeErrorHttp
+                    ? Utils.mensajeErrorHttp(response.status, detalle, options.errorAccion || 'completar la petición')
+                    : (detalle || `Error ${response.status}`);
+                throw new Error(mensaje);
             }
 
             // Si la respuesta está vacía, devolver null

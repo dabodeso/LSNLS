@@ -525,9 +525,11 @@ public class ConcursanteService {
         // Permitir jornadas en cualquier estado (preparacion, lista, en_grabacion, completada, archivada)
         // No hay restricción de estado para jornadas
         
-        // Si ya tenía una jornada asignada, desasignar primero
-        if (concursante.getJornada() != null) {
-            desasignarDeJornada(concursanteId);
+        // Si ya tenía una jornada asignada distinta, comprobar antes de cambiar
+        if (concursante.getJornada() != null && !concursante.getJornada().getId().equals(jornadaId)) {
+            validarPuedeDesasignarJornada(concursante);
+            concursante.setJornada(null);
+            concursante = concursanteRepository.save(concursante);
         }
         
         concursante.setJornada(jornada);
@@ -539,10 +541,19 @@ public class ConcursanteService {
     public ConcursanteDTO desasignarDeJornada(Long concursanteId) {
         Concursante concursante = concursanteRepository.findById(concursanteId)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
+
+        validarPuedeDesasignarJornada(concursante);
         
         concursante.setJornada(null);
         concursante = concursanteRepository.save(concursante);
         return convertToDTO(concursante);
+    }
+
+    private void validarPuedeDesasignarJornada(Concursante concursante) {
+        if (concursante.getCuestionario() != null || concursante.getCombo() != null) {
+            throw new IllegalArgumentException(
+                "No se puede quitar la jornada mientras el concursante tenga cuestionario o combo asignado. Desasígnalos primero.");
+        }
     }
 
     public ConcursanteDTO updateCampo(Long id, Map<String, Object> campo) {

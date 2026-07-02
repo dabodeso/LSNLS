@@ -10,6 +10,95 @@ const CuestionariosManager = {
     cargando: false,
     lastScrollY: 0,
     lastFocusCuestionarioId: null,
+    modoDestacado: false,
+
+    obtenerIdDesdeUrl() {
+        const id = new URLSearchParams(window.location.search).get('id');
+        if (!id || !/^\d+$/.test(String(id).trim())) return null;
+        return parseInt(id, 10);
+    },
+
+    limpiarIdUrl() {
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('id');
+            window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+        } catch (_) {}
+    },
+
+    mostrarAvisoDestacado(id) {
+        let aviso = document.getElementById('aviso-cuestionario-destacado');
+        if (!aviso) {
+            const contenedor = document.getElementById('tabla-cuestionarios-tabla')?.closest('.card-body')
+                || document.getElementById('tabla-cuestionarios-tabla')?.parentElement;
+            if (!contenedor) return;
+            aviso = document.createElement('div');
+            aviso.id = 'aviso-cuestionario-destacado';
+            aviso.className = 'alert alert-info d-flex justify-content-between align-items-center py-2 mb-2';
+            contenedor.insertBefore(aviso, contenedor.firstChild);
+        }
+        aviso.innerHTML = `
+            <span><i class="fas fa-link me-1"></i> Vista directa del cuestionario <strong>#${id}</strong></span>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="CuestionariosManager.salirModoDestacado()">Ver listado completo</button>
+        `;
+        aviso.style.display = '';
+    },
+
+    ocultarAvisoDestacado() {
+        const aviso = document.getElementById('aviso-cuestionario-destacado');
+        if (aviso) aviso.style.display = 'none';
+    },
+
+    salirModoDestacado() {
+        this.modoDestacado = false;
+        this.ocultarAvisoDestacado();
+        this.limpiarIdUrl();
+        this.paginaActual = 0;
+        return this.cargarCuestionarios(true);
+    },
+
+    async cargarDestacado(id) {
+        try {
+            if (!authManager.isAuthenticated()) return;
+            this.cargando = true;
+            this.mostrarEstadoCarga();
+            const resp = await fetch(`/api/cuestionarios/${id}`, { headers: authManager.getAuthHeaders() });
+            if (!resp.ok) throw new Error('Cuestionario no encontrado');
+            const cuestionario = await resp.json();
+            if (!cuestionario?.id) throw new Error('Cuestionario no encontrado');
+
+            this.modoDestacado = true;
+            this.cuestionarios = [cuestionario];
+            this.ultimoListado = [cuestionario];
+            this.totalCuestionarios = 1;
+            this.totalPaginas = 1;
+            this.paginaActual = 0;
+            this.mostrarAvisoDestacado(id);
+            await this.mostrarCuestionarios(this.cuestionarios);
+            this.actualizarPaginacion();
+            setTimeout(() => {
+                const fila = document.querySelector(`tr.fila-cuestionario[data-id='${id}']`);
+                if (fila) {
+                    fila.classList.add('table-warning');
+                    fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        } catch (error) {
+            this.modoDestacado = false;
+            this.ocultarAvisoDestacado();
+            Toastify({
+                text: `Error: ${error.message}`,
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+            await this.cargarCuestionarios(true);
+        } finally {
+            this.cargando = false;
+        }
+    },
 
     rememberScroll() {
         this.lastScrollY = window.scrollY || window.pageYOffset || 0;
@@ -207,13 +296,20 @@ const CuestionariosManager = {
     
     actualizarPaginacion() {
         const infoElement = document.getElementById('info-paginacion-cuestionarios');
+        const paginacionElement = document.getElementById('paginacion-cuestionarios');
+
+        if (this.modoDestacado && this.cuestionarios.length === 1) {
+            if (infoElement) infoElement.textContent = `Cuestionario #${this.cuestionarios[0].id} (vista directa)`;
+            if (paginacionElement) paginacionElement.innerHTML = '';
+            return;
+        }
+
         if (infoElement) {
             const inicio = (this.paginaActual * this.tamanioPagina) + 1;
             const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalCuestionarios);
             infoElement.textContent = `Mostrando ${inicio}-${fin} de ${this.totalCuestionarios} cuestionarios`;
         }
 
-        const paginacionElement = document.getElementById('paginacion-cuestionarios');
         if (!paginacionElement) return;
 
         paginacionElement.innerHTML = '';
@@ -256,6 +352,11 @@ const CuestionariosManager = {
 
     async irAPagina(pagina) {
         if (pagina < 0 || pagina >= this.totalPaginas || pagina === this.paginaActual || this.cargando) return;
+        if (this.modoDestacado) {
+            this.modoDestacado = false;
+            this.ocultarAvisoDestacado();
+            this.limpiarIdUrl();
+        }
         this.paginaActual = pagina;
 
         // Detectar filtros activos
@@ -635,16 +736,20 @@ const CuestionariosManager = {
                 if (pid) Utils.abrirEnNuevaPestana(`preguntas.html?id=${pid}`);
             });
         });
-        const params = new URLSearchParams(window.location.search);
-        const idDestacado = params.get('id');
-        if (idDestacado) {
-            setTimeout(() => {
-                const fila = tbody.querySelector(`tr[data-id='${idDestacado}']`);
-                if (fila) {
-                    fila.classList.add('table-warning');
-                    fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 500);
+        if (!this.modoDestacado) {
+            const params = new URLSearchParams(window.location.search);
+            const idDestacado = params.get('id');
+            if (idDestacado) {
+                setTimeout(() => {
+                    const fila = tbody.querySelector(`tr.fila-cuestionario[data-id='${idDestacado}']`);
+                    if (fila) {
+                        fila.classList.add('table-warning');
+                        fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        this.cargarDestacado(parseInt(idDestacado, 10));
+                    }
+                }, 300);
+            }
         }
         setTimeout(() => this.restoreScrollOrFocus(), 0);
     },
@@ -656,8 +761,14 @@ const CuestionariosManager = {
     },
 };
 
-function inicializarCuestionarios() {
-    CuestionariosManager.cargarCuestionarios();
+async function inicializarCuestionarios() {
+    const idUrl = CuestionariosManager.obtenerIdDesdeUrl();
+    if (idUrl) {
+        CuestionariosManager.cargarTematicasGestionadas().catch(() => {});
+        await CuestionariosManager.cargarDestacado(idUrl);
+    } else {
+        await CuestionariosManager.cargarCuestionarios();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', inicializarCuestionarios);
@@ -965,7 +1076,7 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
                         close: true, 
                         gravity: 'top', 
                         position: 'right', 
-                        style: { background: 'linear-gradient(to right, #ffc107, #ff9800)' } 
+                        style: Utils.estiloToastExito()
                     }).showToast();
                     
                     // Ahora añadir la pregunta
@@ -1462,30 +1573,7 @@ window.eliminarCuestionario = async function(id) {
         const resp = await fetch(`/api/cuestionarios/${id}`, { method: 'DELETE', headers: authManager.getAuthHeaders() });
         
         if (!resp.ok) {
-            let errorMessage = 'No se pudo eliminar el cuestionario';
-            
-            // Intentar obtener el mensaje de error específico del servidor
-            try {
-                const errorData = await resp.json();
-                if (errorData && errorData.mensaje) {
-                    errorMessage = errorData.mensaje;
-                } else if (errorData && errorData.message) {
-                    errorMessage = errorData.message;
-                }
-            } catch (parseError) {
-                // Si no se puede parsear como JSON, intentar obtener el texto
-                try {
-                    const errorText = await resp.text();
-                    if (errorText) {
-                        errorMessage = errorText;
-                    }
-                } catch (textError) {
-                    // Si todo falla, usar el mensaje por defecto
-                    console.error('Error al parsear respuesta del servidor:', textError);
-                }
-            }
-            
-            throw new Error(errorMessage);
+            throw new Error(await Utils.mensajeDesdeResponse(resp, 'eliminar cuestionarios'));
         }
         
         Toastify({ text: 'Cuestionario eliminado', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
@@ -1493,7 +1581,7 @@ window.eliminarCuestionario = async function(id) {
         CuestionariosManager.restoreScrollOrFocus();
     } catch (e) {
         console.error('Error al eliminar cuestionario:', e);
-        Toastify({ text: 'Error al eliminar cuestionario: ' + e.message, duration: 5000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
+        Toastify({ text: Utils.mensajeErrorApi(e, 'eliminar cuestionarios'), duration: 5000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
     }
 };
 
@@ -1589,6 +1677,11 @@ window.filtrarCuestionarios = async function(resetear = true) {
     // porque cargarMasCuestionarios ya establece cargando=true antes de llamar a esta función
     
     try {
+        if (CuestionariosManager.modoDestacado) {
+            CuestionariosManager.modoDestacado = false;
+            CuestionariosManager.ocultarAvisoDestacado();
+            CuestionariosManager.limpiarIdUrl();
+        }
         const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
         const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
         const subtema = document.getElementById('filtro-subtema-cuestionario')?.value || '';
@@ -1684,6 +1777,11 @@ window.filtrarCuestionarios = async function(resetear = true) {
 };
 
 window.limpiarFiltrosCuestionarios = function() {
+    if (CuestionariosManager.modoDestacado) {
+        CuestionariosManager.modoDestacado = false;
+        CuestionariosManager.ocultarAvisoDestacado();
+        CuestionariosManager.limpiarIdUrl();
+    }
     document.getElementById('filtro-estado-cuestionario').value = '';
     document.getElementById('filtro-tematica-cuestionario').value = '';
     document.getElementById('buscar-cuestionario').value = '';

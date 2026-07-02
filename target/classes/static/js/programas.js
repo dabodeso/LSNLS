@@ -28,38 +28,12 @@ const VALORACIONES_PERMITIDAS = ['1', '1+', '2-', '2', '2+', '3-', '3', '3+'];
 
 const TAMANO_MAX_FOTO_BYTES = 10 * 1024 * 1024; // 10MB
 
-function obtenerMensajeErrorProgramas(error, accion = 'operación') {
-    const raw = String(error?.message || error || '');
-    const m = raw.match(/^(\d{3}):\s*([\s\S]*)$/);
-    const status = m ? Number(m[1]) : null;
-    const detalle = (m ? m[2] : raw).trim();
-    const d = detalle.toLowerCase();
-
-    if (d.includes('maximum upload size exceeded') || d.includes('filesizelimitexceededexception') || status === 413) {
+function obtenerMensajeErrorProgramas(error, accion = 'realizar esta acción') {
+    const msg = Utils.mensajeErrorApi(error, accion);
+    if (msg.includes('demasiado grande')) {
         return 'La foto es demasiado grande. El tamaño máximo permitido es 10MB.';
     }
-    if (d.includes('unauthorized') || status === 401) {
-        return 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
-    }
-    if (status === 403 || d.includes('forbidden') || d.includes('no tienes permisos')) {
-        return 'No tienes permisos para realizar esta acción.';
-    }
-    if (status === 404 || d.includes('no encontrado')) {
-        return 'No se ha encontrado el recurso solicitado.';
-    }
-    if (status === 409 || d.includes('conflicto') || d.includes('ocupad')) {
-        return detalle || 'Hay un conflicto con los datos actuales. Recarga e inténtalo de nuevo.';
-    }
-    if (status === 400 || d.includes('validaci') || d.includes('inválid') || d.includes('inval')) {
-        return detalle || 'Los datos no son válidos. Revisa los campos e inténtalo de nuevo.';
-    }
-    if (d.includes('failed to fetch') || d.includes('networkerror') || d.includes('network request failed')) {
-        return 'Error de conexión con el servidor. Revisa tu red e inténtalo de nuevo.';
-    }
-    if (status && status >= 500) {
-        return 'Error interno del servidor. Inténtalo de nuevo en unos minutos.';
-    }
-    return detalle || `Ha fallado la ${accion}.`;
+    return msg;
 }
 
 // Variables para paginación
@@ -939,7 +913,7 @@ async function actualizarDuracionObjetivoPrograma(programaId, nuevaDuracion) {
 }
 
 function irAConcursante(concursanteId) {
-    window.location.href = `concursantes.html?id=${concursanteId}`;
+    Utils.abrirEnNuevaPestana(`concursantes.html?id=${concursanteId}`);
 }
 
 // Variables para filtros globales
@@ -1238,8 +1212,7 @@ async function subirFotoConcursante(concursanteId, file) {
         });
         
         if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`${response.status}: ${errText}`);
+            throw new Error(await Utils.mensajeDesdeResponse(response, 'subir la foto del concursante'));
         }
         
         const resultado = await response.json();
@@ -1256,28 +1229,15 @@ async function subirFotoConcursante(concursanteId, file) {
 
 // Función para mostrar mensajes
 function mostrarMensaje(mensaje, tipo = 'info') {
-    // Crear elemento de mensaje
-    const mensajeDiv = document.createElement('div');
-    mensajeDiv.className = `alert alert-${tipo === 'success' ? 'success' : tipo === 'error' ? 'danger' : 'info'} alert-dismissible fade show`;
-    mensajeDiv.style.position = 'fixed';
-    mensajeDiv.style.top = '20px';
-    mensajeDiv.style.right = '20px';
-    mensajeDiv.style.zIndex = '9999';
-    mensajeDiv.style.minWidth = '300px';
-    
-    mensajeDiv.innerHTML = `
-        ${mensaje}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(mensajeDiv);
-    
-    // Auto-eliminar después de 3 segundos
-    setTimeout(() => {
-        if (mensajeDiv.parentNode) {
-            mensajeDiv.parentNode.removeChild(mensajeDiv);
-        }
-    }, 3000);
+    if (tipo === 'success') {
+        Utils.mostrarToastExito(mensaje);
+        return;
+    }
+    if (tipo === 'error') {
+        Utils.mostrarToastError(mensaje);
+        return;
+    }
+    Utils.showAlert(mensaje, 'info', 3000);
 }
 
 // Función para actualizar el estado del programa automáticamente
@@ -1696,19 +1656,14 @@ async function eliminarPrograma(programaId) {
         mostrarExito('Programa eliminado');
         await recargarProgramas();
     } catch (error) {
-        // Traducir mensajes técnicos a mensajes entendibles
-        const msg = (error && error.message) ? error.message : '';
-        let amigable = 'No se pudo eliminar el programa.';
-        if (msg.includes('403')) {
-            amigable = 'No tienes permisos para eliminar programas.';
-        } else if (msg.includes('No se puede eliminar el programa') || msg.toLowerCase().includes('concursante')) {
+        const msg = Utils.mensajeErrorApi(error, 'eliminar programas');
+        let amigable = msg;
+        if (msg.toLowerCase().includes('concursante')) {
             amigable = 'No se puede eliminar porque hay concursantes asignados. Desasigna los concursantes primero.';
         } else if (msg.toLowerCase().includes('programado')) {
             amigable = 'No se puede eliminar un programa programado. Cambia su estado a Borrador primero.';
         } else if (msg.toLowerCase().includes('emitido')) {
             amigable = 'No se puede eliminar un programa emitido.';
-        } else if (msg.includes('400') && msg.toLowerCase().includes('parameter value')) {
-            amigable = 'No se pudo eliminar por un problema interno. Vuelve a intentarlo.';
         }
         mostrarError(amigable);
     }

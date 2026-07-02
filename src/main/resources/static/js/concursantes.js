@@ -44,6 +44,8 @@ let sortAscConcursantes = true;
 
 // Flag para evitar bucles durante la búsqueda de página por URL ?id=
 let buscandoConcursantePorId = false;
+// Vista directa al abrir concursantes.html?id=123 desde otro módulo
+let modoConcursanteDestacado = false;
 
 // Paginación de selectores (cuestionario/combo)
 let modalCuestPagina = 1;
@@ -94,6 +96,50 @@ async function refrescarListaConcursantes(paginaAntes) {
     }
 }
 
+const MENSAJE_NO_DESASIGNAR_JORNADA =
+    'No se puede quitar la jornada mientras el concursante tenga cuestionario o combo asignado. Desasígnalos primero.';
+
+function concursanteTieneCuestionarioOCombo(concursante) {
+    if (!concursante) return false;
+    const cuestionarioId = concursante.cuestionarioId;
+    const comboId = concursante.comboId;
+    const tieneCuestionario = cuestionarioId != null && cuestionarioId !== '' && Number(cuestionarioId) !== 0;
+    const tieneCombo = comboId != null && comboId !== '' && Number(comboId) !== 0;
+    return tieneCuestionario || tieneCombo;
+}
+
+function validarPuedeDesasignarJornada(concursante) {
+    if (concursanteTieneCuestionarioOCombo(concursante)) {
+        throw new Error(MENSAJE_NO_DESASIGNAR_JORNADA);
+    }
+}
+
+function leerCuestionarioComboDesdeFormulario() {
+    const cuestionarioId = document.getElementById('cuestionario-id')?.value || null;
+    const comboInput = document.getElementById('combo-id');
+    const comboId = comboInput?.dataset?.comboId
+        || comboInput?.value?.replace(/[^0-9]/g, '')
+        || null;
+    return { cuestionarioId, comboId };
+}
+
+function actualizarRestriccionJornadaEnFormulario() {
+    const sel = document.getElementById('jornada-select');
+    if (!sel) return;
+    const sinAsignar = sel.querySelector('option[value=""]');
+    if (!sinAsignar) return;
+    const { cuestionarioId, comboId } = leerCuestionarioComboDesdeFormulario();
+    const bloqueado = concursanteTieneCuestionarioOCombo({ cuestionarioId, comboId });
+    sinAsignar.disabled = bloqueado;
+    sinAsignar.hidden = bloqueado;
+    if (bloqueado && sel.value === '') {
+        const jid = concursanteActual?.jornadaId;
+        if (jid && Array.from(sel.options).some(o => String(o.value) === String(jid))) {
+            sel.value = String(jid);
+        }
+    }
+}
+
 async function sincronizarJornadaConcursante(concursanteId, jornadaId) {
     const objetivo = jornadaId != null && jornadaId !== '' ? jornadaId : null;
     const actual = await apiManager.get(`/api/concursantes/${concursanteId}`);
@@ -102,6 +148,7 @@ async function sincronizarJornadaConcursante(concursanteId, jornadaId) {
     if (objetivo) {
         await apiManager.post(`/api/concursantes/${concursanteId}/asignar-jornada/${objetivo}`, {});
     } else {
+        validarPuedeDesasignarJornada(actual);
         await apiManager.delete(`/api/concursantes/${concursanteId}/desasignar-jornada`);
     }
 }
@@ -167,40 +214,218 @@ async function desasignarComboConcursante(concursanteId, paginaAntes) {
     );
 }
 
+// Columnas visibles/editables solo por ADMIN y DIRECCIÓN
+const COLUMNAS_SOLO_DIRECCION = [
+    'estado',
+    'momentos-destacados',
+    'duracion',
+    'duracion-direccion',
+    'duracion-final',
+    'valoracion-final',
+    'numero-pgm',
+    'orden-escaleta',
+    'bonico'
+];
+
+const MAPEO_COLUMNAS_A_CHECKBOX = {
+    'numero-concur': 'col-numero-concur',
+    'jornada': 'col-jornada',
+    'dia-grabacion': 'col-dia-grabacion',
+    'lugar': 'col-lugar',
+    'nombre': 'col-nombre',
+    'foto': 'col-foto',
+    'edad': 'col-edad',
+    'ocupacion': 'col-ocupacion',
+    'rr-ss': 'col-rr-ss',
+    'cuest': 'col-cuest',
+    'combo': 'col-combo',
+    'xusoker': 'col-xusoker',
+    'x': 'col-x',
+    'resultado': 'col-resultado',
+    'notas-grabacion': 'col-notas-grabacion',
+    'guionista': 'col-guionista',
+    'valoracion-guionista': 'col-valoracion-guionista',
+    'estado': 'col-estado',
+    'momentos-destacados': 'col-momentos-destacados',
+    'duracion': 'col-duracion',
+    'duracion-direccion': 'col-duracion-direccion',
+    'duracion-final': 'col-duracion-final',
+    'valoracion-final': 'col-valoracion-final',
+    'numero-pgm': 'col-numero-pgm',
+    'orden-escaleta': 'col-orden-escaleta',
+    'bonico': 'col-bonico'
+};
+
+const CAMPOS_TABLA_SOLO_DIRECCION = new Set([
+    'momentosDestacados',
+    'duracion',
+    'duracionDireccion',
+    'duracionFinal',
+    'valoracionFinal',
+    'numeroPrograma',
+    'ordenEscaleta',
+    'bonico'
+]);
+
+function obtenerRolUsuarioActual() {
+    const usuario = authManager.currentUser;
+    return usuario && usuario.rol ? usuario.rol.replace('ROLE_', '').toLowerCase() : null;
+}
+
+function puedeVerColumnasDireccion(rol) {
+    const r = rol !== undefined ? rol : obtenerRolUsuarioActual();
+    return r === 'admin' || r === 'direccion';
+}
+
+function crearColumnasVisiblesPorDefecto(verColumnasDireccion) {
+    const columnas = {
+        'numero-concur': true,
+        'jornada': true,
+        'dia-grabacion': true,
+        'lugar': true,
+        'nombre': true,
+        'foto': true,
+        'edad': true,
+        'ocupacion': true,
+        'rr-ss': true,
+        'cuest': true,
+        'combo': true,
+        'xusoker': true,
+        'x': true,
+        'resultado': true,
+        'notas-grabacion': true,
+        'guionista': true,
+        'valoracion-guionista': true
+    };
+    COLUMNAS_SOLO_DIRECCION.forEach(col => {
+        columnas[col] = verColumnasDireccion;
+    });
+    return columnas;
+}
+
+function aplicarRestriccionColumnasDireccion() {
+    const verDireccion = puedeVerColumnasDireccion();
+    configuracionColumnas.esDireccion = verDireccion;
+    if (verDireccion) return false;
+
+    let cambio = false;
+    COLUMNAS_SOLO_DIRECCION.forEach(col => {
+        if (configuracionColumnas.columnasVisibles[col]) {
+            configuracionColumnas.columnasVisibles[col] = false;
+            cambio = true;
+        }
+    });
+    return cambio;
+}
+
+function claveConfiguracionColumnasConcursantes(rol) {
+    const r = rol !== undefined ? rol : obtenerRolUsuarioActual();
+    return `configuracionColumnasConcursantes_${r || 'anon'}`;
+}
+
+function guardarConfiguracionColumnasSiCambio(huboCambio) {
+    if (huboCambio) {
+        localStorage.setItem(claveConfiguracionColumnasConcursantes(), JSON.stringify(configuracionColumnas));
+    }
+}
+
+function guardarConfiguracionColumnas() {
+    localStorage.setItem(claveConfiguracionColumnasConcursantes(), JSON.stringify(configuracionColumnas));
+}
+
 // Configuración de columnas por rol
 let configuracionColumnas = {
 esDireccion: true,
-columnasVisibles: {
-'numero-concur': true,
-'jornada': true,
-'dia-grabacion': true,
-'lugar': true,
-'nombre': true,
-'foto': true,
-'edad': true,
-'ocupacion': true,
-'rr-ss': true,
-'cuest': true,
-'combo': true,
-'xusoker': true,
-'x': true,
-'resultado': true,
-'notas-grabacion': true,
-'guionista': true,
-'valoracion-guionista': true,
-'estado': true,
-'momentos-destacados': true,
-'duracion': true,
-'duracion-direccion': true,
-'duracion-final': true,
-'valoracion-final': true,
-'numero-pgm': true,
-'orden-escaleta': true,
-'bonico': true
-}
+columnasVisibles: crearColumnasVisiblesPorDefecto(true)
 };
 
 // Funciones de inicialización
+function obtenerIdConcursanteDesdeUrl() {
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (!id || !/^\d+$/.test(String(id).trim())) return null;
+    return parseInt(id, 10);
+}
+
+function mostrarAvisoConcursanteDestacado(id) {
+    let aviso = document.getElementById('aviso-concursante-destacado');
+    if (!aviso) {
+        const wrapper = document.getElementById('tabla-concursantes-body-wrapper');
+        const contenedor = wrapper?.closest('.card-body') || wrapper?.parentElement;
+        if (!contenedor) return;
+        aviso = document.createElement('div');
+        aviso.id = 'aviso-concursante-destacado';
+        aviso.className = 'alert alert-info d-flex justify-content-between align-items-center py-2 mb-2';
+        contenedor.insertBefore(aviso, contenedor.firstChild);
+    }
+    aviso.innerHTML = `
+        <span><i class="fas fa-link me-1"></i> Vista directa del concursante <strong>#${id}</strong></span>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="salirModoConcursanteDestacado()">Ver listado completo</button>
+    `;
+    aviso.style.display = '';
+}
+
+function ocultarAvisoConcursanteDestacado() {
+    const aviso = document.getElementById('aviso-concursante-destacado');
+    if (aviso) aviso.style.display = 'none';
+}
+
+function salirModoConcursanteDestacado() {
+    modoConcursanteDestacado = false;
+    ocultarAvisoConcursanteDestacado();
+    try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('id');
+        window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    } catch (_) {}
+    paginaActual = 0;
+    return cargarConcursantes(true);
+}
+
+async function cargarConcursanteDestacado(id) {
+    if (buscandoConcursantePorId) return;
+    buscandoConcursantePorId = true;
+    try {
+        lastScrollYConcursantes = window.scrollY || window.pageYOffset || 0;
+        cargando = true;
+        mostrarEstadoCarga();
+
+        const concursante = await apiManager.get(`/api/concursantes/${id}`);
+        if (!concursante?.id) {
+            mostrarError(`Concursante ${id} no encontrado`);
+            modoConcursanteDestacado = false;
+            ocultarAvisoConcursanteDestacado();
+            await cargarConcursantes(true);
+            return;
+        }
+
+        modoConcursanteDestacado = true;
+        concursantes = [concursante];
+        totalConcursantes = 1;
+        totalPaginas = 1;
+        paginaActual = 0;
+        mostrarAvisoConcursanteDestacado(id);
+        mostrarConcursantes();
+        setTimeout(() => {
+            const fila = document.querySelector(`#tabla-concursantes tr[data-id='${id}']`);
+            if (fila) {
+                fila.classList.add('table-warning');
+                fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 100);
+    } catch (error) {
+        console.error('❌ [CONCURSANTES] Error al cargar concursante destacado:', error);
+        mostrarError('Error al cargar concursante: ' + (error.message || error));
+        modoConcursanteDestacado = false;
+        ocultarAvisoConcursanteDestacado();
+        await cargarConcursantes(true);
+    } finally {
+        cargando = false;
+        ocultarEstadoCarga();
+        actualizarPaginacion();
+        buscandoConcursantePorId = false;
+    }
+}
+
 async function inicializarConcursantes() {
 // Detectar rol del usuario (esto también carga la configuración guardada)
 detectarRolUsuario();
@@ -210,18 +435,23 @@ detectarRolUsuario();
 // pero la llamamos de nuevo aquí para asegurarnos
 cargarConfiguracionGuardada();
 
-await cargarProgramas();
-    await cargarConcursantes(true);
 setupEventListeners();
-
-// Actualizar encabezados de la tabla según la configuración
 actualizarEncabezadosTabla();
+
+const idUrl = obtenerIdConcursanteDesdeUrl();
+if (idUrl) {
+    // Una sola petición al concursante; programas/jornadas en segundo plano para formularios
+    cargarProgramas().catch(e => console.warn('[CONCURSANTES] Programas en background:', e));
+    await cargarConcursanteDestacado(idUrl);
+} else {
+    await cargarProgramas();
+    await cargarConcursantes(true);
+}
 }
 
 function detectarRolUsuario() {
-// Obtener usuario actual
-const usuario = authManager.currentUser;
-const rol = usuario && usuario.rol ? usuario.rol.replace('ROLE_', '').toLowerCase() : null;
+const rol = obtenerRolUsuarioActual();
+const verColumnasDireccion = puedeVerColumnasDireccion(rol);
 
 // ADMIN, GUION y DIRECCION pueden crear/editar; eliminar solo ADMIN/DIRECCION
 puedeCrearConcursante = (rol === 'admin' || rol === 'guion' || rol === 'direccion');
@@ -239,49 +469,16 @@ btnConfig.style.display = 'block';
 btnConfig.querySelector('i')?.classList.add('me-1');
 }
 
-// Si el usuario es GUION, aplicar configuración de columnas predeterminada
-if (rol === 'guion') {
-    // Verificar si ya hay configuración guardada
-    const configGuardada = localStorage.getItem('configuracionColumnasConcursantes');
-    
-    // Solo aplicar configuración predeterminada si no hay configuración guardada
-    if (!configGuardada) {
-        // Configuración predeterminada para GUION: ocultar columnas avanzadas
-        configuracionColumnas.columnasVisibles = {
-            'numero-concur': true,
-            'jornada': true,
-            'dia-grabacion': true,
-            'lugar': true,
-            'nombre': true,
-            'foto': true,
-            'edad': true,
-            'ocupacion': true,
-            'rr-ss': true,
-            'cuest': true,
-            'combo': true,
-            'xusoker': true,
-            'x': true,
-            'resultado': true,
-            'notas-grabacion': true,
-            'guionista': true,
-            'valoracion-guionista': true,
-            'estado': true,
-            'momentos-destacados': false,  // Ocultar por defecto
-            'duracion': true,
-            'duracion-direccion': false,   // Ocultar por defecto
-            'duracion-final': false,        // Ocultar por defecto
-            'valoracion-final': false,      // Ocultar por defecto
-            'numero-pgm': false,            // Ocultar por defecto
-            'orden-escaleta': false,        // Ocultar por defecto
-            'bonico': false                 // Ocultar por defecto
-        };
-        // Guardar la configuración predeterminada
-        localStorage.setItem('configuracionColumnasConcursantes', JSON.stringify(configuracionColumnas));
-    }
+configuracionColumnas.esDireccion = verColumnasDireccion;
+
+const configGuardada = localStorage.getItem(claveConfiguracionColumnasConcursantes(rol));
+if (!configGuardada) {
+    configuracionColumnas.columnasVisibles = crearColumnasVisiblesPorDefecto(verColumnasDireccion);
+    guardarConfiguracionColumnas();
 }
 
-// Cargar configuración guardada para cualquier usuario
 cargarConfiguracionGuardada();
+guardarConfiguracionColumnasSiCambio(aplicarRestriccionColumnasDireccion());
 }
 
 function aplicarConfiguracionBasica() { /* sin uso, mantenido por compatibilidad */ }
@@ -475,6 +672,12 @@ function actualizarPaginacion() {
     const infoEl = document.getElementById('info-paginacion-concursantes');
     const paginacionEl = document.getElementById('paginacion-concursantes');
     if (!paginacionEl || !infoEl) return;
+
+    if (modoConcursanteDestacado && concursantes.length === 1) {
+        infoEl.textContent = `Concursante #${concursantes[0].id} (vista directa)`;
+        paginacionEl.innerHTML = '';
+        return;
+    }
 
     // Info "Mostrando X-Y de Z"
     const inicio = totalConcursantes === 0 ? 0 : (paginaActual * tamanioPagina + 1);
@@ -710,8 +913,12 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'resultad
 // NOTAS GRABACIÓN
 if (configuracionColumnas.columnasVisibles['notas-grabacion']) {
             const notas = concursante.notasGrabacion || '';
-            const contenidoTrunc = `<div class=\"notas-trunc\">${notas}</div>`;
-            celdas.push(`<td ondblclick=\"editarCeldaConcursante(${concursante.id}, 'notasGrabacion', this)\" data-notas=\"${encodeURIComponent(notas)}\" title=\"Doble click para editar\">${contenidoTrunc}</td>`);
+            const soloLectura = puedeEditarConcursantes ? '' : ' readonly';
+            celdas.push(`<td class="col-notas-grabacion">
+                <textarea class="form-control form-control-sm notas-grabacion-textarea" rows="3"
+                    placeholder="Notas de grabación..."
+                    onblur="actualizarNotasGrabacion(${concursante.id}, this.value)"${soloLectura}>${escapeHtmlForTextarea(notas)}</textarea>
+            </td>`);
 }
 
 // GUIONISTA
@@ -737,7 +944,7 @@ if (configuracionColumnas.columnasVisibles['estado']) {
     }).join('');
     celdas.push(
         `<td>
-            <select class="form-select form-select-sm estado-select" data-id="${concursante.id}"${puedeEditarConcursantes ? '' : ' disabled'}>
+            <select class="form-select form-select-sm estado-select" data-id="${concursante.id}"${puedeEditarConcursantes && puedeVerColumnasDireccion() ? '' : ' disabled'}>
                 ${opcionesEstado}
             </select>
         </td>`
@@ -802,52 +1009,39 @@ return `<tr data-id="${concursante.id}" oncontextmenu="showContextMenu(event, ${
     }).join('');
     
     tbody.innerHTML = htmlGenerado;
-// Resaltado y scroll si hay id en la URL
-const params = new URLSearchParams(window.location.search);
-const idDestacado = params.get('id');
-if (idDestacado) {
-    setTimeout(() => {
-        const fila = tbody.querySelector(`tr[data-id='${idDestacado}']`);
-        if (fila) {
-            fila.classList.add('table-warning');
-            fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else if (!buscandoConcursantePorId) {
-            navegarAlConcursante(parseInt(idDestacado, 10));
-        }
-    }, 300);
+// Resaltado y scroll si hay id en la URL (solo en listado paginado normal)
+if (!modoConcursanteDestacado) {
+    const params = new URLSearchParams(window.location.search);
+    const idDestacado = params.get('id');
+    if (idDestacado) {
+        setTimeout(() => {
+            const fila = tbody.querySelector(`tr[data-id='${idDestacado}']`);
+            if (fila) {
+                fila.classList.add('table-warning');
+                fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else if (!buscandoConcursantePorId) {
+                navegarAlConcursante(parseInt(idDestacado, 10));
+            }
+        }, 300);
+    }
 }
 }
 
-// Busca en qué página del servidor está el concursante con el id dado y navega a ella
+// Localiza un concursante por id con una sola petición (sin recorrer todas las páginas)
 async function navegarAlConcursante(idBuscado) {
-    if (buscandoConcursantePorId) return;
-    buscandoConcursantePorId = true;
-    try {
-        for (let pagina = 0; pagina < totalPaginas; pagina++) {
-            if (pagina === paginaActual) continue;
-            const p = new URLSearchParams({
-                page: pagina,
-                size: tamanioPagina,
-                sortBy: sortByConcursantes || 'id',
-                sortDir: sortAscConcursantes ? 'asc' : 'desc'
-            });
-            const resp = await fetch(`/api/concursantes?${p}`, { headers: authManager.getAuthHeaders() });
-            if (!resp.ok) continue;
-            const data = await resp.json();
-            const found = (data.content || []).some(c => String(c.id) === String(idBuscado));
-            if (found) {
-                paginaActual = pagina;
-                await cargarConcursantes(true);
-                return;
-            }
-        }
-        console.warn('[CONCURSANTES] ID', idBuscado, 'no encontrado en ninguna página');
-    } finally {
-        buscandoConcursantePorId = false;
-    }
+    await cargarConcursanteDestacado(idBuscado);
 }
 
 function filtrarConcursantes() {
+    if (modoConcursanteDestacado) {
+        modoConcursanteDestacado = false;
+        ocultarAvisoConcursanteDestacado();
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('id');
+            window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+        } catch (_) {}
+    }
     // Reiniciar paginación y solicitar datos filtrados al backend
     paginaActual = 0;
     cargarConcursantes(true);
@@ -887,6 +1081,7 @@ if (estadoElement) {
 limitarEstadosSegunRol();
 // Cargar jornadas en el desplegable
 try { cargarJornadas(); } catch {}
+actualizarRestriccionJornadaEnFormulario();
 const modal = new bootstrap.Modal(document.getElementById('modal-concursante'));
 modal.show();
 }
@@ -1022,6 +1217,8 @@ const creditosElement = document.getElementById('creditos-especiales');
 if (creditosElement) {
 creditosElement.value = concursanteActual.creditosEspeciales || '';
 }
+
+actualizarRestriccionJornadaEnFormulario();
 
 const modal = new bootstrap.Modal(document.getElementById('modal-concursante'));
 modal.show();
@@ -1173,6 +1370,10 @@ let response;
         snapshotPrevio = await apiManager.get(`/api/concursantes/${datosConcursante.id}`);
         const prevJornada = snapshotPrevio?.jornadaId ?? null;
         const nuevaJornada = selectedJornadaId || null;
+        if (prevJornada && !nuevaJornada && concursanteTieneCuestionarioOCombo(datosConcursante)) {
+            mostrarError(MENSAJE_NO_DESASIGNAR_JORNADA);
+            return;
+        }
         const doAction = async () => {
             await apiManager.put(`/api/concursantes/${datosConcursante.id}`, datosConcursante);
             if (String(nuevaJornada || '') !== String(prevJornada || '')) {
@@ -1290,36 +1491,19 @@ if (response.ok) {
             } catch {}
         }, 100);
 } else {
-let mensaje = 'Error desconocido al guardar concursante.';
-let errorText = '';
-try {
-errorText = await response.text();
-const errorJson = JSON.parse(errorText);
-if (errorJson && errorJson.message) mensaje = errorJson.message;
-else if (errorJson && errorJson.error) mensaje = errorJson.error;
-} catch (e) {
-mensaje = errorText || mensaje;
-}
-if (response.status === 415) {
-mensaje = 'El servidor no acepta el formato de datos enviado. Contacta con el administrador.';
-} else if (response.status === 400) {
-mensaje = mensaje || 'Datos inválidos.';
-} else if (response.status === 401) {
-mensaje = 'No tienes permisos para realizar esta acción.';
-} else if (response.status === 500) {
-mensaje = 'Error interno del servidor.';
-}
-        console.error('❌ [GUARDAR] Error HTTP', { status: response.status, body: errorText });
-mostrarError('Error al guardar concursante: ' + mensaje);
+        const mensaje = await Utils.mensajeDesdeResponse(response, 'guardar concursantes');
+        console.error('❌ [GUARDAR] Error HTTP', { status: response.status, mensaje });
+        mostrarError(mensaje);
 }
 } catch (err) {
 console.error('❌ [GUARDAR] Excepción', err);
-mostrarError('Error de red o inesperado: ' + err);
+mostrarError(Utils.mensajeErrorApi(err, 'guardar concursantes'));
 }
 }
 
 // Manejar cambio de estado desde el select en la tabla
 $(document).on('change', '.estado-select', async function() {
+    if (!puedeVerColumnasDireccion()) return;
     const id = $(this).data('id');
     const nuevoEstado = $(this).val();
     const select = this;
@@ -1345,15 +1529,7 @@ $(document).on('change', '.estado-select', async function() {
         if (typeof estadoPrevio !== 'undefined' && estadoPrevio !== null && select) {
             select.value = (estadoPrevio || '').toLowerCase();
         }
-        // Mensaje más explicativo según tipo de error
-        const msg = (e && e.message) ? e.message : '';
-        if (msg.startsWith('404')) {
-            mostrarError('No se ha encontrado el concursante o el servicio de cambio de estado. Es posible que haya sido eliminado o que la URL del servicio haya cambiado.');
-        } else if (msg.startsWith('403')) {
-            mostrarError('No tienes permisos para cambiar el estado de este concursante.');
-        } else {
-            mostrarError('Error al cambiar el estado del concursante: ' + msg);
-        }
+        mostrarError(Utils.mensajeErrorApi(e, 'cambiar el estado del concursante'));
     }
 });
 
@@ -1388,12 +1564,7 @@ $(document).on('change', '.xusoker-select', async function() {
         if (typeof valorPrevio !== 'undefined' && select) {
             select.value = valorPrevio || '';
         }
-        const msg = (e && e.message) ? e.message : '';
-        if (msg.startsWith('403')) {
-            mostrarError('No tienes permisos para cambiar el XUSÓKER de este concursante.');
-        } else {
-            mostrarError('Error al cambiar el XUSÓKER del concursante: ' + msg);
-        }
+        mostrarError(Utils.mensajeErrorApi(e, 'cambiar el XUSÓKER del concursante'));
     }
 });
 
@@ -1468,7 +1639,7 @@ async function eliminarConcursante(id) {
         if (window.UndoManager) window.UndoManager.record({ do: doDelete, undo: undoCreate, label: `Eliminar concursante ${id}` });
         mostrarExito('Concursante eliminado correctamente');
     } catch (error) {
-        mostrarError('Error al eliminar concursante: ' + error.message);
+        mostrarError(Utils.mensajeErrorApi(error, 'eliminar concursantes'));
     }
 }
 
@@ -1498,7 +1669,8 @@ function crearSelectValoracion(valorActual) {
 
 async function editarCeldaConcursante(id, campo, td) {
 if (!puedeEditarConcursantes) return;
-if (td.querySelector('input,select')) return;
+if (CAMPOS_TABLA_SOLO_DIRECCION.has(campo) && !puedeVerColumnasDireccion()) return;
+if (td.querySelector('input,select,textarea')) return;
 const valorOriginal = (td.innerText || '').trim();
 let input;
 
@@ -1655,18 +1827,56 @@ td.innerHTML = valorOriginal;
 }
 
 // Funciones de utilidad
-function mostrarError(mensaje) {
-Toastify({
-text: mensaje,
-duration: 3000,
-close: true,
-gravity: "top",
-position: "right",
-backgroundColor: "#dc3545"
-}).showToast();
+function escapeHtmlForTextarea(text) {
+    return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
-// Formateo de euros con separador de miles (punto)
+async function actualizarNotasGrabacion(concursanteId, notas) {
+    if (!puedeEditarConcursantes) return;
+    try {
+        const previo = concursantes.find(c => c.id === concursanteId);
+        const notasPrevias = previo?.notasGrabacion ?? '';
+        const notasNorm = notas ?? '';
+        if (notasNorm === (notasPrevias ?? '')) return;
+
+        const snapshot = await apiManager.get(`/api/concursantes/${concursanteId}`);
+        const prevPayload = buildConcursantePayload(snapshot, concursanteId);
+        const nextPayload = buildConcursantePayload(
+            { ...snapshot, notasGrabacion: notasNorm || null },
+            concursanteId
+        );
+
+        const doAction = async () => {
+            await apiManager.put(`/api/concursantes/${concursanteId}`, nextPayload);
+            const c = concursantes.find(x => x.id === concursanteId);
+            if (c) c.notasGrabacion = notasNorm || null;
+        };
+        const undoAction = async () => {
+            await apiManager.put(`/api/concursantes/${concursanteId}`, prevPayload);
+            const c = concursantes.find(x => x.id === concursanteId);
+            if (c) c.notasGrabacion = prevPayload.notasGrabacion;
+        };
+
+        await doAction();
+        if (window.UndoManager) {
+            window.UndoManager.record({
+                do: doAction,
+                undo: undoAction,
+                label: `Notas grabación concursante ${concursanteId}`
+            });
+        }
+    } catch (error) {
+        mostrarError('Error al guardar notas de grabación: ' + error.message);
+    }
+}
+
+function mostrarError(mensaje) {
+    Utils.mostrarToastError(mensaje);
+}
+
 function formatEuro(num) {
     try {
         const n = Number(num);
@@ -1896,14 +2106,7 @@ function abrirSelectorComboDesdePreview() {
 }
 
 function mostrarExito(mensaje) {
-Toastify({
-text: mensaje,
-duration: 3000,
-close: true,
-gravity: "top",
-position: "right",
-backgroundColor: "#28a745"
-}).showToast();
+    Utils.mostrarToastExito(mensaje);
 }
 
 // Modal selector de cuestionario
@@ -2131,6 +2334,7 @@ concursanteParaReemplazo = null;
 } else {
 // Asignar al formulario
 document.getElementById('cuestionario-id').value = id;
+actualizarRestriccionJornadaEnFormulario();
 }
 const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-cuestionario'));
 modal.hide();
@@ -2155,6 +2359,7 @@ concursanteParaReemplazo = null;
 } else {
 // Asignar al formulario (nuevo concursante o edición sin guardar aún)
     actualizarComboEnFormulario(id);
+    actualizarRestriccionJornadaEnFormulario();
 }
 const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-combo'));
 modal.hide();
@@ -2162,6 +2367,7 @@ modal.hide();
 
 function limpiarSelectorCuestionario() {
 document.getElementById('cuestionario-id').value = '';
+actualizarRestriccionJornadaEnFormulario();
 }
 
 async function desasignarCuestionarioModal() {
@@ -2395,6 +2601,7 @@ if (btnReciclar) {
     btnReciclar.style.display = 'none';
     btnReciclar.dataset.comboId = '';
 }
+actualizarRestriccionJornadaEnFormulario();
 }
 
 // Función para iniciar reciclaje de combo desde el formulario o selector
@@ -2899,6 +3106,7 @@ if (sel) {
     if (valorPrevio) {
         sel.value = valorPrevio;
     }
+    actualizarRestriccionJornadaEnFormulario();
 }
 } catch (error) {
 console.error('Error al cargar jornadas:', error);
@@ -2943,7 +3151,7 @@ if (!modal) {
 crearModalSelectorJornada();
 }
 
-cargarJornadas().then(() => {
+cargarJornadas().then(async () => {
 const tbody = document.getElementById('tabla-jornadas-selector');
 tbody.innerHTML = jornadas.map(jornada => `
            <tr>
@@ -2957,6 +3165,20 @@ tbody.innerHTML = jornadas.map(jornada => `
                </td>
            </tr>
        `).join('');
+
+const btnDesasignar = document.querySelector('#modal-selector-jornada .btn-danger');
+if (btnDesasignar && concursanteParaAsignarJornada) {
+    let concursante = (concursantes || []).find(c => c && c.id === concursanteParaAsignarJornada);
+    if (!concursante || (concursante.cuestionarioId === undefined && concursante.comboId === undefined)) {
+        try {
+            concursante = await apiManager.get(`/api/concursantes/${concursanteParaAsignarJornada}`);
+        } catch (_) {}
+    }
+    const bloqueado = concursanteTieneCuestionarioOCombo(concursante);
+    btnDesasignar.style.display = bloqueado ? 'none' : '';
+    btnDesasignar.disabled = bloqueado;
+    btnDesasignar.title = bloqueado ? MENSAJE_NO_DESASIGNAR_JORNADA : '';
+}
 
 const modalInstance = new bootstrap.Modal(document.getElementById('modal-selector-jornada'));
 modalInstance.show();
@@ -3025,6 +3247,11 @@ modal.hide();
 async function desasignarJornadaModal() {
 if (concursanteParaAsignarJornada) {
 try {
+    let concursante = (concursantes || []).find(c => c && c.id === concursanteParaAsignarJornada);
+    if (!concursante) {
+        concursante = await apiManager.get(`/api/concursantes/${concursanteParaAsignarJornada}`);
+    }
+    validarPuedeDesasignarJornada(concursante);
 const paginaAntes = paginaActual;
 await registrarUndoJornadaConcursante(
     concursanteParaAsignarJornada,
@@ -3135,88 +3362,34 @@ modal.show();
 }
 
 function cargarConfiguracionEnModal() {
-// Mapear configuración a IDs de checkboxes
-const mapeoColumnas = {
-'numero-concur': 'col-numero-concur',
-'jornada': 'col-jornada',
-'dia-grabacion': 'col-dia-grabacion',
-'lugar': 'col-lugar',
-'nombre': 'col-nombre',
-'foto': 'col-foto',
-'edad': 'col-edad',
-'ocupacion': 'col-ocupacion',
-    'rr-ss': 'col-rr-ss',
-    'cuest': 'col-cuest',
-    'combo': 'col-combo',
-    'xusoker': 'col-xusoker',
-    'x': 'col-x',
-    'resultado': 'col-resultado',
-'notas-grabacion': 'col-notas-grabacion',
-'guionista': 'col-guionista',
-'valoracion-guionista': 'col-valoracion-guionista',
-'estado': 'col-estado',
-'momentos-destacados': 'col-momentos-destacados',
-'duracion': 'col-duracion',
-'duracion-direccion': 'col-duracion-direccion',
-'duracion-final': 'col-duracion-final',
-'valoracion-final': 'col-valoracion-final',
-'numero-pgm': 'col-numero-pgm',
-'orden-escaleta': 'col-orden-escaleta',
-'bonico': 'col-bonico'
-};
+const verDireccion = puedeVerColumnasDireccion();
 
-// Aplicar configuración a los checkboxes
-Object.keys(mapeoColumnas).forEach(columna => {
-const checkboxId = mapeoColumnas[columna];
+Object.keys(MAPEO_COLUMNAS_A_CHECKBOX).forEach(columna => {
+const checkboxId = MAPEO_COLUMNAS_A_CHECKBOX[columna];
 const checkbox = document.getElementById(checkboxId);
-if (checkbox) {
-checkbox.checked = configuracionColumnas.columnasVisibles[columna] || false;
+if (!checkbox) return;
+
+const wrapper = checkbox.closest('.form-check');
+if (wrapper) {
+    const esColumnaDireccion = COLUMNAS_SOLO_DIRECCION.includes(columna);
+    wrapper.style.display = !esColumnaDireccion || verDireccion ? '' : 'none';
 }
+
+checkbox.checked = configuracionColumnas.columnasVisibles[columna] || false;
 });
 }
 
 function aplicarConfiguracionColumnas() {
-// Mapear IDs de checkboxes a configuración
-const mapeoColumnas = {
-'col-numero-concur': 'numero-concur',
-'col-jornada': 'jornada',
-'col-dia-grabacion': 'dia-grabacion',
-'col-lugar': 'lugar',
-'col-nombre': 'nombre',
-'col-foto': 'foto',
-'col-edad': 'edad',
-'col-ocupacion': 'ocupacion',
-    'col-rr-ss': 'rr-ss',
-    'col-cuest': 'cuest',
-    'col-combo': 'combo',
-    'col-xusoker': 'xusoker',
-    'col-x': 'x',
-    'col-resultado': 'resultado',
-'col-notas-grabacion': 'notas-grabacion',
-'col-guionista': 'guionista',
-'col-valoracion-guionista': 'valoracion-guionista',
-'col-estado': 'estado',
-'col-momentos-destacados': 'momentos-destacados',
-'col-duracion': 'duracion',
-'col-duracion-direccion': 'duracion-direccion',
-'col-duracion-final': 'duracion-final',
-'col-valoracion-final': 'valoracion-final',
-'col-numero-pgm': 'numero-pgm',
-'col-orden-escaleta': 'orden-escaleta',
-'col-bonico': 'bonico'
-};
-
-// Aplicar configuración desde los checkboxes
-Object.keys(mapeoColumnas).forEach(checkboxId => {
-const columna = mapeoColumnas[checkboxId];
+Object.keys(MAPEO_COLUMNAS_A_CHECKBOX).forEach(columna => {
+const checkboxId = MAPEO_COLUMNAS_A_CHECKBOX[columna];
 const checkbox = document.getElementById(checkboxId);
 if (checkbox) {
 configuracionColumnas.columnasVisibles[columna] = checkbox.checked;
 }
 });
 
-// Guardar configuración en localStorage
-localStorage.setItem('configuracionColumnasConcursantes', JSON.stringify(configuracionColumnas));
+aplicarRestriccionColumnasDireccion();
+guardarConfiguracionColumnas();
 
 // Actualizar tabla
 actualizarEncabezadosTabla();
@@ -3302,9 +3475,11 @@ try {
 }
 
 function seleccionarTodasColumnas() {
-const checkboxes = document.querySelectorAll('#modal-config-columnas input[type="checkbox"]');
-checkboxes.forEach(checkbox => {
-checkbox.checked = true;
+const verDireccion = puedeVerColumnasDireccion();
+Object.keys(MAPEO_COLUMNAS_A_CHECKBOX).forEach(columna => {
+    if (!verDireccion && COLUMNAS_SOLO_DIRECCION.includes(columna)) return;
+    const checkbox = document.getElementById(MAPEO_COLUMNAS_A_CHECKBOX[columna]);
+    if (checkbox) checkbox.checked = true;
 });
 }
 
@@ -3318,7 +3493,7 @@ checkbox.checked = false;
 // Cargar configuración guardada al inicializar
 function cargarConfiguracionGuardada() {
 try {
-const configGuardada = localStorage.getItem('configuracionColumnasConcursantes');
+const configGuardada = localStorage.getItem(claveConfiguracionColumnasConcursantes());
         console.log('⏱️ DEBUG - Configuración guardada en localStorage:', configGuardada);
         
 if (configGuardada) {
@@ -3338,6 +3513,10 @@ configuracionColumnas.columnasVisibles[columna] = config.columnasVisibles[column
                 
                 console.log('⏱️ DEBUG - Columnas visibles después de aplicar configuración:', JSON.stringify(configuracionColumnas.columnasVisibles));
 }
+if (typeof config.esDireccion === 'boolean') {
+    configuracionColumnas.esDireccion = config.esDireccion;
+}
+guardarConfiguracionColumnasSiCambio(aplicarRestriccionColumnasDireccion());
 }
 } catch (error) {
 console.error('Error al cargar configuración:', error);
@@ -3364,7 +3543,7 @@ reader.readAsDataURL(file);
 });
 }
     
-    // Añadir función para mostrar notas completas
+    // Añadir función para mostrar notas completas (legacy, ya no usada en tabla)
     window.mostrarNotasCompletas = function(event, texto) {
         // Evitar que se active el evento de doble clic
         event.preventDefault();
@@ -3387,28 +3566,4 @@ reader.readAsDataURL(file);
             modal.show();
         }
     };
-
-    // Click en icono de expandir (pseudoelemento): delegar al TD completo
-    const tablaNotas = document.getElementById('tabla-concursantes');
-    if (tablaNotas) {
-        tablaNotas.addEventListener('click', function(e) {
-            const td = e.target.closest('td');
-            if (!td) return;
-            const tr = td.parentElement;
-            const notasAttr = td.getAttribute('data-notas');
-            if (notasAttr && e.offsetX >= td.clientWidth - 24 && e.offsetY >= td.clientHeight - 24) {
-                try {
-                    const txt = decodeURIComponent(notasAttr);
-                    const contenidoNotas = document.getElementById('contenido-notas');
-                    if (contenidoNotas) {
-                        contenidoNotas.textContent = txt;
-                        const modal = new bootstrap.Modal(document.getElementById('modal-ver-notas'));
-                        modal.show();
-                    }
-                } catch (err) {
-                    console.error('Error decodificando notas:', err);
-                }
-            }
-        });
-    }
 }); 

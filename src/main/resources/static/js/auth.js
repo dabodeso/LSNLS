@@ -344,24 +344,32 @@ function cerrarSesion() {
 
 // Funciones de utilidad
 function mostrarError(mensaje) {
+    if (typeof Utils !== 'undefined' && Utils.mostrarToastError) {
+        Utils.mostrarToastError(mensaje);
+        return;
+    }
     Toastify({
         text: mensaje,
         duration: 3000,
         close: true,
-        gravity: "top",
-        position: "right",
-        backgroundColor: "#dc3545"
+        gravity: 'top',
+        position: 'right',
+        style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
     }).showToast();
 }
 
 function mostrarExito(mensaje) {
+    if (typeof Utils !== 'undefined' && Utils.mostrarToastExito) {
+        Utils.mostrarToastExito(mensaje);
+        return;
+    }
     Toastify({
         text: mensaje,
         duration: 3000,
         close: true,
-        gravity: "top",
-        position: "right",
-        backgroundColor: "#28a745"
+        gravity: 'top',
+        position: 'right',
+        style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' }
     }).showToast();
 }
 

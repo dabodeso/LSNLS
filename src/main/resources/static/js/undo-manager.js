@@ -26,8 +26,8 @@
         position: 'right',
         style: {
           background: esError
-            ? 'linear-gradient(to right, #ff5f6d, #ffc371)'
-            : 'linear-gradient(to right, #11998e, #38ef7d)'
+            ? 'linear-gradient(to right, #ff0000, #cc0000)'
+            : 'linear-gradient(to right, #00b09b, #96c93d)'
         }
       }).showToast();
     } else {

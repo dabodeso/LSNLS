@@ -788,7 +788,7 @@ const JornadasManager = {
             Utils.showAlert(`Cuestionario ${cuestionarioId} eliminado de la jornada`, 'success');
         } catch (e) {
             console.error('❌ [JORNADAS] Error eliminando cuestionario de jornada:', e);
-            Utils.showAlert('Error al eliminar el cuestionario de la jornada', 'error');
+            Utils.showAlert(Utils.mensajeErrorApi(e, 'eliminar cuestionarios de la jornada'), 'error');
         }
     },
 
@@ -851,7 +851,7 @@ const JornadasManager = {
             Utils.showAlert(`Combo ${comboId} eliminado de la jornada`, 'success');
         } catch (e) {
             console.error('❌ [JORNADAS] Error eliminando combo de jornada:', e);
-            Utils.showAlert('Error al eliminar el combo de la jornada', 'error');
+            Utils.showAlert(Utils.mensajeErrorApi(e, 'eliminar combos de la jornada'), 'error');
         }
     },
 
@@ -3065,34 +3065,8 @@ const JornadasManager = {
     },
 
     // Función para extraer el mensaje de error de la respuesta JSON
-    extraerMensajeError(errorMessage) {
-        try {
-            // Si el mensaje contiene un JSON, intentar parsearlo
-            if (errorMessage && errorMessage.includes('{')) {
-                // Buscar el JSON en el mensaje (después del código de estado)
-                const jsonMatch = errorMessage.match(/\{.*\}/);
-                if (jsonMatch) {
-                    const jsonStr = jsonMatch[0];
-                    const errorObj = JSON.parse(jsonStr);
-                    
-                    // Si tiene un campo 'mensaje', usarlo
-                    if (errorObj.mensaje) {
-                        return errorObj.mensaje;
-                    }
-                    
-                    // Si tiene un campo 'message', usarlo
-                    if (errorObj.message) {
-                        return errorObj.message;
-                    }
-                }
-            }
-            
-            // Si no se puede extraer el mensaje del JSON, devolver el mensaje original
-            return errorMessage || 'Error desconocido';
-        } catch (parseError) {
-            console.warn('No se pudo parsear el mensaje de error:', parseError);
-            return errorMessage || 'Error desconocido';
-        }
+    extraerMensajeError(errorMessage, accion = 'realizar esta acción') {
+        return Utils.mensajeErrorApi({ message: errorMessage }, accion);
     }
 
 };
