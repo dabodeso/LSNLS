@@ -532,13 +532,9 @@ line-height: 1.2;
 <div class="row mb-3">
 <div class="col-md-6">
 <label class="form-label">Jornada:</label>
-<div class="input-group">
-    <select class="form-select" id="jornada-select">
-        <option value="">Sin asignar</option>
-    </select>
-    <input type="text" class="form-control" id="jornada-buscar-id" placeholder="ID…">
-    <button type="button" class="btn btn-outline-primary" onclick="buscarJornadaPorId()" title="Buscar por ID">Buscar</button>
-    </div>
+<select class="form-select" id="jornada-select">
+    <option value="">Sin asignar</option>
+</select>
 </div>
 <div class="col-md-6">
 <label class="form-label">Día Grabación:</label>
@@ -616,7 +612,7 @@ line-height: 1.2;
 </div>
 <div class="col-md-4">
 <label class="form-label">Guionista:</label>
-<input type="text" class="form-control" id="guionista" placeholder="Nombre del guionista">
+<input type="text" class="form-control bg-light" id="guionista" placeholder="Nombre del guionista" readonly>
 </div>
 <div class="col-md-4">
 <label class="form-label">Duración (MM:SS):</label>
@@ -646,7 +642,7 @@ line-height: 1.2;
 </div>
 <div class="mb-3">
 <label class="form-label">Valoración Guionista:</label>
-<select class="form-control" id="valoracion-guionista">
+<select class="form-control" id="valoracion-guionista" required>
 <option value="">—</option>
 <option value="1">1</option>
 <option value="1+">1+</option>
@@ -664,7 +660,7 @@ line-height: 1.2;
 </div>
 <div class="mb-3">
 <label class="form-label">Valoración Final (dirección):</label>
-<select class="form-control" id="valoracion-final">
+<select class="form-control" id="valoracion-final" required>
 <option value="">—</option>
 <option value="1">1</option>
 <option value="1+">1+</option>
@@ -694,7 +690,7 @@ line-height: 1.2;
 </div>
 <div class="col-md-3">
 <label class="form-label">Estado:</label>
-<select class="form-control" id="estado">
+<select class="form-control" id="estado" required>
 <option value="">Seleccionar estado</option>
 <option value="borrador" selected>Borrador</option>
 <option value="grabado">Grabado</option>

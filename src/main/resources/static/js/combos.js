@@ -638,7 +638,7 @@ const CombosManager = {
                                        onclick="event.stopPropagation();">
                             </div>
                         </td>
-                        <td>${p.pregunta ?? ''}</td>
+                        <td class="fw-bold">${p.pregunta ?? ''}</td>
                         <td>${p.respuesta ?? ''}</td>
                         <td>${p.datosExtra ?? ''}</td>
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCombo(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
@@ -687,7 +687,7 @@ const CombosManager = {
                 <div class="mt-3">
                     <label class="form-label fw-bold">Añadir notas</label>
                     <textarea class="form-control" rows="2" placeholder="Añadir notas"
-                              onblur="actualizarNotasDireccionCombo(${c.id}, this.value)">${c.notasDireccion || ''}</textarea>
+                              onblur="actualizarNotasDireccionCombo(${c.id}, this)">${c.notasDireccion || ''}</textarea>
                 </div>` : ''}
             </td>`;
             tbody.appendChild(subtr);
@@ -1155,7 +1155,10 @@ async function mostrarFormularioCombo() {
     const asignadoDiv = document.getElementById('combo-jornada-asignada');
     if (asignadoDiv) asignadoDiv.classList.add('d-none');
     const comboNotas = document.getElementById('combo-notas');
-    if (comboNotas) comboNotas.value = '';
+    if (comboNotas) {
+        comboNotas.value = '';
+        comboNotas.dataset.originalNotas = '';
+    }
     
     // Cargar temáticas en el desplegable
     await cargarTematicasEnModal();
@@ -1197,6 +1200,47 @@ async function cargarTematicasEnModal() {
     }
 }
 
+function obtenerNombreAutorNotaCombo() {
+    const nombreAuth = authManager?.currentUser?.nombre;
+    if (nombreAuth && String(nombreAuth).trim()) return String(nombreAuth).trim();
+    try {
+        const guardado = JSON.parse(localStorage.getItem('usuario') || '{}');
+        if (guardado?.nombre && String(guardado.nombre).trim()) return String(guardado.nombre).trim();
+    } catch (_) {}
+    return 'usuario';
+}
+
+function textoConPrefijoAutorCombo(texto, autor) {
+    const limpio = (texto || '').trim();
+    if (!limpio) return '';
+    if (/^\[[^\]]+\]\s*/.test(limpio)) return limpio;
+    return `[${autor}] ${limpio}`;
+}
+
+function construirNotasDireccionComboParaGuardar(notasRaw, notasOriginales, esEdicion) {
+    const actuales = notasRaw || '';
+    const originales = notasOriginales || '';
+    if (!esEdicion) return textoConPrefijoAutorCombo(actuales, obtenerNombreAutorNotaCombo());
+
+    if (actuales === originales) return actuales;
+    if (!actuales.trim()) return '';
+
+    const autor = obtenerNombreAutorNotaCombo();
+    const originalesTrimEnd = originales.replace(/\s+$/, '');
+    const actualesTrimEnd = actuales.replace(/\s+$/, '');
+
+    if (!originalesTrimEnd) return textoConPrefijoAutorCombo(actualesTrimEnd, autor);
+
+    if (actualesTrimEnd.startsWith(originalesTrimEnd)) {
+        const añadido = actualesTrimEnd.slice(originalesTrimEnd.length).trim();
+        if (!añadido) return originalesTrimEnd;
+        const añadidoConAutor = textoConPrefijoAutorCombo(añadido, autor);
+        return `${originalesTrimEnd}\n${añadidoConAutor}`;
+    }
+
+    return textoConPrefijoAutorCombo(actualesTrimEnd, autor);
+}
+
 async function editarCombo(id) {
     try {
         await EditLockManager.tryAcquire('COMBO', id);
@@ -1220,7 +1264,11 @@ async function editarCombo(id) {
         await cargarTematicasEnModal();
         document.getElementById('combo-tematica').value = combo.tematica || '';
         const comboNotas = document.getElementById('combo-notas');
-        if (comboNotas) comboNotas.value = combo.notasDireccion || '';
+        if (comboNotas) {
+            const notasActuales = combo.notasDireccion || '';
+            comboNotas.value = notasActuales;
+            comboNotas.dataset.originalNotas = notasActuales;
+        }
         const comboEstado = document.getElementById('combo-estado');
         if (comboEstado) {
             comboEstado.value = (combo.estado || 'borrador');
@@ -1375,6 +1423,8 @@ function abrirSelectorPregunta(nivel, factor = null) {
     if (temaSelect) temaSelect.value = '';
     const nivelSelect = document.getElementById('buscador-nivel-combo');
     if (nivelSelect) nivelSelect.value = '';
+    const estadoSelect = document.getElementById('buscador-estado');
+    if (estadoSelect) estadoSelect.value = 'aprobada';
     inicializarBuscadorPreguntasModal();
     buscarPreguntasModal(0);
     const modal = new bootstrap.Modal(document.getElementById('modal-selector-pregunta'));
@@ -1469,7 +1519,7 @@ function renderizarPreguntasModal(preguntas, totalPages, currentPage) {
             <td>${pregunta.id}</td>
             <td colspan="4">
                 <div class="pregunta-item">
-                    <div class="pregunta-texto">${pregunta.pregunta}</div>
+                    <div class="pregunta-texto fw-bold">${pregunta.pregunta}</div>
                     <div class="respuesta-texto"><strong>Respuesta:</strong> ${pregunta.respuesta}</div>
                     <div class="pregunta-meta">
                         <small class="text-muted">
@@ -1563,7 +1613,7 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
         // Crear el botón de forma más segura usando addEventListener en lugar de onclick
         tr.innerHTML = `
             <td>${p.id}</td>
-            <td>${p.pregunta}</td>
+            <td class="fw-bold">${p.pregunta}</td>
             <td>${p.respuesta}</td>
             <td>${p.tematica}</td>
             <td><span class="${CombosManager.getNivelColor(p.nivel)}">${p.nivel}</span></td>
@@ -1731,6 +1781,42 @@ async function guardarCombo() {
         }).showToast();
         return;
     }
+
+    // Bloquear guardado si hay preguntas repetidas en distintos factores/PM
+    const slotsPorPregunta = new Map();
+    preguntasMultiplicadoras.forEach((pm) => {
+        const key = Number(pm.id);
+        if (!slotsPorPregunta.has(key)) slotsPorPregunta.set(key, []);
+        slotsPorPregunta.get(key).push({
+            slot: pm.slot,
+            factor: (pm.factor || '').trim() || 'sin factor'
+        });
+    });
+
+    const repetidas = Array.from(slotsPorPregunta.entries())
+        .filter(([, items]) => items.length > 1)
+        .map(([id, items]) => ({ id, items }));
+
+    if (repetidas.length > 0) {
+        const detalle = repetidas
+            .map((r) => {
+                const factores = r.items
+                    .map((i) => `${i.slot} (${i.factor})`)
+                    .join(' y ');
+                return `Pregunta ${r.id}: ${factores}`;
+            })
+            .join(' | ');
+
+        Toastify({
+            text: `Tienes preguntas iguales en el factor del combo: ${detalle}`,
+            duration: 5000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        return;
+    }
     
     // Validaciones adicionales: IDs únicos y factores no vacíos y únicos (solo si hay más de 1 pregunta)
     if (preguntasMultiplicadoras.length > 1) {
@@ -1886,7 +1972,11 @@ async function guardarCombo() {
     const estadoSeleccionado = (document.getElementById('combo-estado')?.value) || 'borrador';
     
     try {
-        const notasDireccion = (document.getElementById('combo-notas')?.value || '').trim();
+        const notasElement = document.getElementById('combo-notas');
+        const notasOriginales = notasElement ? (notasElement.dataset.originalNotas || '') : '';
+        const notasDireccion = notasElement
+            ? construirNotasDireccionComboParaGuardar(notasElement.value, notasOriginales, esEdicion)
+            : '';
         let resp, data;
         if (esEdicion) {
             // PUT para editar (implementar si es necesario)
@@ -1922,6 +2012,7 @@ async function guardarCombo() {
         
         const modal = bootstrap.Modal.getInstance(document.getElementById('modal-combo'));
         modal.hide();
+        if (notasElement) notasElement.dataset.originalNotas = notasDireccion || '';
         // Aplicar estado si procede
         try {
             const idParaEstado = (data && (data.id || data.ID)) || (comboId || null);
@@ -1931,9 +2022,12 @@ async function guardarCombo() {
                     headers: authManager.getAuthHeaders()
                 });
             }
-            // Asegurar actualización de factores tras guardar (edición o creación)
+            // En edición hay que sincronizar altas/bajas de preguntas antes de tocar factores.
             const idParaFactores = (data && (data.id || data.ID)) || comboId;
             if (idParaFactores) {
+                if (esEdicion) {
+                    await sincronizarPreguntasComboEnEdicion(idParaFactores, preguntasMultiplicadoras);
+                }
                 await Promise.all(preguntasMultiplicadoras.map(pm => (
                     fetch(`/api/combos/${idParaFactores}/preguntas/${pm.id}/factor`, {
                         method: 'PUT',
@@ -1957,6 +2051,60 @@ async function guardarCombo() {
             position: 'right',
             style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
         }).showToast();
+    }
+}
+
+function convertirFactorAEntero(factor, slot) {
+    const limpio = String(factor || '').trim().toUpperCase();
+    const numero = limpio.replace(/[^0-9]/g, '');
+    if (numero) return Number(numero);
+    if (limpio === 'X') return 0;
+    if (slot === 'PM1') return 2;
+    if (slot === 'PM2') return 3;
+    return 0;
+}
+
+async function sincronizarPreguntasComboEnEdicion(comboId, preguntasMultiplicadoras) {
+    const headersJson = { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' };
+    const headersAuth = authManager.getAuthHeaders();
+    const respActual = await fetch(`/api/combos/${comboId}`, { headers: headersAuth });
+    if (!respActual.ok) {
+        throw new Error('No se pudo leer el estado actual del combo antes de sincronizar preguntas');
+    }
+
+    const comboActual = await respActual.json();
+    const preguntasActuales = (comboActual.preguntas || [])
+        .filter(pc => pc && pc.slot && pc.pregunta && pc.pregunta.id != null)
+        .map(pc => ({
+            slot: pc.slot,
+            preguntaId: Number(pc.pregunta.id)
+        }));
+
+    const deseadasPorSlot = new Map(
+        (preguntasMultiplicadoras || []).map(pm => [pm.slot, { ...pm, id: Number(pm.id) }])
+    );
+
+    const idsActuales = new Set(preguntasActuales.map(p => p.preguntaId));
+
+    for (const actual of preguntasActuales) {
+        const deseada = deseadasPorSlot.get(actual.slot);
+        if (!deseada || Number(deseada.id) !== actual.preguntaId) {
+            await apiManager.delete(`/api/combos/${comboId}/preguntas/${actual.preguntaId}`, { headers: headersAuth });
+            idsActuales.delete(actual.preguntaId);
+        }
+    }
+
+    for (const pm of (preguntasMultiplicadoras || [])) {
+        const preguntaId = Number(pm.id);
+        if (idsActuales.has(preguntaId)) continue;
+        const posicion = pm.slot === 'PM1' ? 1 : pm.slot === 'PM2' ? 2 : 3;
+        const factorMultiplicacion = convertirFactorAEntero(pm.factor, pm.slot);
+        await apiManager.post(
+            `/api/combos/${comboId}/preguntas`,
+            { preguntaId, factorMultiplicacion, posicion },
+            { headers: headersJson }
+        );
+        idsActuales.add(preguntaId);
     }
 }
 
@@ -2113,19 +2261,36 @@ window.actualizarFactorPregunta = async function(comboId, preguntaId, nuevoFacto
 }
 
 // Actualizar notas de dirección del combo (en listado)
-window.actualizarNotasDireccionCombo = async function(comboId, notas) {
+window.actualizarNotasDireccionCombo = async function(comboId, notasOrElement) {
     try {
+        const notasElement = (notasOrElement && typeof notasOrElement === 'object' && 'value' in notasOrElement)
+            ? notasOrElement
+            : null;
+        const notas = notasElement ? notasElement.value : (notasOrElement || '');
+
+        // Leer estado real actual del combo para construir correctamente el diff de notas.
+        let notasPrevias = '';
+        try {
+            const respActual = await fetch(`/api/combos/${comboId}`, { headers: authManager.getAuthHeaders() });
+            if (respActual.ok) {
+                const comboActual = await respActual.json();
+                notasPrevias = comboActual?.notasDireccion || '';
+            }
+        } catch (_) {}
+
         const previo = (CombosManager.ultimoListado || []).find(c => c.id === comboId);
-        const notasPrevias = previo ? (previo.notasDireccion || '') : '';
+        if (!notasPrevias) notasPrevias = previo ? (previo.notasDireccion || '') : '';
+        const notasConAutor = construirNotasDireccionComboParaGuardar(notas, notasPrevias, true);
         const doAction = async () => {
-            await apiManager.put(`/api/combos/${comboId}`, { notasDireccion: notas });
-            CombosManager.aplicarParcheEnMemoria(comboId, { notasDireccion: notas });
+            await apiManager.put(`/api/combos/${comboId}`, { notasDireccion: notasConAutor });
+            CombosManager.aplicarParcheEnMemoria(comboId, { notasDireccion: notasConAutor });
         };
         const undoAction = async () => {
             await apiManager.put(`/api/combos/${comboId}`, { notasDireccion: notasPrevias });
             CombosManager.aplicarParcheEnMemoria(comboId, { notasDireccion: notasPrevias });
         };
         await doAction();
+        if (notasElement) notasElement.value = notasConAutor;
         if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Notas combo ${comboId}` });
         Toastify({
             text: 'Notas de dirección actualizadas',

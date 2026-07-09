@@ -28,6 +28,24 @@ function setSelectValoracion(selectId, value) {
     sel.value = v;
 }
 
+function obtenerNombreUsuarioActual() {
+    const nombreAuth = authManager?.currentUser?.nombre;
+    if (nombreAuth && String(nombreAuth).trim()) return String(nombreAuth).trim();
+    try {
+        const guardado = JSON.parse(localStorage.getItem('usuario') || '{}');
+        if (guardado?.nombre && String(guardado.nombre).trim()) return String(guardado.nombre).trim();
+    } catch (_) {}
+    return '';
+}
+
+function fijarGuionistaFormulario(nombre) {
+    const input = document.getElementById('guionista');
+    if (!input) return;
+    input.value = nombre || '';
+    input.readOnly = true;
+    input.classList.add('bg-light');
+}
+
 // Variables de paginación
 let paginaActual = 0;
 let tamanioPagina = 25;
@@ -500,11 +518,6 @@ function limitarEstadosSegunRol() {
         estadoSelect.innerHTML = '';
         
         // Agregar solo las opciones permitidas
-        const opcionVacia = document.createElement('option');
-        opcionVacia.value = '';
-        opcionVacia.textContent = 'Seleccionar estado';
-        estadoSelect.appendChild(opcionVacia);
-        
         const opcionBorrador = document.createElement('option');
         opcionBorrador.value = 'borrador';
         opcionBorrador.textContent = 'Borrador';
@@ -1057,26 +1070,51 @@ function limpiarFiltrosConcursantes() {
     cargarConcursantes(true);
 }
 
+function resetFormularioConcursanteNuevo() {
+    const form = document.getElementById('form-concursante');
+    if (form) form.reset();
+
+    concursanteActual = null;
+    jornadaFiltroSeleccion = null;
+    modalCuestPagina = 1;
+    modalComboPagina = 1;
+
+    const titulo = document.getElementById('modal-concursante-titulo');
+    if (titulo) titulo.textContent = 'Nuevo Concursante';
+
+    const concursanteId = document.getElementById('concursante-id');
+    if (concursanteId) concursanteId.value = '';
+
+    const estadoElement = document.getElementById('estado');
+    if (estadoElement) estadoElement.value = 'borrador';
+
+    const comboInput = document.getElementById('combo-id');
+    if (comboInput) {
+        comboInput.value = '';
+        comboInput.dataset.comboId = '';
+    }
+    const cuestionarioInput = document.getElementById('cuestionario-id');
+    if (cuestionarioInput) cuestionarioInput.value = '';
+
+    const btnReciclar = document.getElementById('btn-reciclar-combo');
+    if (btnReciclar) {
+        btnReciclar.style.display = 'none';
+        btnReciclar.dataset.comboId = '';
+    }
+
+    limpiarFoto();
+    const fotoPreview = document.getElementById('foto-preview-img');
+    if (fotoPreview) fotoPreview.src = '';
+
+    const jornadaBuscarId = document.getElementById('jornada-buscar-id');
+    if (jornadaBuscarId) jornadaBuscarId.value = '';
+
+    fijarGuionistaFormulario(obtenerNombreUsuarioActual());
+}
+
 function mostrarFormularioConcursante() {
 if (!puedeEditarConcursantes) return;
-concursanteActual = null;
-document.getElementById('modal-concursante-titulo').textContent = 'Nuevo Concursante';
-document.getElementById('form-concursante').reset();
-document.getElementById('concursante-id').value = '';
-document.getElementById('cuestionario-id').value = '';
-document.getElementById('combo-id').value = '';
-document.getElementById('combo-id').dataset.comboId = '';
-// Ocultar botón de reciclar
-const btnReciclar = document.getElementById('btn-reciclar-combo');
-if (btnReciclar) {
-    btnReciclar.style.display = 'none';
-    btnReciclar.dataset.comboId = '';
-}
-// Establecer estado predeterminado a 'borrador'
-const estadoElement = document.getElementById('estado');
-if (estadoElement) {
-    estadoElement.value = 'borrador';
-}
+resetFormularioConcursanteNuevo();
 // Limitar estados según rol
 limitarEstadosSegunRol();
 // Cargar jornadas en el desplegable
@@ -1162,7 +1200,7 @@ document.getElementById('xusoker').value = concursanteActual.xusoker || '';
 document.getElementById('factor-x').value = concursanteActual.factorX || '';
 document.getElementById('resultado').value = concursanteActual.resultado || '';
 document.getElementById('notas-grabacion').value = concursanteActual.notasGrabacion || '';
-document.getElementById('guionista').value = concursanteActual.guionista || '';
+fijarGuionistaFormulario(concursanteActual.guionista || obtenerNombreUsuarioActual());
 setSelectValoracion('valoracion-guionista', concursanteActual.valoracionGuionista);
 document.getElementById('momentos-destacados').value = concursanteActual.momentosDestacados || '';
         document.getElementById('duracion').value = concursanteActual.duracion || '';
@@ -1316,6 +1354,25 @@ const form = document.getElementById('form-concursante');
 const esEdicion = document.getElementById('concursante-id').value;
 const jornadaIdFormulario = leerJornadaIdDesdeFormulario(esEdicion);
 const fotoFormulario = leerFotoParaGuardar(esEdicion);
+const guionistaAsignado = esEdicion
+    ? ((document.getElementById('guionista')?.value || '').trim() || obtenerNombreUsuarioActual())
+    : obtenerNombreUsuarioActual();
+const valoracionGuionista = (document.getElementById('valoracion-guionista')?.value || '').trim();
+const valoracionFinal = (document.getElementById('valoracion-final')?.value || '').trim();
+const estadoFormulario = (document.getElementById('estado')?.value || '').trim();
+
+if (!valoracionGuionista) {
+    mostrarError('La valoración del guionista es obligatoria');
+    return;
+}
+if (!valoracionFinal) {
+    mostrarError('La valoración final es obligatoria');
+    return;
+}
+if (!estadoFormulario) {
+    mostrarError('El estado es obligatorio');
+    return;
+}
 
 // Recoge todos los campos del formulario
 const datosConcursante = {
@@ -1333,18 +1390,18 @@ redesSociales: document.getElementById('redes-sociales').value || null,
     factorX: document.getElementById('factor-x').value || null,
 resultado: document.getElementById('resultado').value || null,
 notasGrabacion: document.getElementById('notas-grabacion').value || null,
-guionista: document.getElementById('guionista').value || null,
-valoracionGuionista: document.getElementById('valoracion-guionista').value || null,
+guionista: guionistaAsignado || null,
+valoracionGuionista: valoracionGuionista || null,
 momentosDestacados: document.getElementById('momentos-destacados').value || null,
 duracion: document.getElementById('duracion').value || null,
 duracionDireccion: document.getElementById('duracion-direccion').value || null,
 duracionFinal: document.getElementById('duracion-final').value || null,
-valoracionFinal: document.getElementById('valoracion-final').value || null,
+valoracionFinal: valoracionFinal || null,
 numeroPrograma: document.getElementById('numero-programa').value || null,
 ordenEscaleta: document.getElementById('orden-escaleta').value || null,
 bonico: document.getElementById('bonico').value || null,
 // CORREGIR: enviar estado del formulario
-estado: document.getElementById('estado') ? document.getElementById('estado').value || null : null,
+estado: estadoFormulario || null,
 // AÑADIR: campos faltantes si existen en el formulario
 premio: document.getElementById('premio') ? document.getElementById('premio').value || null : null,
 foto: fotoFormulario,
@@ -3541,6 +3598,16 @@ document.getElementById('foto-preview').style.display = 'block';
 reader.readAsDataURL(file);
 }
 });
+}
+
+const modalConcursante = document.getElementById('modal-concursante');
+if (modalConcursante && !modalConcursante._resetOnHideBound) {
+    modalConcursante._resetOnHideBound = true;
+    modalConcursante.addEventListener('hidden.bs.modal', () => {
+        resetFormularioConcursanteNuevo();
+        limitarEstadosSegunRol();
+        actualizarRestriccionJornadaEnFormulario();
+    });
 }
     
     // Añadir función para mostrar notas completas (legacy, ya no usada en tabla)

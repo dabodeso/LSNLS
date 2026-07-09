@@ -779,6 +779,11 @@ const normales = ['1LS','2NLS','3LS','4NLS'];
 let selectorPreguntaContext = { nivel: null, factor: null, inputId: null, textoId: null };
 
 async function mostrarFormularioCuestionario() {
+    const form = document.getElementById('form-cuestionario');
+    if (form) form.reset();
+    const titulo = document.getElementById('modal-cuestionario-titulo');
+    if (titulo) titulo.textContent = 'Nuevo Cuestionario';
+
     // Limpiar selects normales y campos de texto
     normales.forEach(nivel => {
         const sel = document.getElementById(`pregunta-${nivel}`);
@@ -817,6 +822,7 @@ async function mostrarFormularioCuestionario() {
     // Reiniciar estado/jornada asignada
     const estadoSelect = document.getElementById('cuestionario-estado');
     if (estadoSelect) {
+        estadoSelect.value = 'borrador';
         estadoSelect.disabled = false;
     }
     const asignadoDiv = document.getElementById('cuestionario-jornada-asignada');
@@ -882,6 +888,10 @@ function abrirSelectorPregunta(nivel, factor = null) {
     if (textoInput) textoInput.value = '';
     const temaSelect = document.getElementById('buscador-tematica-select');
     if (temaSelect) temaSelect.value = '';
+    const nivelSelect = document.getElementById('buscador-nivel-cuestionario');
+    if (nivelSelect) nivelSelect.value = '';
+    const estadoSelect = document.getElementById('buscador-estado');
+    if (estadoSelect) estadoSelect.value = 'aprobada';
     inicializarBuscadorPreguntasModal();
     buscarPreguntasModal(0);
     const modal = new bootstrap.Modal(document.getElementById('modal-selector-pregunta'));
@@ -1156,6 +1166,47 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
 
 // --- FIN NUEVO SISTEMA DE SELECCIÓN ---
 
+function obtenerNombreAutorNota() {
+    const nombreAuth = authManager?.currentUser?.nombre;
+    if (nombreAuth && String(nombreAuth).trim()) return String(nombreAuth).trim();
+    try {
+        const guardado = JSON.parse(localStorage.getItem('usuario') || '{}');
+        if (guardado?.nombre && String(guardado.nombre).trim()) return String(guardado.nombre).trim();
+    } catch (_) {}
+    return 'usuario';
+}
+
+function textoConPrefijoAutor(texto, autor) {
+    const limpio = (texto || '').trim();
+    if (!limpio) return '';
+    if (/^\[[^\]]+\]\s*/.test(limpio)) return limpio;
+    return `[${autor}] ${limpio}`;
+}
+
+function construirNotasDireccionParaGuardar(notasRaw, notasOriginales, esEdicion) {
+    const actuales = notasRaw || '';
+    const originales = notasOriginales || '';
+    if (!esEdicion) return textoConPrefijoAutor(actuales, obtenerNombreAutorNota());
+
+    if (actuales === originales) return actuales;
+    if (!actuales.trim()) return '';
+
+    const autor = obtenerNombreAutorNota();
+    const originalesTrimEnd = originales.replace(/\s+$/, '');
+    const actualesTrimEnd = actuales.replace(/\s+$/, '');
+
+    if (!originalesTrimEnd) return textoConPrefijoAutor(actualesTrimEnd, autor);
+
+    if (actualesTrimEnd.startsWith(originalesTrimEnd)) {
+        const añadido = actualesTrimEnd.slice(originalesTrimEnd.length).trim();
+        if (!añadido) return originalesTrimEnd;
+        const añadidoConAutor = textoConPrefijoAutor(añadido, autor);
+        return `${originalesTrimEnd}\n${añadidoConAutor}`;
+    }
+
+    return textoConPrefijoAutor(actualesTrimEnd, autor);
+}
+
 async function guardarCuestionario() {
     CuestionariosManager.rememberScroll();
     let preguntasNormales = [];
@@ -1171,6 +1222,37 @@ async function guardarCuestionario() {
     });
     
     console.log('🔍 [FRONTEND] Preguntas seleccionadas:', preguntasNormales);
+
+    // Bloquear guardado si hay preguntas repetidas en distintos niveles
+    const slotsPorPregunta = new Map();
+    Object.entries(preguntasPorSlot).forEach(([slot, preguntaId]) => {
+        const key = Number(preguntaId);
+        if (!slotsPorPregunta.has(key)) slotsPorPregunta.set(key, []);
+        slotsPorPregunta.get(key).push(slot);
+    });
+
+    const repetidas = Array.from(slotsPorPregunta.entries())
+        .filter(([, slots]) => slots.length > 1)
+        .map(([id, slots]) => ({ id, slots }));
+
+    if (repetidas.length > 0) {
+        const detalle = repetidas
+            .map((r) => {
+                const niveles = r.slots.map((s) => Utils.formatearNivel(s)).join(' y ');
+                return `Pregunta ${r.id}: ${niveles}`;
+            })
+            .join(' | ');
+
+        Toastify({
+            text: `Tienes preguntas iguales en la posición/nivel del cuestionario: ${detalle}`,
+            duration: 5000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        return;
+    }
     
     // Cambiar validación: permitir al menos 1 pregunta en lugar de requerir todas las 4
     if (preguntasNormales.length === 0) {
@@ -1319,8 +1401,11 @@ async function guardarCuestionario() {
     const cuestionarioId = cuestionarioIdElement ? cuestionarioIdElement.value : '';
     const tematica = tematicaElement ? tematicaElement.value : '';
     const estadoSeleccionado = estadoElement ? estadoElement.value : '';
-    const notasDireccion = notasElement ? notasElement.value : '';
     const esEdicion = !!cuestionarioId;
+    const notasOriginales = notasElement ? (notasElement.dataset.originalNotas || '') : '';
+    const notasDireccion = notasElement
+        ? construirNotasDireccionParaGuardar(notasElement.value, notasOriginales, esEdicion)
+        : '';
     
     console.log('🔍 [FRONTEND] Datos del formulario:', { 
         cuestionarioId, 
@@ -1421,6 +1506,7 @@ async function guardarCuestionario() {
         }
         const idFinalGuardado = (data && (data.id || data.ID)) || (cuestionarioId || null);
         if (idFinalGuardado) await CuestionariosManager.insertarOActualizarFila(Number(idFinalGuardado));
+        if (notasElement) notasElement.dataset.originalNotas = notasDireccion || '';
         CuestionariosManager.restoreScrollOrFocus();
     } catch (error) {
         console.error('❌ [FRONTEND] Error al guardar:', error);
@@ -1536,6 +1622,12 @@ window.editarCuestionario = async function(id) {
         // Asignar temática actual si existe
         const tematicaSelect = document.getElementById('cuestionario-tematica');
         if (tematicaSelect) tematicaSelect.value = (cuestionario.tematica || '');
+        const notasElement = document.getElementById('cuestionario-notas');
+        if (notasElement) {
+            const notasActuales = cuestionario.notasDireccion || '';
+            notasElement.value = notasActuales;
+            notasElement.dataset.originalNotas = notasActuales;
+        }
 
         // Cambiar título del modal con verificación
         const tituloElement = document.getElementById('modal-cuestionario-titulo');
@@ -1796,9 +1888,10 @@ window.actualizarNotasDireccion = async function(cuestionarioId, notas) {
         // Obtener valor anterior desde el listado
         const previo = (CuestionariosManager.ultimoListado || []).find(c => c.id === cuestionarioId);
         const notasPrevias = previo ? (previo.notasDireccion || '') : '';
+        const notasConAutor = construirNotasDireccionParaGuardar(notas, notasPrevias, true);
         const doAction = async () => {
-            await apiManager.put(`/api/cuestionarios/${cuestionarioId}/notas-direccion`, { notasDireccion: notas });
-            CuestionariosManager.aplicarParcheEnMemoria(cuestionarioId, { notasDireccion: notas });
+            await apiManager.put(`/api/cuestionarios/${cuestionarioId}/notas-direccion`, { notasDireccion: notasConAutor });
+            CuestionariosManager.aplicarParcheEnMemoria(cuestionarioId, { notasDireccion: notasConAutor });
         };
         const undoAction = async () => {
             await apiManager.put(`/api/cuestionarios/${cuestionarioId}/notas-direccion`, { notasDireccion: notasPrevias });
