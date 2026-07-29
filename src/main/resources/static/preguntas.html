@@ -399,6 +399,10 @@
             </div>
         </div>
 
+        <div class="pagination-info text-center mb-2">
+            <span id="info-paginacion-top">Mostrando 0 de 0 preguntas</span>
+        </div>
+
         <!-- Tabla de Preguntas (tabla única con cabecera sticky) -->
         <div class="tabla-sticky-wrapper" id="tabla-preguntas-container" style="width: 100%; margin: 0 auto;">
             <div id="tabla-preguntas-body-wrapper">
@@ -1075,12 +1079,14 @@
     
     // Función para actualizar la información de paginación
     function actualizarInfoPaginacion() {
-        const infoElement = document.getElementById('info-paginacion');
-        if (infoElement) {
-            const inicio = (paginaActualPreguntas - 1) * preguntasPorPagina + 1;
-            const fin = Math.min(paginaActualPreguntas * preguntasPorPagina, totalPreguntas);
-            infoElement.textContent = `Mostrando ${inicio}-${fin} de ${totalPreguntas} preguntas`;
-        }
+        const infosElement = [
+            document.getElementById('info-paginacion'),
+            document.getElementById('info-paginacion-top')
+        ].filter(Boolean);
+        const inicio = (paginaActualPreguntas - 1) * preguntasPorPagina + 1;
+        const fin = Math.min(paginaActualPreguntas * preguntasPorPagina, totalPreguntas);
+        const textoInfo = `Mostrando ${inicio}-${fin} de ${totalPreguntas} preguntas`;
+        infosElement.forEach(el => { el.textContent = textoInfo; });
     }
     
     // Función para generar los botones de paginación

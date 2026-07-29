@@ -64,14 +64,18 @@ ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 DROP TEMPORARY TABLE IF EXISTS tmp_seq;
 CREATE TEMPORARY TABLE tmp_seq (n INT PRIMARY KEY);
 
--- Secuencia 1..100
+-- Secuencia 1..100 (compatible con MySQL sin CTE recursivo)
 INSERT INTO tmp_seq (n)
-WITH RECURSIVE seq AS (
-    SELECT 1 AS n
-    UNION ALL
-    SELECT n + 1 FROM seq WHERE n < 100
-)
-SELECT n FROM seq;
+SELECT (tens.d * 10 + ones.d + 1) AS n
+FROM (
+    SELECT 0 AS d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+    UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9
+) tens
+CROSS JOIN (
+    SELECT 0 AS d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+    UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9
+) ones
+WHERE (tens.d * 10 + ones.d + 1) <= 100;
 
 -- 100 preguntas base
 INSERT INTO preguntas (respuesta, tematica, pregunta, subtema, estado, nivel, fecha_creacion, version)
@@ -143,7 +147,7 @@ SELECT
 FROM tmp_seq
 WHERE n <= 10;
 
--- 10 jornadas (inicialmente preparacion)
+-- 2 jornadas (inicialmente preparacion), para repartir 5 bloques en cada una
 INSERT INTO jornadas (nombre, fecha_jornada, lugar, estado, creacion_usuario_id, fecha_creacion, notas, version)
 SELECT
     CONCAT('Jornada Prueba ', n),
@@ -155,7 +159,7 @@ SELECT
     CONCAT('Notas jornada ', n),
     0
 FROM tmp_seq
-WHERE n <= 10;
+WHERE n <= 2;
 
 DROP TEMPORARY TABLE IF EXISTS tmp_pregunta_idx;
 CREATE TEMPORARY TABLE tmp_pregunta_idx AS
@@ -213,35 +217,36 @@ JOIN tmp_pos5 s
 JOIN tmp_pregunta_idx p
   ON p.idx = ((q.idx - 1) * 10) + 5 + s.pos;
 
--- Asignar 1 cuestionario y 1 combo por jornada (índice a índice)
+-- Asignar 10 cuestionarios en 2 jornadas (5 por jornada)
 INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id)
 SELECT j.id, q.id
-FROM tmp_jornada_idx j
-JOIN tmp_cuestionario_idx q ON q.idx = j.idx;
+FROM tmp_cuestionario_idx q
+JOIN tmp_jornada_idx j ON j.idx = CEIL(q.idx / 5);
 
+-- Asignar 10 combos en 2 jornadas (5 por jornada)
 INSERT INTO jornadas_combos (jornada_id, combo_id)
 SELECT j.id, c.id
-FROM tmp_jornada_idx j
-JOIN tmp_combo_idx c ON c.idx = j.idx;
+FROM tmp_combo_idx c
+JOIN tmp_jornada_idx j ON j.idx = CEIL(c.idx / 5);
 
--- 10 concursantes (1 por jornada), enlazados con su cuestionario/combo
+-- 10 concursantes (5 por jornada), enlazados con su cuestionario/combo
 INSERT INTO concursantes (
     numero_concursante, jornada_id, dia_grabacion, lugar, nombre, edad, ocupacion, redes_sociales,
     cuestionario_id, combo_id, xusoker, resultado, notas_grabacion, guionista, valoracion_guionista,
     momentos_destacados, duracion, valoracion_final, version
 )
 SELECT
-    j.idx AS numero_concursante,
+    q.idx AS numero_concursante,
     j.id AS jornada_id,
     DATE_ADD(CURDATE(), INTERVAL j.idx - 1 DAY) AS dia_grabacion,
     CONCAT('SEDE ', j.idx) AS lugar,
-    CONCAT('CONCURSANTE ', LPAD(j.idx, 2, '0')) AS nombre,
-    20 + j.idx AS edad,
+    CONCAT('CONCURSANTE ', LPAD(q.idx, 2, '0')) AS nombre,
+    20 + q.idx AS edad,
     'PROFESION' AS ocupacion,
-    CONCAT('@concursante', j.idx) AS redes_sociales,
+    CONCAT('@concursante', q.idx) AS redes_sociales,
     q.id AS cuestionario_id,
     c.id AS combo_id,
-    CASE MOD(j.idx, 5)
+    CASE MOD(q.idx, 5)
         WHEN 1 THEN 'NO USÓ'
         WHEN 2 THEN 'CONTINÚE'
         WHEN 3 THEN 'AL VERRÉS'
@@ -249,16 +254,16 @@ SELECT
         ELSE 'LLAMADA'
     END AS xusoker,
     0 AS resultado,
-    CONCAT('Notas concursante ', j.idx) AS notas_grabacion,
+    CONCAT('Notas concursante ', q.idx) AS notas_grabacion,
     'admin' AS guionista,
     '2' AS valoracion_guionista,
-    CONCAT('Momento destacado ', j.idx) AS momentos_destacados,
-    CONCAT(10 + j.idx, ':00') AS duracion,
+    CONCAT('Momento destacado ', q.idx) AS momentos_destacados,
+    CONCAT(10 + q.idx, ':00') AS duracion,
     '2' AS valoracion_final,
     0 AS version
-FROM tmp_jornada_idx j
-JOIN tmp_cuestionario_idx q ON q.idx = j.idx
-JOIN tmp_combo_idx c ON c.idx = j.idx;
+FROM tmp_cuestionario_idx q
+JOIN tmp_combo_idx c ON c.idx = q.idx
+JOIN tmp_jornada_idx j ON j.idx = CEIL(q.idx / 5);
 
 -- ===========================================
 -- Comprobación final de consistencia de estados
@@ -309,3 +314,31 @@ DROP TEMPORARY TABLE IF EXISTS tmp_combo_idx;
 DROP TEMPORARY TABLE IF EXISTS tmp_cuestionario_idx;
 DROP TEMPORARY TABLE IF EXISTS tmp_pregunta_idx;
 DROP TEMPORARY TABLE IF EXISTS tmp_seq;
+
+-- 20 preguntas reales extra, en estado aprobada y disponibles (no asignadas)
+INSERT INTO preguntas (respuesta, tematica, pregunta, subtema, estado, estado_disponibilidad, nivel, fecha_creacion, version)
+VALUES
+('Madrid', 'GEOGRAFÍA', '¿Cuál es la capital de España?', 'GEOGRAFÍA FÍSICA', 'aprobada', 'disponible', '_1LS', NOW(6), 0),
+('Nilo', 'GEOGRAFÍA', '¿Cuál es uno de los ríos más largos del mundo?', 'GEOGRAFÍA FÍSICA', 'aprobada', 'disponible', '_2NLS', NOW(6), 0),
+('Océano Pacífico', 'GEOGRAFÍA', '¿Cuál es el océano más grande de la Tierra?', 'GEOGRAFÍA FÍSICA', 'aprobada', 'disponible', '_3LS', NOW(6), 0),
+('Sáhara', 'GEOGRAFÍA', '¿Cuál es el desierto cálido más grande del mundo?', 'GEOGRAFÍA FÍSICA', 'aprobada', 'disponible', '_4NLS', NOW(6), 0),
+
+('1914', 'HISTORIA', '¿En qué año comenzó la Primera Guerra Mundial?', 'HISTORIA MODERNA', 'aprobada', 'disponible', '_1LS', NOW(6), 0),
+('1789', 'HISTORIA', '¿En qué año comenzó la Revolución Francesa?', 'HISTORIA MODERNA', 'aprobada', 'disponible', '_2NLS', NOW(6), 0),
+('Muro de Berlín', 'HISTORIA', '¿Qué símbolo cayó en 1989 en Alemania?', 'HISTORIA MODERNA', 'aprobada', 'disponible', '_3LS', NOW(6), 0),
+('Napoleón Bonaparte', 'HISTORIA', '¿Qué líder francés fue emperador en 1804?', 'HISTORIA MODERNA', 'aprobada', 'disponible', '_4NLS', NOW(6), 0),
+
+('H2O', 'CIENCIA', '¿Cuál es la fórmula química del agua?', 'FÍSICA CLÁSICA', 'aprobada', 'disponible', '_1LS', NOW(6), 0),
+('Gravedad', 'CIENCIA', '¿Qué fuerza atrae los cuerpos hacia la Tierra?', 'FÍSICA CLÁSICA', 'aprobada', 'disponible', '_2NLS', NOW(6), 0),
+('Newton', 'CIENCIA', '¿Quién formuló las leyes del movimiento clásico?', 'FÍSICA CLÁSICA', 'aprobada', 'disponible', '_3LS', NOW(6), 0),
+('299.792.458 m/s', 'CIENCIA', '¿Cuál es la velocidad de la luz en el vacío?', 'FÍSICA CLÁSICA', 'aprobada', 'disponible', '_4NLS', NOW(6), 0),
+
+('Velázquez', 'ARTE', '¿Qué pintor español es autor de Las Meninas?', 'PINTURA', 'aprobada', 'disponible', '_1LS', NOW(6), 0),
+('Picasso', 'ARTE', '¿Qué artista pintó el Guernica?', 'PINTURA', 'aprobada', 'disponible', '_2NLS', NOW(6), 0),
+('Museo del Prado', 'ARTE', '¿En qué museo se encuentra Las Meninas?', 'PINTURA', 'aprobada', 'disponible', '_3LS', NOW(6), 0),
+('Impresionismo', 'ARTE', '¿A qué movimiento pertenecen Monet y Renoir?', 'PINTURA', 'aprobada', 'disponible', '_4NLS', NOW(6), 0),
+
+('11', 'DEPORTES', '¿Cuántos jugadores por equipo hay en un partido de fútbol?', 'FÚTBOL', 'aprobada', 'disponible', '_1LS', NOW(6), 0),
+('90', 'DEPORTES', '¿Cuántos minutos dura un partido reglamentario de fútbol?', 'FÚTBOL', 'aprobada', 'disponible', '_2NLS', NOW(6), 0),
+('Tarjeta roja', 'DEPORTES', '¿Qué tarjeta implica expulsión directa?', 'FÚTBOL', 'aprobada', 'disponible', '_3LS', NOW(6), 0),
+('Pelé', 'DEPORTES', '¿Qué futbolista brasileño fue apodado O Rei?', 'FÚTBOL', 'aprobada', 'disponible', '_4NLS', NOW(6), 0);

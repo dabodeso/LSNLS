@@ -23,6 +23,15 @@ public class AuthorizationService {
     }
 
     /**
+     * Verifica si el usuario autenticado actual es ADMIN.
+     */
+    public boolean isAdmin() {
+        return getCurrentUser()
+            .map(usuario -> usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN)
+            .orElse(false);
+    }
+
+    /**
      * Verifica si el usuario actual puede leer entidades
      */
     public boolean canRead() {

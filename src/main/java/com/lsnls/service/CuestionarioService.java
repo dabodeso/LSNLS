@@ -151,7 +151,7 @@ public class CuestionarioService {
         int total = preguntas == null ? 0 : preguntas.size();
         if (total != 4) {
             throw new IllegalArgumentException(
-                "Un cuestionario debe tener exactamente 4 preguntas (1LS, 2NLS, 3LS, 4NLS) para pasar a aprobado. Actual: " + total);
+                "Un cuestionario debe tener exactamente 4 preguntas (1LS, 2NLS, 3LS, 4NLS) para un estado distinto de borrador. Actual: " + total);
         }
         Set<String> nivelesRequeridos = Set.of("_1LS", "_2NLS", "_3LS", "_4NLS");
         Set<String> nivelesPresentes = new HashSet<>();
@@ -163,17 +163,49 @@ public class CuestionarioService {
         }
         if (!nivelesPresentes.containsAll(nivelesRequeridos)) {
             throw new IllegalArgumentException(
-                "El cuestionario debe tener una pregunta en cada nivel (1LS, 2NLS, 3LS, 4NLS) para pasar a aprobado");
+                "El cuestionario debe tener una pregunta en cada nivel (1LS, 2NLS, 3LS, 4NLS) para un estado distinto de borrador");
+        }
+    }
+
+    public void validarTransicionEstado(EstadoCuestionario estadoActual, EstadoCuestionario nuevoEstado, boolean usuarioEsAdmin) {
+        if (estadoActual == null || nuevoEstado == null || estadoActual == nuevoEstado) {
+            return;
+        }
+        // Admin puede mover a cualquier estado (incluido corregir -> aprobado)
+        if (usuarioEsAdmin) {
+            return;
+        }
+        Map<EstadoCuestionario, Set<EstadoCuestionario>> transiciones = Map.of(
+            EstadoCuestionario.borrador, Set.of(EstadoCuestionario.revisar),
+            EstadoCuestionario.revisar, Set.of(EstadoCuestionario.corregir, EstadoCuestionario.aprobado),
+            EstadoCuestionario.corregir, Set.of(EstadoCuestionario.revisar, EstadoCuestionario.aprobado),
+            EstadoCuestionario.aprobado, Set.of(),
+            EstadoCuestionario.adjudicado, Set.of(),
+            EstadoCuestionario.grabado, Set.of()
+        );
+        Set<EstadoCuestionario> permitidos = transiciones.getOrDefault(estadoActual, Set.of());
+        if (!permitidos.contains(nuevoEstado)) {
+            throw new IllegalArgumentException(
+                "Transición de estado no permitida: " + estadoActual + " -> " + nuevoEstado);
         }
     }
 
     public Cuestionario cambiarEstado(Long id, EstadoCuestionario nuevoEstado) {
+        return cambiarEstado(id, nuevoEstado, false);
+    }
+
+    public Cuestionario cambiarEstado(Long id, EstadoCuestionario nuevoEstado, boolean usuarioEsAdmin) {
         Optional<Cuestionario> conPreguntas = obtenerConPreguntas(id);
         if (conPreguntas.isEmpty()) {
             return null;
         }
         Cuestionario cuestionario = conPreguntas.get();
-        if (nuevoEstado == EstadoCuestionario.aprobado) {
+        validarTransicionEstado(cuestionario.getEstado(), nuevoEstado, usuarioEsAdmin);
+        // Admin: solo exigir completo al pasar a aprobado.
+        // Resto de roles: exigir completo para cualquier estado distinto de borrador.
+        boolean exigeCompleto = nuevoEstado == EstadoCuestionario.aprobado
+            || (nuevoEstado != EstadoCuestionario.borrador && !usuarioEsAdmin);
+        if (exigeCompleto) {
             validarCompletoParaAprobar(cuestionario);
         }
         cuestionario.setEstado(nuevoEstado);
@@ -264,7 +296,7 @@ public class CuestionarioService {
         if (pregunta.getEstadoDisponibilidad() != null &&
             pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
             pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
-            throw new RuntimeException("La pregunta no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
+            throw new RuntimeException(mensajePreguntaNoAsignable(pregunta));
         }
         
         // Verificar que la pregunta no esté ya en este cuestionario
@@ -747,7 +779,7 @@ public class CuestionarioService {
             if (pregunta.getEstadoDisponibilidad() != null &&
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
-                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no está disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
+                throw new IllegalArgumentException(mensajePreguntaNoAsignable(pregunta));
             }
             
             // Verificar que sea pregunta de nivel 1-4 para cuestionarios
@@ -1094,5 +1126,17 @@ public class CuestionarioService {
         }
         
         return true;
+    }
+
+    private String mensajePreguntaNoAsignable(Pregunta pregunta) {
+        Long id = pregunta.getId();
+        Pregunta.EstadoDisponibilidad disp = pregunta.getEstadoDisponibilidad();
+        if (disp == Pregunta.EstadoDisponibilidad.usada) {
+            return "La pregunta " + id + " ya está asignada a otro cuestionario o combo y no se puede volver a usar";
+        }
+        if (disp == Pregunta.EstadoDisponibilidad.descartada) {
+            return "La pregunta " + id + " está descartada y no se puede asignar";
+        }
+        return "La pregunta " + id + " no está disponible para asignar (disponibilidad: " + disp + ")";
     }
 } 

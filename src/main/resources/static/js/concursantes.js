@@ -682,20 +682,25 @@ function ocultarEstadoCarga() {
 }
 
 function actualizarPaginacion() {
-    const infoEl = document.getElementById('info-paginacion-concursantes');
+    const infosEl = [
+        document.getElementById('info-paginacion-concursantes'),
+        document.getElementById('info-paginacion-concursantes-top')
+    ].filter(Boolean);
     const paginacionEl = document.getElementById('paginacion-concursantes');
-    if (!paginacionEl || !infoEl) return;
+    if (!paginacionEl || infosEl.length === 0) return;
 
     if (modoConcursanteDestacado && concursantes.length === 1) {
-        infoEl.textContent = `Concursante #${concursantes[0].id} (vista directa)`;
+        const textoDestacado = `Concursante #${concursantes[0].id} (vista directa)`;
+        infosEl.forEach(el => { el.textContent = textoDestacado; });
         paginacionEl.innerHTML = '';
         return;
     }
 
-    // Info "Mostrando X-Y de Z"
+    // Info "Mostrando X-Y de Z" (arriba y abajo)
     const inicio = totalConcursantes === 0 ? 0 : (paginaActual * tamanioPagina + 1);
     const fin = Math.min((paginaActual + 1) * tamanioPagina, totalConcursantes);
-    infoEl.textContent = `Mostrando ${inicio}-${fin} de ${totalConcursantes} concursantes`;
+    const textoInfo = `Mostrando ${inicio}-${fin} de ${totalConcursantes} concursantes`;
+    infosEl.forEach(el => { el.textContent = textoInfo; });
 
     paginacionEl.innerHTML = '';
     if (totalPaginas <= 1) return;

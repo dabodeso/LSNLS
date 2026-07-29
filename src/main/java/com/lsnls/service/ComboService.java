@@ -376,7 +376,7 @@ public class ComboService {
         int total = preguntas == null ? 0 : preguntas.size();
         if (total != 3) {
             throw new IllegalArgumentException(
-                "Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para pasar a aprobado. Actual: " + total);
+                "Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para un estado distinto de borrador. Actual: " + total);
         }
         boolean factorX2 = false;
         boolean factorX3 = false;
@@ -409,17 +409,51 @@ public class ComboService {
         }
         if (!factorX2 || !factorX3 || !factorX) {
             throw new IllegalArgumentException(
-                "El combo debe tener las tres preguntas multiplicadoras (PM1/X2, PM2/X3, PM3/X) para pasar a aprobado");
+                "El combo debe tener las tres preguntas multiplicadoras (PM1/X2, PM2/X3, PM3/X) para un estado distinto de borrador");
+        }
+    }
+
+    public void validarTransicionEstado(EstadoCombo estadoActual, EstadoCombo nuevoEstado, boolean usuarioEsAdmin) {
+        if (estadoActual == null || nuevoEstado == null || estadoActual == nuevoEstado) {
+            return;
+        }
+        // Admin puede mover a cualquier estado (incluido corregir -> aprobado)
+        if (usuarioEsAdmin) {
+            return;
+        }
+        Map<EstadoCombo, Set<EstadoCombo>> transiciones = new HashMap<>();
+        transiciones.put(EstadoCombo.borrador, Set.of(EstadoCombo.revisar));
+        transiciones.put(EstadoCombo.revisar, Set.of(EstadoCombo.corregir, EstadoCombo.aprobado));
+        transiciones.put(EstadoCombo.corregir, Set.of(EstadoCombo.revisar, EstadoCombo.aprobado));
+        transiciones.put(EstadoCombo.aprobado, Set.of());
+        transiciones.put(EstadoCombo.adjudicado, Set.of());
+        transiciones.put(EstadoCombo.grabado, Set.of());
+        transiciones.put(EstadoCombo.reaprovechado, Set.of());
+        transiciones.put(EstadoCombo.liberado, Set.of());
+
+        Set<EstadoCombo> permitidos = transiciones.getOrDefault(estadoActual, Set.of());
+        if (!permitidos.contains(nuevoEstado)) {
+            throw new IllegalArgumentException(
+                "Transición de estado no permitida: " + estadoActual + " -> " + nuevoEstado);
         }
     }
 
     public Combo cambiarEstado(Long id, EstadoCombo nuevoEstado) {
+        return cambiarEstado(id, nuevoEstado, false);
+    }
+
+    public Combo cambiarEstado(Long id, EstadoCombo nuevoEstado, boolean usuarioEsAdmin) {
         Optional<Combo> conPreguntas = obtenerConPreguntas(id);
         if (conPreguntas.isEmpty()) {
             return null;
         }
         Combo combo = conPreguntas.get();
-        if (nuevoEstado == EstadoCombo.aprobado) {
+        validarTransicionEstado(combo.getEstado(), nuevoEstado, usuarioEsAdmin);
+        // Admin: solo exigir completo al pasar a aprobado.
+        // Resto de roles: exigir completo para cualquier estado distinto de borrador.
+        boolean exigeCompleto = nuevoEstado == EstadoCombo.aprobado
+            || (nuevoEstado != EstadoCombo.borrador && !usuarioEsAdmin);
+        if (exigeCompleto) {
             validarCompletoParaAprobar(combo);
         }
         combo.setEstado(nuevoEstado);
@@ -456,15 +490,15 @@ public class ComboService {
             
             // Verificar que sea pregunta de nivel 5
             if (!pregunta.getNivel().name().startsWith("_5")) {
-                throw new RuntimeException("Solo se pueden agregar preguntas de nivel 5 a los combos");
+                throw new RuntimeException("Solo se pueden agregar preguntas de nivel 5 (5LS/5NLS) a los combos");
             }
             
-            // Verificar que la pregunta est? disponible o liberada
+            // Verificar que la pregunta está disponible o liberada
             // Tratar null como disponible para compatibilidad con datos antiguos
             if (pregunta.getEstadoDisponibilidad() != null &&
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
-                throw new RuntimeException("La pregunta no est? disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
+                throw new RuntimeException(mensajePreguntaNoAsignable(pregunta));
             }
             
             // Verificar que la pregunta no est? ya en este combo
@@ -917,12 +951,12 @@ public class ComboService {
             
             if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible && 
                 pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {
-                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no est? disponible (estado: " + pregunta.getEstadoDisponibilidad() + ")");
+                throw new IllegalArgumentException(mensajePreguntaNoAsignable(pregunta));
             }
             
             // Verificar que sea pregunta de nivel 5 para combos
             if (!pregunta.getNivel().name().startsWith("_5")) {
-                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no es de nivel 5. Solo se pueden usar preguntas de nivel 5 en combos");
+                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no es de nivel 5. Solo se pueden usar preguntas de nivel 5 (5LS/5NLS) en combos");
             }
         }
         
@@ -1101,5 +1135,17 @@ public class ComboService {
         }
         
         return preguntas;
+    }
+
+    private String mensajePreguntaNoAsignable(Pregunta pregunta) {
+        Long id = pregunta.getId();
+        Pregunta.EstadoDisponibilidad disp = pregunta.getEstadoDisponibilidad();
+        if (disp == Pregunta.EstadoDisponibilidad.usada) {
+            return "La pregunta " + id + " ya está asignada a otro cuestionario o combo y no se puede volver a usar";
+        }
+        if (disp == Pregunta.EstadoDisponibilidad.descartada) {
+            return "La pregunta " + id + " está descartada y no se puede asignar";
+        }
+        return "La pregunta " + id + " no está disponible para asignar (disponibilidad: " + disp + ")";
     }
 } 

@@ -118,9 +118,12 @@ public class ComboController {
                 estadoCombo = "borrador";
             }
 
-            if ("aprobado".equalsIgnoreCase(estadoCombo) && dto.getPreguntasMultiplicadoras().size() != 3) {
+            boolean estadoDistintoBorrador = !"borrador".equalsIgnoreCase(estadoCombo);
+            boolean exigeCompleto = "aprobado".equalsIgnoreCase(estadoCombo)
+                || (estadoDistintoBorrador && !authService.isAdmin());
+            if (exigeCompleto && dto.getPreguntasMultiplicadoras().size() != 3) {
                 return ResponseEntity.badRequest().body(
-                    "Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para pasar a aprobado");
+                    "Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para un estado distinto de borrador");
             }
 
             // Validar tipo de combo
@@ -358,7 +361,7 @@ public class ComboController {
 
             Combo comboActualizado;
             try {
-                comboActualizado = comboService.cambiarEstado(id, nuevoEstado);
+                comboActualizado = comboService.cambiarEstado(id, nuevoEstado, authService.isAdmin());
             } catch (IllegalArgumentException e) {
                 return ResponseEntity.badRequest().body(e.getMessage());
             }
@@ -411,10 +414,24 @@ public class ComboController {
                 String estadoStr = datos.get("estado").toString();
                 try {
                     Combo.EstadoCombo nuevoEstado = Combo.EstadoCombo.valueOf(estadoStr);
-                    if (nuevoEstado == Combo.EstadoCombo.aprobado) {
-                        Combo comboConPreguntas = comboService.obtenerConPreguntas(id)
-                            .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado"));
-                        comboService.validarCompletoParaAprobar(comboConPreguntas);
+                    comboService.validarTransicionEstado(combo.getEstado(), nuevoEstado, authService.isAdmin());
+                    boolean exigeCompleto = nuevoEstado == Combo.EstadoCombo.aprobado
+                        || (nuevoEstado != Combo.EstadoCombo.borrador && !authService.isAdmin());
+                    if (exigeCompleto) {
+                        // Preferir el payload de preguntas del propio request (si viene),
+                        // porque en edición se sincronizan después del PUT.
+                        Object pmsObj = datos.get("preguntasMultiplicadoras");
+                        if (pmsObj instanceof java.util.List) {
+                            int totalPms = ((java.util.List<?>) pmsObj).size();
+                            if (totalPms != 3) {
+                                throw new IllegalArgumentException(
+                                    "Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para un estado distinto de borrador. Actual: " + totalPms);
+                            }
+                        } else {
+                            Combo comboConPreguntas = comboService.obtenerConPreguntas(id)
+                                .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado"));
+                            comboService.validarCompletoParaAprobar(comboConPreguntas);
+                        }
                     }
                     combo.setEstado(nuevoEstado);
                 } catch (IllegalArgumentException e) {

@@ -295,20 +295,23 @@ const CuestionariosManager = {
     },
     
     actualizarPaginacion() {
-        const infoElement = document.getElementById('info-paginacion-cuestionarios');
+        const infosElement = [
+            document.getElementById('info-paginacion-cuestionarios'),
+            document.getElementById('info-paginacion-cuestionarios-top')
+        ].filter(Boolean);
         const paginacionElement = document.getElementById('paginacion-cuestionarios');
 
         if (this.modoDestacado && this.cuestionarios.length === 1) {
-            if (infoElement) infoElement.textContent = `Cuestionario #${this.cuestionarios[0].id} (vista directa)`;
+            const textoDestacado = `Cuestionario #${this.cuestionarios[0].id} (vista directa)`;
+            infosElement.forEach(el => { el.textContent = textoDestacado; });
             if (paginacionElement) paginacionElement.innerHTML = '';
             return;
         }
 
-        if (infoElement) {
-            const inicio = (this.paginaActual * this.tamanioPagina) + 1;
-            const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalCuestionarios);
-            infoElement.textContent = `Mostrando ${inicio}-${fin} de ${this.totalCuestionarios} cuestionarios`;
-        }
+        const inicio = (this.paginaActual * this.tamanioPagina) + 1;
+        const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalCuestionarios);
+        const textoInfo = `Mostrando ${inicio}-${fin} de ${this.totalCuestionarios} cuestionarios`;
+        infosElement.forEach(el => { el.textContent = textoInfo; });
 
         if (!paginacionElement) return;
 
@@ -822,7 +825,7 @@ async function mostrarFormularioCuestionario() {
     // Reiniciar estado/jornada asignada
     const estadoSelect = document.getElementById('cuestionario-estado');
     if (estadoSelect) {
-        estadoSelect.value = 'borrador';
+        estadoSelect.innerHTML = getOpcionesEstadoCuestionario('borrador');
         estadoSelect.disabled = false;
     }
     const asignadoDiv = document.getElementById('cuestionario-jornada-asignada');
@@ -889,7 +892,15 @@ function abrirSelectorPregunta(nivel, factor = null) {
     const temaSelect = document.getElementById('buscador-tematica-select');
     if (temaSelect) temaSelect.value = '';
     const nivelSelect = document.getElementById('buscador-nivel-cuestionario');
-    if (nivelSelect) nivelSelect.value = '';
+    // Por defecto filtrar por el nivel del slot al que se va a asignar (1LS, 2NLS, ...)
+    if (nivelSelect) {
+        const valorNivel = nivel
+            ? (String(nivel).startsWith('_') ? String(nivel) : ('_' + String(nivel)))
+            : '';
+        const existeOpcion = valorNivel &&
+            Array.from(nivelSelect.options).some(o => o.value === valorNivel);
+        nivelSelect.value = existeOpcion ? valorNivel : '';
+    }
     const estadoSelect = document.getElementById('buscador-estado');
     if (estadoSelect) estadoSelect.value = 'aprobada';
     inicializarBuscadorPreguntasModal();
@@ -1266,6 +1277,23 @@ async function guardarCuestionario() {
         }).showToast();
         return;
     }
+
+    // No-admin: no se puede salir de borrador sin las 4 preguntas
+    const estadoSeleccionadoPrevio = document.getElementById('cuestionario-estado')?.value || '';
+    const esAdminCuestionario = !!(authManager && authManager.hasRole && authManager.hasRole('ROLE_ADMIN'));
+    const exigeCompletoCuestionario = estadoSeleccionadoPrevio === 'aprobado'
+        || (!!estadoSeleccionadoPrevio && estadoSeleccionadoPrevio !== 'borrador' && !esAdminCuestionario);
+    if (exigeCompletoCuestionario && preguntasNormales.length !== 4) {
+        Toastify({
+            text: 'No se puede guardar en un estado distinto de borrador sin las 4 preguntas (1LS, 2NLS, 3LS, 4NLS)',
+            duration: 4000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        return;
+    }
     
     // Antes de guardar: comprobar estado y nivel real de las preguntas seleccionadas
     try {
@@ -1495,14 +1523,32 @@ async function guardarCuestionario() {
             if (estadoSeleccionado && estadoSeleccionado !== 'borrador') {
                 const idFinal = (data && (data.id || data.ID)) || (cuestionarioId || null);
                 if (idFinal) {
-                    await fetch(`/api/cuestionarios/${idFinal}/estado?nuevoEstado=${encodeURIComponent(estadoSeleccionado)}`, {
+                    const respEstado = await fetch(`/api/cuestionarios/${idFinal}/estado?nuevoEstado=${encodeURIComponent(estadoSeleccionado)}`, {
                         method: 'PUT',
                         headers: authManager.getAuthHeaders()
                     });
+                    if (!respEstado.ok) {
+                        let msgEstado = 'No se pudo aplicar el estado seleccionado';
+                        try {
+                            const dataEstado = await respEstado.json();
+                            msgEstado = (dataEstado && dataEstado.message) ? dataEstado.message : (typeof dataEstado === 'string' ? dataEstado : msgEstado);
+                        } catch (_) {
+                            try { msgEstado = await respEstado.text() || msgEstado; } catch (_) {}
+                        }
+                        throw new Error(msgEstado);
+                    }
                 }
             }
         } catch (e) {
             console.warn('No se pudo aplicar el estado seleccionado tras guardar:', e);
+            Toastify({
+                text: 'Cuestionario guardado, pero no se pudo aplicar el estado: ' + (e.message || e),
+                duration: 5000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ffc107, #ff9800)' }
+            }).showToast();
         }
         const idFinalGuardado = (data && (data.id || data.ID)) || (cuestionarioId || null);
         if (idFinalGuardado) await CuestionariosManager.insertarOActualizarFila(Number(idFinalGuardado));
@@ -1595,10 +1641,11 @@ window.editarCuestionario = async function(id) {
         const cuestionarioIdElement = document.getElementById('cuestionario-id');
         if (cuestionarioIdElement) cuestionarioIdElement.value = cuestionario.id;
         
-        // Asignar estado actual al selector si existe
+        // Asignar estado actual al selector si existe (sin opción de volver a borrador)
         const estadoElement = document.getElementById('cuestionario-estado');
         if (estadoElement) {
-            estadoElement.value = (cuestionario.estado || 'borrador');
+            const estadoActual = cuestionario.estado || 'borrador';
+            estadoElement.innerHTML = getOpcionesEstadoCuestionario(estadoActual);
             if (cuestionario.jornadaAsignada) {
                 estadoElement.disabled = true;
             } else {
@@ -1930,10 +1977,11 @@ window.cambiarPassword = function() {
 
 function getOpcionesEstadoCuestionario(estadoActual) {
     // Definimos las transiciones permitidas para cada estado
+    // Nota: no se ofrece volver a 'borrador' desde ningún estado
     const transiciones = {
         'borrador': ['revisar'],
         'revisar': ['corregir', 'aprobado'],
-        'corregir': ['revisar'],
+        'corregir': ['revisar', 'aprobado'],
         'aprobado': [], // Solo cambia automáticamente a adjudicado al asignarse a una jornada
         'adjudicado': [], // Solo cambia automáticamente a grabado al asignarse a un concursante
         'grabado': []
@@ -1950,9 +1998,9 @@ function getOpcionesEstadoCuestionario(estadoActual) {
         opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
     });
     
-    // Si el usuario es admin, permitimos todas las opciones
+    // Si el usuario es admin, permitimos el resto de estados excepto volver a borrador
     if (authManager.hasRole('ROLE_ADMIN')) {
-        const todosEstados = ['borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado'];
+        const todosEstados = ['revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado'];
         todosEstados.forEach(estado => {
             if (estado !== estadoActual && !opcionesDisponibles.includes(estado)) {
                 opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
@@ -1981,9 +2029,12 @@ window.cambiarEstadoCuestionario = async function(id, nuevoEstado) {
         const previo = (CuestionariosManager.ultimoListado || []).find(c => c.id === id);
         const estadoPrevio = previo ? previo.estado : null;
 
-        if (nuevoEstado === 'aprobado' && !cuestionarioCompletoParaAprobar(previo)) {
+        const esAdminCuestionario = !!(authManager && authManager.hasRole && authManager.hasRole('ROLE_ADMIN'));
+        const exigeCompletoCuestionario = nuevoEstado === 'aprobado'
+            || (nuevoEstado && nuevoEstado !== 'borrador' && !esAdminCuestionario);
+        if (exigeCompletoCuestionario && !cuestionarioCompletoParaAprobar(previo)) {
             Toastify({
-                text: 'No se puede aprobar: el cuestionario debe tener las 4 preguntas (1LS, 2NLS, 3LS, 4NLS)',
+                text: 'No se puede cambiar a un estado distinto de borrador sin las 4 preguntas (1LS, 2NLS, 3LS, 4NLS)',
                 duration: 4000,
                 close: true,
                 gravity: 'top',

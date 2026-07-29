@@ -320,20 +320,23 @@ const CombosManager = {
     },
     
     actualizarPaginacion() {
-        const infoElement = document.getElementById('info-paginacion-combos');
+        const infosElement = [
+            document.getElementById('info-paginacion-combos'),
+            document.getElementById('info-paginacion-combos-top')
+        ].filter(Boolean);
         const paginacionElement = document.getElementById('paginacion-combos');
 
         if (this.modoDestacado && this.combos.length === 1) {
-            if (infoElement) infoElement.textContent = `Combo #${this.combos[0].id} (vista directa)`;
+            const textoDestacado = `Combo #${this.combos[0].id} (vista directa)`;
+            infosElement.forEach(el => { el.textContent = textoDestacado; });
             if (paginacionElement) paginacionElement.innerHTML = '';
             return;
         }
 
-        if (infoElement) {
-            const inicio = (this.paginaActual * this.tamanioPagina) + 1;
-            const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalCombos);
-            infoElement.textContent = `Mostrando ${inicio}-${fin} de ${this.totalCombos} combos`;
-        }
+        const inicio = (this.paginaActual * this.tamanioPagina) + 1;
+        const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalCombos);
+        const textoInfo = `Mostrando ${inicio}-${fin} de ${this.totalCombos} combos`;
+        infosElement.forEach(el => { el.textContent = textoInfo; });
 
         if (!paginacionElement) return;
 
@@ -1149,7 +1152,7 @@ async function mostrarFormularioCombo() {
     document.getElementById('combo-tematica').value = '';
     const comboEstado = document.getElementById('combo-estado');
     if (comboEstado) {
-        comboEstado.value = 'borrador';
+        comboEstado.innerHTML = getOpcionesEstadoCombo('borrador');
         comboEstado.disabled = false;
     }
     const asignadoDiv = document.getElementById('combo-jornada-asignada');
@@ -1271,7 +1274,8 @@ async function editarCombo(id) {
         }
         const comboEstado = document.getElementById('combo-estado');
         if (comboEstado) {
-            comboEstado.value = (combo.estado || 'borrador');
+            const estadoActual = combo.estado || 'borrador';
+            comboEstado.innerHTML = getOpcionesEstadoCombo(estadoActual);
             comboEstado.disabled = !!combo.jornadaAsignada;
         }
         const asignadoDiv = document.getElementById('combo-jornada-asignada');
@@ -1422,7 +1426,13 @@ function abrirSelectorPregunta(nivel, factor = null) {
     const temaSelect = document.getElementById('buscador-tematica-select');
     if (temaSelect) temaSelect.value = '';
     const nivelSelect = document.getElementById('buscador-nivel-combo');
-    if (nivelSelect) nivelSelect.value = '';
+    // Combos: solo nivel 5 (5LS / 5NLS). Sin "todos" ni niveles 1-4.
+    if (nivelSelect) {
+        const actual = nivelSelect.value;
+        if (actual !== '_5LS' && actual !== '_5NLS') {
+            nivelSelect.value = '_5LS';
+        }
+    }
     const estadoSelect = document.getElementById('buscador-estado');
     if (estadoSelect) estadoSelect.value = 'aprobada';
     inicializarBuscadorPreguntasModal();
@@ -1436,22 +1446,29 @@ async function buscarPreguntasModal(page = 0) {
     const id = document.getElementById('buscador-id').value.trim();
     const texto = (document.getElementById('buscador-texto')?.value || '').trim();
     const tematica = document.getElementById('buscador-tematica-select')?.value || '';
-    const filtroNivel = document.getElementById('buscador-nivel-combo')?.value || '';
+    let filtroNivel = document.getElementById('buscador-nivel-combo')?.value || '';
     const estadoSel = (document.getElementById('buscador-estado')?.value || 'todos').trim().toLowerCase();
 
+    // Combos solo admiten nivel 5: forzar siempre 5LS o 5NLS
+    if (filtroNivel !== '_5LS' && filtroNivel !== '_5NLS') {
+        filtroNivel = '_5LS';
+        const nivelSelect = document.getElementById('buscador-nivel-combo');
+        if (nivelSelect) nivelSelect.value = '_5LS';
+    }
+
     try {
-        // Para combos, buscar preguntas de nivel 5 con endpoint /filtrar y 'texto'
+        // Para combos, buscar solo preguntas de nivel 5
         let preguntas = [];
         let totalPages = 1;
         const params = new URLSearchParams();
         params.set('page', page);
         params.set('size', 20);
+        params.set('nivel', filtroNivel);
         let url = '';
         if (id) {
             // id exacto -> usar /buscar
             params.set('id', id.trim());
             if (tematica) params.set('tematica', tematica);
-            if (filtroNivel) params.set('nivel', filtroNivel);
             url = `/api/preguntas/buscar?${params.toString()}`;
         } else {
             if (texto) params.set('texto', texto);
@@ -1463,25 +1480,24 @@ async function buscarPreguntasModal(page = 0) {
                 // Enviar CSV para que el backend filtre ambos sin sobrecargar al cliente
                 params.set('estado', 'aprobada,verificada');
             }
-            // nivel: por defecto trae _5LS y _5NLS; si el usuario elige uno, filtrar
-            if (filtroNivel) {
-                params.set('nivel', filtroNivel);
-            }
             url = `/api/preguntas/filtrar?${params.toString()}`;
         }
         console.log('[FRONT][COMBO] URL de búsqueda:', url);
         const resp = await fetch(url, { headers: authManager.getAuthHeaders() });
         if (!resp.ok) throw new Error('Error al buscar preguntas');
         const data = await resp.json();
-        // Sin restricción por nivel; mostrar todos por defecto
         let lista = data.content || [];
+        // Seguridad: nunca mostrar preguntas que no sean nivel 5
+        lista = lista.filter(p => {
+            const n = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.name || '');
+            return String(n).startsWith('_5');
+        });
         // Filtro por estado en cliente si el usuario pide 'todos'
         if (estadoSel === 'todos') {
             lista = lista.filter(p => p.estado === 'aprobada' || p.estado === 'verificada');
         } else if (estadoSel === 'aprobada' || estadoSel === 'verificada') {
             lista = lista.filter(p => p.estado === estadoSel);
         }
-        // Si el usuario selecciona nivel en el modal, el backend ya lo filtró. Mostrar la lista tal cual.
         preguntas = lista;
         totalPages = data.totalPages || 1;
         
@@ -1758,9 +1774,12 @@ async function guardarCombo() {
     const estadoCombo = document.getElementById('combo-estado')?.value || '';
     console.log('[DEBUG] Estado del combo:', estadoCombo);
 
-    if (estadoCombo === 'aprobado' && preguntasMultiplicadoras.length !== 3) {
+    const esAdminCombo = !!(authManager && authManager.hasRole && authManager.hasRole('ROLE_ADMIN'));
+    const exigeCompletoCombo = estadoCombo === 'aprobado'
+        || (!!estadoCombo && estadoCombo !== 'borrador' && !esAdminCombo);
+    if (exigeCompletoCombo && preguntasMultiplicadoras.length !== 3) {
         Toastify({
-            text: 'No se puede aprobar: el combo debe tener las 3 preguntas multiplicadoras (PM1, PM2, PM3)',
+            text: 'No se puede guardar en un estado distinto de borrador sin las 3 preguntas multiplicadoras (PM1, PM2, PM3)',
             duration: 4000,
             close: true,
             gravity: 'top',
@@ -1890,7 +1909,7 @@ async function guardarCombo() {
             }
         }
 
-        // Aviso 2: comprobar que las preguntas son de nivel 5 (para combos)
+        // Combos: solo preguntas de nivel 5 (bloquear niveles 1-4)
         const detallesPorId = {};
         (detallesPreguntas || []).forEach(p => {
             if (p && p.id != null) detallesPorId[p.id] = p;
@@ -1908,9 +1927,7 @@ async function guardarCombo() {
             if (!actualNivel || !String(actualNivel).startsWith('_5')) {
                 desajustesNivel.push({
                     id: pm.id,
-                    slot: pm.slot,
                     actualNivel,
-                    targetNivel: '_5' + (String(actualNivel || '').endsWith('NLS') ? 'NLS' : 'LS'),
                     pregunta: detalle.pregunta || ''
                 });
             }
@@ -1918,47 +1935,17 @@ async function guardarCombo() {
 
         if (desajustesNivel.length > 0) {
             const listaNiveles = desajustesNivel
-                .map(m => `- Pregunta ${m.id}: "${m.pregunta}" (nivel actual: ${Utils.formatearNivel(m.actualNivel || 'null')}, necesario: nivel 5 para combos)`)
-                .join('\n');
-
-            const mensajeNiveles =
-                'Atención: algunas preguntas que estás usando en el COMBO no son de nivel 5 (recomendado para combos):\n\n' +
-                listaNiveles +
-                '\n\n' +
-                'Si continúas, se cambiará automáticamente el NIVEL de esas preguntas a un nivel 5 (5LS/5NLS) compatible.\n\n' +
-                '¿Quieres continuar y cambiar el nivel de esas preguntas?';
-
-            const continuarNiveles = window.confirm(mensajeNiveles);
-            if (!continuarNiveles) {
-                return;
-            }
-
-            // Aplicar cambio de nivel en backend para cada pregunta con desajuste
-            for (const m of desajustesNivel) {
-                try {
-                    await fetch(`/api/preguntas/${m.id}`, {
-                        method: 'PUT',
-                        headers: {
-                            ...authManager.getAuthHeaders(),
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            id: m.id,
-                            nivel: m.targetNivel
-                        })
-                    });
-                } catch (err) {
-                    console.error('Error al cambiar nivel de la pregunta para combo', m.id, err);
-                    Toastify({
-                        text: `No se pudo cambiar el nivel de la pregunta ${m.id}: ${err.message || err}`,
-                        duration: 4000,
-                        close: true,
-                        gravity: 'top',
-                        position: 'right',
-                        style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
-                    }).showToast();
-                }
-            }
+                .map(m => `Pregunta ${m.id} (${Utils.formatearNivel(m.actualNivel || 'null')})`)
+                .join(', ');
+            Toastify({
+                text: `Solo se pueden usar preguntas de nivel 5 (5LS/5NLS) en combos. Quita: ${listaNiveles}`,
+                duration: 6000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+            return;
         }
     } catch (e) {
         console.warn('No se pudo comprobar estado/nivel de las preguntas antes de guardar el combo:', e);
@@ -2015,15 +2002,8 @@ async function guardarCombo() {
         if (notasElement) notasElement.dataset.originalNotas = notasDireccion || '';
         // Aplicar estado si procede
         try {
-            const idParaEstado = (data && (data.id || data.ID)) || (comboId || null);
-            if (idParaEstado && estadoSeleccionado && estadoSeleccionado !== 'borrador') {
-                await fetch(`/api/combos/${idParaEstado}/estado?nuevoEstado=${encodeURIComponent(estadoSeleccionado)}`, {
-                    method: 'PUT',
-                    headers: authManager.getAuthHeaders()
-                });
-            }
-            // En edición hay que sincronizar altas/bajas de preguntas antes de tocar factores.
             const idParaFactores = (data && (data.id || data.ID)) || comboId;
+            // En edición hay que sincronizar altas/bajas de preguntas ANTES de cambiar estado/factores.
             if (idParaFactores) {
                 if (esEdicion) {
                     await sincronizarPreguntasComboEnEdicion(idParaFactores, preguntasMultiplicadoras);
@@ -2036,8 +2016,32 @@ async function guardarCombo() {
                     }).catch(() => {})
                 )));
             }
+            if (idParaFactores && estadoSeleccionado && estadoSeleccionado !== 'borrador') {
+                const respEstado = await fetch(`/api/combos/${idParaFactores}/estado?nuevoEstado=${encodeURIComponent(estadoSeleccionado)}`, {
+                    method: 'PUT',
+                    headers: authManager.getAuthHeaders()
+                });
+                if (!respEstado.ok) {
+                    let msgEstado = 'No se pudo aplicar el estado seleccionado';
+                    try {
+                        const dataEstado = await respEstado.json();
+                        msgEstado = (dataEstado && dataEstado.message) ? dataEstado.message : (typeof dataEstado === 'string' ? dataEstado : msgEstado);
+                    } catch (_) {
+                        try { msgEstado = await respEstado.text() || msgEstado; } catch (_) {}
+                    }
+                    throw new Error(msgEstado);
+                }
+            }
         } catch (e) {
             console.warn('No se pudo aplicar el estado seleccionado tras guardar combo:', e);
+            Toastify({
+                text: 'Combo guardado, pero no se pudo aplicar el estado: ' + (e.message || e),
+                duration: 5000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ffc107, #ff9800)' }
+            }).showToast();
         }
         const idFinal = (data && (data.id || data.ID)) || (comboId || null);
         if (idFinal) await CombosManager.insertarOActualizarFila(Number(idFinal));
@@ -2322,10 +2326,11 @@ window.cambiarPassword = function() {
 
 function getOpcionesEstadoCombo(estadoActual) {
     // Definimos las transiciones permitidas para cada estado
+    // Nota: no se ofrece volver a 'borrador' desde ningún estado
     const transiciones = {
         'borrador': ['revisar'],
         'revisar': ['corregir', 'aprobado'],
-        'corregir': ['revisar'],
+        'corregir': ['revisar', 'aprobado'],
         'aprobado': [], // Solo cambia automáticamente a adjudicado al asignarse a una jornada
         'adjudicado': [], // Solo cambia automáticamente a grabado al asignarse a un concursante
         'grabado': []
@@ -2342,9 +2347,9 @@ function getOpcionesEstadoCombo(estadoActual) {
         opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
     });
     
-    // Si el usuario es admin, permitimos todas las opciones
+    // Si el usuario es admin, permitimos el resto de estados excepto volver a borrador
     if (authManager.hasRole('ROLE_ADMIN')) {
-        const todosEstados = ['borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado'];
+        const todosEstados = ['revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado'];
         todosEstados.forEach(estado => {
             if (estado !== estadoActual && !opcionesDisponibles.includes(estado)) {
                 opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
@@ -2379,9 +2384,12 @@ window.cambiarEstadoCombo = async function(id, nuevoEstado) {
         const previo = (CombosManager.ultimoListado || []).find(c => c.id === id);
         const estadoPrevio = previo ? previo.estado : null;
 
-        if (nuevoEstado === 'aprobado' && !comboCompletoParaAprobar(previo)) {
+        const esAdminCombo = !!(authManager && authManager.hasRole && authManager.hasRole('ROLE_ADMIN'));
+        const exigeCompletoCombo = nuevoEstado === 'aprobado'
+            || (nuevoEstado && nuevoEstado !== 'borrador' && !esAdminCombo);
+        if (exigeCompletoCombo && !comboCompletoParaAprobar(previo)) {
             Toastify({
-                text: 'No se puede aprobar: el combo debe tener las 3 preguntas multiplicadoras (PM1, PM2, PM3)',
+                text: 'No se puede cambiar a un estado distinto de borrador sin las 3 preguntas multiplicadoras (PM1, PM2, PM3)',
                 duration: 4000,
                 close: true,
                 gravity: 'top',

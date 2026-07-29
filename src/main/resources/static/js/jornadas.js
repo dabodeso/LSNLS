@@ -258,19 +258,21 @@ const JornadasManager = {
         
         // Usar el contenedor de paginación del HTML
         const paginacionContainer = document.getElementById('paginacion-jornadas');
-        const infoPaginacion = document.getElementById('info-paginacion-jornadas');
+        const infosPaginacion = [
+            document.getElementById('info-paginacion-jornadas'),
+            document.getElementById('info-paginacion-jornadas-top')
+        ].filter(Boolean);
         
         if (!paginacionContainer) {
             console.error('❌ [PAGINACION] Contenedor de paginación no encontrado');
             return;
         }
 
-        // Actualizar información de paginación
-        if (infoPaginacion) {
-            const inicio = (this.paginaActual * this.tamanioPagina) + 1;
-            const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalJornadas);
-            infoPaginacion.textContent = `Mostrando ${inicio}-${fin} de ${this.totalJornadas} jornadas`;
-        }
+        // Actualizar información de paginación (arriba y abajo)
+        const inicio = (this.paginaActual * this.tamanioPagina) + 1;
+        const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalJornadas);
+        const textoInfo = `Mostrando ${inicio}-${fin} de ${this.totalJornadas} jornadas`;
+        infosPaginacion.forEach(el => { el.textContent = textoInfo; });
 
         // Limpiar botones existentes
         paginacionContainer.innerHTML = '';

@@ -337,7 +337,10 @@ const PreguntasManager = {
         
         // Usar el contenedor de paginación del HTML
         const paginacionContainer = document.getElementById('paginacion-preguntas');
-        const infoPaginacion = document.getElementById('info-paginacion');
+        const infosPaginacion = [
+            document.getElementById('info-paginacion'),
+            document.getElementById('info-paginacion-top')
+        ].filter(Boolean);
         
         if (!paginacionContainer) {
             console.error('❌ [PAGINACION] Contenedor de paginación no encontrado');
@@ -345,19 +348,18 @@ const PreguntasManager = {
         }
 
         if (this.modoDestacado && this.preguntas.length === 1) {
-            if (infoPaginacion) {
-                infoPaginacion.textContent = `Pregunta #${this.preguntas[0].id} (vista directa)`;
-            }
+            infosPaginacion.forEach(el => {
+                el.textContent = `Pregunta #${this.preguntas[0].id} (vista directa)`;
+            });
             paginacionContainer.innerHTML = '';
             return;
         }
 
-        // Actualizar información de paginación
-        if (infoPaginacion) {
-            const inicio = (this.paginaActual * this.tamanioPagina) + 1;
-            const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalPreguntas);
-            infoPaginacion.textContent = `Mostrando ${inicio}-${fin} de ${this.totalPreguntas} preguntas`;
-        }
+        // Actualizar información de paginación (arriba y abajo)
+        const inicio = (this.paginaActual * this.tamanioPagina) + 1;
+        const fin = Math.min((this.paginaActual + 1) * this.tamanioPagina, this.totalPreguntas);
+        const textoInfo = `Mostrando ${inicio}-${fin} de ${this.totalPreguntas} preguntas`;
+        infosPaginacion.forEach(el => { el.textContent = textoInfo; });
 
         // Limpiar botones existentes
         paginacionContainer.innerHTML = '';

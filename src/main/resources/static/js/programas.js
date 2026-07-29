@@ -200,16 +200,23 @@ function mostrarProgramas() {
         return;
     }
     
-    // Actualizar información de paginación en el bloque estático
-    const infoEl = document.getElementById('info-paginacion-programas');
+    // Actualizar información de paginación en el bloque estático (arriba y abajo)
+    const infosEl = [
+        document.getElementById('info-paginacion-programas'),
+        document.getElementById('info-paginacion-programas-top')
+    ].filter(Boolean);
     const seccionPag = document.getElementById('seccion-paginacion-programas');
-    if (infoEl && totalItems > 0) {
+    const wrapTop = document.getElementById('info-paginacion-programas-top-wrap');
+    if (infosEl.length && totalItems > 0) {
         const inicio = paginaActual * tamañoPagina + 1;
         const fin = Math.min((paginaActual + 1) * tamañoPagina, totalItems);
-        infoEl.textContent = `Mostrando ${inicio}-${fin} de ${totalItems} programas`;
+        const textoInfo = `Mostrando ${inicio}-${fin} de ${totalItems} programas`;
+        infosEl.forEach(el => { el.textContent = textoInfo; });
         if (seccionPag) seccionPag.style.display = '';
-    } else if (seccionPag) {
-        seccionPag.style.display = 'none';
+        if (wrapTop) wrapTop.style.display = '';
+    } else {
+        if (seccionPag) seccionPag.style.display = 'none';
+        if (wrapTop) wrapTop.style.display = 'none';
     }
 
     const editProg = puedeEditarCamposPrograma();
@@ -1004,13 +1011,19 @@ function renderizarPaginacionFiltrada() {
     const seccionPag = document.getElementById('seccion-paginacion-programas');
     if (!paginacionEl) return;
 
-    // Actualizar info de paginación
-    const infoEl = document.getElementById('info-paginacion-programas');
-    if (infoEl && totalItems > 0) {
+    // Actualizar info de paginación (arriba y abajo)
+    const infosEl = [
+        document.getElementById('info-paginacion-programas'),
+        document.getElementById('info-paginacion-programas-top')
+    ].filter(Boolean);
+    const wrapTop = document.getElementById('info-paginacion-programas-top-wrap');
+    if (infosEl.length && totalItems > 0) {
         const inicio = paginaActual * 5 + 1;
         const fin = Math.min((paginaActual + 1) * 5, totalItems);
-        infoEl.textContent = `Mostrando ${inicio}-${fin} de ${totalItems} programas`;
+        const textoInfo = `Mostrando ${inicio}-${fin} de ${totalItems} programas`;
+        infosEl.forEach(el => { el.textContent = textoInfo; });
         if (seccionPag) seccionPag.style.display = '';
+        if (wrapTop) wrapTop.style.display = '';
     }
 
     paginacionEl.innerHTML = '';

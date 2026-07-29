@@ -249,7 +249,8 @@ public class CuestionarioController {
             editLockService.assertCanEdit(AuditLog.EntityType.CUESTIONARIO, id);
             Cuestionario cuestionarioActualizado;
             try {
-                cuestionarioActualizado = cuestionarioService.cambiarEstado(id, nuevoEstado);
+                cuestionarioActualizado = cuestionarioService.cambiarEstado(
+                    id, nuevoEstado, authorizationService.isAdmin());
             } catch (IllegalArgumentException e) {
                 return ResponseEntity.badRequest().body(e.getMessage());
             }
