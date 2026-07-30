@@ -99,8 +99,8 @@
         .foto-concursante {
             display: block;
             width: 100%;
-            max-width: 360px;
-            aspect-ratio: 1 / 1;
+            max-width: 240px;
+            aspect-ratio: 16 / 9;
             object-fit: cover;
             border-radius: 4px;
             cursor: pointer;
@@ -116,8 +116,8 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            max-width: 360px;
-            aspect-ratio: 1 / 1;
+            max-width: 240px;
+            aspect-ratio: 16 / 9;
             border: 2px dashed #ccc;
             border-radius: 4px;
             cursor: pointer;
@@ -181,7 +181,7 @@
         .concursantes-table .col-rrss { width: 8%; }
         .concursantes-table .col-resultado { width: 6%; }
         .concursantes-table .col-duracion { width: 6%; }
-        .concursantes-table .col-foto { width: 36%; }
+        .concursantes-table .col-foto { width: 24%; }
         .concursantes-table .col-momentos { width: 12%; }
         .concursantes-table .col-xusoker { width: 7%; }
         .concursantes-table .col-factor-x { width: 4%; }
@@ -375,8 +375,8 @@
                             <input type="number" id="filtro-temporada" class="form-control form-control-sm" min="1" onchange="filtrarProgramas()" onkeyup="filtrarProgramas()">
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Nº Programa</label>
-                            <input type="number" id="filtro-programa-id" class="form-control form-control-sm" min="1" onchange="filtrarProgramas()" onkeyup="filtrarProgramas()">
+                            <label class="form-label">Código programa</label>
+                            <input type="text" id="filtro-programa-id" class="form-control form-control-sm" maxlength="32" onchange="filtrarProgramas()" onkeyup="filtrarProgramas()">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Fecha de Emisión</label>
@@ -448,6 +448,12 @@
                     <div class="modal-body">
                         <form id="form-programa">
                             <input type="hidden" id="programa-id">
+                            <div class="mb-3">
+                                <label class="form-label">Código de programa:</label>
+                                <input type="text" class="form-control" id="codigo-programa" maxlength="32"
+                                       placeholder="Automático si se deja vacío">
+                                <small class="form-text text-muted">Identificador editable y único. El ID interno no cambia.</small>
+                            </div>
                             <div class="mb-3">
                                 <label class="form-label">Temporada:</label>
                                 <input type="number" class="form-control" id="temporada-programa" min="1" required>
@@ -557,10 +563,23 @@
                                 <select class="form-select form-select-sm"
                                         id="filtro-estado-concursante-disponible"
                                         onchange="onCambioFiltrosConcursantesDisponibles()">
-                                    <option value="">Grabado y Editado</option>
-                                    <option value="GRABADO">Grabado</option>
                                     <option value="EDITADO">Editado</option>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-3">
+                                <label class="form-label form-label-sm">Duración efectiva mínima</label>
+                                <input type="text" class="form-control form-control-sm" id="filtro-duracion-min-concursante-disponible"
+                                       placeholder="MM:SS" onchange="onCambioFiltrosConcursantesDisponibles()">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label form-label-sm">Duración efectiva máxima</label>
+                                <input type="text" class="form-control form-control-sm" id="filtro-duracion-max-concursante-disponible"
+                                       placeholder="MM:SS" onchange="onCambioFiltrosConcursantesDisponibles()">
+                            </div>
+                            <div class="col-md-6 form-text pt-4">
+                                Se filtra por duración final, luego dirección y finalmente grabación.
                             </div>
                         </div>
                         <div id="info-paginacion-concursantes" class="mb-2 text-muted small">

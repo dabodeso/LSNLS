@@ -509,7 +509,7 @@ function limitarEstadosSegunRol() {
     
     if (!estadoSelect) return;
     
-    // Si es GUION, limitar solo a 'borrador' y 'grabado'
+    // GUIÓN solo puede marcar un concursante como grabado.
     if (rol === 'guion') {
         // Guardar el valor actual
         const valorActual = estadoSelect.value;
@@ -518,22 +518,12 @@ function limitarEstadosSegunRol() {
         estadoSelect.innerHTML = '';
         
         // Agregar solo las opciones permitidas
-        const opcionBorrador = document.createElement('option');
-        opcionBorrador.value = 'borrador';
-        opcionBorrador.textContent = 'Borrador';
-        estadoSelect.appendChild(opcionBorrador);
-        
         const opcionGrabado = document.createElement('option');
         opcionGrabado.value = 'grabado';
         opcionGrabado.textContent = 'Grabado';
         estadoSelect.appendChild(opcionGrabado);
         
-        // Restaurar valor si es permitido, sino establecer borrador
-        if (valorActual === 'borrador' || valorActual === 'grabado') {
-            estadoSelect.value = valorActual;
-        } else {
-            estadoSelect.value = 'borrador';
-        }
+        estadoSelect.value = 'grabado';
     }
 }
 
@@ -783,7 +773,7 @@ const selectPrograma = document.getElementById('programa-id');
 const selectFiltro = document.getElementById('filtro-programa');
 
 const options = programas.map(programa => 
-`<option value="${programa.id}">Programa ${programa.id} - ${programa.fechaEmision || 'Sin fecha'}</option>`
+`<option value="${programa.id}">Programa ${programa.codigo || programa.id} - ${programa.fechaEmision || 'Sin fecha'}</option>`
 );
 
 // Solo actualizar si el elemento existe (para evitar errores en diferentes páginas)
@@ -951,7 +941,7 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoraci
 
 // ESTADO
 if (configuracionColumnas.columnasVisibles['estado']) {
-    const estadosPosibles = ['', 'borrador','grabado','editado','programado','emitido','archivado'];
+    const estadosPosibles = ['', 'grabado','editado','programado','emitido','archivado'];
     const estadoActual = (concursante.estado || '').toLowerCase();
     const opcionesEstado = estadosPosibles.map(e => {
         const selected = e === estadoActual ? ' selected' : '';
@@ -1091,7 +1081,7 @@ function resetFormularioConcursanteNuevo() {
     if (concursanteId) concursanteId.value = '';
 
     const estadoElement = document.getElementById('estado');
-    if (estadoElement) estadoElement.value = 'borrador';
+    if (estadoElement) estadoElement.value = 'grabado';
 
     const comboInput = document.getElementById('combo-id');
     if (comboInput) {
@@ -1370,12 +1360,22 @@ if (!valoracionGuionista) {
     mostrarError('La valoración del guionista es obligatoria');
     return;
 }
-if (!valoracionFinal) {
-    mostrarError('La valoración final es obligatoria');
-    return;
-}
 if (!estadoFormulario) {
     mostrarError('El estado es obligatorio');
+    return;
+}
+const duracionesFormulario = [
+    document.getElementById('duracion')?.value || '',
+    document.getElementById('duracion-direccion')?.value || '',
+    document.getElementById('duracion-final')?.value || ''
+];
+const duracionValida = valor => /^\d{1,3}:[0-5]\d$/.test(valor.trim());
+if (estadoFormulario.toLowerCase() === 'editado' && !duracionesFormulario.some(duracionValida)) {
+    mostrarError('Para marcar un concursante como editado debes indicar una duración válida.');
+    return;
+}
+if (duracionesFormulario.some(valor => valor.trim() && !duracionValida(valor))) {
+    mostrarError('Las duraciones deben tener formato MM:SS.');
     return;
 }
 
@@ -1466,6 +1466,8 @@ let response;
 
 if (response.ok) {
         console.info('✅ [GUARDAR] Respuesta OK', response.status);
+        comboRecicladoPendienteId = null;
+        jornadaReciclajePendienteId = null;
         if (!esEdicion) {
             // Creación: obtener ID creado y asignar jornada si procede
             let creadoId = null;
@@ -1553,12 +1555,14 @@ if (response.ok) {
             } catch {}
         }, 100);
 } else {
+        await cancelarReciclajePendiente();
         const mensaje = await Utils.mensajeDesdeResponse(response, 'guardar concursantes');
         console.error('❌ [GUARDAR] Error HTTP', { status: response.status, mensaje });
         mostrarError(mensaje);
 }
 } catch (err) {
 console.error('❌ [GUARDAR] Excepción', err);
+await cancelarReciclajePendiente();
 mostrarError(Utils.mensajeErrorApi(err, 'guardar concursantes'));
 }
 }
@@ -1572,6 +1576,14 @@ $(document).on('change', '.estado-select', async function() {
     try {
         const snapshot = await apiManager.get(`/api/concursantes/${id}`);
         const estadoPrevio = snapshot && snapshot.estado ? snapshot.estado : null;
+        if (String(nuevoEstado).toLowerCase() === 'editado') {
+            const duraciones = [snapshot?.duracion, snapshot?.duracionDireccion, snapshot?.duracionFinal];
+            if (!duraciones.some(valor => /^\d{1,3}:[0-5]\d$/.test((valor || '').trim()))) {
+                select.value = (estadoPrevio || '').toLowerCase();
+                mostrarError('No se puede marcar como editado sin una duración válida.');
+                return;
+            }
+        }
         // Usamos el endpoint genérico de actualización de campo
         const doAction = async () => {
             await apiManager.patch(`/api/concursantes/${id}/campo`, { estado: nuevoEstado || null });
@@ -2127,8 +2139,11 @@ async function iniciarReciclajeParcialDesdePreview() {
                 if (!sel) { mostrarError('Selecciona la pregunta usada'); return; }
                 const preguntaUsadaId = sel.value;
                 const r = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-parcial/${comboId}`, { preguntaUsadaId });
-                if (r && r.exito) {
-                    mostrarExito('Reciclaje parcial aplicado. Las 2 preguntas restantes quedaron en un combo nuevo.');
+                const comboHijoId = r?.datos?.comboHijoId;
+                if (r && r.exito && comboHijoId && concursanteParaReemplazo) {
+                    const previo = await apiManager.get(`/api/concursantes/${concursanteParaReemplazo}`);
+                    await apiManager.put(`/api/concursantes/${concursanteParaReemplazo}`, { ...previo, comboId: comboHijoId });
+                    mostrarExito(`Reciclaje parcial aplicado y combo #${comboHijoId} asignado al concursante.`);
                     bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-desde-preview')).hide();
                     // Cerrar preview y recargar lista para refrescar estados
                     const prev = bootstrap.Modal.getInstance(document.getElementById('modal-preview-combo'));
@@ -2350,6 +2365,19 @@ mostrarError('Error al buscar cuestionarios: ' + e.message);
 
 // Funciones para asignar desde la tabla
 let concursanteParaAsignar = null;
+let comboRecicladoPendienteId = null;
+let jornadaReciclajePendienteId = null;
+
+async function cancelarReciclajePendiente() {
+    if (!comboRecicladoPendienteId || !jornadaReciclajePendienteId) return;
+    const comboHijoId = comboRecicladoPendienteId;
+    try {
+        await apiManager.delete(`/api/jornadas/${jornadaReciclajePendienteId}/reciclaje-combo/${comboHijoId}`);
+    } finally {
+        comboRecicladoPendienteId = null;
+        jornadaReciclajePendienteId = null;
+    }
+}
 
 function abrirSelectorCuestionarioParaConcursante(concursanteId) {
 concursanteParaAsignar = concursanteId;
@@ -2420,6 +2448,9 @@ concursanteParaAsignar = null;
 concursanteParaReemplazo = null;
 } else {
 // Asignar al formulario (nuevo concursante o edición sin guardar aún)
+    if (comboRecicladoPendienteId && String(comboRecicladoPendienteId) !== String(id)) {
+        await cancelarReciclajePendiente();
+    }
     actualizarComboEnFormulario(id);
     actualizarRestriccionJornadaEnFormulario();
 }
@@ -2655,7 +2686,10 @@ mostrarError('Error al cargar combos: ' + error.message);
 }
 }
 
-function limpiarSelectorCombo() {
+async function limpiarSelectorCombo() {
+if (comboRecicladoPendienteId) {
+    await cancelarReciclajePendiente();
+}
 document.getElementById('combo-id').value = '';
 document.getElementById('combo-id').dataset.comboId = '';
 const btnReciclar = document.getElementById('btn-reciclar-combo');
@@ -2780,6 +2814,7 @@ function mostrarModalReciclajeCombo(comboId, preguntas, jornadaId) {
 // Función para confirmar reciclaje de combo desde formulario
 async function confirmarReciclajeComboDesdeFormulario(comboId, jornadaId) {
     const preguntaSeleccionada = document.querySelector('input[name="preguntaUsadaReciclar"]:checked');
+    let comboHijoId = null;
     
     if (!preguntaSeleccionada) {
         mostrarError('Debe seleccionar una pregunta usada');
@@ -2803,20 +2838,37 @@ async function confirmarReciclajeComboDesdeFormulario(comboId, jornadaId) {
             preguntaUsadaId: preguntaUsadaId
         });
         
-        if (response && response.exito) {
-            mostrarExito('Combo reciclado correctamente. Se ha creado un nuevo combo con las 2 preguntas restantes.');
+        comboHijoId = response?.datos?.comboHijoId;
+        if (response && response.exito && comboHijoId) {
+            actualizarComboEnFormulario(comboHijoId);
             
             // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-combo-formulario'));
             if (modal) modal.hide();
-            
-            // Opcional: actualizar el combo asignado al nuevo combo creado
-            // Por ahora, mantenemos el combo original asignado
+
+            if (concursanteActual?.id) {
+                const datos = { ...concursanteActual, comboId: comboHijoId };
+                await apiManager.put(`/api/concursantes/${concursanteActual.id}`, datos);
+                concursanteActual = await apiManager.get(`/api/concursantes/${concursanteActual.id}`);
+                await cargarConcursantes(true);
+                mostrarExito(`Combo reciclado y asignado automáticamente al concursante (#${comboHijoId}).`);
+            } else {
+                comboRecicladoPendienteId = comboHijoId;
+                jornadaReciclajePendienteId = jornadaId;
+                mostrarExito(`Combo reciclado. Se asignará obligatoriamente al guardar el concursante (#${comboHijoId}).`);
+            }
         } else {
             mostrarError(response?.mensaje || 'Error al reciclar el combo');
         }
     } catch (error) {
         console.error('Error al reciclar combo:', error);
+        if (comboHijoId) {
+            try {
+                await apiManager.delete(`/api/jornadas/${jornadaId}/reciclaje-combo/${comboHijoId}`);
+            } catch (cancelError) {
+                console.error('Error al limpiar combo reciclado:', cancelError);
+            }
+        }
         mostrarError('Error al reciclar el combo: ' + (error.message || error));
     }
 }
@@ -3608,7 +3660,8 @@ reader.readAsDataURL(file);
 const modalConcursante = document.getElementById('modal-concursante');
 if (modalConcursante && !modalConcursante._resetOnHideBound) {
     modalConcursante._resetOnHideBound = true;
-    modalConcursante.addEventListener('hidden.bs.modal', () => {
+    modalConcursante.addEventListener('hidden.bs.modal', async () => {
+        await cancelarReciclajePendiente();
         resetFormularioConcursanteNuevo();
         limitarEstadosSegunRol();
         actualizarRestriccionJornadaEnFormulario();

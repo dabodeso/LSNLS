@@ -16,6 +16,9 @@ public class Programa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "codigo", length = 32, unique = true)
+    private String codigo;
+
     @Version
     private Long version;
 
@@ -26,7 +29,7 @@ public class Programa {
     private LocalTime duracionAcumulada;
 
     @Column(name = "duracion_objetivo")
-    private String duracionObjetivo = "1h 5m";
+    private String duracionObjetivo = "45m";
 
     @Column(name = "resultado_acumulado", precision = 10, scale = 2)
     private BigDecimal resultadoAcumulado;
@@ -55,6 +58,9 @@ public class Programa {
 
     @Column(name = "creditos_especiales", columnDefinition = "TEXT")
     private String creditosEspeciales;
+
+    @Column(name = "notas", columnDefinition = "TEXT")
+    private String notas;
 
     public enum EstadoPrograma {
         borrador, programado, emitido, grabado, editado

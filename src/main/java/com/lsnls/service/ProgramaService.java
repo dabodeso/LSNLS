@@ -66,14 +66,21 @@ public class ProgramaService {
     }
 
     public Programa create(Programa programa) {
+        aplicarDuracionObjetivoPorDefecto(programa);
+        validarCodigoNuevo(programa.getCodigo());
         programa.actualizarEstado();
-        return programaRepository.save(programa);
+        Programa guardado = programaRepository.save(programa);
+        asignarCodigoPorDefectoSiFalta(guardado);
+        return guardado;
     }
 
     public ProgramaDTO createFromDTO(ProgramaDTO programaDTO) {
         Programa programa = convertToEntity(programaDTO);
+        aplicarDuracionObjetivoPorDefecto(programa);
+        validarCodigoNuevo(programa.getCodigo());
         programa.actualizarEstado();
         Programa saved = programaRepository.save(programa);
+        asignarCodigoPorDefectoSiFalta(saved);
         return convertToDTO(saved);
     }
 
@@ -86,6 +93,7 @@ public class ProgramaService {
     public ProgramaDTO updateFromDTO(Long id, ProgramaDTO programaDTO) {
         Programa programa = convertToEntity(programaDTO);
         programa.setId(id);
+        validarCodigo(programa.getCodigo(), id);
         programa.actualizarEstado();
         Programa saved = programaRepository.save(programa);
         return convertToDTO(saved);
@@ -102,6 +110,11 @@ public class ProgramaService {
                 Object value = entry.getValue();
                 
                 switch (key) {
+                    case "codigo":
+                        String codigo = normalizarCodigo(value != null ? value.toString() : null);
+                        validarCodigo(codigo, id);
+                        programa.setCodigo(codigo);
+                        break;
                     case "temporada":
                         if (value != null) {
                             programa.setTemporada(Integer.parseInt(value.toString()));
@@ -112,6 +125,9 @@ public class ProgramaService {
                         break;
                     case "creditosEspeciales":
                         programa.setCreditosEspeciales((String) value);
+                        break;
+                    case "notas":
+                        programa.setNotas((String) value);
                         break;
                     case "resultadoAcumulado":
                         programa.setResultadoAcumulado(value != null ? new BigDecimal(value.toString()) : null);
@@ -213,9 +229,54 @@ public class ProgramaService {
         }
     }
 
+    private void aplicarDuracionObjetivoPorDefecto(Programa programa) {
+        if (programa.getDuracionObjetivo() == null || programa.getDuracionObjetivo().trim().isEmpty()) {
+            programa.setDuracionObjetivo(configuracionService.getDuracionObjetivo());
+        }
+    }
+
+    private void asignarCodigoPorDefectoSiFalta(Programa programa) {
+        if (programa.getCodigo() == null || programa.getCodigo().trim().isEmpty()) {
+            programa.setCodigo(String.valueOf(programa.getId()));
+            programaRepository.save(programa);
+        }
+    }
+
+    private void validarCodigoNuevo(String codigo) {
+        String normalizado = normalizarCodigo(codigo);
+        if (normalizado == null) {
+            return;
+        }
+        if (programaRepository.findByCodigo(normalizado).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un programa con el código " + normalizado + ".");
+        }
+    }
+
+    private void validarCodigo(String codigo, Long id) {
+        String normalizado = normalizarCodigo(codigo);
+        if (normalizado == null) {
+            throw new IllegalArgumentException("El código de programa es obligatorio.");
+        }
+        if (programaRepository.existsByCodigoAndIdNot(normalizado, id)) {
+            throw new IllegalArgumentException("Ya existe un programa con el código " + normalizado + ".");
+        }
+    }
+
+    private String normalizarCodigo(String codigo) {
+        if (codigo == null || codigo.trim().isEmpty()) {
+            return null;
+        }
+        String normalizado = codigo.trim();
+        if (normalizado.length() > 32) {
+            throw new IllegalArgumentException("El código de programa no puede superar 32 caracteres.");
+        }
+        return normalizado;
+    }
+
     private ProgramaDTO convertToDTO(Programa programa) {
         ProgramaDTO dto = new ProgramaDTO();
         dto.setId(programa.getId());
+        dto.setCodigo(programa.getCodigo());
         dto.setTemporada(programa.getTemporada());
         dto.setDuracionAcumulada(programa.getDuracionAcumulada());
         dto.setDuracionObjetivo(programa.getDuracionObjetivo());
@@ -228,6 +289,7 @@ public class ProgramaService {
         dto.setGap(programa.getGap());
         dto.setTotalConcursantes(programa.getTotalConcursantes());
         dto.setCreditosEspeciales(programa.getCreditosEspeciales());
+        dto.setNotas(programa.getNotas());
         dto.setVersion(programa.getVersion());
         return dto;
     }
@@ -235,6 +297,7 @@ public class ProgramaService {
     private Programa convertToEntity(ProgramaDTO dto) {
         Programa programa = new Programa();
         programa.setId(dto.getId());
+        programa.setCodigo(normalizarCodigo(dto.getCodigo()));
         programa.setVersion(dto.getVersion());
         programa.setTemporada(dto.getTemporada());
         programa.setDuracionAcumulada(dto.getDuracionAcumulada());
@@ -254,6 +317,7 @@ public class ProgramaService {
         programa.setGap(dto.getGap());
         programa.setTotalConcursantes(dto.getTotalConcursantes());
         programa.setCreditosEspeciales(dto.getCreditosEspeciales());
+        programa.setNotas(dto.getNotas());
         return programa;
     }
 } 

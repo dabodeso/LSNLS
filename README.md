@@ -91,8 +91,10 @@ LSNLS es una aplicación web completa para la gestión de preguntas, cuestionari
 
 #### 📅 **JORNADAS**
 - **Composición**: Múltiples cuestionarios y combos
-- **Estados**: `preparacion` → `en_grabacion` → `completada`
+- **Estados**: `preparacion` → `lista` → `en_grabacion` → `completada` → `archivada`
+- **Cambio de estado**: solo `ROLE_ADMIN` / `ROLE_DIRECCION` (selector en el listado)
 - **Exportación**: Genera plantillas Excel para grabación
+- **BD**: si al guardar `en_grabacion` falla, comprobar el ENUM con `SHOW COLUMNS FROM jornadas LIKE 'estado'` y aplicar `db/fix_jornadas_estado_enum.sql`
 
 #### 📺 **PROGRAMAS**
 - **Gestión**: Crear y gestionar programas de televisión

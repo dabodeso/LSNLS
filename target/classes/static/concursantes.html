@@ -354,11 +354,10 @@ line-height: 1.2;
 <label class="form-label">Estado</label>
 <select id="filtro-estado-concursante" class="form-select form-select-sm">
 <option value="">Todos</option>
-<option value="BORRADOR">Borrador</option>
-<option value="GRABADO">Grabado</option>
-<option value="EDITADO">Editado</option>
-<option value="PROGRAMADO">Programado</option>
-<option value="EMITIDO">Emitido</option>
+<option value="grabado">Grabado</option>
+<option value="editado">Editado</option>
+<option value="programado">Programado</option>
+<option value="emitido">Emitido</option>
 </select>
 </div>
 <div class="col-md-2">
@@ -664,7 +663,7 @@ line-height: 1.2;
 </div>
 <div class="mb-3">
 <label class="form-label">Valoración Final (dirección):</label>
-<select class="form-control" id="valoracion-final" required>
+<select class="form-control" id="valoracion-final">
 <option value="">—</option>
 <option value="1">1</option>
 <option value="1+">1+</option>
@@ -696,8 +695,7 @@ line-height: 1.2;
 <label class="form-label">Estado:</label>
 <select class="form-control" id="estado" required>
 <option value="">Seleccionar estado</option>
-<option value="borrador" selected>Borrador</option>
-<option value="grabado">Grabado</option>
+<option value="grabado" selected>Grabado</option>
 <option value="editado">Editado</option>
 <option value="programado">Programado</option>
 <option value="emitido">Emitido</option>

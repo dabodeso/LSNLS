@@ -133,7 +133,7 @@ public class SyncService {
                 return jornadaRepository.findById(id).map(Jornada::getNombre).orElse("Jornada " + id);
             case PROGRAMA:
                 return programaRepository.findById(id)
-                        .map(p -> "Programa T" + p.getTemporada() + " #" + id)
+                        .map(p -> "Programa T" + p.getTemporada() + " #" + (p.getCodigo() != null ? p.getCodigo() : id))
                         .orElse("Programa " + id);
             case CONCURSANTE:
                 return concursanteRepository.findById(id).map(Concursante::getNombre).orElse("Concursante " + id);

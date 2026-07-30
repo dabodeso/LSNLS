@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS combos_preguntas (
 -- Crear tabla de configuración global
 CREATE TABLE IF NOT EXISTS configuracion_global (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    clave VARCHAR(255) NOT NULL,
+    clave VARCHAR(255) NOT NULL UNIQUE,
     descripcion VARCHAR(255),
     valor VARCHAR(255) NOT NULL,
     version BIGINT DEFAULT 0
@@ -150,10 +150,11 @@ CREATE TABLE IF NOT EXISTS configuracion_global (
 -- Crear tabla de programas
 CREATE TABLE IF NOT EXISTS programas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(32) UNIQUE,
     temporada INTEGER NOT NULL,
     fecha_emision DATE,
     duracion_acumulada TIME(6),
-    duracion_objetivo VARCHAR(255) DEFAULT '1h 5m',
+    duracion_objetivo VARCHAR(255) DEFAULT '45m',
     resultado_acumulado DECIMAL(10,2),
     dato_audiencia_share DECIMAL(5,2),
     dato_audiencia_target DECIMAL(5,2),
@@ -162,6 +163,7 @@ CREATE TABLE IF NOT EXISTS programas (
     gap VARCHAR(255),
     total_concursantes INTEGER,
     creditos_especiales TEXT,
+    notas TEXT,
     version BIGINT DEFAULT 0
 );
 

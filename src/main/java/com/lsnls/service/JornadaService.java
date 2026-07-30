@@ -1,6 +1,7 @@
 package com.lsnls.service;
 
 import com.lsnls.dto.JornadaDTO;
+import com.lsnls.dto.ReciclajeComboDTO;
 import com.lsnls.entity.*;
 import com.lsnls.repository.*;
 import com.lsnls.entity.PreguntaCombo;
@@ -867,7 +868,7 @@ public class JornadaService {
      * @param preguntaUsadaId ID de la pregunta que se usó
      * @param usuarioId ID del usuario que realiza la acción
      */
-    public void reciclarComboParcial(Long jornadaId, Long comboId, Long preguntaUsadaId, Long usuarioId) {
+    public ReciclajeComboDTO reciclarComboParcial(Long jornadaId, Long comboId, Long preguntaUsadaId, Long usuarioId) {
         // Verificar que la jornada existe
         Jornada jornada = jornadaRepository.findById(jornadaId)
             .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada con ID: " + jornadaId));
@@ -948,8 +949,8 @@ public class JornadaService {
         comboNuevo.setTipo(combo.getTipo());
         comboNuevo.setTematica(combo.getTematica());
         comboNuevo.setNotasDireccion("Combo derivado del combo " + comboId + " (reciclaje parcial) - " + (combo.getNotasDireccion() != null ? combo.getNotasDireccion() : ""));
-        // CORRECCIÓN: El combo nuevo con solo 2 preguntas debe estar en estado BORRADOR, no APROBADO
-        comboNuevo.setEstado(Combo.EstadoCombo.borrador);
+        // El combo derivado se asigna inmediatamente al concursante, por lo que debe ser asignable.
+        comboNuevo.setEstado(Combo.EstadoCombo.aprobado);
         comboNuevo.setFechaCreacion(java.time.LocalDateTime.now());
         comboNuevo.setCreacionUsuario(combo.getCreacionUsuario());
         comboNuevo = comboRepository.save(comboNuevo);
@@ -983,16 +984,28 @@ public class JornadaService {
         System.out.println("🔄🔄🔄 [RECICLAR PARCIAL] Manteniendo estado del combo original " + comboId + ": " + estadoActual);
         comboRepository.save(combo);
         
-        // 5) Mantener combo original en la jornada, marcado como reutilizado en historial
-        registrarHistorialReutilizacion(jornada, combo, "combo", usuarioId);
+        // 5) Registrar el reciclaje con la pregunta usada para poder auditarlo.
+        registrarHistorialReciclajeParcial(jornada, combo, preguntaUsadaId);
         
         // 6) Registrar el combo nuevo en el historial como hijo
         registrarHistorialComboHijo(jornada, comboNuevo, comboId, usuarioId);
 
         System.out.println("✅✅✅ [RECICLAR PARCIAL] Combo " + comboId + " reciclado parcialmente:");
         System.out.println("   - Combo original " + comboId + ": estado=" + combo.getEstado() + ", preguntas=" + totalPreguntas + " (usada=" + preguntaUsadaId + ")");
-        System.out.println("   - Combo nuevo " + comboNuevo.getId() + ": estado=borrador, preguntas=" + preguntasNoUsadas.size());
+        System.out.println("   - Combo nuevo " + comboNuevo.getId() + ": estado=aprobado, preguntas=" + preguntasNoUsadas.size());
         System.out.println("♻️♻️♻️ [RECICLAR PARCIAL] Reciclaje parcial completado para combo " + comboId);
+        return new ReciclajeComboDTO(jornadaId, comboId, comboNuevo.getId(), preguntaUsadaId);
+    }
+
+    private void registrarHistorialReciclajeParcial(Jornada jornada, Combo comboPadre, Long preguntaUsadaId) {
+        entityManager.createNativeQuery(
+                "INSERT INTO historial_jornadas (jornada_id, combo_id, tipo_asignacion, estado_asignacion, fecha_asignacion, pregunta_usada_id, notas) "
+                    + "VALUES (?, ?, 'COMBO', 'reaprovechado', NOW(), ?, ?)")
+            .setParameter(1, jornada.getId())
+            .setParameter(2, comboPadre.getId())
+            .setParameter(3, preguntaUsadaId)
+            .setParameter(4, "RECICLAJE_PARCIAL_COMBO_PADRE:" + comboPadre.getId())
+            .executeUpdate();
     }
 
     /**
@@ -1006,12 +1019,55 @@ public class JornadaService {
                 .setParameter(2, comboHijo.getId())
                 .setParameter(3, "COMBO")
                 .setParameter(4, "asignado")
-                .setParameter(5, "Combo hijo creado desde combo padre " + comboPadreId + " - contiene preguntas no usadas")
+                .setParameter(5, "RECICLAJE_PARCIAL_COMBO_HIJO;PADRE:" + comboPadreId)
                 .executeUpdate();
                 
         } catch (Exception e) {
             System.err.println("⚠️ [JORNADA] Error al registrar historial de combo hijo: " + e.getMessage());
             // No lanzar excepción para no afectar la operación principal
         }
+    }
+
+    /**
+     * Elimina un combo derivado que no llegó a estar asignado a un concursante.
+     */
+    public void cancelarReciclajeCombo(Long jornadaId, Long comboHijoId) {
+        Long asignaciones = ((Number) entityManager.createQuery(
+                "SELECT COUNT(c) FROM Concursante c WHERE c.combo.id = :comboId")
+            .setParameter("comboId", comboHijoId)
+            .getSingleResult()).longValue();
+        if (asignaciones > 0) {
+            throw new IllegalStateException("No se puede cancelar el reciclaje: el combo derivado ya está asignado.");
+        }
+
+        int historialEliminado = entityManager.createNativeQuery(
+                "DELETE FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? "
+                    + "AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'")
+            .setParameter(1, jornadaId)
+            .setParameter(2, comboHijoId)
+            .executeUpdate();
+        if (historialEliminado == 0) {
+            throw new IllegalArgumentException("El combo no es un derivado reciclado de esta jornada.");
+        }
+        comboRepository.deleteById(comboHijoId);
+    }
+
+    public boolean esComboDerivadoDeJornada(Long jornadaId, Long comboId) {
+        Number count = (Number) entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? "
+                    + "AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'")
+            .setParameter(1, jornadaId)
+            .setParameter(2, comboId)
+            .getSingleResult();
+        return count.longValue() > 0;
+    }
+
+    public boolean esComboDerivado(Long comboId) {
+        Number count = (Number) entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM historial_jornadas WHERE combo_id = ? "
+                    + "AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'")
+            .setParameter(1, comboId)
+            .getSingleResult();
+        return count.longValue() > 0;
     }
 } 

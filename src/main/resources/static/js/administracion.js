@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
     await cargarUsuarios();
+    await cargarDuracionObjetivoPrograma();
     
     // Agregar evento al formulario de crear usuario
     document.getElementById('formCrearUsuario').addEventListener('submit', async function(e) {
@@ -22,6 +23,31 @@ async function cargarUsuarios() {
         renderTablaUsuarios(usuarios);
     } catch (e) {
         alert('Error cargando usuarios: ' + e.message);
+    }
+}
+
+async function cargarDuracionObjetivoPrograma() {
+    try {
+        const duracion = await apiManager.get('/api/configuracion/duracion-objetivo');
+        const input = document.getElementById('duracion-objetivo-programa');
+        if (input) input.value = duracion || '45m';
+    } catch (e) {
+        alert('Error cargando la duración objetivo: ' + e.message);
+    }
+}
+
+async function guardarDuracionObjetivoPrograma() {
+    const input = document.getElementById('duracion-objetivo-programa');
+    const duracion = (input?.value || '').trim();
+    if (!/^(\d+h)?\s*(\d+m)?$/.test(duracion) || !/[hm]/.test(duracion)) {
+        alert('Introduce una duración válida, por ejemplo: 45m o 1h 5m.');
+        return;
+    }
+    try {
+        await apiManager.put('/api/configuracion/duracion-objetivo', { duracion });
+        alert('Duración objetivo actualizada.');
+    } catch (e) {
+        alert('Error actualizando la duración objetivo: ' + e.message);
     }
 }
 

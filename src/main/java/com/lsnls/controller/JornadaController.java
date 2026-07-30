@@ -2,6 +2,7 @@ package com.lsnls.controller;
 
 import com.lsnls.dto.ApiResponse;
 import com.lsnls.dto.JornadaDTO;
+import com.lsnls.dto.ReciclajeComboDTO;
 import com.lsnls.entity.AuditLog;
 import com.lsnls.entity.Usuario;
 import com.lsnls.service.AuthorizationService;
@@ -396,7 +397,7 @@ public class JornadaController {
 
     @PostMapping("/{jornadaId}/reciclar-combo-parcial/{comboId}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
-    public ResponseEntity<ApiResponse<String>> reciclarComboParcial(
+    public ResponseEntity<ApiResponse<ReciclajeComboDTO>> reciclarComboParcial(
             @PathVariable Long jornadaId, 
             @PathVariable Long comboId,
             @RequestBody Map<String, Object> request) {
@@ -425,11 +426,12 @@ public class JornadaController {
             }
             
             Usuario currentUser = currentUserOpt.get();
-            jornadaService.reciclarComboParcial(jornadaId, comboId, preguntaUsadaId, currentUser.getId());
+            ReciclajeComboDTO reciclaje = jornadaService.reciclarComboParcial(
+                jornadaId, comboId, preguntaUsadaId, currentUser.getId());
             
             return ResponseEntity.ok(ApiResponse.exitoso(
                 "Combo reciclado parcialmente. Se creó un nuevo combo con las preguntas restantes.", 
-                "Combo reciclado parcialmente"));
+                reciclaje));
                 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
@@ -437,6 +439,22 @@ public class JornadaController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(ApiResponse.error("Error al reciclar combo parcialmente: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{jornadaId}/reciclaje-combo/{comboHijoId}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    public ResponseEntity<ApiResponse<String>> cancelarReciclajeCombo(
+            @PathVariable Long jornadaId,
+            @PathVariable Long comboHijoId) {
+        try {
+            jornadaService.cancelarReciclajeCombo(jornadaId, comboHijoId);
+            return ResponseEntity.ok(ApiResponse.exitoso("Reciclaje cancelado", "OK"));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error al cancelar el reciclaje: " + e.getMessage()));
         }
     }
 } 

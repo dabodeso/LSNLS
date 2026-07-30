@@ -56,6 +56,9 @@ public class ConcursanteService {
     @Autowired
     private ComboService comboService;
 
+    @Autowired
+    private JornadaService jornadaService;
+
     @Value("${upload.directory}")
     private String uploadDirectory;
 
@@ -149,6 +152,7 @@ public class ConcursanteService {
     @Transactional
     public ConcursanteDTO create(ConcursanteDTO concursanteDTO) {
         Concursante concursante = convertToEntity(concursanteDTO);
+        validarDuracionesYEstado(concursante);
         
         // Generar número de concursante automáticamente
         if (concursante.getNumeroConcursante() == null) {
@@ -195,6 +199,7 @@ public class ConcursanteService {
         // Si se asignó un combo, verificar si ya está asignado a otro concursante y desasignarlo
         if (concursante.getCombo() != null) {
             Combo combo = concursante.getCombo();
+            validarComboDerivadoParaJornada(concursante.getJornada(), combo);
             
             // Verificar si el combo ya está asignado a otro concursante
             @SuppressWarnings("unchecked")
@@ -256,6 +261,7 @@ public class ConcursanteService {
         if (concursanteDTO.getVersion() != null) {
             concursante.setVersion(concursanteDTO.getVersion());
         }
+        validarDuracionesYEstado(concursante);
         
         // Si se asignó un cuestionario nuevo, cambiar su estado a grabado
         if (concursante.getCuestionario() != null && 
@@ -337,6 +343,7 @@ public class ConcursanteService {
         if (concursanteDTO.getComboId() != null) {
             Combo comboNuevo = comboRepository.findById(concursanteDTO.getComboId())
                     .orElseThrow(() -> new RuntimeException("Combo no encontrado: " + concursanteDTO.getComboId()));
+            validarComboDerivadoParaJornada(concursante.getJornada(), comboNuevo);
             
             // Solo cambiar estado si es un combo diferente al anterior
             if (comboAnterior == null || !comboAnterior.getId().equals(comboNuevo.getId())) {
@@ -390,7 +397,42 @@ public class ConcursanteService {
         }
         
         concursante = concursanteRepository.save(concursante);
+        if (comboAnterior != null
+                && (concursante.getCombo() == null || !comboAnterior.getId().equals(concursante.getCombo().getId()))) {
+            eliminarComboDerivadoAbandonado(concursante, comboAnterior);
+        }
         return convertToDTO(concursante);
+    }
+
+    private void validarComboDerivadoParaJornada(Jornada jornada, Combo combo) {
+        if (!jornadaService.esComboDerivado(combo.getId())) {
+            return;
+        }
+        if (jornada == null || !jornadaService.esComboDerivadoDeJornada(jornada.getId(), combo.getId())) {
+            throw new IllegalStateException("El combo reciclado no pertenece a la jornada del concursante.");
+        }
+    }
+
+    private void eliminarComboDerivadoAbandonado(Concursante concursante, Combo comboAnterior) {
+        Jornada jornada = concursante.getJornada();
+        if (jornada == null || !jornadaService.esComboDerivadoDeJornada(jornada.getId(), comboAnterior.getId())) {
+            return;
+        }
+        entityManager.flush();
+        Long asignaciones = ((Number) entityManager.createQuery(
+                "SELECT COUNT(c) FROM Concursante c WHERE c.combo.id = :comboId")
+            .setParameter("comboId", comboAnterior.getId())
+            .getSingleResult()).longValue();
+        if (asignaciones > 0) {
+            throw new IllegalStateException("No se puede eliminar el combo reciclado porque sigue asignado.");
+        }
+        entityManager.createNativeQuery(
+                "DELETE FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? "
+                    + "AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'")
+            .setParameter(1, jornada.getId())
+            .setParameter(2, comboAnterior.getId())
+            .executeUpdate();
+        comboRepository.delete(comboAnterior);
     }
 
     @Transactional
@@ -466,6 +508,9 @@ public class ConcursanteService {
     public ConcursanteDTO asignarAPrograma(Long concursanteId, Long programaId, Integer posicion) {
         Concursante concursante = concursanteRepository.findById(concursanteId)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
+        if (!"editado".equalsIgnoreCase(concursante.getEstado())) {
+            throw new IllegalArgumentException("Solo se pueden añadir a programas concursantes en estado editado.");
+        }
 
         Integer numeroPrograma = programaId.intValue();
         Integer posicionAsignada = posicion;
@@ -578,9 +623,16 @@ public class ConcursanteService {
                     }
                     break;
                 case "estado":
-                    if (value != null) {
-                        concursante.setEstado(value.toString());
-                    }
+                    concursante.setEstado(value != null ? value.toString() : null);
+                    break;
+                case "duracion":
+                    concursante.setDuracion(value != null ? value.toString() : null);
+                    break;
+                case "duracionDireccion":
+                    concursante.setDuracionDireccion(value != null ? value.toString() : null);
+                    break;
+                case "duracionFinal":
+                    concursante.setDuracionFinal(value != null ? value.toString() : null);
                     break;
                 case "premio":
                     concursante.setPremio(value != null ? new BigDecimal(value.toString()) : null);
@@ -605,9 +657,36 @@ public class ConcursanteService {
                     break;
             }
         }
-        
+        validarDuracionesYEstado(concursante);
         concursante = concursanteRepository.save(concursante);
         return convertToDTO(concursante);
+    }
+
+    private void validarDuracionesYEstado(Concursante concursante) {
+        validarFormatoDuracion(concursante.getDuracion(), "duración de grabación");
+        validarFormatoDuracion(concursante.getDuracionDireccion(), "duración de dirección");
+        validarFormatoDuracion(concursante.getDuracionFinal(), "duración final");
+        if ("editado".equalsIgnoreCase(concursante.getEstado())
+                && !tieneDuracionEfectiva(concursante)) {
+            throw new IllegalArgumentException(
+                "No se puede marcar como editado sin una duración válida de grabación, dirección o final.");
+        }
+    }
+
+    private void validarFormatoDuracion(String duracion, String campo) {
+        if (duracion != null && !duracion.trim().isEmpty() && !duracion.trim().matches("^\\d{1,3}:[0-5]\\d$")) {
+            throw new IllegalArgumentException("La " + campo + " debe tener formato MM:SS.");
+        }
+    }
+
+    private boolean tieneDuracionEfectiva(Concursante concursante) {
+        return esDuracionValida(concursante.getDuracionFinal())
+            || esDuracionValida(concursante.getDuracionDireccion())
+            || esDuracionValida(concursante.getDuracion());
+    }
+
+    private boolean esDuracionValida(String duracion) {
+        return duracion != null && duracion.trim().matches("^\\d{1,3}:[0-5]\\d$");
     }
 
     private ConcursanteDTO convertToDTO(Concursante concursante) {

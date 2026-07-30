@@ -85,6 +85,19 @@
         <div class="alert alert-info mt-3">
             <b>Nota:</b> Los cambios en nombre y rol se guardan automáticamente. Para resetear la contraseña a <b>123456</b>, pulsa 🔑. Para eliminar el usuario, pulsa 🗑️.
         </div>
+
+        <section class="card mt-4">
+            <div class="card-body">
+                <h3 class="h5">Configuración de programas</h3>
+                <label for="duracion-objetivo-programa" class="form-label">Duración objetivo predeterminada</label>
+                <div class="input-group" style="max-width: 360px;">
+                    <input type="text" id="duracion-objetivo-programa" class="form-control"
+                           placeholder="45m" aria-describedby="ayuda-duracion-objetivo">
+                    <button type="button" class="btn btn-primary" onclick="guardarDuracionObjetivoPrograma()">Guardar</button>
+                </div>
+                <div id="ayuda-duracion-objetivo" class="form-text">Formatos admitidos: 45m, 1h o 1h 5m. Se aplicará a los programas nuevos.</div>
+            </div>
+        </section>
     </div>
     
     <!-- Modal para crear usuario -->

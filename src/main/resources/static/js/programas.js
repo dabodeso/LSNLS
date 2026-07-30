@@ -229,7 +229,7 @@ function mostrarProgramas() {
         const fechaFormateada = formatearFechaPrograma(programa.fechaEmision);
         const totalResultados = calcularTotalResultados(concursantes);
         const duracionReal = calcularDuracionReal(concursantes);
-        const duracionObjetivo = programa.duracionObjetivo || '1h 5m';
+        const duracionObjetivo = programa.duracionObjetivo || '45m';
         const gap = calcularGap(duracionObjetivo, duracionReal);
         
         // Definir colores para estados
@@ -277,8 +277,14 @@ function mostrarProgramas() {
                             </div>
                         </div>
                         <div class="programa-info-item" style="min-width: 80px;">
-                            <div class="programa-info-label">Programa</div>
-                            <div class="programa-info-value">${programa.id}</div>
+                            <div class="programa-info-label">Código programa</div>
+                            <div class="programa-info-value">
+                                ${editProg
+                                    ? `<input type="text" class="form-control form-control-sm" maxlength="32"
+                                               value="${programa.codigo || programa.id}"
+                                               onchange="actualizarCodigoPrograma(${programa.id}, this.value)" style="width: 100px;">`
+                                    : `<span class="programa-info-readonly">${programa.codigo || programa.id}</span>`}
+                            </div>
                         </div>
                         <div class="programa-info-item">
                             <div class="programa-info-label">Estado</div>
@@ -317,7 +323,7 @@ function mostrarProgramas() {
                                     ? `<input type="text" class="form-control form-control-sm"
                                                value="${duracionObjetivo}"
                                                onchange="actualizarDuracionObjetivoPrograma(${programa.id}, this.value)"
-                                               placeholder="1h 5m"
+                                               placeholder="45m"
                                                style="width: 80px; font-size: 0.9em;">`
                                     : `<span class="programa-info-readonly">${duracionObjetivo}</span>`}
                             </div>
@@ -342,6 +348,15 @@ function mostrarProgramas() {
                                          placeholder="Créditos especiales del programa..."
                                          onblur="actualizarCreditosEspecialesPrograma(${programa.id}, this.value)">${programa.creditosEspeciales || ''}</textarea>`
                             : `<p class="editable-field programa-creditos-textarea" style="cursor:default; pointer-events:none; min-height:44px; margin:0;">${programa.creditosEspeciales || ''}</p>`}
+                    </div>
+                    <div class="programa-creditos mt-2">
+                        <div class="programa-info-label" style="text-align:left; margin-bottom:6px;">NOTAS DEL PROGRAMA</div>
+                        ${editProg
+                            ? `<textarea class="editable-field programa-creditos-textarea"
+                                         rows="2"
+                                         placeholder="Notas internas del programa..."
+                                         onblur="actualizarNotasPrograma(${programa.id}, this.value)">${programa.notas || ''}</textarea>`
+                            : `<p class="editable-field programa-creditos-textarea" style="cursor:default; pointer-events:none; min-height:44px; margin:0;">${programa.notas || ''}</p>`}
                     </div>
                 </div>
                 
@@ -502,7 +517,7 @@ function mostrarProgramas() {
             entityType: 'PROGRAMA',
             entityId: p.id,
             version: p.version || 0,
-            label: `Programa T${p.temporada} #${p.id}`
+            label: `Programa T${p.temporada} #${p.codigo || p.id}`
         })));
     }
 }
@@ -522,6 +537,37 @@ async function actualizarCreditosEspecialesPrograma(programaId, creditos) {
         mostrarExito('Créditos especiales actualizados');
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de créditos especiales'));
+    }
+}
+
+async function actualizarCodigoPrograma(programaId, codigo) {
+    try {
+        const valor = (codigo || '').trim();
+        if (!valor) {
+            throw new Error('El código de programa es obligatorio.');
+        }
+        await apiManager.patchUndoable(
+            `/api/programas/${programaId}/campo`,
+            { codigo: valor },
+            { label: `Código programa ${valor}`, snapshotEndpoint: `/api/programas/${programaId}`, onAfter: refrescarVistaProgramas }
+        );
+        mostrarExito('Código de programa actualizado');
+    } catch (error) {
+        mostrarError(obtenerMensajeErrorProgramas(error, 'actualización del código de programa'));
+    }
+}
+
+async function actualizarNotasPrograma(programaId, notas) {
+    try {
+        const valor = (notas != null && String(notas).trim() !== '') ? String(notas) : null;
+        await apiManager.patchUndoable(
+            `/api/programas/${programaId}/campo`,
+            { notas: valor },
+            { label: `Notas programa ${programaId}`, snapshotEndpoint: `/api/programas/${programaId}`, onAfter: refrescarVistaProgramas }
+        );
+        mostrarExito('Notas del programa actualizadas');
+    } catch (error) {
+        mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de notas del programa'));
     }
 }
 
@@ -844,7 +890,7 @@ async function actualizarCampoConcursante(concursanteId, campo, valor) {
                     const concursantes = concursantesPorPrograma[programaId] || [];
                     const duracionReal = calcularDuracionReal(concursantes);
                     const programa = programas.find(p => p.id === programaId);
-                    const duracionObjetivo = programa ? (programa.duracionObjetivo || '1h 5m') : '1h 5m';
+                    const duracionObjetivo = programa ? (programa.duracionObjetivo || '45m') : '45m';
                     const gap = calcularGap(duracionObjetivo, duracionReal);
                     programaContainer.querySelector('.programa-info-item:nth-child(8) .programa-info-readonly').textContent = gap;
 
@@ -900,7 +946,7 @@ async function actualizarCampoConcursante(concursanteId, campo, valor) {
 async function actualizarDuracionObjetivoPrograma(programaId, nuevaDuracion) {
     try {
         if (!nuevaDuracion || nuevaDuracion.trim() === '') {
-            nuevaDuracion = '1h 5m';
+            nuevaDuracion = '45m';
         }
 
         await apiManager.patchUndoable(
@@ -909,7 +955,7 @@ async function actualizarDuracionObjetivoPrograma(programaId, nuevaDuracion) {
             {
                 label: `Duración objetivo programa ${programaId}`,
                 snapshotEndpoint: `/api/programas/${programaId}`,
-                mapRevert: (_key, raw) => raw ?? '1h 5m',
+                mapRevert: (_key, raw) => raw ?? '45m',
                 onAfter: refrescarVistaProgramas
             }
         );
@@ -1090,8 +1136,10 @@ function aplicarFiltros(lista) {
         if (temporadaFiltro && String(programa.temporada) !== String(temporadaFiltro)) {
             return false;
         }
-        // Nº Programa (ID)
-        if (programaIdFiltro && String(programa.id) !== String(programaIdFiltro)) {
+        // Código de programa, manteniendo coincidencia por ID interno durante la transición.
+        if (programaIdFiltro
+                && String(programa.codigo || '').toLowerCase() !== String(programaIdFiltro).toLowerCase()
+                && String(programa.id) !== String(programaIdFiltro)) {
             return false;
         }
         // Fecha de emisión exacta (normalizada a YYYY-MM-DD)
@@ -1124,6 +1172,7 @@ function limpiarFiltrosProgramas() {
 function mostrarFormularioPrograma() {
     document.getElementById('form-programa').reset();
     document.getElementById('programa-id').value = '';
+    document.getElementById('codigo-programa').value = '';
     document.getElementById('modal-programa-titulo').textContent = 'Nuevo Programa';
     
     const modal = new bootstrap.Modal(document.getElementById('modal-programa'));
@@ -1134,6 +1183,7 @@ async function guardarPrograma() {
     const programaId = document.getElementById('programa-id').value;
     const temporada = document.getElementById('temporada-programa').value;
     const fechaEmision = document.getElementById('fecha-emision').value || null; // Puede ser null
+    const codigo = (document.getElementById('codigo-programa').value || '').trim() || null;
     
     if (!temporada) {
         mostrarError('La temporada es obligatoria');
@@ -1142,7 +1192,8 @@ async function guardarPrograma() {
     
     const programaData = {
         temporada: parseInt(temporada),
-        fechaEmision
+        fechaEmision,
+        codigo: codigo || (programaId ? String(programaId) : null)
     };
     
     try {
@@ -1151,6 +1202,7 @@ async function guardarPrograma() {
             await apiManager.putUndoable(`/api/programas/${programaId}`, programaData, { label: `Actualizar programa ${programaId}` });
             await apiManager.patch(`/api/programas/${programaId}/campo`, { temporada: parseInt(temporada) });
             await apiManager.patch(`/api/programas/${programaId}/campo`, { fechaEmision });
+            await apiManager.patch(`/api/programas/${programaId}/campo`, { codigo: codigo || programaId.toString() });
             mostrarExito('Programa actualizado correctamente');
         } else {
             const creado = await apiManager.postUndoable('/api/programas', programaData, {
@@ -1363,21 +1415,32 @@ let totalPaginasConcursantesDisponibles = 1;
 let debounceTimer = null;
 let posicionPreferidaPrograma = null;
 
-// Aplica filtros de lugar, valoración final y estado sobre la lista en memoria
+function duracionConcursanteEnSegundos(duracion) {
+    const texto = (duracion || '').trim();
+    const match = texto.match(/^(\d{1,3}):([0-5]\d)$/);
+    if (!match) return null;
+    return Number(match[1]) * 60 + Number(match[2]);
+}
+
+// Aplica filtros de lugar, valoración final, estado y duración efectiva sobre la lista en memoria
 function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
-    const soloEstadosPermitidos = ['GRABADO', 'EDITADO'];
+    const soloEstadosPermitidos = ['EDITADO'];
     const lugarInput = document.getElementById('filtro-lugar-concursante-disponible');
     const valoracionSelect = document.getElementById('filtro-valoracion-final-concursante-disponible');
     const estadoSelect = document.getElementById('filtro-estado-concursante-disponible');
+    const duracionMinInput = document.getElementById('filtro-duracion-min-concursante-disponible');
+    const duracionMaxInput = document.getElementById('filtro-duracion-max-concursante-disponible');
 
     const lugarFiltro = (lugarInput?.value || '').trim().toLowerCase();
     const valoracionFiltro = (valoracionSelect?.value || '').trim();
     const estadoFiltro = (estadoSelect?.value || '').trim().toUpperCase();
+    const duracionMin = duracionConcursanteEnSegundos(duracionMinInput?.value);
+    const duracionMax = duracionConcursanteEnSegundos(duracionMaxInput?.value);
 
     return (concursantesDisponibles || []).filter(c => {
         const estado = (c.estado || '').toUpperCase();
 
-        // Siempre limitar a Grabado / Editado
+        // Solo se puede incorporar a programa a concursantes editados.
         if (!soloEstadosPermitidos.includes(estado)) {
             return false;
         }
@@ -1401,6 +1464,14 @@ function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
             if (val !== valoracionFiltro) {
                 return false;
             }
+        }
+
+        const duracionEfectiva = duracionConcursanteEnSegundos(obtenerDuracionConcursante(c));
+        if (duracionMin !== null && (duracionEfectiva === null || duracionEfectiva < duracionMin)) {
+            return false;
+        }
+        if (duracionMax !== null && (duracionEfectiva === null || duracionEfectiva > duracionMax)) {
+            return false;
         }
 
         return true;
@@ -1427,9 +1498,13 @@ async function mostrarConcursantesDisponibles(programaId, posicionPreferida = nu
         const filtroLugar = document.getElementById('filtro-lugar-concursante-disponible');
         const filtroValoracion = document.getElementById('filtro-valoracion-final-concursante-disponible');
         const filtroEstado = document.getElementById('filtro-estado-concursante-disponible');
+        const filtroDuracionMin = document.getElementById('filtro-duracion-min-concursante-disponible');
+        const filtroDuracionMax = document.getElementById('filtro-duracion-max-concursante-disponible');
         if (filtroLugar) filtroLugar.value = '';
         if (filtroValoracion) filtroValoracion.value = '';
-        if (filtroEstado) filtroEstado.value = '';
+        if (filtroEstado) filtroEstado.value = 'EDITADO';
+        if (filtroDuracionMin) filtroDuracionMin.value = '';
+        if (filtroDuracionMax) filtroDuracionMax.value = '';
         
         // Cargar concursantes disponibles con paginación (10 por página)
         const response = await apiManager.get('/api/concursantes/disponibles?page=0&size=10');
@@ -1459,7 +1534,7 @@ function renderizarConcursantesDisponibles() {
     const infoPaginacion = document.getElementById('info-paginacion-concursantes');
     const listaFiltrada = aplicarFiltrosConcursantesDisponiblesEnMemoria();
     if (infoPaginacion) {
-        infoPaginacion.innerHTML = `Mostrando ${listaFiltrada.length} de ${totalConcursantesDisponibles} concursantes (solo estados Grabado/Editado) (Página ${paginaConcursantesDisponibles + 1} de ${totalPaginasConcursantesDisponibles})`;
+        infoPaginacion.innerHTML = `Mostrando ${listaFiltrada.length} de ${totalConcursantesDisponibles} concursantes editados (Página ${paginaConcursantesDisponibles + 1} de ${totalPaginasConcursantesDisponibles})`;
     }
     
     lista.innerHTML = `
@@ -1472,6 +1547,9 @@ function renderizarConcursantesDisponibles() {
                         <th>Edad</th>
                         <th>Premio</th>
                         <th>Valoración final</th>
+                        <th>Dur. grabación</th>
+                        <th>Dur. dirección</th>
+                        <th>Dur. final</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1482,6 +1560,9 @@ function renderizarConcursantesDisponibles() {
                             <td>${concursante.edad || ''}</td>
                             <td>${concursante.premio != null && concursante.premio !== '' ? concursante.premio : ''}</td>
                             <td>${concursante.valoracionFinal || ''}</td>
+                            <td>${concursante.duracion || ''}</td>
+                            <td>${concursante.duracionDireccion || ''}</td>
+                            <td>${concursante.duracionFinal || ''}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -1580,6 +1661,7 @@ async function editarPrograma(programaId) {
         await EditLockManager.tryAcquire('PROGRAMA', programaId);
         const programa = await apiManager.get(`/api/programas/${programaId}`);
         document.getElementById('programa-id').value = programa.id;
+        document.getElementById('codigo-programa').value = programa.codigo || programa.id;
         document.getElementById('temporada-programa').value = programa.temporada;
         document.getElementById('fecha-emision').value = normalizarFechaProgramaISO(programa.fechaEmision);
         document.getElementById('modal-programa-titulo').textContent = 'Editar Programa';

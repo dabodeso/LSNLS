@@ -40,10 +40,13 @@ public class ConfiguracionGlobalService {
     }
 
     public String getDuracionObjetivo() {
-        return obtenerValor("DURACION_OBJETIVO_PROGRAMA", "1h 5m");
+        return obtenerValor("DURACION_OBJETIVO_PROGRAMA", "45m");
     }
 
     public void setDuracionObjetivo(String duracion) {
+        if (duracion == null || !duracion.trim().matches("^(?=.*\\d)(?:\\d+h)?\\s*(?:\\d+m)?$")) {
+            throw new IllegalArgumentException("La duración debe tener formato como 45m o 1h 5m.");
+        }
         actualizarConfiguracion("DURACION_OBJETIVO_PROGRAMA", duracion, "Duración objetivo por defecto para programas");
     }
 } 

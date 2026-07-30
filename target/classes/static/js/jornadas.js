@@ -64,11 +64,15 @@ const JornadasManager = {
         await this.cargarDatos(false);
     },
 
-    configurarPermisos() {
-        // Ocultar botón de nueva jornada para guionistas
+    esAdminODireccion() {
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        return usuario.rol === 'ROLE_ADMIN' || usuario.rol === 'ROLE_DIRECCION';
+    },
+
+    configurarPermisos() {
+        // Crear jornada: solo ADMIN / DIRECCION (alineado con POST /api/jornadas)
         const btnNuevaJornada = document.querySelector('button[onclick*="mostrarModalCrear"]');
-        if (btnNuevaJornada && usuario.rol === 'ROLE_GUION') {
+        if (btnNuevaJornada && !this.esAdminODireccion()) {
             btnNuevaJornada.style.display = 'none';
         }
     },
@@ -876,26 +880,24 @@ const JornadasManager = {
     },
 
     puedeEditar(jornada) {
-        // Los guionistas no pueden editar
-        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-        if (usuario.rol === 'ROLE_GUION') {
+        // Solo ADMIN / DIRECCION; bloqueado en completada / archivada (alineado con PUT /api/jornadas)
+        if (!this.esAdminODireccion()) {
             return false;
         }
         return jornada.estado !== 'completada' && jornada.estado !== 'archivada';
     },
 
     puedeEliminar(jornada) {
-        // Los guionistas no pueden eliminar
-        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-        if (usuario.rol === 'ROLE_GUION') {
+        // Solo ADMIN / DIRECCION; bloqueado en completada / archivada (alineado con DELETE)
+        if (!this.esAdminODireccion()) {
             return false;
         }
-        return jornada.estado !== 'en_grabacion';
+        return jornada.estado !== 'completada' && jornada.estado !== 'archivada';
     },
 
     puedeGestionarEstado(jornada) {
-        // Asumiendo que solo ciertos roles pueden cambiar estado
-        return true; // Implementar según roles del usuario
+        // Solo ADMIN / DIRECCION (alineado con PUT /api/jornadas/{id}/estado)
+        return this.esAdminODireccion();
     },
 
     mostrarModalCrear() {
@@ -1061,10 +1063,20 @@ const JornadasManager = {
                 }, 2000);
                 return;
             }
+
+            const msg = (error.message || '').toLowerCase();
+            if (msg.includes('403') || msg.includes('permiso') || msg.includes('forbidden')) {
+                Utils.showAlert('No tienes permiso para cambiar el estado', 'error');
+                await this.cargarDatos(true);
+                this.mostrarJornadas();
+                return;
+            }
             
             // Extraer mensaje de error de la respuesta JSON
-            const mensajeError = this.extraerMensajeError(error.message);
+            const mensajeError = this.extraerMensajeError(error.message, 'cambiar el estado');
             Utils.showAlert(mensajeError, 'error');
+            await this.cargarDatos(true);
+            this.mostrarJornadas();
         }
     },
 
