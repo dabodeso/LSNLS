@@ -9,6 +9,9 @@ const JornadasManager = {
     lastScrollY: 0,
     lastFocusJornadaId: null,
     reabrirEditarTrasSeleccion: false,
+    selectorCuestPagina: 0,
+    selectorComboPagina: 0,
+    selectorPorPagina: 10,
 
     normalizeId(id) {
         const n = Number(id);
@@ -196,32 +199,49 @@ const JornadasManager = {
             inpCb.addEventListener('input', (e) => this.filtrarCombos(e.target.value));
         }
 
-        // Nuevos filtros en modales (IDs actuales)
-        const filtCuId = document.getElementById('filtroCuestId');
         const filtCuTem = document.getElementById('filtroCuestTematica');
-        if (filtCuId) {
-            filtCuId.addEventListener('keyup', () => this.mostrarCuestionariosDisponibles());
-            filtCuId.addEventListener('change', () => this.mostrarCuestionariosDisponibles());
-        }
         if (filtCuTem) {
-            filtCuTem.addEventListener('change', () => this.mostrarCuestionariosDisponibles());
+            filtCuTem.addEventListener('change', () => this.buscarCuestionariosSelector());
         }
 
-        const filtCoId = document.getElementById('filtroComboId');
         const filtCoTipo = document.getElementById('filtroComboTipo');
         const filtCoTem = document.getElementById('filtroComboTematica');
-        if (filtCoId) {
-            filtCoId.addEventListener('keyup', () => this.mostrarCombosDisponibles());
-            filtCoId.addEventListener('change', () => this.mostrarCombosDisponibles());
-        }
         if (filtCoTipo) {
-            filtCoTipo.addEventListener('change', () => this.mostrarCombosDisponibles());
+            filtCoTipo.addEventListener('change', () => this.buscarCombosSelector());
         }
         if (filtCoTem) {
-            filtCoTem.addEventListener('change', () => this.mostrarCombosDisponibles());
+            filtCoTem.addEventListener('change', () => this.buscarCombosSelector());
         }
 
+        this.configurarTeclasSelectores();
         this.configurarReaperturaSelectores();
+    },
+
+    esTeclaConfirmarSelector(e) {
+        return e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space';
+    },
+
+    debeIgnorarTeclaSelector(e) {
+        const tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
+        if (tag === 'SELECT' || tag === 'BUTTON' || tag === 'TEXTAREA' || tag === 'A') return true;
+        if (e.target && e.target.getAttribute && e.target.getAttribute('data-bs-dismiss')) return true;
+        return false;
+    },
+
+    configurarTeclasSelectores() {
+        const enlazar = (modalId, confirmarFn) => {
+            const modal = document.getElementById(modalId);
+            if (!modal || modal.dataset.teclasSelector) return;
+            modal.dataset.teclasSelector = '1';
+            modal.addEventListener('keydown', (e) => {
+                if (!this.esTeclaConfirmarSelector(e) || this.debeIgnorarTeclaSelector(e)) return;
+                e.preventDefault();
+                e.stopPropagation();
+                confirmarFn.call(this);
+            });
+        };
+        enlazar('modalSelectorCuestionarios', this.confirmarSelectorCuestionariosConTeclado);
+        enlazar('modalSelectorCombos', this.confirmarSelectorCombosConTeclado);
     },
 
     configurarReaperturaSelectores() {
@@ -1163,27 +1183,12 @@ const JornadasManager = {
             }
         } catch (e) { console.warn('[JORNADAS] No se pudieron cargar temáticas de cuestionarios', e); }
 
-        // Listeners de filtros
-        const inputId = document.getElementById('filtroCuestId');
-        const selTem = document.getElementById('filtroCuestTematica');
-        const trigger = () => this.mostrarCuestionariosDisponibles();
-        if (inputId) {
-            inputId.removeEventListener('keyup', inputId._h || (()=>{}));
-            inputId._h = trigger;
-            inputId.addEventListener('keyup', trigger);
-            inputId.removeEventListener('change', inputId._hc || (()=>{}));
-            inputId._hc = trigger;
-            inputId.addEventListener('change', trigger);
-        }
-        if (selTem) {
-            selTem.removeEventListener('change', selTem._h || (()=>{}));
-            selTem._h = trigger;
-            selTem.addEventListener('change', trigger);
-        }
-
+        this.selectorCuestPagina = 0;
         this.mostrarCuestionariosDisponibles();
-        const modal = new bootstrap.Modal(document.getElementById('modalSelectorCuestionarios'));
+        const modalEl = document.getElementById('modalSelectorCuestionarios');
+        const modal = new bootstrap.Modal(modalEl);
         modal.show();
+        setTimeout(() => document.getElementById('filtroCuestId')?.focus(), 200);
     },
 
     async seleccionarCombos() {
@@ -1207,51 +1212,145 @@ const JornadasManager = {
             }
         } catch (e) { console.warn('[JORNADAS] No se pudieron cargar temáticas de combos', e); }
 
-        // Listeners de filtros
-        const inputId = document.getElementById('filtroComboId');
-        const selTipo = document.getElementById('filtroComboTipo');
-        const selTem = document.getElementById('filtroComboTematica');
-        const trigger = () => this.mostrarCombosDisponibles();
-        if (inputId) {
-            inputId.removeEventListener('keyup', inputId._h || (()=>{}));
-            inputId._h = trigger;
-            inputId.addEventListener('keyup', trigger);
-            inputId.removeEventListener('change', inputId._hc || (()=>{}));
-            inputId._hc = trigger;
-            inputId.addEventListener('change', trigger);
-        }
-        if (selTipo) {
-            selTipo.removeEventListener('change', selTipo._h || (()=>{}));
-            selTipo._h = trigger;
-            selTipo.addEventListener('change', trigger);
-        }
-        if (selTem) {
-            selTem.removeEventListener('change', selTem._h || (()=>{}));
-            selTem._h = trigger;
-            selTem.addEventListener('change', trigger);
-        }
-
+        this.selectorComboPagina = 0;
         this.mostrarCombosDisponibles();
-        const modal = new bootstrap.Modal(document.getElementById('modalSelectorCombos'));
+        const modalEl = document.getElementById('modalSelectorCombos');
+        const modal = new bootstrap.Modal(modalEl);
         modal.show();
+        setTimeout(() => document.getElementById('filtroComboId')?.focus(), 200);
     },
 
-    mostrarCuestionariosDisponibles() {
-        const container = document.getElementById('listaCuestionarios');
-        let html = '';
-
+    listaCuestionariosFiltrada() {
         const idFiltro = (document.getElementById('filtroCuestId')?.value || '').trim();
         const tematicaFiltro = document.getElementById('filtroCuestTematica')?.value || '';
-
-        const lista = this.cuestionariosDisponibles.filter(cuestionario => {
+        return (this.cuestionariosDisponibles || []).filter(cuestionario => {
             if (idFiltro && String(cuestionario.id) !== idFiltro) return false;
             if (tematicaFiltro && cuestionario.tematica !== tematicaFiltro) return false;
             return true;
         });
+    },
 
-        lista.forEach(cuestionario => {
-            const isSelected = this.incluyeId(this.cuestionariosSeleccionados, cuestionario.id);
-            html += `
+    listaCombosFiltrada() {
+        const idFiltro = (document.getElementById('filtroComboId')?.value || '').trim();
+        const tipoFiltro = document.getElementById('filtroComboTipo')?.value || '';
+        const tematicaFiltro = document.getElementById('filtroComboTematica')?.value || '';
+        return (this.combosDisponibles || []).filter(combo => {
+            if (idFiltro && String(combo.id) !== idFiltro) return false;
+            if (tipoFiltro && combo.tipo !== tipoFiltro) return false;
+            if (tematicaFiltro && combo.tematica !== tematicaFiltro) return false;
+            return true;
+        });
+    },
+
+    paginarListaSelector(lista, pagina) {
+        const total = lista.length;
+        const totalPag = Math.max(1, Math.ceil(total / this.selectorPorPagina) || 1);
+        const p = Math.min(Math.max(0, pagina), totalPag - 1);
+        const start = p * this.selectorPorPagina;
+        return {
+            slice: lista.slice(start, start + this.selectorPorPagina),
+            pagina: p,
+            total,
+            totalPag,
+            inicio: total === 0 ? 0 : start + 1,
+            fin: Math.min(start + this.selectorPorPagina, total)
+        };
+    },
+
+    renderPaginacionSelector(ulId, pagina, totalPag, irAFnName) {
+        const ul = document.getElementById(ulId);
+        if (!ul) return;
+        ul.innerHTML = '';
+        if (totalPag <= 1) return;
+
+        const addItem = (label, target, disabled, active) => {
+            const li = document.createElement('li');
+            li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#">${label}</a>`;
+            if (!disabled && !active) {
+                li.querySelector('a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this[irAFnName](target);
+                });
+            } else {
+                li.querySelector('a').addEventListener('click', (e) => e.preventDefault());
+            }
+            ul.appendChild(li);
+        };
+
+        addItem('Anterior', pagina - 1, pagina === 0, false);
+        const inicio = Math.max(0, pagina - 2);
+        const fin = Math.min(totalPag - 1, pagina + 2);
+        for (let i = inicio; i <= fin; i++) {
+            addItem(String(i + 1), i, false, i === pagina);
+        }
+        addItem('Siguiente', pagina + 1, pagina >= totalPag - 1, false);
+    },
+
+    buscarCuestionariosSelector() {
+        this.selectorCuestPagina = 0;
+        this.mostrarCuestionariosDisponibles();
+        document.getElementById('filtroCuestId')?.focus();
+    },
+
+    buscarCombosSelector() {
+        this.selectorComboPagina = 0;
+        this.mostrarCombosDisponibles();
+        document.getElementById('filtroComboId')?.focus();
+    },
+
+    irAPaginaSelectorCuestionarios(pagina) {
+        this.selectorCuestPagina = pagina;
+        this.mostrarCuestionariosDisponibles();
+    },
+
+    irAPaginaSelectorCombos(pagina) {
+        this.selectorComboPagina = pagina;
+        this.mostrarCombosDisponibles();
+    },
+
+    confirmarSelectorCuestionariosConTeclado() {
+        const idFiltro = (document.getElementById('filtroCuestId')?.value || '').trim();
+        if (idFiltro) {
+            const encontrado = (this.cuestionariosDisponibles || []).find(c => String(c.id) === idFiltro);
+            if (encontrado) {
+                this.seleccionarCuestionarioDirecto(encontrado.id);
+                return;
+            }
+            Utils.showAlert(`No hay un cuestionario disponible con ID ${idFiltro}`, 'error');
+            return;
+        }
+        this.confirmarSeleccionCuestionarios();
+    },
+
+    confirmarSelectorCombosConTeclado() {
+        const idFiltro = (document.getElementById('filtroComboId')?.value || '').trim();
+        if (idFiltro) {
+            const encontrado = (this.combosDisponibles || []).find(c => String(c.id) === idFiltro);
+            if (encontrado) {
+                this.seleccionarComboDirecto(encontrado.id);
+                return;
+            }
+            Utils.showAlert(`No hay un combo disponible con ID ${idFiltro}`, 'error');
+            return;
+        }
+        this.confirmarSeleccionCombos();
+    },
+
+    mostrarCuestionariosDisponibles() {
+        const container = document.getElementById('listaCuestionarios');
+        if (!container) return;
+        const lista = this.listaCuestionariosFiltrada();
+        const pagina = this.paginarListaSelector(lista, this.selectorCuestPagina);
+        this.selectorCuestPagina = pagina.pagina;
+
+        if (!pagina.slice.length) {
+            container.innerHTML = '<div class="list-group-item text-muted">No hay cuestionarios para mostrar</div>';
+        } else {
+            let html = '';
+            pagina.slice.forEach(cuestionario => {
+                const isSelected = this.incluyeId(this.cuestionariosSeleccionados, cuestionario.id);
+                html += `
                 <div class="list-group-item ${isSelected ? 'active' : ''}" 
                      onclick="JornadasManager.toggleCuestionario(${cuestionario.id})"
                      data-id="${cuestionario.id}">
@@ -1278,30 +1377,33 @@ const JornadasManager = {
                     </div>
                 </div>
             `;
-        });
+            });
+            container.innerHTML = html;
+        }
 
-        container.innerHTML = html;
+        const info = document.getElementById('info-paginacion-selector-cuestionarios');
+        if (info) {
+            info.textContent = pagina.total === 0
+                ? 'Mostrando 0 de 0'
+                : `Mostrando ${pagina.inicio}-${pagina.fin} de ${pagina.total}`;
+        }
+        this.renderPaginacionSelector('paginacion-selector-cuestionarios', pagina.pagina, pagina.totalPag, 'irAPaginaSelectorCuestionarios');
     },
 
     mostrarCombosDisponibles() {
         const container = document.getElementById('listaCombos');
-        let html = '';
+        if (!container) return;
+        const lista = this.listaCombosFiltrada();
+        const pagina = this.paginarListaSelector(lista, this.selectorComboPagina);
+        this.selectorComboPagina = pagina.pagina;
 
-        // Leer filtros
-        const idFiltro = (document.getElementById('filtroComboId')?.value || '').trim();
-        const tipoFiltro = document.getElementById('filtroComboTipo')?.value || '';
-        const tematicaFiltro = document.getElementById('filtroComboTematica')?.value || '';
-
-        const lista = this.combosDisponibles.filter(combo => {
-            if (idFiltro && String(combo.id) !== idFiltro) return false;
-            if (tipoFiltro && combo.tipo !== tipoFiltro) return false;
-            if (tematicaFiltro && combo.tematica !== tematicaFiltro) return false;
-            return true;
-        });
-
-        lista.forEach(combo => {
-            const isSelected = this.incluyeId(this.combosSeleccionados, combo.id);
-            html += `
+        if (!pagina.slice.length) {
+            container.innerHTML = '<div class="list-group-item text-muted">No hay combos para mostrar</div>';
+        } else {
+            let html = '';
+            pagina.slice.forEach(combo => {
+                const isSelected = this.incluyeId(this.combosSeleccionados, combo.id);
+                html += `
                 <div class="list-group-item ${isSelected ? 'active' : ''}" 
                      onclick="JornadasManager.toggleCombo(${combo.id})"
                      data-id="${combo.id}">
@@ -1328,9 +1430,17 @@ const JornadasManager = {
                     </div>
                 </div>
             `;
-        });
+            });
+            container.innerHTML = html;
+        }
 
-        container.innerHTML = html;
+        const info = document.getElementById('info-paginacion-selector-combos');
+        if (info) {
+            info.textContent = pagina.total === 0
+                ? 'Mostrando 0 de 0'
+                : `Mostrando ${pagina.inicio}-${pagina.fin} de ${pagina.total}`;
+        }
+        this.renderPaginacionSelector('paginacion-selector-combos', pagina.pagina, pagina.totalPag, 'irAPaginaSelectorCombos');
     },
 
     seleccionarCuestionarioDirecto(id) {

@@ -424,7 +424,7 @@
 
     <!-- Modal Selector de Cuestionarios -->
     <div class="modal fade" id="modalSelectorCuestionarios" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Seleccionar Cuestionarios</h5>
@@ -433,16 +433,23 @@
                 <div class="modal-body">
                     <div class="row g-2 mb-3">
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="filtroCuestId" placeholder="ID">
+                            <input type="text" class="form-control" id="filtroCuestId" placeholder="ID" autocomplete="off">
                         </div>
-                        <div class="col-md-9">
+                        <div class="col-md-6">
                             <select class="form-select" id="filtroCuestTematica">
                                 <option value="">Temática (todas)</option>
                             </select>
                         </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-primary w-100" onclick="JornadasManager.buscarCuestionariosSelector()">Buscar</button>
+                        </div>
                     </div>
                     <div class="list-group" id="listaCuestionarios">
                         <!-- Lista de cuestionarios disponibles -->
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                        <small id="info-paginacion-selector-cuestionarios" class="text-muted">Mostrando 0 de 0</small>
+                        <ul id="paginacion-selector-cuestionarios" class="pagination pagination-sm mb-0"></ul>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -457,7 +464,7 @@
 
     <!-- Modal Selector de Combos -->
     <div class="modal fade" id="modalSelectorCombos" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Seleccionar Combos</h5>
@@ -466,9 +473,9 @@
                 <div class="modal-body">
                     <div class="row g-2 mb-3">
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="filtroComboId" placeholder="ID">
+                            <input type="text" class="form-control" id="filtroComboId" placeholder="ID" autocomplete="off">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <select class="form-select" id="filtroComboTipo">
                                 <option value="">Tipo de combo (todos)</option>
                                 <option value="P">Premio</option>
@@ -477,14 +484,21 @@
                                 <option value="R">Rescate</option>
                             </select>
                         </div>
-                        <div class="col-md-5">
+                        <div class="col-md-3">
                             <select class="form-select" id="filtroComboTematica">
                                 <option value="">Temática (todas)</option>
                             </select>
                         </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-primary w-100" onclick="JornadasManager.buscarCombosSelector()">Buscar</button>
+                        </div>
                     </div>
                     <div class="list-group" id="listaCombos">
                         <!-- Lista de combos disponibles -->
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                        <small id="info-paginacion-selector-combos" class="text-muted">Mostrando 0 de 0</small>
+                        <ul id="paginacion-selector-combos" class="pagination pagination-sm mb-0"></ul>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -818,7 +832,7 @@
     <script src="js/undo-manager.js?v=20260626-3"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
-    <script src="js/jornadas.js?v=20260821-2"></script>
+    <script src="js/jornadas.js?v=20260821-3"></script>
     <script>
         // Verificar autenticación al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
