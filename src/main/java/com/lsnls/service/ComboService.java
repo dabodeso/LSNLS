@@ -47,6 +47,9 @@ public class ComboService {
     @Autowired
     private EntityManager entityManager;
 
+    @Autowired
+    private UndoService undoService;
+
     public Combo crear(Combo combo) {
         combo.setFechaCreacion(LocalDateTime.now());
         combo.setEstado(EstadoCombo.borrador);
@@ -666,6 +669,29 @@ public class ComboService {
                 jornadasCount + " jornada(s). Desas?gnalo primero.");
         }
 
+        // UNDO: capturar todo lo que este borrado destruye o modifica, ANTES de tocarlo:
+        // la fila del combo (se reinsertará con el mismo id), sus preguntas asociadas,
+        // el historial que se borra y los estados que se liberan
+        List<Map<String, Object>> accionesUndo = new ArrayList<>();
+        Map<String, Object> filaCombo = undoService.snapshotFila("combos", id);
+        if (filaCombo != null) {
+            accionesUndo.add(UndoService.accionInsertarFila("combos", filaCombo));
+        }
+        for (Map<String, Object> fila : undoService.snapshotFilas("combos_preguntas", "combo_id", id)) {
+            accionesUndo.add(UndoService.accionInsertarFila("combos_preguntas", fila));
+        }
+        for (Map<String, Object> fila : undoService.snapshotFilas("historial_jornadas", "combo_id", id)) {
+            accionesUndo.add(UndoService.accionInsertarFila("historial_jornadas", fila));
+        }
+        if (combo.getPreguntas() != null) {
+            for (PreguntaCombo pc : combo.getPreguntas()) {
+                Map<String, Object> camposPrevios = new HashMap<>();
+                camposPrevios.put("estado", pc.getPregunta().getEstado() != null ? pc.getPregunta().getEstado().name() : null);
+                camposPrevios.put("estado_disponibilidad", pc.getPregunta().getEstadoDisponibilidad() != null ? pc.getPregunta().getEstadoDisponibilidad().name() : null);
+                accionesUndo.add(UndoService.accionActualizarCampos("preguntas", pc.getPregunta().getId(), camposPrevios));
+            }
+        }
+
         // Eliminar registros del historial que referencian este combo (si la tabla existe)
         try {
             // Verificar si la tabla existe antes de intentar eliminar
@@ -696,6 +722,9 @@ public class ComboService {
         }
         
         comboRepository.deleteById(id);
+
+        // UNDO: registrar el borrado como operación deshacible (reinserta con el mismo id)
+        undoService.registrar("eliminar_combo", "Eliminar combo " + id, accionesUndo);
     }
 
     public int limpiarPreguntasInvalidas(Long comboId) {

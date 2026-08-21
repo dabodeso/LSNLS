@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EditLock.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.entity</a> &gt; <span class="el_source">EditLock.java</span></div><h1>EditLock.java</h1><pre class="source lang-java linenums">package com.lsnls.entity;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@Entity
+@Table(name = &quot;edit_locks&quot;, uniqueConstraints = @UniqueConstraint(columnNames = {&quot;entity_type&quot;, &quot;entity_id&quot;}))
+public class EditLock {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;entity_type&quot;, nullable = false, length = 40)
+    private AuditLog.EntityType entityType;
+
+    @Column(name = &quot;entity_id&quot;, nullable = false)
+    private Long entityId;
+
+    @Column(name = &quot;usuario_id&quot;, nullable = false)
+    private Long usuarioId;
+
+    @Column(name = &quot;usuario_nombre&quot;, nullable = false, length = 100)
+    private String usuarioNombre;
+
+    @Column(name = &quot;expires_at&quot;, nullable = false)
+    private LocalDateTime expiresAt;
+
+    @Column(name = &quot;created_at&quot;, nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = &quot;updated_at&quot;, nullable = false)
+    private LocalDateTime updatedAt;
+
+    public boolean isExpired() {
+<span class="nc bnc" id="L42" title="All 4 branches missed.">        return expiresAt == null || LocalDateTime.now().isAfter(expiresAt);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

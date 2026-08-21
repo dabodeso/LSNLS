@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HistorialJornadaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">HistorialJornadaService.java</span></div><h1>HistorialJornadaService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import com.lsnls.entity.HistorialJornada;
+import com.lsnls.entity.HistorialJornada.EstadoAsignacion;
+import com.lsnls.entity.HistorialJornada.TipoAsignacion;
+import com.lsnls.entity.Cuestionario;
+import com.lsnls.entity.Combo;
+import com.lsnls.entity.Jornada;
+import com.lsnls.entity.Pregunta;
+import com.lsnls.repository.HistorialJornadaRepository;
+import com.lsnls.repository.CuestionarioRepository;
+import com.lsnls.repository.ComboRepository;
+import com.lsnls.repository.JornadaRepository;
+import com.lsnls.repository.PreguntaRepository;
+import com.lsnls.dto.HistorialJornadaDTO;
+import com.lsnls.dto.MarcarNoUsadoDTO;
+import com.lsnls.dto.ReaprovecharComboDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+<span class="nc" id="L28">public class HistorialJornadaService {</span>
+    
+    @Autowired
+    private HistorialJornadaRepository historialRepository;
+    
+    @Autowired
+    private CuestionarioRepository cuestionarioRepository;
+    
+    @Autowired
+    private ComboRepository comboRepository;
+    
+    @Autowired
+    private JornadaRepository jornadaRepository;
+    
+    @Autowired
+    private PreguntaRepository preguntaRepository;
+
+    @Autowired
+    private UndoService undoService;
+
+    /**
+     * Registrar asignación de cuestionario a jornada
+     */
+    public HistorialJornada registrarAsignacionCuestionario(Long jornadaId, Long cuestionarioId) {
+<span class="nc" id="L52">        Optional&lt;Jornada&gt; jornadaOpt = jornadaRepository.findById(jornadaId);</span>
+<span class="nc" id="L53">        Optional&lt;Cuestionario&gt; cuestionarioOpt = cuestionarioRepository.findById(cuestionarioId);</span>
+        
+<span class="nc bnc" id="L55" title="All 4 branches missed.">        if (jornadaOpt.isEmpty() || cuestionarioOpt.isEmpty()) {</span>
+<span class="nc" id="L56">            throw new IllegalArgumentException(&quot;Jornada o cuestionario no encontrado&quot;);</span>
+        }
+        
+<span class="nc" id="L59">        HistorialJornada historial = new HistorialJornada();</span>
+<span class="nc" id="L60">        historial.setJornada(jornadaOpt.get());</span>
+<span class="nc" id="L61">        historial.setCuestionario(cuestionarioOpt.get());</span>
+<span class="nc" id="L62">        historial.setTipoAsignacion(TipoAsignacion.CUESTIONARIO);</span>
+<span class="nc" id="L63">        historial.setEstadoAsignacion(EstadoAsignacion.asignado);</span>
+        
+<span class="nc" id="L65">        return historialRepository.save(historial);</span>
+    }
+
+    /**
+     * Registrar asignación de combo a jornada
+     */
+    public HistorialJornada registrarAsignacionCombo(Long jornadaId, Long comboId) {
+<span class="nc" id="L72">        Optional&lt;Jornada&gt; jornadaOpt = jornadaRepository.findById(jornadaId);</span>
+<span class="nc" id="L73">        Optional&lt;Combo&gt; comboOpt = comboRepository.findById(comboId);</span>
+        
+<span class="nc bnc" id="L75" title="All 4 branches missed.">        if (jornadaOpt.isEmpty() || comboOpt.isEmpty()) {</span>
+<span class="nc" id="L76">            throw new IllegalArgumentException(&quot;Jornada o combo no encontrado&quot;);</span>
+        }
+        
+<span class="nc" id="L79">        HistorialJornada historial = new HistorialJornada();</span>
+<span class="nc" id="L80">        historial.setJornada(jornadaOpt.get());</span>
+<span class="nc" id="L81">        historial.setCombo(comboOpt.get());</span>
+<span class="nc" id="L82">        historial.setTipoAsignacion(TipoAsignacion.COMBO);</span>
+<span class="nc" id="L83">        historial.setEstadoAsignacion(EstadoAsignacion.asignado);</span>
+        
+<span class="nc" id="L85">        return historialRepository.save(historial);</span>
+    }
+
+    /**
+     * Marcar elementos como no usados en una jornada
+     */
+    public void marcarNoUsados(MarcarNoUsadoDTO dto) {
+        // Marcar cuestionarios como no usados
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (dto.getCuestionarioIds() != null) {</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            for (Long cuestionarioId : dto.getCuestionarioIds()) {</span>
+<span class="nc" id="L95">                List&lt;HistorialJornada&gt; historiales = historialRepository.findByCuestionarioId(cuestionarioId);</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                for (HistorialJornada historial : historiales) {</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                    if (historial.getJornada().getId().equals(dto.getJornadaId())) {</span>
+<span class="nc" id="L98">                        historial.setEstadoAsignacion(EstadoAsignacion.no_usado);</span>
+<span class="nc" id="L99">                        historial.setNotas(dto.getMotivo());</span>
+<span class="nc" id="L100">                        historialRepository.save(historial);</span>
+                        
+                        // Cambiar estado del cuestionario a aprobado
+<span class="nc" id="L103">                        Cuestionario cuestionario = historial.getCuestionario();</span>
+<span class="nc" id="L104">                        cuestionario.setEstado(Cuestionario.EstadoCuestionario.aprobado);</span>
+<span class="nc" id="L105">                        cuestionarioRepository.save(cuestionario);</span>
+                    }
+<span class="nc" id="L107">                }</span>
+<span class="nc" id="L108">            }</span>
+        }
+        
+        // Marcar combos como no usados
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (dto.getComboIds() != null) {</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            for (Long comboId : dto.getComboIds()) {</span>
+<span class="nc" id="L114">                List&lt;HistorialJornada&gt; historiales = historialRepository.findByComboId(comboId);</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                for (HistorialJornada historial : historiales) {</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">                    if (historial.getJornada().getId().equals(dto.getJornadaId())) {</span>
+<span class="nc" id="L117">                        historial.setEstadoAsignacion(EstadoAsignacion.no_usado);</span>
+<span class="nc" id="L118">                        historial.setNotas(dto.getMotivo());</span>
+<span class="nc" id="L119">                        historialRepository.save(historial);</span>
+                        
+                        // Cambiar estado del combo a aprobado
+<span class="nc" id="L122">                        Combo combo = historial.getCombo();</span>
+<span class="nc" id="L123">                        combo.setEstado(Combo.EstadoCombo.aprobado);</span>
+<span class="nc" id="L124">                        comboRepository.save(combo);</span>
+                    }
+<span class="nc" id="L126">                }</span>
+<span class="nc" id="L127">            }</span>
+        }
+<span class="nc" id="L129">    }</span>
+
+    /**
+     * Reaprovechar un combo
+     */
+    public Combo reaprovecharCombo(ReaprovecharComboDTO dto) {
+<span class="nc" id="L135">        Optional&lt;Combo&gt; comboOriginalOpt = comboRepository.findById(dto.getComboOriginalId());</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (comboOriginalOpt.isEmpty()) {</span>
+<span class="nc" id="L137">            throw new IllegalArgumentException(&quot;Combo original no encontrado&quot;);</span>
+        }
+        
+<span class="nc" id="L140">        Combo comboOriginal = comboOriginalOpt.get();</span>
+<span class="nc" id="L141">        List&lt;java.util.Map&lt;String, Object&gt;&gt; accionesUndo = new java.util.ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L143">        java.util.Map&lt;String, Object&gt; camposCombo = new java.util.LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        camposCombo.put(&quot;estado&quot;, comboOriginal.getEstado() != null ? comboOriginal.getEstado().name() : null);</span>
+<span class="nc" id="L145">        accionesUndo.add(UndoService.accionActualizarCampos(&quot;combos&quot;, comboOriginal.getId(), camposCombo));</span>
+        
+        // Marcar combo original como reaprovechado
+<span class="nc" id="L148">        comboOriginal.setEstado(Combo.EstadoCombo.reaprovechado);</span>
+<span class="nc" id="L149">        comboRepository.save(comboOriginal);</span>
+        
+        // Crear nuevo combo
+<span class="nc" id="L152">        Combo nuevoCombo = new Combo();</span>
+<span class="nc" id="L153">        nuevoCombo.setCreacionUsuario(comboOriginal.getCreacionUsuario());</span>
+<span class="nc" id="L154">        nuevoCombo.setNivel(comboOriginal.getNivel());</span>
+<span class="nc" id="L155">        nuevoCombo.setTipo(comboOriginal.getTipo());</span>
+<span class="nc" id="L156">        nuevoCombo.setEstado(Combo.EstadoCombo.borrador);</span>
+        
+<span class="nc" id="L158">        Combo comboGuardado = comboRepository.save(nuevoCombo);</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        if (comboGuardado.getId() != null) {</span>
+<span class="nc" id="L160">            accionesUndo.add(UndoService.accionEliminarFilas(&quot;combos_preguntas&quot;, &quot;combo_id&quot;, comboGuardado.getId()));</span>
+<span class="nc" id="L161">            accionesUndo.add(UndoService.accionEliminarFila(&quot;combos&quot;, comboGuardado.getId()));</span>
+        }
+        
+        // Registrar pregunta usada en el historial
+<span class="nc" id="L165">        List&lt;HistorialJornada&gt; historiales = historialRepository.findByComboId(dto.getComboOriginalId());</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        for (HistorialJornada historial : historiales) {</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            if (historial.getEstadoAsignacion() == EstadoAsignacion.asignado) {</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                if (historial.getId() != null) {</span>
+<span class="nc" id="L169">                    java.util.Map&lt;String, Object&gt; camposHistorial = new java.util.LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L170">                    camposHistorial.put(&quot;estado_asignacion&quot;, historial.getEstadoAsignacion().name());</span>
+<span class="nc" id="L171">                    camposHistorial.put(&quot;pregunta_usada_id&quot;, historial.getPreguntaUsadaId());</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                    camposHistorial.put(&quot;fecha_uso&quot;, historial.getFechaUso() != null ? historial.getFechaUso().toString() : null);</span>
+<span class="nc" id="L173">                    camposHistorial.put(&quot;notas&quot;, historial.getNotas());</span>
+<span class="nc" id="L174">                    accionesUndo.add(UndoService.accionActualizarCampos(&quot;historial_jornadas&quot;, historial.getId(), camposHistorial));</span>
+                }
+<span class="nc" id="L176">                historial.setEstadoAsignacion(EstadoAsignacion.usado);</span>
+<span class="nc" id="L177">                historial.setPreguntaUsadaId(dto.getPreguntaUsadaId());</span>
+<span class="nc" id="L178">                historial.setFechaUso(LocalDateTime.now());</span>
+<span class="nc" id="L179">                historial.setNotas(&quot;Combo reaprovechado - Pregunta usada: &quot; + dto.getPreguntaUsadaId());</span>
+<span class="nc" id="L180">                historialRepository.save(historial);</span>
+<span class="nc" id="L181">                break;</span>
+            }
+<span class="nc" id="L183">        }</span>
+        
+        // Liberar preguntas no usadas
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (dto.getPreguntasNoUsadasIds() != null) {</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            for (Long preguntaId : dto.getPreguntasNoUsadasIds()) {</span>
+<span class="nc" id="L188">                Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                if (preguntaOpt.isPresent()) {</span>
+<span class="nc" id="L190">                    Pregunta pregunta = preguntaOpt.get();</span>
+<span class="nc" id="L191">                    java.util.Map&lt;String, Object&gt; camposPregunta = new java.util.LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L192">                    camposPregunta.put(&quot;estado_disponibilidad&quot;,</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                            pregunta.getEstadoDisponibilidad() != null ? pregunta.getEstadoDisponibilidad().name() : null);</span>
+<span class="nc" id="L194">                    accionesUndo.add(UndoService.accionActualizarCampos(&quot;preguntas&quot;, preguntaId, camposPregunta));</span>
+<span class="nc" id="L195">                    pregunta.setEstadoDisponibilidad(Pregunta.EstadoDisponibilidad.disponible);</span>
+<span class="nc" id="L196">                    preguntaRepository.save(pregunta);</span>
+                }
+<span class="nc" id="L198">            }</span>
+        }
+
+<span class="nc" id="L201">        undoService.registrar(&quot;reaprovechar_combo&quot;,</span>
+<span class="nc" id="L202">                &quot;Reaprovechar combo &quot; + dto.getComboOriginalId(), accionesUndo);</span>
+        
+<span class="nc" id="L204">        return comboGuardado;</span>
+    }
+
+    /**
+     * Obtener historial de un cuestionario
+     */
+    public List&lt;HistorialJornadaDTO&gt; obtenerHistorialCuestionario(Long cuestionarioId) {
+<span class="nc" id="L211">        List&lt;HistorialJornada&gt; historiales = historialRepository.findByCuestionarioId(cuestionarioId);</span>
+<span class="nc" id="L212">        return historiales.stream()</span>
+<span class="nc" id="L213">            .map(this::convertirADTO)</span>
+<span class="nc" id="L214">            .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Obtener historial de un combo
+     */
+    public List&lt;HistorialJornadaDTO&gt; obtenerHistorialCombo(Long comboId) {
+<span class="nc" id="L221">        List&lt;HistorialJornada&gt; historiales = historialRepository.findByComboId(comboId);</span>
+<span class="nc" id="L222">        return historiales.stream()</span>
+<span class="nc" id="L223">            .map(this::convertirADTO)</span>
+<span class="nc" id="L224">            .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Obtener asignaciones no usadas de una jornada
+     */
+    public List&lt;HistorialJornadaDTO&gt; obtenerNoUsados(Long jornadaId) {
+<span class="nc" id="L231">        List&lt;HistorialJornada&gt; historiales = historialRepository.findByJornadaIdAndEstado(jornadaId, EstadoAsignacion.no_usado);</span>
+<span class="nc" id="L232">        return historiales.stream()</span>
+<span class="nc" id="L233">            .map(this::convertirADTO)</span>
+<span class="nc" id="L234">            .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Convertir entidad a DTO
+     */
+    private HistorialJornadaDTO convertirADTO(HistorialJornada historial) {
+<span class="nc" id="L241">        HistorialJornadaDTO dto = new HistorialJornadaDTO();</span>
+<span class="nc" id="L242">        dto.setId(historial.getId());</span>
+<span class="nc" id="L243">        dto.setJornadaId(historial.getJornada().getId());</span>
+<span class="nc" id="L244">        dto.setJornadaNombre(historial.getJornada().getNombre());</span>
+<span class="nc" id="L245">        dto.setTipoAsignacion(historial.getTipoAsignacion().name());</span>
+<span class="nc" id="L246">        dto.setEstadoAsignacion(historial.getEstadoAsignacion().name());</span>
+<span class="nc" id="L247">        dto.setFechaAsignacion(historial.getFechaAsignacion());</span>
+<span class="nc" id="L248">        dto.setFechaUso(historial.getFechaUso());</span>
+<span class="nc" id="L249">        dto.setPreguntaUsadaId(historial.getPreguntaUsadaId());</span>
+<span class="nc" id="L250">        dto.setNotas(historial.getNotas());</span>
+        
+<span class="nc bnc" id="L252" title="All 2 branches missed.">        if (historial.getCuestionario() != null) {</span>
+<span class="nc" id="L253">            dto.setCuestionarioId(historial.getCuestionario().getId());</span>
+        }
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        if (historial.getCombo() != null) {</span>
+<span class="nc" id="L256">            dto.setComboId(historial.getCombo().getId());</span>
+        }
+        
+<span class="nc" id="L259">        return dto;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

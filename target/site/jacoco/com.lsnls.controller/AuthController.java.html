@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
+
+import com.lsnls.config.MensajesUsuario;
+import com.lsnls.dto.AuthResponse;
+import com.lsnls.dto.ErrorResponse;
+import com.lsnls.dto.LoginRequest;
+import com.lsnls.entity.Usuario;
+import com.lsnls.service.AuthService;
+import com.lsnls.service.UsuarioService;
+import javax.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Map;
+import java.util.Optional;
+
+<span class="nc" id="L21">@Slf4j</span>
+@RestController
+@RequestMapping(&quot;/api/auth&quot;)
+@CrossOrigin(origins = &quot;*&quot;)
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final AuthService authService;
+    private final UsuarioService usuarioService;
+
+    @PostMapping(&quot;/login&quot;)
+    public ResponseEntity&lt;?&gt; login(@Valid @RequestBody LoginRequest request) {
+<span class="nc" id="L33">        log.info(&quot;🔐 Intento de login para usuario: {}&quot;, request.getNombre());</span>
+        try {
+            // Validación básica
+<span class="nc bnc" id="L36" title="All 4 branches missed.">            if (request.getNombre() == null || request.getNombre().trim().isEmpty()) {</span>
+<span class="nc" id="L37">                log.warn(&quot;❌ Login fallido: nombre de usuario vacío&quot;);</span>
+<span class="nc" id="L38">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L39">                    .body(new ErrorResponse(&quot;Error de validación&quot;, &quot;El nombre de usuario es obligatorio. Por favor, introduce tu nombre de usuario.&quot;));</span>
+            }
+<span class="nc bnc" id="L41" title="All 4 branches missed.">            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {</span>
+<span class="nc" id="L42">                log.warn(&quot;❌ Login fallido: contraseña vacía&quot;);</span>
+<span class="nc" id="L43">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L44">                    .body(new ErrorResponse(&quot;Error de validación&quot;, &quot;La contraseña es obligatoria. Por favor, introduce tu contraseña.&quot;));</span>
+            }
+
+<span class="nc" id="L47">            log.debug(&quot;👉 Intentando autenticar usuario con AuthService&quot;);</span>
+<span class="nc" id="L48">            AuthResponse response = authService.login(request);</span>
+<span class="nc" id="L49">            log.info(&quot;✅ Login exitoso para usuario: {}&quot;, request.getNombre());</span>
+<span class="nc" id="L50">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L51">        } catch (Exception e) {</span>
+<span class="nc" id="L52">            log.error(&quot;Error en login: {} - {}&quot;, e.getClass().getSimpleName(), e.getMessage(), e);</span>
+<span class="nc" id="L53">            String mensaje = e.getMessage();</span>
+<span class="nc bnc" id="L54" title="All 4 branches missed.">            if (mensaje != null &amp;&amp; mensaje.toLowerCase().contains(&quot;bad credentials&quot;)) {</span>
+<span class="nc" id="L55">                return ResponseEntity.status(401)</span>
+<span class="nc" id="L56">                    .body(new ErrorResponse(&quot;Error de autenticación&quot;, &quot;Usuario o contraseña incorrectos. Comprueba tus datos e inténtalo de nuevo.&quot;));</span>
+            }
+<span class="nc" id="L58">            return ResponseEntity.status(401)</span>
+<span class="nc" id="L59">                .body(new ErrorResponse(&quot;Error de autenticación&quot;, MensajesUsuario.sanitizar(mensaje, &quot;No se ha podido iniciar sesión. Inténtalo de nuevo.&quot;)));</span>
+        }
+    }
+
+    @PostMapping(&quot;/register&quot;)
+    public ResponseEntity&lt;?&gt; register(@Valid @RequestBody Usuario usuario) {
+        try {
+            // Validación básica
+<span class="nc bnc" id="L67" title="All 4 branches missed.">            if (usuario.getNombre() == null || usuario.getNombre().trim().isEmpty()) {</span>
+<span class="nc" id="L68">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L69">                    .body(new ErrorResponse(&quot;Error de validación&quot;, &quot;El nombre de usuario es requerido&quot;));</span>
+            }
+<span class="nc bnc" id="L71" title="All 4 branches missed.">            if (usuario.getPassword() == null || usuario.getPassword().trim().isEmpty()) {</span>
+<span class="nc" id="L72">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L73">                    .body(new ErrorResponse(&quot;Error de validación&quot;, &quot;La contraseña es requerida&quot;));</span>
+            }
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            if (usuario.getRol() == null) {</span>
+<span class="nc" id="L76">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L77">                    .body(new ErrorResponse(&quot;Error de validación&quot;, &quot;El rol es requerido&quot;));</span>
+            }
+
+<span class="nc" id="L80">            AuthResponse response = authService.register(usuario);</span>
+<span class="nc" id="L81">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L82">        } catch (Exception e) {</span>
+<span class="nc" id="L83">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L84">                .body(new ErrorResponse(&quot;Error de registro&quot;, MensajesUsuario.sanitizar(e.getMessage(), MensajesUsuario.VALIDACION)));</span>
+        }
+    }
+
+    @GetMapping(&quot;/me&quot;)
+    public ResponseEntity&lt;?&gt; getCurrentUser() {
+<span class="nc" id="L90">        log.debug(&quot;👤 Solicitando usuario actual&quot;);</span>
+        try {
+<span class="nc" id="L92">            Optional&lt;Usuario&gt; usuario = authService.getCurrentUser();</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            if (usuario.isPresent()) {</span>
+<span class="nc" id="L94">                log.debug(&quot;✅ Usuario actual encontrado: {}&quot;, usuario.get().getNombre());</span>
+<span class="nc" id="L95">                return ResponseEntity.ok(usuario.get());</span>
+            } else {
+<span class="nc" id="L97">                log.warn(&quot;❌ Usuario actual no encontrado&quot;);</span>
+<span class="nc" id="L98">                return ResponseEntity.status(401)</span>
+<span class="nc" id="L99">                    .body(new ErrorResponse(&quot;Error de autenticación&quot;, &quot;Usuario no autenticado&quot;));</span>
+            }
+<span class="nc" id="L101">        } catch (Exception e) {</span>
+<span class="nc" id="L102">            log.error(&quot;Error al obtener usuario actual: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L103">            return ResponseEntity.status(401)</span>
+<span class="nc" id="L104">                .body(new ErrorResponse(&quot;Error de autenticación&quot;, MensajesUsuario.SESION));</span>
+        }
+    }
+
+    @PostMapping(&quot;/logout&quot;)
+    public ResponseEntity&lt;?&gt; logout() {
+        try {
+<span class="nc" id="L111">            SecurityContextHolder.clearContext();</span>
+<span class="nc" id="L112">            return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Sesión cerrada exitosamente&quot;));</span>
+<span class="nc" id="L113">        } catch (Exception e) {</span>
+<span class="nc" id="L114">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L115">                .body(new ErrorResponse(&quot;Error al cerrar sesión&quot;, MensajesUsuario.GENERICO));</span>
+        }
+    }
+
+    @GetMapping(&quot;/profile&quot;)
+    public ResponseEntity&lt;?&gt; getProfile() {
+        try {
+<span class="nc" id="L122">            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="nc bnc" id="L123" title="All 4 branches missed.">            if (authentication == null || !authentication.isAuthenticated()) {</span>
+<span class="nc" id="L124">                return ResponseEntity.status(401)</span>
+<span class="nc" id="L125">                    .body(new ErrorResponse(&quot;Error de autenticación&quot;, &quot;Usuario no autenticado&quot;));</span>
+            }
+
+<span class="nc" id="L128">            Optional&lt;Usuario&gt; usuario = usuarioService.obtenerPorNombre(authentication.getName());</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (usuario.isPresent()) {</span>
+<span class="nc" id="L130">                return ResponseEntity.ok(usuario.get());</span>
+            } else {
+<span class="nc" id="L132">                return ResponseEntity.status(401)</span>
+<span class="nc" id="L133">                    .body(new ErrorResponse(&quot;Error de autenticación&quot;, &quot;Usuario no encontrado&quot;));</span>
+            }
+<span class="nc" id="L135">        } catch (Exception e) {</span>
+<span class="nc" id="L136">            return ResponseEntity.status(401)</span>
+<span class="nc" id="L137">                .body(new ErrorResponse(&quot;Error de autenticación&quot;, MensajesUsuario.SESION));</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

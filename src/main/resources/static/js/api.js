@@ -11,6 +11,10 @@ const Logger = {
 class ApiManager {
     constructor() {
         this.baseUrl = '';  // URL base de la API
+        // Id de la operación deshacible registrada por el backend en la última
+        // petición mutadora (cabecera X-Undo-Operacion-Id). Permite deshacerla
+        // con POST /api/undo/{id}.
+        this.ultimaOperacionUndoId = null;
         console.log('🌐 ApiManager inicializado');
     }
 
@@ -53,9 +57,15 @@ class ApiManager {
                 body: requestOptions.body
             });
 
+            this.ultimaOperacionUndoId = null;
             const response = await fetch(this.baseUrl + endpoint, requestOptions);
             const endTime = performance.now();
             Logger.debug(`⏱️ Petición completada en ${Math.round(endTime - startTime)}ms`);
+
+            if (response.ok) {
+                const undoId = response.headers.get('X-Undo-Operacion-Id');
+                this.ultimaOperacionUndoId = undoId ? Number(undoId) : null;
+            }
 
             // Manejar respuesta
             if (!response.ok) {
@@ -116,6 +126,51 @@ class ApiManager {
         });
     }
 
+    // POST multipart (p. ej. fotos). No fuerza Content-Type JSON para que el
+    // navegador ponga el boundary. Captura X-Undo-Operacion-Id si el backend
+    // registró la operación.
+    async postMultipart(endpoint, formData) {
+        const token = authManager.getToken();
+        this.ultimaOperacionUndoId = null;
+        const response = await fetch(this.baseUrl + endpoint, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: formData
+        });
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('UNAUTHORIZED: Token expirado o inválido');
+            }
+            throw new Error(await Utils.mensajeDesdeResponse(response, 'completar la petición'));
+        }
+        const undoId = response.headers.get('X-Undo-Operacion-Id');
+        this.ultimaOperacionUndoId = undoId ? Number(undoId) : null;
+        const contentType = response.headers.get('content-type');
+        if (!contentType || contentType.indexOf('application/json') === -1) {
+            return null;
+        }
+        return response.json();
+    }
+
+    async postFormDataUndoable(endpoint, formData, { label, redo } = {}) {
+        const result = await this.postMultipart(endpoint, formData);
+        this.registrarUndoBackend({ label, redo });
+        return result;
+    }
+
+    // POST con undo respaldado por el backend (cabecera X-Undo-Operacion-Id).
+    async postUndoableBackend(endpoint, data, { label, redo } = {}) {
+        const result = await this.post(endpoint, data);
+        this.registrarUndoBackend({
+            label,
+            redo: redo || (async () => { await this.post(endpoint, data); })
+        });
+        return result;
+    }
+
     async put(endpoint, data, options = {}) {
         return this.makeRequest(endpoint, {
             method: 'PUT',
@@ -130,55 +185,90 @@ class ApiManager {
     }
 
     // ==== OPERACIONES DESHACIBLES (GENÉRICAS) ====
-    // PUT deshaciente: hace snapshot previo (GET) y registra Undo/Redo
-    async putUndoable(endpoint, data, { label, snapshotEndpoint } = {}) {
-        try {
-            const snapUrl = snapshotEndpoint || endpoint;
-            let previous = null;
-            try {
-                previous = await this.get(snapUrl);
-            } catch (e) {
-                console.warn('[Undoable PUT] No se pudo obtener snapshot previo:', e);
-            }
 
-            const result = await this.put(endpoint, data);
-
-            if (window.UndoManager && previous) {
-                const restoreUrl = snapshotEndpoint || endpoint;
-                const hacer = async () => { await this.put(endpoint, data); };
-                const deshacer = async () => { await this.put(restoreUrl, previous); };
-                window.UndoManager.record({ do: hacer, undo: deshacer, label: label || `PUT ${endpoint}` });
-            }
-
-            return result;
-        } catch (e) {
-            throw e;
+    // Prepara un payload de restauración con la versión optimista actual del
+    // recurso, para que el PUT de undo no falle con 409 por versión antigua.
+    async _conVersionActual(snapUrl, previous) {
+        if (!previous || typeof previous !== 'object' || !('version' in previous)) {
+            return previous;
         }
+        try {
+            const actual = await this.get(snapUrl);
+            if (actual && typeof actual === 'object' && 'version' in actual) {
+                return { ...previous, version: actual.version };
+            }
+        } catch (e) {
+            console.warn('[Undoable] No se pudo refrescar la versión del recurso:', e);
+        }
+        return previous;
     }
 
-    // DELETE deshaciente: snapshot previo (GET) y registra Undo/Redo (rehace con DELETE)
-    async deleteUndoable(endpoint, { label, snapshotEndpoint } = {}) {
+    // PUT deshaciente: hace snapshot previo (GET) y registra Undo/Redo
+    async putUndoable(endpoint, data, { label, snapshotEndpoint } = {}) {
+        const snapUrl = snapshotEndpoint || endpoint;
+        let previous = null;
         try {
-            const snapUrl = snapshotEndpoint || endpoint;
-            let previous = null;
-            try {
-                previous = await this.get(snapUrl);
-            } catch (e) {
-                console.warn('[Undoable DELETE] No se pudo obtener snapshot previo:', e);
-            }
-
-            const result = await this.delete(endpoint);
-
-            if (window.UndoManager && previous) {
-                const deshacer = async () => { await this.put(snapUrl, previous); };
-                const rehacer = async () => { await this.delete(endpoint); };
-                window.UndoManager.record({ do: rehacer, undo: deshacer, label: label || `DELETE ${endpoint}` });
-            }
-
-            return result;
+            previous = await this.get(snapUrl);
         } catch (e) {
-            throw e;
+            console.warn('[Undoable PUT] No se pudo obtener snapshot previo:', e);
         }
+
+        const result = await this.put(endpoint, data);
+
+        if (window.UndoManager && previous) {
+            const restoreUrl = snapshotEndpoint || endpoint;
+            const hacer = async () => { await this.put(endpoint, data); };
+            const deshacer = async () => {
+                const restaurar = await this._conVersionActual(restoreUrl, previous);
+                await this.put(restoreUrl, restaurar);
+            };
+            window.UndoManager.record({ do: hacer, undo: deshacer, label: label || `PUT ${endpoint}` });
+        }
+
+        return result;
+    }
+
+    // DELETE deshaciente respaldado por backend: si el servidor registró una
+    // operación deshacible (cabecera X-Undo-Operacion-Id), el undo llama a
+    // POST /api/undo/{id}, que restaura las filas borradas con su MISMO id
+    // y los estados afectados. El redo repite el DELETE (válido porque el
+    // undo recreó el recurso con el mismo id).
+    async deleteUndoable(endpoint, { label } = {}) {
+        const result = await this.delete(endpoint);
+
+        let opId = this.ultimaOperacionUndoId;
+        if (window.UndoManager && opId) {
+            const deshacer = async () => { await this.post(`/api/undo/${opId}`, {}); };
+            const rehacer = async () => {
+                await this.delete(endpoint);
+                // El nuevo DELETE registra otra operación; el siguiente undo debe usarla
+                if (this.ultimaOperacionUndoId) opId = this.ultimaOperacionUndoId;
+            };
+            window.UndoManager.record({ do: rehacer, undo: deshacer, label: label || `DELETE ${endpoint}` });
+        } else if (label) {
+            console.info(`[Undoable DELETE] "${label}": el backend no registró undo; borrado definitivo`);
+        }
+
+        return result;
+    }
+
+    // Registra en el UndoManager la última operación deshacible del backend.
+    // `redo` es opcional: función que re-ejecuta la operación original.
+    registrarUndoBackend({ label, redo } = {}) {
+        let opId = this.ultimaOperacionUndoId;
+        if (!window.UndoManager || !opId) return false;
+        const accion = {
+            undo: async () => { await this.post(`/api/undo/${opId}`, {}); },
+            label
+        };
+        if (typeof redo === 'function') {
+            accion.do = async () => {
+                await redo();
+                if (this.ultimaOperacionUndoId) opId = this.ultimaOperacionUndoId;
+            };
+        }
+        window.UndoManager.record(accion);
+        return true;
     }
 
     // POST deshaciente (opcional): requiere cómo obtener el id creado
@@ -188,10 +278,15 @@ class ApiManager {
         const created = await this.post(endpoint, data);
         try {
             if (window.UndoManager && idExtractor && deleteEndpointBuilder) {
-                const id = idExtractor(created);
-                const delUrl = deleteEndpointBuilder(id);
-                const rehacer = async () => { await this.post(endpoint, data); };
-                const deshacer = async () => { await this.delete(delUrl); };
+                // El id se guarda en una variable mutable: al rehacer (nuevo POST)
+                // el recurso recreado tiene otro id, y el siguiente undo debe
+                // borrar ese id nuevo, no el original.
+                let idActual = idExtractor(created);
+                const rehacer = async () => {
+                    const recreado = await this.post(endpoint, data);
+                    idActual = idExtractor(recreado);
+                };
+                const deshacer = async () => { await this.delete(deleteEndpointBuilder(idActual)); };
                 window.UndoManager.record({ do: rehacer, undo: deshacer, label: label || `POST ${endpoint}` });
             }
         } catch (e) {

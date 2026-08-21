@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthorizationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">AuthorizationService.java</span></div><h1>AuthorizationService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import com.lsnls.entity.Usuario;
+import com.lsnls.entity.Pregunta;
+import com.lsnls.entity.Cuestionario.EstadoCuestionario;
+import com.lsnls.entity.Combo;
+import com.lsnls.entity.Programa;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+public class AuthorizationService {
+
+    private final AuthService authService;
+
+    /**
+     * Obtiene el usuario autenticado actual
+     */
+    public Optional&lt;Usuario&gt; getCurrentUser() {
+<span class="fc" id="L22">        return authService.getCurrentUser();</span>
+    }
+
+    /**
+     * Verifica si el usuario autenticado actual es ADMIN.
+     */
+    public boolean isAdmin() {
+<span class="fc" id="L29">        return getCurrentUser()</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">            .map(usuario -&gt; usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN)</span>
+<span class="fc" id="L31">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede leer entidades
+     */
+    public boolean canRead() {
+<span class="fc" id="L38">        return getCurrentUser().isPresent();</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede crear preguntas
+     */
+    public boolean canCreatePregunta() {
+<span class="fc" id="L45">        return getCurrentUser()</span>
+<span class="fc" id="L46">            .map(usuario -&gt; </span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)</span>
+<span class="fc" id="L50">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede editar una pregunta según su estado
+     */
+    public boolean canEditPregunta(Pregunta.EstadoPregunta estado) {
+<span class="fc" id="L57">        return getCurrentUser()</span>
+<span class="fc" id="L58">            .map(usuario -&gt; {</span>
+                // El admin siempre puede editar
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                if (usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN) {</span>
+<span class="fc" id="L61">                    return true;</span>
+                }
+
+<span class="fc bfc" id="L64" title="All 5 branches covered.">                switch (estado) {</span>
+                    case borrador:
+                    case para_verificar:
+                    case revisar:
+                    case corregir:
+                        // Niveles 2, 3 y 4 (GUION, VERIFICACION, DIRECCION)
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                        
+                    case verificada:
+                        // Guion puede consultar/editar tras verificar; verificación y dirección también
+<span class="pc bfc" id="L76" title="All 2 branches covered.">                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                        
+                    case para_aprobar:
+                        // Solo nivel 4 (DIRECCION) puede gestionar preguntas pendientes de aprobación
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                        return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+
+                    case rechazada:
+                    case aprobada:
+                        // Solo nivel 4 (DIRECCION)
+<span class="fc bfc" id="L87" title="All 2 branches covered.">                        return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                        
+                    default:
+<span class="fc" id="L90">                        return false;</span>
+                }
+            })
+<span class="fc" id="L93">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede cambiar el estado de una pregunta
+     */
+    public boolean canChangeEstadoPregunta(Pregunta.EstadoPregunta estadoActual, Pregunta.EstadoPregunta nuevoEstado) {
+<span class="fc" id="L100">        return getCurrentUser()</span>
+<span class="fc" id="L101">            .map(usuario -&gt; {</span>
+                // El admin siempre puede cambiar estados, pero debe seguir el flujo correcto
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                boolean isAdmin = usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN;</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">                boolean isGuion = usuario.getRol() == Usuario.RolUsuario.ROLE_GUION;</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">                boolean isVerificacion = usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION;</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">                boolean isDireccion = usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                
+                // Verificar la transición válida según el autómata
+<span class="fc" id="L109">                boolean transicionValida = false;</span>
+
+                // Dirección puede hacer cualquier transición
+<span class="fc bfc" id="L112" title="All 2 branches covered.">                if (isDireccion) {</span>
+<span class="fc" id="L113">                    return true;</span>
+                }
+                
+<span class="fc bfc" id="L116" title="All 9 branches covered.">                switch (estadoActual) {</span>
+                    case borrador:
+                        // Borrador -&gt; Para Verificar (por Guion)
+<span class="fc bfc" id="L119" title="All 4 branches covered.">                        transicionValida = nuevoEstado == Pregunta.EstadoPregunta.para_verificar &amp;&amp; isGuion;</span>
+<span class="fc" id="L120">                        break;</span>
+                        
+                    case para_verificar:
+                        // Para Verificar -&gt; Verificada o Revisar (por Guion, Verificación o Dirección)
+<span class="pc bfc" id="L124" title="All 2 branches covered.">                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.verificada &amp;&amp;</span>
+<span class="pc bpc" id="L125" title="3 of 6 branches missed.">                                           (isGuion || isVerificacion || isDireccion)) ||</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">                                          (nuevoEstado == Pregunta.EstadoPregunta.revisar &amp;&amp;</span>
+<span class="pc bpc" id="L127" title="1 of 4 branches missed.">                                           (isVerificacion || isGuion));</span>
+<span class="fc" id="L128">                        break;</span>
+                        
+                    case revisar:
+                    // Revisar -&gt; Para Verificar, Para Aprobar o Rechazada (por Guion)
+<span class="pc bfc" id="L132" title="All 2 branches covered.">                    transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_verificar ||</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">                                       nuevoEstado == Pregunta.EstadoPregunta.para_aprobar ||</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                                       nuevoEstado == Pregunta.EstadoPregunta.rechazada) &amp;&amp;</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">                                      isGuion;</span>
+<span class="fc" id="L136">                        break;</span>
+                        
+                    case verificada:
+                        // Verificada -&gt; Corregir, Rechazada o Aprobada (por Dirección)
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.corregir || </span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">                                           nuevoEstado == Pregunta.EstadoPregunta.rechazada || </span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">                                           nuevoEstado == Pregunta.EstadoPregunta.aprobada) &amp;&amp; </span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                                          isDireccion;</span>
+<span class="fc" id="L144">                        break;</span>
+                        
+                    case corregir:
+                        // Corregir -&gt; Para Aprobar o Para Verificar (por Guion)
+<span class="pc bfc" id="L148" title="All 2 branches covered.">                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_aprobar || </span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">                                           nuevoEstado == Pregunta.EstadoPregunta.para_verificar) &amp;&amp; </span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">                                          isGuion;</span>
+<span class="fc" id="L151">                        break;</span>
+                        
+                    case para_aprobar:
+                    // Para Aprobar -&gt; Aprobada, Corregir, Rechazada o Para Verificar (por Dirección)
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">                    transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.aprobada ||</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                                       nuevoEstado == Pregunta.EstadoPregunta.corregir ||</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                                       nuevoEstado == Pregunta.EstadoPregunta.rechazada ||</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                                       nuevoEstado == Pregunta.EstadoPregunta.para_verificar) &amp;&amp;</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">                                      isDireccion;</span>
+<span class="fc" id="L160">                        break;</span>
+                        
+                    case aprobada:
+                        // Aprobada -&gt; Usada (automático al asignar a cuestionario)
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">                        transicionValida = nuevoEstado == Pregunta.EstadoPregunta.usada;</span>
+<span class="fc" id="L165">                        break;</span>
+                        
+                    case usada:
+                        // Usada -&gt; Aprobada (automático al quitar del cuestionario)
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">                        transicionValida = nuevoEstado == Pregunta.EstadoPregunta.aprobada;</span>
+<span class="fc" id="L170">                        break;</span>
+                        
+                    default:
+<span class="fc" id="L173">                        transicionValida = false;</span>
+                }
+                
+                // Si es admin, puede hacer cualquier transición válida
+<span class="fc bfc" id="L177" title="All 4 branches covered.">                return isAdmin || transicionValida;</span>
+            })
+<span class="fc" id="L179">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede crear cuestionarios
+     */
+    public boolean canCreateCuestionario() {
+<span class="fc" id="L186">        return getCurrentUser()</span>
+<span class="fc" id="L187">            .map(usuario -&gt; </span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)</span>
+<span class="fc" id="L190">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede editar un cuestionario según su estado
+     */
+    public boolean canEditCuestionario(EstadoCuestionario estado) {
+<span class="fc" id="L197">        return getCurrentUser()</span>
+<span class="fc" id="L198">            .map(usuario -&gt; {</span>
+                // El admin siempre puede editar cualquier estado
+<span class="fc bfc" id="L200" title="All 2 branches covered.">                if (usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN) {</span>
+<span class="fc" id="L201">                    return true;</span>
+                }
+
+                // Dirección puede editar en todos los estados
+<span class="fc bfc" id="L205" title="All 2 branches covered.">                if (usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION) {</span>
+<span class="fc" id="L206">                    return true;</span>
+                }
+
+<span class="fc" id="L209">                return false;</span>
+            })
+<span class="fc" id="L211">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede editar un combo según su estado
+     */
+    public boolean canEditCombo(Combo.EstadoCombo estado) {
+<span class="fc" id="L218">        return getCurrentUser()</span>
+<span class="fc" id="L219">            .map(usuario -&gt; {</span>
+                // El admin siempre puede editar cualquier estado
+<span class="fc bfc" id="L221" title="All 2 branches covered.">                if (usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN) {</span>
+<span class="fc" id="L222">                    return true;</span>
+                }
+
+                // Dirección puede editar en todos los estados
+<span class="fc bfc" id="L226" title="All 2 branches covered.">                if (usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION) {</span>
+<span class="fc" id="L227">                    return true;</span>
+                }
+
+<span class="fc" id="L230">                return false;</span>
+            })
+<span class="fc" id="L232">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede crear concursantes
+     */
+    public boolean canCreateConcursante() {
+<span class="fc" id="L239">        return getCurrentUser()</span>
+<span class="fc" id="L240">            .map(usuario -&gt;</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)</span>
+<span class="fc" id="L245">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede editar un concursante según su estado
+     */
+    public boolean canEditConcursante(String estado) {
+<span class="fc" id="L252">        return getCurrentUser()</span>
+<span class="fc" id="L253">            .map(usuario -&gt; {</span>
+<span class="fc bfc" id="L254" title="All 2 branches covered.">                if (estado == null) {</span>
+<span class="pc bpc" id="L255" title="1 of 2 branches missed.">                    return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">                           usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">                           usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                }
+                
+<span class="fc bfc" id="L260" title="All 4 branches covered.">                switch (estado.toUpperCase()) {</span>
+                    case &quot;GRABADO&quot;:
+<span class="fc bfc" id="L262" title="All 2 branches covered.">                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="fc bfc" id="L264" title="All 2 branches covered.">                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                        
+                    case &quot;EDITADO&quot;:
+<span class="fc bfc" id="L267" title="All 2 branches covered.">                        return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="pc bpc" id="L268" title="1 of 2 branches missed.">                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                        
+                    case &quot;PROGRAMADO&quot;:
+                    case &quot;EMITIDO&quot;:
+                    case &quot;ARCHIVADO&quot;:
+<span class="fc bfc" id="L273" title="All 2 branches covered.">                        return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                        
+                    default:
+                        // Para estados personalizados, permitir edición según roles básicos
+<span class="pc bpc" id="L277" title="1 of 2 branches missed.">                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                }
+            })
+<span class="fc" id="L282">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede crear programas
+     */
+    public boolean canCreatePrograma() {
+<span class="fc" id="L289">        return getCurrentUser()</span>
+<span class="fc" id="L290">            .map(usuario -&gt; </span>
+<span class="fc bfc" id="L291" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)</span>
+<span class="fc" id="L293">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede editar un programa según su estado
+     */
+    public boolean canEditPrograma(Programa.EstadoPrograma estado) {
+<span class="fc" id="L300">        return getCurrentUser()</span>
+<span class="fc" id="L301">            .map(usuario -&gt; {</span>
+<span class="fc bfc" id="L302" title="All 3 branches covered.">                switch (estado) {</span>
+                    case borrador:
+<span class="pc bpc" id="L304" title="1 of 2 branches missed.">                        return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                        
+                    case programado:
+<span class="fc bfc" id="L308" title="All 2 branches covered.">                        return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;</span>
+                        
+                    default:
+<span class="fc" id="L311">                        return false;</span>
+                }
+            })
+<span class="fc" id="L314">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede eliminar entidades
+     */
+    public boolean canDelete() {
+<span class="fc" id="L321">        return getCurrentUser()</span>
+<span class="fc" id="L322">            .map(usuario -&gt; </span>
+<span class="fc bfc" id="L323" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)</span>
+<span class="fc" id="L325">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede crear entidades generales
+     */
+    public boolean canCreate() {
+<span class="fc" id="L332">        return getCurrentUser()</span>
+<span class="fc" id="L333">            .map(usuario -&gt; </span>
+<span class="fc bfc" id="L334" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||</span>
+<span class="fc bfc" id="L335" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||</span>
+<span class="fc bfc" id="L336" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)</span>
+<span class="fc" id="L338">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede editar entidades generales
+     */
+    public boolean canEdit() {
+<span class="fc" id="L345">        return getCurrentUser()</span>
+<span class="fc" id="L346">            .map(usuario -&gt; </span>
+<span class="fc bfc" id="L347" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||</span>
+<span class="pc bpc" id="L348" title="1 of 2 branches missed.">                usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||</span>
+<span class="fc bfc" id="L349" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="pc bpc" id="L350" title="1 of 2 branches missed.">                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)</span>
+<span class="fc" id="L351">            .orElse(false);</span>
+    }
+
+    /**
+     * Verifica si el usuario actual puede validar (aprobar/rechazar)
+     */
+    public boolean canValidate() {
+<span class="fc" id="L358">        return getCurrentUser()</span>
+<span class="fc" id="L359">            .map(usuario -&gt; </span>
+<span class="fc bfc" id="L360" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||</span>
+<span class="fc bfc" id="L361" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||</span>
+<span class="fc bfc" id="L362" title="All 2 branches covered.">                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)</span>
+<span class="fc" id="L363">            .orElse(false);</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TematicaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">TematicaController.java</span></div><h1>TematicaController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
+
+import com.lsnls.entity.Tematica;
+import com.lsnls.entity.Usuario;
+import com.lsnls.service.TematicaService;
+import com.lsnls.service.AuthorizationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+@RestController
+@RequestMapping(&quot;/api/tematicas&quot;)
+@CrossOrigin(origins = &quot;*&quot;)
+<span class="nc" id="L21">public class TematicaController {</span>
+
+<span class="nc" id="L23">    private static final Logger log = LoggerFactory.getLogger(TematicaController.class);</span>
+
+    @Autowired
+    private TematicaService tematicaService;
+
+    @Autowired
+    private AuthorizationService authService;
+
+    @GetMapping
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;List&lt;Tematica&gt;&gt; obtenerTodas() {
+        try {
+<span class="nc" id="L35">            List&lt;Tematica&gt; tematicas = tematicaService.obtenerTodas();</span>
+<span class="nc" id="L36">            return ResponseEntity.ok(tematicas);</span>
+<span class="nc" id="L37">        } catch (Exception e) {</span>
+<span class="nc" id="L38">            log.error(&quot;Error al obtener temáticas: &quot;, e);</span>
+<span class="nc" id="L39">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+
+    @GetMapping(&quot;/buscar&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;List&lt;Tematica&gt;&gt; buscarPorTexto(@RequestParam String texto) {
+        try {
+<span class="nc" id="L47">            List&lt;Tematica&gt; tematicas = tematicaService.buscarPorTexto(texto);</span>
+<span class="nc" id="L48">            return ResponseEntity.ok(tematicas);</span>
+<span class="nc" id="L49">        } catch (Exception e) {</span>
+<span class="nc" id="L50">            log.error(&quot;Error al buscar temáticas: &quot;, e);</span>
+<span class="nc" id="L51">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+
+    @PostMapping
+    @PreAuthorize(&quot;@authorizationService.canWrite()&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; crearTematica(@RequestBody Map&lt;String, String&gt; request) {
+        try {
+<span class="nc" id="L59">            String nombre = request.get(&quot;nombre&quot;);</span>
+<span class="nc bnc" id="L60" title="All 4 branches missed.">            if (nombre == null || nombre.trim().isEmpty()) {</span>
+<span class="nc" id="L61">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L62">                error.put(&quot;error&quot;, &quot;El nombre de la temática es obligatorio&quot;);</span>
+<span class="nc" id="L63">                return ResponseEntity.badRequest().body(error);</span>
+            }
+
+            // Obtener el usuario actual (esto debería venir del contexto de seguridad)
+            // Por ahora, asumimos que existe un usuario con ID 1
+<span class="nc" id="L68">            Usuario usuario = new Usuario();</span>
+<span class="nc" id="L69">            usuario.setId(1L);</span>
+
+<span class="nc" id="L71">            Tematica tematica = tematicaService.crearTematica(nombre.trim(), usuario);</span>
+            
+<span class="nc" id="L73">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L74">            response.put(&quot;tematica&quot;, tematica);</span>
+<span class="nc" id="L75">            response.put(&quot;mensaje&quot;, &quot;Temática creada exitosamente&quot;);</span>
+            
+<span class="nc" id="L77">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L78">        } catch (Exception e) {</span>
+<span class="nc" id="L79">            log.error(&quot;Error al crear temática: &quot;, e);</span>
+<span class="nc" id="L80">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L81">            error.put(&quot;error&quot;, &quot;Error al crear temática: &quot; + e.getMessage());</span>
+<span class="nc" id="L82">            return ResponseEntity.internalServerError().body(error);</span>
+        }
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;@authorizationService.canWrite()&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; actualizarTematica(@PathVariable Long id, @RequestBody Map&lt;String, String&gt; request) {
+        try {
+<span class="nc" id="L90">            String nuevoNombre = request.get(&quot;nombre&quot;);</span>
+<span class="nc bnc" id="L91" title="All 4 branches missed.">            if (nuevoNombre == null || nuevoNombre.trim().isEmpty()) {</span>
+<span class="nc" id="L92">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L93">                error.put(&quot;error&quot;, &quot;El nombre de la temática es obligatorio&quot;);</span>
+<span class="nc" id="L94">                return ResponseEntity.badRequest().body(error);</span>
+            }
+
+<span class="nc" id="L97">            Tematica tematica = tematicaService.actualizarTematica(id, nuevoNombre.trim());</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (tematica == null) {</span>
+<span class="nc" id="L99">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L100">                error.put(&quot;error&quot;, &quot;Temática no encontrada&quot;);</span>
+<span class="nc" id="L101">                return ResponseEntity.notFound().build();</span>
+            }
+            
+<span class="nc" id="L104">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L105">            response.put(&quot;tematica&quot;, tematica);</span>
+<span class="nc" id="L106">            response.put(&quot;mensaje&quot;, &quot;Temática actualizada exitosamente&quot;);</span>
+            
+<span class="nc" id="L108">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L109">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L110">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L111">            error.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L112">            return ResponseEntity.badRequest().body(error);</span>
+<span class="nc" id="L113">        } catch (Exception e) {</span>
+<span class="nc" id="L114">            log.error(&quot;Error al actualizar temática: &quot;, e);</span>
+<span class="nc" id="L115">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L116">            error.put(&quot;error&quot;, &quot;Error al actualizar temática: &quot; + e.getMessage());</span>
+<span class="nc" id="L117">            return ResponseEntity.internalServerError().body(error);</span>
+        }
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;@authorizationService.canWrite()&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; eliminarTematica(@PathVariable Long id) {
+        try {
+<span class="nc" id="L125">            boolean eliminada = tematicaService.eliminarTematica(id);</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            if (!eliminada) {</span>
+<span class="nc" id="L127">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L128">                error.put(&quot;error&quot;, &quot;Temática no encontrada&quot;);</span>
+<span class="nc" id="L129">                return ResponseEntity.notFound().build();</span>
+            }
+            
+<span class="nc" id="L132">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L133">            response.put(&quot;mensaje&quot;, &quot;Temática eliminada exitosamente&quot;);</span>
+            
+<span class="nc" id="L135">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L136">        } catch (Exception e) {</span>
+<span class="nc" id="L137">            log.error(&quot;Error al eliminar temática: &quot;, e);</span>
+<span class="nc" id="L138">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L139">            error.put(&quot;error&quot;, &quot;Error al eliminar temática: &quot; + e.getMessage());</span>
+<span class="nc" id="L140">            return ResponseEntity.internalServerError().body(error);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

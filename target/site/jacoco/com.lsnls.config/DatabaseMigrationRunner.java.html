@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseMigrationRunner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.config</a> &gt; <span class="el_source">DatabaseMigrationRunner.java</span></div><h1>DatabaseMigrationRunner.java</h1><pre class="source lang-java linenums">package com.lsnls.config;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+import javax.annotation.PostConstruct;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@Component
+public class DatabaseMigrationRunner {
+
+<span class="nc" id="L15">    private static final Logger log = LoggerFactory.getLogger(DatabaseMigrationRunner.class);</span>
+
+    private final JdbcTemplate jdbcTemplate;
+
+    @Value(&quot;${spring.datasource.url:jdbc:mysql://localhost:3306/lsnls}&quot;)
+    private String datasourceUrl;
+
+<span class="nc" id="L22">    public DatabaseMigrationRunner(JdbcTemplate jdbcTemplate) {</span>
+<span class="nc" id="L23">        this.jdbcTemplate = jdbcTemplate;</span>
+<span class="nc" id="L24">    }</span>
+
+    @PostConstruct
+    public void runMigrations() {
+        try {
+<span class="nc" id="L29">            final String schema = extractSchemaName(datasourceUrl);</span>
+<span class="nc bnc" id="L30" title="All 4 branches missed.">            if (schema == null || schema.isEmpty()) {</span>
+<span class="nc" id="L31">                log.warn(&quot;[DB MIGRATION] No se pudo determinar el esquema a partir de la URL. Usando 'lsnls' por defecto.&quot;);</span>
+            }
+<span class="nc bnc" id="L33" title="All 4 branches missed.">            final String schemaName = (schema == null || schema.isEmpty()) ? &quot;lsnls&quot; : schema;</span>
+
+            // 1) programas.duracion_objetivo
+<span class="nc" id="L36">            Integer count = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L37">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND COLUMN_NAME = 'duracion_objetivo'&quot;,</span>
+<span class="nc" id="L38">                    Integer.class,</span>
+<span class="nc" id="L39">                    schemaName</span>
+            );
+<span class="nc bnc" id="L41" title="All 4 branches missed.">            if (count != null &amp;&amp; count == 0) {</span>
+<span class="nc" id="L42">                log.info(&quot;[DB MIGRATION] Añadiendo columna programas.duracion_objetivo ...&quot;);</span>
+<span class="nc" id="L43">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD COLUMN duracion_objetivo VARCHAR(255) DEFAULT '45m'&quot;);</span>
+<span class="nc" id="L44">                log.info(&quot;[DB MIGRATION] Columna programas.duracion_objetivo añadida correctamente.&quot;);</span>
+<span class="nc" id="L45">            } else {</span>
+<span class="nc" id="L46">                log.info(&quot;[DB MIGRATION] Columna programas.duracion_objetivo ya existe. No se realizan cambios.&quot;);</span>
+            }
+
+            // 2) Configuración global de duración objetivo: migrar solo el valor antiguo por defecto.
+<span class="nc" id="L50">            Integer configuracionCount = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L51">                    &quot;SELECT COUNT(*) FROM configuracion_global WHERE clave = 'DURACION_OBJETIVO_PROGRAMA'&quot;,</span>
+<span class="nc" id="L52">                    Integer.class);</span>
+<span class="nc bnc" id="L53" title="All 4 branches missed.">            if (configuracionCount != null &amp;&amp; configuracionCount == 0) {</span>
+<span class="nc" id="L54">                jdbcTemplate.update(</span>
+<span class="nc" id="L55">                    &quot;INSERT INTO configuracion_global (clave, valor, descripcion, version) VALUES (?, ?, ?, 0)&quot;,</span>
+<span class="nc" id="L56">                    &quot;DURACION_OBJETIVO_PROGRAMA&quot;, &quot;45m&quot;,</span>
+<span class="nc" id="L57">                    &quot;Duración objetivo por defecto para programas&quot;);</span>
+<span class="nc" id="L58">            } else {</span>
+<span class="nc" id="L59">                jdbcTemplate.update(</span>
+<span class="nc" id="L60">                    &quot;UPDATE configuracion_global SET valor = '45m' &quot;</span>
+                        + &quot;WHERE clave = 'DURACION_OBJETIVO_PROGRAMA' AND valor = '1h 5m'&quot;);
+            }
+
+            // 3) programas.codigo y programas.notas
+<span class="nc" id="L65">            Integer codigoCount = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L66">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND COLUMN_NAME = 'codigo'&quot;,</span>
+<span class="nc" id="L67">                    Integer.class, schemaName);</span>
+<span class="nc bnc" id="L68" title="All 4 branches missed.">            if (codigoCount != null &amp;&amp; codigoCount == 0) {</span>
+<span class="nc" id="L69">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD COLUMN codigo VARCHAR(32) NULL AFTER id&quot;);</span>
+            }
+<span class="nc" id="L71">            jdbcTemplate.execute(&quot;UPDATE programas SET codigo = CAST(id AS CHAR) WHERE codigo IS NULL OR TRIM(codigo) = ''&quot;);</span>
+
+<span class="nc" id="L73">            Integer codigoIndexCount = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L74">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND INDEX_NAME = 'uk_programas_codigo'&quot;,</span>
+<span class="nc" id="L75">                    Integer.class, schemaName);</span>
+<span class="nc bnc" id="L76" title="All 4 branches missed.">            if (codigoIndexCount != null &amp;&amp; codigoIndexCount == 0) {</span>
+<span class="nc" id="L77">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD UNIQUE INDEX uk_programas_codigo (codigo)&quot;);</span>
+            }
+
+<span class="nc" id="L80">            Integer notasCount = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L81">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND COLUMN_NAME = 'notas'&quot;,</span>
+<span class="nc" id="L82">                    Integer.class, schemaName);</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">            if (notasCount != null &amp;&amp; notasCount == 0) {</span>
+<span class="nc" id="L84">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD COLUMN notas TEXT NULL&quot;);</span>
+            }
+
+            // 4) Tabla de operaciones deshacibles (Ctrl+Z respaldado por backend)
+<span class="nc" id="L88">            jdbcTemplate.execute(&quot;CREATE TABLE IF NOT EXISTS operaciones_undo (&quot;</span>
+                    + &quot;id BIGINT AUTO_INCREMENT PRIMARY KEY, &quot;
+                    + &quot;usuario_id BIGINT NOT NULL, &quot;
+                    + &quot;tipo_operacion VARCHAR(64) NOT NULL, &quot;
+                    + &quot;descripcion VARCHAR(500), &quot;
+                    + &quot;datos_undo LONGTEXT NOT NULL, &quot;
+                    + &quot;fecha_creacion datetime(6) NOT NULL, &quot;
+                    + &quot;deshecha TINYINT(1) NOT NULL DEFAULT 0, &quot;
+                    + &quot;INDEX idx_undo_usuario_fecha (usuario_id, fecha_creacion))&quot;);
+
+            // 5) Concursantes: el estado inicial es grabado (ya no existe borrador)
+            try {
+<span class="nc" id="L100">                jdbcTemplate.update(</span>
+<span class="nc" id="L101">                    &quot;UPDATE concursantes SET estado = 'grabado' &quot;</span>
+                        + &quot;WHERE estado IS NULL OR TRIM(estado) = '' OR LOWER(estado) = 'borrador'&quot;
+                );
+<span class="nc" id="L104">            } catch (Exception e) {</span>
+<span class="nc" id="L105">                log.warn(&quot;[DB MIGRATION] No se pudo normalizar estado de concursantes: {}&quot;, e.getMessage());</span>
+            }
+
+<span class="nc" id="L108">        } catch (Exception e) {</span>
+<span class="nc" id="L109">            log.error(&quot;[DB MIGRATION] Error ejecutando migraciones: {}&quot;, e.getMessage(), e);</span>
+        }
+<span class="nc" id="L111">    }</span>
+
+    private String extractSchemaName(String url) {
+        try {
+            // Ej: jdbc:mysql://localhost:3306/lsnls?params
+<span class="nc" id="L116">            Pattern pattern = Pattern.compile(&quot;jdbc:mysql://[^/]+/([^?]+)&quot;);</span>
+<span class="nc" id="L117">            Matcher matcher = pattern.matcher(url);</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            if (matcher.find()) {</span>
+<span class="nc" id="L119">                return matcher.group(1);</span>
+            }
+<span class="nc" id="L121">        } catch (Exception ignored) {</span>
+        }
+<span class="nc" id="L123">        return null;</span>
+    }
+}
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

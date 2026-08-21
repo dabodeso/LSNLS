@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.config</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.lsnls.config;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+<span class="nc" id="L23">@Slf4j</span>
+@RestControllerAdvice
+<span class="nc" id="L25">public class GlobalExceptionHandler {</span>
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleResponseStatus(ResponseStatusException ex) {
+<span class="nc" id="L29">        int status = ex.getStatus().value();</span>
+<span class="nc" id="L30">        String mensaje = MensajesUsuario.sanitizar(ex.getReason(), MensajesUsuario.porHttp(status));</span>
+<span class="nc" id="L31">        return cuerpo(ex.getStatus(), mensaje);</span>
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+<span class="nc" id="L36">        return cuerpo(HttpStatus.PAYLOAD_TOO_LARGE, MensajesUsuario.ARCHIVO_GRANDE);</span>
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleAccessDenied(AccessDeniedException ex) {
+<span class="nc" id="L41">        return cuerpo(HttpStatus.FORBIDDEN, MensajesUsuario.PERMISOS);</span>
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleAuthentication(AuthenticationException ex) {
+<span class="nc" id="L46">        return cuerpo(HttpStatus.UNAUTHORIZED, MensajesUsuario.SESION);</span>
+    }
+
+    @ExceptionHandler({OptimisticLockingFailureException.class})
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleOptimisticLock(OptimisticLockingFailureException ex) {
+<span class="nc" id="L51">        log.warn(&quot;Conflicto de edición concurrente: {}&quot;, ex.getMessage());</span>
+<span class="nc" id="L52">        return cuerpo(HttpStatus.CONFLICT, MensajesUsuario.CONCURRENCIA);</span>
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleDataIntegrity(DataIntegrityViolationException ex) {
+<span class="nc" id="L57">        log.warn(&quot;Violación de integridad: {}&quot;, ex.getMostSpecificCause().getMessage());</span>
+<span class="nc" id="L58">        return cuerpo(HttpStatus.CONFLICT, MensajesUsuario.RELACIONADOS);</span>
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleUnreadable(HttpMessageNotReadableException ex) {
+<span class="nc" id="L63">        log.warn(&quot;Cuerpo de petición no legible: {}&quot;, ex.getMostSpecificCause().getMessage());</span>
+<span class="nc" id="L64">        return cuerpo(HttpStatus.BAD_REQUEST, MensajesUsuario.VALIDACION);</span>
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleValidation(MethodArgumentNotValidException ex) {
+<span class="nc" id="L69">        String detalle = ex.getBindingResult().getFieldErrors().stream()</span>
+<span class="nc" id="L70">                .map(FieldError::getDefaultMessage)</span>
+<span class="nc bnc" id="L71" title="All 4 branches missed.">                .filter(msg -&gt; msg != null &amp;&amp; !msg.isBlank())</span>
+<span class="nc" id="L72">                .collect(Collectors.joining(&quot;. &quot;));</span>
+<span class="nc" id="L73">        return cuerpo(HttpStatus.BAD_REQUEST, MensajesUsuario.sanitizar(detalle, MensajesUsuario.VALIDACION));</span>
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleConstraint(ConstraintViolationException ex) {
+<span class="nc" id="L78">        String detalle = ex.getConstraintViolations().stream()</span>
+<span class="nc" id="L79">                .map(ConstraintViolation::getMessage)</span>
+<span class="nc" id="L80">                .collect(Collectors.joining(&quot;. &quot;));</span>
+<span class="nc" id="L81">        return cuerpo(HttpStatus.BAD_REQUEST, MensajesUsuario.sanitizar(detalle, MensajesUsuario.VALIDACION));</span>
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleIllegalArgument(IllegalArgumentException ex) {
+<span class="nc" id="L86">        return cuerpo(HttpStatus.BAD_REQUEST, MensajesUsuario.sanitizar(ex.getMessage(), MensajesUsuario.VALIDACION));</span>
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleIllegalState(IllegalStateException ex) {
+<span class="nc" id="L91">        return cuerpo(HttpStatus.CONFLICT, MensajesUsuario.sanitizar(ex.getMessage(), MensajesUsuario.GENERICO));</span>
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleGeneric(Exception ex) {
+<span class="nc" id="L96">        log.error(&quot;Error no controlado: {}&quot;, ex.getMessage(), ex);</span>
+<span class="nc" id="L97">        return cuerpo(HttpStatus.INTERNAL_SERVER_ERROR, MensajesUsuario.GENERICO);</span>
+    }
+
+    private static ResponseEntity&lt;Map&lt;String, String&gt;&gt; cuerpo(HttpStatus status, String mensaje) {
+<span class="nc" id="L101">        return ResponseEntity.status(status).body(Map.of(</span>
+                &quot;mensaje&quot;, mensaje,
+                &quot;message&quot;, mensaje
+        ));
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

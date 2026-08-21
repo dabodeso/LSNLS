@@ -48,6 +48,9 @@ public class JornadaService {
     @Autowired
     private EntityManager entityManager;
 
+    @Autowired
+    private UndoService undoService;
+
     public List<JornadaDTO> obtenerTodas() {
         // Normalizar estados legacy en BD antes de leer
         try { normalizarEstadosLegacy(); } catch (Exception ignored) {}
@@ -326,6 +329,36 @@ public class JornadaService {
                 concursantesCount + " concursante(s) asignado(s). Desasigna los concursantes primero.");
         }
 
+        // UNDO: capturar todo lo que este borrado destruye o modifica, ANTES de tocarlo:
+        // la fila de la jornada (se reinsertará con el mismo id), sus relaciones con
+        // cuestionarios/combos, su historial y los estados que se van a liberar
+        List<Map<String, Object>> accionesUndo = new ArrayList<>();
+        Map<String, Object> filaJornada = undoService.snapshotFila("jornadas", id);
+        if (filaJornada != null) {
+            accionesUndo.add(UndoService.accionInsertarFila("jornadas", filaJornada));
+        }
+        for (Map<String, Object> fila : undoService.snapshotFilas("jornadas_cuestionarios", "jornada_id", id)) {
+            accionesUndo.add(UndoService.accionInsertarFila("jornadas_cuestionarios", fila));
+        }
+        for (Map<String, Object> fila : undoService.snapshotFilas("jornadas_combos", "jornada_id", id)) {
+            accionesUndo.add(UndoService.accionInsertarFila("jornadas_combos", fila));
+        }
+        for (Map<String, Object> fila : undoService.snapshotFilas("historial_jornadas", "jornada_id", id)) {
+            accionesUndo.add(UndoService.accionInsertarFila("historial_jornadas", fila));
+        }
+        if (jornada.getCuestionarios() != null) {
+            for (Cuestionario c : jornada.getCuestionarios()) {
+                accionesUndo.add(UndoService.accionActualizarCampos("cuestionarios", c.getId(),
+                    Collections.singletonMap("estado", c.getEstado() != null ? c.getEstado().name() : null)));
+            }
+        }
+        if (jornada.getCombos() != null) {
+            for (Combo cb : jornada.getCombos()) {
+                accionesUndo.add(UndoService.accionActualizarCampos("combos", cb.getId(),
+                    Collections.singletonMap("estado", cb.getEstado() != null ? cb.getEstado().name() : null)));
+            }
+        }
+
         // Liberar todos los cuestionarios asignados a esta jornada
         if (jornada.getCuestionarios() != null) {
             for (Cuestionario cuestionario : jornada.getCuestionarios()) {
@@ -356,11 +389,34 @@ public class JornadaService {
         }
 
         jornadaRepository.delete(jornada);
+
+        // UNDO: registrar el borrado como operación deshacible (reinserta con el mismo id)
+        undoService.registrar("eliminar_jornada",
+            "Eliminar jornada '" + jornada.getNombre() + "' (" + id + ")", accionesUndo);
     }
 
     public JornadaDTO cambiarEstado(Long id, String nuevoEstado) {
         Jornada jornada = jornadaRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada"));
+
+        // UNDO: capturar estados previos de la jornada y de todos sus elementos
+        // ANTES de la cascada, para poder revertirla exactamente
+        Jornada.EstadoJornada estadoAnterior = jornada.getEstado();
+        List<Map<String, Object>> accionesUndo = new ArrayList<>();
+        accionesUndo.add(UndoService.accionActualizarCampos("jornadas", id,
+            Collections.singletonMap("estado", estadoAnterior != null ? estadoAnterior.name() : null)));
+        if (jornada.getCuestionarios() != null) {
+            for (Cuestionario c : jornada.getCuestionarios()) {
+                accionesUndo.add(UndoService.accionActualizarCampos("cuestionarios", c.getId(),
+                    Collections.singletonMap("estado", c.getEstado() != null ? c.getEstado().name() : null)));
+            }
+        }
+        if (jornada.getCombos() != null) {
+            for (Combo cb : jornada.getCombos()) {
+                accionesUndo.add(UndoService.accionActualizarCampos("combos", cb.getId(),
+                    Collections.singletonMap("estado", cb.getEstado() != null ? cb.getEstado().name() : null)));
+            }
+        }
 
         try {
             System.out.println("🔄 [JORNADA ESTADO] Solicitud de cambio de estado - Jornada " + id + " -> " + nuevoEstado);
@@ -449,6 +505,14 @@ public class JornadaService {
                 } catch (Exception e) {
                     System.err.println("⚠️ [JORNADA ESTADO] Error batch (adjudicado): " + e.getMessage());
                 }
+            }
+
+            // UNDO: registrar la operación con los estados previos capturados
+            if (estadoAnterior == null || !estadoAnterior.name().equals(nuevoEstado)) {
+                undoService.registrar("cambiar_estado_jornada",
+                    "Estado de jornada '" + jornada.getNombre() + "' (" +
+                        (estadoAnterior != null ? estadoAnterior.name() : "?") + " → " + nuevoEstado + ")",
+                    accionesUndo);
             }
 
             return convertirADTO(jornada);
@@ -850,12 +914,16 @@ public class JornadaService {
         }
 
         System.out.println("🔄🔄🔄 [RECICLAR ENTERO] Combo " + comboId + " | Estado actual: " + estadoActual + " | Jornada: " + jornadaId);
+        Combo.EstadoCombo estadoAnterior = estadoActual;
+        Set<Long> idsHistorialAntes = UndoService.extraerIds(
+                undoService.snapshotFilas("historial_jornadas", "combo_id", comboId));
         combo.setEstado(Combo.EstadoCombo.aprobado);
         comboRepository.save(combo);
         System.out.println("✅✅✅ [RECICLAR ENTERO] Combo " + comboId + " cambiado: " + estadoActual + " -> aprobado");
 
         // Registrar en el historial como reaprovechado (para pintarlo en verde en la UI)
         registrarHistorialReutilizacion(jornada, combo, "combo", usuarioId);
+        registrarUndoReciclajeEntero(comboId, estadoAnterior.name(), idsHistorialAntes);
 
         System.out.println("♻️♻️♻️ [RECICLAR ENTERO] Combo " + comboId + " reciclado completamente de jornada " + jornadaId);
     }
@@ -942,6 +1010,9 @@ public class JornadaService {
         if (preguntasNoUsadas.isEmpty()) {
             throw new IllegalArgumentException("Debe quedar al menos una pregunta sin usar para crear el combo derivado");
         }
+
+        Set<Long> idsHistorialPadreAntes = UndoService.extraerIds(
+                undoService.snapshotFilas("historial_jornadas", "combo_id", comboId));
         
         // 2) Crear un combo nuevo con las preguntas no usadas
         Combo comboNuevo = new Combo();
@@ -989,6 +1060,7 @@ public class JornadaService {
         
         // 6) Registrar el combo nuevo en el historial como hijo
         registrarHistorialComboHijo(jornada, comboNuevo, comboId, usuarioId);
+        registrarUndoReciclajeParcial(comboId, comboNuevo.getId(), idsHistorialPadreAntes);
 
         System.out.println("✅✅✅ [RECICLAR PARCIAL] Combo " + comboId + " reciclado parcialmente:");
         System.out.println("   - Combo original " + comboId + ": estado=" + combo.getEstado() + ", preguntas=" + totalPreguntas + " (usada=" + preguntaUsadaId + ")");
@@ -1040,16 +1112,138 @@ public class JornadaService {
             throw new IllegalStateException("No se puede cancelar el reciclaje: el combo derivado ya está asignado.");
         }
 
-        int historialEliminado = entityManager.createNativeQuery(
+        List<Map<String, Object>> historialHijo = undoService.snapshotFilas("historial_jornadas", "combo_id", comboHijoId);
+        List<Map<String, Object>> historialHijoReciclaje = new ArrayList<>();
+        Long comboPadreId = null;
+        for (Map<String, Object> fila : historialHijo) {
+            if (!mismaJornada(fila, jornadaId)) {
+                continue;
+            }
+            String notas = valorTexto(fila.get("notas"));
+            if (notas.contains("RECICLAJE_PARCIAL_COMBO_HIJO")) {
+                historialHijoReciclaje.add(fila);
+                if (comboPadreId == null) {
+                    comboPadreId = extraerComboPadreDesdeNotas(notas);
+                }
+            }
+        }
+        if (historialHijoReciclaje.isEmpty()) {
+            throw new IllegalArgumentException("El combo no es un derivado reciclado de esta jornada.");
+        }
+
+        List<Map<String, Object>> historialPadre = new ArrayList<>();
+        if (comboPadreId != null) {
+            for (Map<String, Object> fila : undoService.snapshotFilas("historial_jornadas", "combo_id", comboPadreId)) {
+                if (mismaJornada(fila, jornadaId)
+                        && valorTexto(fila.get("notas")).contains("RECICLAJE_PARCIAL_COMBO_PADRE")) {
+                    historialPadre.add(fila);
+                }
+            }
+        }
+
+        List<Map<String, Object>> accionesUndo = new ArrayList<>();
+        Map<String, Object> filaCombo = undoService.snapshotFila("combos", comboHijoId);
+        if (filaCombo != null) {
+            accionesUndo.add(UndoService.accionInsertarFila("combos", filaCombo));
+        }
+        for (Map<String, Object> fila : undoService.snapshotFilas("combos_preguntas", "combo_id", comboHijoId)) {
+            accionesUndo.add(UndoService.accionInsertarFila("combos_preguntas", fila));
+        }
+        for (Map<String, Object> fila : historialHijoReciclaje) {
+            accionesUndo.add(UndoService.accionInsertarFila("historial_jornadas", fila));
+        }
+        for (Map<String, Object> fila : historialPadre) {
+            accionesUndo.add(UndoService.accionInsertarFila("historial_jornadas", fila));
+        }
+
+        entityManager.createNativeQuery(
                 "DELETE FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? "
                     + "AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'")
             .setParameter(1, jornadaId)
             .setParameter(2, comboHijoId)
             .executeUpdate();
-        if (historialEliminado == 0) {
-            throw new IllegalArgumentException("El combo no es un derivado reciclado de esta jornada.");
+        if (comboPadreId != null) {
+            entityManager.createNativeQuery(
+                    "DELETE FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? "
+                        + "AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_PADRE:%'")
+                .setParameter(1, jornadaId)
+                .setParameter(2, comboPadreId)
+                .executeUpdate();
         }
         comboRepository.deleteById(comboHijoId);
+        undoService.registrar("cancelar_reciclaje_combo",
+                "Cancelar reciclaje combo " + comboHijoId, accionesUndo);
+    }
+
+    private void registrarUndoReciclajeEntero(Long comboId, String estadoAnterior, Set<Long> idsHistorialAntes) {
+        entityManager.flush();
+        List<Map<String, Object>> acciones = new ArrayList<>();
+        Map<String, Object> campos = new LinkedHashMap<>();
+        campos.put("estado", estadoAnterior);
+        acciones.add(UndoService.accionActualizarCampos("combos", comboId, campos));
+        for (Map<String, Object> fila : undoService.snapshotFilasNuevas(
+                "historial_jornadas", "combo_id", comboId, idsHistorialAntes)) {
+            Long id = UndoService.extraerId(fila);
+            if (id != null) {
+                acciones.add(UndoService.accionEliminarFila("historial_jornadas", id));
+            }
+        }
+        undoService.registrar("reciclar_combo_entero", "Reciclar combo " + comboId, acciones);
+    }
+
+    private void registrarUndoReciclajeParcial(Long comboPadreId, Long comboHijoId, Set<Long> idsHistorialPadreAntes) {
+        if (comboHijoId == null) {
+            return;
+        }
+        entityManager.flush();
+        List<Map<String, Object>> acciones = new ArrayList<>();
+        acciones.add(UndoService.accionEliminarFilas("combos_preguntas", "combo_id", comboHijoId));
+        for (Map<String, Object> fila : undoService.snapshotFilas("historial_jornadas", "combo_id", comboHijoId)) {
+            Long id = UndoService.extraerId(fila);
+            if (id != null) {
+                acciones.add(UndoService.accionEliminarFila("historial_jornadas", id));
+            }
+        }
+        for (Map<String, Object> fila : undoService.snapshotFilasNuevas(
+                "historial_jornadas", "combo_id", comboPadreId, idsHistorialPadreAntes)) {
+            Long id = UndoService.extraerId(fila);
+            if (id != null) {
+                acciones.add(UndoService.accionEliminarFila("historial_jornadas", id));
+            }
+        }
+        acciones.add(UndoService.accionEliminarFila("combos", comboHijoId));
+        undoService.registrar("reciclar_combo_parcial",
+                "Reciclaje parcial combo " + comboPadreId + " → " + comboHijoId, acciones);
+    }
+
+    private static boolean mismaJornada(Map<String, Object> fila, Long jornadaId) {
+        Object valor = fila.get("jornada_id");
+        return valor instanceof Number && jornadaId != null && ((Number) valor).longValue() == jornadaId;
+    }
+
+    private static String valorTexto(Object valor) {
+        return valor == null ? "" : valor.toString();
+    }
+
+    private static Long extraerComboPadreDesdeNotas(String notas) {
+        if (notas == null) {
+            return null;
+        }
+        int idx = notas.indexOf("PADRE:");
+        if (idx < 0) {
+            return null;
+        }
+        String resto = notas.substring(idx + 6);
+        StringBuilder numero = new StringBuilder();
+        for (int i = 0; i < resto.length(); i++) {
+            char c = resto.charAt(i);
+            if (Character.isDigit(c)) {
+                numero.append(c);
+            } else {
+                break;
+            }
+        }
+        return numero.length() == 0 ? null : Long.valueOf(numero.toString());
     }
 
     public boolean esComboDerivadoDeJornada(Long jornadaId, Long comboId) {

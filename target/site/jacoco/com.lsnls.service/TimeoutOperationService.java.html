@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TimeoutOperationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">TimeoutOperationService.java</span></div><h1>TimeoutOperationService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import org.springframework.stereotype.Service;
+
+import java.util.concurrent.*;
+import java.util.function.Supplier;
+
+/**
+ * Servicio para ejecutar operaciones con timeouts configurables
+ * Previene que operaciones largas se cuelguen indefinidamente
+ */
+@Service
+public class TimeoutOperationService {
+
+    // Timeouts por defecto en segundos
+    private static final int DEFAULT_QUERY_TIMEOUT = 30;
+    private static final int DEFAULT_CREATION_TIMEOUT = 60;
+    private static final int DEFAULT_UPDATE_TIMEOUT = 45;
+    private static final int DEFAULT_VALIDATION_TIMEOUT = 15;
+    private static final int DEFAULT_EXPORT_TIMEOUT = 300; // 5 minutos
+
+    private final ExecutorService timeoutExecutor;
+
+<span class="nc" id="L24">    public TimeoutOperationService() {</span>
+<span class="nc" id="L25">        this.timeoutExecutor = Executors.newCachedThreadPool(r -&gt; {</span>
+<span class="nc" id="L26">            Thread t = new Thread(r, &quot;timeout-operation&quot;);</span>
+<span class="nc" id="L27">            t.setDaemon(true);</span>
+<span class="nc" id="L28">            return t;</span>
+        });
+<span class="nc" id="L30">    }</span>
+
+    /**
+     * Resultado de una operación con timeout
+     */
+    public static class TimeoutResult&lt;T&gt; {
+        private final boolean success;
+        private final T result;
+        private final String errorMessage;
+        private final boolean timedOut;
+
+<span class="nc" id="L41">        private TimeoutResult(boolean success, T result, String errorMessage, boolean timedOut) {</span>
+<span class="nc" id="L42">            this.success = success;</span>
+<span class="nc" id="L43">            this.result = result;</span>
+<span class="nc" id="L44">            this.errorMessage = errorMessage;</span>
+<span class="nc" id="L45">            this.timedOut = timedOut;</span>
+<span class="nc" id="L46">        }</span>
+
+        public static &lt;T&gt; TimeoutResult&lt;T&gt; success(T result) {
+<span class="nc" id="L49">            return new TimeoutResult&lt;&gt;(true, result, null, false);</span>
+        }
+
+        public static &lt;T&gt; TimeoutResult&lt;T&gt; failure(String errorMessage) {
+<span class="nc" id="L53">            return new TimeoutResult&lt;&gt;(false, null, errorMessage, false);</span>
+        }
+
+        public static &lt;T&gt; TimeoutResult&lt;T&gt; timeout() {
+<span class="nc" id="L57">            return new TimeoutResult&lt;&gt;(false, null, &quot;Operación cancelada por timeout&quot;, true);</span>
+        }
+
+        // Getters
+<span class="nc" id="L61">        public boolean isSuccess() { return success; }</span>
+<span class="nc" id="L62">        public T getResult() { return result; }</span>
+<span class="nc" id="L63">        public String getErrorMessage() { return errorMessage; }</span>
+<span class="nc" id="L64">        public boolean isTimedOut() { return timedOut; }</span>
+    }
+
+    /**
+     * Ejecuta una operación con timeout por defecto según el tipo
+     */
+    public &lt;T&gt; TimeoutResult&lt;T&gt; executeWithTimeout(OperationType operationType, Supplier&lt;T&gt; operation) {
+<span class="nc" id="L71">        int timeoutSeconds = getDefaultTimeout(operationType);</span>
+<span class="nc" id="L72">        return executeWithTimeout(operation, timeoutSeconds, TimeUnit.SECONDS);</span>
+    }
+
+    /**
+     * Ejecuta una operación con timeout personalizado
+     */
+    public &lt;T&gt; TimeoutResult&lt;T&gt; executeWithTimeout(Supplier&lt;T&gt; operation, long timeout, TimeUnit timeUnit) {
+<span class="nc" id="L79">        Future&lt;T&gt; future = timeoutExecutor.submit(() -&gt; {</span>
+            try {
+<span class="nc" id="L81">                return operation.get();</span>
+<span class="nc" id="L82">            } catch (Exception e) {</span>
+<span class="nc" id="L83">                throw new RuntimeException(e);</span>
+            }
+        });
+
+        try {
+<span class="nc" id="L88">            T result = future.get(timeout, timeUnit);</span>
+<span class="nc" id="L89">            return TimeoutResult.success(result);</span>
+<span class="nc" id="L90">        } catch (TimeoutException e) {</span>
+<span class="nc" id="L91">            future.cancel(true);</span>
+<span class="nc" id="L92">            return TimeoutResult.timeout();</span>
+<span class="nc" id="L93">        } catch (ExecutionException e) {</span>
+<span class="nc" id="L94">            Throwable cause = e.getCause();</span>
+<span class="nc" id="L95">            return TimeoutResult.failure(&quot;Error en la operación: &quot; + </span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                (cause != null ? cause.getMessage() : e.getMessage()));</span>
+<span class="nc" id="L97">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L98">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L99">            future.cancel(true);</span>
+<span class="nc" id="L100">            return TimeoutResult.failure(&quot;Operación interrumpida&quot;);</span>
+        }
+    }
+
+    /**
+     * Ejecuta una operación crítica con timeout y reintentos
+     */
+    public &lt;T&gt; TimeoutResult&lt;T&gt; executeWithRetries(Supplier&lt;T&gt; operation, int maxRetries, long timeout, TimeUnit timeUnit) {
+<span class="nc" id="L108">        TimeoutResult&lt;T&gt; lastResult = null;</span>
+        
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        for (int attempt = 1; attempt &lt;= maxRetries; attempt++) {</span>
+<span class="nc" id="L111">            lastResult = executeWithTimeout(operation, timeout, timeUnit);</span>
+            
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            if (lastResult.isSuccess()) {</span>
+<span class="nc" id="L114">                return lastResult;</span>
+            }
+            
+            // Si fue timeout, no reintentar (probablemente problema de recursos)
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            if (lastResult.isTimedOut()) {</span>
+<span class="nc" id="L119">                break;</span>
+            }
+            
+            // Esperar antes del siguiente intento (backoff exponencial)
+<span class="nc bnc" id="L123" title="All 2 branches missed.">            if (attempt &lt; maxRetries) {</span>
+                try {
+<span class="nc" id="L125">                    Thread.sleep(Math.min(1000 * attempt, 5000)); // máximo 5 segundos</span>
+<span class="nc" id="L126">                } catch (InterruptedException e) {</span>
+<span class="nc" id="L127">                    Thread.currentThread().interrupt();</span>
+<span class="nc" id="L128">                    break;</span>
+<span class="nc" id="L129">                }</span>
+            }
+        }
+        
+<span class="nc" id="L133">        return lastResult;</span>
+    }
+
+    /**
+     * Métodos específicos para operaciones comunes
+     */
+
+    /**
+     * Ejecuta una query de base de datos con timeout
+     */
+    public &lt;T&gt; TimeoutResult&lt;T&gt; executeQuery(Supplier&lt;T&gt; query) {
+<span class="nc" id="L144">        return executeWithTimeout(query, DEFAULT_QUERY_TIMEOUT, TimeUnit.SECONDS);</span>
+    }
+
+    /**
+     * Ejecuta una operación de creación con timeout
+     */
+    public &lt;T&gt; TimeoutResult&lt;T&gt; executeCreation(Supplier&lt;T&gt; creation) {
+<span class="nc" id="L151">        return executeWithTimeout(creation, DEFAULT_CREATION_TIMEOUT, TimeUnit.SECONDS);</span>
+    }
+
+    /**
+     * Ejecuta una operación de actualización con timeout
+     */
+    public &lt;T&gt; TimeoutResult&lt;T&gt; executeUpdate(Supplier&lt;T&gt; update) {
+<span class="nc" id="L158">        return executeWithTimeout(update, DEFAULT_UPDATE_TIMEOUT, TimeUnit.SECONDS);</span>
+    }
+
+    /**
+     * Ejecuta una validación con timeout
+     */
+    public &lt;T&gt; TimeoutResult&lt;T&gt; executeValidation(Supplier&lt;T&gt; validation) {
+<span class="nc" id="L165">        return executeWithTimeout(validation, DEFAULT_VALIDATION_TIMEOUT, TimeUnit.SECONDS);</span>
+    }
+
+    /**
+     * Ejecuta una exportación con timeout extendido
+     */
+    public &lt;T&gt; TimeoutResult&lt;T&gt; executeExport(Supplier&lt;T&gt; export) {
+<span class="nc" id="L172">        return executeWithTimeout(export, DEFAULT_EXPORT_TIMEOUT, TimeUnit.SECONDS);</span>
+    }
+
+    /**
+     * Ejecuta una operación batch con timeout y reintentos
+     */
+    public &lt;T&gt; TimeoutResult&lt;T&gt; executeBatchOperation(Supplier&lt;T&gt; batchOperation) {
+<span class="nc" id="L179">        return executeWithRetries(batchOperation, 3, DEFAULT_CREATION_TIMEOUT, TimeUnit.SECONDS);</span>
+    }
+
+    /**
+     * Ejecuta una operación de importación con timeout extendido y reintentos
+     */
+    public &lt;T&gt; TimeoutResult&lt;T&gt; executeImport(Supplier&lt;T&gt; importOperation) {
+<span class="nc" id="L186">        return executeWithRetries(importOperation, 2, DEFAULT_EXPORT_TIMEOUT, TimeUnit.SECONDS);</span>
+    }
+
+    /**
+     * Tipos de operaciones con timeouts por defecto
+     */
+<span class="nc" id="L192">    public enum OperationType {</span>
+<span class="nc" id="L193">        QUERY(DEFAULT_QUERY_TIMEOUT),</span>
+<span class="nc" id="L194">        CREATION(DEFAULT_CREATION_TIMEOUT),</span>
+<span class="nc" id="L195">        UPDATE(DEFAULT_UPDATE_TIMEOUT),</span>
+<span class="nc" id="L196">        VALIDATION(DEFAULT_VALIDATION_TIMEOUT),</span>
+<span class="nc" id="L197">        EXPORT(DEFAULT_EXPORT_TIMEOUT),</span>
+<span class="nc" id="L198">        BATCH(DEFAULT_CREATION_TIMEOUT);</span>
+
+        private final int defaultTimeoutSeconds;
+
+<span class="nc" id="L202">        OperationType(int defaultTimeoutSeconds) {</span>
+<span class="nc" id="L203">            this.defaultTimeoutSeconds = defaultTimeoutSeconds;</span>
+<span class="nc" id="L204">        }</span>
+
+        public int getDefaultTimeoutSeconds() {
+<span class="nc" id="L207">            return defaultTimeoutSeconds;</span>
+        }
+    }
+
+    private int getDefaultTimeout(OperationType operationType) {
+<span class="nc" id="L212">        return operationType.getDefaultTimeoutSeconds();</span>
+    }
+
+    /**
+     * Monitoreo de operaciones en progreso
+     */
+    public int getActiveOperations() {
+<span class="nc bnc" id="L219" title="All 2 branches missed.">        if (timeoutExecutor instanceof ThreadPoolExecutor) {</span>
+<span class="nc" id="L220">            return ((ThreadPoolExecutor) timeoutExecutor).getActiveCount();</span>
+        }
+<span class="nc" id="L222">        return 0;</span>
+    }
+
+    public long getCompletedOperations() {
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (timeoutExecutor instanceof ThreadPoolExecutor) {</span>
+<span class="nc" id="L227">            return ((ThreadPoolExecutor) timeoutExecutor).getCompletedTaskCount();</span>
+        }
+<span class="nc" id="L229">        return 0;</span>
+    }
+
+    /**
+     * Limpieza de recursos
+     */
+    public void shutdown() {
+<span class="nc" id="L236">        timeoutExecutor.shutdown();</span>
+        try {
+<span class="nc bnc" id="L238" title="All 2 branches missed.">            if (!timeoutExecutor.awaitTermination(10, TimeUnit.SECONDS)) {</span>
+<span class="nc" id="L239">                timeoutExecutor.shutdownNow();</span>
+            }
+<span class="nc" id="L241">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L242">            timeoutExecutor.shutdownNow();</span>
+<span class="nc" id="L243">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L244">        }</span>
+<span class="nc" id="L245">    }</span>
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

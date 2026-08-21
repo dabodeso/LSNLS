@@ -84,6 +84,27 @@ public class DatabaseMigrationRunner {
                 jdbcTemplate.execute("ALTER TABLE programas ADD COLUMN notas TEXT NULL");
             }
 
+            // 4) Tabla de operaciones deshacibles (Ctrl+Z respaldado por backend)
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS operaciones_undo ("
+                    + "id BIGINT AUTO_INCREMENT PRIMARY KEY, "
+                    + "usuario_id BIGINT NOT NULL, "
+                    + "tipo_operacion VARCHAR(64) NOT NULL, "
+                    + "descripcion VARCHAR(500), "
+                    + "datos_undo LONGTEXT NOT NULL, "
+                    + "fecha_creacion datetime(6) NOT NULL, "
+                    + "deshecha TINYINT(1) NOT NULL DEFAULT 0, "
+                    + "INDEX idx_undo_usuario_fecha (usuario_id, fecha_creacion))");
+
+            // 5) Concursantes: el estado inicial es grabado (ya no existe borrador)
+            try {
+                jdbcTemplate.update(
+                    "UPDATE concursantes SET estado = 'grabado' "
+                        + "WHERE estado IS NULL OR TRIM(estado) = '' OR LOWER(estado) = 'borrador'"
+                );
+            } catch (Exception e) {
+                log.warn("[DB MIGRATION] No se pudo normalizar estado de concursantes: {}", e.getMessage());
+            }
+
         } catch (Exception e) {
             log.error("[DB MIGRATION] Error ejecutando migraciones: {}", e.getMessage(), e);
         }

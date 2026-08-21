@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TemasCatalogService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">TemasCatalogService.java</span></div><h1>TemasCatalogService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import com.lsnls.entity.SubtemaPregunta;
+import com.lsnls.entity.TematicaCombo;
+import com.lsnls.entity.TematicaPregunta;
+import com.lsnls.repository.SubtemaPreguntaRepository;
+import com.lsnls.repository.TematicaComboRepository;
+import com.lsnls.repository.TematicaPreguntaRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class TemasCatalogService {
+
+    private final TematicaPreguntaRepository tematicaPreguntaRepository;
+    private final TematicaComboRepository tematicaComboRepository;
+    private final SubtemaPreguntaRepository subtemaPreguntaRepository;
+    private final AuthorizationService authorizationService;
+    private final UndoService undoService;
+
+    public List&lt;String&gt; obtenerTematicasPreguntas() {
+<span class="nc" id="L30">        return tematicaPreguntaRepository.findAll().stream()</span>
+<span class="nc" id="L31">                .map(TematicaPregunta::getNombre)</span>
+<span class="nc" id="L32">                .sorted()</span>
+<span class="nc" id="L33">                .collect(Collectors.toList());</span>
+    }
+
+    public List&lt;String&gt; obtenerTematicasCombos() {
+<span class="nc" id="L37">        return tematicaComboRepository.findAll().stream()</span>
+<span class="nc" id="L38">                .map(TematicaCombo::getNombre)</span>
+<span class="nc" id="L39">                .sorted()</span>
+<span class="nc" id="L40">                .collect(Collectors.toList());</span>
+    }
+
+    public List&lt;String&gt; obtenerSubtemasPreguntas() {
+<span class="nc" id="L44">        return subtemaPreguntaRepository.findAll().stream()</span>
+<span class="nc" id="L45">                .map(SubtemaPregunta::getNombre)</span>
+<span class="nc" id="L46">                .sorted()</span>
+<span class="nc" id="L47">                .collect(Collectors.toList());</span>
+    }
+
+    public String añadirTematicaPregunta(String nombre) {
+<span class="nc" id="L51">        String normalizado = normalizar(nombre);</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (tematicaPreguntaRepository.existsByNombre(normalizado)) return normalizado;</span>
+<span class="nc" id="L53">        TematicaPregunta t = new TematicaPregunta();</span>
+<span class="nc" id="L54">        t.setNombre(normalizado);</span>
+<span class="nc" id="L55">        t.setCreacionUsuario(authorizationService.getCurrentUser().orElse(null));</span>
+<span class="nc" id="L56">        TematicaPregunta guardada = tematicaPreguntaRepository.save(t);</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (guardada.getId() != null) {</span>
+<span class="nc" id="L58">            undoService.registrar(&quot;añadir_tematica_pregunta&quot;, &quot;Añadir temática &quot; + normalizado,</span>
+<span class="nc" id="L59">                    Collections.singletonList(UndoService.accionEliminarFila(&quot;tematicas_preguntas&quot;, guardada.getId())));</span>
+        }
+<span class="nc" id="L61">        return normalizado;</span>
+    }
+
+    public String añadirSubtemaPregunta(String nombre) {
+<span class="nc" id="L65">        String normalizado = normalizar(nombre);</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (subtemaPreguntaRepository.existsByNombre(normalizado)) return normalizado;</span>
+<span class="nc" id="L67">        SubtemaPregunta s = new SubtemaPregunta();</span>
+<span class="nc" id="L68">        s.setNombre(normalizado);</span>
+<span class="nc" id="L69">        s.setCreacionUsuario(authorizationService.getCurrentUser().orElse(null));</span>
+<span class="nc" id="L70">        SubtemaPregunta guardado = subtemaPreguntaRepository.save(s);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (guardado.getId() != null) {</span>
+<span class="nc" id="L72">            undoService.registrar(&quot;añadir_subtema_pregunta&quot;, &quot;Añadir subtema &quot; + normalizado,</span>
+<span class="nc" id="L73">                    Collections.singletonList(UndoService.accionEliminarFila(&quot;subtemas_preguntas&quot;, guardado.getId())));</span>
+        }
+<span class="nc" id="L75">        return normalizado;</span>
+    }
+
+    public void eliminarTematicaPregunta(String nombre) {
+<span class="nc" id="L79">        tematicaPreguntaRepository.findByNombre(normalizar(nombre)).ifPresent(t -&gt; {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            Map&lt;String, Object&gt; fila = t.getId() != null ? undoService.snapshotFila(&quot;tematicas_preguntas&quot;, t.getId()) : null;</span>
+<span class="nc" id="L81">            tematicaPreguntaRepository.delete(t);</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            if (fila != null) {</span>
+<span class="nc" id="L83">                undoService.registrar(&quot;eliminar_tematica_pregunta&quot;, &quot;Eliminar temática &quot; + t.getNombre(),</span>
+<span class="nc" id="L84">                        Collections.singletonList(UndoService.accionInsertarFila(&quot;tematicas_preguntas&quot;, fila)));</span>
+            }
+<span class="nc" id="L86">        });</span>
+<span class="nc" id="L87">    }</span>
+
+    public void eliminarSubtemaPregunta(String nombre) {
+<span class="nc" id="L90">        subtemaPreguntaRepository.findByNombre(normalizar(nombre)).ifPresent(s -&gt; {</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">            Map&lt;String, Object&gt; fila = s.getId() != null ? undoService.snapshotFila(&quot;subtemas_preguntas&quot;, s.getId()) : null;</span>
+<span class="nc" id="L92">            subtemaPreguntaRepository.delete(s);</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            if (fila != null) {</span>
+<span class="nc" id="L94">                undoService.registrar(&quot;eliminar_subtema_pregunta&quot;, &quot;Eliminar subtema &quot; + s.getNombre(),</span>
+<span class="nc" id="L95">                        Collections.singletonList(UndoService.accionInsertarFila(&quot;subtemas_preguntas&quot;, fila)));</span>
+            }
+<span class="nc" id="L97">        });</span>
+<span class="nc" id="L98">    }</span>
+
+    private String normalizar(String s) {
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        return s == null ? null : s.trim().toUpperCase();</span>
+    }
+}
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

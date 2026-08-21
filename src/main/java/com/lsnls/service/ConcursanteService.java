@@ -22,6 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.data.domain.Page;
@@ -58,6 +60,9 @@ public class ConcursanteService {
 
     @Autowired
     private JornadaService jornadaService;
+
+    @Autowired
+    private UndoService undoService;
 
     @Value("${upload.directory}")
     private String uploadDirectory;
@@ -152,6 +157,7 @@ public class ConcursanteService {
     @Transactional
     public ConcursanteDTO create(ConcursanteDTO concursanteDTO) {
         Concursante concursante = convertToEntity(concursanteDTO);
+        concursante.setEstado(normalizarEstadoConcursante(concursante.getEstado()));
         validarDuracionesYEstado(concursante);
         
         // Generar número de concursante automáticamente
@@ -261,6 +267,7 @@ public class ConcursanteService {
         if (concursanteDTO.getVersion() != null) {
             concursante.setVersion(concursanteDTO.getVersion());
         }
+        concursante.setEstado(normalizarEstadoConcursante(concursante.getEstado()));
         validarDuracionesYEstado(concursante);
         
         // Si se asignó un cuestionario nuevo, cambiar su estado a grabado
@@ -446,13 +453,25 @@ public class ConcursanteService {
             throw new IllegalArgumentException("No se puede eliminar el concursante porque está asignado al programa " + 
                 concursante.getNumeroPrograma() + ". Desasígnalo del programa primero.");
         }
-        
-        // Verificar estado del concursante
-        if (concursante.getEstado() == "grabado") {
-            throw new IllegalArgumentException("No se puede eliminar el concursante porque ya está grabado. " +
-                "Los concursantes grabados no pueden ser eliminados.");
+
+        // UNDO: capturar la fila del concursante (se reinsertará con el mismo id)
+        // y los estados de cuestionario/combo antes de restaurarlos
+        List<Map<String, Object>> accionesUndo = new java.util.ArrayList<>();
+        Map<String, Object> filaConcursante = undoService.snapshotFila("concursantes", id);
+        if (filaConcursante != null) {
+            accionesUndo.add(UndoService.accionInsertarFila("concursantes", filaConcursante));
         }
-        
+        if (concursante.getCuestionario() != null) {
+            accionesUndo.add(UndoService.accionActualizarCampos("cuestionarios", concursante.getCuestionario().getId(),
+                java.util.Collections.singletonMap("estado",
+                    concursante.getCuestionario().getEstado() != null ? concursante.getCuestionario().getEstado().name() : null)));
+        }
+        if (concursante.getCombo() != null) {
+            accionesUndo.add(UndoService.accionActualizarCampos("combos", concursante.getCombo().getId(),
+                java.util.Collections.singletonMap("estado",
+                    concursante.getCombo().getEstado() != null ? concursante.getCombo().getEstado().name() : null)));
+        }
+
         // Restaurar estado del cuestionario si estaba grabado
         if (concursante.getCuestionario() != null && 
             concursante.getCuestionario().getEstado() == Cuestionario.EstadoCuestionario.grabado) {
@@ -468,6 +487,11 @@ public class ConcursanteService {
         }
         
         concursanteRepository.deleteById(id);
+
+        // UNDO: registrar el borrado como operación deshacible
+        undoService.registrar("eliminar_concursante",
+            "Eliminar concursante " + (concursante.getNombre() != null ? "'" + concursante.getNombre() + "'" : id),
+            accionesUndo);
     }
 
     public List<ConcursanteDTO> findByEstado(String estado) {
@@ -623,7 +647,7 @@ public class ConcursanteService {
                     }
                     break;
                 case "estado":
-                    concursante.setEstado(value != null ? value.toString() : null);
+                    concursante.setEstado(normalizarEstadoConcursante(value != null ? value.toString() : null));
                     break;
                 case "duracion":
                     concursante.setDuracion(value != null ? value.toString() : null);
@@ -671,6 +695,13 @@ public class ConcursanteService {
             throw new IllegalArgumentException(
                 "No se puede marcar como editado sin una duración válida de grabación, dirección o final.");
         }
+    }
+
+    private String normalizarEstadoConcursante(String estado) {
+        if (estado == null || estado.isBlank() || "borrador".equalsIgnoreCase(estado.trim())) {
+            return "grabado";
+        }
+        return estado.trim().toLowerCase();
     }
 
     private void validarFormatoDuracion(String duracion, String campo) {
@@ -784,12 +815,20 @@ public class ConcursanteService {
         String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
         Path filePath = uploadPath.resolve(fileName);
         
+        String fotoAnterior = concursante.getFoto();
+
         // Guardar el archivo
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
         
         // Actualizar solo el nombre del archivo en el concursante
         concursante.setFoto(fileName);
         concursanteRepository.save(concursante);
+
+        Map<String, Object> camposPrevios = new HashMap<>();
+        camposPrevios.put("foto", fotoAnterior);
+        undoService.registrar("cambiar_foto_concursante",
+                "Cambiar foto del concursante " + concursanteId,
+                Collections.singletonList(UndoService.accionActualizarCampos("concursantes", concursanteId, camposPrevios)));
         
         return fileName;
     }

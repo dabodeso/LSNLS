@@ -12,7 +12,7 @@
     <!-- Toastify CSS -->
     <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link href="css/styles.css" rel="stylesheet">
+    <link href="css/styles.css?v=20260821-1" rel="stylesheet">
     <link href="css/pagination-programas.css" rel="stylesheet">
     <style>
         .programa-header {
@@ -25,18 +25,19 @@
         }
         .programa-info {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: nowrap; /* Evitar salto de línea */
-            gap: 32px; /* Más espacio entre columnas */
+            justify-content: flex-start;
+            align-items: stretch;
+            flex-wrap: nowrap;
+            gap: 14px;
         }
         
         /* Botones de acción en el header */
         .programa-acciones {
             display: flex;
             gap: 4px;
-            margin-left: auto;
-            margin-right: 50px; /* Desplazar hacia la izquierda pero sin salirse */
+            flex: 0 0 auto;
+            align-self: center;
+            margin-left: 4px;
         }
         
         .programa-acciones .btn {
@@ -50,19 +51,19 @@
         }
         /* Todos los bloques del header con el mismo ancho visual */
         .programa-info-item {
-            flex: 0 0 100px; /* ancho reducido para hacer espacio a los botones */
-        }
-        .programa-info-item {
+            flex: 0 0 auto;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 125px; /* Reducido para hacer más espacio */
-            gap: 7px; /* Un poco más de separación interna */
+            justify-content: center;
+            min-width: 90px;
+            gap: 4px;
         }
         .programa-info-label {
-            font-size: 0.9em;
+            font-size: 0.78em;
             opacity: 0.9;
-            margin-bottom: 5px;
+            margin-bottom: 0;
+            white-space: nowrap;
         }
         .programa-info-value {
             font-size: 1.1em;
@@ -165,8 +166,10 @@
             outline: none;
         }
         .table-excel td textarea.campo-editable {
-            resize: vertical;
+            resize: both;
+            overflow: auto;
             min-height: 30px;
+            max-width: none;
         }
         
         /* Ajustes específicos para la tabla de concursantes */
@@ -226,18 +229,39 @@
             display: none !important;
         }
         
-        /* Créditos especiales ahora van en cabecera del programa */
+        /* Créditos y notas: recuadros a la derecha del GAP */
+        .programa-recuadros {
+            display: flex;
+            flex: 1 1 0;
+            gap: 10px;
+            min-width: 0;
+            align-items: stretch;
+        }
+        .programa-recuadro {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .programa-recuadro .programa-info-label {
+            text-align: left;
+            width: 100%;
+        }
         .programa-creditos-textarea {
             width: 100%;
-            min-height: 44px;
-            resize: vertical;
+            flex: 1 1 auto;
+            min-height: 52px;
+            resize: both;
             text-align: left;
             color: #ffffff;
             background: rgba(255,255,255,0.12);
             border: 1px solid rgba(255,255,255,0.35);
             border-radius: 6px;
-            padding: 8px 10px;
+            padding: 6px 8px;
             line-height: 1.25;
+            font-size: 0.82em;
+            overflow: auto;
         }
         .programa-creditos-textarea:focus {
             background: rgba(255,255,255,0.18);
@@ -267,11 +291,16 @@
             padding: 7px 4px !important;
         }
 
-        /* Evitar scroll interno en campos editables, permitir crecer en altura */
+        /* Permitir agrandar a mano los cuadros de texto de la tabla */
         .table-excel td textarea.campo-editable {
-            overflow: hidden !important;
+            overflow: auto !important;
             min-height: 32px;
             line-height: 1.3;
+            resize: both !important;
+        }
+
+        .concursantes-table td.col-momentos textarea.campo-editable {
+            min-height: 58px;
         }
 
         /* Asegurar que las celdas se expandan en altura cuando el contenido crece */
@@ -619,14 +648,14 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script src="js/api.js?v=20260626-1"></script>
+    <script src="js/api.js?v=20260821-3"></script>
     <script src="js/auth.js"></script>
-    <script src="js/utils.js"></script>
+    <script src="js/utils.js?v=20260821-3"></script>
     <script src="js/undo-manager.js?v=20260626-3"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
     <script src="js/table-resizer.js?v=20260128-2"></script>
-    <script src="js/programas.js?v=20260626-3"></script>
+    <script src="js/programas.js?v=20260821-5"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();

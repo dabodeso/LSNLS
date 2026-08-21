@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BackupService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">BackupService.java</span></div><h1>BackupService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+<span class="nc" id="L20">@Slf4j</span>
+@Service
+<span class="nc" id="L22">public class BackupService {</span>
+
+    @Value(&quot;${spring.datasource.url}&quot;)
+    private String databaseUrl;
+
+    @Value(&quot;${spring.datasource.username}&quot;)
+    private String databaseUsername;
+
+    @Value(&quot;${spring.datasource.password}&quot;)
+    private String databasePassword;
+
+    @Value(&quot;${lsnls.backup.directory:./backup}&quot;)
+    private String backupDirectory;
+
+    @Value(&quot;${lsnls.backup.retention-days:7}&quot;)
+    private int retentionDays;
+
+<span class="nc" id="L39">    private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern(&quot;yyyyMMdd_HHmmss&quot;);</span>
+
+    /**
+     * Ejecuta backup automático todos los días a las 22:00 (10 PM) hora española
+     */
+    @Scheduled(cron = &quot;0 0 22 * * ?&quot;, zone = &quot;Europe/Madrid&quot;)
+    public void executeScheduledBackup() {
+<span class="nc" id="L46">        log.info(&quot;🔄 Iniciando backup automático programado&quot;);</span>
+        try {
+<span class="nc" id="L48">            String backupFile = createBackup();</span>
+<span class="nc" id="L49">            cleanupOldBackups();</span>
+<span class="nc" id="L50">            log.info(&quot;✅ Backup automático completado: {}&quot;, backupFile);</span>
+<span class="nc" id="L51">        } catch (Exception e) {</span>
+<span class="nc" id="L52">            log.error(&quot;❌ Error en backup automático&quot;, e);</span>
+<span class="nc" id="L53">        }</span>
+<span class="nc" id="L54">    }</span>
+
+    /**
+     * Crea un backup manual de la base de datos
+     */
+    public String createBackup() throws IOException {
+<span class="nc" id="L60">        log.info(&quot;📦 Iniciando creación de backup&quot;);</span>
+
+        // Crear directorio de backup si no existe
+<span class="nc" id="L63">        Path backupPath = Paths.get(backupDirectory);</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (!Files.exists(backupPath)) {</span>
+<span class="nc" id="L65">            Files.createDirectories(backupPath);</span>
+<span class="nc" id="L66">            log.info(&quot;📁 Directorio de backup creado: {}&quot;, backupPath);</span>
+        }
+
+        // Generar nombre del archivo con timestamp
+<span class="nc" id="L70">        String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);</span>
+<span class="nc" id="L71">        String backupFileName = String.format(&quot;lsnls_backup_%s.sql&quot;, timestamp);</span>
+<span class="nc" id="L72">        Path backupFile = backupPath.resolve(backupFileName);</span>
+
+        // Extraer configuración de la base de datos
+<span class="nc" id="L75">        DatabaseConfig dbConfig = extractDatabaseConfig();</span>
+
+        // Comando mysqldump
+<span class="nc" id="L78">        List&lt;String&gt; command = Arrays.asList(</span>
+            &quot;mysqldump&quot;,
+            &quot;-h&quot;, dbConfig.host,
+            &quot;-P&quot;, dbConfig.port,
+            &quot;-u&quot;, dbConfig.username,
+            &quot;-p&quot; + dbConfig.password,
+            &quot;--single-transaction&quot;,
+            &quot;--routines&quot;,
+            &quot;--triggers&quot;,
+            &quot;--events&quot;,
+            &quot;--add-drop-database&quot;,
+            &quot;--create-options&quot;,
+            &quot;--complete-insert&quot;,
+            &quot;--extended-insert&quot;,
+            &quot;--set-charset&quot;,
+            &quot;--default-character-set=utf8mb4&quot;,
+            dbConfig.database
+        );
+
+<span class="nc" id="L97">        log.info(&quot;🔧 Ejecutando comando: mysqldump -h {} -P {} -u {} -p*** {}&quot;, </span>
+                dbConfig.host, dbConfig.port, dbConfig.username, dbConfig.database);
+
+        // Ejecutar comando
+<span class="nc" id="L101">        ProcessBuilder processBuilder = new ProcessBuilder(command);</span>
+<span class="nc" id="L102">        processBuilder.redirectOutput(backupFile.toFile());</span>
+<span class="nc" id="L103">        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);</span>
+
+<span class="nc" id="L105">        Process process = processBuilder.start();</span>
+        int exitCode;
+        try {
+<span class="nc" id="L108">            exitCode = process.waitFor();</span>
+<span class="nc" id="L109">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L110">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L111">            throw new IOException(&quot;Backup interrumpido&quot;, e);</span>
+<span class="nc" id="L112">        }</span>
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (exitCode == 0) {</span>
+<span class="nc" id="L115">            long fileSize = Files.size(backupFile);</span>
+<span class="nc" id="L116">            log.info(&quot;✅ Backup creado exitosamente: {} ({} bytes)&quot;, backupFileName, fileSize);</span>
+            
+            // Comprimir backup
+<span class="nc" id="L119">            compressBackup(backupFile);</span>
+            
+<span class="nc" id="L121">            return backupFileName;</span>
+        } else {
+<span class="nc" id="L123">            throw new IOException(&quot;Error en mysqldump. Código de salida: &quot; + exitCode);</span>
+        }
+    }
+
+    /**
+     * Comprime el archivo de backup usando PowerShell
+     */
+    private void compressBackup(Path backupFile) {
+        try {
+<span class="nc" id="L132">            String zipFile = backupFile.toString() + &quot;.zip&quot;;</span>
+<span class="nc" id="L133">            List&lt;String&gt; command = Arrays.asList(</span>
+                &quot;powershell&quot;,
+                &quot;-command&quot;,
+<span class="nc" id="L136">                String.format(&quot;Compress-Archive -Path '%s' -DestinationPath '%s' -Force&quot;, </span>
+<span class="nc" id="L137">                            backupFile.toString(), zipFile)</span>
+            );
+
+<span class="nc" id="L140">            ProcessBuilder processBuilder = new ProcessBuilder(command);</span>
+<span class="nc" id="L141">            Process process = processBuilder.start();</span>
+<span class="nc" id="L142">            int exitCode = process.waitFor();</span>
+
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            if (exitCode == 0) {</span>
+<span class="nc" id="L145">                log.info(&quot;📦 Backup comprimido: {}&quot;, zipFile);</span>
+                // Eliminar archivo original
+<span class="nc" id="L147">                Files.delete(backupFile);</span>
+            } else {
+<span class="nc" id="L149">                log.warn(&quot;⚠️ No se pudo comprimir el backup: {}&quot;, backupFile);</span>
+            }
+<span class="nc" id="L151">        } catch (Exception e) {</span>
+<span class="nc" id="L152">            log.warn(&quot;⚠️ Error al comprimir backup&quot;, e);</span>
+<span class="nc" id="L153">        }</span>
+<span class="nc" id="L154">    }</span>
+
+    /**
+     * Limpia backups antiguos según la política de retención
+     */
+    public void cleanupOldBackups() {
+<span class="nc" id="L160">        log.info(&quot;🧹 Iniciando limpieza de backups antiguos (retención: {} días)&quot;, retentionDays);</span>
+
+        try {
+<span class="nc" id="L163">            Path backupPath = Paths.get(backupDirectory);</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            if (!Files.exists(backupPath)) {</span>
+<span class="nc" id="L165">                log.info(&quot;📁 Directorio de backup no existe, no hay nada que limpiar&quot;);</span>
+<span class="nc" id="L166">                return;</span>
+            }
+
+<span class="nc" id="L169">            LocalDateTime cutoffDate = LocalDateTime.now().minusDays(retentionDays);</span>
+<span class="nc" id="L170">            int deletedCount = 0;</span>
+
+            // Buscar archivos de backup
+<span class="nc" id="L173">            List&lt;Path&gt; backupFiles = Files.list(backupPath)</span>
+<span class="nc" id="L174">                .filter(path -&gt; {</span>
+<span class="nc" id="L175">                    String fileName = path.getFileName().toString();</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">                    return fileName.startsWith(&quot;lsnls_backup_&quot;) &amp;&amp; </span>
+<span class="nc bnc" id="L177" title="All 4 branches missed.">                           (fileName.endsWith(&quot;.sql&quot;) || fileName.endsWith(&quot;.zip&quot;));</span>
+                })
+<span class="nc" id="L179">                .collect(Collectors.toList());</span>
+
+<span class="nc bnc" id="L181" title="All 2 branches missed.">            for (Path backupFile : backupFiles) {</span>
+                try {
+<span class="nc" id="L183">                    LocalDateTime fileDate = extractDateFromFileName(backupFile.getFileName().toString());</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                    if (fileDate.isBefore(cutoffDate)) {</span>
+<span class="nc" id="L185">                        Files.delete(backupFile);</span>
+<span class="nc" id="L186">                        deletedCount++;</span>
+<span class="nc" id="L187">                        log.info(&quot;🗑️ Eliminado backup antiguo: {}&quot;, backupFile.getFileName());</span>
+                    }
+<span class="nc" id="L189">                } catch (Exception e) {</span>
+<span class="nc" id="L190">                    log.warn(&quot;⚠️ Error al procesar archivo: {}&quot;, backupFile.getFileName(), e);</span>
+<span class="nc" id="L191">                }</span>
+<span class="nc" id="L192">            }</span>
+
+<span class="nc" id="L194">            log.info(&quot;✅ Limpieza completada. {} archivos eliminados&quot;, deletedCount);</span>
+
+<span class="nc" id="L196">        } catch (Exception e) {</span>
+<span class="nc" id="L197">            log.error(&quot;❌ Error durante la limpieza de backups&quot;, e);</span>
+<span class="nc" id="L198">        }</span>
+<span class="nc" id="L199">    }</span>
+
+    /**
+     * Lista todos los backups disponibles
+     */
+    public List&lt;BackupInfo&gt; listBackups() {
+        try {
+<span class="nc" id="L206">            Path backupPath = Paths.get(backupDirectory);</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (!Files.exists(backupPath)) {</span>
+<span class="nc" id="L208">                return List.of();</span>
+            }
+
+<span class="nc" id="L211">            return Files.list(backupPath)</span>
+<span class="nc" id="L212">                .filter(path -&gt; {</span>
+<span class="nc" id="L213">                    String fileName = path.getFileName().toString();</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                    return fileName.startsWith(&quot;lsnls_backup_&quot;) &amp;&amp; </span>
+<span class="nc bnc" id="L215" title="All 4 branches missed.">                           (fileName.endsWith(&quot;.sql&quot;) || fileName.endsWith(&quot;.zip&quot;));</span>
+                })
+<span class="nc" id="L217">                .map(this::createBackupInfo)</span>
+<span class="nc" id="L218">                .sorted(Comparator.comparing(BackupInfo::getCreatedAt).reversed())</span>
+<span class="nc" id="L219">                .collect(Collectors.toList());</span>
+
+<span class="nc" id="L221">        } catch (Exception e) {</span>
+<span class="nc" id="L222">            log.error(&quot;❌ Error al listar backups&quot;, e);</span>
+<span class="nc" id="L223">            return List.of();</span>
+        }
+    }
+
+    /**
+     * Restaura la base de datos desde un backup
+     */
+    public boolean restoreBackup(String backupFileName) {
+<span class="nc" id="L231">        log.info(&quot;🔄 Iniciando restauración desde: {}&quot;, backupFileName);</span>
+
+        try {
+<span class="nc" id="L234">            Path backupPath = Paths.get(backupDirectory);</span>
+<span class="nc" id="L235">            Path backupFile = backupPath.resolve(backupFileName);</span>
+
+<span class="nc bnc" id="L237" title="All 2 branches missed.">            if (!Files.exists(backupFile)) {</span>
+<span class="nc" id="L238">                log.error(&quot;❌ Archivo de backup no encontrado: {}&quot;, backupFile);</span>
+<span class="nc" id="L239">                return false;</span>
+            }
+
+            // Crear backup de seguridad antes de restaurar
+<span class="nc" id="L243">            String safetyBackup = createBackup();</span>
+<span class="nc" id="L244">            log.info(&quot;🛡️ Backup de seguridad creado: {}&quot;, safetyBackup);</span>
+
+            // Extraer configuración de la base de datos
+<span class="nc" id="L247">            DatabaseConfig dbConfig = extractDatabaseConfig();</span>
+
+            // Comando mysql para restaurar
+<span class="nc" id="L250">            List&lt;String&gt; command = Arrays.asList(</span>
+                &quot;mysql&quot;,
+                &quot;-h&quot;, dbConfig.host,
+                &quot;-P&quot;, dbConfig.port,
+                &quot;-u&quot;, dbConfig.username,
+                &quot;-p&quot; + dbConfig.password,
+                dbConfig.database
+            );
+
+<span class="nc" id="L259">            log.info(&quot;🔧 Ejecutando restauración...&quot;);</span>
+
+<span class="nc" id="L261">            ProcessBuilder processBuilder = new ProcessBuilder(command);</span>
+<span class="nc" id="L262">            processBuilder.redirectInput(backupFile.toFile());</span>
+<span class="nc" id="L263">            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);</span>
+
+<span class="nc" id="L265">            Process process = processBuilder.start();</span>
+<span class="nc" id="L266">            int exitCode = process.waitFor();</span>
+
+<span class="nc bnc" id="L268" title="All 2 branches missed.">            if (exitCode == 0) {</span>
+<span class="nc" id="L269">                log.info(&quot;✅ Restauración completada exitosamente&quot;);</span>
+<span class="nc" id="L270">                return true;</span>
+            } else {
+<span class="nc" id="L272">                log.error(&quot;❌ Error en la restauración. Código de salida: {}&quot;, exitCode);</span>
+<span class="nc" id="L273">                return false;</span>
+            }
+
+<span class="nc" id="L276">        } catch (Exception e) {</span>
+<span class="nc" id="L277">            log.error(&quot;❌ Error durante la restauración&quot;, e);</span>
+<span class="nc" id="L278">            return false;</span>
+        }
+    }
+
+    /**
+     * Extrae la configuración de la base de datos desde la URL
+     */
+    private DatabaseConfig extractDatabaseConfig() {
+        // Ejemplo: jdbc:mysql://localhost:3306/lsnls
+<span class="nc" id="L287">        String url = databaseUrl.replace(&quot;jdbc:mysql://&quot;, &quot;&quot;);</span>
+<span class="nc" id="L288">        String[] parts = url.split(&quot;/&quot;);</span>
+        
+<span class="nc" id="L290">        String hostPort = parts[0];</span>
+<span class="nc" id="L291">        String database = parts[1].split(&quot;\\?&quot;)[0]; // Remover parámetros de conexión</span>
+        
+<span class="nc" id="L293">        String[] hostPortParts = hostPort.split(&quot;:&quot;);</span>
+<span class="nc" id="L294">        String host = hostPortParts[0];</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">        String port = hostPortParts.length &gt; 1 ? hostPortParts[1] : &quot;3306&quot;;</span>
+
+<span class="nc" id="L297">        return new DatabaseConfig(host, port, database, databaseUsername, databasePassword);</span>
+    }
+
+    /**
+     * Extrae la fecha del nombre del archivo
+     */
+    private LocalDateTime extractDateFromFileName(String fileName) {
+        try {
+            // Formato: lsnls_backup_20241201_220000.sql
+<span class="nc" id="L306">            String datePart = fileName.replace(&quot;lsnls_backup_&quot;, &quot;&quot;).replace(&quot;.sql&quot;, &quot;&quot;).replace(&quot;.zip&quot;, &quot;&quot;);</span>
+<span class="nc" id="L307">            return LocalDateTime.parse(datePart, TIMESTAMP_FORMATTER);</span>
+<span class="nc" id="L308">        } catch (Exception e) {</span>
+<span class="nc" id="L309">            log.warn(&quot;⚠️ No se pudo extraer fecha del archivo: {}&quot;, fileName);</span>
+<span class="nc" id="L310">            return LocalDateTime.now().minusDays(30); // Archivo muy antiguo</span>
+        }
+    }
+
+    /**
+     * Crea información del backup
+     */
+    private BackupInfo createBackupInfo(Path backupFile) {
+        try {
+<span class="nc" id="L319">            String fileName = backupFile.getFileName().toString();</span>
+<span class="nc" id="L320">            LocalDateTime createdAt = extractDateFromFileName(fileName);</span>
+<span class="nc" id="L321">            long size = Files.size(backupFile);</span>
+<span class="nc" id="L322">            boolean isCompressed = fileName.endsWith(&quot;.zip&quot;);</span>
+
+<span class="nc" id="L324">            return new BackupInfo(fileName, createdAt, size, isCompressed);</span>
+<span class="nc" id="L325">        } catch (Exception e) {</span>
+<span class="nc" id="L326">            log.warn(&quot;⚠️ Error al crear BackupInfo para: {}&quot;, backupFile.getFileName());</span>
+<span class="nc" id="L327">            return new BackupInfo(backupFile.getFileName().toString(), LocalDateTime.now(), 0, false);</span>
+        }
+    }
+
+    /**
+     * Clase para configuración de base de datos
+     */
+    private static class DatabaseConfig {
+        final String host;
+        final String port;
+        final String database;
+        final String username;
+        final String password;
+
+<span class="nc" id="L341">        DatabaseConfig(String host, String port, String database, String username, String password) {</span>
+<span class="nc" id="L342">            this.host = host;</span>
+<span class="nc" id="L343">            this.port = port;</span>
+<span class="nc" id="L344">            this.database = database;</span>
+<span class="nc" id="L345">            this.username = username;</span>
+<span class="nc" id="L346">            this.password = password;</span>
+<span class="nc" id="L347">        }</span>
+    }
+
+    /**
+     * Clase para información del backup
+     */
+    public static class BackupInfo {
+        private final String fileName;
+        private final LocalDateTime createdAt;
+        private final long size;
+        private final boolean compressed;
+
+<span class="nc" id="L359">        public BackupInfo(String fileName, LocalDateTime createdAt, long size, boolean compressed) {</span>
+<span class="nc" id="L360">            this.fileName = fileName;</span>
+<span class="nc" id="L361">            this.createdAt = createdAt;</span>
+<span class="nc" id="L362">            this.size = size;</span>
+<span class="nc" id="L363">            this.compressed = compressed;</span>
+<span class="nc" id="L364">        }</span>
+
+<span class="nc" id="L366">        public String getFileName() { return fileName; }</span>
+<span class="nc" id="L367">        public LocalDateTime getCreatedAt() { return createdAt; }</span>
+<span class="nc" id="L368">        public long getSize() { return size; }</span>
+<span class="nc" id="L369">        public boolean isCompressed() { return compressed; }</span>
+        public String getFormattedSize() {
+<span class="nc bnc" id="L371" title="All 2 branches missed.">            if (size &lt; 1024) return size + &quot; B&quot;;</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">            if (size &lt; 1024 * 1024) return String.format(&quot;%.1f KB&quot;, size / 1024.0);</span>
+<span class="nc" id="L373">            return String.format(&quot;%.1f MB&quot;, size / (1024.0 * 1024.0));</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

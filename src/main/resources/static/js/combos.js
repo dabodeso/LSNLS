@@ -353,9 +353,9 @@ const CombosManager = {
         anterior.innerHTML = `<a class="page-link" href="#" onclick="CombosManager.irAPagina(${this.paginaActual - 1});return false;">Anterior</a>`;
         paginacionElement.appendChild(anterior);
 
-        const inicio = Math.max(0, this.paginaActual - 2);
-        const fin = Math.min(this.totalPaginas - 1, this.paginaActual + 2);
-        for (let i = inicio; i <= fin; i++) {
+        const inicioRango = Math.max(0, this.paginaActual - 2);
+        const finRango = Math.min(this.totalPaginas - 1, this.paginaActual + 2);
+        for (let i = inicioRango; i <= finRango; i++) {
             const li = document.createElement('li');
             li.className = `page-item ${i === this.paginaActual ? 'active' : ''}`;
             li.innerHTML = `<a class="page-link" href="#" onclick="CombosManager.irAPagina(${i});return false;">${i + 1}</a>`;
@@ -530,7 +530,7 @@ const CombosManager = {
             // Determinar icono y tooltip para reutilización
             let iconoReutilizadoCombo = '';
             if (c.reutilizadoDeJornadaId) {
-                iconoReutilizadoCombo = `<span class="ms-2" title="Reutilizado de ${c.reutilizadoDeJornadaNombre || 'jornada ' + c.reutilizadoDeJornadaId}" style="cursor: help;">♻️</span>`;
+                iconoReutilizadoCombo = `<span class="ms-2 text-muted" title="Reutilizado de ${c.reutilizadoDeJornadaNombre || 'jornada ' + c.reutilizadoDeJornadaId}" style="cursor: help;">Reutilizado</span>`;
                 console.log(`[FRONT-COMBO] Combo ${c.id} | estado=${c.estado} | jornada=${c.jornadaAsignada} | mostrarSelector=${!(c.jornadaAsignada && (c.estado === 'adjudicado' || c.estado === 'grabado'))}`);
             }
             
@@ -1506,7 +1506,7 @@ async function buscarPreguntasModal(page = 0) {
         renderizarPreguntasModal(preguntas, totalPages, page);
     } catch (error) {
         console.error('[COMBO] Error al buscar preguntas:', error);
-        document.getElementById('tbody-selector-pregunta').innerHTML = `<tr><td colspan="4">Error al cargar preguntas: ${error.message}</td></tr>`;
+        document.getElementById('tbody-selector-pregunta').innerHTML = '<tr><td colspan="4">No se han podido cargar las preguntas. Inténtalo de nuevo.</td></tr>';
         document.getElementById('paginacion-selector-pregunta').innerHTML = '';
     }
 }
@@ -1723,7 +1723,7 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
         const texto = document.getElementById(selectorPreguntaContext.textoId);
         if (!input || !texto) {
             console.error('[FRONT] No se encontró el input o el campo de texto para el selector:', selectorPreguntaContext);
-            alert('Error interno: no se encontró el campo para asignar la pregunta seleccionada.');
+            alert('No se pudo asignar la pregunta seleccionada. Cierra el recuadro e inténtalo de nuevo.');
             return;
         }
         input.value = id;
@@ -1739,7 +1739,7 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
         }
     } catch (e) {
         console.error('[FRONT] Error en seleccionarPreguntaModal:', e);
-        alert('Error al seleccionar la pregunta. Revisa la consola para más detalles.');
+        alert('No se pudo seleccionar la pregunta. Inténtalo de nuevo.');
     }
 }
 
@@ -2113,14 +2113,10 @@ async function sincronizarPreguntasComboEnEdicion(comboId, preguntasMultiplicado
 }
 
 window.eliminarCombo = async function(id) {
-    if (!confirm('¿Seguro que quieres eliminar este combo? Esta acción no se puede deshacer.')) return;
+    if (!confirm('¿Seguro que quieres eliminar este combo?\n\nPodrás deshacerlo con Ctrl+Z durante la próxima hora.')) return;
     try {
         CombosManager.rememberScroll();
-        const resp = await fetch(`/api/combos/${id}`, { method: 'DELETE', headers: authManager.getAuthHeaders() });
-        
-        if (!resp.ok) {
-            throw new Error(await Utils.mensajeDesdeResponse(resp, 'eliminar combos'));
-        }
+        await apiManager.deleteUndoable(`/api/combos/${id}`, { label: `Eliminar combo ${id}` });
         
         Toastify({ text: 'Combo eliminado', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
         CombosManager.quitarDeListado(id);
@@ -2325,39 +2321,38 @@ window.cambiarPassword = function() {
 };
 
 function getOpcionesEstadoCombo(estadoActual) {
-    // Definimos las transiciones permitidas para cada estado
-    // Nota: no se ofrece volver a 'borrador' desde ningún estado
+    // Orden fijo del filtro/modal: Borrador, Revisar, Corregir, Aprobado, Adjudicado, Grabado
+    const orden = ['borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado'];
     const transiciones = {
         'borrador': ['revisar'],
         'revisar': ['corregir', 'aprobado'],
         'corregir': ['revisar', 'aprobado'],
-        'aprobado': [], // Solo cambia automáticamente a adjudicado al asignarse a una jornada
-        'adjudicado': [], // Solo cambia automáticamente a grabado al asignarse a un concursante
-        'grabado': []
+        'aprobado': [],
+        'adjudicado': [],
+        'grabado': [],
+        'reaprovechado': [],
+        'liberado': []
     };
-    
-    // Obtenemos las opciones disponibles según el estado actual
+
     const opcionesDisponibles = transiciones[estadoActual] || [];
-    
-    // Siempre incluimos el estado actual como seleccionado
-    let opciones = `<option value="${estadoActual}" selected>${estadoActual.charAt(0).toUpperCase() + estadoActual.slice(1)}</option>`;
-    
-    // Añadimos las opciones de transición permitidas
-    opcionesDisponibles.forEach(estado => {
-        opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
-    });
-    
-    // Si el usuario es admin, permitimos el resto de estados excepto volver a borrador
-    if (authManager.hasRole('ROLE_ADMIN')) {
-        const todosEstados = ['revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado'];
-        todosEstados.forEach(estado => {
-            if (estado !== estadoActual && !opcionesDisponibles.includes(estado)) {
-                opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
-            }
-        });
+    const esAdmin = typeof authManager !== 'undefined' && authManager.hasRole('ROLE_ADMIN');
+    const visibles = orden.filter(estado =>
+        estado === estadoActual
+        || opcionesDisponibles.includes(estado)
+        || (esAdmin && estado !== 'borrador')
+    );
+
+    if (estadoActual === 'reaprovechado' || estadoActual === 'liberado') {
+        visibles.push(estadoActual);
+    } else if (estadoActual && !visibles.includes(estadoActual)) {
+        visibles.unshift(estadoActual);
     }
-    
-    return opciones;
+
+    return visibles.map(estado => {
+        const selected = estado === estadoActual ? ' selected' : '';
+        const etiqueta = estado.charAt(0).toUpperCase() + estado.slice(1);
+        return `<option value="${estado}"${selected}>${etiqueta}</option>`;
+    }).join('');
 }
 
 function getOpcionesTematicaCombo(tematicaActual) {

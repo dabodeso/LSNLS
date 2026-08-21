@@ -46,6 +46,9 @@ public class CuestionarioService {
     @Autowired
     private EntityManager entityManager;
 
+    @Autowired
+    private UndoService undoService;
+
     public boolean estaAsignadoAJornada(Long cuestionarioId) {
         Long count = entityManager.createQuery(
             "SELECT COUNT(j) FROM Jornada j JOIN j.cuestionarios c WHERE c.id = :id", Long.class)
@@ -418,6 +421,29 @@ public class CuestionarioService {
                 jornadasCount + " jornada(s). Desasígnalo primero.");
         }
 
+        // UNDO: capturar todo lo que este borrado destruye o modifica, ANTES de tocarlo:
+        // la fila del cuestionario (se reinsertará con el mismo id), sus preguntas
+        // asociadas, el historial que se borra y los estados que se liberan
+        List<Map<String, Object>> accionesUndo = new ArrayList<>();
+        Map<String, Object> filaCuestionario = undoService.snapshotFila("cuestionarios", id);
+        if (filaCuestionario != null) {
+            accionesUndo.add(UndoService.accionInsertarFila("cuestionarios", filaCuestionario));
+        }
+        for (Map<String, Object> fila : undoService.snapshotFilas("cuestionarios_preguntas", "cuestionario_id", id)) {
+            accionesUndo.add(UndoService.accionInsertarFila("cuestionarios_preguntas", fila));
+        }
+        for (Map<String, Object> fila : undoService.snapshotFilas("historial_jornadas", "cuestionario_id", id)) {
+            accionesUndo.add(UndoService.accionInsertarFila("historial_jornadas", fila));
+        }
+        if (cuestionario.getPreguntas() != null) {
+            for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {
+                Map<String, Object> camposPrevios = new HashMap<>();
+                camposPrevios.put("estado", pc.getPregunta().getEstado() != null ? pc.getPregunta().getEstado().name() : null);
+                camposPrevios.put("estado_disponibilidad", pc.getPregunta().getEstadoDisponibilidad() != null ? pc.getPregunta().getEstadoDisponibilidad().name() : null);
+                accionesUndo.add(UndoService.accionActualizarCampos("preguntas", pc.getPregunta().getId(), camposPrevios));
+            }
+        }
+
         // Eliminar registros del historial que referencian este cuestionario (si la tabla existe)
         try {
             // Verificar si la tabla existe antes de intentar eliminar
@@ -456,6 +482,9 @@ public class CuestionarioService {
         }
         
         cuestionarioRepository.deleteById(id);
+
+        // UNDO: registrar el borrado como operación deshacible (reinserta con el mismo id)
+        undoService.registrar("eliminar_cuestionario", "Eliminar cuestionario " + id, accionesUndo);
     }
 
     public void eliminarPorId(Long id) {

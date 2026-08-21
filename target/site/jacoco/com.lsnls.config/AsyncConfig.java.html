@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AsyncConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.config</a> &gt; <span class="el_source">AsyncConfig.java</span></div><h1>AsyncConfig.java</h1><pre class="source lang-java linenums">package com.lsnls.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
+
+/**
+ * Configuración para operaciones asíncronas con timeouts y pools de threads
+ */
+@Configuration
+@EnableAsync
+<span class="nc" id="L16">public class AsyncConfig {</span>
+
+    /**
+     * Pool de threads para operaciones de auditoría
+     */
+    @Bean(name = &quot;auditTaskExecutor&quot;)
+    public Executor auditTaskExecutor() {
+<span class="nc" id="L23">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
+<span class="nc" id="L24">        executor.setCorePoolSize(2);</span>
+<span class="nc" id="L25">        executor.setMaxPoolSize(5);</span>
+<span class="nc" id="L26">        executor.setQueueCapacity(100);</span>
+<span class="nc" id="L27">        executor.setThreadNamePrefix(&quot;audit-&quot;);</span>
+<span class="nc" id="L28">        executor.setKeepAliveSeconds(60);</span>
+        
+        // Política de rechazo: ejecutar en el hilo llamador si está lleno
+<span class="nc" id="L31">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());</span>
+        
+        // Permitir que los threads core mueran si están inactivos
+<span class="nc" id="L34">        executor.setAllowCoreThreadTimeOut(true);</span>
+        
+<span class="nc" id="L36">        executor.initialize();</span>
+<span class="nc" id="L37">        return executor;</span>
+    }
+
+    /**
+     * Pool de threads para operaciones de validación
+     */
+    @Bean(name = &quot;validationTaskExecutor&quot;)
+    public Executor validationTaskExecutor() {
+<span class="nc" id="L45">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
+<span class="nc" id="L46">        executor.setCorePoolSize(3);</span>
+<span class="nc" id="L47">        executor.setMaxPoolSize(8);</span>
+<span class="nc" id="L48">        executor.setQueueCapacity(50);</span>
+<span class="nc" id="L49">        executor.setThreadNamePrefix(&quot;validation-&quot;);</span>
+<span class="nc" id="L50">        executor.setKeepAliveSeconds(30);</span>
+        
+        // Política de rechazo: descartar tareas más antiguas si está lleno
+<span class="nc" id="L53">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());</span>
+        
+<span class="nc" id="L55">        executor.setAllowCoreThreadTimeOut(true);</span>
+        
+<span class="nc" id="L57">        executor.initialize();</span>
+<span class="nc" id="L58">        return executor;</span>
+    }
+
+    /**
+     * Pool de threads para operaciones de exportación/importación
+     */
+    @Bean(name = &quot;exportTaskExecutor&quot;)
+    public Executor exportTaskExecutor() {
+<span class="nc" id="L66">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
+<span class="nc" id="L67">        executor.setCorePoolSize(1);</span>
+<span class="nc" id="L68">        executor.setMaxPoolSize(3);</span>
+<span class="nc" id="L69">        executor.setQueueCapacity(10);</span>
+<span class="nc" id="L70">        executor.setThreadNamePrefix(&quot;export-&quot;);</span>
+<span class="nc" id="L71">        executor.setKeepAliveSeconds(120);</span>
+        
+        // Política de rechazo: rechazar tareas nuevas si está lleno
+<span class="nc" id="L74">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());</span>
+        
+<span class="nc" id="L76">        executor.setAllowCoreThreadTimeOut(true);</span>
+        
+<span class="nc" id="L78">        executor.initialize();</span>
+<span class="nc" id="L79">        return executor;</span>
+    }
+
+    /**
+     * Pool general para operaciones críticas con timeout
+     */
+    @Bean(name = &quot;criticalTaskExecutor&quot;)
+    public Executor criticalTaskExecutor() {
+<span class="nc" id="L87">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
+<span class="nc" id="L88">        executor.setCorePoolSize(4);</span>
+<span class="nc" id="L89">        executor.setMaxPoolSize(10);</span>
+<span class="nc" id="L90">        executor.setQueueCapacity(25);</span>
+<span class="nc" id="L91">        executor.setThreadNamePrefix(&quot;critical-&quot;);</span>
+<span class="nc" id="L92">        executor.setKeepAliveSeconds(45);</span>
+        
+        // Política de rechazo: ejecutar en el hilo llamador para operaciones críticas
+<span class="nc" id="L95">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());</span>
+        
+<span class="nc" id="L97">        executor.setAllowCoreThreadTimeOut(false); // Mantener threads core vivos para operaciones críticas</span>
+        
+<span class="nc" id="L99">        executor.initialize();</span>
+<span class="nc" id="L100">        return executor;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

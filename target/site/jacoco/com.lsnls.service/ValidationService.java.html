@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValidationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">ValidationService.java</span></div><h1>ValidationService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import com.lsnls.entity.*;
+import com.lsnls.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import javax.persistence.EntityManager;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Servicio centralizado para validaciones de integridad de datos
+ * Implementa validaciones adicionales que van más allá de las validaciones básicas
+ */
+@Service
+<span class="nc" id="L21">public class ValidationService {</span>
+
+    @Autowired
+    private EntityManager entityManager;
+    
+    @Autowired
+    private PreguntaRepository preguntaRepository;
+    
+    @Autowired
+    private CuestionarioRepository cuestionarioRepository;
+    
+    @Autowired
+    private ComboRepository comboRepository;
+    
+    @Autowired
+    private ConcursanteRepository concursanteRepository;
+    
+    @Autowired
+    private JornadaRepository jornadaRepository;
+    
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+    
+    @Autowired
+    private ProgramaRepository programaRepository;
+
+    /**
+     * Resultado de validación con detalles específicos
+     */
+    public static class ValidationResult {
+        private boolean valid;
+        private List&lt;String&gt; errors;
+        private List&lt;String&gt; warnings;
+        
+<span class="nc" id="L55">        public ValidationResult() {</span>
+<span class="nc" id="L56">            this.valid = true;</span>
+<span class="nc" id="L57">            this.errors = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L58">            this.warnings = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L59">        }</span>
+        
+        public void addError(String error) {
+<span class="nc" id="L62">            this.errors.add(error);</span>
+<span class="nc" id="L63">            this.valid = false;</span>
+<span class="nc" id="L64">        }</span>
+        
+        public void addWarning(String warning) {
+<span class="nc" id="L67">            this.warnings.add(warning);</span>
+<span class="nc" id="L68">        }</span>
+        
+        // Getters
+<span class="nc" id="L71">        public boolean isValid() { return valid; }</span>
+<span class="nc" id="L72">        public List&lt;String&gt; getErrors() { return errors; }</span>
+<span class="nc" id="L73">        public List&lt;String&gt; getWarnings() { return warnings; }</span>
+        
+        public String getErrorsAsString() {
+<span class="nc" id="L76">            return String.join(&quot;; &quot;, errors);</span>
+        }
+        
+        public String getWarningsAsString() {
+<span class="nc" id="L80">            return String.join(&quot;; &quot;, warnings);</span>
+        }
+    }
+
+    /**
+     * Valida la integridad completa de una pregunta
+     */
+    public ValidationResult validarIntegridadPregunta(Pregunta pregunta) {
+<span class="nc" id="L88">        ValidationResult result = new ValidationResult();</span>
+        
+        // Validar contenido de la pregunta
+<span class="nc bnc" id="L91" title="All 4 branches missed.">        if (pregunta.getPregunta() == null || pregunta.getPregunta().trim().length() &lt; 10) {</span>
+<span class="nc" id="L92">            result.addError(&quot;La pregunta debe tener al menos 10 caracteres&quot;);</span>
+        }
+        
+<span class="nc bnc" id="L95" title="All 4 branches missed.">        if (pregunta.getPregunta() != null &amp;&amp; pregunta.getPregunta().length() &gt; 2000) {</span>
+<span class="nc" id="L96">            result.addError(&quot;La pregunta no puede exceder 2000 caracteres&quot;);</span>
+        }
+        
+        // Validar respuesta
+<span class="nc bnc" id="L100" title="All 4 branches missed.">        if (pregunta.getRespuesta() == null || pregunta.getRespuesta().trim().length() &lt; 3) {</span>
+<span class="nc" id="L101">            result.addError(&quot;La respuesta debe tener al menos 3 caracteres&quot;);</span>
+        }
+        
+<span class="nc bnc" id="L104" title="All 4 branches missed.">        if (pregunta.getRespuesta() != null &amp;&amp; pregunta.getRespuesta().length() &gt; 500) {</span>
+<span class="nc" id="L105">            result.addError(&quot;La respuesta no puede exceder 500 caracteres&quot;);</span>
+        }
+        
+        // Validar temática
+<span class="nc bnc" id="L109" title="All 4 branches missed.">        if (pregunta.getTematica() == null || pregunta.getTematica().trim().length() &lt; 3) {</span>
+<span class="nc" id="L110">            result.addError(&quot;La temática debe tener al menos 3 caracteres&quot;);</span>
+        }
+        
+        // Validar consistencia de fechas
+<span class="nc bnc" id="L114" title="All 4 branches missed.">        if (pregunta.getFechaCreacion() != null &amp;&amp; pregunta.getFechaVerificacion() != null) {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">            if (pregunta.getFechaVerificacion().isBefore(pregunta.getFechaCreacion())) {</span>
+<span class="nc" id="L116">                result.addError(&quot;La fecha de verificación no puede ser anterior a la fecha de creación&quot;);</span>
+            }
+        }
+        
+        // Validar estado y disponibilidad consistentes
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (pregunta.getEstado() == Pregunta.EstadoPregunta.aprobada) {</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible &amp;&amp; </span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.usada &amp;&amp;</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {</span>
+<span class="nc" id="L125">                result.addError(&quot;Una pregunta aprobada debe estar disponible, usada o liberada&quot;);</span>
+            }
+        }
+        
+        // Validar límites por usuario
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (pregunta.getCreacionUsuario() != null) {</span>
+<span class="nc" id="L131">            Long preguntasDelUsuario = preguntaRepository.countByCreacionUsuario(pregunta.getCreacionUsuario());</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            if (preguntasDelUsuario &gt; 1000) {</span>
+<span class="nc" id="L133">                result.addWarning(&quot;El usuario tiene más de 1000 preguntas creadas. Considerar revisión&quot;);</span>
+            }
+        }
+        
+<span class="nc" id="L137">        return result;</span>
+    }
+
+    /**
+     * Valida la integridad de un cuestionario
+     */
+    public ValidationResult validarIntegridadCuestionario(Cuestionario cuestionario) {
+<span class="nc" id="L144">        ValidationResult result = new ValidationResult();</span>
+        
+        // Validar que tenga al menos 1 pregunta (cambio: antes requería exactamente 4)
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (cuestionario.getPreguntas() != null) {</span>
+<span class="nc" id="L148">            int totalPreguntas = cuestionario.getPreguntas().size();</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            if (totalPreguntas &lt; 1) {</span>
+<span class="nc" id="L150">                result.addError(&quot;Un cuestionario debe tener al menos 1 pregunta, actual: &quot; + totalPreguntas);</span>
+            }
+            
+            // Validar que las preguntas sean de niveles 1-4 (sin requerir duplicados)
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {</span>
+<span class="nc" id="L155">                String nivel = pc.getPregunta().getNivel().name();</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                if (!nivel.matches(&quot;_[1-4](LS|NLS)&quot;)) {</span>
+<span class="nc" id="L157">                    result.addError(&quot;Pregunta con nivel inválido para cuestionario: &quot; + nivel + </span>
+                                  &quot;. Solo se permiten niveles _1LS, _2NLS, _3LS, _4NLS&quot;);
+                }
+<span class="nc" id="L160">            }</span>
+        }
+        
+        // Validar consistencia de estados
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {</span>
+            // Verificar que realmente esté asignado a una jornada
+<span class="nc" id="L166">            Long jornadasCount = entityManager.createQuery(</span>
+                &quot;SELECT COUNT(j) FROM Jornada j JOIN j.cuestionarios c WHERE c.id = :cuestionarioId&quot;, Long.class)
+<span class="nc" id="L168">                .setParameter(&quot;cuestionarioId&quot;, cuestionario.getId())</span>
+<span class="nc" id="L169">                .getSingleResult();</span>
+            
+<span class="nc bnc" id="L171" title="All 2 branches missed.">            if (jornadasCount == 0) {</span>
+<span class="nc" id="L172">                result.addError(&quot;Cuestionario marcado como 'adjudicado' pero no está asignado a ninguna jornada&quot;);</span>
+            }
+        }
+        
+<span class="nc" id="L176">        return result;</span>
+    }
+
+    /**
+     * Valida la integridad de un combo
+     */
+    public ValidationResult validarIntegridadCombo(Combo combo) {
+<span class="nc" id="L183">        ValidationResult result = new ValidationResult();</span>
+        
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        if (combo.getPreguntas() != null) {</span>
+<span class="nc" id="L186">            int totalPreguntas = combo.getPreguntas().size();</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            if (totalPreguntas == 0) {</span>
+<span class="nc" id="L188">                result.addError(&quot;Un combo debe tener al menos una pregunta&quot;);</span>
+            }
+            
+            // Validar factores únicos
+<span class="nc" id="L192">            boolean[] factoresPresentes = new boolean[3]; // factor 2, 3, 0</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            for (PreguntaCombo pc : combo.getPreguntas()) {</span>
+<span class="nc" id="L194">                String factor = pc.getFactorMultiplicacion();</span>
+                
+                // Validar que la pregunta sea de nivel 5
+<span class="nc" id="L197">                String nivel = pc.getPregunta().getNivel().name();</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                if (!nivel.startsWith(&quot;_5&quot;)) {</span>
+<span class="nc" id="L199">                    result.addError(&quot;Combo contiene pregunta de nivel &quot; + nivel + &quot;. Solo se permiten preguntas de nivel 5&quot;);</span>
+                }
+                
+                // Validar factores únicos
+<span class="nc bnc" id="L203" title="All 4 branches missed.">                if (&quot;X2&quot;.equals(factor) || &quot;2&quot;.equals(factor)) {</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">                    if (factoresPresentes[0]) {</span>
+<span class="nc" id="L205">                        result.addError(&quot;Factor multiplicador X2 duplicado en combo&quot;);</span>
+                    }
+<span class="nc" id="L207">                    factoresPresentes[0] = true;</span>
+<span class="nc bnc" id="L208" title="All 4 branches missed.">                } else if (&quot;X3&quot;.equals(factor) || &quot;3&quot;.equals(factor)) {</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                    if (factoresPresentes[1]) {</span>
+<span class="nc" id="L210">                        result.addError(&quot;Factor multiplicador X3 duplicado en combo&quot;);</span>
+                    }
+<span class="nc" id="L212">                    factoresPresentes[1] = true;</span>
+<span class="nc bnc" id="L213" title="All 4 branches missed.">                } else if (&quot;X&quot;.equals(factor) || &quot;0&quot;.equals(factor)) {</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                    if (factoresPresentes[2]) {</span>
+<span class="nc" id="L215">                        result.addError(&quot;Factor multiplicador X duplicado en combo&quot;);</span>
+                    }
+<span class="nc" id="L217">                    factoresPresentes[2] = true;</span>
+                } else {
+                    // No validamos otros valores ya que ahora el factor es texto libre
+                }
+<span class="nc" id="L221">            }</span>
+        }
+        
+<span class="nc" id="L224">        return result;</span>
+    }
+
+    /**
+     * Valida la integridad de un concursante
+     */
+    public ValidationResult validarIntegridadConcursante(Concursante concursante) {
+<span class="nc" id="L231">        ValidationResult result = new ValidationResult();</span>
+        
+        // Validar campos obligatorios
+<span class="nc bnc" id="L234" title="All 4 branches missed.">        if (concursante.getNombre() == null || concursante.getNombre().trim().length() &lt; 2) {</span>
+<span class="nc" id="L235">            result.addError(&quot;El nombre del concursante debe tener al menos 2 caracteres&quot;);</span>
+        }
+        
+        // Validar número de concursante único
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        if (concursante.getNumeroConcursante() != null) {</span>
+<span class="nc" id="L240">            Long duplicados = concursanteRepository.countByNumeroConcursante(concursante.getNumeroConcursante());</span>
+<span class="nc bnc" id="L241" title="All 4 branches missed.">            if (concursante.getId() == null &amp;&amp; duplicados &gt; 0) {</span>
+<span class="nc" id="L242">                result.addError(&quot;Ya existe un concursante con el número &quot; + concursante.getNumeroConcursante());</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">            } else if (concursante.getId() != null) {</span>
+                // Para actualizaciones, excluir el propio concursante
+<span class="nc" id="L245">                Long duplicadosExcluyendo = entityManager.createQuery(</span>
+                    &quot;SELECT COUNT(c) FROM Concursante c WHERE c.numeroConcursante = :numero AND c.id != :id&quot;, Long.class)
+<span class="nc" id="L247">                    .setParameter(&quot;numero&quot;, concursante.getNumeroConcursante())</span>
+<span class="nc" id="L248">                    .setParameter(&quot;id&quot;, concursante.getId())</span>
+<span class="nc" id="L249">                    .getSingleResult();</span>
+                    
+<span class="nc bnc" id="L251" title="All 2 branches missed.">                if (duplicadosExcluyendo &gt; 0) {</span>
+<span class="nc" id="L252">                    result.addError(&quot;Ya existe otro concursante con el número &quot; + concursante.getNumeroConcursante());</span>
+                }
+            }
+        }
+        
+        // Validar asignaciones consistentes
+<span class="nc bnc" id="L258" title="All 2 branches missed.">        if (concursante.getCuestionario() != null) {</span>
+<span class="nc bnc" id="L259" title="All 2 branches missed.">            if (concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.aprobado &amp;&amp;</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">                concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.adjudicado &amp;&amp;</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">                concursante.getCuestionario().getEstado() != Cuestionario.EstadoCuestionario.grabado) {</span>
+<span class="nc" id="L262">                result.addError(&quot;El cuestionario asignado no está en un estado válido para concursantes&quot;);</span>
+            }
+        }
+        
+<span class="nc bnc" id="L266" title="All 2 branches missed.">        if (concursante.getCombo() != null) {</span>
+<span class="nc bnc" id="L267" title="All 2 branches missed.">            if (concursante.getCombo().getEstado() != Combo.EstadoCombo.aprobado &amp;&amp;</span>
+<span class="nc bnc" id="L268" title="All 2 branches missed.">                concursante.getCombo().getEstado() != Combo.EstadoCombo.adjudicado &amp;&amp;</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">                concursante.getCombo().getEstado() != Combo.EstadoCombo.grabado) {</span>
+<span class="nc" id="L270">                result.addError(&quot;El combo asignado no está en un estado válido para concursantes&quot;);</span>
+            }
+        }
+        
+<span class="nc" id="L274">        return result;</span>
+    }
+
+    /**
+     * Valida la integridad de una jornada
+     */
+    public ValidationResult validarIntegridadJornada(Jornada jornada) {
+<span class="nc" id="L281">        ValidationResult result = new ValidationResult();</span>
+        
+        // Validar límites de cuestionarios y combos
+<span class="nc bnc" id="L284" title="All 4 branches missed.">        if (jornada.getCuestionarios() != null &amp;&amp; jornada.getCuestionarios().size() &gt; 5) {</span>
+<span class="nc" id="L285">            result.addError(&quot;Una jornada no puede tener más de 5 cuestionarios, actual: &quot; + jornada.getCuestionarios().size());</span>
+        }
+        
+<span class="nc bnc" id="L288" title="All 4 branches missed.">        if (jornada.getCombos() != null &amp;&amp; jornada.getCombos().size() &gt; 5) {</span>
+<span class="nc" id="L289">            result.addError(&quot;Una jornada no puede tener más de 5 combos, actual: &quot; + jornada.getCombos().size());</span>
+        }
+        
+        // Validar fechas
+<span class="nc bnc" id="L293" title="All 2 branches missed.">        if (jornada.getFechaJornada() != null) {</span>
+<span class="nc" id="L294">            LocalDate hoy = LocalDate.now();</span>
+<span class="nc" id="L295">            LocalDate fechaLimite = hoy.plusYears(2); // No más de 2 años en el futuro</span>
+            
+<span class="nc bnc" id="L297" title="All 2 branches missed.">            if (jornada.getFechaJornada().isBefore(hoy.minusYears(1))) {</span>
+<span class="nc" id="L298">                result.addWarning(&quot;La fecha de la jornada es muy antigua (más de 1 año)&quot;);</span>
+            }
+            
+<span class="nc bnc" id="L301" title="All 2 branches missed.">            if (jornada.getFechaJornada().isAfter(fechaLimite)) {</span>
+<span class="nc" id="L302">                result.addError(&quot;La fecha de la jornada no puede ser más de 2 años en el futuro&quot;);</span>
+            }
+        }
+        
+        // Validar estados de cuestionarios y combos asignados
+<span class="nc bnc" id="L307" title="All 2 branches missed.">        if (jornada.getCuestionarios() != null) {</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">            for (Cuestionario cuestionario : jornada.getCuestionarios()) {</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">                if (cuestionario.getEstado() != Cuestionario.EstadoCuestionario.adjudicado) {</span>
+<span class="nc" id="L310">                    result.addWarning(&quot;Cuestionario &quot; + cuestionario.getId() + &quot; asignado a jornada pero no está en estado 'adjudicado'&quot;);</span>
+                }
+<span class="nc" id="L312">            }</span>
+        }
+        
+<span class="nc bnc" id="L315" title="All 2 branches missed.">        if (jornada.getCombos() != null) {</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">            for (Combo combo : jornada.getCombos()) {</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">                if (combo.getEstado() != Combo.EstadoCombo.adjudicado) {</span>
+<span class="nc" id="L318">                    result.addWarning(&quot;Combo &quot; + combo.getId() + &quot; asignado a jornada pero no está en estado 'adjudicado'&quot;);</span>
+                }
+<span class="nc" id="L320">            }</span>
+        }
+        
+<span class="nc" id="L323">        return result;</span>
+    }
+
+    /**
+     * Valida la integridad de un programa
+     */
+    public ValidationResult validarIntegridadPrograma(Programa programa) {
+<span class="nc" id="L330">        ValidationResult result = new ValidationResult();</span>
+        
+        // Validar temporada única
+<span class="nc bnc" id="L333" title="All 2 branches missed.">        if (programa.getTemporada() != null) {</span>
+<span class="nc" id="L334">            Long duplicados = programaRepository.countByTemporada(programa.getTemporada());</span>
+<span class="nc bnc" id="L335" title="All 4 branches missed.">            if (programa.getId() == null &amp;&amp; duplicados &gt; 0) {</span>
+<span class="nc" id="L336">                result.addError(&quot;Ya existe un programa para la temporada &quot; + programa.getTemporada());</span>
+<span class="nc bnc" id="L337" title="All 2 branches missed.">            } else if (programa.getId() != null) {</span>
+<span class="nc" id="L338">                Long duplicadosExcluyendo = entityManager.createQuery(</span>
+                    &quot;SELECT COUNT(p) FROM Programa p WHERE p.temporada = :temporada AND p.id != :id&quot;, Long.class)
+<span class="nc" id="L340">                    .setParameter(&quot;temporada&quot;, programa.getTemporada())</span>
+<span class="nc" id="L341">                    .setParameter(&quot;id&quot;, programa.getId())</span>
+<span class="nc" id="L342">                    .getSingleResult();</span>
+                    
+<span class="nc bnc" id="L344" title="All 2 branches missed.">                if (duplicadosExcluyendo &gt; 0) {</span>
+<span class="nc" id="L345">                    result.addError(&quot;Ya existe otro programa para la temporada &quot; + programa.getTemporada());</span>
+                }
+            }
+        }
+        
+        // Validar rangos de temporada
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        if (programa.getTemporada() != null) {</span>
+<span class="nc" id="L352">            int currentYear = LocalDate.now().getYear();</span>
+<span class="nc bnc" id="L353" title="All 4 branches missed.">            if (programa.getTemporada() &lt; 2020 || programa.getTemporada() &gt; currentYear + 5) {</span>
+<span class="nc" id="L354">                result.addError(&quot;La temporada debe estar entre 2020 y &quot; + (currentYear + 5));</span>
+            }
+        }
+        
+        // Validar fechas
+<span class="nc bnc" id="L359" title="All 2 branches missed.">        if (programa.getFechaEmision() != null) {</span>
+<span class="nc" id="L360">            LocalDate hoy = LocalDate.now();</span>
+<span class="nc bnc" id="L361" title="All 2 branches missed.">            if (programa.getFechaEmision().isBefore(hoy.minusYears(5))) {</span>
+<span class="nc" id="L362">                result.addWarning(&quot;La fecha de emisión es muy antigua (más de 5 años)&quot;);</span>
+            }
+<span class="nc bnc" id="L364" title="All 2 branches missed.">            if (programa.getFechaEmision().isAfter(hoy.plusYears(2))) {</span>
+<span class="nc" id="L365">                result.addError(&quot;La fecha de emisión no puede ser más de 2 años en el futuro&quot;);</span>
+            }
+        }
+        
+        // Validar duración acumulada
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        if (programa.getDuracionAcumulada() != null) {</span>
+<span class="nc" id="L371">            LocalTime maxDuracion = LocalTime.of(4, 0); // 4 horas máximo</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">            if (programa.getDuracionAcumulada().isAfter(maxDuracion)) {</span>
+<span class="nc" id="L373">                result.addWarning(&quot;La duración acumulada es muy alta (más de 4 horas)&quot;);</span>
+            }
+        }
+        
+<span class="nc" id="L377">        return result;</span>
+    }
+
+    /**
+     * Ejecuta una validación integral del sistema
+     */
+    public ValidationResult validarSistemaCompleto() {
+<span class="nc" id="L384">        ValidationResult result = new ValidationResult();</span>
+        
+        try {
+            // Validar integridad referencial
+<span class="nc" id="L388">            result.addWarning(&quot;Ejecutando validación completa del sistema...&quot;);</span>
+            
+            // Contar inconsistencias
+<span class="nc" id="L391">            Long preguntasOrfanas = entityManager.createQuery(</span>
+                &quot;SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta IS NULL OR pc.cuestionario IS NULL&quot;, Long.class)
+<span class="nc" id="L393">                .getSingleResult();</span>
+<span class="nc bnc" id="L394" title="All 2 branches missed.">            if (preguntasOrfanas &gt; 0) {</span>
+<span class="nc" id="L395">                result.addError(&quot;Existen &quot; + preguntasOrfanas + &quot; relaciones pregunta-cuestionario con referencias nulas&quot;);</span>
+            }
+            
+<span class="nc" id="L398">            Long combosOrfanos = entityManager.createQuery(</span>
+                &quot;SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta IS NULL OR pc.combo IS NULL&quot;, Long.class)
+<span class="nc" id="L400">                .getSingleResult();</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">            if (combosOrfanos &gt; 0) {</span>
+<span class="nc" id="L402">                result.addError(&quot;Existen &quot; + combosOrfanos + &quot; relaciones pregunta-combo con referencias nulas&quot;);</span>
+            }
+            
+            // Validar estados inconsistentes
+<span class="nc" id="L406">            Long cuestionariosInconsistentes = entityManager.createQuery(</span>
+                &quot;SELECT COUNT(c) FROM Cuestionario c WHERE c.estado = 'adjudicado' AND &quot; +
+                &quot;c.id NOT IN (SELECT cu.id FROM Jornada j JOIN j.cuestionarios cu)&quot;, Long.class)
+<span class="nc" id="L409">                .getSingleResult();</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">            if (cuestionariosInconsistentes &gt; 0) {</span>
+<span class="nc" id="L411">                result.addError(&quot;Existen &quot; + cuestionariosInconsistentes + &quot; cuestionarios marcados como 'adjudicado' pero no asignados a ninguna jornada&quot;);</span>
+            }
+            
+<span class="nc" id="L414">            result.addWarning(&quot;Validación del sistema completada&quot;);</span>
+            
+<span class="nc" id="L416">        } catch (Exception e) {</span>
+<span class="nc" id="L417">            result.addError(&quot;Error durante la validación del sistema: &quot; + e.getMessage());</span>
+<span class="nc" id="L418">        }</span>
+        
+<span class="nc" id="L420">        return result;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

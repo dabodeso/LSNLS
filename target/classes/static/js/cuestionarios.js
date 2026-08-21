@@ -331,9 +331,9 @@ const CuestionariosManager = {
         paginacionElement.appendChild(anterior);
 
         // Rango de páginas
-        const inicio = Math.max(0, this.paginaActual - 2);
-        const fin = Math.min(this.totalPaginas - 1, this.paginaActual + 2);
-        for (let i = inicio; i <= fin; i++) {
+        const inicioRango = Math.max(0, this.paginaActual - 2);
+        const finRango = Math.min(this.totalPaginas - 1, this.paginaActual + 2);
+        for (let i = inicioRango; i <= finRango; i++) {
             const li = document.createElement('li');
             li.className = `page-item ${i === this.paginaActual ? 'active' : ''}`;
             li.innerHTML = `<a class="page-link" href="#" onclick="CuestionariosManager.irAPagina(${i});return false;">${i + 1}</a>`;
@@ -556,7 +556,7 @@ const CuestionariosManager = {
             // Determinar icono y tooltip para reutilización
             let iconoReutilizado = '';
             if (c.reutilizadoDeJornadaId) {
-                iconoReutilizado = `<span class="ms-2" title="Reutilizado de ${c.reutilizadoDeJornadaNombre || 'jornada ' + c.reutilizadoDeJornadaId}" style="cursor: help;">♻️</span>`;
+                iconoReutilizado = `<span class="ms-2 text-muted" title="Reutilizado de ${c.reutilizadoDeJornadaNombre || 'jornada ' + c.reutilizadoDeJornadaId}" style="cursor: help;">Reutilizado</span>`;
                 console.log(`[FRONT-CUEST] Cuest ${c.id} | estado=${c.estado} | jornada=${c.jornadaAsignada} | mostrarSelector=${!(c.jornadaAsignada && (c.estado === 'adjudicado' || c.estado === 'grabado'))}`);
             }
             
@@ -960,7 +960,7 @@ async function buscarPreguntasModal(page = 0) {
     } catch (e) {
         console.error('Error en buscarPreguntasModal:', e);
         const tbody = document.getElementById('tbody-selector-pregunta');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="6">Error al cargar preguntas: ${e.message}</td></tr>`;
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6">No se han podido cargar las preguntas. Inténtalo de nuevo.</td></tr>';
         const pag = document.getElementById('paginacion-selector-pregunta');
         if (pag) pag.innerHTML = '';
     }
@@ -1156,7 +1156,7 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
         const texto = document.getElementById(selectorPreguntaContext.textoId);
         if (!input || !texto) {
             console.error('[FRONT] No se encontró el input o el campo de texto para el selector:', selectorPreguntaContext);
-            alert('Error interno: no se encontró el campo para asignar la pregunta seleccionada.');
+            alert('No se pudo asignar la pregunta seleccionada. Cierra el recuadro e inténtalo de nuevo.');
             return;
         }
         input.value = id;
@@ -1171,7 +1171,7 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
         }
     } catch (e) {
         console.error('[FRONT] Error en seleccionarPreguntaModal:', e);
-        alert('Error al seleccionar la pregunta. Revisa la consola para más detalles.');
+        alert('No se pudo seleccionar la pregunta. Inténtalo de nuevo.');
     }
 }
 
@@ -1706,14 +1706,10 @@ window.editarCuestionario = async function(id) {
 };
 
 window.eliminarCuestionario = async function(id) {
-    if (!confirm('¿Seguro que quieres eliminar este cuestionario? Esta acción no se puede deshacer.')) return;
+    if (!confirm('¿Seguro que quieres eliminar este cuestionario?\n\nPodrás deshacerlo con Ctrl+Z durante la próxima hora.')) return;
     try {
         CuestionariosManager.rememberScroll();
-        const resp = await fetch(`/api/cuestionarios/${id}`, { method: 'DELETE', headers: authManager.getAuthHeaders() });
-        
-        if (!resp.ok) {
-            throw new Error(await Utils.mensajeDesdeResponse(resp, 'eliminar cuestionarios'));
-        }
+        await apiManager.deleteUndoable(`/api/cuestionarios/${id}`, { label: `Eliminar cuestionario ${id}` });
         
         Toastify({ text: 'Cuestionario eliminado', duration: 3000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #00b09b, #96c93d)' } }).showToast();
         CuestionariosManager.quitarDeListado(id);
@@ -1976,39 +1972,34 @@ window.cambiarPassword = function() {
 };
 
 function getOpcionesEstadoCuestionario(estadoActual) {
-    // Definimos las transiciones permitidas para cada estado
-    // Nota: no se ofrece volver a 'borrador' desde ningún estado
+    // Mismo orden fijo que combos: Borrador, Revisar, Corregir, Aprobado, Adjudicado, Grabado
+    const orden = ['borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado'];
     const transiciones = {
         'borrador': ['revisar'],
         'revisar': ['corregir', 'aprobado'],
         'corregir': ['revisar', 'aprobado'],
-        'aprobado': [], // Solo cambia automáticamente a adjudicado al asignarse a una jornada
-        'adjudicado': [], // Solo cambia automáticamente a grabado al asignarse a un concursante
+        'aprobado': [],
+        'adjudicado': [],
         'grabado': []
     };
-    
-    // Obtenemos las opciones disponibles según el estado actual
+
     const opcionesDisponibles = transiciones[estadoActual] || [];
-    
-    // Siempre incluimos el estado actual como seleccionado
-    let opciones = `<option value="${estadoActual}" selected>${estadoActual.charAt(0).toUpperCase() + estadoActual.slice(1)}</option>`;
-    
-    // Añadimos las opciones de transición permitidas
-    opcionesDisponibles.forEach(estado => {
-        opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
-    });
-    
-    // Si el usuario es admin, permitimos el resto de estados excepto volver a borrador
-    if (authManager.hasRole('ROLE_ADMIN')) {
-        const todosEstados = ['revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado'];
-        todosEstados.forEach(estado => {
-            if (estado !== estadoActual && !opcionesDisponibles.includes(estado)) {
-                opciones += `<option value="${estado}">${estado.charAt(0).toUpperCase() + estado.slice(1)}</option>`;
-            }
-        });
+    const esAdmin = typeof authManager !== 'undefined' && authManager.hasRole('ROLE_ADMIN');
+    const visibles = orden.filter(estado =>
+        estado === estadoActual
+        || opcionesDisponibles.includes(estado)
+        || (esAdmin && estado !== 'borrador')
+    );
+
+    if (estadoActual && !visibles.includes(estadoActual)) {
+        visibles.unshift(estadoActual);
     }
-    
-    return opciones;
+
+    return visibles.map(estado => {
+        const selected = estado === estadoActual ? ' selected' : '';
+        const etiqueta = estado.charAt(0).toUpperCase() + estado.slice(1);
+        return `<option value="${estado}"${selected}>${etiqueta}</option>`;
+    }).join('');
 }
 
 function cuestionarioCompletoParaAprobar(cuestionario) {
@@ -2172,30 +2163,9 @@ const TematicasManager = {
 
     async añadirTematica(nombreTematica) {
         try {
-            const response = await fetch('/api/cuestionarios/tematicas', {
-                method: 'POST',
-                headers: {
-                    ...authManager.getAuthHeaders(),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ tematica: nombreTematica })
+            const result = await apiManager.postUndoableBackend('/api/cuestionarios/tematicas', { tematica: nombreTematica }, {
+                label: `Añadir temática ${nombreTematica}`
             });
-
-            if (!response.ok) {
-                let errorText = await response.text();
-                if (response.status === 403) {
-                    throw new Error('No tienes permisos para añadir temáticas en cuestionarios. Esta acción está permitida solo para los roles autorizados.');
-                }
-                try {
-                    const parsed = JSON.parse(errorText);
-                    errorText = parsed.message || parsed.error || errorText;
-                } catch (parseError) {
-                    console.debug('No se pudo parsear el error de añadir temática:', parseError);
-                }
-                throw new Error(errorText || 'No se pudo añadir la temática');
-            }
-
-            const result = await response.json();
             mostrarExito(result.mensaje);
             
             // Limpiar formulario
@@ -2211,23 +2181,15 @@ const TematicasManager = {
     },
 
     async eliminarTematica(nombreTematica) {
-        if (!confirm(`¿Estás seguro de que quieres eliminar la temática "${nombreTematica}"?`)) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar la temática "${nombreTematica}"?\n\nPodrás deshacerlo con Ctrl+Z durante la próxima hora.`)) {
             return;
         }
 
         try {
-            const response = await fetch(`/api/cuestionarios/tematicas/${encodeURIComponent(nombreTematica)}`, {
-                method: 'DELETE',
-                headers: authManager.getAuthHeaders()
+            const result = await apiManager.deleteUndoable(`/api/cuestionarios/tematicas/${encodeURIComponent(nombreTematica)}`, {
+                label: `Eliminar temática ${nombreTematica}`
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText);
-            }
-
-            const result = await response.json();
-            mostrarExito(result.mensaje);
+            mostrarExito(result?.mensaje || 'Temática eliminada correctamente');
             
             // Recargar datos
             await this.cargarTematicas();

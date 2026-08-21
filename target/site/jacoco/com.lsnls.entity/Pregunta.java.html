@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Pregunta.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.entity</a> &gt; <span class="el_source">Pregunta.java</span></div><h1>Pregunta.java</h1><pre class="source lang-java linenums">package com.lsnls.entity;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.lsnls.validation.NoLineBreaks;
+import com.lsnls.validation.NoSpecialCharacters;
+import com.lsnls.validation.UpperCase;
+import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.Set;
+
+@Data
+@NoArgsConstructor
+@Entity
+@Table(name = &quot;preguntas&quot;)
+public class Pregunta {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Version
+    private Long version;
+
+    @ManyToOne
+    @JoinColumn(name = &quot;creacion_usuario_id&quot;)
+    @JsonIgnoreProperties({&quot;preguntasCreadas&quot;, &quot;preguntasVerificadas&quot;, &quot;cuestionariosCreados&quot;})
+    private Usuario creacionUsuario;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NivelPregunta nivel;
+
+    @NotBlank(message = &quot;La temática es obligatoria&quot;)
+    @Size(max = 100, message = &quot;La temática no puede exceder 100 caracteres&quot;)
+    @NoLineBreaks(message = &quot;La temática no puede contener saltos de línea&quot;)
+    @NoSpecialCharacters(message = &quot;La temática contiene caracteres no permitidos&quot;)
+    @Column(nullable = false, length = 100)
+    private String tematica;
+
+    @NotBlank(message = &quot;La pregunta es obligatoria&quot;)
+    @NoLineBreaks(message = &quot;La pregunta no puede contener saltos de línea&quot;)
+    @NoSpecialCharacters(message = &quot;La pregunta contiene caracteres no permitidos&quot;)
+    @Column(nullable = false, columnDefinition = &quot;TEXT&quot;)
+    private String pregunta;
+
+    @NotBlank(message = &quot;La respuesta es obligatoria&quot;)
+    @Size(max = 500, message = &quot;La respuesta no puede exceder 500 caracteres&quot;)
+    @NoLineBreaks(message = &quot;La respuesta no puede contener saltos de línea&quot;)
+    @NoSpecialCharacters(message = &quot;La respuesta contiene caracteres no permitidos&quot;)
+    @Column(nullable = false, length = 500)
+    private String respuesta;
+
+    @Column(name = &quot;datos_extra&quot;)
+    private String datosExtra;
+
+    private String fuentes;
+
+    @Column(columnDefinition = &quot;TEXT&quot;)
+    private String notas;
+
+    @Column(name = &quot;notas_verificacion&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String notasVerificacion;
+
+    @Column(name = &quot;notas_direccion&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String notasDireccion;
+
+    @Column(name = &quot;verificacion&quot;, length = 500)
+    private String verificacion;
+
+    @ManyToOne
+    @JoinColumn(name = &quot;verificacion_usuario_id&quot;)
+    @JsonIgnoreProperties({&quot;preguntasCreadas&quot;, &quot;preguntasVerificadas&quot;, &quot;cuestionariosCreados&quot;})
+    private Usuario verificacionUsuario;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoPregunta estado = EstadoPregunta.borrador;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;estado_disponibilidad&quot;)
+    private EstadoDisponibilidad estadoDisponibilidad = EstadoDisponibilidad.disponible;
+
+    @Column(name = &quot;fecha_creacion&quot;)
+    private LocalDateTime fechaCreacion;
+
+    @Column(name = &quot;fecha_verificacion&quot;)
+    private LocalDateTime fechaVerificacion;
+
+    @Column(name = &quot;subtema&quot;, length = 100)
+    private String subtema;
+
+    @Column(name = &quot;autor&quot;, length = 100)
+    private String autor;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = &quot;pregunta&quot;)
+    private Set&lt;PreguntaCuestionario&gt; cuestionarios;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 2)
+    private FactorPregunta factor;
+
+<span class="nc" id="L108">    public enum NivelPregunta {</span>
+<span class="nc" id="L109">        _0, _1LS, _2NLS, _3LS, _4NLS, _5LS, _5NLS</span>
+    }
+
+<span class="fc" id="L112">    public enum EstadoPregunta {</span>
+<span class="fc" id="L113">        borrador, para_verificar, verificada, revisar, corregir, rechazada, aprobada, para_aprobar, usada</span>
+    }
+
+<span class="nc" id="L116">    public enum EstadoDisponibilidad {</span>
+<span class="nc" id="L117">        disponible, usada, liberada, descartada</span>
+    }
+
+<span class="nc" id="L120">    public enum FactorPregunta {</span>
+<span class="nc" id="L121">        X, X2, X3</span>
+    }
+
+    @PrePersist
+    protected void onCreate() {
+<span class="nc" id="L126">        fechaCreacion = LocalDateTime.now();</span>
+<span class="nc" id="L127">    }</span>
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

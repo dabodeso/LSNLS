@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HistorialJornadaDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.dto</a> &gt; <span class="el_source">HistorialJornadaDTO.java</span></div><h1>HistorialJornadaDTO.java</h1><pre class="source lang-java linenums">package com.lsnls.dto;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import java.time.LocalDateTime;
+import java.util.List;
+
+<span class="nc" id="L7">public class HistorialJornadaDTO {</span>
+    private Long id;
+    private Long jornadaId;
+    private String jornadaNombre;
+    private Long cuestionarioId;
+    private Long comboId;
+    private String tipoAsignacion;
+    private String estadoAsignacion;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = &quot;yyyy-MM-dd'T'HH:mm:ss&quot;)
+    private LocalDateTime fechaAsignacion;
+    
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = &quot;yyyy-MM-dd'T'HH:mm:ss&quot;)
+    private LocalDateTime fechaUso;
+    
+    private Long preguntaUsadaId;
+    private String notas;
+
+    // Getters y Setters
+<span class="nc" id="L26">    public Long getId() { return id; }</span>
+<span class="nc" id="L27">    public void setId(Long id) { this.id = id; }</span>
+    
+<span class="nc" id="L29">    public Long getJornadaId() { return jornadaId; }</span>
+<span class="nc" id="L30">    public void setJornadaId(Long jornadaId) { this.jornadaId = jornadaId; }</span>
+    
+<span class="nc" id="L32">    public String getJornadaNombre() { return jornadaNombre; }</span>
+<span class="nc" id="L33">    public void setJornadaNombre(String jornadaNombre) { this.jornadaNombre = jornadaNombre; }</span>
+    
+<span class="nc" id="L35">    public Long getCuestionarioId() { return cuestionarioId; }</span>
+<span class="nc" id="L36">    public void setCuestionarioId(Long cuestionarioId) { this.cuestionarioId = cuestionarioId; }</span>
+    
+<span class="nc" id="L38">    public Long getComboId() { return comboId; }</span>
+<span class="nc" id="L39">    public void setComboId(Long comboId) { this.comboId = comboId; }</span>
+    
+<span class="nc" id="L41">    public String getTipoAsignacion() { return tipoAsignacion; }</span>
+<span class="nc" id="L42">    public void setTipoAsignacion(String tipoAsignacion) { this.tipoAsignacion = tipoAsignacion; }</span>
+    
+<span class="nc" id="L44">    public String getEstadoAsignacion() { return estadoAsignacion; }</span>
+<span class="nc" id="L45">    public void setEstadoAsignacion(String estadoAsignacion) { this.estadoAsignacion = estadoAsignacion; }</span>
+    
+<span class="nc" id="L47">    public LocalDateTime getFechaAsignacion() { return fechaAsignacion; }</span>
+<span class="nc" id="L48">    public void setFechaAsignacion(LocalDateTime fechaAsignacion) { this.fechaAsignacion = fechaAsignacion; }</span>
+    
+<span class="nc" id="L50">    public LocalDateTime getFechaUso() { return fechaUso; }</span>
+<span class="nc" id="L51">    public void setFechaUso(LocalDateTime fechaUso) { this.fechaUso = fechaUso; }</span>
+    
+<span class="nc" id="L53">    public Long getPreguntaUsadaId() { return preguntaUsadaId; }</span>
+<span class="nc" id="L54">    public void setPreguntaUsadaId(Long preguntaUsadaId) { this.preguntaUsadaId = preguntaUsadaId; }</span>
+    
+<span class="nc" id="L56">    public String getNotas() { return notas; }</span>
+<span class="nc" id="L57">    public void setNotas(String notas) { this.notas = notas; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

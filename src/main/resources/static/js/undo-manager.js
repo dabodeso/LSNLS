@@ -8,11 +8,17 @@
 //   UndoManager.enabled = true/false
 
 (function () {
-  const isEditableElement = (el) => {
+  // Campos donde el usuario escribe texto: el navegador gestiona su propio
+  // Ctrl+Z/Ctrl+Y (deshacer texto), así que la app no debe interceptarlo.
+  const isTextEntryElement = (el) => {
     if (!el) return false;
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
     if (el.isContentEditable) return true;
+    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    if (tag === 'textarea') return true;
+    if (tag === 'input') {
+      const type = (el.type || 'text').toLowerCase();
+      return ['text', 'search', 'url', 'tel', 'email', 'password', 'number'].includes(type);
+    }
     return false;
   };
 
@@ -168,50 +174,23 @@
     _installGlobalShortcuts() {
       document.addEventListener('keydown', (e) => {
         const isCtrl = e.ctrlKey || e.metaKey;
-        if (!isCtrl) return;
+        if (!isCtrl || e.altKey) return;
 
         const key = (e.key || '').toLowerCase();
+        if (key !== 'z' && key !== 'y') return;
 
-        // Si hay historial de la app, Ctrl+Z/Y tienen prioridad sobre el navegador
-        if (key === 'z' && !e.shiftKey && this.canUndo()) {
-          e.preventDefault();
-          e.stopPropagation();
+        // Con el foco en un campo de texto, el atajo es siempre del navegador
+        // (deshacer/rehacer el texto escrito). La pila de la app queda para
+        // cuando el foco está fuera de campos de texto, o para los botones.
+        if (isTextEntryElement(e.target)) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        const esRedo = key === 'y' || (key === 'z' && e.shiftKey);
+        if (esRedo) {
+          this.redo();
+        } else {
           this.undo();
-          return;
-        }
-        if ((key === 'y' || (key === 'z' && e.shiftKey)) && this.canRedo()) {
-          e.preventDefault();
-          e.stopPropagation();
-          this.redo();
-          return;
-        }
-
-        // Sin historial: no interferir en textos libres salvo selects/fechas
-        if (key === 'z') {
-          if (isEditableElement(e.target)) {
-            const tag = e.target.tagName ? e.target.tagName.toLowerCase() : '';
-            if (tag === 'select') {
-              e.preventDefault();
-              this.undo();
-            } else {
-              const type = (e.target.type || '').toLowerCase();
-              if (['date', 'number', 'checkbox', 'radio', 'time', 'datetime-local'].includes(type)) {
-                e.preventDefault();
-                this.undo();
-              }
-            }
-            return;
-          }
-          e.preventDefault();
-          if (e.shiftKey) {
-            this.redo();
-          } else {
-            this.undo();
-          }
-        } else if (key === 'y') {
-          if (isEditableElement(e.target)) return;
-          e.preventDefault();
-          this.redo();
         }
       }, true);
     }

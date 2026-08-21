@@ -16,6 +16,7 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\repository\His
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\controller\EditLockController.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\AuditLog.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\PreguntaDTO.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\ErrorResponseAdvice.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\controller\TematicaController.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\ConcursanteService.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\HistorialJornadaService.java
@@ -41,6 +42,7 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\controller\Pre
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\Combo.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\ReaprovecharComboDTO.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\DataTransformationService.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\controller\UndoController.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\validation\NoLineBreaksValidator.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\AsyncConfig.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\ApiResponse.java
@@ -82,7 +84,9 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\EstadoC
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\Jornada.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\BackupService.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\TimeoutOperationService.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\MensajesUsuario.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\UsuarioService.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\UndoService.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\JwtAuthenticationFilter.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\WebConfig.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\AuthorizationService.java
@@ -96,6 +100,7 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\ErrorRespo
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\controller\UsuarioController.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\repository\ComboRepository.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\CrearCuestionarioDTO.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\UndoHeaderAdvice.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\SyncService.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\ConcursanteDTO.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\LoginRequest.java

@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProgramaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">ProgramaService.java</span></div><h1>ProgramaService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import com.lsnls.dto.ProgramaDTO;
+import com.lsnls.entity.Programa;
+import com.lsnls.repository.ProgramaRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import javax.persistence.EntityManager;
+
+@Service
+<span class="nc" id="L22">public class ProgramaService {</span>
+
+    @Autowired
+    private ProgramaRepository programaRepository;
+
+    @Autowired
+    private ConfiguracionGlobalService configuracionService;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private UndoService undoService;
+
+    public List&lt;Programa&gt; findAll() {
+<span class="nc" id="L37">        return programaRepository.findAll();</span>
+    }
+
+    public List&lt;ProgramaDTO&gt; findAllDTO() {
+<span class="nc" id="L41">        return programaRepository.findAll().stream()</span>
+<span class="nc" id="L42">                .map(this::convertToDTO)</span>
+<span class="nc" id="L43">                .collect(Collectors.toList());</span>
+    }
+    
+    public Map&lt;String, Object&gt; findAllPaginated(Pageable pageable) {
+<span class="nc" id="L47">        Page&lt;Programa&gt; page = programaRepository.findAll(pageable);</span>
+        
+<span class="nc" id="L49">        List&lt;ProgramaDTO&gt; programas = page.getContent().stream()</span>
+<span class="nc" id="L50">                .map(this::convertToDTO)</span>
+<span class="nc" id="L51">                .collect(Collectors.toList());</span>
+        
+<span class="nc" id="L53">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L54">        response.put(&quot;programas&quot;, programas);</span>
+<span class="nc" id="L55">        response.put(&quot;currentPage&quot;, page.getNumber());</span>
+<span class="nc" id="L56">        response.put(&quot;totalItems&quot;, page.getTotalElements());</span>
+<span class="nc" id="L57">        response.put(&quot;totalPages&quot;, page.getTotalPages());</span>
+        
+<span class="nc" id="L59">        return response;</span>
+    }
+
+    public Optional&lt;Programa&gt; findById(Long id) {
+<span class="nc" id="L63">        return programaRepository.findById(id);</span>
+    }
+
+    public Optional&lt;ProgramaDTO&gt; findByIdDTO(Long id) {
+<span class="nc" id="L67">        return programaRepository.findById(id)</span>
+<span class="nc" id="L68">                .map(this::convertToDTO);</span>
+    }
+
+    public Programa create(Programa programa) {
+<span class="nc" id="L72">        aplicarDuracionObjetivoPorDefecto(programa);</span>
+<span class="nc" id="L73">        validarCodigoNuevo(programa.getCodigo());</span>
+<span class="nc" id="L74">        programa.actualizarEstado();</span>
+<span class="nc" id="L75">        Programa guardado = programaRepository.save(programa);</span>
+<span class="nc" id="L76">        asignarCodigoPorDefectoSiFalta(guardado);</span>
+<span class="nc" id="L77">        return guardado;</span>
+    }
+
+    public ProgramaDTO createFromDTO(ProgramaDTO programaDTO) {
+<span class="nc" id="L81">        Programa programa = convertToEntity(programaDTO);</span>
+<span class="nc" id="L82">        aplicarDuracionObjetivoPorDefecto(programa);</span>
+<span class="nc" id="L83">        validarCodigoNuevo(programa.getCodigo());</span>
+<span class="nc" id="L84">        programa.actualizarEstado();</span>
+<span class="nc" id="L85">        Programa saved = programaRepository.save(programa);</span>
+<span class="nc" id="L86">        asignarCodigoPorDefectoSiFalta(saved);</span>
+<span class="nc" id="L87">        return convertToDTO(saved);</span>
+    }
+
+    public Programa update(Long id, Programa programa) {
+<span class="nc" id="L91">        programa.setId(id);</span>
+<span class="nc" id="L92">        programa.actualizarEstado();</span>
+<span class="nc" id="L93">        return programaRepository.save(programa);</span>
+    }
+
+    public ProgramaDTO updateFromDTO(Long id, ProgramaDTO programaDTO) {
+<span class="nc" id="L97">        Programa programa = convertToEntity(programaDTO);</span>
+<span class="nc" id="L98">        programa.setId(id);</span>
+<span class="nc" id="L99">        validarCodigo(programa.getCodigo(), id);</span>
+<span class="nc" id="L100">        programa.actualizarEstado();</span>
+<span class="nc" id="L101">        Programa saved = programaRepository.save(programa);</span>
+<span class="nc" id="L102">        return convertToDTO(saved);</span>
+    }
+
+    public ProgramaDTO updateCampo(Long id, Map&lt;String, Object&gt; campo) {
+<span class="nc" id="L106">        Optional&lt;Programa&gt; optionalPrograma = programaRepository.findById(id);</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (optionalPrograma.isPresent()) {</span>
+<span class="nc" id="L108">            Programa programa = optionalPrograma.get();</span>
+<span class="nc" id="L109">            boolean estadoActualizadoExplicitamente = false;</span>
+            
+<span class="nc bnc" id="L111" title="All 2 branches missed.">            for (Map.Entry&lt;String, Object&gt; entry : campo.entrySet()) {</span>
+<span class="nc" id="L112">                String key = entry.getKey();</span>
+<span class="nc" id="L113">                Object value = entry.getValue();</span>
+                
+<span class="nc bnc" id="L115" title="All 10 branches missed.">                switch (key) {</span>
+                    case &quot;codigo&quot;:
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                        String codigo = normalizarCodigo(value != null ? value.toString() : null);</span>
+<span class="nc" id="L118">                        validarCodigo(codigo, id);</span>
+<span class="nc" id="L119">                        programa.setCodigo(codigo);</span>
+<span class="nc" id="L120">                        break;</span>
+                    case &quot;temporada&quot;:
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                        if (value != null) {</span>
+<span class="nc" id="L123">                            programa.setTemporada(Integer.parseInt(value.toString()));</span>
+                        }
+                        break;
+                    case &quot;totalPremios&quot;:
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                        programa.setTotalPremios(value != null ? new BigDecimal(value.toString()) : null);</span>
+<span class="nc" id="L128">                        break;</span>
+                    case &quot;creditosEspeciales&quot;:
+<span class="nc" id="L130">                        programa.setCreditosEspeciales((String) value);</span>
+<span class="nc" id="L131">                        break;</span>
+                    case &quot;notas&quot;:
+<span class="nc" id="L133">                        programa.setNotas((String) value);</span>
+<span class="nc" id="L134">                        break;</span>
+                    case &quot;resultadoAcumulado&quot;:
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                        programa.setResultadoAcumulado(value != null ? new BigDecimal(value.toString()) : null);</span>
+<span class="nc" id="L137">                        break;</span>
+                    case &quot;duracionAcumulada&quot;:
+<span class="nc bnc" id="L139" title="All 4 branches missed.">                        if (value != null &amp;&amp; !value.toString().isEmpty()) {</span>
+                            try {
+<span class="nc" id="L141">                                programa.setDuracionAcumulada(java.time.LocalTime.parse(value.toString()));</span>
+<span class="nc" id="L142">                            } catch (Exception e) {</span>
+<span class="nc" id="L143">                                programa.setDuracionAcumulada(null);</span>
+<span class="nc" id="L144">                            }</span>
+                        } else {
+<span class="nc" id="L146">                            programa.setDuracionAcumulada(null);</span>
+                        }
+<span class="nc" id="L148">                        break;</span>
+                    case &quot;fechaEmision&quot;:
+<span class="nc bnc" id="L150" title="All 4 branches missed.">                        if (value != null &amp;&amp; !value.toString().isEmpty()) {</span>
+                            try {
+<span class="nc" id="L152">                                programa.setFechaEmision(java.time.LocalDate.parse(value.toString()));</span>
+<span class="nc" id="L153">                            } catch (Exception e) {</span>
+<span class="nc" id="L154">                                programa.setFechaEmision(null);</span>
+<span class="nc" id="L155">                            }</span>
+                        } else {
+<span class="nc" id="L157">                            programa.setFechaEmision(null);</span>
+                        }
+<span class="nc" id="L159">                        break;</span>
+                    case &quot;estado&quot;:
+<span class="nc bnc" id="L161" title="All 4 branches missed.">                        if (value != null &amp;&amp; !value.toString().isEmpty()) {</span>
+                            try {
+<span class="nc" id="L163">                                programa.setEstado(Programa.EstadoPrograma.valueOf(value.toString()));</span>
+<span class="nc" id="L164">                                estadoActualizadoExplicitamente = true;</span>
+<span class="nc" id="L165">                            } catch (Exception e) {</span>
+                                // Si el estado no es válido, no cambiar el estado actual
+<span class="nc" id="L167">                            }</span>
+                        }
+                        break;
+                }
+<span class="nc" id="L171">            }</span>
+            
+            // Solo recalcular automáticamente si NO se ha actualizado el estado explícitamente
+<span class="nc bnc" id="L174" title="All 2 branches missed.">            if (!estadoActualizadoExplicitamente) {</span>
+<span class="nc" id="L175">                programa.actualizarEstado();</span>
+            }
+            
+<span class="nc" id="L178">            Programa saved = programaRepository.save(programa);</span>
+<span class="nc" id="L179">            return convertToDTO(saved);</span>
+        }
+<span class="nc" id="L181">        throw new RuntimeException(&quot;Programa no encontrado con id: &quot; + id);</span>
+    }
+
+    public void delete(Long id) {
+        // Verificar que el programa existe
+<span class="nc" id="L186">        Optional&lt;Programa&gt; programaOpt = programaRepository.findById(id);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        if (programaOpt.isEmpty()) {</span>
+<span class="nc" id="L188">            throw new IllegalArgumentException(&quot;Programa con ID &quot; + id + &quot; no encontrado&quot;);</span>
+        }
+
+<span class="nc" id="L191">        Programa programa = programaOpt.get();</span>
+
+        // Verificar dependencias - no se puede eliminar si hay concursantes asignados
+<span class="nc" id="L194">        Long concursantesCount = entityManager.createQuery(</span>
+            &quot;SELECT COUNT(c) FROM Concursante c WHERE c.numeroPrograma = :programaId&quot;, Long.class)
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            .setParameter(&quot;programaId&quot;, programa.getId() != null ? programa.getId().intValue() : null)</span>
+<span class="nc" id="L197">            .getSingleResult();</span>
+        
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        if (concursantesCount &gt; 0) {</span>
+<span class="nc" id="L200">            throw new IllegalArgumentException(&quot;No se puede eliminar el programa &quot; + </span>
+<span class="nc" id="L201">                programa.getId() + &quot; porque tiene &quot; + concursantesCount + </span>
+                &quot; concursante(s) asignado(s). Desasigna los concursantes primero.&quot;);
+        }
+
+        // Verificar estado del programa - no eliminar si está en grabación o finalizado
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (programa.getEstado() == Programa.EstadoPrograma.programado) {</span>
+<span class="nc" id="L207">            throw new IllegalArgumentException(&quot;No se puede eliminar un programa que ya está programado. &quot; +</span>
+                &quot;Cambia su estado a 'borrador' primero.&quot;);
+        }
+        
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        if (programa.getEstado() == Programa.EstadoPrograma.emitido) {</span>
+<span class="nc" id="L212">            throw new IllegalArgumentException(&quot;No se puede eliminar un programa que ya ha sido emitido. &quot; +</span>
+                &quot;Los programas emitidos no pueden ser eliminados.&quot;);
+        }
+
+        // UNDO: capturar la fila completa antes de borrar (se reinsertará con el mismo id)
+<span class="nc" id="L217">        Map&lt;String, Object&gt; filaPrograma = undoService.snapshotFila(&quot;programas&quot;, id);</span>
+
+        // Si llegamos aquí, es seguro eliminar
+<span class="nc" id="L220">        programaRepository.deleteById(id);</span>
+
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (filaPrograma != null) {</span>
+<span class="nc" id="L223">            undoService.registrar(&quot;eliminar_programa&quot;,</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">                &quot;Eliminar programa &quot; + (programa.getCodigo() != null ? programa.getCodigo() : id),</span>
+<span class="nc" id="L225">                java.util.Collections.singletonList(UndoService.accionInsertarFila(&quot;programas&quot;, filaPrograma)));</span>
+        }
+<span class="nc" id="L227">    }</span>
+
+    public String getDuracionObjetivo() {
+<span class="nc" id="L230">        return configuracionService.getDuracionObjetivo();</span>
+    }
+
+    public void updateDuracionObjetivo(Long id, String duracionObjetivo) {
+<span class="nc" id="L234">        Optional&lt;Programa&gt; optionalPrograma = programaRepository.findById(id);</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        if (optionalPrograma.isPresent()) {</span>
+<span class="nc" id="L236">            Programa programa = optionalPrograma.get();</span>
+<span class="nc" id="L237">            programa.setDuracionObjetivo(duracionObjetivo);</span>
+<span class="nc" id="L238">            programaRepository.save(programa);</span>
+<span class="nc" id="L239">        } else {</span>
+<span class="nc" id="L240">            throw new IllegalArgumentException(&quot;Programa con ID &quot; + id + &quot; no encontrado&quot;);</span>
+        }
+<span class="nc" id="L242">    }</span>
+
+    private void aplicarDuracionObjetivoPorDefecto(Programa programa) {
+<span class="nc bnc" id="L245" title="All 4 branches missed.">        if (programa.getDuracionObjetivo() == null || programa.getDuracionObjetivo().trim().isEmpty()) {</span>
+<span class="nc" id="L246">            programa.setDuracionObjetivo(configuracionService.getDuracionObjetivo());</span>
+        }
+<span class="nc" id="L248">    }</span>
+
+    private void asignarCodigoPorDefectoSiFalta(Programa programa) {
+<span class="nc bnc" id="L251" title="All 4 branches missed.">        if (programa.getCodigo() == null || programa.getCodigo().trim().isEmpty()) {</span>
+<span class="nc" id="L252">            programa.setCodigo(String.valueOf(programa.getId()));</span>
+<span class="nc" id="L253">            programaRepository.save(programa);</span>
+        }
+<span class="nc" id="L255">    }</span>
+
+    private void validarCodigoNuevo(String codigo) {
+<span class="nc" id="L258">        String normalizado = normalizarCodigo(codigo);</span>
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        if (normalizado == null) {</span>
+<span class="nc" id="L260">            return;</span>
+        }
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        if (programaRepository.findByCodigo(normalizado).isPresent()) {</span>
+<span class="nc" id="L263">            throw new IllegalArgumentException(&quot;Ya existe un programa con el código &quot; + normalizado + &quot;.&quot;);</span>
+        }
+<span class="nc" id="L265">    }</span>
+
+    private void validarCodigo(String codigo, Long id) {
+<span class="nc" id="L268">        String normalizado = normalizarCodigo(codigo);</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        if (normalizado == null) {</span>
+<span class="nc" id="L270">            throw new IllegalArgumentException(&quot;El código de programa es obligatorio.&quot;);</span>
+        }
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        if (programaRepository.existsByCodigoAndIdNot(normalizado, id)) {</span>
+<span class="nc" id="L273">            throw new IllegalArgumentException(&quot;Ya existe un programa con el código &quot; + normalizado + &quot;.&quot;);</span>
+        }
+<span class="nc" id="L275">    }</span>
+
+    private String normalizarCodigo(String codigo) {
+<span class="nc bnc" id="L278" title="All 4 branches missed.">        if (codigo == null || codigo.trim().isEmpty()) {</span>
+<span class="nc" id="L279">            return null;</span>
+        }
+<span class="nc" id="L281">        String normalizado = codigo.trim();</span>
+<span class="nc bnc" id="L282" title="All 2 branches missed.">        if (normalizado.length() &gt; 32) {</span>
+<span class="nc" id="L283">            throw new IllegalArgumentException(&quot;El código de programa no puede superar 32 caracteres.&quot;);</span>
+        }
+<span class="nc" id="L285">        return normalizado;</span>
+    }
+
+    private ProgramaDTO convertToDTO(Programa programa) {
+<span class="nc" id="L289">        ProgramaDTO dto = new ProgramaDTO();</span>
+<span class="nc" id="L290">        dto.setId(programa.getId());</span>
+<span class="nc" id="L291">        dto.setCodigo(programa.getCodigo());</span>
+<span class="nc" id="L292">        dto.setTemporada(programa.getTemporada());</span>
+<span class="nc" id="L293">        dto.setDuracionAcumulada(programa.getDuracionAcumulada());</span>
+<span class="nc" id="L294">        dto.setDuracionObjetivo(programa.getDuracionObjetivo());</span>
+<span class="nc" id="L295">        dto.setResultadoAcumulado(programa.getResultadoAcumulado());</span>
+<span class="nc" id="L296">        dto.setFechaEmision(programa.getFechaEmision());</span>
+<span class="nc" id="L297">        dto.setDatoAudienciaShare(programa.getDatoAudienciaShare());</span>
+<span class="nc" id="L298">        dto.setDatoAudienciaTarget(programa.getDatoAudienciaTarget());</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">        dto.setEstado(programa.getEstado() != null ? programa.getEstado().toString() : null);</span>
+<span class="nc" id="L300">        dto.setTotalPremios(programa.getTotalPremios());</span>
+<span class="nc" id="L301">        dto.setGap(programa.getGap());</span>
+<span class="nc" id="L302">        dto.setTotalConcursantes(programa.getTotalConcursantes());</span>
+<span class="nc" id="L303">        dto.setCreditosEspeciales(programa.getCreditosEspeciales());</span>
+<span class="nc" id="L304">        dto.setNotas(programa.getNotas());</span>
+<span class="nc" id="L305">        dto.setVersion(programa.getVersion());</span>
+<span class="nc" id="L306">        return dto;</span>
+    }
+
+    private Programa convertToEntity(ProgramaDTO dto) {
+<span class="nc" id="L310">        Programa programa = new Programa();</span>
+<span class="nc" id="L311">        programa.setId(dto.getId());</span>
+<span class="nc" id="L312">        programa.setCodigo(normalizarCodigo(dto.getCodigo()));</span>
+<span class="nc" id="L313">        programa.setVersion(dto.getVersion());</span>
+<span class="nc" id="L314">        programa.setTemporada(dto.getTemporada());</span>
+<span class="nc" id="L315">        programa.setDuracionAcumulada(dto.getDuracionAcumulada());</span>
+<span class="nc" id="L316">        programa.setDuracionObjetivo(dto.getDuracionObjetivo());</span>
+<span class="nc" id="L317">        programa.setResultadoAcumulado(dto.getResultadoAcumulado());</span>
+<span class="nc" id="L318">        programa.setFechaEmision(dto.getFechaEmision());</span>
+<span class="nc" id="L319">        programa.setDatoAudienciaShare(dto.getDatoAudienciaShare());</span>
+<span class="nc" id="L320">        programa.setDatoAudienciaTarget(dto.getDatoAudienciaTarget());</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">        if (dto.getEstado() != null) {</span>
+            try {
+<span class="nc" id="L323">                programa.setEstado(Programa.EstadoPrograma.valueOf(dto.getEstado()));</span>
+<span class="nc" id="L324">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L325">                programa.setEstado(Programa.EstadoPrograma.borrador);</span>
+<span class="nc" id="L326">            }</span>
+        }
+<span class="nc" id="L328">        programa.setTotalPremios(dto.getTotalPremios());</span>
+<span class="nc" id="L329">        programa.setGap(dto.getGap());</span>
+<span class="nc" id="L330">        programa.setTotalConcursantes(dto.getTotalConcursantes());</span>
+<span class="nc" id="L331">        programa.setCreditosEspeciales(dto.getCreditosEspeciales());</span>
+<span class="nc" id="L332">        programa.setNotas(dto.getNotas());</span>
+<span class="nc" id="L333">        return programa;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

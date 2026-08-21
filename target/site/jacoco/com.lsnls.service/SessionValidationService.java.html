@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SessionValidationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">SessionValidationService.java</span></div><h1>SessionValidationService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import com.lsnls.entity.Usuario;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Servicio para validaciones avanzadas de sesión y seguridad JWT
+ */
+@Service
+<span class="nc" id="L26">public class SessionValidationService {</span>
+
+    @Value(&quot;${application.security.jwt.secret-key}&quot;)
+    private String jwtSecret;
+
+    @Value(&quot;${application.security.jwt.expiration:86400000}&quot;) // 24 horas por defecto
+    private int jwtExpirationInMs;
+
+    @Autowired
+    private AuditService auditService;
+
+    // Cache de tokens invalidados/blacklist
+<span class="nc" id="L38">    private final Set&lt;String&gt; blacklistedTokens = ConcurrentHashMap.newKeySet();</span>
+    
+    // Cache de sesiones activas por usuario
+<span class="nc" id="L41">    private final Map&lt;String, Set&lt;String&gt;&gt; userActiveSessions = new ConcurrentHashMap&lt;&gt;();</span>
+    
+    // Límite de sesiones concurrentes por usuario
+    private static final int MAX_CONCURRENT_SESSIONS = 3;
+    
+    // Timeouts de sesión en minutos
+    private static final int SESSION_TIMEOUT_MINUTES = 30;
+    private static final int ADMIN_SESSION_TIMEOUT_MINUTES = 60;
+
+    /**
+     * Resultado de validación de sesión
+     */
+    public static class SessionValidationResult {
+        private final boolean valid;
+        private final String reason;
+        private final SecurityLevel securityLevel;
+
+<span class="nc" id="L58">        public SessionValidationResult(boolean valid, String reason, SecurityLevel securityLevel) {</span>
+<span class="nc" id="L59">            this.valid = valid;</span>
+<span class="nc" id="L60">            this.reason = reason;</span>
+<span class="nc" id="L61">            this.securityLevel = securityLevel;</span>
+<span class="nc" id="L62">        }</span>
+
+<span class="nc" id="L64">        public boolean isValid() { return valid; }</span>
+<span class="nc" id="L65">        public String getReason() { return reason; }</span>
+<span class="nc" id="L66">        public SecurityLevel getSecurityLevel() { return securityLevel; }</span>
+
+        public static SessionValidationResult valid(SecurityLevel level) {
+<span class="nc" id="L69">            return new SessionValidationResult(true, null, level);</span>
+        }
+
+        public static SessionValidationResult invalid(String reason) {
+<span class="nc" id="L73">            return new SessionValidationResult(false, reason, SecurityLevel.BLOCKED);</span>
+        }
+    }
+
+<span class="nc" id="L77">    public enum SecurityLevel {</span>
+<span class="nc" id="L78">        HIGH,      // Sesión completamente válida</span>
+<span class="nc" id="L79">        MEDIUM,    // Sesión válida con advertencias</span>
+<span class="nc" id="L80">        LOW,       // Sesión válida pero sospechosa</span>
+<span class="nc" id="L81">        BLOCKED    // Sesión bloqueada</span>
+    }
+
+    /**
+     * Valida completamente una sesión JWT
+     */
+    public SessionValidationResult validateSession(String token, HttpServletRequest request) {
+        try {
+            // Verificar si el token está en blacklist
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            if (isTokenBlacklisted(token)) {</span>
+<span class="nc" id="L91">                auditService.logSecurityEvent(&quot;Token blacklisted usado: &quot; + getTokenSummary(token), </span>
+<span class="nc" id="L92">                    getClientIP(request), request.getHeader(&quot;User-Agent&quot;));</span>
+<span class="nc" id="L93">                return SessionValidationResult.invalid(&quot;Token en lista negra&quot;);</span>
+            }
+
+            // Validar estructura y firma del JWT
+<span class="nc" id="L97">            Claims claims = validateJwtToken(token);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (claims == null) {</span>
+<span class="nc" id="L99">                return SessionValidationResult.invalid(&quot;Token JWT inválido&quot;);</span>
+            }
+
+            // Validar usuario y obtener datos
+<span class="nc" id="L103">            String username = claims.getSubject();</span>
+<span class="nc bnc" id="L104" title="All 4 branches missed.">            if (username == null || username.trim().isEmpty()) {</span>
+<span class="nc" id="L105">                return SessionValidationResult.invalid(&quot;Usuario no encontrado en token&quot;);</span>
+            }
+
+            // Validar expiración
+<span class="nc" id="L109">            Date expiration = claims.getExpiration();</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            if (expiration.before(new Date())) {</span>
+<span class="nc" id="L111">                return SessionValidationResult.invalid(&quot;Token expirado&quot;);</span>
+            }
+
+            // Validaciones de seguridad adicionales
+<span class="nc" id="L115">            SecurityLevel securityLevel = performSecurityChecks(claims, request, username);</span>
+            
+<span class="nc bnc" id="L117" title="All 2 branches missed.">            if (securityLevel == SecurityLevel.BLOCKED) {</span>
+<span class="nc" id="L118">                return SessionValidationResult.invalid(&quot;Sesión bloqueada por seguridad&quot;);</span>
+            }
+
+            // Validar límites de sesiones concurrentes
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            if (!validateConcurrentSessions(username, token)) {</span>
+<span class="nc" id="L123">                auditService.logSecurityEvent(&quot;Exceso de sesiones concurrentes para usuario: &quot; + username,</span>
+<span class="nc" id="L124">                    getClientIP(request), request.getHeader(&quot;User-Agent&quot;));</span>
+<span class="nc" id="L125">                return SessionValidationResult.invalid(&quot;Demasiadas sesiones activas&quot;);</span>
+            }
+
+            // Actualizar última actividad
+<span class="nc" id="L129">            updateSessionActivity(username, token);</span>
+
+<span class="nc" id="L131">            return SessionValidationResult.valid(securityLevel);</span>
+
+<span class="nc" id="L133">        } catch (ExpiredJwtException e) {</span>
+<span class="nc" id="L134">            return SessionValidationResult.invalid(&quot;Token expirado&quot;);</span>
+<span class="nc" id="L135">        } catch (JwtException e) {</span>
+<span class="nc" id="L136">            auditService.logSecurityEvent(&quot;JWT inválido: &quot; + e.getMessage(),</span>
+<span class="nc" id="L137">                getClientIP(request), request.getHeader(&quot;User-Agent&quot;));</span>
+<span class="nc" id="L138">            return SessionValidationResult.invalid(&quot;Token malformado&quot;);</span>
+<span class="nc" id="L139">        } catch (Exception e) {</span>
+<span class="nc" id="L140">            auditService.logSecurityEvent(&quot;Error en validación de sesión: &quot; + e.getMessage(),</span>
+<span class="nc" id="L141">                getClientIP(request), request.getHeader(&quot;User-Agent&quot;));</span>
+<span class="nc" id="L142">            return SessionValidationResult.invalid(&quot;Error interno de validación&quot;);</span>
+        }
+    }
+
+    /**
+     * Valida el token JWT y extrae claims
+     */
+    private Claims validateJwtToken(String token) {
+        try {
+<span class="nc" id="L151">            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L152">            return Jwts.parserBuilder()</span>
+<span class="nc" id="L153">                .setSigningKey(key)</span>
+<span class="nc" id="L154">                .build()</span>
+<span class="nc" id="L155">                .parseClaimsJws(token)</span>
+<span class="nc" id="L156">                .getBody();</span>
+<span class="nc" id="L157">        } catch (Exception e) {</span>
+<span class="nc" id="L158">            return null;</span>
+        }
+    }
+
+    /**
+     * Realiza verificaciones de seguridad adicionales
+     */
+    private SecurityLevel performSecurityChecks(Claims claims, HttpServletRequest request, String username) {
+<span class="nc" id="L166">        SecurityLevel level = SecurityLevel.HIGH;</span>
+
+        // Verificar IP consistency (si está en el token)
+<span class="nc" id="L169">        String tokenIP = claims.get(&quot;ip&quot;, String.class);</span>
+<span class="nc" id="L170">        String currentIP = getClientIP(request);</span>
+<span class="nc bnc" id="L171" title="All 4 branches missed.">        if (tokenIP != null &amp;&amp; !tokenIP.equals(currentIP)) {</span>
+<span class="nc" id="L172">            level = SecurityLevel.MEDIUM;</span>
+<span class="nc" id="L173">            auditService.logSecurityEvent(&quot;Cambio de IP detectado para usuario &quot; + username + </span>
+<span class="nc" id="L174">                &quot;: de &quot; + tokenIP + &quot; a &quot; + currentIP, currentIP, request.getHeader(&quot;User-Agent&quot;));</span>
+        }
+
+        // Verificar User-Agent consistency
+<span class="nc" id="L178">        String tokenUA = claims.get(&quot;userAgent&quot;, String.class);</span>
+<span class="nc" id="L179">        String currentUA = request.getHeader(&quot;User-Agent&quot;);</span>
+<span class="nc bnc" id="L180" title="All 4 branches missed.">        if (tokenUA != null &amp;&amp; !tokenUA.equals(currentUA)) {</span>
+<span class="nc" id="L181">            level = SecurityLevel.LOW;</span>
+        }
+
+        // Verificar hora de emisión del token
+<span class="nc" id="L185">        Date issuedAt = claims.getIssuedAt();</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (issuedAt != null) {</span>
+<span class="nc" id="L187">            long hoursAgo = (System.currentTimeMillis() - issuedAt.getTime()) / (1000 * 60 * 60);</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">            if (hoursAgo &gt; 24) {</span>
+<span class="nc" id="L189">                level = SecurityLevel.LOW;</span>
+            }
+        }
+
+        // Verificar actividad sospechosa por IP
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (isSuspiciousActivity(currentIP)) {</span>
+<span class="nc" id="L195">            auditService.logSecurityEvent(&quot;Actividad sospechosa detectada desde IP: &quot; + currentIP,</span>
+<span class="nc" id="L196">                currentIP, request.getHeader(&quot;User-Agent&quot;));</span>
+<span class="nc" id="L197">            return SecurityLevel.BLOCKED;</span>
+        }
+
+<span class="nc" id="L200">        return level;</span>
+    }
+
+    /**
+     * Valida límites de sesiones concurrentes
+     */
+    private boolean validateConcurrentSessions(String username, String token) {
+<span class="nc" id="L207">        Set&lt;String&gt; userSessions = userActiveSessions.computeIfAbsent(username, k -&gt; ConcurrentHashMap.newKeySet());</span>
+        
+        // Limpiar tokens expirados
+<span class="nc" id="L210">        userSessions.removeIf(this::isTokenExpired);</span>
+        
+        // Si el token ya está en la lista, está bien
+<span class="nc bnc" id="L213" title="All 2 branches missed.">        if (userSessions.contains(getTokenSummary(token))) {</span>
+<span class="nc" id="L214">            return true;</span>
+        }
+        
+        // Si hay menos del límite, agregar y permitir
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        if (userSessions.size() &lt; MAX_CONCURRENT_SESSIONS) {</span>
+<span class="nc" id="L219">            userSessions.add(getTokenSummary(token));</span>
+<span class="nc" id="L220">            return true;</span>
+        }
+        
+        // Demasiadas sesiones
+<span class="nc" id="L224">        return false;</span>
+    }
+
+    /**
+     * Detecta actividad sospechosa
+     */
+    private boolean isSuspiciousActivity(String ipAddress) {
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (ipAddress == null) return false;</span>
+        
+        // Verificar si la IP ha tenido muchos intentos fallidos recientemente
+<span class="nc" id="L234">        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);</span>
+<span class="nc" id="L235">        List&lt;com.lsnls.entity.AuditLog&gt; recentActivity = auditService.findSuspiciousActivity(ipAddress, oneHourAgo, LocalDateTime.now());</span>
+        
+        // Si hay más de 10 eventos sospechosos en la última hora
+<span class="nc bnc" id="L238" title="All 2 branches missed.">        return recentActivity.size() &gt; 10;</span>
+    }
+
+    /**
+     * Blacklist de tokens
+     */
+    public void blacklistToken(String token) {
+<span class="nc" id="L245">        blacklistedTokens.add(getTokenSummary(token));</span>
+<span class="nc" id="L246">    }</span>
+
+    public boolean isTokenBlacklisted(String token) {
+<span class="nc" id="L249">        return blacklistedTokens.contains(getTokenSummary(token));</span>
+    }
+
+    /**
+     * Gestión de sesiones activas
+     */
+    public void addActiveSession(String username, String token) {
+<span class="nc" id="L256">        Set&lt;String&gt; userSessions = userActiveSessions.computeIfAbsent(username, k -&gt; ConcurrentHashMap.newKeySet());</span>
+<span class="nc" id="L257">        userSessions.add(getTokenSummary(token));</span>
+<span class="nc" id="L258">    }</span>
+
+    public void removeActiveSession(String username, String token) {
+<span class="nc" id="L261">        Set&lt;String&gt; userSessions = userActiveSessions.get(username);</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        if (userSessions != null) {</span>
+<span class="nc" id="L263">            userSessions.remove(getTokenSummary(token));</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">            if (userSessions.isEmpty()) {</span>
+<span class="nc" id="L265">                userActiveSessions.remove(username);</span>
+            }
+        }
+<span class="nc" id="L268">    }</span>
+
+    public int getActiveSessionsCount(String username) {
+<span class="nc" id="L271">        Set&lt;String&gt; userSessions = userActiveSessions.get(username);</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        return userSessions != null ? userSessions.size() : 0;</span>
+    }
+
+    /**
+     * Invalidar todas las sesiones de un usuario
+     */
+    public void invalidateAllUserSessions(String username) {
+<span class="nc" id="L279">        Set&lt;String&gt; userSessions = userActiveSessions.remove(username);</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">        if (userSessions != null) {</span>
+<span class="nc" id="L281">            blacklistedTokens.addAll(userSessions);</span>
+<span class="nc" id="L282">            auditService.logSecurityEvent(&quot;Todas las sesiones invalidadas para usuario: &quot; + username,</span>
+                null, null);
+        }
+<span class="nc" id="L285">    }</span>
+
+    /**
+     * Forzar cierre de sesión por seguridad
+     */
+    public void forceLogout(String username, String reason) {
+<span class="nc" id="L291">        invalidateAllUserSessions(username);</span>
+<span class="nc" id="L292">        auditService.logSecurityEvent(&quot;Logout forzado para usuario &quot; + username + &quot;: &quot; + reason,</span>
+            null, null);
+<span class="nc" id="L294">    }</span>
+
+    /**
+     * Validar timeout de sesión
+     */
+    public boolean isSessionTimedOut(Claims claims, Usuario.RolUsuario userRole) {
+<span class="nc" id="L300">        Date lastActivity = claims.get(&quot;lastActivity&quot;, Date.class);</span>
+<span class="nc bnc" id="L301" title="All 2 branches missed.">        if (lastActivity == null) {</span>
+<span class="nc" id="L302">            lastActivity = claims.getIssuedAt();</span>
+        }
+
+<span class="nc bnc" id="L305" title="All 2 branches missed.">        if (lastActivity == null) {</span>
+<span class="nc" id="L306">            return true; // Sin actividad registrada, considerar expirado</span>
+        }
+
+<span class="nc bnc" id="L309" title="All 4 branches missed.">        int timeoutMinutes = (userRole == Usuario.RolUsuario.ROLE_ADMIN || userRole == Usuario.RolUsuario.ROLE_DIRECCION) </span>
+<span class="nc" id="L310">            ? ADMIN_SESSION_TIMEOUT_MINUTES </span>
+<span class="nc" id="L311">            : SESSION_TIMEOUT_MINUTES;</span>
+
+<span class="nc" id="L313">        long minutesSinceActivity = (System.currentTimeMillis() - lastActivity.getTime()) / (1000 * 60);</span>
+<span class="nc bnc" id="L314" title="All 2 branches missed.">        return minutesSinceActivity &gt; timeoutMinutes;</span>
+    }
+
+    /**
+     * Métodos auxiliares
+     */
+    private void updateSessionActivity(String username, String token) {
+        // En una implementación real, actualizarías el timestamp en el token o base de datos
+        // Por simplicidad, solo registramos la actividad
+<span class="nc" id="L323">    }</span>
+
+    private String getTokenSummary(String token) {
+<span class="nc bnc" id="L326" title="All 4 branches missed.">        if (token == null || token.length() &lt; 20) {</span>
+<span class="nc" id="L327">            return token;</span>
+        }
+        // Retornar solo una parte del token para identificación
+<span class="nc" id="L330">        return token.substring(0, 10) + &quot;...&quot; + token.substring(token.length() - 10);</span>
+    }
+
+    private boolean isTokenExpired(String tokenSummary) {
+        // En una implementación real, validarías cada token
+        // Por simplicidad, asumimos que si no está en blacklist, puede estar activo
+<span class="nc" id="L336">        return blacklistedTokens.contains(tokenSummary);</span>
+    }
+
+    private String getClientIP(HttpServletRequest request) {
+<span class="nc" id="L340">        String xForwardedFor = request.getHeader(&quot;X-Forwarded-For&quot;);</span>
+<span class="nc bnc" id="L341" title="All 4 branches missed.">        if (xForwardedFor != null &amp;&amp; !xForwardedFor.isEmpty()) {</span>
+<span class="nc" id="L342">            return xForwardedFor.split(&quot;,&quot;)[0].trim();</span>
+        }
+        
+<span class="nc" id="L345">        String xRealIp = request.getHeader(&quot;X-Real-IP&quot;);</span>
+<span class="nc bnc" id="L346" title="All 4 branches missed.">        if (xRealIp != null &amp;&amp; !xRealIp.isEmpty()) {</span>
+<span class="nc" id="L347">            return xRealIp;</span>
+        }
+        
+<span class="nc" id="L350">        return request.getRemoteAddr();</span>
+    }
+
+    /**
+     * Obtener estadísticas de sesiones
+     */
+    public Map&lt;String, Object&gt; getSessionStats() {
+<span class="nc" id="L357">        Map&lt;String, Object&gt; stats = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L358">        stats.put(&quot;totalActiveUsers&quot;, userActiveSessions.size());</span>
+<span class="nc" id="L359">        stats.put(&quot;totalActiveSessions&quot;, userActiveSessions.values().stream().mapToInt(Set::size).sum());</span>
+<span class="nc" id="L360">        stats.put(&quot;blacklistedTokens&quot;, blacklistedTokens.size());</span>
+<span class="nc" id="L361">        stats.put(&quot;timestamp&quot;, LocalDateTime.now());</span>
+<span class="nc" id="L362">        return stats;</span>
+    }
+
+    /**
+     * Limpieza periódica de tokens expirados
+     */
+    public void cleanupExpiredTokens() {
+        // Limpiar tokens blacklisted antiguos (más de 24 horas)
+<span class="nc" id="L370">        blacklistedTokens.clear(); // En producción, filtrar por fecha</span>
+        
+        // Limpiar sesiones inactivas
+<span class="nc" id="L373">        userActiveSessions.entrySet().removeIf(entry -&gt; {</span>
+<span class="nc" id="L374">            entry.getValue().removeIf(this::isTokenExpired);</span>
+<span class="nc" id="L375">            return entry.getValue().isEmpty();</span>
+        });
+<span class="nc" id="L377">    }</span>
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -26,6 +26,9 @@ public class TematicaService {
     @Autowired
     private ComboRepository comboRepository;
 
+    @Autowired
+    private UndoService undoService;
+
     /**
      * Obtiene todas las temáticas ordenadas por nombre
      */
@@ -51,7 +54,12 @@ public class TematicaService {
         
         // Crear nueva temática
         Tematica tematica = new Tematica(nombre, usuario);
-        return tematicaRepository.save(tematica);
+        Tematica guardada = tematicaRepository.save(tematica);
+        if (guardada.getId() != null) {
+            undoService.registrar("añadir_tematica", "Añadir temática " + guardada.getNombre(),
+                    java.util.Collections.singletonList(UndoService.accionEliminarFila("tematicas", guardada.getId())));
+        }
+        return guardada;
     }
 
     /**
@@ -81,9 +89,19 @@ public class TematicaService {
                 tematicaRepository.existsByNombreIgnoreCase(nuevoNombre)) {
                 throw new IllegalArgumentException("Ya existe una temática con el nombre: " + nuevoNombre);
             }
-            
+
+            String nombreAnterior = tematica.getNombre();
             tematica.setNombre(nuevoNombre);
-            return tematicaRepository.save(tematica);
+            Tematica guardada = tematicaRepository.save(tematica);
+            if (nombreAnterior != null && !nombreAnterior.equals(nuevoNombre)) {
+                java.util.Map<String, Object> camposPrevios = new java.util.HashMap<>();
+                camposPrevios.put("nombre", nombreAnterior);
+                undoService.registrar("renombrar_tematica",
+                        "Renombrar temática " + nombreAnterior + " → " + nuevoNombre,
+                        java.util.Collections.singletonList(
+                                UndoService.accionActualizarCampos("tematicas", id, camposPrevios)));
+            }
+            return guardada;
         }
         return null;
     }
@@ -102,6 +120,7 @@ public class TematicaService {
         if (usadosEnCuestionarios > 0 || usadosEnCombos > 0) {
             throw new IllegalStateException("No se puede eliminar la temática, hay cuestionarios/combos con ella");
         }
+        registrarUndoEliminarTematica(tematicaOpt.get());
         tematicaRepository.deleteById(id);
         return true;
     }
@@ -119,8 +138,20 @@ public class TematicaService {
         if (usadosEnCuestionarios > 0 || usadosEnCombos > 0) {
             throw new IllegalStateException("No se puede eliminar la temática, hay cuestionarios/combos con ella");
         }
+        registrarUndoEliminarTematica(tematicaOpt.get());
         tematicaRepository.delete(tematicaOpt.get());
         return true;
+    }
+
+    private void registrarUndoEliminarTematica(Tematica tematica) {
+        if (tematica.getId() == null) {
+            return;
+        }
+        java.util.Map<String, Object> fila = undoService.snapshotFila("tematicas", tematica.getId());
+        if (fila != null) {
+            undoService.registrar("eliminar_tematica", "Eliminar temática " + tematica.getNombre(),
+                    java.util.Collections.singletonList(UndoService.accionInsertarFila("tematicas", fila)));
+        }
     }
 
     /**

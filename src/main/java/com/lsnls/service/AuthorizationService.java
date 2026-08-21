@@ -258,17 +258,18 @@ public class AuthorizationService {
                 }
                 
                 switch (estado.toUpperCase()) {
-                    case "BORRADOR":
+                    case "GRABADO":
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
-                    case "GRABADO":
                     case "EDITADO":
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
                     case "PROGRAMADO":
+                    case "EMITIDO":
+                    case "ARCHIVADO":
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
                     default:

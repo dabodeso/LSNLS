@@ -263,6 +263,20 @@ CREATE TABLE IF NOT EXISTS edit_locks (
     UNIQUE KEY uk_edit_locks_entity (entity_type, entity_id)
 );
 
+-- Operaciones deshacibles (Ctrl+Z respaldado por backend)
+-- Guarda, por usuario, las acciones inversas necesarias para revertir una operación.
+-- Retención: máximo 50 operaciones por usuario y máximo 1 hora de antigüedad.
+CREATE TABLE IF NOT EXISTS operaciones_undo (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id BIGINT NOT NULL,
+    tipo_operacion VARCHAR(64) NOT NULL,
+    descripcion VARCHAR(500),
+    datos_undo LONGTEXT NOT NULL,
+    fecha_creacion datetime(6) NOT NULL,
+    deshecha TINYINT(1) NOT NULL DEFAULT 0,
+    INDEX idx_undo_usuario_fecha (usuario_id, fecha_creacion)
+);
+
 -- Registro de auditoría de operaciones críticas
 CREATE TABLE IF NOT EXISTS audit_logs (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

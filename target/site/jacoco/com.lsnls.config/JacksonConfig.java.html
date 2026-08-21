@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JacksonConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.config</a> &gt; <span class="el_source">JacksonConfig.java</span></div><h1>JacksonConfig.java</h1><pre class="source lang-java linenums">package com.lsnls.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.MediaType;
+import java.util.Arrays;
+
+@Configuration
+<span class="nc" id="L13">public class JacksonConfig {</span>
+
+    @Bean
+    public ObjectMapper objectMapper() {
+<span class="nc" id="L17">        ObjectMapper mapper = new ObjectMapper();</span>
+<span class="nc" id="L18">        mapper.registerModule(new JavaTimeModule());</span>
+<span class="nc" id="L19">        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);</span>
+<span class="nc" id="L20">        return mapper;</span>
+    }
+
+    @Bean
+    public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter(ObjectMapper objectMapper) {
+<span class="nc" id="L25">        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();</span>
+<span class="nc" id="L26">        converter.setObjectMapper(objectMapper);</span>
+<span class="nc" id="L27">        converter.setSupportedMediaTypes(Arrays.asList(</span>
+            MediaType.APPLICATION_JSON,
+<span class="nc" id="L29">            MediaType.valueOf(&quot;application/json;charset=UTF-8&quot;)</span>
+        ));
+<span class="nc" id="L31">        return converter;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

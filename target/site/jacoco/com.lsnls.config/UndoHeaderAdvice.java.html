@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UndoHeaderAdvice.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.config</a> &gt; <span class="el_source">UndoHeaderAdvice.java</span></div><h1>UndoHeaderAdvice.java</h1><pre class="source lang-java linenums">package com.lsnls.config;
+
+import com.lsnls.service.UndoService;
+import org.springframework.core.MethodParameter;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
+
+/**
+ * Añade a la respuesta HTTP la cabecera X-Undo-Operacion-Id cuando la petición
+ * registró una operación deshacible, para que el frontend pueda ofrecer Ctrl+Z
+ * llamando a POST /api/undo/{id}.
+ */
+@RestControllerAdvice
+<span class="nc" id="L18">public class UndoHeaderAdvice implements ResponseBodyAdvice&lt;Object&gt; {</span>
+
+    @Override
+    public boolean supports(MethodParameter returnType, Class&lt;? extends HttpMessageConverter&lt;?&gt;&gt; converterType) {
+<span class="nc" id="L22">        return true;</span>
+    }
+
+    @Override
+    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
+            Class&lt;? extends HttpMessageConverter&lt;?&gt;&gt; selectedConverterType,
+            ServerHttpRequest request, ServerHttpResponse response) {
+<span class="nc" id="L29">        Long operacionId = UndoService.consumirUltimaOperacionId();</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (operacionId != null) {</span>
+<span class="nc" id="L31">            response.getHeaders().set(UndoService.HEADER_OPERACION, String.valueOf(operacionId));</span>
+<span class="nc" id="L32">            response.getHeaders().set(&quot;Access-Control-Expose-Headers&quot;, UndoService.HEADER_OPERACION);</span>
+        }
+<span class="nc" id="L34">        return body;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

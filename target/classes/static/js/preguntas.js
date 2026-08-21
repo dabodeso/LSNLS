@@ -382,11 +382,11 @@ const PreguntasManager = {
         paginacionContainer.appendChild(paginaAnterior);
 
         // Calcular rango de páginas a mostrar
-        const inicio = Math.max(0, this.paginaActual - 2);
-        const fin = Math.min(this.totalPaginas - 1, this.paginaActual + 2);
+        const inicioRango = Math.max(0, this.paginaActual - 2);
+        const finRango = Math.min(this.totalPaginas - 1, this.paginaActual + 2);
 
         // Mostrar páginas en el rango
-        for (let i = inicio; i <= fin; i++) {
+        for (let i = inicioRango; i <= finRango; i++) {
             const pagina = document.createElement('li');
             pagina.className = `page-item ${i === this.paginaActual ? 'active' : ''}`;
             pagina.innerHTML = `<a class="page-link" href="#" onclick="PreguntasManager.irAPagina(${i})">${i + 1}</a>`;
@@ -692,40 +692,6 @@ const PreguntasManager = {
         return false;
     },
 
-    async restaurarPreguntaEliminada(snapshot) {
-        const payload = { ...snapshot };
-        if (payload.nivel) payload.nivel = this.normalizarEnumSnapshot(payload.nivel);
-        if (payload.estado) payload.estado = this.normalizarEnumSnapshot(payload.estado);
-        if (payload.factor) payload.factor = this.normalizarEnumSnapshot(payload.factor);
-        if (!payload.id) {
-            throw new Error('No se puede restaurar la pregunta sin ID');
-        }
-
-        const crearResp = await fetch('/api/preguntas/restaurar', {
-            method: 'POST',
-            headers: {
-                ...authManager.getAuthHeaders(),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-        if (!crearResp.ok) {
-            let msg = 'No se pudo deshacer la eliminación';
-            try {
-                const errText = await crearResp.text();
-                if (errText) msg = errText;
-            } catch {}
-            throw new Error(msg);
-        }
-
-        const creada = await crearResp.json();
-        const idRestaurado = creada?.id ?? payload.id;
-        if (!idRestaurado) {
-            throw new Error('No se pudo obtener el ID de la pregunta restaurada');
-        }
-        return idRestaurado;
-    },
-
     // Función para cargar los usuarios en el filtro de autoría
     async cargarUsuariosEnFiltro() {
         try {
@@ -878,8 +844,11 @@ const PreguntasManager = {
                     const creada = await response.json();
                     const createdId = creada?.id;
                     if (window.UndoManager && createdId) {
+                        // Id mutable: al rehacer se crea una pregunta con id nuevo
+                        // y el siguiente undo debe borrar ese id, no el original
+                        const estadoUndo = { id: createdId };
                         const undoAction = async () => {
-                            const del = await fetch(`/api/preguntas/${createdId}`, {
+                            const del = await fetch(`/api/preguntas/${estadoUndo.id}`, {
                                 method: 'DELETE',
                                 headers: authManager.getAuthHeaders()
                             });
@@ -896,6 +865,10 @@ const PreguntasManager = {
                                 body: JSON.stringify(preguntaData)
                             });
                             if (!r.ok) throw new Error('No se pudo rehacer la creación');
+                            try {
+                                const recreada = await r.json();
+                                if (recreada?.id) estadoUndo.id = recreada.id;
+                            } catch {}
                             await this.recargarConFiltros();
                         };
                         window.UndoManager.record({ do: redoAction, undo: undoAction, label: `Crear pregunta ${createdId}` });
@@ -1083,7 +1056,7 @@ const PreguntasManager = {
 
     async editarCelda(id, campo, td) {
         // Evitar múltiples inputs
-        if (td.querySelector('input,select')) return;
+        if (td.querySelector('input,select,textarea')) return;
         
         // No permitir editar campos de autoría
         if (campo === 'creacionUsuario' || campo === 'creacionUsuarioNombre') {
@@ -1142,6 +1115,13 @@ const PreguntasManager = {
                 if (valorOriginal === opt) option.selected = true;
                 input.appendChild(option);
             });
+        } else if (['pregunta', 'respuesta', 'datosExtra', 'fuentes', 'notasVerificacion', 'notasDireccion'].includes(campo)) {
+            input = document.createElement('textarea');
+            input.rows = 3;
+            input.value = valorOriginal;
+            input.style.resize = 'both';
+            input.style.minWidth = '100%';
+            input.style.minHeight = '4em';
         } else {
             input = document.createElement('input');
             input.type = 'text';
@@ -1162,7 +1142,7 @@ const PreguntasManager = {
         } else {
             input.onblur = async () => await this.guardarCelda(id, campo, input, td, valorOriginal);
             input.onkeydown = async (e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && input.tagName !== 'TEXTAREA') {
                     input.blur();
                 } else if (e.key === 'Escape') {
                     td.innerHTML = valorOriginal;
@@ -1448,72 +1428,11 @@ const PreguntasManager = {
     },
 
     async eliminarPregunta(id) {
-        if (!confirm('¿Seguro que quieres borrar esta pregunta?')) return;
+        if (!confirm('¿Seguro que quieres borrar esta pregunta?\n\nPodrás deshacerlo con Ctrl+Z durante la próxima hora.')) return;
         try {
-            // Snapshot previo para permitir deshacer
-            let snapshot = null;
-            try {
-                const snapResp = await fetch(`/api/preguntas/${id}`, {
-                    headers: authManager.getAuthHeaders()
-                });
-                if (snapResp.ok) {
-                    snapshot = await snapResp.json();
-                }
-            } catch (e) {
-                console.warn('⚠️ [UNDO] No se pudo obtener snapshot previo de la pregunta:', e);
-            }
-
-            const response = await fetch(`/api/preguntas/${id}`, {
-                method: 'DELETE',
-                headers: authManager.getAuthHeaders()
-            });
-            if (!response.ok) {
-                throw new Error(await Utils.mensajeDesdeResponse(response, 'eliminar preguntas'));
-            }
-
-            // Registrar undo/redo para eliminación (restaurar y mostrar la pregunta)
-            if (window.UndoManager && snapshot) {
-                const estadoUndo = { recreatedId: null, idOriginal: id };
-
-                const undoAction = async () => {
-                    const idRestaurado = await PreguntasManager.restaurarPreguntaEliminada(snapshot);
-                    estadoUndo.recreatedId = idRestaurado;
-                    await PreguntasManager.recargarConFiltros();
-                    const fila = document.querySelector(`#tabla-preguntas tr[data-id='${idRestaurado}']`);
-                    if (fila) PreguntasManager.resaltarFilaPregunta(fila);
-                    Utils.mostrarToastExito(`Pregunta #${idRestaurado} restaurada`, 4000);
-                };
-
-                const doAction = async () => {
-                    let targetId = estadoUndo.recreatedId;
-                    if (!targetId) {
-                        try {
-                            await this.recargarConFiltros();
-                            const match = (this.preguntas || []).find(
-                                p => p.pregunta === snapshot.pregunta && p.respuesta === snapshot.respuesta
-                            );
-                            if (match) targetId = match.id;
-                        } catch {}
-                    }
-                    if (!targetId) return;
-                    const r = await fetch(`/api/preguntas/${targetId}`, {
-                        method: 'DELETE',
-                        headers: authManager.getAuthHeaders()
-                    });
-                    if (!r.ok) throw new Error('No se pudo rehacer la eliminación');
-                    estadoUndo.recreatedId = null;
-                    await this.recargarConFiltros();
-                };
-
-                window.UndoManager.record({
-                    do: doAction,
-                    undo: undoAction,
-                    label: `Eliminar pregunta ${id}`,
-                    skipPageRefresh: true
-                });
-            } else if (!snapshot) {
-                console.warn('⚠️ [UNDO] Sin snapshot previo; no se puede deshacer la eliminación');
-            }
+            // El backend registra la operación deshacible y restaura la pregunta
+            // con su mismo id al deshacer
+            await apiManager.deleteUndoable(`/api/preguntas/${id}`, { label: `Eliminar pregunta ${id}` });
 
             await this.recargarConFiltros();
             Utils.mostrarToastExito('Pregunta eliminada');
@@ -1603,7 +1522,7 @@ const PreguntasManager = {
         } catch (error) {
             console.error('Error al buscar apariciones:', error);
             document.getElementById('apariciones-resumen').innerHTML = `
-                <i class="fas fa-exclamation-triangle"></i> Error al buscar apariciones: ${error.message}
+                <i class="fas fa-exclamation-triangle"></i> No se han podido buscar las apariciones. Inténtalo de nuevo.
             `;
             document.getElementById('apariciones-resumen').className = 'alert alert-danger mb-3';
         }
@@ -1713,7 +1632,7 @@ const PreguntasManager = {
         } catch (error) {
             console.error('Error al buscar apariciones:', error);
             document.getElementById('apariciones-resumen').innerHTML = `
-                <i class="fas fa-exclamation-triangle"></i> Error al buscar apariciones: ${error.message}
+                <i class="fas fa-exclamation-triangle"></i> No se han podido buscar las apariciones. Inténtalo de nuevo.
             `;
             document.getElementById('apariciones-resumen').className = 'alert alert-danger mb-3';
         }
@@ -2228,21 +2147,9 @@ const TemasManager = {
 
     async añadirTema(nombreTema) {
         try {
-            const response = await fetch('/api/temas', {
-                method: 'POST',
-                headers: {
-                    ...authManager.getAuthHeaders(),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ tema: nombreTema })
+            const result = await apiManager.postUndoableBackend('/api/temas', { tema: nombreTema }, {
+                label: `Añadir temática ${nombreTema}`
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText);
-            }
-
-            const result = await response.json();
             mostrarExito(result.mensaje);
             
             // Recargar datos
@@ -2259,21 +2166,9 @@ const TemasManager = {
 
     async añadirSubtema(nombreSubtema) {
         try {
-            const response = await fetch('/api/temas/subtemas', {
-                method: 'POST',
-                headers: {
-                    ...authManager.getAuthHeaders(),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ subtema: nombreSubtema })
+            const result = await apiManager.postUndoableBackend('/api/temas/subtemas', { subtema: nombreSubtema }, {
+                label: `Añadir subtema ${nombreSubtema}`
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText);
-            }
-
-            const result = await response.json();
             mostrarExito(result.mensaje);
             
             // Recargar datos
@@ -2289,23 +2184,15 @@ const TemasManager = {
     },
 
     async eliminarTema(nombreTema) {
-        if (!confirm(`¿Estás seguro de que quieres eliminar el tema "${nombreTema}"?`)) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar el tema "${nombreTema}"?\n\nPodrás deshacerlo con Ctrl+Z durante la próxima hora.`)) {
             return;
         }
 
         try {
-            const response = await fetch(`/api/temas/${encodeURIComponent(nombreTema)}`, {
-                method: 'DELETE',
-                headers: authManager.getAuthHeaders()
+            const result = await apiManager.deleteUndoable(`/api/temas/${encodeURIComponent(nombreTema)}`, {
+                label: `Eliminar temática ${nombreTema}`
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText);
-            }
-
-            const result = await response.json();
-            mostrarExito(result.mensaje);
+            mostrarExito(result?.mensaje || 'Tema eliminado correctamente');
             
             // Recargar datos
             await this.cargarTemas();
@@ -2317,23 +2204,15 @@ const TemasManager = {
     },
 
     async eliminarSubtema(nombreSubtema) {
-        if (!confirm(`¿Estás seguro de que quieres eliminar el subtema "${nombreSubtema}"?`)) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar el subtema "${nombreSubtema}"?\n\nPodrás deshacerlo con Ctrl+Z durante la próxima hora.`)) {
             return;
         }
 
         try {
-            const response = await fetch(`/api/temas/subtemas/${encodeURIComponent(nombreSubtema)}`, {
-                method: 'DELETE',
-                headers: authManager.getAuthHeaders()
+            const result = await apiManager.deleteUndoable(`/api/temas/subtemas/${encodeURIComponent(nombreSubtema)}`, {
+                label: `Eliminar subtema ${nombreSubtema}`
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText);
-            }
-
-            const result = await response.json();
-            mostrarExito(result.mensaje);
+            mostrarExito(result?.mensaje || 'Subtema eliminado correctamente');
             
             // Recargar datos
             await this.cargarSubtemas();

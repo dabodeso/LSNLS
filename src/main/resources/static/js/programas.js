@@ -310,7 +310,7 @@ function mostrarProgramas() {
                                     : `<span class="programa-info-readonly">${fechaFormateada}</span>`}
                             </div>
                         </div>
-                        <div class="programa-info-item">
+                        <div class="programa-info-item" data-campo="premios">
                             <div class="programa-info-label">Total Premios</div>
                             <div class="programa-info-value">
                                 <span class="programa-info-readonly">${totalResultados}€</span>
@@ -328,10 +328,30 @@ function mostrarProgramas() {
                                     : `<span class="programa-info-readonly">${duracionObjetivo}</span>`}
                             </div>
                         </div>
-                        <div class="programa-info-item">
+                        <div class="programa-info-item" data-campo="gap">
                             <div class="programa-info-label">GAP</div>
                             <div class="programa-info-value">
                                 <span class="programa-info-readonly">${gap}</span>
+                            </div>
+                        </div>
+                        <div class="programa-recuadros">
+                            <div class="programa-recuadro">
+                                <div class="programa-info-label">Créditos especiales</div>
+                                ${editProg
+                                    ? `<textarea class="editable-field programa-creditos-textarea"
+                                                 rows="2"
+                                                 placeholder="Créditos especiales..."
+                                                 onblur="actualizarCreditosEspecialesPrograma(${programa.id}, this.value)">${programa.creditosEspeciales || ''}</textarea>`
+                                    : `<p class="editable-field programa-creditos-textarea" style="cursor:default; pointer-events:none; margin:0;">${programa.creditosEspeciales || ''}</p>`}
+                            </div>
+                            <div class="programa-recuadro">
+                                <div class="programa-info-label">Notas del programa</div>
+                                ${editProg
+                                    ? `<textarea class="editable-field programa-creditos-textarea"
+                                                 rows="2"
+                                                 placeholder="Notas internas..."
+                                                 onblur="actualizarNotasPrograma(${programa.id}, this.value)">${programa.notas || ''}</textarea>`
+                                    : `<p class="editable-field programa-creditos-textarea" style="cursor:default; pointer-events:none; margin:0;">${programa.notas || ''}</p>`}
                             </div>
                         </div>
                         <div class="programa-acciones">
@@ -339,24 +359,6 @@ function mostrarProgramas() {
                                 <i class="fas fa-trash"></i>
                             </button>` : ''}
                         </div>
-                    </div>
-                    <div class="programa-creditos mt-2">
-                        <div class="programa-info-label" style="text-align:left; margin-bottom:6px;">CRÉDITOS ESPECIALES (Programa)</div>
-                        ${editProg
-                            ? `<textarea class="editable-field programa-creditos-textarea"
-                                         rows="2"
-                                         placeholder="Créditos especiales del programa..."
-                                         onblur="actualizarCreditosEspecialesPrograma(${programa.id}, this.value)">${programa.creditosEspeciales || ''}</textarea>`
-                            : `<p class="editable-field programa-creditos-textarea" style="cursor:default; pointer-events:none; min-height:44px; margin:0;">${programa.creditosEspeciales || ''}</p>`}
-                    </div>
-                    <div class="programa-creditos mt-2">
-                        <div class="programa-info-label" style="text-align:left; margin-bottom:6px;">NOTAS DEL PROGRAMA</div>
-                        ${editProg
-                            ? `<textarea class="editable-field programa-creditos-textarea"
-                                         rows="2"
-                                         placeholder="Notas internas del programa..."
-                                         onblur="actualizarNotasPrograma(${programa.id}, this.value)">${programa.notas || ''}</textarea>`
-                            : `<p class="editable-field programa-creditos-textarea" style="cursor:default; pointer-events:none; min-height:44px; margin:0;">${programa.notas || ''}</p>`}
                     </div>
                 </div>
                 
@@ -446,7 +448,7 @@ function mostrarProgramas() {
                                             </td>
                                             <td class="col-momentos">
                                                 ${editConc
-                                                    ? `<textarea class="campo-editable"
+                                                    ? `<textarea class="campo-editable campo-momentos"
                                                                  onchange="actualizarCampoConcursante(${concursante.id}, 'momentosDestacados', this.value)"
                                                                  onclick="event.stopPropagation()"
                                                                  placeholder="Momentos destacados"
@@ -574,14 +576,24 @@ async function actualizarNotasPrograma(programaId, notas) {
 function autoResizeTextareasEnProgramas() {
     const textareas = document.querySelectorAll('.concursantes-table textarea.campo-editable');
     const autoResize = (el) => {
+        if (el.dataset.userResized === '1') return;
         el.style.height = 'auto';
-        el.style.overflow = 'hidden';
         el.style.height = `${el.scrollHeight}px`;
     };
     textareas.forEach((ta) => {
         autoResize(ta);
         ta.addEventListener('input', () => autoResize(ta));
-        ta.addEventListener('change', () => autoResize(ta));
+        ta.addEventListener('mousedown', () => {
+            const startW = ta.offsetWidth;
+            const startH = ta.offsetHeight;
+            const onUp = () => {
+                if (Math.abs(ta.offsetWidth - startW) > 2 || Math.abs(ta.offsetHeight - startH) > 2) {
+                    ta.dataset.userResized = '1';
+                }
+                window.removeEventListener('mouseup', onUp);
+            };
+            window.addEventListener('mouseup', onUp);
+        });
     });
 }
 
@@ -892,11 +904,12 @@ async function actualizarCampoConcursante(concursanteId, campo, valor) {
                     const programa = programas.find(p => p.id === programaId);
                     const duracionObjetivo = programa ? (programa.duracionObjetivo || '45m') : '45m';
                     const gap = calcularGap(duracionObjetivo, duracionReal);
-                    programaContainer.querySelector('.programa-info-item:nth-child(8) .programa-info-readonly').textContent = gap;
+                    const gapElement = programaContainer.querySelector('[data-campo="gap"] .programa-info-readonly');
+                    if (gapElement) gapElement.textContent = gap;
 
                     if (campo === 'resultado') {
                         const nuevoTotalResultados = calcularTotalResultados(concursantes);
-                        const premiosElement = programaContainer.querySelector('.programa-info-item:nth-child(6) .programa-info-readonly');
+                        const premiosElement = programaContainer.querySelector('[data-campo="premios"] .programa-info-readonly');
                         if (premiosElement) {
                             premiosElement.textContent = nuevoTotalResultados + '€';
                         }
@@ -1266,22 +1279,16 @@ async function subirFotoConcursante(concursanteId, file) {
         // Crear FormData para enviar el archivo
         const formData = new FormData();
         formData.append('foto', file);
-        
-        // Subir la foto
-        const response = await fetch(`/api/concursantes/${concursanteId}/foto`, {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + localStorage.getItem('token')
-            },
-            body: formData
+        const endpoint = `/api/concursantes/${concursanteId}/foto`;
+        await apiManager.postFormDataUndoable(endpoint, formData, {
+            label: `Cambiar foto del concursante ${concursanteId}`,
+            redo: async () => {
+                const rehacer = new FormData();
+                rehacer.append('foto', file);
+                await apiManager.postMultipart(endpoint, rehacer);
+            }
         });
-        
-        if (!response.ok) {
-            throw new Error(await Utils.mensajeDesdeResponse(response, 'subir la foto del concursante'));
-        }
-        
-        const resultado = await response.json();
-        
+
         // Actualizar la vista
         await recargarProgramas();
         mostrarMensaje('Foto subida correctamente', 'success');
@@ -1645,7 +1652,27 @@ async function quitarConcursanteDePrograma(concursanteId, event) {
     }
     
     try {
-        await apiManager.deleteUndoable(`/api/concursantes/${concursanteId}/desasignar-programa`, { label: `Desasignar programa de concursante ${concursanteId}`, snapshotEndpoint: `/api/concursantes/${concursanteId}` });
+        // Capturar programa y posición actuales para poder deshacer reasignando
+        let programaPrevio = null;
+        let posicionPrevia = null;
+        try {
+            const snap = await apiManager.get(`/api/concursantes/${concursanteId}`);
+            programaPrevio = snap?.numeroPrograma ?? null;
+            posicionPrevia = snap?.numeroConcursante ?? null;
+        } catch (e) {
+            console.warn('No se pudo capturar el programa previo del concursante:', e);
+        }
+
+        await apiManager.delete(`/api/concursantes/${concursanteId}/desasignar-programa`);
+
+        if (window.UndoManager && programaPrevio != null) {
+            const queryPos = (posicionPrevia != null) ? `?posicion=${encodeURIComponent(posicionPrevia)}` : '';
+            window.UndoManager.record({
+                do: async () => { await apiManager.delete(`/api/concursantes/${concursanteId}/desasignar-programa`); },
+                undo: async () => { await apiManager.post(`/api/concursantes/${concursanteId}/asignar-programa/${programaPrevio}${queryPos}`, {}); },
+                label: `Quitar concursante ${concursanteId} del programa ${programaPrevio}`
+            });
+        }
         
         // Recargar programas
         await recargarProgramas();
@@ -1745,9 +1772,9 @@ async function cambiarPagina(nuevaPagina) {
 document.addEventListener('DOMContentLoaded', inicializarProgramas); 
 
 async function eliminarPrograma(programaId) {
-    if (!confirm('¿Seguro que deseas borrar este programa? Esta acción no se puede deshacer.')) return;
+    if (!confirm('¿Seguro que deseas borrar este programa?\n\nPodrás deshacerlo con Ctrl+Z durante la próxima hora.')) return;
     try {
-        await apiManager.deleteUndoable(`/api/programas/${programaId}`, { label: `Eliminar programa ${programaId}`, snapshotEndpoint: `/api/programas/${programaId}` });
+        await apiManager.deleteUndoable(`/api/programas/${programaId}`, { label: `Eliminar programa ${programaId}` });
         mostrarExito('Programa eliminado');
         await recargarProgramas();
     } catch (error) {
@@ -1788,6 +1815,7 @@ function sincronizarAnchosCabeceraCuerpo(contenedor) {
     // Re-ajustar altura de textareas tras cambio de anchos de columna
     requestAnimationFrame(() => {
         bodyTable.querySelectorAll('textarea.campo-editable').forEach(ta => {
+            if (ta.dataset.userResized === '1') return;
             ta.style.height = 'auto';
             ta.style.height = ta.scrollHeight + 'px';
         });

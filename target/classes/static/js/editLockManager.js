@@ -10,12 +10,11 @@ const EditLockManager = {
 
     async parseErrorResponse(response) {
         const text = await response.text();
-        try {
-            const parsed = JSON.parse(text);
-            return parsed.message || parsed.error || text;
-        } catch (e) {
-            return text || 'Otro usuario está editando este elemento.';
+        if (typeof Utils !== 'undefined' && Utils.mensajeErrorHttp) {
+            const detalle = Utils.extraerDetalleErrorCuerpo(text);
+            return Utils.mensajeErrorHttp(response.status, detalle, 'editar este elemento');
         }
+        return 'Otro usuario está editando este elemento. Inténtalo más tarde.';
     },
 
     async tryAcquire(entityType, entityId) {

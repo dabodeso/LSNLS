@@ -50,6 +50,9 @@ public class PreguntaService {
     private PreguntaComboRepository preguntaComboRepository;
 
     @Autowired
+    private UndoService undoService;
+
+    @Autowired
     private EntityManager entityManager;
     
     @Autowired(required = false)
@@ -662,8 +665,16 @@ public class PreguntaService {
                 combosCount + " combo(s). Quítala de los combos primero.");
         }
 
+        // UNDO: capturar la fila completa antes de borrar (se reinsertará con el mismo id)
+        Map<String, Object> filaPregunta = undoService.snapshotFila("preguntas", id);
+
         // Si llegamos aquí, es seguro eliminar
         preguntaRepository.deleteById(id);
+
+        if (filaPregunta != null) {
+            undoService.registrar("eliminar_pregunta", "Eliminar pregunta " + id,
+                Collections.singletonList(UndoService.accionInsertarFila("preguntas", filaPregunta)));
+        }
     }
     
     /**
@@ -857,8 +868,16 @@ public class PreguntaService {
                 combosCount + " combo(s). Quítala de los combos primero.");
         }
 
+        // UNDO: capturar la fila completa antes de borrar (se reinsertará con el mismo id)
+        Map<String, Object> filaPregunta = undoService.snapshotFila("preguntas", id);
+
         // Si llegamos aquí, es seguro eliminar
         preguntaRepository.deleteById(id);
+
+        if (filaPregunta != null) {
+            undoService.registrar("eliminar_pregunta", "Eliminar pregunta " + id,
+                Collections.singletonList(UndoService.accionInsertarFila("preguntas", filaPregunta)));
+        }
     }
 
     public List<PreguntaDTO> filtrarPreguntasCompleto(String nivel, String factor, String estado, 

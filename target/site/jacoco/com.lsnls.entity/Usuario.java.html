@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Usuario.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.entity</a> &gt; <span class="el_source">Usuario.java</span></div><h1>Usuario.java</h1><pre class="source lang-java linenums">package com.lsnls.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import javax.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.util.Set;
+
+@Data
+@NoArgsConstructor
+@Entity
+@Table(name = &quot;usuarios&quot;)
+public class Usuario {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Version
+    private Long version;
+
+    @Column(nullable = false, length = 50)
+    private String nombre;
+
+    @JsonIgnore
+    @Column(nullable = false)
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RolUsuario rol;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = &quot;creacionUsuario&quot;)
+    private Set&lt;Pregunta&gt; preguntasCreadas;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = &quot;verificacionUsuario&quot;)
+    private Set&lt;Pregunta&gt; preguntasVerificadas;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = &quot;creacionUsuario&quot;)
+    private Set&lt;Cuestionario&gt; cuestionariosCreados;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = &quot;creacionUsuario&quot;)
+    private Set&lt;Combo&gt; combosCreados;
+
+<span class="fc" id="L49">    public enum RolUsuario {</span>
+<span class="fc" id="L50">        ROLE_ADMIN, ROLE_CONSULTA, ROLE_GUION, ROLE_VERIFICACION, ROLE_DIRECCION;</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L54">            return name();</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

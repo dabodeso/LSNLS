@@ -319,7 +319,9 @@ async function iniciarSesion(event) {
     } catch (error) {
         console.error('Error completo:', error);
         console.error('Stack trace:', error.stack);
-        mostrarError('Error al iniciar sesión: ' + error.message);
+        mostrarError(typeof Utils !== 'undefined'
+            ? Utils.mensajeErrorApi(error, 'iniciar sesión')
+            : 'No se ha podido iniciar sesión. Inténtalo de nuevo.');
         // Limpiar datos en caso de error
         authManager.clearAuth();
     }

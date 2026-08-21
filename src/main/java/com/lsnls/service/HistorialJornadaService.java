@@ -42,6 +42,9 @@ public class HistorialJornadaService {
     @Autowired
     private PreguntaRepository preguntaRepository;
 
+    @Autowired
+    private UndoService undoService;
+
     /**
      * Registrar asignación de cuestionario a jornada
      */
@@ -135,6 +138,11 @@ public class HistorialJornadaService {
         }
         
         Combo comboOriginal = comboOriginalOpt.get();
+        List<java.util.Map<String, Object>> accionesUndo = new java.util.ArrayList<>();
+
+        java.util.Map<String, Object> camposCombo = new java.util.LinkedHashMap<>();
+        camposCombo.put("estado", comboOriginal.getEstado() != null ? comboOriginal.getEstado().name() : null);
+        accionesUndo.add(UndoService.accionActualizarCampos("combos", comboOriginal.getId(), camposCombo));
         
         // Marcar combo original como reaprovechado
         comboOriginal.setEstado(Combo.EstadoCombo.reaprovechado);
@@ -148,11 +156,23 @@ public class HistorialJornadaService {
         nuevoCombo.setEstado(Combo.EstadoCombo.borrador);
         
         Combo comboGuardado = comboRepository.save(nuevoCombo);
+        if (comboGuardado.getId() != null) {
+            accionesUndo.add(UndoService.accionEliminarFilas("combos_preguntas", "combo_id", comboGuardado.getId()));
+            accionesUndo.add(UndoService.accionEliminarFila("combos", comboGuardado.getId()));
+        }
         
         // Registrar pregunta usada en el historial
         List<HistorialJornada> historiales = historialRepository.findByComboId(dto.getComboOriginalId());
         for (HistorialJornada historial : historiales) {
             if (historial.getEstadoAsignacion() == EstadoAsignacion.asignado) {
+                if (historial.getId() != null) {
+                    java.util.Map<String, Object> camposHistorial = new java.util.LinkedHashMap<>();
+                    camposHistorial.put("estado_asignacion", historial.getEstadoAsignacion().name());
+                    camposHistorial.put("pregunta_usada_id", historial.getPreguntaUsadaId());
+                    camposHistorial.put("fecha_uso", historial.getFechaUso() != null ? historial.getFechaUso().toString() : null);
+                    camposHistorial.put("notas", historial.getNotas());
+                    accionesUndo.add(UndoService.accionActualizarCampos("historial_jornadas", historial.getId(), camposHistorial));
+                }
                 historial.setEstadoAsignacion(EstadoAsignacion.usado);
                 historial.setPreguntaUsadaId(dto.getPreguntaUsadaId());
                 historial.setFechaUso(LocalDateTime.now());
@@ -168,11 +188,18 @@ public class HistorialJornadaService {
                 Optional<Pregunta> preguntaOpt = preguntaRepository.findById(preguntaId);
                 if (preguntaOpt.isPresent()) {
                     Pregunta pregunta = preguntaOpt.get();
+                    java.util.Map<String, Object> camposPregunta = new java.util.LinkedHashMap<>();
+                    camposPregunta.put("estado_disponibilidad",
+                            pregunta.getEstadoDisponibilidad() != null ? pregunta.getEstadoDisponibilidad().name() : null);
+                    accionesUndo.add(UndoService.accionActualizarCampos("preguntas", preguntaId, camposPregunta));
                     pregunta.setEstadoDisponibilidad(Pregunta.EstadoDisponibilidad.disponible);
                     preguntaRepository.save(pregunta);
                 }
             }
         }
+
+        undoService.registrar("reaprovechar_combo",
+                "Reaprovechar combo " + dto.getComboOriginalId(), accionesUndo);
         
         return comboGuardado;
     }

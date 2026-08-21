@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MensajesUsuario.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.config</a> &gt; <span class="el_source">MensajesUsuario.java</span></div><h1>MensajesUsuario.java</h1><pre class="source lang-java linenums">package com.lsnls.config;
+
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+/**
+ * Convierte excepciones y textos de error en mensajes comprensibles
+ * para alguien que no programa. Nunca debe devolver SQL, clases Java,
+ * trazas ni ingles de infraestructura.
+ */
+public final class MensajesUsuario {
+
+    public static final String GENERICO = &quot;No se ha podido completar la operación. Inténtalo de nuevo.&quot;;
+    public static final String RED = &quot;No hay conexión con el servidor. Comprueba tu red e inténtalo de nuevo.&quot;;
+    public static final String SESION = &quot;Tu sesión ha caducado. Vuelve a iniciar sesión.&quot;;
+    public static final String PERMISOS = &quot;No tienes permisos para realizar esta acción.&quot;;
+    public static final String CONCURRENCIA = &quot;Otro usuario ha modificado estos datos. Recarga la página e inténtalo de nuevo.&quot;;
+    public static final String VALIDACION = &quot;Los datos no son válidos. Revisa los campos e inténtalo de nuevo.&quot;;
+    public static final String NO_ENCONTRADO = &quot;No se ha encontrado lo que buscas.&quot;;
+    public static final String ARCHIVO_GRANDE = &quot;El archivo es demasiado grande. El tamaño máximo permitido es 10 MB.&quot;;
+    public static final String RELACIONADOS = &quot;No se puede completar porque hay datos relacionados o duplicados.&quot;;
+
+<span class="nc" id="L23">    private static final Pattern EMOJIS = Pattern.compile(</span>
+            &quot;[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{FE0F}\\x{200D}]&quot;);
+
+<span class="nc" id="L26">    private static final Pattern TECNICO = Pattern.compile(</span>
+            &quot;(?i)(failed to fetch|networkerror|load failed|net::err|&quot;
+                    + &quot;typeerror|referenceerror|syntaxerror|unexpected token|&quot;
+                    + &quot;json\\.parse|is not (a function|defined|iterable)|&quot;
+                    + &quot;cannot read propert|sql(state|exception|syntax)|hibernate|jdbc|&quot;
+                    + &quot;org\\.springframework|org\\.hibernate|java\\.(lang|sql|io|util)|&quot;
+                    + &quot;nested exception|could not (execute|extract|open|obtain|serialize)|&quot;
+                    + &quot;no enum constant|optimistic.?lock|objectoptimisticlocking|&quot;
+                    + &quot;data integrity|constraint(violation)?|duplicate entry|whitelabel|&quot;
+                    + &quot;http/1\\.[01]|content-type:|stack trace|unauthorized:\\s*token|&quot;
+                    + &quot;nullpointer|classcastexception|transaction.*rolled back|deadlock|&quot;
+                    + &quot;lock wait timeout|unknown column|doesn't exist|data truncated|&quot;
+                    + &quot;caused by:|exception in thread|\\bat\\s+[a-z0-9_.$]+\\(|&quot;
+                    + &quot;row was updated or deleted|was concurrently updated|&quot;
+                    + &quot;\\bundefined\\b|\\[object object\\]|revisa la consola|&quot;
+                    + &quot;el body debe ser un json)&quot;);
+
+    private MensajesUsuario() {
+    }
+
+    public static String sanitizar(String texto) {
+<span class="nc" id="L47">        return sanitizar(texto, GENERICO);</span>
+    }
+
+    public static String sanitizar(String texto, String fallback) {
+<span class="nc bnc" id="L51" title="All 4 branches missed.">        String reserva = (fallback == null || fallback.isBlank()) ? GENERICO : fallback;</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (texto == null) {</span>
+<span class="nc" id="L53">            return reserva;</span>
+        }
+<span class="nc" id="L55">        String t = quitarEmojis(texto).trim();</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (t.isEmpty()) {</span>
+<span class="nc" id="L57">            return reserva;</span>
+        }
+<span class="nc" id="L59">        String lower = t.toLowerCase(Locale.ROOT);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (esRed(lower)) {</span>
+<span class="nc" id="L61">            return RED;</span>
+        }
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (esSesion(lower)) {</span>
+<span class="nc" id="L64">            return SESION;</span>
+        }
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (esConcurrencia(lower)) {</span>
+<span class="nc" id="L67">            return CONCURRENCIA;</span>
+        }
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (esRelacionados(lower)) {</span>
+<span class="nc" id="L70">            return RELACIONADOS;</span>
+        }
+<span class="nc bnc" id="L72" title="All 4 branches missed.">        if (esTecnico(t) || esGenericoIngles(lower)) {</span>
+<span class="nc" id="L73">            return reserva;</span>
+        }
+<span class="nc" id="L75">        return t;</span>
+    }
+
+    public static String de(Throwable error, String accion) {
+<span class="nc bnc" id="L79" title="All 4 branches missed.">        String fallback = accion == null || accion.isBlank()</span>
+<span class="nc" id="L80">                ? GENERICO</span>
+<span class="nc" id="L81">                : &quot;No se ha podido &quot; + accion + &quot;. Inténtalo de nuevo.&quot;;</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (error == null) {</span>
+<span class="nc" id="L83">            return fallback;</span>
+        }
+<span class="nc" id="L85">        return sanitizar(error.getMessage(), fallback);</span>
+    }
+
+    public static String porHttp(int status) {
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (status == 401) {</span>
+<span class="nc" id="L90">            return SESION;</span>
+        }
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (status == 403) {</span>
+<span class="nc" id="L93">            return PERMISOS;</span>
+        }
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (status == 404) {</span>
+<span class="nc" id="L96">            return NO_ENCONTRADO;</span>
+        }
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (status == 409) {</span>
+<span class="nc" id="L99">            return CONCURRENCIA;</span>
+        }
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (status == 413) {</span>
+<span class="nc" id="L102">            return ARCHIVO_GRANDE;</span>
+        }
+<span class="nc bnc" id="L104" title="All 4 branches missed.">        if (status == 400 || status == 422) {</span>
+<span class="nc" id="L105">            return VALIDACION;</span>
+        }
+<span class="nc" id="L107">        return GENERICO;</span>
+    }
+
+    public static boolean esTecnico(String texto) {
+<span class="nc bnc" id="L111" title="All 4 branches missed.">        if (texto == null || texto.isBlank()) {</span>
+<span class="nc" id="L112">            return true;</span>
+        }
+<span class="nc bnc" id="L114" title="All 4 branches missed.">        return TECNICO.matcher(texto).find() || texto.contains(&quot;\n\tat &quot;);</span>
+    }
+
+    static String quitarEmojis(String texto) {
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        if (texto == null) {</span>
+<span class="nc" id="L119">            return &quot;&quot;;</span>
+        }
+<span class="nc" id="L121">        return EMOJIS.matcher(texto).replaceAll(&quot;&quot;).replaceAll(&quot;\\s{2,}&quot;, &quot; &quot;).trim();</span>
+    }
+
+    private static boolean esRed(String lower) {
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        return lower.contains(&quot;failed to fetch&quot;)</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">                || lower.contains(&quot;networkerror&quot;)</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                || lower.contains(&quot;load failed&quot;)</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                || lower.contains(&quot;net::err&quot;);</span>
+    }
+
+    private static boolean esSesion(String lower) {
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        return lower.contains(&quot;unauthorized&quot;)</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">                || lower.contains(&quot;token expirado&quot;)</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">                || lower.contains(&quot;token inválido&quot;)</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                || lower.contains(&quot;token invalido&quot;)</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                || lower.contains(&quot;jwt&quot;);</span>
+    }
+
+    private static boolean esConcurrencia(String lower) {
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        return lower.contains(&quot;optimistic&quot;)</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                || lower.contains(&quot;concurrencia&quot;)</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                || lower.contains(&quot;row was updated&quot;)</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">                || lower.contains(&quot;was concurrently updated&quot;);</span>
+    }
+
+    private static boolean esRelacionados(String lower) {
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        return lower.contains(&quot;constraint&quot;)</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                || lower.contains(&quot;duplicate entry&quot;)</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                || lower.contains(&quot;foreign key&quot;)</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">                || lower.contains(&quot;integridad&quot;);</span>
+    }
+
+    private static boolean esGenericoIngles(String lower) {
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        return lower.equals(&quot;forbidden&quot;)</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                || lower.equals(&quot;access denied&quot;)</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                || lower.equals(&quot;unauthorized&quot;)</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                || lower.equals(&quot;bad request&quot;)</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                || lower.equals(&quot;not found&quot;)</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                || lower.equals(&quot;internal server error&quot;)</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">                || lower.equals(&quot;conflict&quot;)</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">                || lower.equals(&quot;error&quot;)</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                || lower.matches(&quot;^(error|http error)\\s*\\d{0,3}$&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JornadaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">JornadaController.java</span></div><h1>JornadaController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
+
+import com.lsnls.dto.ApiResponse;
+import com.lsnls.dto.JornadaDTO;
+import com.lsnls.dto.ReciclajeComboDTO;
+import com.lsnls.entity.AuditLog;
+import com.lsnls.entity.Usuario;
+import com.lsnls.service.AuthorizationService;
+import com.lsnls.service.EditLockService;
+import com.lsnls.service.JornadaService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@RestController
+@RequestMapping(&quot;/api/jornadas&quot;)
+@CrossOrigin(origins = &quot;*&quot;)
+<span class="nc" id="L32">public class JornadaController {</span>
+
+    @Autowired
+    private JornadaService jornadaService;
+
+    @Autowired
+    private AuthorizationService authService;
+
+    @Autowired
+    private EditLockService editLockService;
+
+    @GetMapping
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;Page&lt;JornadaDTO&gt;&gt;&gt; obtenerTodas(
+            @RequestParam(defaultValue = &quot;0&quot;) int page,
+            @RequestParam(defaultValue = &quot;10&quot;) int size,
+            @RequestParam(defaultValue = &quot;id&quot;) String sortBy,
+            @RequestParam(defaultValue = &quot;desc&quot;) String sortDir,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta,
+            @RequestParam(required = false) String buscar) {
+        try {
+            // Crear objeto de ordenamiento
+<span class="nc" id="L56">            Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);</span>
+<span class="nc" id="L57">            Pageable pageable = PageRequest.of(page, size, sort);</span>
+            
+<span class="nc" id="L59">            Page&lt;JornadaDTO&gt; jornadas = jornadaService.obtenerTodasPaginadasConFiltros(</span>
+                pageable, estado, fechaDesde, fechaHasta, buscar);
+<span class="nc" id="L61">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornadas obtenidas exitosamente&quot;, jornadas));</span>
+<span class="nc" id="L62">        } catch (Exception e) {</span>
+<span class="nc" id="L63">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L64">                .body(ApiResponse.error(&quot;Error al obtener jornadas: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;JornadaDTO&gt;&gt; obtenerPorId(@PathVariable Long id) {
+        try {
+<span class="nc" id="L72">            Optional&lt;JornadaDTO&gt; jornada = jornadaService.obtenerPorId(id);</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (jornada.isPresent()) {</span>
+<span class="nc" id="L74">                return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornada encontrada&quot;, jornada.get()));</span>
+            } else {
+<span class="nc" id="L76">                return ResponseEntity.status(404)</span>
+<span class="nc" id="L77">                    .body(ApiResponse.error(&quot;Jornada con ID &quot; + id + &quot; no encontrada&quot;));</span>
+            }
+<span class="nc" id="L79">        } catch (Exception e) {</span>
+<span class="nc" id="L80">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L81">                .body(ApiResponse.error(&quot;Error interno al obtener jornada: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @PostMapping
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;JornadaDTO&gt;&gt; crear(@RequestBody JornadaDTO jornadaDTO) {
+        try {
+            // Validaciones específicas de campos requeridos
+<span class="nc bnc" id="L90" title="All 4 branches missed.">            if (jornadaDTO.getNombre() == null || jornadaDTO.getNombre().trim().isEmpty()) {</span>
+<span class="nc" id="L91">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L92">                    .body(ApiResponse.error(&quot;El campo 'nombre' es obligatorio para crear una jornada&quot;));</span>
+            }
+
+            // Validar límites de cuestionarios y combos
+<span class="nc bnc" id="L96" title="All 4 branches missed.">            if (jornadaDTO.getCuestionarioIds() != null &amp;&amp; jornadaDTO.getCuestionarioIds().size() &gt; 5) {</span>
+<span class="nc" id="L97">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L98">                    .body(ApiResponse.error(&quot;Una jornada puede tener máximo 5 cuestionarios. Has seleccionado &quot; + jornadaDTO.getCuestionarioIds().size() + &quot; cuestionarios. Deselecciona &quot; + (jornadaDTO.getCuestionarioIds().size() - 5) + &quot; cuestionarios.&quot;));</span>
+            }
+<span class="nc bnc" id="L100" title="All 4 branches missed.">            if (jornadaDTO.getComboIds() != null &amp;&amp; jornadaDTO.getComboIds().size() &gt; 5) {</span>
+<span class="nc" id="L101">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L102">                    .body(ApiResponse.error(&quot;Una jornada puede tener máximo 5 combos. Has seleccionado &quot; + jornadaDTO.getComboIds().size() + &quot; combos. Deselecciona &quot; + (jornadaDTO.getComboIds().size() - 5) + &quot; combos.&quot;));</span>
+            }
+
+            // Verificar autenticación
+<span class="nc" id="L106">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="nc" id="L108">                return ResponseEntity.status(401)</span>
+<span class="nc" id="L109">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
+            }
+            
+<span class="nc" id="L112">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="nc" id="L113">            JornadaDTO nuevaJornada = jornadaService.crear(jornadaDTO, currentUser.getId());</span>
+            
+<span class="nc" id="L115">            String mensaje = &quot;Jornada '&quot; + nuevaJornada.getNombre() + &quot;' creada exitosamente&quot;;</span>
+<span class="nc bnc" id="L116" title="All 4 branches missed.">            if (jornadaDTO.getCuestionarioIds() != null &amp;&amp; !jornadaDTO.getCuestionarioIds().isEmpty()) {</span>
+<span class="nc" id="L117">                mensaje += &quot; con &quot; + jornadaDTO.getCuestionarioIds().size() + &quot; cuestionarios&quot;;</span>
+            }
+<span class="nc bnc" id="L119" title="All 4 branches missed.">            if (jornadaDTO.getComboIds() != null &amp;&amp; !jornadaDTO.getComboIds().isEmpty()) {</span>
+<span class="nc" id="L120">                mensaje += &quot; y &quot; + jornadaDTO.getComboIds().size() + &quot; combos&quot;;</span>
+            }
+            
+<span class="nc" id="L123">            return ResponseEntity.ok(ApiResponse.exitoso(mensaje, nuevaJornada));</span>
+            
+<span class="nc" id="L125">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L126">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L127">                .body(ApiResponse.error(&quot;Error de validación: &quot; + e.getMessage()));</span>
+<span class="nc" id="L128">        } catch (Exception e) {</span>
+<span class="nc" id="L129">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L130">                .body(ApiResponse.error(&quot;Error interno al crear jornada: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;JornadaDTO&gt;&gt; actualizar(@PathVariable Long id, @RequestBody JornadaDTO jornadaDTO) {
+        try {
+<span class="nc" id="L138">            editLockService.assertCanEdit(AuditLog.EntityType.JORNADA, id);</span>
+<span class="nc" id="L139">            JornadaDTO jornadaActualizada = jornadaService.actualizar(id, jornadaDTO);</span>
+<span class="nc" id="L140">            editLockService.logEntityUpdate(AuditLog.EntityType.JORNADA, id, &quot;Actualización de jornada&quot;);</span>
+<span class="nc" id="L141">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornada actualizada exitosamente&quot;, jornadaActualizada));</span>
+<span class="nc" id="L142">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L143">            return ResponseEntity.status(409)</span>
+<span class="nc" id="L144">                .body(ApiResponse.error(&quot;La jornada ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.&quot;));</span>
+<span class="nc" id="L145">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L146">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L147">                .body(ApiResponse.error(&quot;Error de validación: &quot; + e.getMessage()));</span>
+<span class="nc" id="L148">        } catch (Exception e) {</span>
+<span class="nc" id="L149">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L150">                .body(ApiResponse.error(&quot;Error al actualizar jornada: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;@authorizationService.canDelete()&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; eliminar(@PathVariable Long id) {
+        try {
+<span class="nc" id="L158">            jornadaService.eliminar(id);</span>
+<span class="nc" id="L159">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornada eliminada exitosamente&quot;, null));</span>
+<span class="nc" id="L160">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L161">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L162">                .body(ApiResponse.error(&quot;Error de validación: &quot; + e.getMessage()));</span>
+<span class="nc" id="L163">        } catch (Exception e) {</span>
+<span class="nc" id="L164">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L165">                .body(ApiResponse.error(&quot;Error al eliminar jornada: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @PutMapping(&quot;/{id}/estado&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;JornadaDTO&gt;&gt; cambiarEstado(@PathVariable Long id, @RequestBody Map&lt;String, String&gt; request) {
+        try {
+<span class="nc" id="L173">            String nuevoEstado = request.get(&quot;estado&quot;);</span>
+<span class="nc bnc" id="L174" title="All 4 branches missed.">            if (nuevoEstado == null || nuevoEstado.trim().isEmpty()) {</span>
+<span class="nc" id="L175">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L176">                    .body(ApiResponse.error(&quot;El estado es requerido&quot;));</span>
+            }
+            
+<span class="nc" id="L179">            editLockService.assertCanEdit(AuditLog.EntityType.JORNADA, id);</span>
+<span class="nc" id="L180">            JornadaDTO jornadaActualizada = jornadaService.cambiarEstado(id, nuevoEstado);</span>
+<span class="nc" id="L181">            editLockService.logEntityUpdate(AuditLog.EntityType.JORNADA, id, &quot;Cambio de estado de jornada&quot;);</span>
+<span class="nc" id="L182">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Estado actualizado exitosamente&quot;, jornadaActualizada));</span>
+<span class="nc" id="L183">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L184">            return ResponseEntity.status(409)</span>
+<span class="nc" id="L185">                .body(ApiResponse.error(&quot;La jornada ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.&quot;));</span>
+<span class="nc" id="L186">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L187">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L188">                .body(ApiResponse.error(&quot;Error de validación: &quot; + e.getMessage()));</span>
+<span class="nc" id="L189">        } catch (Exception e) {</span>
+<span class="nc" id="L190">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L191">                .body(ApiResponse.error(&quot;Error al cambiar estado: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @GetMapping(&quot;/{id}/exportar-excel&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;byte[]&gt; exportarExcel(
+            @PathVariable Long id, 
+            @RequestHeader(value = &quot;X-Excel-Cambiar-Columna-ID-PREGUNTA&quot;, required = false) String cambiarColumnaID,
+            @RequestHeader(value = &quot;X-Excel-Mostrar-Factor-Multiplicacion&quot;, required = false) String mostrarFactor,
+            @RequestHeader(value = &quot;X-Excel-Ordenar-Cuestionarios-Por-Nivel&quot;, required = false) String ordenarCuestionarios,
+            @RequestHeader(value = &quot;X-Excel-Ordenar-Combos-Por-Factor&quot;, required = false) String ordenarCombos) {
+        try {
+            // Configurar opciones de exportación basadas en las cabeceras
+<span class="nc" id="L205">            Map&lt;String, Object&gt; opcionesExcel = new HashMap&lt;&gt;();</span>
+            
+            // Si se solicita cambiar la columna ID PREGUNTA por otro valor
+<span class="nc bnc" id="L208" title="All 4 branches missed.">            if (cambiarColumnaID != null &amp;&amp; !cambiarColumnaID.isEmpty()) {</span>
+<span class="nc" id="L209">                opcionesExcel.put(&quot;cambiarColumnaID&quot;, cambiarColumnaID);</span>
+            }
+            
+            // Si se solicita mostrar el factor de multiplicación
+<span class="nc bnc" id="L213" title="All 2 branches missed.">            if (&quot;true&quot;.equalsIgnoreCase(mostrarFactor)) {</span>
+<span class="nc" id="L214">                opcionesExcel.put(&quot;mostrarFactorMultiplicacion&quot;, true);</span>
+            }
+            
+            // Si se solicita ordenar cuestionarios por nivel
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (&quot;true&quot;.equalsIgnoreCase(ordenarCuestionarios)) {</span>
+<span class="nc" id="L219">                opcionesExcel.put(&quot;ordenarCuestionariosPorNivel&quot;, true);</span>
+            }
+            
+            // Si se solicita ordenar combos por factor de multiplicación
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            if (&quot;true&quot;.equalsIgnoreCase(ordenarCombos)) {</span>
+<span class="nc" id="L224">                opcionesExcel.put(&quot;ordenarCombosPorFactor&quot;, true);</span>
+            }
+            
+            // Generar el Excel con las opciones especificadas
+<span class="nc" id="L228">            byte[] excelData = jornadaService.exportarExcel(id, opcionesExcel);</span>
+            
+            // Obtener información de la jornada para el nombre del archivo
+<span class="nc" id="L231">            Optional&lt;JornadaDTO&gt; jornada = jornadaService.obtenerPorId(id);</span>
+<span class="nc" id="L232">            String nombreArchivo = &quot;jornada_&quot; + id;</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">            if (jornada.isPresent()) {</span>
+<span class="nc" id="L234">                nombreArchivo = &quot;jornada_&quot; + jornada.get().getNombre().replaceAll(&quot;[^a-zA-Z0-9]&quot;, &quot;_&quot;);</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">                if (jornada.get().getFechaJornada() != null) {</span>
+<span class="nc" id="L236">                    nombreArchivo += &quot;_&quot; + jornada.get().getFechaJornada().toString();</span>
+                }
+            }
+<span class="nc" id="L239">            nombreArchivo += &quot;.xlsx&quot;;</span>
+            
+<span class="nc" id="L241">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="nc" id="L242">            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);</span>
+<span class="nc" id="L243">            headers.setContentDispositionFormData(&quot;attachment&quot;, nombreArchivo);</span>
+<span class="nc" id="L244">            headers.setContentLength(excelData.length);</span>
+            
+<span class="nc" id="L246">            return ResponseEntity.ok()</span>
+<span class="nc" id="L247">                .headers(headers)</span>
+<span class="nc" id="L248">                .body(excelData);</span>
+                
+<span class="nc" id="L250">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L251">            return ResponseEntity.notFound().build();</span>
+<span class="nc" id="L252">        } catch (Exception e) {</span>
+<span class="nc" id="L253">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+
+    @GetMapping(&quot;/cuestionarios-disponibles&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt;&gt; obtenerCuestionariosDisponibles() {
+        try {
+<span class="nc" id="L261">            List&lt;Map&lt;String, Object&gt;&gt; cuestionarios = jornadaService.obtenerCuestionariosDisponibles();</span>
+<span class="nc" id="L262">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Cuestionarios disponibles obtenidos&quot;, cuestionarios));</span>
+<span class="nc" id="L263">        } catch (Exception e) {</span>
+<span class="nc" id="L264">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L265">                .body(ApiResponse.error(&quot;Error al obtener cuestionarios disponibles: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @GetMapping(&quot;/combos-disponibles&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt;&gt; obtenerCombosDisponibles() {
+        try {
+<span class="nc" id="L273">            List&lt;Map&lt;String, Object&gt;&gt; combos = jornadaService.obtenerCombosDisponibles();</span>
+<span class="nc" id="L274">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Combos disponibles obtenidos&quot;, combos));</span>
+<span class="nc" id="L275">        } catch (Exception e) {</span>
+<span class="nc" id="L276">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L277">                .body(ApiResponse.error(&quot;Error al obtener combos disponibles: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @PostMapping(&quot;/{jornadaId}/reutilizar-cuestionario/{cuestionarioId}&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; reutilizarCuestionario(
+            @PathVariable Long jornadaId, 
+            @PathVariable Long cuestionarioId) {
+        try {
+            // Verificar autenticación
+<span class="nc" id="L288">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="nc" id="L290">                return ResponseEntity.status(401)</span>
+<span class="nc" id="L291">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
+            }
+            
+<span class="nc" id="L294">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="nc" id="L295">            jornadaService.reutilizarCuestionario(jornadaId, cuestionarioId, currentUser.getId());</span>
+            
+<span class="nc" id="L297">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+                &quot;Cuestionario &quot; + cuestionarioId + &quot; reutilizado correctamente. Ahora está disponible para usar en otras jornadas.&quot;, 
+                &quot;Cuestionario reutilizado&quot;));
+                
+<span class="nc" id="L301">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L302">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L303">                .body(ApiResponse.error(&quot;Error de validación: &quot; + e.getMessage()));</span>
+<span class="nc" id="L304">        } catch (Exception e) {</span>
+<span class="nc" id="L305">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L306">                .body(ApiResponse.error(&quot;Error al reutilizar cuestionario: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @PostMapping(&quot;/{jornadaId}/quitar-reutilizacion-cuestionario/{cuestionarioId}&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; quitarReutilizacionCuestionario(
+            @PathVariable Long jornadaId,
+            @PathVariable Long cuestionarioId) {
+        try {
+<span class="nc" id="L316">            jornadaService.quitarReutilizacionCuestionario(jornadaId, cuestionarioId);</span>
+<span class="nc" id="L317">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Reutilización de cuestionario quitada&quot;, &quot;OK&quot;));</span>
+<span class="nc" id="L318">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L319">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
+<span class="nc" id="L320">        } catch (Exception e) {</span>
+<span class="nc" id="L321">            return ResponseEntity.internalServerError().body(ApiResponse.error(&quot;Error al quitar reutilización: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @PostMapping(&quot;/{jornadaId}/reutilizar-combo/{comboId}&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; reutilizarCombo(
+            @PathVariable Long jornadaId, 
+            @PathVariable Long comboId) {
+        try {
+            // Verificar autenticación
+<span class="nc" id="L332">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="nc bnc" id="L333" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="nc" id="L334">                return ResponseEntity.status(401)</span>
+<span class="nc" id="L335">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
+            }
+            
+<span class="nc" id="L338">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="nc" id="L339">            jornadaService.reutilizarCombo(jornadaId, comboId, currentUser.getId());</span>
+            
+<span class="nc" id="L341">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+                &quot;Combo &quot; + comboId + &quot; reutilizado correctamente. Ahora está disponible para usar en otras jornadas.&quot;, 
+                &quot;Combo reutilizado&quot;));
+                
+<span class="nc" id="L345">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L346">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L347">                .body(ApiResponse.error(&quot;Error de validación: &quot; + e.getMessage()));</span>
+<span class="nc" id="L348">        } catch (Exception e) {</span>
+<span class="nc" id="L349">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L350">                .body(ApiResponse.error(&quot;Error al reutilizar combo: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @PostMapping(&quot;/{jornadaId}/quitar-reutilizacion-combo/{comboId}&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; quitarReutilizacionCombo(
+            @PathVariable Long jornadaId,
+            @PathVariable Long comboId) {
+        try {
+<span class="nc" id="L360">            jornadaService.quitarReutilizacionCombo(jornadaId, comboId);</span>
+<span class="nc" id="L361">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Reutilización de combo quitada&quot;, &quot;OK&quot;));</span>
+<span class="nc" id="L362">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L363">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
+<span class="nc" id="L364">        } catch (Exception e) {</span>
+<span class="nc" id="L365">            return ResponseEntity.internalServerError().body(ApiResponse.error(&quot;Error al quitar reutilización: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @PostMapping(&quot;/{jornadaId}/reciclar-combo-entero/{comboId}&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; reciclarComboEntero(
+            @PathVariable Long jornadaId, 
+            @PathVariable Long comboId) {
+        try {
+            // Verificar autenticación
+<span class="nc" id="L376">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="nc bnc" id="L377" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="nc" id="L378">                return ResponseEntity.status(401)</span>
+<span class="nc" id="L379">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
+            }
+            
+<span class="nc" id="L382">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="nc" id="L383">            jornadaService.reciclarComboEntero(jornadaId, comboId, currentUser.getId());</span>
+            
+<span class="nc" id="L385">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+                &quot;Combo &quot; + comboId + &quot; reciclado completamente. Marcado como liberado.&quot;, 
+                &quot;Combo reciclado&quot;));
+                
+<span class="nc" id="L389">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L390">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L391">                .body(ApiResponse.error(&quot;Error de validación: &quot; + e.getMessage()));</span>
+<span class="nc" id="L392">        } catch (Exception e) {</span>
+<span class="nc" id="L393">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L394">                .body(ApiResponse.error(&quot;Error al reciclar combo: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @PostMapping(&quot;/{jornadaId}/reciclar-combo-parcial/{comboId}&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;ReciclajeComboDTO&gt;&gt; reciclarComboParcial(
+            @PathVariable Long jornadaId, 
+            @PathVariable Long comboId,
+            @RequestBody Map&lt;String, Object&gt; request) {
+        try {
+            // Verificar autenticación
+<span class="nc" id="L406">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="nc" id="L408">                return ResponseEntity.status(401)</span>
+<span class="nc" id="L409">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
+            }
+            
+            // Obtener la pregunta usada del request
+<span class="nc" id="L413">            Long preguntaUsadaId = null;</span>
+<span class="nc bnc" id="L414" title="All 2 branches missed.">            if (request.containsKey(&quot;preguntaUsadaId&quot;)) {</span>
+<span class="nc" id="L415">                Object preguntaIdObj = request.get(&quot;preguntaUsadaId&quot;);</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                if (preguntaIdObj instanceof Number) {</span>
+<span class="nc" id="L417">                    preguntaUsadaId = ((Number) preguntaIdObj).longValue();</span>
+<span class="nc bnc" id="L418" title="All 2 branches missed.">                } else if (preguntaIdObj instanceof String) {</span>
+<span class="nc" id="L419">                    preguntaUsadaId = Long.valueOf((String) preguntaIdObj);</span>
+                }
+            }
+            
+<span class="nc bnc" id="L423" title="All 2 branches missed.">            if (preguntaUsadaId == null) {</span>
+<span class="nc" id="L424">                return ResponseEntity.badRequest()</span>
+<span class="nc" id="L425">                    .body(ApiResponse.error(&quot;Se debe especificar la pregunta usada&quot;));</span>
+            }
+            
+<span class="nc" id="L428">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="nc" id="L429">            ReciclajeComboDTO reciclaje = jornadaService.reciclarComboParcial(</span>
+<span class="nc" id="L430">                jornadaId, comboId, preguntaUsadaId, currentUser.getId());</span>
+            
+<span class="nc" id="L432">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+                &quot;Combo reciclado parcialmente. Se creó un nuevo combo con las preguntas restantes.&quot;, 
+                reciclaje));
+                
+<span class="nc" id="L436">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L437">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L438">                .body(ApiResponse.error(&quot;Error de validación: &quot; + e.getMessage()));</span>
+<span class="nc" id="L439">        } catch (Exception e) {</span>
+<span class="nc" id="L440">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L441">                .body(ApiResponse.error(&quot;Error al reciclar combo parcialmente: &quot; + e.getMessage()));</span>
+        }
+    }
+
+    @DeleteMapping(&quot;/{jornadaId}/reciclaje-combo/{comboHijoId}&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; cancelarReciclajeCombo(
+            @PathVariable Long jornadaId,
+            @PathVariable Long comboHijoId) {
+        try {
+<span class="nc" id="L451">            jornadaService.cancelarReciclajeCombo(jornadaId, comboHijoId);</span>
+<span class="nc" id="L452">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Reciclaje cancelado&quot;, &quot;OK&quot;));</span>
+<span class="nc" id="L453">        } catch (IllegalArgumentException | IllegalStateException e) {</span>
+<span class="nc" id="L454">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
+<span class="nc" id="L455">        } catch (Exception e) {</span>
+<span class="nc" id="L456">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L457">                .body(ApiResponse.error(&quot;Error al cancelar el reciclaje: &quot; + e.getMessage()));</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

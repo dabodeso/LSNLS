@@ -2,15 +2,18 @@
 class Utils {
     // Mostrar alertas optimizado
     static showAlert(message, type = 'info', duration = 4000) {
+        const texto = (type === 'danger' || type === 'error')
+            ? Utils.prepararTextoUsuario(message)
+            : Utils.quitarEmojis(message);
         if (type === 'success') {
-            Utils.mostrarToastExito(message, duration);
+            Utils.mostrarToastExito(texto, duration);
             return;
         }
         if (type === 'danger' || type === 'error') {
-            Utils.mostrarToastError(message, duration);
+            Utils.mostrarToastError(texto, duration);
             return;
         }
-        Utils._showBootstrapAlert(message, type, duration);
+        Utils._showBootstrapAlert(texto, type, duration);
     }
 
     static _showBootstrapAlert(message, type = 'info', duration = 4000) {
@@ -35,7 +38,7 @@ class Utils {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.innerHTML = `
-            ${message}
+            ${Utils.sanitizeHTML(String(message == null ? '' : message))}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
 
@@ -190,7 +193,7 @@ class Utils {
         const permissions = await authManager.checkPermissions();
         if (!permissions || !permissions[permission]) {
             const roleRequired = Utils.getRoleRequiredForPermission(permission);
-            Utils.showAlert(`No tienes permisos para ${action}. Se requiere rol: ${roleRequired}`, 'warning');
+            Utils.showAlert('No tienes permisos para esta acción.', 'warning');
             return false;
         }
         return true;
@@ -239,9 +242,10 @@ class Utils {
     }
 
     static mostrarToastExito(mensaje, duration = 3000) {
+        const texto = Utils.quitarEmojis(mensaje);
         if (typeof Toastify === 'function') {
             Toastify({
-                text: mensaje,
+                text: texto,
                 duration,
                 close: true,
                 gravity: 'top',
@@ -250,13 +254,14 @@ class Utils {
             }).showToast();
             return;
         }
-        Utils._showBootstrapAlert(mensaje, 'success', duration);
+        Utils._showBootstrapAlert(texto, 'success', duration);
     }
 
     static mostrarToastError(mensaje, duration = 4000) {
+        const texto = Utils.prepararTextoUsuario(mensaje);
         if (typeof Toastify === 'function') {
             Toastify({
-                text: mensaje,
+                text: texto,
                 duration,
                 close: true,
                 gravity: 'top',
@@ -265,7 +270,127 @@ class Utils {
             }).showToast();
             return;
         }
-        Utils._showBootstrapAlert(mensaje, 'danger', duration);
+        Utils._showBootstrapAlert(texto, 'danger', duration);
+    }
+
+    static quitarEmojis(texto) {
+        if (texto == null) return '';
+        return String(texto)
+            .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+    }
+
+    static esMensajeTecnico(texto) {
+        if (texto == null) return true;
+        const t = String(texto);
+        if (!t.trim()) return true;
+        const patrones = [
+            /failed to fetch/i,
+            /networkerror/i,
+            /load failed/i,
+            /net::err/i,
+            /typeerror/i,
+            /referenceerror/i,
+            /syntaxerror/i,
+            /unexpected token/i,
+            /json\.parse/i,
+            /is not (a function|defined|iterable)/i,
+            /cannot read propert/i,
+            /sql(state|exception|syntax)/i,
+            /hibernate/i,
+            /jdbc/i,
+            /org\.springframework/i,
+            /org\.hibernate/i,
+            /java\.(lang|sql|io|util)/i,
+            /nested exception/i,
+            /could not (execute|extract|open|obtain|serialize)/i,
+            /no enum constant/i,
+            /optimistic.?lock/i,
+            /objectoptimisticlocking/i,
+            /data integrity/i,
+            /constraint(violation)?/i,
+            /duplicate entry/i,
+            /whitelabel/i,
+            /http\/1\.[01]/i,
+            /content-type:/i,
+            /stack trace/i,
+            /^\s*at\s+\S+/m,
+            /unauthorized:\s*token/i,
+            /el body debe ser un json/i,
+            /revisa la consola/i,
+            /\[object object\]/i,
+            /\bundefined\b/i,
+            /nullpointer/i,
+            /classcastexception/i,
+            /transaction.*rolled back/i,
+            /deadlock/i,
+            /lock wait timeout/i,
+            /unknown column/i,
+            /doesn't exist/i,
+            /data truncated/i,
+            /caused by:/i,
+            /exception in thread/i,
+            /row was updated or deleted/i,
+            /was concurrently updated/i,
+            /<html/i,
+            /status\s*=\s*5\d\d/i
+        ];
+        return patrones.some(p => p.test(t));
+    }
+
+    /** Texto listo para mostrar a una persona que no programa. */
+    static prepararTextoUsuario(texto, accion = 'completar la operación') {
+        const fallback = `No se ha podido ${accion}. Inténtalo de nuevo.`;
+        const t = Utils.quitarEmojis(texto == null ? '' : String(texto));
+        if (!t) return fallback;
+        const lower = t.toLowerCase();
+        if (lower.includes('failed to fetch') || lower.includes('networkerror')
+            || lower.includes('load failed') || lower.includes('net::err')) {
+            return 'No hay conexión con el servidor. Comprueba tu red e inténtalo de nuevo.';
+        }
+        if (lower.includes('unauthorized') || lower.includes('token expirado')
+            || lower.includes('token inválido') || lower.includes('token invalido') || lower.includes('jwt')) {
+            return 'Tu sesión ha caducado. Vuelve a iniciar sesión.';
+        }
+        if (lower.includes('optimistic') || lower.includes('concurrencia')
+            || lower.includes('row was updated') || lower.includes('was concurrently updated')) {
+            return 'Otro usuario ha modificado estos datos. Recarga la página e inténtalo de nuevo.';
+        }
+        if (lower.includes('duplicate entry') || lower.includes('foreign key')
+            || lower.includes('constraint') || lower.includes('integridad')) {
+            return 'No se puede completar porque hay datos relacionados o duplicados.';
+        }
+        if (Utils.esMensajeTecnico(t) || Utils.esMensajeHttpGenerico(t)) {
+            return fallback;
+        }
+        return t;
+    }
+
+    static instalarFiltroMensajesUsuario() {
+        if (typeof Toastify === 'function' && !Toastify._lsnlsFiltrado) {
+            const original = Toastify;
+            const envuelto = function (opts) {
+                if (opts && opts.text != null) {
+                    let text = Utils.quitarEmojis(opts.text);
+                    if (Utils.esMensajeTecnico(text) || Utils.esMensajeHttpGenerico(text) || /^\s*error\b/i.test(text)) {
+                        text = Utils.prepararTextoUsuario(text);
+                    }
+                    opts = Object.assign({}, opts, { text });
+                }
+                return original.call(this, opts);
+            };
+            Object.keys(original).forEach(k => { envuelto[k] = original[k]; });
+            envuelto._lsnlsFiltrado = true;
+            window.Toastify = envuelto;
+        }
+        if (!window.alert._lsnlsFiltrado) {
+            const alertOriginal = window.alert.bind(window);
+            window.alert = function (msg) {
+                alertOriginal(Utils.prepararTextoUsuario(msg));
+            };
+            window.alert._lsnlsFiltrado = true;
+        }
     }
 
     /** Detecta textos genéricos del servidor (p. ej. Spring: "Forbidden"). */
@@ -289,9 +414,7 @@ class Utils {
             'service unavailable',
             'gateway timeout',
             'error',
-            'unknown error',
-            'no tienes permisos para realizar esta acción.',
-            'no tienes permisos para realizar esta accion.'
+            'unknown error'
         ]);
         if (genericos.has(t)) return true;
         if (/^(error|http error)\s*\d{0,3}$/i.test(t)) return true;
@@ -306,12 +429,14 @@ class Utils {
             const json = JSON.parse(trimmed);
             const candidatos = [json.message, json.mensaje, json.detail, json.error, json.title];
             for (const candidato of candidatos) {
-                if (typeof candidato === 'string' && candidato.trim() && !Utils.esMensajeHttpGenerico(candidato)) {
+                if (typeof candidato === 'string' && candidato.trim()
+                    && !Utils.esMensajeHttpGenerico(candidato)
+                    && !Utils.esMensajeTecnico(candidato)) {
                     return candidato.trim();
                 }
             }
         } catch {
-            if (!Utils.esMensajeHttpGenerico(trimmed)) {
+            if (!Utils.esMensajeHttpGenerico(trimmed) && !Utils.esMensajeTecnico(trimmed)) {
                 return trimmed;
             }
         }
@@ -333,8 +458,8 @@ class Utils {
     /** Mensajes HTTP estándar; prioriza el detalle del backend si es claro. */
     static mensajeErrorHttp(status, detalle, accion = 'realizar esta acción') {
         const texto = Utils.extraerDetalleErrorCuerpo(detalle) || (typeof detalle === 'string' ? detalle.trim() : '');
-        if (texto && !Utils.esMensajeHttpGenerico(texto)) {
-            return texto;
+        if (texto && !Utils.esMensajeHttpGenerico(texto) && !Utils.esMensajeTecnico(texto)) {
+            return Utils.prepararTextoUsuario(texto, accion);
         }
         switch (status) {
             case 401:
@@ -350,9 +475,9 @@ class Utils {
             case 422:
                 return 'Los datos enviados no son válidos.';
             case 500:
-                return 'Error interno del servidor. Inténtalo de nuevo más tarde.';
+                return 'No se ha podido completar la operación. Inténtalo de nuevo.';
             default:
-                return `Error al ${accion}.`;
+                return `No se ha podido ${accion}. Inténtalo de nuevo.`;
         }
     }
 
@@ -375,13 +500,10 @@ class Utils {
             return Utils.mensajeErrorHttp(status, detalle, accion);
         }
         const detalle = Utils.extraerDetalleErrorCuerpo(msg);
-        if (detalle && !Utils.esMensajeHttpGenerico(detalle)) {
-            return detalle;
+        if (detalle) {
+            return Utils.prepararTextoUsuario(detalle, accion);
         }
-        if (!Utils.esMensajeHttpGenerico(msg)) {
-            return msg;
-        }
-        return `Error al ${accion}.`;
+        return Utils.prepararTextoUsuario(msg, accion);
     }
 }
 
@@ -422,6 +544,12 @@ function mostrarExito(mensaje) {
     Utils.mostrarToastExito(mensaje);
 }
 
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => Utils.instalarFiltroMensajesUsuario());
+} else {
+    Utils.instalarFiltroMensajesUsuario();
+}
+
 console.log('🛠️ Utils cargado y optimizado');
 
 /**
@@ -434,9 +562,18 @@ window.refrescarPaginaActual = async function refrescarPaginaActual() {
             if (window.PreguntasManager?.recargarConFiltros) {
                 await PreguntasManager.recargarConFiltros();
             }
+            if (window.TemasManager?.cargarTemas) {
+                await TemasManager.cargarTemas();
+                if (window.TemasManager.cargarSubtemas) await TemasManager.cargarSubtemas();
+                if (window.TemasManager.cargarEstadisticas) await TemasManager.cargarEstadisticas();
+            }
         } else if (path.includes('cuestionario')) {
             if (window.CuestionariosManager?.recargarConFiltros) {
                 await CuestionariosManager.recargarConFiltros();
+            }
+            if (window.TematicasManager?.cargarTematicas) {
+                await TematicasManager.cargarTematicas();
+                if (window.TematicasManager.cargarEstadisticas) await TematicasManager.cargarEstadisticas();
             }
         } else if (path.includes('combo')) {
             if (window.CombosManager?.recargarConFiltros) {

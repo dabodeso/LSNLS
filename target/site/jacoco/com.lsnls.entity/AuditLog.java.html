@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuditLog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.entity</a> &gt; <span class="el_source">AuditLog.java</span></div><h1>AuditLog.java</h1><pre class="source lang-java linenums">package com.lsnls.entity;
+
+import javax.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+/**
+ * Entidad para registrar logs de auditoría de operaciones críticas
+ */
+@Data
+@NoArgsConstructor
+@Entity
+@Table(name = &quot;audit_logs&quot;)
+public class AuditLog {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * Usuario que realizó la operación
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;usuario_id&quot;)
+    private Usuario usuario;
+
+    /**
+     * Nombre del usuario (almacenado por si el usuario se elimina)
+     */
+    @Column(name = &quot;usuario_nombre&quot;, length = 100)
+    private String usuarioNombre;
+
+    /**
+     * Timestamp de cuando ocurrió la operación
+     */
+    @Column(name = &quot;timestamp&quot;, nullable = false)
+    private LocalDateTime timestamp;
+
+    /**
+     * Tipo de operación realizada
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;operation_type&quot;, nullable = false)
+    private OperationType operationType;
+
+    /**
+     * Tipo de entidad afectada
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;entity_type&quot;, nullable = false)
+    private EntityType entityType;
+
+    /**
+     * ID de la entidad afectada
+     */
+    @Column(name = &quot;entity_id&quot;)
+    private Long entityId;
+
+    /**
+     * Descripción detallada de la operación
+     */
+    @Column(name = &quot;description&quot;, length = 1000)
+    private String description;
+
+    /**
+     * Datos antes de la operación (JSON)
+     */
+    @Column(name = &quot;old_values&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String oldValues;
+
+    /**
+     * Datos después de la operación (JSON)
+     */
+    @Column(name = &quot;new_values&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String newValues;
+
+    /**
+     * IP desde donde se realizó la operación
+     */
+    @Column(name = &quot;ip_address&quot;, length = 45)
+    private String ipAddress;
+
+    /**
+     * User Agent del cliente
+     */
+    @Column(name = &quot;user_agent&quot;, length = 500)
+    private String userAgent;
+
+    /**
+     * Resultado de la operación
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;result&quot;, nullable = false)
+    private OperationResult result;
+
+    /**
+     * Mensaje de error si la operación falló
+     */
+    @Column(name = &quot;error_message&quot;, length = 1000)
+    private String errorMessage;
+
+    /**
+     * Duración de la operación en millisegundos
+     */
+    @Column(name = &quot;duration_ms&quot;)
+    private Long durationMs;
+
+    /**
+     * Tipos de operaciones auditables
+     */
+<span class="nc" id="L113">    public enum OperationType {</span>
+<span class="nc" id="L114">        CREATE,          // Crear entidad</span>
+<span class="nc" id="L115">        UPDATE,          // Actualizar entidad</span>
+<span class="nc" id="L116">        DELETE,          // Eliminar entidad</span>
+<span class="nc" id="L117">        STATE_CHANGE,    // Cambio de estado</span>
+<span class="nc" id="L118">        APPROVE,         // Aprobar</span>
+<span class="nc" id="L119">        REJECT,          // Rechazar</span>
+<span class="nc" id="L120">        ASSIGN,          // Asignar</span>
+<span class="nc" id="L121">        UNASSIGN,        // Desasignar</span>
+<span class="nc" id="L122">        LOGIN,           // Inicio de sesión</span>
+<span class="nc" id="L123">        LOGOUT,          // Cierre de sesión</span>
+<span class="nc" id="L124">        EXPORT,          // Exportar datos</span>
+<span class="nc" id="L125">        VALIDATION,      // Validación del sistema</span>
+<span class="nc" id="L126">        SECURITY_EVENT   // Evento de seguridad</span>
+    }
+
+    /**
+     * Tipos de entidades auditables
+     */
+<span class="nc" id="L132">    public enum EntityType {</span>
+<span class="nc" id="L133">        PREGUNTA,</span>
+<span class="nc" id="L134">        CUESTIONARIO,</span>
+<span class="nc" id="L135">        COMBO,</span>
+<span class="nc" id="L136">        CONCURSANTE,</span>
+<span class="nc" id="L137">        JORNADA,</span>
+<span class="nc" id="L138">        PROGRAMA,</span>
+<span class="nc" id="L139">        USUARIO,</span>
+<span class="nc" id="L140">        CONFIGURACION_GLOBAL,</span>
+<span class="nc" id="L141">        SISTEMA</span>
+    }
+
+    /**
+     * Resultado de la operación
+     */
+<span class="nc" id="L147">    public enum OperationResult {</span>
+<span class="nc" id="L148">        SUCCESS,         // Operación exitosa</span>
+<span class="nc" id="L149">        FAILURE,         // Operación fallida</span>
+<span class="nc" id="L150">        PARTIAL_SUCCESS, // Operación parcialmente exitosa</span>
+<span class="nc" id="L151">        BLOCKED          // Operación bloqueada por seguridad/permisos</span>
+    }
+
+    /**
+     * Constructor para crear un log básico
+     */
+    public AuditLog(Usuario usuario, OperationType operationType, EntityType entityType, 
+<span class="nc" id="L158">                    Long entityId, String description, OperationResult result) {</span>
+<span class="nc" id="L159">        this.usuario = usuario;</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">        this.usuarioNombre = usuario != null ? usuario.getNombre() : &quot;SISTEMA&quot;;</span>
+<span class="nc" id="L161">        this.timestamp = LocalDateTime.now();</span>
+<span class="nc" id="L162">        this.operationType = operationType;</span>
+<span class="nc" id="L163">        this.entityType = entityType;</span>
+<span class="nc" id="L164">        this.entityId = entityId;</span>
+<span class="nc" id="L165">        this.description = description;</span>
+<span class="nc" id="L166">        this.result = result;</span>
+<span class="nc" id="L167">    }</span>
+
+    /**
+     * Constructor completo
+     */
+    public AuditLog(Usuario usuario, OperationType operationType, EntityType entityType, 
+                    Long entityId, String description, String oldValues, String newValues,
+                    String ipAddress, String userAgent, OperationResult result) {
+<span class="nc" id="L175">        this(usuario, operationType, entityType, entityId, description, result);</span>
+<span class="nc" id="L176">        this.oldValues = oldValues;</span>
+<span class="nc" id="L177">        this.newValues = newValues;</span>
+<span class="nc" id="L178">        this.ipAddress = ipAddress;</span>
+<span class="nc" id="L179">        this.userAgent = userAgent;</span>
+<span class="nc" id="L180">    }</span>
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.lsnls.service.HistorialJornadaServiceTest
+-------------------------------------------------------------------------------
+Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.957 s -- in com.lsnls.service.HistorialJornadaServiceTest

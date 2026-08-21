@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ComboController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">ComboController.java</span></div><h1>ComboController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
+
+import com.lsnls.entity.Combo;
+import com.lsnls.entity.Combo.EstadoCombo;
+// import com.lsnls.entity.Combo.NivelCombo;
+import com.lsnls.entity.Usuario;
+// import com.lsnls.entity.PreguntaCombo;
+import com.lsnls.service.ComboService;
+import com.lsnls.service.AuthorizationService;
+import com.lsnls.repository.ComboRepository;
+// import javax.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.lsnls.dto.CrearComboDTO;
+import com.lsnls.entity.AuditLog;
+import com.lsnls.service.EditLockService;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.HashMap;
+import java.util.ArrayList;
+import com.lsnls.dto.ApiResponse;
+
+@RestController
+@RequestMapping(&quot;/api/combos&quot;)
+@CrossOrigin(origins = &quot;*&quot;)
+<span class="nc" id="L34">public class ComboController {</span>
+
+<span class="nc" id="L36">    private static final Logger log = LoggerFactory.getLogger(ComboController.class);</span>
+
+    @Autowired
+    private ComboService comboService;
+
+    @Autowired
+    private AuthorizationService authService;
+
+    @Autowired
+    private ComboRepository comboRepository;
+
+    @Autowired
+    private EditLockService editLockService;
+
+    @GetMapping
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; obtenerTodos(
+            @RequestParam(defaultValue = &quot;0&quot;) int page,
+            @RequestParam(defaultValue = &quot;25&quot;) int size) {
+        try {
+<span class="nc" id="L56">            Map&lt;String, Object&gt; response = comboService.obtenerTodosPaginados(page, size);</span>
+<span class="nc" id="L57">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L58">        } catch (Exception e) {</span>
+<span class="nc" id="L59">            log.error(&quot;Error al obtener combos paginados: &quot;, e);</span>
+<span class="nc" id="L60">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; obtenerPorId(@PathVariable Long id) {
+        try {
+<span class="nc" id="L68">            Map&lt;String, Object&gt; dto = comboService.obtenerComboConSlots(id);</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            if (dto != null) {</span>
+<span class="nc" id="L70">                return ResponseEntity.ok(dto);</span>
+            } else {
+<span class="nc" id="L72">                return ResponseEntity.notFound().build();</span>
+            }
+<span class="nc" id="L74">        } catch (Exception e) {</span>
+<span class="nc" id="L75">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+
+    @GetMapping(&quot;/{id}/preguntas&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;ApiResponse&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt;&gt; obtenerPreguntas(@PathVariable Long id) {
+        try {
+<span class="nc" id="L83">            List&lt;Map&lt;String, Object&gt;&gt; preguntas = comboService.obtenerPreguntasCombo(id);</span>
+<span class="nc" id="L84">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Preguntas obtenidas correctamente&quot;, preguntas));</span>
+<span class="nc" id="L85">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L86">            return ResponseEntity.badRequest()</span>
+<span class="nc" id="L87">                .body(ApiResponse.error(&quot;Error de validación: &quot; + e.getMessage()));</span>
+<span class="nc" id="L88">        } catch (Exception e) {</span>
+<span class="nc" id="L89">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L90">                .body(ApiResponse.error(&quot;Error al obtener preguntas del combo: &quot; + e.getMessage()));</span>
+        }
+    }
+    
+
+    @PostMapping(&quot;/nuevo&quot;)
+    @PreAuthorize(&quot;@authorizationService.canCreateCuestionario()&quot;)
+    public ResponseEntity&lt;?&gt; crearCombo(@RequestBody CrearComboDTO dto) {
+        try {
+            // Verificar permisos específicos
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (!authService.canCreateCuestionario()) {</span>
+<span class="nc" id="L101">                return ResponseEntity.status(403).body(&quot;No tienes permisos para crear combos. Solo usuarios con rol GUION o DIRECCION pueden crear combos.&quot;);</span>
+            }
+            
+            // Verificar autenticación
+<span class="nc" id="L105">            Optional&lt;Usuario&gt; usuarioOpt = authService.getCurrentUser();</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">            if (usuarioOpt.isEmpty()) {</span>
+<span class="nc" id="L107">                return ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;);</span>
+            }
+            
+            // Validaciones específicas de campos requeridos
+<span class="nc bnc" id="L111" title="All 4 branches missed.">            if (dto.getPreguntasMultiplicadoras() == null || dto.getPreguntasMultiplicadoras().isEmpty()) {</span>
+<span class="nc" id="L112">                return ResponseEntity.badRequest().body(&quot;Debe seleccionar las preguntas multiplicadoras para el combo&quot;);</span>
+            }
+            
+            // Obtener el estado del combo (por defecto &quot;borrador&quot; si no se especifica)
+<span class="nc" id="L116">            String estadoCombo = dto.getEstado();</span>
+<span class="nc bnc" id="L117" title="All 4 branches missed.">            if (estadoCombo == null || estadoCombo.trim().isEmpty()) {</span>
+<span class="nc" id="L118">                estadoCombo = &quot;borrador&quot;;</span>
+            }
+
+<span class="nc bnc" id="L121" title="All 2 branches missed.">            boolean estadoDistintoBorrador = !&quot;borrador&quot;.equalsIgnoreCase(estadoCombo);</span>
+<span class="nc bnc" id="L122" title="All 4 branches missed.">            boolean exigeCompleto = &quot;aprobado&quot;.equalsIgnoreCase(estadoCombo)</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                || (estadoDistintoBorrador &amp;&amp; !authService.isAdmin());</span>
+<span class="nc bnc" id="L124" title="All 4 branches missed.">            if (exigeCompleto &amp;&amp; dto.getPreguntasMultiplicadoras().size() != 3) {</span>
+<span class="nc" id="L125">                return ResponseEntity.badRequest().body(</span>
+                    &quot;Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para un estado distinto de borrador&quot;);
+            }
+
+            // Validar tipo de combo
+<span class="nc bnc" id="L130" title="All 4 branches missed.">            if (dto.getTipo() == null || dto.getTipo().trim().isEmpty()) {</span>
+<span class="nc" id="L131">                return ResponseEntity.badRequest().body(&quot;El campo 'tipo' es obligatorio. Tipos permitidos: P (Premio), A (Asequible), D (Difícil)&quot;);</span>
+            }
+            
+            // Validar que no se repitan preguntas
+<span class="nc" id="L135">            java.util.HashSet&lt;Long&gt; idsPreguntas = new java.util.HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            for (CrearComboDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                if (pm.getId() == null) {</span>
+<span class="nc" id="L138">                    return ResponseEntity.badRequest().body(&quot;Todas las preguntas multiplicadoras deben tener un ID válido&quot;);</span>
+                }
+<span class="nc bnc" id="L140" title="All 4 branches missed.">                if (pm.getFactor() == null || pm.getFactor().trim().isEmpty()) {</span>
+<span class="nc" id="L141">                    return ResponseEntity.badRequest().body(&quot;Todas las preguntas multiplicadoras deben tener un factor asignado (X2, X3, X)&quot;);</span>
+                }
+<span class="nc" id="L143">                idsPreguntas.add(pm.getId());</span>
+<span class="nc" id="L144">            }</span>
+            // Validar que no haya IDs duplicados comparando con el tamaño real de la lista
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            if (idsPreguntas.size() != dto.getPreguntasMultiplicadoras().size()) {</span>
+<span class="nc" id="L147">                return ResponseEntity.badRequest().body(&quot;No se puede usar la misma pregunta para diferentes multiplicadores (PM1, PM2, PM3)&quot;);</span>
+            }
+            
+            // Validar tipo con validación anticipada
+            try {
+<span class="nc" id="L152">                Combo.TipoCombo.valueOf(dto.getTipo());</span>
+<span class="nc" id="L153">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L154">                return ResponseEntity.badRequest().body(&quot;Tipo de combo '&quot; + dto.getTipo() + &quot;' no válido. Tipos permitidos: P (Premio), A (Asequible), D (Difícil)&quot;);</span>
+<span class="nc" id="L155">            }</span>
+            
+            // CREAR COMBO DE FORMA ATÓMICA con todas las preguntas
+            Combo combo;
+            try {
+<span class="nc" id="L160">                combo = comboService.crearComboDesdeDTO(dto, usuarioOpt.get());</span>
+<span class="nc" id="L161">            } catch (IllegalArgumentException e) {</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                if (e.getMessage().contains(&quot;Error de concurrencia&quot;)) {</span>
+<span class="nc" id="L163">                    return ResponseEntity.status(409).body(&quot;Conflicto de concurrencia: &quot; + e.getMessage());</span>
+                }
+<span class="nc" id="L165">                return ResponseEntity.badRequest().body(e.getMessage());</span>
+<span class="nc" id="L166">            } catch (RuntimeException e) {</span>
+<span class="nc" id="L167">                return ResponseEntity.badRequest().body(&quot;Error al crear combo: &quot; + e.getMessage());</span>
+<span class="nc" id="L168">            }</span>
+            
+<span class="nc" id="L170">            return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L171">                &quot;message&quot;, &quot;Combo tipo &quot; + dto.getTipo() + &quot; creado correctamente&quot;,</span>
+<span class="nc" id="L172">                &quot;id&quot;, combo.getId()</span>
+            ));
+<span class="nc" id="L174">        } catch (Exception e) {</span>
+<span class="nc" id="L175">            return ResponseEntity.badRequest().body(&quot;Error interno al crear combo: &quot; + e.getMessage());</span>
+        }
+    }
+
+    @PostMapping(&quot;/{comboId}/preguntas&quot;)
+    @PreAuthorize(&quot;@authorizationService.canCreateCuestionario()&quot;)
+    public ResponseEntity&lt;?&gt; agregarPregunta(
+            @PathVariable Long comboId,
+            @RequestBody Map&lt;String, Object&gt; request) {
+        try {
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (!authService.canCreateCuestionario()) {</span>
+<span class="nc" id="L186">                return ResponseEntity.status(403).body(&quot;No tienes permisos para agregar preguntas a combos. Solo usuarios con rol GUION o DIRECCION pueden agregar preguntas a combos.&quot;);</span>
+            }
+            
+            // Bloquear si el combo está asignado a una jornada
+<span class="nc bnc" id="L190" title="All 2 branches missed.">            if (comboService.estaAsignadoAJornada(comboId)) {</span>
+<span class="nc" id="L191">                return ResponseEntity.status(409).body(&quot;Este combo está asignado a una jornada y no se puede modificar.&quot;);</span>
+            }
+            
+<span class="nc" id="L194">            Long preguntaId = Long.valueOf(request.get(&quot;preguntaId&quot;).toString());</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">            Integer factorMultiplicacion = request.get(&quot;factorMultiplicacion&quot;) != null ? </span>
+<span class="nc" id="L196">                Integer.valueOf(request.get(&quot;factorMultiplicacion&quot;).toString()) : 1;</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">            Integer posicion = request.get(&quot;posicion&quot;) != null ?</span>
+<span class="nc" id="L198">                Integer.valueOf(request.get(&quot;posicion&quot;).toString()) : null;</span>
+            
+<span class="nc" id="L200">            boolean exito = comboService.agregarPregunta(comboId, preguntaId, factorMultiplicacion, posicion);</span>
+            
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            if (exito) {</span>
+<span class="nc" id="L203">                return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Pregunta agregada exitosamente&quot;));</span>
+            } else {
+<span class="nc" id="L205">                return ResponseEntity.badRequest().body(&quot;Error al agregar pregunta: No se pudo completar la operación&quot;);</span>
+            }
+<span class="nc" id="L207">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L208">            return ResponseEntity.badRequest().body(&quot;Error al agregar pregunta: &quot; + e.getMessage());</span>
+<span class="nc" id="L209">        } catch (Exception e) {</span>
+<span class="nc" id="L210">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(&quot;Error interno del servidor: &quot; + e.getMessage());</span>
+        }
+    }
+
+    @DeleteMapping(&quot;/{comboId}/preguntas/{preguntaId}&quot;)
+    @PreAuthorize(&quot;@authorizationService.canCreateCuestionario()&quot;)
+    public ResponseEntity&lt;?&gt; quitarPregunta(@PathVariable Long comboId, @PathVariable Long preguntaId) {
+        try {
+<span class="nc" id="L218">            log.info(&quot;[QUITAR PREGUNTA] Intentando quitar pregunta {} del combo {}&quot;, preguntaId, comboId);</span>
+            
+<span class="nc bnc" id="L220" title="All 2 branches missed.">            if (!authService.canCreateCuestionario()) {</span>
+<span class="nc" id="L221">                return ResponseEntity.status(403).body(&quot;No tienes permisos para quitar preguntas de combos. Solo usuarios con rol GUION o DIRECCION pueden quitar preguntas de combos.&quot;);</span>
+            }
+            
+            // Bloquear si el combo está asignado a una jornada
+<span class="nc bnc" id="L225" title="All 2 branches missed.">            if (comboService.estaAsignadoAJornada(comboId)) {</span>
+<span class="nc" id="L226">                return ResponseEntity.status(409).body(&quot;Este combo está asignado a una jornada y no se puede modificar.&quot;);</span>
+            }
+            
+<span class="nc" id="L229">            boolean exito = comboService.quitarPregunta(comboId, preguntaId);</span>
+            
+<span class="nc bnc" id="L231" title="All 2 branches missed.">            if (exito) {</span>
+<span class="nc" id="L232">                log.info(&quot;[QUITAR PREGUNTA] Pregunta {} quitada exitosamente del combo {}&quot;, preguntaId, comboId);</span>
+<span class="nc" id="L233">                return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Pregunta quitada exitosamente&quot;));</span>
+            } else {
+<span class="nc" id="L235">                log.warn(&quot;[QUITAR PREGUNTA] No se pudo quitar pregunta {} del combo {}&quot;, preguntaId, comboId);</span>
+<span class="nc" id="L236">                return ResponseEntity.badRequest().body(&quot;Error al quitar pregunta: No se pudo completar la operación&quot;);</span>
+            }
+<span class="nc" id="L238">        } catch (Exception e) {</span>
+<span class="nc" id="L239">            log.error(&quot;[QUITAR PREGUNTA] Error al quitar pregunta {} del combo {}: {}&quot;, preguntaId, comboId, e.getMessage(), e);</span>
+<span class="nc" id="L240">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(&quot;Error interno del servidor: &quot; + e.getMessage());</span>
+        }
+    }
+
+    @PostMapping(&quot;/{comboId}/limpiar-preguntas-invalidas&quot;)
+    @PreAuthorize(&quot;@authorizationService.canCreateCuestionario()&quot;)
+    public ResponseEntity&lt;?&gt; limpiarPreguntasInvalidas(@PathVariable Long comboId) {
+        try {
+<span class="nc" id="L248">            log.info(&quot;[LIMPIAR PREGUNTAS] Limpiando preguntas inválidas del combo {}&quot;, comboId);</span>
+            
+<span class="nc bnc" id="L250" title="All 2 branches missed.">            if (!authService.canCreateCuestionario()) {</span>
+<span class="nc" id="L251">                return ResponseEntity.status(403).body(&quot;No tienes permisos para limpiar combos. Solo usuarios con rol GUION o DIRECCION pueden limpiar combos.&quot;);</span>
+            }
+            
+<span class="nc" id="L254">            int preguntasEliminadas = comboService.limpiarPreguntasInvalidas(comboId);</span>
+            
+<span class="nc" id="L256">            log.info(&quot;[LIMPIAR PREGUNTAS] {} preguntas inválidas eliminadas del combo {}&quot;, preguntasEliminadas, comboId);</span>
+<span class="nc" id="L257">            return ResponseEntity.ok(Map.of(</span>
+                &quot;message&quot;, &quot;Preguntas inválidas limpiadas exitosamente&quot;,
+<span class="nc" id="L259">                &quot;preguntasEliminadas&quot;, preguntasEliminadas</span>
+            ));
+<span class="nc" id="L261">        } catch (Exception e) {</span>
+<span class="nc" id="L262">            log.error(&quot;[LIMPIAR PREGUNTAS] Error al limpiar preguntas del combo {}: {}&quot;, comboId, e.getMessage(), e);</span>
+<span class="nc" id="L263">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(&quot;Error interno del servidor: &quot; + e.getMessage());</span>
+        }
+    }
+
+    @GetMapping(&quot;/para-asignar&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; obtenerCombosParaAsignar() {
+        try {
+<span class="nc" id="L271">            List&lt;Combo&gt; combos = comboService.obtenerDisponiblesParaConcursantes();</span>
+<span class="nc" id="L272">            List&lt;Map&lt;String, Object&gt;&gt; resultado = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">            for (Combo c : combos) {</span>
+<span class="nc" id="L274">                Map&lt;String, Object&gt; dto = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L275">                dto.put(&quot;id&quot;, c.getId());</span>
+<span class="nc" id="L276">                dto.put(&quot;estado&quot;, c.getEstado());</span>
+<span class="nc" id="L277">                dto.put(&quot;fechaCreacion&quot;, c.getFechaCreacion());</span>
+<span class="nc" id="L278">                dto.put(&quot;nivel&quot;, c.getNivel());</span>
+<span class="nc" id="L279">                resultado.add(dto);</span>
+<span class="nc" id="L280">            }</span>
+<span class="nc" id="L281">            return ResponseEntity.ok(resultado);</span>
+<span class="nc" id="L282">        } catch (Exception e) {</span>
+<span class="nc" id="L283">            log.error(&quot;Error al obtener combos para asignar&quot;, e);</span>
+<span class="nc" id="L284">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+
+    @GetMapping(&quot;/por-estado/{estado}&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;List&lt;Combo&gt;&gt; obtenerPorEstado(@PathVariable Combo.EstadoCombo estado) {
+        try {
+<span class="nc" id="L292">            List&lt;Combo&gt; combos = comboService.obtenerPorEstado(estado);</span>
+<span class="nc" id="L293">            return ResponseEntity.ok(combos);</span>
+<span class="nc" id="L294">        } catch (Exception e) {</span>
+<span class="nc" id="L295">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+
+    @GetMapping(&quot;/por-nivel/{nivel}&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;List&lt;Combo&gt;&gt; obtenerPorNivel(@PathVariable Combo.NivelCombo nivel) {
+        try {
+<span class="nc" id="L303">            List&lt;Combo&gt; combos = comboService.obtenerPorNivel(nivel);</span>
+<span class="nc" id="L304">            return ResponseEntity.ok(combos);</span>
+<span class="nc" id="L305">        } catch (Exception e) {</span>
+<span class="nc" id="L306">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+    
+    @GetMapping(&quot;/filtrar&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; filtrarCombos(
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String tematica,
+            @RequestParam(required = false) String subtema,
+            @RequestParam(required = false) String id,
+            @RequestParam(required = false) String texto,
+            @RequestParam(defaultValue = &quot;0&quot;) int page,
+            @RequestParam(defaultValue = &quot;25&quot;) int size
+    ) {
+        try {
+            Map&lt;String, Object&gt; response;
+            
+            // Si se proporciona un ID, buscar por ID
+<span class="nc bnc" id="L326" title="All 4 branches missed.">            if (id != null &amp;&amp; !id.isEmpty()) {</span>
+<span class="nc" id="L327">                response = comboService.filtrarCombosPorId(id, page, size);</span>
+            } else {
+<span class="nc" id="L329">                response = comboService.filtrarCombos(estado, tipo, tematica, subtema, texto, page, size);</span>
+            }
+<span class="nc" id="L331">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L332">        } catch (Exception e) {</span>
+<span class="nc" id="L333">            log.error(&quot;Error al filtrar combos: &quot;, e);</span>
+<span class="nc" id="L334">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+
+    @PutMapping(&quot;/{id}/estado&quot;)
+    @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
+    public ResponseEntity&lt;?&gt; cambiarEstado(@PathVariable Long id, @RequestParam Combo.EstadoCombo nuevoEstado) {
+        try {
+<span class="nc" id="L342">            Optional&lt;Combo&gt; comboOpt = comboRepository.findById(id);</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">            if (comboOpt.isEmpty()) {</span>
+<span class="nc" id="L344">                return ResponseEntity.notFound().build();</span>
+            }
+
+<span class="nc" id="L347">            Combo combo = comboOpt.get();</span>
+            
+            // Bloquear cambio si está asignado a una jornada
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            if (comboService.estaAsignadoAJornada(id)) {</span>
+<span class="nc" id="L351">                return ResponseEntity.status(409).body(&quot;Este combo está asignado a una jornada y su estado está bloqueado en 'adjudicado'.&quot;);</span>
+            }
+
+            // Verificar permisos para cambiar estado
+<span class="nc bnc" id="L355" title="All 2 branches missed.">            if (!authService.canEditCombo(combo.getEstado())) {</span>
+<span class="nc" id="L356">                String estadoDescripcion = combo.getEstado().toString();</span>
+<span class="nc" id="L357">                return ResponseEntity.status(403).body(&quot;No tienes permisos para cambiar el estado de este combo. Tu rol actual no permite editar combos en estado '&quot; + estadoDescripcion + &quot;'.&quot;);</span>
+            }
+
+<span class="nc" id="L360">            editLockService.assertCanEdit(AuditLog.EntityType.COMBO, id);</span>
+
+            Combo comboActualizado;
+            try {
+<span class="nc" id="L364">                comboActualizado = comboService.cambiarEstado(id, nuevoEstado, authService.isAdmin());</span>
+<span class="nc" id="L365">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L366">                return ResponseEntity.badRequest().body(e.getMessage());</span>
+<span class="nc" id="L367">            }</span>
+<span class="nc bnc" id="L368" title="All 2 branches missed.">            if (comboActualizado != null) {</span>
+<span class="nc" id="L369">                editLockService.logEntityUpdate(AuditLog.EntityType.COMBO, id, &quot;Cambio de estado de combo&quot;);</span>
+<span class="nc" id="L370">                return ResponseEntity.ok(Map.of(</span>
+                    &quot;message&quot;, &quot;Estado del combo cambiado exitosamente&quot;,
+                    &quot;estado&quot;, nuevoEstado
+                ));
+            } else {
+<span class="nc" id="L375">                return ResponseEntity.badRequest().body(&quot;Error al cambiar el estado del combo&quot;);</span>
+            }
+<span class="nc" id="L377">        } catch (Exception e) {</span>
+<span class="nc" id="L378">            log.error(&quot;Error al cambiar estado del combo {}: {}&quot;, id, e.getMessage(), e);</span>
+<span class="nc" id="L379">            return ResponseEntity.internalServerError().body(&quot;Error interno del servidor: &quot; + e.getMessage());</span>
+        }
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;@authorizationService.canCreateCuestionario()&quot;)
+    public ResponseEntity&lt;?&gt; actualizarCombo(@PathVariable Long id, @RequestBody Map&lt;String, Object&gt; datos) {
+        try {
+<span class="nc bnc" id="L387" title="All 2 branches missed.">            if (!authService.canCreateCuestionario()) {</span>
+<span class="nc" id="L388">                return ResponseEntity.status(403).body(&quot;No tienes permisos para editar combos. Solo usuarios con rol GUION o DIRECCION pueden editar combos.&quot;);</span>
+            }
+            
+<span class="nc" id="L391">            Optional&lt;Combo&gt; comboOpt = comboService.obtenerPorId(id);</span>
+<span class="nc bnc" id="L392" title="All 2 branches missed.">            if (comboOpt.isEmpty()) {</span>
+<span class="nc" id="L393">                return ResponseEntity.badRequest().body(&quot;Combo no encontrado&quot;);</span>
+            }
+            
+<span class="nc" id="L396">            Combo combo = comboOpt.get();</span>
+
+<span class="nc bnc" id="L398" title="All 4 branches missed.">            if (datos.containsKey(&quot;version&quot;) &amp;&amp; datos.get(&quot;version&quot;) != null) {</span>
+<span class="nc" id="L399">                combo.setVersion(Long.parseLong(datos.get(&quot;version&quot;).toString()));</span>
+            }
+
+            // Actualizar tipo si se proporciona
+<span class="nc bnc" id="L403" title="All 4 branches missed.">            if (datos.containsKey(&quot;tipo&quot;) &amp;&amp; datos.get(&quot;tipo&quot;) != null) {</span>
+<span class="nc" id="L404">                String tipoStr = datos.get(&quot;tipo&quot;).toString();</span>
+                try {
+<span class="nc" id="L406">                    combo.setTipo(Combo.TipoCombo.valueOf(tipoStr));</span>
+<span class="nc" id="L407">                } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L408">                    return ResponseEntity.badRequest().body(&quot;Tipo de combo inválido: &quot; + tipoStr);</span>
+<span class="nc" id="L409">                }</span>
+            }
+            
+            // Actualizar estado si se proporciona
+<span class="nc bnc" id="L413" title="All 4 branches missed.">            if (datos.containsKey(&quot;estado&quot;) &amp;&amp; datos.get(&quot;estado&quot;) != null) {</span>
+<span class="nc" id="L414">                String estadoStr = datos.get(&quot;estado&quot;).toString();</span>
+                try {
+<span class="nc" id="L416">                    Combo.EstadoCombo nuevoEstado = Combo.EstadoCombo.valueOf(estadoStr);</span>
+<span class="nc" id="L417">                    comboService.validarTransicionEstado(combo.getEstado(), nuevoEstado, authService.isAdmin());</span>
+<span class="nc bnc" id="L418" title="All 4 branches missed.">                    boolean exigeCompleto = nuevoEstado == Combo.EstadoCombo.aprobado</span>
+<span class="nc bnc" id="L419" title="All 2 branches missed.">                        || (nuevoEstado != Combo.EstadoCombo.borrador &amp;&amp; !authService.isAdmin());</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">                    if (exigeCompleto) {</span>
+                        // Preferir el payload de preguntas del propio request (si viene),
+                        // porque en edición se sincronizan después del PUT.
+<span class="nc" id="L423">                        Object pmsObj = datos.get(&quot;preguntasMultiplicadoras&quot;);</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">                        if (pmsObj instanceof java.util.List) {</span>
+<span class="nc" id="L425">                            int totalPms = ((java.util.List&lt;?&gt;) pmsObj).size();</span>
+<span class="nc bnc" id="L426" title="All 2 branches missed.">                            if (totalPms != 3) {</span>
+<span class="nc" id="L427">                                throw new IllegalArgumentException(</span>
+                                    &quot;Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para un estado distinto de borrador. Actual: &quot; + totalPms);
+                            }
+<span class="nc" id="L430">                        } else {</span>
+<span class="nc" id="L431">                            Combo comboConPreguntas = comboService.obtenerConPreguntas(id)</span>
+<span class="nc" id="L432">                                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Combo no encontrado&quot;));</span>
+<span class="nc" id="L433">                            comboService.validarCompletoParaAprobar(comboConPreguntas);</span>
+                        }
+                    }
+<span class="nc" id="L436">                    combo.setEstado(nuevoEstado);</span>
+<span class="nc" id="L437">                } catch (IllegalArgumentException e) {</span>
+<span class="nc bnc" id="L438" title="All 4 branches missed.">                    if (e.getMessage() != null &amp;&amp; !e.getMessage().startsWith(&quot;No enum constant&quot;)) {</span>
+<span class="nc" id="L439">                        return ResponseEntity.badRequest().body(e.getMessage());</span>
+                    }
+<span class="nc" id="L441">                    return ResponseEntity.badRequest().body(&quot;Estado de combo inválido: &quot; + estadoStr);</span>
+<span class="nc" id="L442">                }</span>
+            }
+            
+            // Actualizar temática si se proporciona
+<span class="nc bnc" id="L446" title="All 2 branches missed.">            if (datos.containsKey(&quot;tematica&quot;)) {</span>
+<span class="nc bnc" id="L447" title="All 2 branches missed.">                String tematica = datos.get(&quot;tematica&quot;) != null ? datos.get(&quot;tematica&quot;).toString() : null;</span>
+<span class="nc" id="L448">                combo.setTematica(tematica);</span>
+            }
+
+            // Actualizar notas de dirección si se proporciona
+<span class="nc bnc" id="L452" title="All 2 branches missed.">            if (datos.containsKey(&quot;notasDireccion&quot;)) {</span>
+<span class="nc bnc" id="L453" title="All 2 branches missed.">                String notas = datos.get(&quot;notasDireccion&quot;) != null ? datos.get(&quot;notasDireccion&quot;).toString() : null;</span>
+<span class="nc" id="L454">                combo.setNotasDireccion(notas);</span>
+            }
+
+<span class="nc" id="L457">            editLockService.assertCanEdit(AuditLog.EntityType.COMBO, id);</span>
+            
+<span class="nc" id="L459">            Combo comboActualizado = comboService.actualizar(id, combo);</span>
+<span class="nc bnc" id="L460" title="All 2 branches missed.">            if (comboActualizado != null) {</span>
+<span class="nc" id="L461">                editLockService.logEntityUpdate(AuditLog.EntityType.COMBO, id, &quot;Actualización de combo&quot;);</span>
+<span class="nc" id="L462">                return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Combo actualizado correctamente&quot;));</span>
+            } else {
+<span class="nc" id="L464">                return ResponseEntity.badRequest().body(&quot;Error al actualizar combo&quot;);</span>
+            }
+<span class="nc" id="L466">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L467">            return ResponseEntity.status(409).body(&quot;El combo ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L468">        } catch (Exception e) {</span>
+<span class="nc" id="L469">            return ResponseEntity.badRequest().body(&quot;Error al actualizar combo: &quot; + e.getMessage());</span>
+        }
+    }
+
+        @PutMapping(&quot;/{comboId}/preguntas/{preguntaId}/factor&quot;)
+    @PreAuthorize(&quot;@authorizationService.canCreateCuestionario()&quot;)
+    public ResponseEntity&lt;?&gt; actualizarFactorPregunta(
+            @PathVariable Long comboId,
+            @PathVariable Long preguntaId,
+            @RequestBody Map&lt;String, Object&gt; request) {
+        try {
+<span class="nc bnc" id="L480" title="All 2 branches missed.">            if (!authService.canCreateCuestionario()) {</span>
+<span class="nc" id="L481">                return ResponseEntity.status(403).body(&quot;No tienes permisos para modificar factores de preguntas en combos.&quot;);</span>
+            }
+
+            // Verificar que el factor existe en la solicitud
+<span class="nc bnc" id="L485" title="All 2 branches missed.">            if (!request.containsKey(&quot;factorMultiplicacion&quot;)) {</span>
+<span class="nc" id="L486">                log.warn(&quot;[ACTUALIZAR FACTOR] Falta el parámetro factorMultiplicacion en la solicitud&quot;);</span>
+<span class="nc" id="L487">                return ResponseEntity.badRequest().body(&quot;Error: Falta el parámetro factorMultiplicacion&quot;);</span>
+            }
+            
+            // Convertir el factor a String de manera segura
+<span class="nc" id="L491">            Object factorObj = request.get(&quot;factorMultiplicacion&quot;);</span>
+<span class="nc bnc" id="L492" title="All 2 branches missed.">            String factorMultiplicacion = factorObj != null ? factorObj.toString() : &quot;&quot;;</span>
+
+<span class="nc" id="L494">            log.info(&quot;[ACTUALIZAR FACTOR] Actualizando factor de pregunta {} en combo {} a: {}&quot;,</span>
+                    preguntaId, comboId, factorMultiplicacion);
+
+<span class="nc" id="L497">            boolean exito = comboService.actualizarFactorPregunta(comboId, preguntaId, factorMultiplicacion);</span>
+
+<span class="nc bnc" id="L499" title="All 2 branches missed.">            if (exito) {</span>
+<span class="nc" id="L500">                log.info(&quot;[ACTUALIZAR FACTOR] Factor actualizado exitosamente&quot;);</span>
+<span class="nc" id="L501">                return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Factor actualizado exitosamente&quot;, </span>
+                                               &quot;comboId&quot;, comboId,
+                                               &quot;preguntaId&quot;, preguntaId,
+                                               &quot;factor&quot;, factorMultiplicacion));
+            } else {
+<span class="nc" id="L506">                log.warn(&quot;[ACTUALIZAR FACTOR] No se pudo actualizar el factor&quot;);</span>
+<span class="nc" id="L507">                return ResponseEntity.badRequest().body(&quot;Error al actualizar factor: No se pudo completar la operación&quot;);</span>
+            }
+<span class="nc" id="L509">        } catch (Exception e) {</span>
+<span class="nc" id="L510">            log.error(&quot;Error al actualizar factor de pregunta {} en combo {}: {}&quot;, preguntaId, comboId, e.getMessage(), e);</span>
+<span class="nc" id="L511">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(&quot;Error interno del servidor: &quot; + e.getMessage());</span>
+        }
+    }
+    
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;@authorizationService.canDelete()&quot;)
+    public ResponseEntity&lt;?&gt; eliminar(@PathVariable Long id) {
+<span class="nc" id="L518">        log.info(&quot;[ELIMINAR COMBO] Solicitud para eliminar combo con id: {}&quot;, id);</span>
+        try {
+            // Verificar permisos específicos
+<span class="nc bnc" id="L521" title="All 2 branches missed.">            if (!authService.canDelete()) {</span>
+<span class="nc" id="L522">                log.warn(&quot;[ELIMINAR COMBO] Permiso denegado para eliminar combo id: {}&quot;, id);</span>
+<span class="nc" id="L523">                return ResponseEntity.status(403).body(&quot;No tienes permisos para eliminar combos. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar combos.&quot;);</span>
+            }
+
+            // Verificar que el combo existe
+<span class="nc" id="L527">            Optional&lt;Combo&gt; comboOpt = comboService.obtenerPorId(id);</span>
+<span class="nc bnc" id="L528" title="All 2 branches missed.">            if (comboOpt.isEmpty()) {</span>
+<span class="nc" id="L529">                return ResponseEntity.status(404).body(&quot;Combo con ID &quot; + id + &quot; no encontrado&quot;);</span>
+            }
+
+<span class="nc" id="L532">            Combo combo = comboOpt.get();</span>
+            
+            // Verificar estado del combo
+<span class="nc bnc" id="L535" title="All 2 branches missed.">            if (combo.getEstado() == EstadoCombo.adjudicado) {</span>
+<span class="nc" id="L536">                return ResponseEntity.badRequest().body(&quot;No se puede eliminar el combo porque está adjudicado. Cámbialo a un estado anterior primero.&quot;);</span>
+            }
+<span class="nc bnc" id="L538" title="All 2 branches missed.">            if (combo.getEstado() == EstadoCombo.grabado) {</span>
+<span class="nc" id="L539">                return ResponseEntity.badRequest().body(&quot;No se puede eliminar el combo porque está grabado. Cámbialo a un estado anterior primero.&quot;);</span>
+            }
+
+<span class="nc" id="L542">            authService.getCurrentUser().ifPresent(user -&gt; log.info(&quot;[ELIMINAR COMBO] Usuario actual: {} (ID: {})&quot;, user.getNombre(), user.getId()));</span>
+            
+<span class="nc" id="L544">            comboService.eliminar(id);</span>
+<span class="nc" id="L545">            log.info(&quot;[ELIMINAR COMBO] Combo {} eliminado correctamente&quot;, id);</span>
+<span class="nc" id="L546">            return ResponseEntity.ok().build();</span>
+<span class="nc" id="L547">        } catch (IllegalArgumentException e) {</span>
+            // Mensajes específicos de validación
+<span class="nc" id="L549">            log.warn(&quot;[ELIMINAR COMBO] Validación fallida para combo {}: {}&quot;, id, e.getMessage());</span>
+<span class="nc" id="L550">            return ResponseEntity.badRequest().body(e.getMessage());</span>
+<span class="nc" id="L551">        } catch (Exception e) {</span>
+<span class="nc" id="L552">            log.error(&quot;[ELIMINAR COMBO] Error al eliminar combo {}: {}&quot;, id, e.getMessage(), e);</span>
+<span class="nc bnc" id="L553" title="All 2 branches missed.">            String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : &quot;&quot;;</span>
+<span class="nc bnc" id="L554" title="All 4 branches missed.">            if (msg.contains(&quot;foreign key&quot;) || msg.contains(&quot;constraint&quot;)) {</span>
+<span class="nc" id="L555">                return ResponseEntity.badRequest().body(&quot;No se puede eliminar el combo porque está siendo usado por concursantes o jornadas. Desasígnalo primero.&quot;);</span>
+            }
+<span class="nc bnc" id="L557" title="All 2 branches missed.">            if (msg.contains(&quot;jornada&quot;)) {</span>
+<span class="nc" id="L558">                return ResponseEntity.badRequest().body(&quot;No se puede eliminar el combo porque está asignado a una jornada.&quot;);</span>
+            }
+<span class="nc bnc" id="L560" title="All 2 branches missed.">            if (msg.contains(&quot;concursante&quot;)) {</span>
+<span class="nc" id="L561">                return ResponseEntity.badRequest().body(&quot;No se puede eliminar el combo porque está asignado a concursantes.&quot;);</span>
+            }
+            // Mensaje genérico para errores internos
+<span class="nc" id="L564">            return ResponseEntity.badRequest().body(&quot;No se pudo eliminar el combo. Verifica que no esté siendo usado por otros elementos del sistema.&quot;);</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

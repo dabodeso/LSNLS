@@ -12,7 +12,7 @@
 <!-- Toastify CSS -->
 <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
 <!-- Custom CSS -->
-<link href="css/styles.css" rel="stylesheet">
+<link href="css/styles.css?v=20260821-1" rel="stylesheet">
     <link href="css/pagination.css" rel="stylesheet">
 <style>
 /* Ancho y diseño general de la tabla (como en preguntas) */
@@ -136,7 +136,8 @@ pointer-events: none;
 .notas-grabacion-textarea {
     width: 100%;
     min-width: 200px;
-    resize: vertical;
+    resize: both;
+    overflow: auto;
     font-size: inherit;
     line-height: 1.4;
 }
@@ -560,7 +561,7 @@ line-height: 1.2;
 <label class="form-label">Cuestionario (Niveles 1-4):</label>
 <div class="input-group">
 <input type="text" class="form-control" id="cuestionario-id" readonly placeholder="Seleccionar cuestionario">
-<button type="button" class="btn btn-outline-primary" onclick="abrirSelectorCuestionario()">
+<button type="button" class="btn btn-outline-primary" id="btn-buscar-cuestionario" onclick="abrirSelectorCuestionario()">
 <i class="fas fa-search"></i>
 </button>
 <button type="button" class="btn btn-outline-danger" onclick="limpiarSelectorCuestionario()">
@@ -572,7 +573,7 @@ line-height: 1.2;
 <label class="form-label">Combo (Preguntas Multiplicadoras):</label>
 <div class="input-group">
 <input type="text" class="form-control" id="combo-id" readonly placeholder="Seleccionar combo">
-<button type="button" class="btn btn-outline-primary" onclick="abrirSelectorCombo()">
+<button type="button" class="btn btn-outline-primary" id="btn-buscar-combo" onclick="abrirSelectorCombo()">
 <i class="fas fa-search"></i>
 </button>
 <button type="button" class="btn btn-outline-warning" id="btn-reciclar-combo" onclick="iniciarReciclajeComboDesdeFormulario()" title="Reciclar combo (seleccionar pregunta usada)" style="display: none;">
@@ -694,7 +695,6 @@ line-height: 1.2;
 <div class="col-md-3">
 <label class="form-label">Estado:</label>
 <select class="form-control" id="estado" required>
-<option value="">Seleccionar estado</option>
 <option value="grabado" selected>Grabado</option>
 <option value="editado">Editado</option>
 <option value="programado">Programado</option>
@@ -1052,11 +1052,11 @@ Borrar
 <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 <!-- Custom JS -->
 <script src="js/auth.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/api.js?v=20260626-1"></script>
+<script src="js/utils.js?v=20260821-3"></script>
+<script src="js/api.js?v=20260821-3"></script>
     <script src="js/undo-manager.js?v=20260626-3"></script>
 <script src="js/table-resizer.js?v=20260128-2"></script>
-    <script src="js/concursantes.js?v=20260626-9"></script>
+    <script src="js/concursantes.js?v=20260821-6"></script>
 <script>
 // Inicializar la página cuando se carga
 document.addEventListener('DOMContentLoaded', function() {

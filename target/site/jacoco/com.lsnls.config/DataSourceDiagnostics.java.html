@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DataSourceDiagnostics.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.config</a> &gt; <span class="el_source">DataSourceDiagnostics.java</span></div><h1>DataSourceDiagnostics.java</h1><pre class="source lang-java linenums">package com.lsnls.config;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.Arrays;
+
+<span class="nc" id="L19">@Slf4j</span>
+@Component
+<span class="nc" id="L21">public class DataSourceDiagnostics {</span>
+
+    @Autowired
+    private DataSource dataSource;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Autowired(required = false)
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private Environment environment;
+
+    @PostConstruct
+    public void logDataSourceInfo() {
+<span class="nc" id="L37">        try (Connection conn = dataSource.getConnection(); Statement st = conn.createStatement()) {</span>
+<span class="nc" id="L38">            DatabaseMetaData md = conn.getMetaData();</span>
+<span class="nc" id="L39">            String url = md.getURL();</span>
+<span class="nc" id="L40">            String user = md.getUserName();</span>
+<span class="nc" id="L41">            String driver = md.getDriverName() + &quot; &quot; + md.getDriverVersion();</span>
+
+<span class="nc" id="L43">            String profiles = Arrays.toString(environment.getActiveProfiles());</span>
+
+<span class="nc" id="L45">            String dbName = null;</span>
+<span class="nc" id="L46">            String host = null;</span>
+<span class="nc" id="L47">            String version = null;</span>
+<span class="nc" id="L48">            try (ResultSet rs = st.executeQuery(&quot;SELECT DATABASE()&quot;)) {</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                if (rs.next()) dbName = rs.getString(1);</span>
+            }
+<span class="nc" id="L51">            try (ResultSet rs = st.executeQuery(&quot;SELECT @@hostname, @@version&quot;)) {</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                if (rs.next()) { host = rs.getString(1); version = rs.getString(2); }</span>
+            }
+
+<span class="nc" id="L55">            log.info(&quot;[DS DEBUG] profiles={}, jdbcUrl={}, dbUser={}, driver={}, database={}, host={}, mysqlVersion={}&quot;,</span>
+                    profiles, url, user, driver, dbName, host, version);
+
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            log.info(&quot;[SEC DEBUG] PasswordEncoder en uso: {}&quot;, passwordEncoder != null ? passwordEncoder.getClass().getName() : &quot;null&quot;);</span>
+
+<span class="nc" id="L60">            try (ResultSet rs = st.executeQuery(&quot;SELECT COUNT(*) FROM usuarios&quot;)) {</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                if (rs.next()) log.info(&quot;[DS DEBUG] usuarios.count={}&quot;, rs.getLong(1));</span>
+<span class="nc" id="L62">            } catch (Exception ignore) {}</span>
+
+<span class="nc" id="L64">        } catch (Exception e) {</span>
+<span class="nc" id="L65">            log.warn(&quot;[DS DEBUG] No se pudo obtener información de DataSource: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L66">        }</span>
+<span class="nc" id="L67">    }</span>
+}
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -236,8 +236,32 @@ body {
 }
 
 textarea {
-    resize: vertical;
+    resize: both;
+    overflow: auto;
     min-height: 80px;
+    min-width: 80px;
+}
+
+/* En tablas el mínimo es más bajo para no inflar la fila; se puede agrandar a mano */
+table textarea,
+td textarea,
+.table textarea,
+.table-excel textarea {
+    min-height: 2.2em;
+    min-width: 100%;
+    width: 100%;
+    max-width: none;
+    resize: both !important;
+    overflow: auto !important;
+    position: relative;
+    z-index: 6;
+    box-sizing: border-box;
+}
+
+td:has(textarea) {
+    overflow: visible !important;
+    max-width: none !important;
+    vertical-align: top;
 }
 
 .character-counter {
@@ -947,4 +971,14 @@ textarea {
 
 .context-selected {
     background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+/* Cuadros de texto ampliables en toda la app (alto y ancho), incluidas tablas */
+textarea.form-control,
+textarea.editable-field,
+textarea.campo-editable,
+textarea.notas-grabacion-textarea,
+textarea.programa-creditos-textarea {
+    resize: both !important;
+    overflow: auto !important;
 } 

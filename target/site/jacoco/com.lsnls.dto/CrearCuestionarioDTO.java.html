@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CrearCuestionarioDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.dto</a> &gt; <span class="el_source">CrearCuestionarioDTO.java</span></div><h1>CrearCuestionarioDTO.java</h1><pre class="source lang-java linenums">package com.lsnls.dto;
+
+import java.util.List;
+
+<span class="nc" id="L5">public class CrearCuestionarioDTO {</span>
+    private Long version;
+    private List&lt;Long&gt; preguntasNormales;
+    private List&lt;PreguntaMultiplicadoraDTO&gt; preguntasMultiplicadoras;
+    private String tematica;
+    private String notasDireccion;
+
+<span class="nc" id="L12">    public Long getVersion() { return version; }</span>
+<span class="nc" id="L13">    public void setVersion(Long version) { this.version = version; }</span>
+<span class="nc" id="L14">    public List&lt;Long&gt; getPreguntasNormales() { return preguntasNormales; }</span>
+<span class="nc" id="L15">    public void setPreguntasNormales(List&lt;Long&gt; preguntasNormales) { this.preguntasNormales = preguntasNormales; }</span>
+<span class="nc" id="L16">    public List&lt;PreguntaMultiplicadoraDTO&gt; getPreguntasMultiplicadoras() { return preguntasMultiplicadoras; }</span>
+<span class="nc" id="L17">    public void setPreguntasMultiplicadoras(List&lt;PreguntaMultiplicadoraDTO&gt; preguntasMultiplicadoras) { this.preguntasMultiplicadoras = preguntasMultiplicadoras; }</span>
+<span class="nc" id="L18">    public String getTematica() { return tematica; }</span>
+<span class="nc" id="L19">    public void setTematica(String tematica) { this.tematica = tematica; }</span>
+<span class="nc" id="L20">    public String getNotasDireccion() { return notasDireccion; }</span>
+<span class="nc" id="L21">    public void setNotasDireccion(String notasDireccion) { this.notasDireccion = notasDireccion; }</span>
+
+<span class="nc" id="L23">    public static class PreguntaMultiplicadoraDTO {</span>
+        private Long id;
+        private String factor;
+<span class="nc" id="L26">        public Long getId() { return id; }</span>
+<span class="nc" id="L27">        public void setId(Long id) { this.id = id; }</span>
+<span class="nc" id="L28">        public String getFactor() { return factor; }</span>
+<span class="nc" id="L29">        public void setFactor(String factor) { this.factor = factor; }</span>
+    }
+
+    // Utilidad para obtener el slot/hueco por índice y tipo
+    public static String getSlotPorIndice(int idx, boolean esMultiplicadora) {
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (!esMultiplicadora) {</span>
+<span class="nc bnc" id="L35" title="All 5 branches missed.">            switch (idx) {</span>
+<span class="nc" id="L36">                case 0: return &quot;1LS&quot;;</span>
+<span class="nc" id="L37">                case 1: return &quot;2NLS&quot;;</span>
+<span class="nc" id="L38">                case 2: return &quot;3LS&quot;;</span>
+<span class="nc" id="L39">                case 3: return &quot;4NLS&quot;;</span>
+            }
+        } else {
+<span class="nc bnc" id="L42" title="All 4 branches missed.">            switch (idx) {</span>
+<span class="nc" id="L43">                case 0: return &quot;PM1&quot;;</span>
+<span class="nc" id="L44">                case 1: return &quot;PM2&quot;;</span>
+<span class="nc" id="L45">                case 2: return &quot;PM3&quot;;</span>
+            }
+        }
+<span class="nc" id="L48">        return null;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Jornada.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.entity</a> &gt; <span class="el_source">Jornada.java</span></div><h1>Jornada.java</h1><pre class="source lang-java linenums">package com.lsnls.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import javax.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.Set;
+
+@Data
+@NoArgsConstructor
+@Entity
+@Table(name = &quot;jornadas&quot;)
+public class Jornada {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Version
+    private Long version;
+
+    @Column(nullable = false)
+    private String nombre;
+
+    @Column(name = &quot;fecha_jornada&quot;)
+    private LocalDate fechaJornada;
+
+    @Column(name = &quot;lugar&quot;)
+    private String lugar;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoJornada estado = EstadoJornada.preparacion;
+
+    @ManyToOne
+    @JoinColumn(name = &quot;creacion_usuario_id&quot;, nullable = false)
+    @JsonIgnoreProperties({&quot;preguntasCreadas&quot;, &quot;preguntasVerificadas&quot;, &quot;cuestionariosCreados&quot;})
+    private Usuario creacionUsuario;
+
+    @Column(name = &quot;fecha_creacion&quot;)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = &quot;yyyy-MM-dd'T'HH:mm:ss&quot;)
+    private LocalDateTime fechaCreacion;
+
+    @Column(columnDefinition = &quot;TEXT&quot;)
+    private String notas;
+
+    // Cuestionarios de la jornada (exactamente 5)
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = &quot;jornadas_cuestionarios&quot;,
+        joinColumns = @JoinColumn(name = &quot;jornada_id&quot;),
+        inverseJoinColumns = @JoinColumn(name = &quot;cuestionario_id&quot;)
+    )
+    @JsonIgnoreProperties({&quot;preguntas&quot;, &quot;creacionUsuario&quot;})
+    private Set&lt;Cuestionario&gt; cuestionarios;
+
+    // Combos de la jornada (exactamente 5)
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = &quot;jornadas_combos&quot;,
+        joinColumns = @JoinColumn(name = &quot;jornada_id&quot;),
+        inverseJoinColumns = @JoinColumn(name = &quot;combo_id&quot;)
+    )
+    @JsonIgnoreProperties({&quot;preguntas&quot;, &quot;creacionUsuario&quot;})
+    private Set&lt;Combo&gt; combos;
+
+<span class="fc" id="L69">    public enum EstadoJornada {</span>
+<span class="fc" id="L70">        preparacion, lista, en_grabacion, completada, archivada</span>
+    }
+
+    @PrePersist
+    protected void onCreate() {
+<span class="nc" id="L75">        fechaCreacion = LocalDateTime.now();</span>
+<span class="nc" id="L76">    }</span>
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

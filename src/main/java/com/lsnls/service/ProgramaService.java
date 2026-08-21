@@ -30,6 +30,9 @@ public class ProgramaService {
     @Autowired
     private EntityManager entityManager;
 
+    @Autowired
+    private UndoService undoService;
+
     public List<Programa> findAll() {
         return programaRepository.findAll();
     }
@@ -210,8 +213,17 @@ public class ProgramaService {
                 "Los programas emitidos no pueden ser eliminados.");
         }
 
+        // UNDO: capturar la fila completa antes de borrar (se reinsertará con el mismo id)
+        Map<String, Object> filaPrograma = undoService.snapshotFila("programas", id);
+
         // Si llegamos aquí, es seguro eliminar
         programaRepository.deleteById(id);
+
+        if (filaPrograma != null) {
+            undoService.registrar("eliminar_programa",
+                "Eliminar programa " + (programa.getCodigo() != null ? programa.getCodigo() : id),
+                java.util.Collections.singletonList(UndoService.accionInsertarFila("programas", filaPrograma)));
+        }
     }
 
     public String getDuracionObjetivo() {

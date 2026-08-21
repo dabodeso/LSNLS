@@ -1,0 +1,1169 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PreguntaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">PreguntaService.java</span></div><h1>PreguntaService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import com.lsnls.entity.Pregunta;
+import com.lsnls.entity.Pregunta.EstadoPregunta;
+import com.lsnls.entity.Pregunta.EstadoDisponibilidad;
+import com.lsnls.entity.Pregunta.NivelPregunta;
+import com.lsnls.entity.Usuario;
+import com.lsnls.repository.PreguntaRepository;
+import com.lsnls.repository.PreguntaComboRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import com.lsnls.dto.PreguntaDTO;
+import javax.persistence.EntityManager;
+import java.util.ArrayList;
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@Service
+@Transactional
+<span class="nc" id="L39">public class PreguntaService {</span>
+    
+<span class="nc" id="L41">    private static final Logger log = LoggerFactory.getLogger(PreguntaService.class);</span>
+    
+    @Autowired
+    private PreguntaRepository preguntaRepository;
+    
+    @Autowired
+    private DataTransformationService dataTransformationService;
+    
+    @Autowired
+    private PreguntaComboRepository preguntaComboRepository;
+
+    @Autowired
+    private UndoService undoService;
+
+    @Autowired
+    private EntityManager entityManager;
+    
+    @Autowired(required = false)
+    private UsuarioService usuarioService; // no usado actualmente
+
+    public Pregunta crear(Pregunta pregunta) {
+        // Transformar datos automáticamente a mayúsculas y limpiar
+<span class="nc" id="L63">        pregunta.setPregunta(dataTransformationService.normalizarPregunta(pregunta.getPregunta()));</span>
+<span class="nc" id="L64">        pregunta.setRespuesta(dataTransformationService.normalizarRespuesta(pregunta.getRespuesta()));</span>
+<span class="nc" id="L65">        pregunta.setTematica(dataTransformationService.normalizarTematica(pregunta.getTematica()));</span>
+        
+        // Validar datos transformados
+<span class="nc" id="L68">        DataTransformationService.ValidationResult validation = </span>
+<span class="nc" id="L69">            dataTransformationService.validarPreguntaCompleta(</span>
+<span class="nc" id="L70">                pregunta.getPregunta(), </span>
+<span class="nc" id="L71">                pregunta.getRespuesta(), </span>
+<span class="nc" id="L72">                pregunta.getTematica()</span>
+            );
+        
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (!validation.isValid()) {</span>
+<span class="nc" id="L76">            throw new IllegalArgumentException(&quot;Datos no válidos: &quot; + validation.getErrorsAsString());</span>
+        }
+        
+<span class="nc" id="L79">        pregunta.setFechaCreacion(LocalDateTime.now());</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (pregunta.getEstado() == null) {</span>
+<span class="nc" id="L81">            pregunta.setEstado(EstadoPregunta.borrador);</span>
+        }
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (pregunta.getEstadoDisponibilidad() == null) {</span>
+<span class="nc" id="L84">            pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.disponible);</span>
+        }
+<span class="nc" id="L86">        return preguntaRepository.save(pregunta);</span>
+    }
+
+    /**
+     * Comprueba que la pregunta tiene los campos mínimos para pasar a &quot;para verificar&quot;.
+     */
+    public void validarRequisitosParaVerificar(String tematica, String pregunta, String respuesta, String fuentes) {
+<span class="nc" id="L93">        List&lt;String&gt; faltantes = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L94" title="All 4 branches missed.">        if (tematica == null || tematica.trim().isEmpty()) {</span>
+<span class="nc" id="L95">            faltantes.add(&quot;temática&quot;);</span>
+        }
+<span class="nc bnc" id="L97" title="All 4 branches missed.">        if (pregunta == null || pregunta.trim().isEmpty()) {</span>
+<span class="nc" id="L98">            faltantes.add(&quot;pregunta&quot;);</span>
+        }
+<span class="nc bnc" id="L100" title="All 4 branches missed.">        if (respuesta == null || respuesta.trim().isEmpty()) {</span>
+<span class="nc" id="L101">            faltantes.add(&quot;respuesta&quot;);</span>
+        }
+<span class="nc bnc" id="L103" title="All 4 branches missed.">        if (fuentes == null || fuentes.trim().isEmpty()) {</span>
+<span class="nc" id="L104">            faltantes.add(&quot;fuente&quot;);</span>
+        }
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (!faltantes.isEmpty()) {</span>
+<span class="nc" id="L107">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L108">                &quot;Para pasar a 'para verificar' son obligatorios: &quot; + String.join(&quot;, &quot;, faltantes));</span>
+        }
+<span class="nc" id="L110">    }</span>
+
+    /**
+     * Restaura una pregunta eliminada recreándola con el mismo ID del snapshot (undo).
+     */
+    public Pregunta restaurarDesdeSnapshot(PreguntaDTO dto) {
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (dto == null) {</span>
+<span class="nc" id="L117">            throw new IllegalArgumentException(&quot;Snapshot de pregunta vacío&quot;);</span>
+        }
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (dto.getId() == null) {</span>
+<span class="nc" id="L120">            throw new IllegalArgumentException(&quot;El ID es obligatorio para restaurar la pregunta&quot;);</span>
+        }
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (preguntaRepository.existsById(dto.getId())) {</span>
+<span class="nc" id="L123">            throw new IllegalArgumentException(&quot;Ya existe una pregunta con ID &quot; + dto.getId());</span>
+        }
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (dto.getNivel() == null) {</span>
+<span class="nc" id="L126">            throw new IllegalArgumentException(&quot;El nivel es obligatorio para restaurar&quot;);</span>
+        }
+<span class="nc bnc" id="L128" title="All 4 branches missed.">        if (dto.getTematica() == null || dto.getTematica().trim().isEmpty()) {</span>
+<span class="nc" id="L129">            throw new IllegalArgumentException(&quot;La temática es obligatoria para restaurar&quot;);</span>
+        }
+<span class="nc bnc" id="L131" title="All 4 branches missed.">        if (dto.getPregunta() == null || dto.getPregunta().trim().isEmpty()) {</span>
+<span class="nc" id="L132">            throw new IllegalArgumentException(&quot;El texto de la pregunta es obligatorio para restaurar&quot;);</span>
+        }
+<span class="nc bnc" id="L134" title="All 4 branches missed.">        if (dto.getRespuesta() == null || dto.getRespuesta().trim().isEmpty()) {</span>
+<span class="nc" id="L135">            throw new IllegalArgumentException(&quot;La respuesta es obligatoria para restaurar&quot;);</span>
+        }
+
+<span class="nc" id="L138">        Long id = dto.getId();</span>
+<span class="nc" id="L139">        String tematica = dataTransformationService.normalizarTematica(dto.getTematica());</span>
+<span class="nc" id="L140">        String pregunta = dataTransformationService.normalizarPregunta(dto.getPregunta());</span>
+<span class="nc" id="L141">        String respuesta = dataTransformationService.normalizarRespuesta(dto.getRespuesta());</span>
+
+<span class="nc" id="L143">        DataTransformationService.ValidationResult validation =</span>
+<span class="nc" id="L144">            dataTransformationService.validarPreguntaCompleta(pregunta, respuesta, tematica);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        if (!validation.isValid()) {</span>
+<span class="nc" id="L146">            throw new IllegalArgumentException(&quot;Datos no válidos: &quot; + validation.getErrorsAsString());</span>
+        }
+
+<span class="nc" id="L149">        EstadoPregunta estado = EstadoPregunta.borrador;</span>
+<span class="nc bnc" id="L150" title="All 4 branches missed.">        if (dto.getEstado() != null &amp;&amp; !dto.getEstado().isBlank()) {</span>
+<span class="nc" id="L151">            estado = EstadoPregunta.valueOf(dto.getEstado().trim());</span>
+        }
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        EstadoDisponibilidad estadoDisponibilidad = estado == EstadoPregunta.usada</span>
+<span class="nc" id="L154">            ? EstadoDisponibilidad.usada</span>
+<span class="nc" id="L155">            : EstadoDisponibilidad.disponible;</span>
+
+<span class="nc" id="L157">        LocalDateTime fechaCreacion = parseSnapshotDateTime(dto.getFechaCreacion()).orElse(LocalDateTime.now());</span>
+<span class="nc" id="L158">        LocalDateTime fechaVerificacion = parseSnapshotDateTime(dto.getFechaVerificacion()).orElse(null);</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        Long version = dto.getVersion() != null ? dto.getVersion() : 0L;</span>
+
+<span class="nc" id="L161">        entityManager.createNativeQuery(</span>
+            &quot;INSERT INTO preguntas (&quot; +
+            &quot;id, version, creacion_usuario_id, fecha_creacion, fecha_verificacion, &quot; +
+            &quot;verificacion_usuario_id, respuesta, tematica, pregunta, subtema, &quot; +
+            &quot;datos_extra, fuentes, autor, notas, notas_verificacion, notas_direccion, &quot; +
+            &quot;verificacion, estado, estado_disponibilidad, factor, nivel&quot; +
+            &quot;) VALUES (&quot; +
+            &quot;:id, :version, :creacionUsuarioId, :fechaCreacion, :fechaVerificacion, &quot; +
+            &quot;:verificacionUsuarioId, :respuesta, :tematica, :pregunta, :subtema, &quot; +
+            &quot;:datosExtra, :fuentes, :autor, :notas, :notasVerificacion, :notasDireccion, &quot; +
+            &quot;:verificacion, :estado, :estadoDisponibilidad, :factor, :nivel&quot; +
+            &quot;)&quot;
+        )
+<span class="nc" id="L174">        .setParameter(&quot;id&quot;, id)</span>
+<span class="nc" id="L175">        .setParameter(&quot;version&quot;, version)</span>
+<span class="nc" id="L176">        .setParameter(&quot;creacionUsuarioId&quot;, dto.getCreacionUsuarioId())</span>
+<span class="nc" id="L177">        .setParameter(&quot;fechaCreacion&quot;, Timestamp.valueOf(fechaCreacion))</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        .setParameter(&quot;fechaVerificacion&quot;, fechaVerificacion != null ? Timestamp.valueOf(fechaVerificacion) : null)</span>
+<span class="nc" id="L179">        .setParameter(&quot;verificacionUsuarioId&quot;, null)</span>
+<span class="nc" id="L180">        .setParameter(&quot;respuesta&quot;, respuesta)</span>
+<span class="nc" id="L181">        .setParameter(&quot;tematica&quot;, tematica)</span>
+<span class="nc" id="L182">        .setParameter(&quot;pregunta&quot;, pregunta)</span>
+<span class="nc" id="L183">        .setParameter(&quot;subtema&quot;, dto.getSubtema())</span>
+<span class="nc" id="L184">        .setParameter(&quot;datosExtra&quot;, dto.getDatosExtra())</span>
+<span class="nc" id="L185">        .setParameter(&quot;fuentes&quot;, dto.getFuentes())</span>
+<span class="nc" id="L186">        .setParameter(&quot;autor&quot;, dto.getAutor())</span>
+<span class="nc" id="L187">        .setParameter(&quot;notas&quot;, dto.getNotas())</span>
+<span class="nc" id="L188">        .setParameter(&quot;notasVerificacion&quot;, dto.getNotasVerificacion())</span>
+<span class="nc" id="L189">        .setParameter(&quot;notasDireccion&quot;, dto.getNotasDireccion())</span>
+<span class="nc" id="L190">        .setParameter(&quot;verificacion&quot;, dto.getVerificacion())</span>
+<span class="nc" id="L191">        .setParameter(&quot;estado&quot;, estado.name())</span>
+<span class="nc" id="L192">        .setParameter(&quot;estadoDisponibilidad&quot;, estadoDisponibilidad.name())</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        .setParameter(&quot;factor&quot;, dto.getFactor() != null ? dto.getFactor().name() : null)</span>
+<span class="nc" id="L194">        .setParameter(&quot;nivel&quot;, dto.getNivel().name())</span>
+<span class="nc" id="L195">        .executeUpdate();</span>
+
+<span class="nc" id="L197">        sincronizarAutoIncrementPreguntas();</span>
+<span class="nc" id="L198">        entityManager.flush();</span>
+<span class="nc" id="L199">        entityManager.clear();</span>
+
+<span class="nc" id="L201">        return preguntaRepository.findById(id)</span>
+<span class="nc" id="L202">            .orElseThrow(() -&gt; new IllegalStateException(&quot;No se pudo cargar la pregunta restaurada con ID &quot; + id));</span>
+    }
+
+    private Optional&lt;LocalDateTime&gt; parseSnapshotDateTime(String raw) {
+<span class="nc bnc" id="L206" title="All 4 branches missed.">        if (raw == null || raw.isBlank()) {</span>
+<span class="nc" id="L207">            return Optional.empty();</span>
+        }
+        try {
+<span class="nc" id="L210">            return Optional.of(LocalDateTime.parse(raw));</span>
+<span class="nc" id="L211">        } catch (DateTimeParseException e) {</span>
+            try {
+<span class="nc" id="L213">                return Optional.of(LocalDateTime.parse(raw, DateTimeFormatter.ISO_OFFSET_DATE_TIME));</span>
+<span class="nc" id="L214">            } catch (DateTimeParseException e2) {</span>
+<span class="nc" id="L215">                log.warn(&quot;[RESTAURAR] Fecha no parseable: '{}'&quot;, raw);</span>
+<span class="nc" id="L216">                return Optional.empty();</span>
+            }
+        }
+    }
+
+    private void sincronizarAutoIncrementPreguntas() {
+<span class="nc" id="L222">        Number maxId = (Number) entityManager.createNativeQuery(</span>
+            &quot;SELECT COALESCE(MAX(id), 0) FROM preguntas&quot;
+<span class="nc" id="L224">        ).getSingleResult();</span>
+<span class="nc" id="L225">        long nextId = maxId.longValue() + 1;</span>
+<span class="nc" id="L226">        entityManager.createNativeQuery(</span>
+            &quot;ALTER TABLE preguntas AUTO_INCREMENT = &quot; + nextId
+<span class="nc" id="L228">        ).executeUpdate();</span>
+<span class="nc" id="L229">    }</span>
+
+    private Optional&lt;Usuario&gt; obtenerUsuarioActual() {
+        try {
+            org.springframework.security.core.Authentication auth =
+<span class="nc" id="L234">                SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="nc bnc" id="L235" title="All 8 branches missed.">            if (auth != null &amp;&amp; auth.isAuthenticated() &amp;&amp; !&quot;anonymousUser&quot;.equals(auth.getName()) &amp;&amp; usuarioService != null) {</span>
+<span class="nc" id="L236">                return usuarioService.obtenerPorNombre(auth.getName());</span>
+            }
+<span class="nc" id="L238">        } catch (Exception ignored) {}</span>
+<span class="nc" id="L239">        return Optional.empty();</span>
+    }
+
+    public List&lt;Pregunta&gt; obtenerTodas() {
+<span class="nc" id="L243">        return preguntaRepository.findAll();</span>
+    }
+
+    public Page&lt;Pregunta&gt; obtenerPaginadas(Pageable pageable) {
+<span class="nc" id="L247">        return preguntaRepository.findAll(pageable);</span>
+    }
+
+    public Optional&lt;Pregunta&gt; obtenerPorId(Long id) {
+<span class="nc" id="L251">        return preguntaRepository.findById(id);</span>
+    }
+
+    public List&lt;Pregunta&gt; obtenerPorEstado(EstadoPregunta estado) {
+<span class="nc" id="L255">        return preguntaRepository.findByEstado(estado);</span>
+    }
+
+    public List&lt;Pregunta&gt; obtenerPorNivel(NivelPregunta nivel) {
+<span class="nc" id="L259">        return preguntaRepository.findByNivel(nivel);</span>
+    }
+
+    public List&lt;Pregunta&gt; obtenerDisponibles() {
+<span class="nc" id="L263">        return preguntaRepository.findByEstadoAndEstadoDisponibilidad(</span>
+            EstadoPregunta.aprobada, EstadoDisponibilidad.disponible);
+    }
+
+    public List&lt;Pregunta&gt; buscarPorTematica(String tematica) {
+<span class="nc" id="L268">        return preguntaRepository.findByTematicaContainingIgnoreCase(tematica);</span>
+    }
+
+    public List&lt;Pregunta&gt; obtenerPorEstadoYNivel(EstadoPregunta estado, NivelPregunta nivel) {
+<span class="nc" id="L272">        return preguntaRepository.findByEstadoAndNivel(estado, nivel);</span>
+    }
+
+    public Pregunta actualizar(Long id, Pregunta pregunta) {
+<span class="nc" id="L276">        System.out.println(&quot;🔍 [BACKEND] Iniciando actualización de pregunta ID: &quot; + id);</span>
+<span class="nc" id="L277">        System.out.println(&quot;🔍 [BACKEND] Datos recibidos - tematica: &quot; + pregunta.getTematica() + &quot;, verificacion: &quot; + pregunta.getVerificacion());</span>
+<span class="nc" id="L278">        System.out.println(&quot;🔍 [BACKEND] notasVerificacion recibidas: '&quot; + pregunta.getNotasVerificacion() + &quot;'&quot;);</span>
+        
+<span class="nc bnc" id="L280" title="All 2 branches missed.">        if (preguntaRepository.existsById(id)) {</span>
+            // Obtener pregunta existente PRIMERO
+<span class="nc" id="L282">            Pregunta preguntaExistente = preguntaRepository.findById(id).orElse(null);</span>
+<span class="nc bnc" id="L283" title="All 2 branches missed.">            if (preguntaExistente == null) {</span>
+<span class="nc" id="L284">                return null;</span>
+            }
+            
+<span class="nc" id="L287">            System.out.println(&quot;📥 [BACKEND] Pregunta existente - tematica: &quot; + preguntaExistente.getTematica() + &quot;, verificacion: &quot; + preguntaExistente.getVerificacion());</span>
+<span class="nc" id="L288">            System.out.println(&quot;📥 [BACKEND] notasVerificacion existentes: '&quot; + preguntaExistente.getNotasVerificacion() + &quot;'&quot;);</span>
+            
+            // IMPORTANTE: Solo transformar y actualizar los campos que REALMENTE se enviaron (no son null)
+            // Copiar todos los valores existentes al objeto a guardar
+<span class="nc" id="L292">            pregunta.setId(id);</span>
+<span class="nc" id="L293">            pregunta.setVersion(preguntaExistente.getVersion());</span>
+<span class="nc" id="L294">            pregunta.setCreacionUsuario(preguntaExistente.getCreacionUsuario());</span>
+<span class="nc" id="L295">            pregunta.setFechaCreacion(preguntaExistente.getFechaCreacion());</span>
+<span class="nc" id="L296">            pregunta.setVerificacionUsuario(preguntaExistente.getVerificacionUsuario());</span>
+<span class="nc" id="L297">            pregunta.setFechaVerificacion(preguntaExistente.getFechaVerificacion());</span>
+<span class="nc" id="L298">            pregunta.setEstadoDisponibilidad(preguntaExistente.getEstadoDisponibilidad());</span>
+<span class="nc" id="L299">            pregunta.setFactor(preguntaExistente.getFactor());</span>
+<span class="nc" id="L300">            pregunta.setNotas(preguntaExistente.getNotas());</span>
+            
+            // Solo actualizar campos específicos si vienen en la petición
+<span class="nc bnc" id="L303" title="All 2 branches missed.">            if (pregunta.getPregunta() == null) {</span>
+<span class="nc" id="L304">                pregunta.setPregunta(preguntaExistente.getPregunta());</span>
+            } else {
+<span class="nc" id="L306">                pregunta.setPregunta(dataTransformationService.normalizarPregunta(pregunta.getPregunta()));</span>
+            }
+            
+<span class="nc bnc" id="L309" title="All 2 branches missed.">            if (pregunta.getRespuesta() == null) {</span>
+<span class="nc" id="L310">                pregunta.setRespuesta(preguntaExistente.getRespuesta());</span>
+            } else {
+<span class="nc" id="L312">                pregunta.setRespuesta(dataTransformationService.normalizarRespuesta(pregunta.getRespuesta()));</span>
+            }
+            
+<span class="nc bnc" id="L315" title="All 2 branches missed.">            if (pregunta.getTematica() == null) {</span>
+<span class="nc" id="L316">                pregunta.setTematica(preguntaExistente.getTematica());</span>
+            } else {
+<span class="nc" id="L318">                pregunta.setTematica(dataTransformationService.normalizarTematica(pregunta.getTematica()));</span>
+            }
+            
+<span class="nc bnc" id="L321" title="All 2 branches missed.">            if (pregunta.getSubtema() == null) {</span>
+<span class="nc" id="L322">                pregunta.setSubtema(preguntaExistente.getSubtema());</span>
+            }
+            
+<span class="nc bnc" id="L325" title="All 2 branches missed.">            if (pregunta.getNivel() == null) {</span>
+<span class="nc" id="L326">                pregunta.setNivel(preguntaExistente.getNivel());</span>
+            }
+            
+<span class="nc bnc" id="L329" title="All 2 branches missed.">            if (pregunta.getDatosExtra() == null) {</span>
+<span class="nc" id="L330">                pregunta.setDatosExtra(preguntaExistente.getDatosExtra());</span>
+            }
+            
+<span class="nc bnc" id="L333" title="All 2 branches missed.">            if (pregunta.getFuentes() == null) {</span>
+<span class="nc" id="L334">                pregunta.setFuentes(preguntaExistente.getFuentes());</span>
+            }
+            
+<span class="nc bnc" id="L337" title="All 2 branches missed.">            if (pregunta.getNotasDireccion() == null) {</span>
+<span class="nc" id="L338">                pregunta.setNotasDireccion(preguntaExistente.getNotasDireccion());</span>
+            }
+            
+            // Manejar campo notasVerificacion
+<span class="nc bnc" id="L342" title="All 2 branches missed.">            if (pregunta.getNotasVerificacion() == null) {</span>
+<span class="nc" id="L343">                pregunta.setNotasVerificacion(preguntaExistente.getNotasVerificacion());</span>
+            }
+            
+            // Manejar campo verificacion - SOLO actualizar si el estado cambia a verificada
+<span class="nc bnc" id="L347" title="All 4 branches missed.">            if (pregunta.getEstado() != null &amp;&amp; preguntaExistente.getEstado() != null &amp;&amp;</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">                pregunta.getEstado() == Pregunta.EstadoPregunta.verificada &amp;&amp; </span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">                preguntaExistente.getEstado() != Pregunta.EstadoPregunta.verificada) {</span>
+                
+<span class="nc" id="L351">                System.out.println(&quot;🔄 [BACKEND] Estado cambiado a VERIFICADA, actualizando verificacion...&quot;);</span>
+                
+                // Obtener el usuario actual del contexto de seguridad
+<span class="nc" id="L354">                String nombreUsuario = null;</span>
+                try {
+                    org.springframework.security.core.Authentication auth = 
+<span class="nc" id="L357">                        SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="nc bnc" id="L358" title="All 6 branches missed.">                    if (auth != null &amp;&amp; auth.isAuthenticated() &amp;&amp; !&quot;anonymousUser&quot;.equals(auth.getName())) {</span>
+<span class="nc" id="L359">                        nombreUsuario = auth.getName();</span>
+                    }
+<span class="nc" id="L361">                } catch (Exception e) {</span>
+<span class="nc" id="L362">                    nombreUsuario = &quot;Usuario&quot;;</span>
+<span class="nc" id="L363">                }</span>
+                
+<span class="nc bnc" id="L365" title="All 2 branches missed.">                if (nombreUsuario != null) {</span>
+<span class="nc" id="L366">                    String verificacionActual = preguntaExistente.getVerificacion();</span>
+                    
+<span class="nc bnc" id="L368" title="All 4 branches missed.">                    if (verificacionActual == null || verificacionActual.trim().isEmpty()) {</span>
+<span class="nc" id="L369">                        pregunta.setVerificacion(nombreUsuario);</span>
+<span class="nc" id="L370">                        System.out.println(&quot;🆕 [BACKEND] Nueva verificacion: &quot; + nombreUsuario);</span>
+                    } else {
+<span class="nc bnc" id="L372" title="All 2 branches missed.">                        if (!verificacionActual.contains(nombreUsuario)) {</span>
+<span class="nc" id="L373">                            pregunta.setVerificacion(verificacionActual + &quot;, &quot; + nombreUsuario);</span>
+<span class="nc" id="L374">                            System.out.println(&quot;📝 [BACKEND] Verificacion actualizada: &quot; + pregunta.getVerificacion());</span>
+                        } else {
+<span class="nc" id="L376">                            pregunta.setVerificacion(verificacionActual);</span>
+<span class="nc" id="L377">                            System.out.println(&quot;🔄 [BACKEND] Usuario ya incluido, manteniendo: &quot; + verificacionActual);</span>
+                        }
+                    }
+                }
+<span class="nc" id="L381">            } else {</span>
+                // Si no cambia a verificada, mantener verificacion existente
+<span class="nc" id="L383">                pregunta.setVerificacion(preguntaExistente.getVerificacion());</span>
+<span class="nc" id="L384">                System.out.println(&quot;🔒 [BACKEND] Estado no cambia a VERIFICADA, manteniendo verificacion: &quot; + preguntaExistente.getVerificacion());</span>
+            }
+            
+            // Validar datos finales
+<span class="nc" id="L388">            DataTransformationService.ValidationResult validation = </span>
+<span class="nc" id="L389">                dataTransformationService.validarPreguntaCompleta(pregunta.getPregunta(), pregunta.getRespuesta(), pregunta.getTematica());</span>
+            
+<span class="nc bnc" id="L391" title="All 2 branches missed.">            if (!validation.isValid()) {</span>
+<span class="nc" id="L392">                throw new IllegalArgumentException(&quot;Datos no válidos: &quot; + validation.getErrorsAsString());</span>
+            }
+            
+<span class="nc" id="L395">            Pregunta resultado = preguntaRepository.save(pregunta);</span>
+<span class="nc" id="L396">            System.out.println(&quot;💾 [BACKEND] Pregunta guardada - ID: &quot; + resultado.getId() + &quot;, tematica: &quot; + resultado.getTematica() + &quot;, verificacion: &quot; + resultado.getVerificacion());</span>
+<span class="nc" id="L397">            return resultado;</span>
+        }
+<span class="nc" id="L399">        return null;</span>
+    }
+
+    public Pregunta cambiarEstado(Long id, EstadoPregunta nuevoEstado) {
+<span class="nc" id="L403">        return cambiarEstado(id, nuevoEstado, null);</span>
+    }
+
+    public Pregunta cambiarEstado(Long id, EstadoPregunta nuevoEstado, Usuario usuarioActual) {
+<span class="nc" id="L407">        return preguntaRepository.findById(id).map(pregunta -&gt; {</span>
+<span class="nc" id="L408">            pregunta.setEstado(nuevoEstado);</span>
+<span class="nc bnc" id="L409" title="All 2 branches missed.">            if (nuevoEstado == EstadoPregunta.verificada) {</span>
+<span class="nc" id="L410">                pregunta.setFechaVerificacion(LocalDateTime.now());</span>
+<span class="nc bnc" id="L411" title="All 2 branches missed.">                if (usuarioActual != null) {</span>
+<span class="nc" id="L412">                    pregunta.setVerificacionUsuario(usuarioActual);</span>
+                }
+            }
+<span class="nc bnc" id="L415" title="All 2 branches missed.">            if (nuevoEstado == EstadoPregunta.aprobada) {</span>
+<span class="nc" id="L416">                pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.disponible);</span>
+<span class="nc" id="L417">                System.out.println(&quot;✅ Pregunta ID &quot; + id + &quot; aprobada y marcada como DISPONIBLE&quot;);</span>
+            }
+<span class="nc" id="L419">            return preguntaRepository.save(pregunta);</span>
+<span class="nc" id="L420">        }).orElse(null);</span>
+    }
+
+    /**
+     * Cambia el estado de una pregunta de forma atómica con validación de concurrencia
+     * @param id ID de la pregunta
+     * @param estadoActualEsperado Estado actual esperado
+     * @param nuevoEstado Nuevo estado a asignar
+     * @param usuarioActual Usuario que realiza el cambio (opcional)
+     * @return true si el estado fue cambiado exitosamente
+     * @throws IllegalStateException si otro usuario modificó la pregunta simultáneamente
+     */
+    @Transactional
+    public boolean cambiarEstadoAtomico(Long id, EstadoPregunta estadoActualEsperado, 
+                                       EstadoPregunta nuevoEstado, Usuario usuarioActual) {
+
+<span class="nc bnc" id="L436" title="All 4 branches missed.">        if (nuevoEstado == EstadoPregunta.para_verificar</span>
+            &amp;&amp; estadoActualEsperado != EstadoPregunta.para_verificar) {
+<span class="nc" id="L438">            Pregunta pregunta = preguntaRepository.findById(id)</span>
+<span class="nc" id="L439">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;));</span>
+<span class="nc" id="L440">            validarRequisitosParaVerificar(</span>
+<span class="nc" id="L441">                pregunta.getTematica(), pregunta.getPregunta(), pregunta.getRespuesta(), pregunta.getFuentes());</span>
+        }
+        
+        // Construir query base
+<span class="nc" id="L445">        StringBuilder query = new StringBuilder(&quot;UPDATE preguntas SET estado = ?&quot;);</span>
+<span class="nc" id="L446">        List&lt;Object&gt; parametros = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L447">        parametros.add(nuevoEstado.name());</span>
+        
+<span class="nc" id="L449">        int paramIndex = 2; // mantenido para claridad aunque no se usa después</span>
+        
+        // Agregar campos adicionales según el nuevo estado
+<span class="nc bnc" id="L452" title="All 2 branches missed.">        if (nuevoEstado == EstadoPregunta.verificada) {</span>
+<span class="nc" id="L453">            query.append(&quot;, fecha_verificacion = ?&quot;);</span>
+<span class="nc" id="L454">            parametros.add(java.sql.Timestamp.valueOf(LocalDateTime.now()));</span>
+<span class="nc" id="L455">            paramIndex++;</span>
+            
+<span class="nc bnc" id="L457" title="All 2 branches missed.">            if (usuarioActual != null) {</span>
+<span class="nc" id="L458">                query.append(&quot;, verificacion_usuario_id = ?&quot;);</span>
+<span class="nc" id="L459">                parametros.add(usuarioActual.getId());</span>
+<span class="nc" id="L460">                paramIndex++;</span>
+                
+                // Actualizar también el campo verificacion con el nombre del usuario
+<span class="nc" id="L463">                query.append(&quot;, verificacion = ?&quot;);</span>
+                
+                // Primero obtener el valor actual del campo verificacion
+<span class="nc" id="L466">                String verificacionActual = null;</span>
+                try {
+<span class="nc" id="L468">                    Object result = entityManager.createNativeQuery(&quot;SELECT verificacion FROM preguntas WHERE id = ?&quot;)</span>
+<span class="nc" id="L469">                        .setParameter(1, id)</span>
+<span class="nc" id="L470">                        .getSingleResult();</span>
+<span class="nc bnc" id="L471" title="All 2 branches missed.">                    verificacionActual = result != null ? result.toString() : null;</span>
+<span class="nc" id="L472">                } catch (Exception e) {</span>
+                    // Si hay error, dejar verificacionActual como null
+<span class="nc" id="L474">                    System.out.println(&quot;No se pudo obtener el valor actual de verificacion: &quot; + e.getMessage());</span>
+<span class="nc" id="L475">                }</span>
+                
+                // Construir el nuevo valor de verificacion
+                String nuevoValorVerificacion;
+<span class="nc bnc" id="L479" title="All 4 branches missed.">                if (verificacionActual == null || verificacionActual.trim().isEmpty()) {</span>
+<span class="nc" id="L480">                    nuevoValorVerificacion = usuarioActual.getNombre();</span>
+                } else {
+                    // Verificar si el usuario ya está incluido
+<span class="nc bnc" id="L483" title="All 2 branches missed.">                    if (!verificacionActual.contains(usuarioActual.getNombre())) {</span>
+<span class="nc" id="L484">                        nuevoValorVerificacion = verificacionActual + &quot;, &quot; + usuarioActual.getNombre();</span>
+                    } else {
+<span class="nc" id="L486">                        nuevoValorVerificacion = verificacionActual;</span>
+                    }
+                }
+                
+<span class="nc" id="L490">                parametros.add(nuevoValorVerificacion);</span>
+<span class="nc" id="L491">                paramIndex++;</span>
+                
+<span class="nc" id="L493">                System.out.println(&quot;✅ Actualizando campo verificacion a: &quot; + nuevoValorVerificacion);</span>
+            }
+        }
+        
+<span class="nc bnc" id="L497" title="All 2 branches missed.">        if (nuevoEstado == EstadoPregunta.aprobada) {</span>
+<span class="nc" id="L498">            query.append(&quot;, estado_disponibilidad = ?&quot;);</span>
+<span class="nc" id="L499">            parametros.add(EstadoDisponibilidad.disponible.name());</span>
+<span class="nc" id="L500">            paramIndex++;</span>
+        }
+        
+        // Agregar condiciones WHERE con verificación de estado
+<span class="nc" id="L504">        query.append(&quot; WHERE id = ? AND estado = ?&quot;);</span>
+<span class="nc" id="L505">        parametros.add(id);</span>
+<span class="nc" id="L506">        parametros.add(estadoActualEsperado.name());</span>
+        
+        // Ejecutar query nativa atómica
+<span class="nc" id="L509">        javax.persistence.Query nativeQuery = entityManager.createNativeQuery(query.toString());</span>
+<span class="nc bnc" id="L510" title="All 2 branches missed.">        for (int i = 0; i &lt; parametros.size(); i++) {</span>
+<span class="nc" id="L511">            nativeQuery.setParameter(i + 1, parametros.get(i));</span>
+        }
+        
+<span class="nc" id="L514">        int filasActualizadas = nativeQuery.executeUpdate();</span>
+        
+<span class="nc bnc" id="L516" title="All 2 branches missed.">        if (filasActualizadas == 0) {</span>
+<span class="nc" id="L517">            throw new IllegalStateException(&quot;No se pudo cambiar el estado de la pregunta &quot; + id + </span>
+                &quot; porque otro usuario la modificó simultáneamente. Estado esperado: &quot; + estadoActualEsperado);
+        }
+        
+<span class="nc bnc" id="L521" title="All 2 branches missed.">        if (nuevoEstado == EstadoPregunta.aprobada) {</span>
+<span class="nc" id="L522">            System.out.println(&quot;✅ Pregunta ID &quot; + id + &quot; aprobada atómicamente y marcada como DISPONIBLE&quot;);</span>
+        }
+        
+<span class="nc" id="L525">        return true;</span>
+    }
+
+    public Pregunta verificar(Long id, EstadoPregunta nuevoEstado, String notas, Usuario verificador) {
+<span class="nc" id="L529">        return preguntaRepository.findById(id).map(pregunta -&gt; {</span>
+<span class="nc" id="L530">            pregunta.setEstado(nuevoEstado);</span>
+<span class="nc" id="L531">            pregunta.setVerificacionUsuario(verificador);</span>
+<span class="nc" id="L532">            pregunta.setFechaVerificacion(LocalDateTime.now());</span>
+<span class="nc bnc" id="L533" title="All 4 branches missed.">            if (notas != null &amp;&amp; !notas.trim().isEmpty()) {</span>
+<span class="nc" id="L534">                pregunta.setNotas(notas);</span>
+            }
+<span class="nc" id="L536">            return preguntaRepository.save(pregunta);</span>
+<span class="nc" id="L537">        }).orElse(null);</span>
+    }
+
+    public Pregunta rechazar(Long id, String motivo) {
+<span class="nc" id="L541">        return preguntaRepository.findById(id).map(pregunta -&gt; {</span>
+<span class="nc" id="L542">            pregunta.setEstado(EstadoPregunta.rechazada);</span>
+<span class="nc bnc" id="L543" title="All 4 branches missed.">            if (motivo != null &amp;&amp; !motivo.trim().isEmpty()) {</span>
+<span class="nc" id="L544">                pregunta.setNotas(&quot;RECHAZADA: &quot; + motivo);</span>
+            }
+<span class="nc" id="L546">            return preguntaRepository.save(pregunta);</span>
+<span class="nc" id="L547">        }).orElse(null);</span>
+    }
+
+    /**
+     * Rechaza una pregunta de forma atómica con validación de concurrencia
+     * @param id ID de la pregunta
+     * @param estadoActualEsperado Estado actual esperado
+     * @param motivo Motivo del rechazo
+     * @return true si la pregunta fue rechazada exitosamente
+     * @throws IllegalStateException si otro usuario modificó la pregunta simultáneamente
+     */
+    @Transactional
+    public boolean rechazarAtomico(Long id, EstadoPregunta estadoActualEsperado, String motivo) {
+        // Construir query con estado y notas
+<span class="nc" id="L561">        String query = &quot;UPDATE preguntas SET estado = ?, notas = ? WHERE id = ? AND estado = ?&quot;;</span>
+        
+<span class="nc bnc" id="L563" title="All 4 branches missed.">        String notasRechazo = &quot;RECHAZADA: &quot; + (motivo != null &amp;&amp; !motivo.trim().isEmpty() ? motivo : &quot;Sin motivo especificado&quot;);</span>
+        
+        // Ejecutar query nativa atómica
+<span class="nc" id="L566">        int filasActualizadas = entityManager.createNativeQuery(query)</span>
+<span class="nc" id="L567">            .setParameter(1, EstadoPregunta.rechazada.name())</span>
+<span class="nc" id="L568">            .setParameter(2, notasRechazo)</span>
+<span class="nc" id="L569">            .setParameter(3, id)</span>
+<span class="nc" id="L570">            .setParameter(4, estadoActualEsperado.name())</span>
+<span class="nc" id="L571">            .executeUpdate();</span>
+        
+<span class="nc bnc" id="L573" title="All 2 branches missed.">        if (filasActualizadas == 0) {</span>
+<span class="nc" id="L574">            throw new IllegalStateException(&quot;No se pudo rechazar la pregunta &quot; + id + </span>
+                &quot; porque otro usuario la modificó simultáneamente. Estado esperado: &quot; + estadoActualEsperado);
+        }
+        
+<span class="nc" id="L578">        return true;</span>
+    }
+
+    public Pregunta marcarParaRevisar(Long id, String notas, Usuario usuario) {
+<span class="nc" id="L582">        return preguntaRepository.findById(id).map(pregunta -&gt; {</span>
+<span class="nc" id="L583">            pregunta.setEstado(EstadoPregunta.revisar);</span>
+<span class="nc" id="L584">            pregunta.setVerificacionUsuario(usuario);</span>
+<span class="nc" id="L585">            pregunta.setFechaVerificacion(LocalDateTime.now());</span>
+<span class="nc bnc" id="L586" title="All 4 branches missed.">            if (notas != null &amp;&amp; !notas.trim().isEmpty()) {</span>
+<span class="nc" id="L587">                pregunta.setNotasVerificacion(&quot;REVISAR: &quot; + notas);</span>
+            }
+<span class="nc" id="L589">            return preguntaRepository.save(pregunta);</span>
+<span class="nc" id="L590">        }).orElse(null);</span>
+    }
+
+    public Pregunta marcarParaCorregir(Long id, String notas, Usuario usuario) {
+<span class="nc" id="L594">        return preguntaRepository.findById(id).map(pregunta -&gt; {</span>
+<span class="nc" id="L595">            pregunta.setEstado(EstadoPregunta.corregir);</span>
+<span class="nc" id="L596">            pregunta.setVerificacionUsuario(usuario);</span>
+<span class="nc" id="L597">            pregunta.setFechaVerificacion(LocalDateTime.now());</span>
+<span class="nc bnc" id="L598" title="All 4 branches missed.">            if (notas != null &amp;&amp; !notas.trim().isEmpty()) {</span>
+<span class="nc" id="L599">                pregunta.setNotasVerificacion(&quot;CORREGIR: &quot; + notas);</span>
+            }
+<span class="nc" id="L601">            return preguntaRepository.save(pregunta);</span>
+<span class="nc" id="L602">        }).orElse(null);</span>
+    }
+
+    public Pregunta verificarPregunta(Long id, Long verificadorId, EstadoPregunta nuevoEstado) {
+<span class="nc" id="L606">        return preguntaRepository.findById(id).map(pregunta -&gt; {</span>
+<span class="nc" id="L607">            pregunta.setEstado(nuevoEstado);</span>
+<span class="nc" id="L608">            pregunta.setFechaVerificacion(LocalDateTime.now());</span>
+<span class="nc" id="L609">            return preguntaRepository.save(pregunta);</span>
+<span class="nc" id="L610">        }).orElse(null);</span>
+    }
+
+    public void marcarComoUsada(Long id) {
+<span class="nc" id="L614">        preguntaRepository.findById(id).ifPresent(pregunta -&gt; {</span>
+<span class="nc" id="L615">            pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.usada);</span>
+            // Cambiar el estado de la pregunta a 'usada' si estaba en 'aprobada'
+<span class="nc bnc" id="L617" title="All 2 branches missed.">            if (pregunta.getEstado() == EstadoPregunta.aprobada) {</span>
+<span class="nc" id="L618">                pregunta.setEstado(EstadoPregunta.usada);</span>
+<span class="nc" id="L619">                System.out.println(&quot;✅ Pregunta ID &quot; + id + &quot; marcada como USADA&quot;);</span>
+            }
+<span class="nc" id="L621">            preguntaRepository.save(pregunta);</span>
+<span class="nc" id="L622">        });</span>
+<span class="nc" id="L623">    }</span>
+
+    public void liberarPregunta(Long id) {
+<span class="nc" id="L626">        preguntaRepository.findById(id).ifPresent(pregunta -&gt; {</span>
+<span class="nc" id="L627">            pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.liberada);</span>
+            // Cambiar el estado de la pregunta a 'aprobada' si estaba en 'usada'
+<span class="nc bnc" id="L629" title="All 2 branches missed.">            if (pregunta.getEstado() == EstadoPregunta.usada) {</span>
+<span class="nc" id="L630">                pregunta.setEstado(EstadoPregunta.aprobada);</span>
+<span class="nc" id="L631">                System.out.println(&quot;✅ Pregunta ID &quot; + id + &quot; liberada y marcada como APROBADA&quot;);</span>
+            }
+<span class="nc" id="L633">            preguntaRepository.save(pregunta);</span>
+<span class="nc" id="L634">        });</span>
+<span class="nc" id="L635">    }</span>
+
+    public void eliminar(Long id) {
+        // Verificar que la pregunta existe
+<span class="nc" id="L639">        Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(id);</span>
+<span class="nc bnc" id="L640" title="All 2 branches missed.">        if (preguntaOpt.isEmpty()) {</span>
+<span class="nc" id="L641">            throw new IllegalArgumentException(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;);</span>
+        }
+
+<span class="nc" id="L644">        Pregunta pregunta = preguntaOpt.get(); // usado para validaciones más abajo</span>
+
+        // Verificar si está siendo usada en cuestionarios
+<span class="nc" id="L647">        Long cuestionariosCount = entityManager.createQuery(</span>
+            &quot;SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)
+<span class="nc" id="L649">            .setParameter(&quot;preguntaId&quot;, id)</span>
+<span class="nc" id="L650">            .getSingleResult();</span>
+        
+<span class="nc bnc" id="L652" title="All 2 branches missed.">        if (cuestionariosCount &gt; 0) {</span>
+<span class="nc" id="L653">            throw new IllegalArgumentException(&quot;No se puede eliminar la pregunta porque está siendo usada en &quot; + </span>
+                cuestionariosCount + &quot; cuestionario(s). Quítala de los cuestionarios primero.&quot;);
+        }
+
+        // Verificar si está siendo usada en combos
+<span class="nc" id="L658">        Long combosCount = entityManager.createQuery(</span>
+            &quot;SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)
+<span class="nc" id="L660">            .setParameter(&quot;preguntaId&quot;, id)</span>
+<span class="nc" id="L661">            .getSingleResult();</span>
+        
+<span class="nc bnc" id="L663" title="All 2 branches missed.">        if (combosCount &gt; 0) {</span>
+<span class="nc" id="L664">            throw new IllegalArgumentException(&quot;No se puede eliminar la pregunta porque está siendo usada en &quot; + </span>
+                combosCount + &quot; combo(s). Quítala de los combos primero.&quot;);
+        }
+
+        // UNDO: capturar la fila completa antes de borrar (se reinsertará con el mismo id)
+<span class="nc" id="L669">        Map&lt;String, Object&gt; filaPregunta = undoService.snapshotFila(&quot;preguntas&quot;, id);</span>
+
+        // Si llegamos aquí, es seguro eliminar
+<span class="nc" id="L672">        preguntaRepository.deleteById(id);</span>
+
+<span class="nc bnc" id="L674" title="All 2 branches missed.">        if (filaPregunta != null) {</span>
+<span class="nc" id="L675">            undoService.registrar(&quot;eliminar_pregunta&quot;, &quot;Eliminar pregunta &quot; + id,</span>
+<span class="nc" id="L676">                Collections.singletonList(UndoService.accionInsertarFila(&quot;preguntas&quot;, filaPregunta)));</span>
+        }
+<span class="nc" id="L678">    }</span>
+    
+    /**
+     * Método específico para validar una pregunta sin guardarla
+     */
+    public DataTransformationService.ValidationResult validarPregunta(Pregunta pregunta) {
+<span class="nc" id="L684">        String preguntaTexto = dataTransformationService.normalizarPregunta(pregunta.getPregunta());</span>
+<span class="nc" id="L685">        String respuestaTexto = dataTransformationService.normalizarRespuesta(pregunta.getRespuesta());</span>
+<span class="nc" id="L686">        String tematicaTexto = dataTransformationService.normalizarTematica(pregunta.getTematica());</span>
+        
+<span class="nc" id="L688">        return dataTransformationService.validarPreguntaCompleta(preguntaTexto, respuestaTexto, tematicaTexto);</span>
+    }
+
+    public Pregunta actualizarDesdeDTO(Long id, PreguntaDTO dto) {
+<span class="nc" id="L692">        Pregunta pregunta = preguntaRepository.findById(id).orElseThrow(() -&gt; new IllegalArgumentException(&quot;Pregunta no encontrada&quot;));</span>
+
+<span class="nc bnc" id="L694" title="All 2 branches missed.">        if (dto.getVersion() != null) {</span>
+<span class="nc" id="L695">            pregunta.setVersion(dto.getVersion());</span>
+        }
+        
+<span class="nc" id="L698">        System.out.println(&quot;✅ [ACTUALIZAR] Iniciando actualización de pregunta ID: &quot; + id);</span>
+<span class="nc" id="L699">        System.out.println(&quot;✅ [ACTUALIZAR] Estado actual: &quot; + pregunta.getEstado() + &quot;, Estado solicitado: &quot; + dto.getEstado());</span>
+        
+        // Proteger el campo de autoría - no permitir modificaciones
+<span class="nc bnc" id="L702" title="All 4 branches missed.">        if (dto.getCreacionUsuarioId() != null &amp;&amp; !dto.getCreacionUsuarioId().equals(pregunta.getCreacionUsuario().getId())) {</span>
+<span class="nc" id="L703">            throw new IllegalArgumentException(&quot;No se puede modificar el campo de autoría de una pregunta&quot;);</span>
+        }
+
+        // Validar cambio de nivel si la pregunta está asignada a un combo
+<span class="nc bnc" id="L707" title="All 4 branches missed.">        if (dto.getNivel() != null &amp;&amp; !dto.getNivel().equals(pregunta.getNivel())) {</span>
+<span class="nc" id="L708">            boolean estaAsignadaACombo = preguntaComboRepository.existsByPreguntaId(id);</span>
+            
+<span class="nc bnc" id="L710" title="All 2 branches missed.">            if (estaAsignadaACombo) {</span>
+                // Verificar si el nuevo nivel es de nivel 5
+<span class="nc" id="L712">                boolean esNivel5 = dto.getNivel().name().startsWith(&quot;_5&quot;);</span>
+                
+<span class="nc bnc" id="L714" title="All 2 branches missed.">                if (!esNivel5) {</span>
+<span class="nc" id="L715">                    throw new IllegalArgumentException(&quot;La pregunta está asignada a un combo, solo puede tener nivel 5&quot;);</span>
+                }
+            }
+        }
+
+        // Guardar el valor anterior del estado para comparar
+<span class="nc" id="L721">        Pregunta.EstadoPregunta estadoAnterior = pregunta.getEstado();</span>
+        
+        // IMPORTANTE: Manejar explícitamente el cambio de estado
+<span class="nc bnc" id="L724" title="All 2 branches missed.">        if (dto.getEstado() != null) {</span>
+            try {
+<span class="nc" id="L726">                EstadoPregunta nuevoEstado = EstadoPregunta.valueOf(dto.getEstado());</span>
+<span class="nc" id="L727">                System.out.println(&quot;✅ [ACTUALIZAR] Cambiando estado de &quot; + pregunta.getEstado() + &quot; a &quot; + nuevoEstado);</span>
+<span class="nc" id="L728">                pregunta.setEstado(nuevoEstado);</span>
+<span class="nc" id="L729">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L730">                System.err.println(&quot;❌ [ACTUALIZAR] Estado inválido: &quot; + dto.getEstado());</span>
+<span class="nc" id="L731">                throw new IllegalArgumentException(&quot;Estado inválido: &quot; + dto.getEstado());</span>
+<span class="nc" id="L732">            }</span>
+        }
+
+<span class="nc bnc" id="L735" title="All 2 branches missed.">        if (dto.getTematica() != null) pregunta.setTematica(dataTransformationService.normalizarTematica(dto.getTematica()));</span>
+<span class="nc bnc" id="L736" title="All 2 branches missed.">        if (dto.getPregunta() != null) pregunta.setPregunta(dataTransformationService.normalizarPregunta(dto.getPregunta()));</span>
+<span class="nc bnc" id="L737" title="All 2 branches missed.">        if (dto.getRespuesta() != null) pregunta.setRespuesta(dataTransformationService.normalizarRespuesta(dto.getRespuesta()));</span>
+<span class="nc bnc" id="L738" title="All 2 branches missed.">        if (dto.getDatosExtra() != null) pregunta.setDatosExtra(dto.getDatosExtra());</span>
+<span class="nc bnc" id="L739" title="All 2 branches missed.">        if (dto.getFuentes() != null) pregunta.setFuentes(dto.getFuentes());</span>
+<span class="nc bnc" id="L740" title="All 2 branches missed.">        if (dto.getNivel() != null) pregunta.setNivel(dto.getNivel());</span>
+<span class="nc bnc" id="L741" title="All 2 branches missed.">        if (dto.getNotas() != null) pregunta.setNotas(dto.getNotas());</span>
+<span class="nc bnc" id="L742" title="All 2 branches missed.">        if (dto.getFactor() != null) pregunta.setFactor(dto.getFactor());</span>
+<span class="nc bnc" id="L743" title="All 2 branches missed.">        if (dto.getNotasVerificacion() != null) pregunta.setNotasVerificacion(dto.getNotasVerificacion());</span>
+<span class="nc bnc" id="L744" title="All 2 branches missed.">        if (dto.getNotasDireccion() != null) pregunta.setNotasDireccion(dto.getNotasDireccion());</span>
+<span class="nc bnc" id="L745" title="All 2 branches missed.">        if (dto.getSubtema() != null) pregunta.setSubtema(dto.getSubtema());</span>
+
+<span class="nc bnc" id="L747" title="All 4 branches missed.">        if (pregunta.getEstado() == EstadoPregunta.para_verificar</span>
+            &amp;&amp; estadoAnterior != EstadoPregunta.para_verificar) {
+<span class="nc" id="L749">            validarRequisitosParaVerificar(</span>
+<span class="nc" id="L750">                pregunta.getTematica(), pregunta.getPregunta(), pregunta.getRespuesta(), pregunta.getFuentes());</span>
+        }
+        
+        // Manejar actualización del campo verificacion SOLO cuando se cambia a estado verificada
+<span class="nc bnc" id="L754" title="All 2 branches missed.">        if (dto.getEstado() != null &amp;&amp; </span>
+<span class="nc bnc" id="L755" title="All 4 branches missed.">            EstadoPregunta.verificada.name().equals(dto.getEstado()) &amp;&amp; </span>
+            estadoAnterior != EstadoPregunta.verificada) {
+            
+<span class="nc" id="L758">            System.out.println(&quot;✅ [ACTUALIZAR] Estado cambiado a VERIFICADA, actualizando verificacion&quot;);</span>
+            
+            // Obtener el usuario actual del contexto de seguridad
+<span class="nc" id="L761">            String nombreUsuario = null;</span>
+            try {
+                org.springframework.security.core.Authentication auth = 
+<span class="nc" id="L764">                    SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="nc bnc" id="L765" title="All 6 branches missed.">                if (auth != null &amp;&amp; auth.isAuthenticated() &amp;&amp; !&quot;anonymousUser&quot;.equals(auth.getName())) {</span>
+<span class="nc" id="L766">                    nombreUsuario = auth.getName();</span>
+                }
+<span class="nc" id="L768">            } catch (Exception e) {</span>
+                // Si no se puede obtener el usuario, usar un valor por defecto
+<span class="nc" id="L770">                nombreUsuario = &quot;Usuario&quot;;</span>
+<span class="nc" id="L771">            }</span>
+            
+<span class="nc bnc" id="L773" title="All 2 branches missed.">            if (nombreUsuario != null) {</span>
+<span class="nc" id="L774">                String verificacionActual = pregunta.getVerificacion();</span>
+                
+<span class="nc bnc" id="L776" title="All 4 branches missed.">                if (verificacionActual == null || verificacionActual.trim().isEmpty()) {</span>
+                    // Si no hay verificacion previa, usar solo el nombre del usuario actual
+<span class="nc" id="L778">                    pregunta.setVerificacion(nombreUsuario);</span>
+                } else {
+                    // Si ya hay verificacion previa, agregar el nuevo usuario si no está ya incluido
+<span class="nc bnc" id="L781" title="All 2 branches missed.">                    if (!verificacionActual.contains(nombreUsuario)) {</span>
+<span class="nc" id="L782">                        pregunta.setVerificacion(verificacionActual + &quot;, &quot; + nombreUsuario);</span>
+                    }
+                    // Si ya está incluido, mantener la verificacion actual (no hacer nada)
+                }
+            }
+        }
+        
+        // Validar y guardar
+<span class="nc" id="L790">        DataTransformationService.ValidationResult validation = dataTransformationService.validarPreguntaCompleta(</span>
+<span class="nc" id="L791">            pregunta.getPregunta(), pregunta.getRespuesta(), pregunta.getTematica()</span>
+        );
+<span class="nc bnc" id="L793" title="All 2 branches missed.">        if (!validation.isValid()) {</span>
+<span class="nc" id="L794">            throw new IllegalArgumentException(&quot;Datos no válidos: &quot; + validation.getErrorsAsString());</span>
+        }
+        
+<span class="nc" id="L797">        Pregunta preguntaGuardada = preguntaRepository.save(pregunta);</span>
+<span class="nc" id="L798">        System.out.println(&quot;✅ [ACTUALIZAR] Pregunta guardada con éxito. Estado final: &quot; + preguntaGuardada.getEstado());</span>
+<span class="nc" id="L799">        return preguntaGuardada;</span>
+    }
+
+    public Page&lt;Pregunta&gt; buscarPreguntasPaginadas(String nivel, String factor, String id, String pregunta, String respuesta, String tematica, Pageable pageable) {
+<span class="nc" id="L803">        Pregunta.NivelPregunta nivelEnum = null;</span>
+<span class="nc" id="L804">        Pregunta.FactorPregunta factorEnum = null;</span>
+        try {
+<span class="nc bnc" id="L806" title="All 6 branches missed.">            if (nivel != null &amp;&amp; !nivel.isBlank()) nivelEnum = Pregunta.NivelPregunta.valueOf(nivel.startsWith(&quot;_&quot;) ? nivel : (&quot;_&quot;+nivel));</span>
+<span class="nc" id="L807">        } catch (Exception ignored) {}</span>
+        try {
+<span class="nc bnc" id="L809" title="All 4 branches missed.">            if (factor != null &amp;&amp; !factor.isBlank()) factorEnum = Pregunta.FactorPregunta.valueOf(factor);</span>
+<span class="nc" id="L810">        } catch (Exception ignored) {}</span>
+        
+<span class="nc" id="L812">        log.info(&quot;[BUSCAR] Parámetros de búsqueda - Nivel: {}, Factor: {}, ID: {}, Pregunta: {}, Respuesta: {}, Temática: {}&quot;, </span>
+            nivel, factor, id, pregunta, respuesta, tematica);
+<span class="nc" id="L814">        log.info(&quot;[BUSCAR] Enums convertidos - NivelEnum: {}, FactorEnum: {}&quot;, nivelEnum, factorEnum);</span>
+        
+        // TEMPORAL: Usar el método sin filtro de disponibilidad para debug
+<span class="nc" id="L817">        Page&lt;Pregunta&gt; resultado = preguntaRepository.buscarPreguntasSinFiltroDisponibilidad(</span>
+            nivelEnum,
+            factorEnum,
+<span class="nc bnc" id="L820" title="All 4 branches missed.">            (id != null &amp;&amp; !id.isBlank()) ? id : null,</span>
+<span class="nc bnc" id="L821" title="All 4 branches missed.">            (pregunta != null &amp;&amp; !pregunta.isBlank()) ? pregunta : null,</span>
+<span class="nc bnc" id="L822" title="All 4 branches missed.">            (respuesta != null &amp;&amp; !respuesta.isBlank()) ? respuesta : null,</span>
+<span class="nc bnc" id="L823" title="All 4 branches missed.">            (tematica != null &amp;&amp; !tematica.isBlank()) ? tematica : null,</span>
+            Pregunta.EstadoPregunta.aprobada,
+            pageable
+        );
+        
+<span class="nc" id="L828">        log.info(&quot;[BUSCAR] Resultado - Total elementos: {}, Total páginas: {}, Elementos en esta página: {}&quot;, </span>
+<span class="nc" id="L829">            resultado.getTotalElements(), resultado.getTotalPages(), resultado.getContent().size());</span>
+        
+<span class="nc" id="L831">        return resultado;</span>
+    }
+
+    public void eliminarPorId(Long id) {
+        // Verificar que la pregunta existe
+<span class="nc" id="L836">        Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(id);</span>
+<span class="nc bnc" id="L837" title="All 2 branches missed.">        if (preguntaOpt.isEmpty()) {</span>
+<span class="nc" id="L838">            throw new IllegalArgumentException(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;);</span>
+        }
+
+<span class="nc" id="L841">        Pregunta pregunta = preguntaOpt.get();</span>
+        
+        // Verificar si la pregunta está en estado &quot;usada&quot;
+<span class="nc bnc" id="L844" title="All 2 branches missed.">        if (pregunta.getEstado() == EstadoPregunta.usada || </span>
+<span class="nc bnc" id="L845" title="All 2 branches missed.">            pregunta.getEstadoDisponibilidad() == EstadoDisponibilidad.usada) {</span>
+<span class="nc" id="L846">            throw new IllegalArgumentException(&quot;No se puede eliminar la pregunta porque está siendo usada en un cuestionario o combo&quot;);</span>
+        }
+        
+        // Verificar si está siendo usada en cuestionarios
+<span class="nc" id="L850">        Long cuestionariosCount = entityManager.createQuery(</span>
+            &quot;SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)
+<span class="nc" id="L852">            .setParameter(&quot;preguntaId&quot;, id)</span>
+<span class="nc" id="L853">            .getSingleResult();</span>
+        
+<span class="nc bnc" id="L855" title="All 2 branches missed.">        if (cuestionariosCount &gt; 0) {</span>
+<span class="nc" id="L856">            throw new IllegalArgumentException(&quot;No se puede eliminar la pregunta porque está siendo usada en &quot; + </span>
+                cuestionariosCount + &quot; cuestionario(s). Quítala de los cuestionarios primero.&quot;);
+        }
+
+        // Verificar si está siendo usada en combos
+<span class="nc" id="L861">        Long combosCount = entityManager.createQuery(</span>
+            &quot;SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)
+<span class="nc" id="L863">            .setParameter(&quot;preguntaId&quot;, id)</span>
+<span class="nc" id="L864">            .getSingleResult();</span>
+        
+<span class="nc bnc" id="L866" title="All 2 branches missed.">        if (combosCount &gt; 0) {</span>
+<span class="nc" id="L867">            throw new IllegalArgumentException(&quot;No se puede eliminar la pregunta porque está siendo usada en &quot; + </span>
+                combosCount + &quot; combo(s). Quítala de los combos primero.&quot;);
+        }
+
+        // UNDO: capturar la fila completa antes de borrar (se reinsertará con el mismo id)
+<span class="nc" id="L872">        Map&lt;String, Object&gt; filaPregunta = undoService.snapshotFila(&quot;preguntas&quot;, id);</span>
+
+        // Si llegamos aquí, es seguro eliminar
+<span class="nc" id="L875">        preguntaRepository.deleteById(id);</span>
+
+<span class="nc bnc" id="L877" title="All 2 branches missed.">        if (filaPregunta != null) {</span>
+<span class="nc" id="L878">            undoService.registrar(&quot;eliminar_pregunta&quot;, &quot;Eliminar pregunta &quot; + id,</span>
+<span class="nc" id="L879">                Collections.singletonList(UndoService.accionInsertarFila(&quot;preguntas&quot;, filaPregunta)));</span>
+        }
+<span class="nc" id="L881">    }</span>
+
+    public List&lt;PreguntaDTO&gt; filtrarPreguntasCompleto(String nivel, String factor, String estado, 
+                                                     String tematica, String subtema, String pregunta, String respuesta, String autoria, String texto) {
+<span class="nc" id="L885">        Specification&lt;Pregunta&gt; spec = buildFiltrarSpecification(</span>
+<span class="nc" id="L886">            parseNivel(nivel), parseFactor(factor), estado,</span>
+            tematica, subtema, pregunta, respuesta, autoria, texto);
+
+<span class="nc" id="L889">        List&lt;Pregunta&gt; preguntas = preguntaRepository.findAll(spec, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
+<span class="nc" id="L890">        return preguntas.stream().map(this::mapPreguntaToDTO).collect(Collectors.toList());</span>
+    }
+
+    public Page&lt;PreguntaDTO&gt; filtrarPreguntasCompletoPaginado(String nivel, String factor, String estado, 
+                                                             String tematica, String subtema, String pregunta, String respuesta, 
+                                                             String autoria, String texto, Pageable pageable) {
+<span class="nc" id="L896">        log.info(&quot;[FILTRAR] Filtros recibidos - estado: {}, tematica: {}, subtema: {}, autoria: {}, nivel: {}, texto: {}&quot;,</span>
+            estado, tematica, subtema, autoria, nivel, texto);
+
+<span class="nc" id="L899">        Specification&lt;Pregunta&gt; spec = buildFiltrarSpecification(</span>
+<span class="nc" id="L900">            parseNivel(nivel), parseFactor(factor), estado,</span>
+            tematica, subtema, pregunta, respuesta, autoria, texto);
+
+<span class="nc" id="L903">        Page&lt;Pregunta&gt; page = preguntaRepository.findAll(spec, pageable);</span>
+<span class="nc" id="L904">        log.info(&quot;[FILTRAR] Resultado tras filtrar - total: {}, pagina: {}, tamPagina: {}&quot;,</span>
+<span class="nc" id="L905">            page.getTotalElements(), pageable.getPageNumber(), pageable.getPageSize());</span>
+
+<span class="nc" id="L907">        return page.map(this::mapPreguntaToDTO);</span>
+    }
+
+    private Pregunta.NivelPregunta parseNivel(String nivel) {
+<span class="nc bnc" id="L911" title="All 4 branches missed.">        if (nivel == null || nivel.isBlank()) {</span>
+<span class="nc" id="L912">            return null;</span>
+        }
+        try {
+<span class="nc bnc" id="L915" title="All 2 branches missed.">            return Pregunta.NivelPregunta.valueOf(nivel.startsWith(&quot;_&quot;) ? nivel : (&quot;_&quot; + nivel));</span>
+<span class="nc" id="L916">        } catch (Exception e) {</span>
+<span class="nc" id="L917">            log.warn(&quot;[FILTRAR] Nivel no reconocido: '{}'&quot;, nivel);</span>
+<span class="nc" id="L918">            return null;</span>
+        }
+    }
+
+    private Pregunta.FactorPregunta parseFactor(String factor) {
+<span class="nc bnc" id="L923" title="All 4 branches missed.">        if (factor == null || factor.isBlank()) {</span>
+<span class="nc" id="L924">            return null;</span>
+        }
+        try {
+<span class="nc" id="L927">            return Pregunta.FactorPregunta.valueOf(factor);</span>
+<span class="nc" id="L928">        } catch (Exception e) {</span>
+<span class="nc" id="L929">            log.warn(&quot;[FILTRAR] Factor no reconocido: '{}'&quot;, factor);</span>
+<span class="nc" id="L930">            return null;</span>
+        }
+    }
+
+    private Specification&lt;Pregunta&gt; buildFiltrarSpecification(
+            Pregunta.NivelPregunta nivel,
+            Pregunta.FactorPregunta factor,
+            String estadoRaw,
+            String tematica,
+            String subtema,
+            String pregunta,
+            String respuesta,
+            String autoria,
+            String texto) {
+
+<span class="nc" id="L945">        Specification&lt;Pregunta&gt; spec = Specification.where(null);</span>
+
+<span class="nc bnc" id="L947" title="All 2 branches missed.">        if (nivel != null) {</span>
+<span class="nc" id="L948">            spec = spec.and((root, cq, cb) -&gt; cb.equal(root.get(&quot;nivel&quot;), nivel));</span>
+        }
+<span class="nc bnc" id="L950" title="All 2 branches missed.">        if (factor != null) {</span>
+<span class="nc" id="L951">            spec = spec.and((root, cq, cb) -&gt; cb.equal(root.get(&quot;factor&quot;), factor));</span>
+        }
+
+<span class="nc bnc" id="L954" title="All 4 branches missed.">        if (estadoRaw != null &amp;&amp; !estadoRaw.isBlank()) {</span>
+<span class="nc bnc" id="L955" title="All 2 branches missed.">            if (estadoRaw.contains(&quot;,&quot;)) {</span>
+<span class="nc" id="L956">                List&lt;Pregunta.EstadoPregunta&gt; estados = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L957" title="All 2 branches missed.">                for (String s : estadoRaw.split(&quot;,&quot;)) {</span>
+<span class="nc" id="L958">                    String v = s.trim();</span>
+<span class="nc bnc" id="L959" title="All 2 branches missed.">                    if (!v.isEmpty()) {</span>
+                        try {
+<span class="nc" id="L961">                            estados.add(parseEstadoPregunta(v));</span>
+<span class="nc" id="L962">                        } catch (Exception e) {</span>
+<span class="nc" id="L963">                            log.warn(&quot;[FILTRAR] Estado CSV no reconocido: '{}'&quot;, v);</span>
+<span class="nc" id="L964">                        }</span>
+                    }
+                }
+<span class="nc bnc" id="L967" title="All 2 branches missed.">                if (!estados.isEmpty()) {</span>
+<span class="nc" id="L968">                    spec = spec.and((root, cq, cb) -&gt; root.get(&quot;estado&quot;).in(estados));</span>
+                }
+<span class="nc" id="L970">            } else {</span>
+                try {
+<span class="nc" id="L972">                    Pregunta.EstadoPregunta estado = parseEstadoPregunta(estadoRaw);</span>
+<span class="nc" id="L973">                    spec = spec.and((root, cq, cb) -&gt; cb.equal(root.get(&quot;estado&quot;), estado));</span>
+<span class="nc" id="L974">                } catch (Exception e) {</span>
+<span class="nc" id="L975">                    log.warn(&quot;[FILTRAR] Estado no reconocido: '{}'&quot;, estadoRaw);</span>
+<span class="nc" id="L976">                }</span>
+            }
+        }
+
+<span class="nc bnc" id="L980" title="All 4 branches missed.">        if (tematica != null &amp;&amp; !tematica.isBlank()) {</span>
+<span class="nc" id="L981">            final String like = &quot;%&quot; + tematica.toLowerCase() + &quot;%&quot;;</span>
+<span class="nc" id="L982">            spec = spec.and((root, cq, cb) -&gt; cb.like(cb.lower(root.get(&quot;tematica&quot;)), like));</span>
+        }
+<span class="nc bnc" id="L984" title="All 4 branches missed.">        if (subtema != null &amp;&amp; !subtema.isBlank()) {</span>
+<span class="nc" id="L985">            final String like = &quot;%&quot; + subtema.toLowerCase() + &quot;%&quot;;</span>
+<span class="nc" id="L986">            spec = spec.and((root, cq, cb) -&gt; cb.like(cb.lower(root.get(&quot;subtema&quot;)), like));</span>
+        }
+<span class="nc bnc" id="L988" title="All 4 branches missed.">        if (pregunta != null &amp;&amp; !pregunta.isBlank()) {</span>
+<span class="nc" id="L989">            final String like = &quot;%&quot; + pregunta.toLowerCase() + &quot;%&quot;;</span>
+<span class="nc" id="L990">            spec = spec.and((root, cq, cb) -&gt; cb.like(cb.lower(root.get(&quot;pregunta&quot;)), like));</span>
+        }
+<span class="nc bnc" id="L992" title="All 4 branches missed.">        if (respuesta != null &amp;&amp; !respuesta.isBlank()) {</span>
+<span class="nc" id="L993">            final String like = &quot;%&quot; + respuesta.toLowerCase() + &quot;%&quot;;</span>
+<span class="nc" id="L994">            spec = spec.and((root, cq, cb) -&gt; cb.like(cb.lower(root.get(&quot;respuesta&quot;)), like));</span>
+        }
+<span class="nc bnc" id="L996" title="All 4 branches missed.">        if (autoria != null &amp;&amp; !autoria.isBlank()) {</span>
+<span class="nc" id="L997">            final String like = &quot;%&quot; + autoria.toLowerCase() + &quot;%&quot;;</span>
+<span class="nc" id="L998">            spec = spec.and((root, cq, cb) -&gt; {</span>
+<span class="nc" id="L999">                Join&lt;Pregunta, Usuario&gt; creacionUsuario = root.join(&quot;creacionUsuario&quot;, JoinType.LEFT);</span>
+<span class="nc" id="L1000">                return cb.like(</span>
+<span class="nc" id="L1001">                    cb.lower(cb.coalesce(root.get(&quot;autor&quot;), cb.coalesce(creacionUsuario.get(&quot;nombre&quot;), cb.literal(&quot;&quot;)))),</span>
+                    like
+                );
+            });
+        }
+<span class="nc bnc" id="L1006" title="All 4 branches missed.">        if (texto != null &amp;&amp; !texto.isBlank()) {</span>
+<span class="nc" id="L1007">            final String like = &quot;%&quot; + texto.toLowerCase() + &quot;%&quot;;</span>
+<span class="nc" id="L1008">            spec = spec.and((root, cq, cb) -&gt; cb.or(</span>
+<span class="nc" id="L1009">                cb.like(cb.lower(root.get(&quot;pregunta&quot;)), like),</span>
+<span class="nc" id="L1010">                cb.like(cb.lower(root.get(&quot;respuesta&quot;)), like)</span>
+            ));
+        }
+
+<span class="nc" id="L1014">        return spec;</span>
+    }
+
+    private Pregunta.EstadoPregunta parseEstadoPregunta(String raw) {
+<span class="nc" id="L1018">        String normalized = raw.trim().toLowerCase().replace(' ', '_');</span>
+<span class="nc" id="L1019">        return Pregunta.EstadoPregunta.valueOf(normalized);</span>
+    }
+
+    // --- MÉTODO DE MAPEADO DTO ---
+    public PreguntaDTO mapPreguntaToDTO(Pregunta p) {
+<span class="nc" id="L1024">        PreguntaDTO dto = new PreguntaDTO();</span>
+<span class="nc" id="L1025">        dto.setId(p.getId());</span>
+<span class="nc" id="L1026">        dto.setTematica(p.getTematica());</span>
+<span class="nc" id="L1027">        dto.setPregunta(p.getPregunta());</span>
+<span class="nc" id="L1028">        dto.setRespuesta(p.getRespuesta());</span>
+<span class="nc" id="L1029">        dto.setDatosExtra(p.getDatosExtra());</span>
+<span class="nc" id="L1030">        dto.setFuentes(p.getFuentes());</span>
+<span class="nc" id="L1031">        dto.setNivel(p.getNivel());</span>
+<span class="nc bnc" id="L1032" title="All 2 branches missed.">        dto.setCreacionUsuarioId(p.getCreacionUsuario() != null ? p.getCreacionUsuario().getId() : null);</span>
+<span class="nc bnc" id="L1033" title="All 2 branches missed.">        dto.setCreacionUsuarioNombre(p.getCreacionUsuario() != null ? p.getCreacionUsuario().getNombre() : null);</span>
+<span class="nc" id="L1034">        dto.setSubtema(p.getSubtema());</span>
+<span class="nc" id="L1035">        dto.setAutor(p.getAutor());</span>
+<span class="nc" id="L1036">        dto.setNotas(p.getNotas());</span>
+<span class="nc" id="L1037">        dto.setFactor(p.getFactor());</span>
+<span class="nc" id="L1038">        dto.setNotasVerificacion(p.getNotasVerificacion());</span>
+<span class="nc" id="L1039">        dto.setNotasDireccion(p.getNotasDireccion());</span>
+<span class="nc" id="L1040">        dto.setVerificacion(p.getVerificacion());</span>
+<span class="nc bnc" id="L1041" title="All 2 branches missed.">        dto.setFechaCreacion(p.getFechaCreacion() != null ? p.getFechaCreacion().toString() : null);</span>
+<span class="nc bnc" id="L1042" title="All 2 branches missed.">        dto.setFechaVerificacion(p.getFechaVerificacion() != null ? p.getFechaVerificacion().toString() : null);</span>
+<span class="nc bnc" id="L1043" title="All 2 branches missed.">        dto.setEstado(p.getEstado() != null ? p.getEstado().name() : null);</span>
+<span class="nc" id="L1044">        dto.setVersion(p.getVersion());</span>
+        
+<span class="nc" id="L1046">        return dto;</span>
+    }
+
+    // Modificar obtenerTodas para devolver DTOs
+    public List&lt;PreguntaDTO&gt; obtenerTodasDTO() {
+<span class="nc" id="L1051">        return obtenerTodas().stream().map(this::mapPreguntaToDTO).collect(java.util.stream.Collectors.toList());</span>
+    }
+
+    // Método para obtener preguntas paginadas como DTOs
+    public Page&lt;PreguntaDTO&gt; obtenerPaginadasDTO(Pageable pageable) {
+        try {
+<span class="nc" id="L1057">            log.info(&quot;[PAGINADAS] Iniciando consulta paginada - Page: {}, Size: {}&quot;, </span>
+<span class="nc" id="L1058">                pageable.getPageNumber(), pageable.getPageSize());</span>
+            
+<span class="nc" id="L1060">            Page&lt;Pregunta&gt; preguntasPage = preguntaRepository.findAll(pageable);</span>
+            
+<span class="nc" id="L1062">            log.info(&quot;[PAGINADAS] Consulta exitosa - Total elementos: {}, Total páginas: {}&quot;, </span>
+<span class="nc" id="L1063">                preguntasPage.getTotalElements(), preguntasPage.getTotalPages());</span>
+            
+<span class="nc" id="L1065">            return preguntasPage.map(this::mapPreguntaToDTO);</span>
+<span class="nc" id="L1066">        } catch (Exception e) {</span>
+<span class="nc" id="L1067">            log.error(&quot;[PAGINADAS] Error al obtener preguntas paginadas: {}&quot;, e.getMessage(), e);</span>
+            
+            // Log adicional para identificar el problema específico
+<span class="nc bnc" id="L1070" title="All 4 branches missed.">            if (e.getCause() != null &amp;&amp; e.getCause().getMessage().contains(&quot;No enum constant&quot;)) {</span>
+<span class="nc" id="L1071">                log.error(&quot;[PAGINADAS] Error de enum detectado: {}&quot;, e.getCause().getMessage());</span>
+                
+                // Intentar identificar qué valores problemáticos hay
+                try {
+<span class="nc" id="L1075">                    List&lt;Pregunta&gt; todas = preguntaRepository.findAll();</span>
+<span class="nc" id="L1076">                    log.info(&quot;[PAGINADAS] Total preguntas en BD: {}&quot;, todas.size());</span>
+                    
+                    // Verificar niveles únicos
+<span class="nc" id="L1079">                    Set&lt;String&gt; niveles = todas.stream()</span>
+<span class="nc bnc" id="L1080" title="All 2 branches missed.">                        .map(p -&gt; p.getNivel() != null ? p.getNivel().name() : &quot;NULL&quot;)</span>
+<span class="nc" id="L1081">                        .collect(Collectors.toSet());</span>
+<span class="nc" id="L1082">                    log.info(&quot;[PAGINADAS] Niveles únicos encontrados: {}&quot;, niveles);</span>
+                    
+                    // Verificar estados únicos
+<span class="nc" id="L1085">                    Set&lt;String&gt; estados = todas.stream()</span>
+<span class="nc bnc" id="L1086" title="All 2 branches missed.">                        .map(p -&gt; p.getEstado() != null ? p.getEstado().name() : &quot;NULL&quot;)</span>
+<span class="nc" id="L1087">                        .collect(Collectors.toSet());</span>
+<span class="nc" id="L1088">                    log.info(&quot;[PAGINADAS] Estados únicos encontrados: {}&quot;, estados);</span>
+                    
+<span class="nc" id="L1090">                } catch (Exception ex) {</span>
+<span class="nc" id="L1091">                    log.error(&quot;[PAGINADAS] Error al verificar datos: {}&quot;, ex.getMessage());</span>
+<span class="nc" id="L1092">                }</span>
+            }
+            
+<span class="nc" id="L1095">            throw e;</span>
+        }
+    }
+
+    // Modificar obtenerPorId para devolver DTO
+    public Optional&lt;PreguntaDTO&gt; obtenerPorIdDTO(Long id) {
+<span class="nc" id="L1101">        return obtenerPorId(id).map(this::mapPreguntaToDTO);</span>
+    }
+    
+    /**
+     * Busca apariciones de un texto en preguntas y respuestas
+     * @param texto Texto a buscar
+     * @return Lista de preguntas que contienen el texto en pregunta o respuesta
+     */
+    public List&lt;PreguntaDTO&gt; buscarApariciones(String texto) {
+<span class="nc bnc" id="L1110" title="All 4 branches missed.">        if (texto == null || texto.trim().isEmpty()) {</span>
+<span class="nc" id="L1111">            return Collections.emptyList();</span>
+        }
+        
+<span class="nc" id="L1114">        String textoLimpio = texto.trim().toLowerCase();</span>
+<span class="nc" id="L1115">        System.out.println(&quot;🔍 Buscando apariciones para: &quot; + textoLimpio);</span>
+        
+        // Buscar en todas las preguntas (no usar filtro de estado para ser exhaustivo)
+<span class="nc" id="L1118">        List&lt;Pregunta&gt; todasLasPreguntas = preguntaRepository.findAll();</span>
+        
+<span class="nc" id="L1120">        List&lt;Pregunta&gt; preguntasCoincidentes = todasLasPreguntas.stream()</span>
+<span class="nc" id="L1121">            .filter(p -&gt; {</span>
+<span class="nc bnc" id="L1122" title="All 2 branches missed.">                boolean coincidePregunta = p.getPregunta() != null &amp;&amp; </span>
+<span class="nc bnc" id="L1123" title="All 2 branches missed.">                                         p.getPregunta().toLowerCase().contains(textoLimpio);</span>
+<span class="nc bnc" id="L1124" title="All 2 branches missed.">                boolean coincideRespuesta = p.getRespuesta() != null &amp;&amp; </span>
+<span class="nc bnc" id="L1125" title="All 2 branches missed.">                                          p.getRespuesta().toLowerCase().contains(textoLimpio);</span>
+<span class="nc bnc" id="L1126" title="All 4 branches missed.">                return coincidePregunta || coincideRespuesta;</span>
+            })
+<span class="nc" id="L1128">            .collect(Collectors.toList());</span>
+        
+<span class="nc" id="L1130">        System.out.println(&quot;✅ Encontradas &quot; + preguntasCoincidentes.size() + &quot; coincidencias&quot;);</span>
+        
+        // Convertir a DTOs para la respuesta
+<span class="nc" id="L1133">        return preguntasCoincidentes.stream()</span>
+<span class="nc" id="L1134">            .map(this::mapPreguntaToDTO)</span>
+<span class="nc" id="L1135">            .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Obtiene estadísticas de niveles de preguntas para debug
+     * @return Mapa con estadísticas por nivel
+     */
+    public Map&lt;String, Object&gt; obtenerEstadisticasNiveles() {
+<span class="nc" id="L1143">        Map&lt;String, Object&gt; estadisticas = new HashMap&lt;&gt;();</span>
+        
+<span class="nc" id="L1145">        List&lt;Pregunta&gt; todasLasPreguntas = preguntaRepository.findAll();</span>
+        
+        // Agrupar por nivel
+<span class="nc" id="L1148">        Map&lt;Pregunta.NivelPregunta, Long&gt; porNivel = todasLasPreguntas.stream()</span>
+<span class="nc" id="L1149">            .collect(Collectors.groupingBy(Pregunta::getNivel, Collectors.counting()));</span>
+        
+        // Agrupar por estado
+<span class="nc" id="L1152">        Map&lt;Pregunta.EstadoPregunta, Long&gt; porEstado = todasLasPreguntas.stream()</span>
+<span class="nc" id="L1153">            .collect(Collectors.groupingBy(Pregunta::getEstado, Collectors.counting()));</span>
+        
+        // Agrupar por estado de disponibilidad
+<span class="nc" id="L1156">        Map&lt;Pregunta.EstadoDisponibilidad, Long&gt; porDisponibilidad = todasLasPreguntas.stream()</span>
+<span class="nc" id="L1157">            .collect(Collectors.groupingBy(Pregunta::getEstadoDisponibilidad, Collectors.counting()));</span>
+        
+<span class="nc" id="L1159">        estadisticas.put(&quot;totalPreguntas&quot;, todasLasPreguntas.size());</span>
+<span class="nc" id="L1160">        estadisticas.put(&quot;porNivel&quot;, porNivel);</span>
+<span class="nc" id="L1161">        estadisticas.put(&quot;porEstado&quot;, porEstado);</span>
+<span class="nc" id="L1162">        estadisticas.put(&quot;porDisponibilidad&quot;, porDisponibilidad);</span>
+        
+<span class="nc" id="L1164">        log.info(&quot;[DEBUG] Estadísticas de niveles: {}&quot;, estadisticas);</span>
+        
+<span class="nc" id="L1166">        return estadisticas;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

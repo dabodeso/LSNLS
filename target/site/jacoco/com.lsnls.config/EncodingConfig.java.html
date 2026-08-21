@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EncodingConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.config</a> &gt; <span class="el_source">EncodingConfig.java</span></div><h1>EncodingConfig.java</h1><pre class="source lang-java linenums">package com.lsnls.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.web.filter.CharacterEncodingFilter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+@Configuration
+<span class="nc" id="L14">public class EncodingConfig implements WebMvcConfigurer {</span>
+
+    /**
+     * Filtro para forzar codificación UTF-8 en todas las peticiones
+     */
+    @Bean
+    public CharacterEncodingFilter characterEncodingFilter() {
+<span class="nc" id="L21">        CharacterEncodingFilter filter = new CharacterEncodingFilter();</span>
+<span class="nc" id="L22">        filter.setEncoding(&quot;UTF-8&quot;);</span>
+<span class="nc" id="L23">        filter.setForceEncoding(true);</span>
+<span class="nc" id="L24">        filter.setForceRequestEncoding(true);</span>
+<span class="nc" id="L25">        filter.setForceResponseEncoding(true);</span>
+<span class="nc" id="L26">        return filter;</span>
+    }
+
+    /**
+     * Configurar convertidores HTTP para usar UTF-8
+     */
+    @Override
+    public void configureMessageConverters(List&lt;HttpMessageConverter&lt;?&gt;&gt; converters) {
+<span class="nc" id="L34">        StringHttpMessageConverter stringConverter = new StringHttpMessageConverter(StandardCharsets.UTF_8);</span>
+<span class="nc" id="L35">        stringConverter.setWriteAcceptCharset(false);</span>
+<span class="nc" id="L36">        converters.add(stringConverter);</span>
+<span class="nc" id="L37">    }</span>
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

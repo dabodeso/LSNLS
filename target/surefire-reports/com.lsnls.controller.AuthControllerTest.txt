@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.lsnls.controller.AuthControllerTest
+-------------------------------------------------------------------------------
+Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.115 s -- in com.lsnls.controller.AuthControllerTest

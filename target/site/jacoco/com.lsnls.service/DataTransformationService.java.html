@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DataTransformationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">DataTransformationService.java</span></div><h1>DataTransformationService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import org.springframework.stereotype.Service;
+
+@Service
+<span class="nc" id="L6">public class DataTransformationService {</span>
+
+    /**
+     * Transforma texto y limpia caracteres no permitidos PERO PRESERVA MAYÚSCULAS/MINÚSCULAS
+     */
+    public String normalizarTexto(String texto) {
+<span class="nc bnc" id="L12" title="All 4 branches missed.">        if (texto == null || texto.trim().isEmpty()) {</span>
+<span class="nc" id="L13">            return texto;</span>
+        }
+        
+        // YA NO convertir a mayúsculas automáticamente
+<span class="nc" id="L17">        String normalizado = texto.trim();</span>
+        
+        // Remover saltos de línea
+<span class="nc" id="L20">        normalizado = normalizado.replaceAll(&quot;[\r\n]+&quot;, &quot; &quot;);</span>
+        
+        // Limpiar múltiples espacios
+<span class="nc" id="L23">        normalizado = normalizado.replaceAll(&quot;\\s+&quot;, &quot; &quot;);</span>
+        
+<span class="nc" id="L25">        return normalizado;</span>
+    }
+
+    /**
+     * Valida que el texto cumple con los requisitos de LSNOLS (SIN EXIGIR MAYÚSCULAS)
+     */
+    public boolean esTextoValido(String texto, int maxLength) {
+<span class="nc bnc" id="L32" title="All 4 branches missed.">        if (texto == null || texto.trim().isEmpty()) {</span>
+<span class="nc" id="L33">            return false;</span>
+        }
+        
+        // Verificar longitud
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        if (texto.length() &gt; maxLength) {</span>
+<span class="nc" id="L38">            return false;</span>
+        }
+        
+        // YA NO verificar que esté en mayúsculas - permitir mayúsculas y minúsculas
+        
+        // Verificar que no tenga saltos de línea
+<span class="nc bnc" id="L44" title="All 4 branches missed.">        if (texto.contains(&quot;\n&quot;) || texto.contains(&quot;\r&quot;)) {</span>
+<span class="nc" id="L45">            return false;</span>
+        }
+        
+        // Verificar caracteres permitidos (letras, números, espacios, signos básicos)
+<span class="nc" id="L49">        String patronPermitido = &quot;^[A-Za-zÀ-ÿÑñ0-9\\s.,;:!?¡¿()\\[\\]\&quot;'\\-]+$&quot;;</span>
+<span class="nc" id="L50">        return texto.matches(patronPermitido);</span>
+    }
+
+    /**
+     * Normaliza específicamente las preguntas (sin límite de caracteres)
+     */
+    public String normalizarPregunta(String pregunta) {
+<span class="nc" id="L57">        String normalizada = normalizarTexto(pregunta);</span>
+        // Ya no se trunca a 150 caracteres
+<span class="nc" id="L59">        return normalizada;</span>
+    }
+
+    /**
+     * Normaliza específicamente las respuestas (500 caracteres máximo)
+     */
+    public String normalizarRespuesta(String respuesta) {
+<span class="nc" id="L66">        String normalizada = normalizarTexto(respuesta);</span>
+<span class="nc bnc" id="L67" title="All 4 branches missed.">        if (normalizada != null &amp;&amp; normalizada.length() &gt; 500) {</span>
+<span class="nc" id="L68">            normalizada = normalizada.substring(0, 500).trim();</span>
+        }
+<span class="nc" id="L70">        return normalizada;</span>
+    }
+
+    /**
+     * Normaliza específicamente las temáticas (100 caracteres máximo)
+     */
+    public String normalizarTematica(String tematica) {
+<span class="nc" id="L77">        String normalizada = normalizarTexto(tematica);</span>
+<span class="nc bnc" id="L78" title="All 4 branches missed.">        if (normalizada != null &amp;&amp; normalizada.length() &gt; 100) {</span>
+<span class="nc" id="L79">            normalizada = normalizada.substring(0, 100).trim();</span>
+        }
+<span class="nc" id="L81">        return normalizada;</span>
+    }
+
+    /**
+     * Valida específicamente una pregunta completa
+     */
+    public ValidationResult validarPreguntaCompleta(String pregunta, String respuesta, String tematica) {
+<span class="nc" id="L88">        ValidationResult result = new ValidationResult();</span>
+        
+        // Validar pregunta - sin límite de caracteres
+<span class="nc bnc" id="L91" title="All 8 branches missed.">        if (pregunta == null || pregunta.trim().isEmpty() || pregunta.contains(&quot;\n&quot;) || pregunta.contains(&quot;\r&quot;)) {</span>
+<span class="nc" id="L92">            result.addError(&quot;pregunta&quot;, &quot;La pregunta no puede estar vacía ni contener saltos de línea&quot;);</span>
+        } else {
+            // Verificar caracteres permitidos (letras, números, espacios, signos básicos)
+<span class="nc" id="L95">            String patronPermitido = &quot;^[A-Za-zÀ-ÿÑñ0-9\\s.,;:!?¡¿()\\[\\]\&quot;'\\-]+$&quot;;</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (!pregunta.matches(patronPermitido)) {</span>
+<span class="nc" id="L97">                result.addError(&quot;pregunta&quot;, &quot;La pregunta contiene caracteres no permitidos&quot;);</span>
+            }
+        }
+        
+        // Validar respuesta - aumentado a 500 caracteres
+<span class="nc bnc" id="L102" title="All 8 branches missed.">        if (respuesta == null || respuesta.trim().isEmpty() || respuesta.contains(&quot;\n&quot;) || respuesta.contains(&quot;\r&quot;)) {</span>
+<span class="nc" id="L103">            result.addError(&quot;respuesta&quot;, &quot;La respuesta no puede estar vacía ni contener saltos de línea&quot;);</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        } else if (respuesta.length() &gt; 500) {</span>
+<span class="nc" id="L105">            result.addError(&quot;respuesta&quot;, &quot;La respuesta no puede exceder los 500 caracteres&quot;);</span>
+        } else {
+            // Verificar caracteres permitidos (letras, números, espacios, signos básicos)
+<span class="nc" id="L108">            String patronPermitido = &quot;^[A-Za-zÀ-ÿÑñ0-9\\s.,;:!?¡¿()\\[\\]\&quot;'\\-]+$&quot;;</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">            if (!respuesta.matches(patronPermitido)) {</span>
+<span class="nc" id="L110">                result.addError(&quot;respuesta&quot;, &quot;La respuesta contiene caracteres no permitidos&quot;);</span>
+            }
+        }
+        
+        // Validar temática
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        if (!esTextoValido(tematica, 100)) {</span>
+<span class="nc" id="L116">            result.addError(&quot;tematica&quot;, &quot;La temática no cumple con el formato requerido (máximo 100 caracteres, sin saltos de línea)&quot;);</span>
+        }
+        
+<span class="nc" id="L119">        return result;</span>
+    }
+
+    /**
+     * Clase para manejar resultados de validación
+     */
+<span class="nc" id="L125">    public static class ValidationResult {</span>
+<span class="nc" id="L126">        private boolean valid = true;</span>
+<span class="nc" id="L127">        private java.util.Map&lt;String, String&gt; errors = new java.util.HashMap&lt;&gt;();</span>
+        
+        public void addError(String field, String message) {
+<span class="nc" id="L130">            valid = false;</span>
+<span class="nc" id="L131">            errors.put(field, message);</span>
+<span class="nc" id="L132">        }</span>
+        
+        public boolean isValid() {
+<span class="nc" id="L135">            return valid;</span>
+        }
+        
+        public java.util.Map&lt;String, String&gt; getErrors() {
+<span class="nc" id="L139">            return errors;</span>
+        }
+        
+        public String getErrorsAsString() {
+<span class="nc" id="L143">            return String.join(&quot;; &quot;, errors.values());</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

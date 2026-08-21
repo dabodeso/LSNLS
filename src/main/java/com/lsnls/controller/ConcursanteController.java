@@ -254,6 +254,7 @@ public class ConcursanteController {
             String urlFoto = concursanteService.subirFoto(id, foto);
             Map<String, String> response = new HashMap<>();
             response.put("url", urlFoto);
+            response.put("foto", urlFoto);
             response.put("mensaje", "Foto subida correctamente");
             return ResponseEntity.ok(response);
         } catch (Exception e) {

@@ -1,5 +1,6 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
 import com.lsnls.dto.AuthResponse;
 import com.lsnls.dto.ErrorResponse;
 import com.lsnls.dto.LoginRequest;
@@ -48,14 +49,14 @@ public class AuthController {
             log.info("✅ Login exitoso para usuario: {}", request.getNombre());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("❌ Error en login: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
+            log.error("Error en login: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
             String mensaje = e.getMessage();
-            if (mensaje != null && mensaje.contains("Bad credentials")) {
+            if (mensaje != null && mensaje.toLowerCase().contains("bad credentials")) {
                 return ResponseEntity.status(401)
-                    .body(new ErrorResponse("Error de autenticación", "Usuario o contraseña incorrectos. Por favor, verifica tus credenciales e intenta nuevamente."));
+                    .body(new ErrorResponse("Error de autenticación", "Usuario o contraseña incorrectos. Comprueba tus datos e inténtalo de nuevo."));
             }
             return ResponseEntity.status(401)
-                .body(new ErrorResponse("Error de autenticación", "Error al procesar la solicitud: " + e.getMessage()));
+                .body(new ErrorResponse("Error de autenticación", MensajesUsuario.sanitizar(mensaje, "No se ha podido iniciar sesión. Inténtalo de nuevo.")));
         }
     }
 
@@ -80,7 +81,7 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(new ErrorResponse("Error de registro", e.getMessage()));
+                .body(new ErrorResponse("Error de registro", MensajesUsuario.sanitizar(e.getMessage(), MensajesUsuario.VALIDACION)));
         }
     }
 
@@ -98,9 +99,9 @@ public class AuthController {
                     .body(new ErrorResponse("Error de autenticación", "Usuario no autenticado"));
             }
         } catch (Exception e) {
-            log.error("❌ Error al obtener usuario actual: {}", e.getMessage());
+            log.error("Error al obtener usuario actual: {}", e.getMessage());
             return ResponseEntity.status(401)
-                .body(new ErrorResponse("Error de autenticación", e.getMessage()));
+                .body(new ErrorResponse("Error de autenticación", MensajesUsuario.SESION));
         }
     }
 
@@ -111,7 +112,7 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("message", "Sesión cerrada exitosamente"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(new ErrorResponse("Error al cerrar sesión", e.getMessage()));
+                .body(new ErrorResponse("Error al cerrar sesión", MensajesUsuario.GENERICO));
         }
     }
 
@@ -133,7 +134,7 @@ public class AuthController {
             }
         } catch (Exception e) {
             return ResponseEntity.status(401)
-                .body(new ErrorResponse("Error de autenticación", e.getMessage()));
+                .body(new ErrorResponse("Error de autenticación", MensajesUsuario.SESION));
         }
     }
 } 

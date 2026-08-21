@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValidationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">ValidationController.java</span></div><h1>ValidationController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
+
+import com.lsnls.service.ValidationService;
+import com.lsnls.service.ValidationService.ValidationResult;
+import com.lsnls.entity.*;
+import com.lsnls.service.*;
+import com.lsnls.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * Controlador para validaciones de integridad del sistema
+ * Solo accesible para usuarios con rol ADMIN o DIRECCION
+ */
+@RestController
+@RequestMapping(&quot;/api/validation&quot;)
+@PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
+<span class="nc" id="L24">public class ValidationController {</span>
+
+    @Autowired
+    private ValidationService validationService;
+    
+    @Autowired
+    private PreguntaService preguntaService;
+    
+    @Autowired
+    private CuestionarioService cuestionarioService;
+    
+    @Autowired
+    private ComboService comboService;
+    
+    @Autowired
+    private ConcursanteRepository concursanteRepository;
+    
+    @Autowired
+    private JornadaRepository jornadaRepository;
+    
+    @Autowired
+    private ProgramaService programaService;
+
+    /**
+     * Valida la integridad de una pregunta específica
+     */
+    @GetMapping(&quot;/pregunta/{id}&quot;)
+    public ResponseEntity&lt;?&gt; validarPregunta(@PathVariable Long id) {
+        try {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            if (id == null) {</span>
+<span class="nc" id="L54">                return ResponseEntity.badRequest().body(&quot;El ID de la pregunta es requerido&quot;);</span>
+            }
+            
+<span class="nc" id="L57">            Optional&lt;Pregunta&gt; preguntaOpt = preguntaService.obtenerPorId(id);</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (preguntaOpt.isEmpty()) {</span>
+<span class="nc" id="L59">                return ResponseEntity.status(404).body(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;);</span>
+            }
+            
+<span class="nc" id="L62">            ValidationResult result = validationService.validarIntegridadPregunta(preguntaOpt.get());</span>
+            
+<span class="nc" id="L64">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L65">            response.put(&quot;entidad&quot;, &quot;Pregunta&quot;);</span>
+<span class="nc" id="L66">            response.put(&quot;id&quot;, id);</span>
+<span class="nc" id="L67">            response.put(&quot;valida&quot;, result.isValid());</span>
+<span class="nc" id="L68">            response.put(&quot;errores&quot;, result.getErrors());</span>
+<span class="nc" id="L69">            response.put(&quot;advertencias&quot;, result.getWarnings());</span>
+            
+<span class="nc" id="L71">            return ResponseEntity.ok(response);</span>
+            
+<span class="nc" id="L73">        } catch (Exception e) {</span>
+<span class="nc" id="L74">            return ResponseEntity.badRequest().body(&quot;Error interno al validar pregunta: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * Valida la integridad de un cuestionario específico
+     */
+    @GetMapping(&quot;/cuestionario/{id}&quot;)
+    public ResponseEntity&lt;?&gt; validarCuestionario(@PathVariable Long id) {
+        try {
+<span class="nc" id="L84">            Optional&lt;Cuestionario&gt; cuestionarioOpt = cuestionarioService.obtenerConPreguntas(id);</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            if (cuestionarioOpt.isEmpty()) {</span>
+<span class="nc" id="L86">                return ResponseEntity.notFound().build();</span>
+            }
+            
+<span class="nc" id="L89">            ValidationResult result = validationService.validarIntegridadCuestionario(cuestionarioOpt.get());</span>
+            
+<span class="nc" id="L91">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L92">            response.put(&quot;entidad&quot;, &quot;Cuestionario&quot;);</span>
+<span class="nc" id="L93">            response.put(&quot;id&quot;, id);</span>
+<span class="nc" id="L94">            response.put(&quot;valida&quot;, result.isValid());</span>
+<span class="nc" id="L95">            response.put(&quot;errores&quot;, result.getErrors());</span>
+<span class="nc" id="L96">            response.put(&quot;advertencias&quot;, result.getWarnings());</span>
+            
+<span class="nc" id="L98">            return ResponseEntity.ok(response);</span>
+            
+<span class="nc" id="L100">        } catch (Exception e) {</span>
+<span class="nc" id="L101">            return ResponseEntity.badRequest().body(&quot;Error al validar cuestionario: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * Valida la integridad de un combo específico
+     */
+    @GetMapping(&quot;/combo/{id}&quot;)
+    public ResponseEntity&lt;?&gt; validarCombo(@PathVariable Long id) {
+        try {
+<span class="nc" id="L111">            Optional&lt;Combo&gt; comboOpt = comboService.obtenerConPreguntas(id);</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (comboOpt.isEmpty()) {</span>
+<span class="nc" id="L113">                return ResponseEntity.notFound().build();</span>
+            }
+            
+<span class="nc" id="L116">            ValidationResult result = validationService.validarIntegridadCombo(comboOpt.get());</span>
+            
+<span class="nc" id="L118">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L119">            response.put(&quot;entidad&quot;, &quot;Combo&quot;);</span>
+<span class="nc" id="L120">            response.put(&quot;id&quot;, id);</span>
+<span class="nc" id="L121">            response.put(&quot;valida&quot;, result.isValid());</span>
+<span class="nc" id="L122">            response.put(&quot;errores&quot;, result.getErrors());</span>
+<span class="nc" id="L123">            response.put(&quot;advertencias&quot;, result.getWarnings());</span>
+            
+<span class="nc" id="L125">            return ResponseEntity.ok(response);</span>
+            
+<span class="nc" id="L127">        } catch (Exception e) {</span>
+<span class="nc" id="L128">            return ResponseEntity.badRequest().body(&quot;Error al validar combo: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * Valida la integridad de un concursante específico
+     */
+    @GetMapping(&quot;/concursante/{id}&quot;)
+    public ResponseEntity&lt;?&gt; validarConcursante(@PathVariable Long id) {
+        try {
+<span class="nc" id="L138">            Optional&lt;Concursante&gt; concursanteOpt = concursanteRepository.findById(id);</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">            if (concursanteOpt.isEmpty()) {</span>
+<span class="nc" id="L140">                return ResponseEntity.notFound().build();</span>
+            }
+            
+<span class="nc" id="L143">            ValidationResult result = validationService.validarIntegridadConcursante(concursanteOpt.get());</span>
+            
+<span class="nc" id="L145">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L146">            response.put(&quot;entidad&quot;, &quot;Concursante&quot;);</span>
+<span class="nc" id="L147">            response.put(&quot;id&quot;, id);</span>
+<span class="nc" id="L148">            response.put(&quot;valida&quot;, result.isValid());</span>
+<span class="nc" id="L149">            response.put(&quot;errores&quot;, result.getErrors());</span>
+<span class="nc" id="L150">            response.put(&quot;advertencias&quot;, result.getWarnings());</span>
+            
+<span class="nc" id="L152">            return ResponseEntity.ok(response);</span>
+            
+<span class="nc" id="L154">        } catch (Exception e) {</span>
+<span class="nc" id="L155">            return ResponseEntity.badRequest().body(&quot;Error al validar concursante: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * Valida la integridad de una jornada específica
+     */
+    @GetMapping(&quot;/jornada/{id}&quot;)
+    public ResponseEntity&lt;?&gt; validarJornada(@PathVariable Long id) {
+        try {
+<span class="nc" id="L165">            Optional&lt;Jornada&gt; jornadaOpt = jornadaRepository.findById(id);</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">            if (jornadaOpt.isEmpty()) {</span>
+<span class="nc" id="L167">                return ResponseEntity.notFound().build();</span>
+            }
+            
+<span class="nc" id="L170">            ValidationResult result = validationService.validarIntegridadJornada(jornadaOpt.get());</span>
+            
+<span class="nc" id="L172">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L173">            response.put(&quot;entidad&quot;, &quot;Jornada&quot;);</span>
+<span class="nc" id="L174">            response.put(&quot;id&quot;, id);</span>
+<span class="nc" id="L175">            response.put(&quot;valida&quot;, result.isValid());</span>
+<span class="nc" id="L176">            response.put(&quot;errores&quot;, result.getErrors());</span>
+<span class="nc" id="L177">            response.put(&quot;advertencias&quot;, result.getWarnings());</span>
+            
+<span class="nc" id="L179">            return ResponseEntity.ok(response);</span>
+            
+<span class="nc" id="L181">        } catch (Exception e) {</span>
+<span class="nc" id="L182">            return ResponseEntity.badRequest().body(&quot;Error al validar jornada: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * Valida la integridad de un programa específico
+     */
+    @GetMapping(&quot;/programa/{id}&quot;)
+    public ResponseEntity&lt;?&gt; validarPrograma(@PathVariable Long id) {
+        try {
+<span class="nc" id="L192">            Optional&lt;Programa&gt; programaOpt = programaService.findById(id);</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            if (programaOpt.isEmpty()) {</span>
+<span class="nc" id="L194">                return ResponseEntity.notFound().build();</span>
+            }
+            
+<span class="nc" id="L197">            ValidationResult result = validationService.validarIntegridadPrograma(programaOpt.get());</span>
+            
+<span class="nc" id="L199">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L200">            response.put(&quot;entidad&quot;, &quot;Programa&quot;);</span>
+<span class="nc" id="L201">            response.put(&quot;id&quot;, id);</span>
+<span class="nc" id="L202">            response.put(&quot;valida&quot;, result.isValid());</span>
+<span class="nc" id="L203">            response.put(&quot;errores&quot;, result.getErrors());</span>
+<span class="nc" id="L204">            response.put(&quot;advertencias&quot;, result.getWarnings());</span>
+            
+<span class="nc" id="L206">            return ResponseEntity.ok(response);</span>
+            
+<span class="nc" id="L208">        } catch (Exception e) {</span>
+<span class="nc" id="L209">            return ResponseEntity.badRequest().body(&quot;Error al validar programa: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * Ejecuta una validación completa del sistema
+     */
+    @GetMapping(&quot;/sistema&quot;)
+    public ResponseEntity&lt;?&gt; validarSistemaCompleto() {
+        try {
+<span class="nc" id="L219">            ValidationResult result = validationService.validarSistemaCompleto();</span>
+            
+<span class="nc" id="L221">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L222">            response.put(&quot;entidad&quot;, &quot;Sistema Completo&quot;);</span>
+<span class="nc" id="L223">            response.put(&quot;valida&quot;, result.isValid());</span>
+<span class="nc" id="L224">            response.put(&quot;errores&quot;, result.getErrors());</span>
+<span class="nc" id="L225">            response.put(&quot;advertencias&quot;, result.getWarnings());</span>
+<span class="nc" id="L226">            response.put(&quot;timestamp&quot;, java.time.LocalDateTime.now());</span>
+            
+<span class="nc bnc" id="L228" title="All 2 branches missed.">            if (result.isValid()) {</span>
+<span class="nc" id="L229">                response.put(&quot;mensaje&quot;, &quot;Sistema validado correctamente sin errores críticos&quot;);</span>
+            } else {
+<span class="nc" id="L231">                response.put(&quot;mensaje&quot;, &quot;Se encontraron &quot; + result.getErrors().size() + &quot; errores críticos que requieren atención&quot;);</span>
+            }
+            
+<span class="nc" id="L234">            return ResponseEntity.ok(response);</span>
+            
+<span class="nc" id="L236">        } catch (Exception e) {</span>
+<span class="nc" id="L237">            return ResponseEntity.badRequest().body(&quot;Error al validar sistema: &quot; + e.getMessage());</span>
+        }
+    }
+
+    /**
+     * Obtiene un resumen del estado de validación del sistema
+     */
+    @GetMapping(&quot;/resumen&quot;)
+    public ResponseEntity&lt;?&gt; obtenerResumenValidacion() {
+        try {
+<span class="nc" id="L247">            Map&lt;String, Object&gt; resumen = new HashMap&lt;&gt;();</span>
+            
+            // Estadísticas generales
+<span class="nc" id="L250">            resumen.put(&quot;timestamp&quot;, java.time.LocalDateTime.now());</span>
+<span class="nc" id="L251">            resumen.put(&quot;descripcion&quot;, &quot;Resumen del estado de validación del sistema LSNLS&quot;);</span>
+            
+            // Ejecutar validación completa
+<span class="nc" id="L254">            ValidationResult resultadoSistema = validationService.validarSistemaCompleto();</span>
+<span class="nc" id="L255">            resumen.put(&quot;errores_criticos&quot;, resultadoSistema.getErrors().size());</span>
+<span class="nc" id="L256">            resumen.put(&quot;advertencias&quot;, resultadoSistema.getWarnings().size());</span>
+<span class="nc" id="L257">            resumen.put(&quot;sistema_valido&quot;, resultadoSistema.isValid());</span>
+            
+<span class="nc bnc" id="L259" title="All 2 branches missed.">            if (resultadoSistema.getErrors().isEmpty()) {</span>
+<span class="nc" id="L260">                resumen.put(&quot;estado_general&quot;, &quot;SALUDABLE&quot;);</span>
+<span class="nc" id="L261">                resumen.put(&quot;recomendacion&quot;, &quot;El sistema está funcionando correctamente&quot;);</span>
+            } else {
+<span class="nc" id="L263">                resumen.put(&quot;estado_general&quot;, &quot;REQUIERE_ATENCION&quot;);</span>
+<span class="nc" id="L264">                resumen.put(&quot;recomendacion&quot;, &quot;Revisar errores críticos identificados&quot;);</span>
+            }
+            
+<span class="nc" id="L267">            return ResponseEntity.ok(resumen);</span>
+            
+<span class="nc" id="L269">        } catch (Exception e) {</span>
+<span class="nc" id="L270">            return ResponseEntity.badRequest().body(&quot;Error al generar resumen: &quot; + e.getMessage());</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

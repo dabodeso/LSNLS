@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ErrorResponseAdvice.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.config</a> &gt; <span class="el_source">ErrorResponseAdvice.java</span></div><h1>ErrorResponseAdvice.java</h1><pre class="source lang-java linenums">package com.lsnls.config;
+
+import com.lsnls.dto.ApiResponse;
+import com.lsnls.dto.ErrorResponse;
+import org.springframework.core.MethodParameter;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.http.server.ServletServerHttpResponse;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * Última barrera: si un controlador devuelve un 4xx/5xx con texto técnico
+ * (SQL, Hibernate, getMessage de Java), se sustituye antes de enviarlo al navegador.
+ */
+@ControllerAdvice
+<span class="nc" id="L23">public class ErrorResponseAdvice implements ResponseBodyAdvice&lt;Object&gt; {</span>
+
+    @Override
+    public boolean supports(MethodParameter returnType, Class&lt;? extends HttpMessageConverter&lt;?&gt;&gt; converterType) {
+<span class="nc" id="L27">        return true;</span>
+    }
+
+    @Override
+    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
+                                  Class&lt;? extends HttpMessageConverter&lt;?&gt;&gt; selectedConverterType,
+                                  ServerHttpRequest request, ServerHttpResponse response) {
+<span class="nc" id="L34">        int status = extraerStatus(response);</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (status &lt; 400) {</span>
+<span class="nc" id="L36">            return body;</span>
+        }
+<span class="nc" id="L38">        return sanitizarCuerpo(body, status);</span>
+    }
+
+    private static int extraerStatus(ServerHttpResponse response) {
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (response instanceof ServletServerHttpResponse) {</span>
+<span class="nc" id="L43">            HttpServletResponse servletResponse = ((ServletServerHttpResponse) response).getServletResponse();</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">            if (servletResponse != null) {</span>
+<span class="nc" id="L45">                return servletResponse.getStatus();</span>
+            }
+        }
+<span class="nc" id="L48">        return 500;</span>
+    }
+
+    static Object sanitizarCuerpo(Object body, int status) {
+<span class="nc" id="L52">        String fallback = MensajesUsuario.porHttp(status);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (body == null) {</span>
+<span class="nc" id="L54">            return Map.of(&quot;mensaje&quot;, fallback, &quot;message&quot;, fallback);</span>
+        }
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (body instanceof String) {</span>
+<span class="nc" id="L57">            return MensajesUsuario.sanitizar((String) body, fallback);</span>
+        }
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (body instanceof ApiResponse) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L61">            ApiResponse&lt;Object&gt; api = (ApiResponse&lt;Object&gt;) body;</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (!api.isExito()) {</span>
+<span class="nc" id="L63">                api.setMensaje(MensajesUsuario.sanitizar(api.getMensaje(), fallback));</span>
+            }
+<span class="nc" id="L65">            return api;</span>
+        }
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (body instanceof ErrorResponse) {</span>
+<span class="nc" id="L68">            ErrorResponse error = (ErrorResponse) body;</span>
+<span class="nc" id="L69">            error.setMensaje(MensajesUsuario.sanitizar(error.getMensaje(), fallback));</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (MensajesUsuario.esTecnico(error.getError())) {</span>
+<span class="nc" id="L71">                error.setError(&quot;Error&quot;);</span>
+            }
+<span class="nc" id="L73">            return error;</span>
+        }
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (body instanceof Map) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L77">            Map&lt;Object, Object&gt; original = (Map&lt;Object, Object&gt;) body;</span>
+<span class="nc" id="L78">            Map&lt;Object, Object&gt; copia = new LinkedHashMap&lt;&gt;(original);</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            for (String clave : new String[] {&quot;mensaje&quot;, &quot;message&quot;, &quot;detail&quot;, &quot;error&quot;, &quot;title&quot;}) {</span>
+<span class="nc" id="L80">                Object valor = copia.get(clave);</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">                if (valor instanceof String) {</span>
+<span class="nc" id="L82">                    String sanitizado = MensajesUsuario.sanitizar((String) valor, fallback);</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">                    if (&quot;error&quot;.equals(clave) &amp;&amp; MensajesUsuario.esTecnico((String) valor)</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">                            &amp;&amp; sanitizado.equals(fallback)) {</span>
+<span class="nc" id="L85">                        copia.put(clave, &quot;Error&quot;);</span>
+                    } else {
+<span class="nc" id="L87">                        copia.put(clave, sanitizado);</span>
+                    }
+                }
+            }
+<span class="nc" id="L91">            return copia;</span>
+        }
+<span class="nc" id="L93">        return body;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
