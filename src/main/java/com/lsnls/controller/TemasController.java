@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.service.TemasCatalogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +30,7 @@ public class TemasController {
         try {
             return ResponseEntity.ok(temasCatalogService.obtenerTematicasPreguntas());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error interno al obtener temas: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al obtener temas: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -41,7 +43,7 @@ public class TemasController {
         try {
             return ResponseEntity.ok(temasCatalogService.obtenerSubtemasPreguntas());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error interno al obtener subtemas: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al obtener subtemas: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -64,7 +66,7 @@ public class TemasController {
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al añadir tema: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al añadir tema: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -88,7 +90,7 @@ public class TemasController {
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al añadir subtema: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al añadir subtema: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -109,7 +111,7 @@ public class TemasController {
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al eliminar tema: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al eliminar tema: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -130,7 +132,7 @@ public class TemasController {
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al eliminar subtema: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al eliminar subtema: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -149,7 +151,7 @@ public class TemasController {
             
             return ResponseEntity.ok(estadisticas);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error interno al obtener estadísticas: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al obtener estadísticas: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 } 

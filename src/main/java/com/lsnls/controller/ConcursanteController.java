@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.dto.ConcursanteDTO;
 import com.lsnls.service.ConcursanteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +54,7 @@ public class ConcursanteController {
                 pageable, estado, jornada, lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico, busqueda);
             return ResponseEntity.ok(concursantes);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error interno al obtener concursantes: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al obtener concursantes: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
     
@@ -62,7 +64,7 @@ public class ConcursanteController {
             List<ConcursanteDTO> concursantes = concursanteService.findAll();
             return ResponseEntity.ok(concursantes);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error interno al obtener concursantes: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al obtener concursantes: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -75,7 +77,7 @@ public class ConcursanteController {
             }
             return ResponseEntity.ok(concursante);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al buscar concursante: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al buscar concursante: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -88,7 +90,7 @@ public class ConcursanteController {
             List<ConcursanteDTO> concursantes = concursanteService.findByEstado(estado);
             return ResponseEntity.ok(concursantes);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error interno al buscar concursantes por estado: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al buscar concursantes por estado: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -101,7 +103,7 @@ public class ConcursanteController {
             List<ConcursanteDTO> concursantes = concursanteService.findByProgramaId(programaId);
             return ResponseEntity.ok(concursantes);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error interno al buscar concursantes por programa: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al buscar concursantes por programa: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -115,7 +117,7 @@ public class ConcursanteController {
             Page<ConcursanteDTO> concursantes = concursanteService.findConcursantesSinProgramaPaginated(pageable, busqueda);
             return ResponseEntity.ok(concursantes);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error interno al obtener concursantes disponibles: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al obtener concursantes disponibles: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -147,7 +149,7 @@ public class ConcursanteController {
             }
             return ResponseEntity.badRequest().body("Error al crear concursante: " + mensaje);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al crear concursante: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al crear concursante: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -160,7 +162,7 @@ public class ConcursanteController {
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al actualizar concursante: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al actualizar concursante: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -172,7 +174,7 @@ public class ConcursanteController {
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al actualizar campo: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al actualizar campo: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -192,7 +194,7 @@ public class ConcursanteController {
             }
             return ResponseEntity.badRequest().body("Error al asignar concursante a programa: " + mensaje);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al asignar concursante a programa: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al asignar concursante a programa: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -209,7 +211,7 @@ public class ConcursanteController {
             }
             return ResponseEntity.badRequest().body("Error al desasignar concursante del programa: " + mensaje);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al desasignar concursante del programa: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al desasignar concursante del programa: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -226,7 +228,7 @@ public class ConcursanteController {
             }
             return ResponseEntity.badRequest().body("Error al asignar concursante a jornada: " + mensaje);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al asignar concursante a jornada: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al asignar concursante a jornada: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -243,7 +245,7 @@ public class ConcursanteController {
             }
             return ResponseEntity.badRequest().body("Error al desasignar concursante de la jornada: " + mensaje);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al desasignar concursante de la jornada: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al desasignar concursante de la jornada: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -259,7 +261,7 @@ public class ConcursanteController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
-            error.put("error", "Error al subir la foto: " + e.getMessage());
+            error.put("error", "Error al subir la foto: " + MensajesUsuario.sanitizar(e.getMessage()));
             return ResponseEntity.badRequest().body(error);
         }
     }
@@ -278,11 +280,11 @@ public class ConcursanteController {
             return ResponseEntity.ok().body("Concursante eliminado exitosamente");
         } catch (IllegalArgumentException e) {
             // Mensajes específicos de validación
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             return ResponseEntity.badRequest().body("No se puede eliminar el concursante porque tiene datos asociados. Revisa sus asignaciones primero.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al eliminar concursante: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al eliminar concursante: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 } 

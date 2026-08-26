@@ -105,20 +105,20 @@ public class Pregunta {
     @Column(length = 2)
     private FactorPregunta factor;
 
-<span class="nc" id="L108">    public enum NivelPregunta {</span>
-<span class="nc" id="L109">        _0, _1LS, _2NLS, _3LS, _4NLS, _5LS, _5NLS</span>
+<span class="fc" id="L108">    public enum NivelPregunta {</span>
+<span class="fc" id="L109">        _0, _1LS, _2NLS, _3LS, _4NLS, _5LS, _5NLS</span>
     }
 
 <span class="fc" id="L112">    public enum EstadoPregunta {</span>
 <span class="fc" id="L113">        borrador, para_verificar, verificada, revisar, corregir, rechazada, aprobada, para_aprobar, usada</span>
     }
 
-<span class="nc" id="L116">    public enum EstadoDisponibilidad {</span>
-<span class="nc" id="L117">        disponible, usada, liberada, descartada</span>
+<span class="fc" id="L116">    public enum EstadoDisponibilidad {</span>
+<span class="fc" id="L117">        disponible, usada, liberada, descartada</span>
     }
 
-<span class="nc" id="L120">    public enum FactorPregunta {</span>
-<span class="nc" id="L121">        X, X2, X3</span>
+<span class="fc" id="L120">    public enum FactorPregunta {</span>
+<span class="fc" id="L121">        X, X2, X3</span>
     }
 
     @PrePersist

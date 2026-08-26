@@ -2,9 +2,10 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\AuditS
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\controller\HistorialJornadaController.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\JornadaDTO.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\HistorialJornadaDTO.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\JornadaComboAsignacion.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\EntityChangeDTO.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\SessionValidationService.java
-C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\RateLimitingService.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\CompatiblePasswordEncoder.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\validation\NoSpecialCharacters.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\Cuestionario.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\validation\UpperCase.java
@@ -54,6 +55,7 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\Program
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\HistorialJornada.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\repository\TematicaPreguntaRepository.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\EditLockService.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\SlotsJornada.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\controller\BackupController.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\TematicaPregunta.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\AuthService.java
@@ -64,6 +66,7 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\AuthRespon
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\Usuario.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\controller\ValidationController.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\TemasCatalogService.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\TransicionesEstado.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\UserDetailsServiceImpl.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\dto\ProgramaDTO.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\ExcelExportService.java
@@ -71,6 +74,7 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\validation\NoL
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\CacheConfig.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\controller\ConfiguracionGlobalController.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\repository\EditLockRepository.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\JornadaCuestionarioAsignacion.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\repository\TematicaRepository.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\Concursante.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\repository\ProgramaRepository.java
@@ -83,7 +87,6 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\repository\Usu
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\EstadoConcursante.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\entity\Jornada.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\BackupService.java
-C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\TimeoutOperationService.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\config\MensajesUsuario.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\UsuarioService.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\main\java\com\lsnls\service\UndoService.java

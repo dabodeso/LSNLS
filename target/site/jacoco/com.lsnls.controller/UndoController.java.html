@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UndoController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">UndoController.java</span></div><h1>UndoController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.dto.ApiResponse;
 import com.lsnls.service.UndoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping(&quot;/api/undo&quot;)
 @CrossOrigin(origins = &quot;*&quot;)
-<span class="nc" id="L13">public class UndoController {</span>
+<span class="nc" id="L15">public class UndoController {</span>
 
     @Autowired
     private UndoService undoService;
@@ -23,16 +25,16 @@ import org.springframework.web.bind.annotation.*;
     @PreAuthorize(&quot;isAuthenticated()&quot;)
     public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; deshacer(@PathVariable Long operacionId) {
         try {
-<span class="nc" id="L26">            String descripcion = undoService.deshacer(operacionId);</span>
-<span class="nc bnc" id="L27" title="All 4 branches missed.">            String mensaje = descripcion != null &amp;&amp; !descripcion.isEmpty()</span>
-<span class="nc" id="L28">                    ? &quot;Deshecho: &quot; + descripcion</span>
-<span class="nc" id="L29">                    : &quot;Operación deshecha&quot;;</span>
-<span class="nc" id="L30">            return ResponseEntity.ok(ApiResponse.exitoso(mensaje, descripcion));</span>
-<span class="nc" id="L31">        } catch (IllegalArgumentException | IllegalStateException e) {</span>
-<span class="nc" id="L32">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
-<span class="nc" id="L33">        } catch (Exception e) {</span>
-<span class="nc" id="L34">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L35">                    .body(ApiResponse.error(&quot;Error al deshacer la operación: &quot; + e.getMessage()));</span>
+<span class="nc" id="L28">            String descripcion = undoService.deshacer(operacionId);</span>
+<span class="nc bnc" id="L29" title="All 4 branches missed.">            String mensaje = descripcion != null &amp;&amp; !descripcion.isEmpty()</span>
+<span class="nc" id="L30">                    ? &quot;Deshecho: &quot; + descripcion</span>
+<span class="nc" id="L31">                    : &quot;Operación deshecha&quot;;</span>
+<span class="nc" id="L32">            return ResponseEntity.ok(ApiResponse.exitoso(mensaje, descripcion));</span>
+<span class="nc" id="L33">        } catch (IllegalArgumentException | IllegalStateException e) {</span>
+<span class="nc" id="L34">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
+<span class="nc" id="L35">        } catch (Exception e) {</span>
+<span class="nc" id="L36">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L37">                    .body(ApiResponse.error(&quot;Error al deshacer la operación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 }

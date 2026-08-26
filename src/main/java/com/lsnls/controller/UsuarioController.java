@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.entity.Usuario;
 import com.lsnls.service.UsuarioService;
 import com.lsnls.service.AuthorizationService;
@@ -48,7 +50,7 @@ public class UsuarioController {
             Usuario nuevoUsuario = usuarioService.crear(usuario);
             return ResponseEntity.ok(nuevoUsuario);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al crear usuario: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al crear usuario: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -128,10 +130,10 @@ public class UsuarioController {
             } catch (ObjectOptimisticLockingFailureException e) {
                 return ResponseEntity.status(409).body("El usuario ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
             } catch (Exception e) {
-                return ResponseEntity.badRequest().body("Error interno al actualizar usuario: " + e.getMessage());
+                return ResponseEntity.badRequest().body("Error interno al actualizar usuario: " + MensajesUsuario.sanitizar(e.getMessage()));
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al actualizar usuario: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al actualizar usuario: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -172,10 +174,10 @@ public class UsuarioController {
                     return ResponseEntity.badRequest().body("No se puede eliminar el usuario '" + usuario.getNombre() + 
                         "' porque tiene preguntas, cuestionarios o combos asociados. Reasigna estos elementos a otro usuario primero.");
                 }
-                return ResponseEntity.badRequest().body("Error interno al eliminar usuario: " + e.getMessage());
+                return ResponseEntity.badRequest().body("Error interno al eliminar usuario: " + MensajesUsuario.sanitizar(e.getMessage()));
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al eliminar usuario: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al eliminar usuario: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -193,7 +195,7 @@ public class UsuarioController {
             Usuario usuario = usuarioService.resetearPassword(id);
             return ResponseEntity.ok(usuario);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al resetear contraseña: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al resetear contraseña: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -221,7 +223,7 @@ public class UsuarioController {
                 }
             }).orElse(ResponseEntity.status(401).body("Usuario no autenticado"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al cambiar contraseña: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al cambiar contraseña: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 } 

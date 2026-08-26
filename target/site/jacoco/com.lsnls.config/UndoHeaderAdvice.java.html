@@ -15,23 +15,23 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
  * llamando a POST /api/undo/{id}.
  */
 @RestControllerAdvice
-<span class="nc" id="L18">public class UndoHeaderAdvice implements ResponseBodyAdvice&lt;Object&gt; {</span>
+<span class="fc" id="L18">public class UndoHeaderAdvice implements ResponseBodyAdvice&lt;Object&gt; {</span>
 
     @Override
     public boolean supports(MethodParameter returnType, Class&lt;? extends HttpMessageConverter&lt;?&gt;&gt; converterType) {
-<span class="nc" id="L22">        return true;</span>
+<span class="fc" id="L22">        return true;</span>
     }
 
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
             Class&lt;? extends HttpMessageConverter&lt;?&gt;&gt; selectedConverterType,
             ServerHttpRequest request, ServerHttpResponse response) {
-<span class="nc" id="L29">        Long operacionId = UndoService.consumirUltimaOperacionId();</span>
-<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (operacionId != null) {</span>
-<span class="nc" id="L31">            response.getHeaders().set(UndoService.HEADER_OPERACION, String.valueOf(operacionId));</span>
-<span class="nc" id="L32">            response.getHeaders().set(&quot;Access-Control-Expose-Headers&quot;, UndoService.HEADER_OPERACION);</span>
+<span class="fc" id="L29">        Long operacionId = UndoService.consumirUltimaOperacionId();</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (operacionId != null) {</span>
+<span class="fc" id="L31">            response.getHeaders().set(UndoService.HEADER_OPERACION, String.valueOf(operacionId));</span>
+<span class="fc" id="L32">            response.getHeaders().set(&quot;Access-Control-Expose-Headers&quot;, UndoService.HEADER_OPERACION);</span>
         }
-<span class="nc" id="L34">        return body;</span>
+<span class="fc" id="L34">        return body;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

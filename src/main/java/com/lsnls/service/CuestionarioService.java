@@ -32,6 +32,7 @@ import org.springframework.data.domain.Sort;
 
 @Service
 @Transactional
+@lombok.extern.slf4j.Slf4j
 public class CuestionarioService {
     
     @Autowired
@@ -121,7 +122,7 @@ public class CuestionarioService {
             return Optional.of(resultados.get(0));
             
         } catch (Exception e) {
-            System.err.println("Error al obtener cuestionario con preguntas: " + e.getMessage());
+            log.warn("Error al obtener cuestionario con preguntas: " + e.getMessage());
             return Optional.empty();
         }
     }
@@ -171,26 +172,7 @@ public class CuestionarioService {
     }
 
     public void validarTransicionEstado(EstadoCuestionario estadoActual, EstadoCuestionario nuevoEstado, boolean usuarioEsAdmin) {
-        if (estadoActual == null || nuevoEstado == null || estadoActual == nuevoEstado) {
-            return;
-        }
-        // Admin puede mover a cualquier estado (incluido corregir -> aprobado)
-        if (usuarioEsAdmin) {
-            return;
-        }
-        Map<EstadoCuestionario, Set<EstadoCuestionario>> transiciones = Map.of(
-            EstadoCuestionario.borrador, Set.of(EstadoCuestionario.revisar),
-            EstadoCuestionario.revisar, Set.of(EstadoCuestionario.corregir, EstadoCuestionario.aprobado),
-            EstadoCuestionario.corregir, Set.of(EstadoCuestionario.revisar, EstadoCuestionario.aprobado),
-            EstadoCuestionario.aprobado, Set.of(),
-            EstadoCuestionario.adjudicado, Set.of(),
-            EstadoCuestionario.grabado, Set.of()
-        );
-        Set<EstadoCuestionario> permitidos = transiciones.getOrDefault(estadoActual, Set.of());
-        if (!permitidos.contains(nuevoEstado)) {
-            throw new IllegalArgumentException(
-                "Transición de estado no permitida: " + estadoActual + " -> " + nuevoEstado);
-        }
+        com.lsnls.config.TransicionesEstado.validar(estadoActual, nuevoEstado, usuarioEsAdmin);
     }
 
     public Cuestionario cambiarEstado(Long id, EstadoCuestionario nuevoEstado) {
@@ -337,7 +319,7 @@ public class CuestionarioService {
             return true;
             
         } catch (Exception e) {
-            System.err.println("Error al agregar pregunta: " + e.getMessage());
+            log.warn("Error al agregar pregunta: " + e.getMessage());
             throw new RuntimeException("Error al agregar pregunta: " + e.getMessage());
         }
     }
@@ -468,7 +450,7 @@ public class CuestionarioService {
             }
         } catch (Exception e) {
             // Si hay error al eliminar el historial, continuamos de todas formas
-            System.err.println("Advertencia: No se pudieron eliminar algunos registros del historial para el cuestionario " + id + ": " + e.getMessage());
+            log.warn("Advertencia: No se pudieron eliminar algunos registros del historial para el cuestionario " + id + ": " + e.getMessage());
         }
 
         // Si llegamos aquí, es seguro eliminar - liberar las preguntas asociadas
@@ -635,7 +617,7 @@ public class CuestionarioService {
         response.put("totalItems", paginaCuestionarios.getTotalElements());
         response.put("totalPages", paginaCuestionarios.getTotalPages());
         
-        System.out.println("Filtrado con paginación optimizada - Página: " + page + ", Tamaño: " + size + 
+        log.debug("Filtrado con paginación optimizada - Página: " + page + ", Tamaño: " + size + 
                           ", Total: " + paginaCuestionarios.getTotalElements() + 
                           ", Cuestionarios en esta página: " + dtos.size());
         
@@ -681,7 +663,7 @@ public class CuestionarioService {
                 response.put("totalItems", 1);
                 response.put("totalPages", 1);
                 
-                System.out.println("Búsqueda exacta por ID - ID: " + id + ", Encontrado: " + (dto != null));
+                log.debug("Búsqueda exacta por ID - ID: " + id + ", Encontrado: " + (dto != null));
                 
                 return response;
             } else {
@@ -692,7 +674,7 @@ public class CuestionarioService {
                 response.put("totalItems", 0);
                 response.put("totalPages", 0);
                 
-                System.out.println("Búsqueda exacta por ID - ID: " + id + ", No encontrado");
+                log.debug("Búsqueda exacta por ID - ID: " + id + ", No encontrado");
                 
                 return response;
             }
@@ -715,7 +697,7 @@ public class CuestionarioService {
             response.put("totalItems", paginaCuestionarios.getTotalElements());
             response.put("totalPages", paginaCuestionarios.getTotalPages());
             
-            System.out.println("Búsqueda parcial por ID - Término: " + idStr + 
+            log.debug("Búsqueda parcial por ID - Término: " + idStr + 
                               ", Página: " + page + ", Tamaño: " + size + 
                               ", Total: " + paginaCuestionarios.getTotalElements() + 
                               ", Cuestionarios en esta página: " + dtos.size());
@@ -1033,10 +1015,10 @@ public class CuestionarioService {
                 Object[] registro = historialReutilizado.get(0);
                 dto.put("reutilizadoDeJornadaId", ((Number) registro[0]).longValue());
                 dto.put("reutilizadoDeJornadaNombre", (String) registro[1]);
-                System.out.println("[DTO-CUEST] Cuest " + id + " | estado=" + c.getEstado() + " | jornada=" + dto.get("jornadaAsignada") + " | reutilizadoDe=" + dto.get("reutilizadoDeJornadaId"));
+                log.debug("[DTO-CUEST] Cuest " + id + " | estado=" + c.getEstado() + " | jornada=" + dto.get("jornadaAsignada") + " | reutilizadoDe=" + dto.get("reutilizadoDeJornadaId"));
             }
         } catch (Exception e) {
-            System.err.println("[DTO-CUEST] ERROR al buscar historial para cuest " + id);
+            log.warn("[DTO-CUEST] ERROR al buscar historial para cuest " + id);
         }
         
         java.util.Map<String, PreguntaCuestionario> mapPorSlot = mapearPreguntasPorSlot(c);

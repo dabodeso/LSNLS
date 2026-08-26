@@ -24,8 +24,7 @@ public class UsuarioService {
     private EntityManager entityManager;
 
     public Usuario crear(Usuario usuario) {
-        // Asignar automáticamente la contraseña por defecto
-        usuario.setPassword("123456");
+        usuario.setPassword(passwordEncoder.encode("123456"));
         return usuarioRepository.save(usuario);
     }
 
@@ -52,6 +51,8 @@ public class UsuarioService {
             // Preservar la contraseña existente si no se proporciona una nueva
             if (usuario.getPassword() == null || usuario.getPassword().isEmpty()) {
                 usuario.setPassword(usuarioExistente.getPassword());
+            } else if (!usuario.getPassword().equals(usuarioExistente.getPassword())) {
+                usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
             }
             
             // Preservar la versión para control de concurrencia
@@ -132,7 +133,7 @@ public class UsuarioService {
         Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
         if (usuarioOpt.isPresent()) {
             Usuario usuario = usuarioOpt.get();
-            usuario.setPassword("123456");
+            usuario.setPassword(passwordEncoder.encode("123456"));
             return usuarioRepository.save(usuario);
         }
         throw new IllegalArgumentException("Usuario no encontrado");

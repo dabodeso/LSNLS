@@ -1,15 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Jornada.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.entity</a> &gt; <span class="el_source">Jornada.java</span></div><h1>Jornada.java</h1><pre class="source lang-java linenums">package com.lsnls.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import javax.persistence.*;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.lsnls.config.SlotsJornada;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
+import lombok.Setter;
+
+import javax.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @Entity
 @Table(name = &quot;jornadas&quot;)
@@ -46,33 +57,139 @@ public class Jornada {
     @Column(columnDefinition = &quot;TEXT&quot;)
     private String notas;
 
-    // Cuestionarios de la jornada (exactamente 5)
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = &quot;jornadas_cuestionarios&quot;,
-        joinColumns = @JoinColumn(name = &quot;jornada_id&quot;),
-        inverseJoinColumns = @JoinColumn(name = &quot;cuestionario_id&quot;)
-    )
-    @JsonIgnoreProperties({&quot;preguntas&quot;, &quot;creacionUsuario&quot;})
-    private Set&lt;Cuestionario&gt; cuestionarios;
+    @OneToMany(mappedBy = &quot;jornada&quot;, cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    private Set&lt;JornadaCuestionarioAsignacion&gt; cuestionarioAsignaciones = new HashSet&lt;&gt;();
 
-    // Combos de la jornada (exactamente 5)
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = &quot;jornadas_combos&quot;,
-        joinColumns = @JoinColumn(name = &quot;jornada_id&quot;),
-        inverseJoinColumns = @JoinColumn(name = &quot;combo_id&quot;)
-    )
-    @JsonIgnoreProperties({&quot;preguntas&quot;, &quot;creacionUsuario&quot;})
-    private Set&lt;Combo&gt; combos;
+    @OneToMany(mappedBy = &quot;jornada&quot;, cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    private Set&lt;JornadaComboAsignacion&gt; comboAsignaciones = new HashSet&lt;&gt;();
 
-<span class="fc" id="L69">    public enum EstadoJornada {</span>
-<span class="fc" id="L70">        preparacion, lista, en_grabacion, completada, archivada</span>
+    public Set&lt;Cuestionario&gt; getCuestionarios() {
+<span class="nc" id="L71">        LinkedHashSet&lt;Cuestionario&gt; set = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        for (Cuestionario c : getCuestionariosPorSlot()) {</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (c != null) {</span>
+<span class="nc" id="L74">                set.add(c);</span>
+            }
+        }
+<span class="nc" id="L77">        return set;</span>
+    }
+
+    public void setCuestionarios(Set&lt;Cuestionario&gt; cuestionarios) {
+<span class="fc" id="L81">        List&lt;Cuestionario&gt; porSlot = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
+<span class="fc" id="L82">        int i = 0;</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (cuestionarios != null) {</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">            for (Cuestionario c : cuestionarios) {</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">                if (i &gt;= SlotsJornada.TOTAL) {</span>
+<span class="nc" id="L86">                    break;</span>
+                }
+<span class="fc" id="L88">                porSlot.set(i++, c);</span>
+            }
+        }
+<span class="fc" id="L91">        reemplazarCuestionariosPorSlot(porSlot);</span>
+<span class="fc" id="L92">    }</span>
+
+    public Set&lt;Combo&gt; getCombos() {
+<span class="nc" id="L95">        LinkedHashSet&lt;Combo&gt; set = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        for (Combo c : getCombosPorSlot()) {</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">            if (c != null) {</span>
+<span class="nc" id="L98">                set.add(c);</span>
+            }
+        }
+<span class="nc" id="L101">        return set;</span>
+    }
+
+    public void setCombos(Set&lt;Combo&gt; combos) {
+<span class="fc" id="L105">        List&lt;Combo&gt; porSlot = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
+<span class="fc" id="L106">        int i = 0;</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if (combos != null) {</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            for (Combo c : combos) {</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">                if (i &gt;= SlotsJornada.TOTAL) {</span>
+<span class="nc" id="L110">                    break;</span>
+                }
+<span class="fc" id="L112">                porSlot.set(i++, c);</span>
+            }
+        }
+<span class="fc" id="L115">        reemplazarCombosPorSlot(porSlot);</span>
+<span class="fc" id="L116">    }</span>
+
+    public List&lt;Cuestionario&gt; getCuestionariosPorSlot() {
+<span class="fc" id="L119">        List&lt;Cuestionario&gt; slots = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (cuestionarioAsignaciones == null) {</span>
+<span class="nc" id="L121">            return slots;</span>
+        }
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        for (JornadaCuestionarioAsignacion a : cuestionarioAsignaciones) {</span>
+<span class="fc" id="L124">            Integer slot = a.getSlot();</span>
+<span class="pc bpc" id="L125" title="3 of 6 branches missed.">            if (slot != null &amp;&amp; slot &gt;= 1 &amp;&amp; slot &lt;= SlotsJornada.TOTAL) {</span>
+<span class="fc" id="L126">                slots.set(slot - 1, a.getCuestionario());</span>
+            }
+        }
+<span class="fc" id="L129">        return slots;</span>
+    }
+
+    public List&lt;Combo&gt; getCombosPorSlot() {
+<span class="fc" id="L133">        List&lt;Combo&gt; slots = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (comboAsignaciones == null) {</span>
+<span class="nc" id="L135">            return slots;</span>
+        }
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        for (JornadaComboAsignacion a : comboAsignaciones) {</span>
+<span class="fc" id="L138">            Integer slot = a.getSlot();</span>
+<span class="pc bpc" id="L139" title="3 of 6 branches missed.">            if (slot != null &amp;&amp; slot &gt;= 1 &amp;&amp; slot &lt;= SlotsJornada.TOTAL) {</span>
+<span class="fc" id="L140">                slots.set(slot - 1, a.getCombo());</span>
+            }
+        }
+<span class="fc" id="L143">        return slots;</span>
+    }
+
+    public void reemplazarCuestionariosPorSlot(List&lt;Cuestionario&gt; porSlot) {
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (cuestionarioAsignaciones == null) {</span>
+<span class="nc" id="L148">            cuestionarioAsignaciones = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L149">        } else {</span>
+<span class="fc" id="L150">            cuestionarioAsignaciones.clear();</span>
+        }
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (porSlot == null) {</span>
+<span class="nc" id="L153">            return;</span>
+        }
+<span class="pc bpc" id="L155" title="1 of 4 branches missed.">        for (int i = 0; i &lt; porSlot.size() &amp;&amp; i &lt; SlotsJornada.TOTAL; i++) {</span>
+<span class="fc" id="L156">            Cuestionario c = porSlot.get(i);</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">            if (c == null) {</span>
+<span class="fc" id="L158">                continue;</span>
+            }
+<span class="fc" id="L160">            JornadaCuestionarioAsignacion a = new JornadaCuestionarioAsignacion();</span>
+<span class="fc" id="L161">            a.vincular(this, c, i + 1);</span>
+<span class="fc" id="L162">            cuestionarioAsignaciones.add(a);</span>
+        }
+<span class="fc" id="L164">    }</span>
+
+    public void reemplazarCombosPorSlot(List&lt;Combo&gt; porSlot) {
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (comboAsignaciones == null) {</span>
+<span class="nc" id="L168">            comboAsignaciones = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L169">        } else {</span>
+<span class="fc" id="L170">            comboAsignaciones.clear();</span>
+        }
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (porSlot == null) {</span>
+<span class="nc" id="L173">            return;</span>
+        }
+<span class="pc bpc" id="L175" title="1 of 4 branches missed.">        for (int i = 0; i &lt; porSlot.size() &amp;&amp; i &lt; SlotsJornada.TOTAL; i++) {</span>
+<span class="fc" id="L176">            Combo c = porSlot.get(i);</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">            if (c == null) {</span>
+<span class="fc" id="L178">                continue;</span>
+            }
+<span class="fc" id="L180">            JornadaComboAsignacion a = new JornadaComboAsignacion();</span>
+<span class="fc" id="L181">            a.vincular(this, c, i + 1);</span>
+<span class="fc" id="L182">            comboAsignaciones.add(a);</span>
+        }
+<span class="fc" id="L184">    }</span>
+
+<span class="fc" id="L186">    public enum EstadoJornada {</span>
+<span class="fc" id="L187">        preparacion, lista, en_grabacion, completada, archivada</span>
     }
 
     @PrePersist
     protected void onCreate() {
-<span class="nc" id="L75">        fechaCreacion = LocalDateTime.now();</span>
-<span class="nc" id="L76">    }</span>
-} 
+<span class="nc" id="L192">        fechaCreacion = LocalDateTime.now();</span>
+<span class="nc" id="L193">    }</span>
+}
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProgramaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">ProgramaController.java</span></div><h1>ProgramaController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.dto.ProgramaDTO;
 import com.lsnls.entity.AuditLog;
 import com.lsnls.service.EditLockService;
@@ -21,7 +23,7 @@ import org.springframework.data.domain.Sort;
 @RestController
 @RequestMapping(&quot;/api/programas&quot;)
 @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_CONSULTA', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
-<span class="nc" id="L24">public class ProgramaController {</span>
+<span class="nc" id="L26">public class ProgramaController {</span>
 
     @Autowired
     private ProgramaService programaService;
@@ -31,7 +33,7 @@ import org.springframework.data.domain.Sort;
 
     @GetMapping
     public ResponseEntity&lt;List&lt;ProgramaDTO&gt;&gt; findAll() {
-<span class="nc" id="L34">        return ResponseEntity.ok(programaService.findAllDTO());</span>
+<span class="nc" id="L36">        return ResponseEntity.ok(programaService.findAllDTO());</span>
     }
     
     @GetMapping(&quot;/pagina&quot;)
@@ -41,23 +43,23 @@ import org.springframework.data.domain.Sort;
             @RequestParam(defaultValue = &quot;id&quot;) String sortBy,
             @RequestParam(defaultValue = &quot;desc&quot;) String sortDir) {
         
-<span class="nc bnc" id="L44" title="All 2 branches missed.">        Sort.Direction direction = sortDir.equalsIgnoreCase(&quot;desc&quot;) ? Sort.Direction.DESC : Sort.Direction.ASC;</span>
-<span class="nc" id="L45">        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        Sort.Direction direction = sortDir.equalsIgnoreCase(&quot;desc&quot;) ? Sort.Direction.DESC : Sort.Direction.ASC;</span>
+<span class="nc" id="L47">        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));</span>
         
-<span class="nc" id="L47">        return ResponseEntity.ok(programaService.findAllPaginated(pageable));</span>
+<span class="nc" id="L49">        return ResponseEntity.ok(programaService.findAllPaginated(pageable));</span>
     }
 
     @GetMapping(&quot;/{id}&quot;)
     public ResponseEntity&lt;?&gt; findById(@PathVariable Long id) {
         try {
-<span class="nc" id="L53">            Optional&lt;ProgramaDTO&gt; programa = programaService.findByIdDTO(id);</span>
-<span class="nc bnc" id="L54" title="All 2 branches missed.">            if (programa.isPresent()) {</span>
-<span class="nc" id="L55">                return ResponseEntity.ok(programa.get());</span>
+<span class="nc" id="L55">            Optional&lt;ProgramaDTO&gt; programa = programaService.findByIdDTO(id);</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            if (programa.isPresent()) {</span>
+<span class="nc" id="L57">                return ResponseEntity.ok(programa.get());</span>
             } else {
-<span class="nc" id="L57">                return ResponseEntity.status(404).body(&quot;Programa con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="nc" id="L59">                return ResponseEntity.status(404).body(&quot;Programa con ID &quot; + id + &quot; no encontrado&quot;);</span>
             }
-<span class="nc" id="L59">        } catch (Exception e) {</span>
-<span class="nc" id="L60">            return ResponseEntity.internalServerError().body(&quot;Error interno al buscar programa: &quot; + e.getMessage());</span>
+<span class="nc" id="L61">        } catch (Exception e) {</span>
+<span class="nc" id="L62">            return ResponseEntity.internalServerError().body(&quot;Error interno al buscar programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -66,19 +68,19 @@ import org.springframework.data.domain.Sort;
     public ResponseEntity&lt;?&gt; create(@RequestBody ProgramaDTO programaDTO) {
         try {
             // Validaciones específicas de campos requeridos
-<span class="nc bnc" id="L69" title="All 2 branches missed.">            if (programaDTO.getTemporada() == null) {</span>
-<span class="nc" id="L70">                return ResponseEntity.badRequest().body(&quot;El campo 'temporada' es obligatorio para crear un programa&quot;);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if (programaDTO.getTemporada() == null) {</span>
+<span class="nc" id="L72">                return ResponseEntity.badRequest().body(&quot;El campo 'temporada' es obligatorio para crear un programa&quot;);</span>
             }
             // fechaEmision puede ser null
 
-<span class="nc" id="L74">            ProgramaDTO nuevoPrograma = programaService.createFromDTO(programaDTO);</span>
-<span class="nc" id="L75">            return ResponseEntity.ok(nuevoPrograma);</span>
-<span class="nc" id="L76">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L77">            return ResponseEntity.status(409).body(&quot;El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L78">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L79">            return ResponseEntity.badRequest().body(&quot;Error de validación: &quot; + e.getMessage());</span>
-<span class="nc" id="L80">        } catch (Exception e) {</span>
-<span class="nc" id="L81">            return ResponseEntity.badRequest().body(&quot;Error interno al crear programa: &quot; + e.getMessage());</span>
+<span class="nc" id="L76">            ProgramaDTO nuevoPrograma = programaService.createFromDTO(programaDTO);</span>
+<span class="nc" id="L77">            return ResponseEntity.ok(nuevoPrograma);</span>
+<span class="nc" id="L78">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L79">            return ResponseEntity.status(409).body(&quot;El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L80">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L81">            return ResponseEntity.badRequest().body(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L82">        } catch (Exception e) {</span>
+<span class="nc" id="L83">            return ResponseEntity.badRequest().body(&quot;Error interno al crear programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -87,27 +89,27 @@ import org.springframework.data.domain.Sort;
     public ResponseEntity&lt;?&gt; update(@PathVariable Long id, @RequestBody ProgramaDTO programaDTO) {
         try {
             // Verificar que el programa existe
-<span class="nc" id="L90">            Optional&lt;ProgramaDTO&gt; programaExistente = programaService.findByIdDTO(id);</span>
-<span class="nc bnc" id="L91" title="All 2 branches missed.">            if (programaExistente.isEmpty()) {</span>
-<span class="nc" id="L92">                return ResponseEntity.status(404).body(&quot;Programa con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="nc" id="L92">            Optional&lt;ProgramaDTO&gt; programaExistente = programaService.findByIdDTO(id);</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            if (programaExistente.isEmpty()) {</span>
+<span class="nc" id="L94">                return ResponseEntity.status(404).body(&quot;Programa con ID &quot; + id + &quot; no encontrado&quot;);</span>
             }
 
             // Validaciones específicas de campos requeridos
-<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (programaDTO.getTemporada() == null) {</span>
-<span class="nc" id="L97">                return ResponseEntity.badRequest().body(&quot;El campo 'temporada' es obligatorio&quot;);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (programaDTO.getTemporada() == null) {</span>
+<span class="nc" id="L99">                return ResponseEntity.badRequest().body(&quot;El campo 'temporada' es obligatorio&quot;);</span>
             }
             // fechaEmision puede ser null
 
-<span class="nc" id="L101">            editLockService.assertCanEdit(AuditLog.EntityType.PROGRAMA, id);</span>
-<span class="nc" id="L102">            ProgramaDTO programaActualizado = programaService.updateFromDTO(id, programaDTO);</span>
-<span class="nc" id="L103">            editLockService.logEntityUpdate(AuditLog.EntityType.PROGRAMA, id, &quot;Actualización de programa&quot;);</span>
-<span class="nc" id="L104">            return ResponseEntity.ok(programaActualizado);</span>
-<span class="nc" id="L105">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L106">            return ResponseEntity.status(409).body(&quot;El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L107">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L108">            return ResponseEntity.badRequest().body(&quot;Error de validación: &quot; + e.getMessage());</span>
-<span class="nc" id="L109">        } catch (Exception e) {</span>
-<span class="nc" id="L110">            return ResponseEntity.badRequest().body(&quot;Error interno al actualizar programa: &quot; + e.getMessage());</span>
+<span class="nc" id="L103">            editLockService.assertCanEdit(AuditLog.EntityType.PROGRAMA, id);</span>
+<span class="nc" id="L104">            ProgramaDTO programaActualizado = programaService.updateFromDTO(id, programaDTO);</span>
+<span class="nc" id="L105">            editLockService.logEntityUpdate(AuditLog.EntityType.PROGRAMA, id, &quot;Actualización de programa&quot;);</span>
+<span class="nc" id="L106">            return ResponseEntity.ok(programaActualizado);</span>
+<span class="nc" id="L107">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L108">            return ResponseEntity.status(409).body(&quot;El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L109">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L110">            return ResponseEntity.badRequest().body(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L111">        } catch (Exception e) {</span>
+<span class="nc" id="L112">            return ResponseEntity.badRequest().body(&quot;Error interno al actualizar programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -115,15 +117,15 @@ import org.springframework.data.domain.Sort;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; updateDuracionObjetivo(@PathVariable Long id, @RequestBody Map&lt;String, String&gt; request) {
         try {
-<span class="nc" id="L118">            String duracionObjetivo = request.get(&quot;duracionObjetivo&quot;);</span>
-<span class="nc bnc" id="L119" title="All 4 branches missed.">            if (duracionObjetivo == null || duracionObjetivo.trim().isEmpty()) {</span>
-<span class="nc" id="L120">                return ResponseEntity.badRequest().body(&quot;La duración objetivo es obligatoria&quot;);</span>
+<span class="nc" id="L120">            String duracionObjetivo = request.get(&quot;duracionObjetivo&quot;);</span>
+<span class="nc bnc" id="L121" title="All 4 branches missed.">            if (duracionObjetivo == null || duracionObjetivo.trim().isEmpty()) {</span>
+<span class="nc" id="L122">                return ResponseEntity.badRequest().body(&quot;La duración objetivo es obligatoria&quot;);</span>
             }
             
-<span class="nc" id="L123">            programaService.updateDuracionObjetivo(id, duracionObjetivo);</span>
-<span class="nc" id="L124">            return ResponseEntity.ok().build();</span>
-<span class="nc" id="L125">        } catch (Exception e) {</span>
-<span class="nc" id="L126">            return ResponseEntity.badRequest().body(&quot;Error al actualizar duración objetivo: &quot; + e.getMessage());</span>
+<span class="nc" id="L125">            programaService.updateDuracionObjetivo(id, duracionObjetivo);</span>
+<span class="nc" id="L126">            return ResponseEntity.ok().build();</span>
+<span class="nc" id="L127">        } catch (Exception e) {</span>
+<span class="nc" id="L128">            return ResponseEntity.badRequest().body(&quot;Error al actualizar duración objetivo: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -132,24 +134,24 @@ import org.springframework.data.domain.Sort;
     public ResponseEntity&lt;?&gt; updateCampo(@PathVariable Long id, @RequestBody Map&lt;String, Object&gt; campo) {
         try {
             // Verificar que el programa existe
-<span class="nc" id="L135">            Optional&lt;ProgramaDTO&gt; programaExistente = programaService.findByIdDTO(id);</span>
-<span class="nc bnc" id="L136" title="All 2 branches missed.">            if (programaExistente.isEmpty()) {</span>
-<span class="nc" id="L137">                return ResponseEntity.status(404).body(&quot;Programa con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="nc" id="L137">            Optional&lt;ProgramaDTO&gt; programaExistente = programaService.findByIdDTO(id);</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (programaExistente.isEmpty()) {</span>
+<span class="nc" id="L139">                return ResponseEntity.status(404).body(&quot;Programa con ID &quot; + id + &quot; no encontrado&quot;);</span>
             }
 
             // Validar que el campo no esté vacío
-<span class="nc bnc" id="L141" title="All 4 branches missed.">            if (campo == null || campo.isEmpty()) {</span>
-<span class="nc" id="L142">                return ResponseEntity.badRequest().body(&quot;Debe proporcionar al menos un campo para actualizar&quot;);</span>
+<span class="nc bnc" id="L143" title="All 4 branches missed.">            if (campo == null || campo.isEmpty()) {</span>
+<span class="nc" id="L144">                return ResponseEntity.badRequest().body(&quot;Debe proporcionar al menos un campo para actualizar&quot;);</span>
             }
 
-<span class="nc" id="L145">            Object resultado = programaService.updateCampo(id, campo);</span>
-<span class="nc" id="L146">            return ResponseEntity.ok(resultado);</span>
-<span class="nc" id="L147">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L148">            return ResponseEntity.status(409).body(&quot;El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L149">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L150">            return ResponseEntity.badRequest().body(&quot;Error de validación: &quot; + e.getMessage());</span>
-<span class="nc" id="L151">        } catch (Exception e) {</span>
-<span class="nc" id="L152">            return ResponseEntity.badRequest().body(&quot;Error interno al actualizar campo: &quot; + e.getMessage());</span>
+<span class="nc" id="L147">            Object resultado = programaService.updateCampo(id, campo);</span>
+<span class="nc" id="L148">            return ResponseEntity.ok(resultado);</span>
+<span class="nc" id="L149">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L150">            return ResponseEntity.status(409).body(&quot;El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L151">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L152">            return ResponseEntity.badRequest().body(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L153">        } catch (Exception e) {</span>
+<span class="nc" id="L154">            return ResponseEntity.badRequest().body(&quot;Error interno al actualizar campo: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -158,20 +160,20 @@ import org.springframework.data.domain.Sort;
     public ResponseEntity&lt;?&gt; delete(@PathVariable Long id) {
         try {
             // Verificar que el programa existe
-<span class="nc" id="L161">            Optional&lt;ProgramaDTO&gt; programaExistente = programaService.findByIdDTO(id);</span>
-<span class="nc bnc" id="L162" title="All 2 branches missed.">            if (programaExistente.isEmpty()) {</span>
-<span class="nc" id="L163">                return ResponseEntity.status(404).body(&quot;Programa con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="nc" id="L163">            Optional&lt;ProgramaDTO&gt; programaExistente = programaService.findByIdDTO(id);</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            if (programaExistente.isEmpty()) {</span>
+<span class="nc" id="L165">                return ResponseEntity.status(404).body(&quot;Programa con ID &quot; + id + &quot; no encontrado&quot;);</span>
             }
 
-<span class="nc" id="L166">            programaService.delete(id);</span>
-<span class="nc" id="L167">            return ResponseEntity.ok().body(&quot;Programa eliminado exitosamente&quot;);</span>
-<span class="nc" id="L168">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L168">            programaService.delete(id);</span>
+<span class="nc" id="L169">            return ResponseEntity.ok().body(&quot;Programa eliminado exitosamente&quot;);</span>
+<span class="nc" id="L170">        } catch (IllegalArgumentException e) {</span>
             // Mensajes específicos de validación
-<span class="nc" id="L170">            return ResponseEntity.badRequest().body(e.getMessage());</span>
-<span class="nc" id="L171">        } catch (org.springframework.dao.DataIntegrityViolationException e) {</span>
-<span class="nc" id="L172">            return ResponseEntity.badRequest().body(&quot;No se puede eliminar el programa porque tiene concursantes asociados. Desasigna los concursantes primero.&quot;);</span>
-<span class="nc" id="L173">        } catch (Exception e) {</span>
-<span class="nc" id="L174">            return ResponseEntity.badRequest().body(&quot;Error interno al eliminar programa: &quot; + e.getMessage());</span>
+<span class="nc" id="L172">            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L173">        } catch (org.springframework.dao.DataIntegrityViolationException e) {</span>
+<span class="nc" id="L174">            return ResponseEntity.badRequest().body(&quot;No se puede eliminar el programa porque tiene concursantes asociados. Desasigna los concursantes primero.&quot;);</span>
+<span class="nc" id="L175">        } catch (Exception e) {</span>
+<span class="nc" id="L176">            return ResponseEntity.badRequest().body(&quot;Error interno al eliminar programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 } 

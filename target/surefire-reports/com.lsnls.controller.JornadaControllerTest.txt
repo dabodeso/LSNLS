@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.lsnls.controller.JornadaControllerTest
 -------------------------------------------------------------------------------
-Tests run: 60, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.362 s -- in com.lsnls.controller.JornadaControllerTest
+Tests run: 61, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.793 s -- in com.lsnls.controller.JornadaControllerTest

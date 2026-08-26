@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.entity.Cuestionario;
 // import com.lsnls.entity.Cuestionario.EstadoCuestionario;
 // import com.lsnls.entity.Cuestionario.NivelCuestionario;
@@ -66,20 +68,20 @@ public class CuestionarioController {
     @PreAuthorize("@authorizationService.canRead()")
     public ResponseEntity<Cuestionario> obtenerPorId(@PathVariable Long id) {
         try {
-            System.out.println("🌐 CONTROLADOR: Solicitando cuestionario " + id);
+            log.debug("🌐 CONTROLADOR: Solicitando cuestionario " + id);
             
             Optional<Cuestionario> cuestionario = cuestionarioService.obtenerConPreguntas(id);
             
             if (cuestionario.isPresent()) {
                 Cuestionario c = cuestionario.get();
-                System.out.println("📤 ENVIANDO AL FRONTEND: Cuestionario " + c.getId() + " con " + c.getPreguntas().size() + " preguntas");
+                log.debug("📤 ENVIANDO AL FRONTEND: Cuestionario " + c.getId() + " con " + c.getPreguntas().size() + " preguntas");
                 return ResponseEntity.ok(c);
             } else {
-                System.out.println("❌ CONTROLADOR: Cuestionario " + id + " no encontrado");
+                log.debug("❌ CONTROLADOR: Cuestionario " + id + " no encontrado");
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            System.out.println("💥 CONTROLADOR ERROR: " + e.getMessage());
+            log.debug("💥 CONTROLADOR ERROR: " + MensajesUsuario.sanitizar(e.getMessage()));
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
@@ -98,12 +100,12 @@ public class CuestionarioController {
                         Cuestionario nuevoCuestionario = cuestionarioService.crear(cuestionario);
                         return ResponseEntity.ok(nuevoCuestionario);
                     } catch (Exception e) {
-                        return ResponseEntity.badRequest().body("Error al crear cuestionario: " + e.getMessage());
+                        return ResponseEntity.badRequest().body("Error al crear cuestionario: " + MensajesUsuario.sanitizar(e.getMessage()));
                     }
                 })
                 .orElse(ResponseEntity.status(401).body("Usuario no autenticado"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al crear cuestionario: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al crear cuestionario: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -119,7 +121,7 @@ public class CuestionarioController {
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El cuestionario ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al actualizar notas de dirección: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al actualizar notas de dirección: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -203,14 +205,14 @@ public class CuestionarioController {
                 }
             } catch (IllegalArgumentException e) {
                 log.error("[ACTUALIZAR CUESTIONARIO] Error de validación: {}", e.getMessage());
-                return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+                return ResponseEntity.badRequest().body("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage()));
             }
         } catch (ObjectOptimisticLockingFailureException e) {
             log.error("[ACTUALIZAR CUESTIONARIO] Error de concurrencia: {}", e.getMessage());
             return ResponseEntity.status(409).body("El cuestionario ha sido modificado por otro usuario. Por favor, recarga la página y vuelve a intentarlo.");
         } catch (Exception e) {
             log.error("[ACTUALIZAR CUESTIONARIO] Error inesperado: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body("Error interno al actualizar cuestionario: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al actualizar cuestionario: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -252,7 +254,7 @@ public class CuestionarioController {
                 cuestionarioActualizado = cuestionarioService.cambiarEstado(
                     id, nuevoEstado, authorizationService.isAdmin());
             } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body(e.getMessage());
+                return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
             }
             if (cuestionarioActualizado == null) {
                 return ResponseEntity.notFound().build();
@@ -265,7 +267,7 @@ public class CuestionarioController {
                 "message", "Estado actualizado correctamente"
             ));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al cambiar estado: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al cambiar estado: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -295,7 +297,7 @@ public class CuestionarioController {
                 "message", "Temática actualizada correctamente"
             ));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al cambiar temática: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al cambiar temática: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -326,9 +328,9 @@ public class CuestionarioController {
                 return ResponseEntity.badRequest().body("Error al agregar pregunta: No se pudo completar la operación");
             }
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error al agregar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al agregar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -391,7 +393,7 @@ public class CuestionarioController {
         } catch (IllegalArgumentException e) {
             // Mensajes específicos de validación
             log.warn("[ELIMINAR CUESTIONARIO] Validación fallida para cuestionario {}: {}", id, e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
             log.error("[ELIMINAR CUESTIONARIO] Error al eliminar cuestionario {}: {}", id, e.getMessage(), e);
             String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
@@ -432,9 +434,9 @@ public class CuestionarioController {
                 return ResponseEntity.badRequest().body("Error al quitar pregunta: No se pudo completar la operación");
             }
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error al quitar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al quitar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -461,122 +463,10 @@ public class CuestionarioController {
                 return ResponseEntity.badRequest().body("Error al quitar pregunta: No se encontró pregunta en el slot " + slot);
             }
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error al quitar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al quitar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
-    }
-
-    @GetMapping("/debug/permisos")
-    public ResponseEntity<Map<String, Object>> debugPermisos() {
-        Map<String, Object> debug = new HashMap<>();
-        
-        return authorizationService.getCurrentUser()
-            .map(currentUser -> {
-                debug.put("currentUser", currentUser.getNombre());
-                debug.put("currentUserRole", currentUser.getRol().toString());
-                debug.put("canCreateCuestionario", authorizationService.canCreateCuestionario());
-                debug.put("canRead", authorizationService.canRead());
-                debug.put("canDelete", authorizationService.canDelete());
-                return ResponseEntity.ok(debug);
-            })
-            .orElse(ResponseEntity.status(401).build());
-    }
-
-    @GetMapping("/debug/pregunta/{id}")
-    public ResponseEntity<Map<String, Object>> debugPregunta(@PathVariable Long id) {
-        Map<String, Object> debug = new HashMap<>();
-        
-        try {
-            Optional<com.lsnls.entity.Pregunta> preguntaOpt = cuestionarioService.obtenerPreguntaPorId(id);
-            if (preguntaOpt.isPresent()) {
-                com.lsnls.entity.Pregunta pregunta = preguntaOpt.get();
-                debug.put("id", pregunta.getId());
-                debug.put("estado", pregunta.getEstado().toString());
-                debug.put("estadoDisponibilidad", pregunta.getEstadoDisponibilidad().toString());
-                debug.put("pregunta", pregunta.getPregunta());
-                debug.put("respuesta", pregunta.getRespuesta());
-                debug.put("respuestaLength", pregunta.getRespuesta() != null ? pregunta.getRespuesta().length() : 0);
-                debug.put("respuestaBytes", pregunta.getRespuesta() != null ? java.util.Arrays.toString(pregunta.getRespuesta().getBytes()) : "null");
-                debug.put("nivel", pregunta.getNivel().toString());
-                debug.put("creador", pregunta.getCreacionUsuario() != null ? pregunta.getCreacionUsuario().getNombre() : "null");
-                
-                // Verificar caracteres especiales
-                if (pregunta.getRespuesta() != null) {
-                    String respuesta = pregunta.getRespuesta();
-                    StringBuilder caracteresEspeciales = new StringBuilder();
-                    for (char c : respuesta.toCharArray()) {
-                        if (!Character.isLetterOrDigit(c) && !Character.isWhitespace(c) && 
-                            ".,;:!?¡¿()[]\"'-".indexOf(c) == -1) {
-                            caracteresEspeciales.append(c).append(" (").append((int)c).append(") ");
-                        }
-                    }
-                    debug.put("caracteresEspeciales", caracteresEspeciales.toString());
-                }
-            } else {
-                debug.put("error", "Pregunta no encontrada");
-            }
-        } catch (Exception e) {
-            debug.put("error", e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return ResponseEntity.ok(debug);
-    }
-
-    @GetMapping("/debug/simple/{id}")
-    public ResponseEntity<String> debugSimple(@PathVariable Long id) {
-        try {
-            Optional<com.lsnls.entity.Pregunta> preguntaOpt = cuestionarioService.obtenerPreguntaPorId(id);
-            if (preguntaOpt.isPresent()) {
-                com.lsnls.entity.Pregunta pregunta = preguntaOpt.get();
-                return ResponseEntity.ok("Pregunta " + id + " - Respuesta: '" + pregunta.getRespuesta() + "' - Estado: " + pregunta.getEstado() + " - Disponibilidad: " + pregunta.getEstadoDisponibilidad());
-            } else {
-                return ResponseEntity.ok("Pregunta " + id + " no encontrada");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.ok("Error: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/debug/sql/{id}")
-    public ResponseEntity<Map<String, Object>> debugSql(@PathVariable Long id) {
-        Map<String, Object> debug = new HashMap<>();
-        
-        try {
-            // Verificar cuestionario
-            Optional<Cuestionario> cuestionarioOpt = cuestionarioService.obtenerPorId(id);
-            debug.put("cuestionarioExists", cuestionarioOpt.isPresent());
-            
-            if (cuestionarioOpt.isPresent()) {
-                Cuestionario cuestionario = cuestionarioOpt.get();
-                debug.put("cuestionarioId", cuestionario.getId());
-                debug.put("cuestionarioNivel", cuestionario.getNivel());
-                debug.put("cuestionarioEstado", cuestionario.getEstado());
-                
-                // Verificar preguntas usando consulta SQL directa
-                List<Object[]> resultados = cuestionarioService.obtenerPreguntasPorCuestionarioSQL(id);
-                debug.put("preguntasEncontradas", resultados.size());
-                
-                List<Map<String, Object>> preguntasInfo = new ArrayList<>();
-                for (Object[] row : resultados) {
-                    Map<String, Object> preguntaInfo = new HashMap<>();
-                    preguntaInfo.put("preguntaId", row[0]);
-                    preguntaInfo.put("cuestionarioId", row[1]);
-                    preguntaInfo.put("factor", row[2]);
-                    preguntaInfo.put("preguntaTexto", row[3]);
-                    preguntaInfo.put("respuesta", row[4]);
-                    preguntasInfo.add(preguntaInfo);
-                }
-                debug.put("preguntasDetalle", preguntasInfo);
-            }
-            
-        } catch (Exception e) {
-            debug.put("error", e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return ResponseEntity.ok(debug);
     }
 
     @PostMapping("/nuevo")
@@ -613,14 +503,14 @@ public class CuestionarioController {
                 ));
             } catch (IllegalArgumentException e) {
                 log.error("[CREAR CUESTIONARIO] Error de validación: {}", e.getMessage());
-                return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+                return ResponseEntity.badRequest().body("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage()));
             } catch (Exception e) {
                 log.error("[CREAR CUESTIONARIO] Error al crear cuestionario: {}", e.getMessage(), e);
-                return ResponseEntity.badRequest().body("Error interno al crear cuestionario: " + e.getMessage());
+                return ResponseEntity.badRequest().body("Error interno al crear cuestionario: " + MensajesUsuario.sanitizar(e.getMessage()));
             }
         } catch (Exception e) {
             log.error("[CREAR CUESTIONARIO] Error inesperado: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body("Error interno al crear cuestionario: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al crear cuestionario: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -656,7 +546,7 @@ public class CuestionarioController {
             tematicaService.añadirTematica(tematica.trim(), currentUserOpt.get());
             return ResponseEntity.ok(Map.of("mensaje", "Temática añadida correctamente"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al añadir temática: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al añadir temática: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -668,9 +558,9 @@ public class CuestionarioController {
             return ResponseEntity.ok(Map.of("mensaje", "Temática eliminada correctamente"));
         } catch (IllegalStateException e) {
             // Validación de uso en cuestionarios/combos
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al eliminar temática: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al eliminar temática: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 

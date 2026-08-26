@@ -97,11 +97,35 @@ class AuthServiceTest {
     }
 
     @Test
+    void login_rehashPasswordPlana() {
+        LoginRequest request = new LoginRequest();
+        request.setNombre("admin");
+        request.setPassword("pass");
+        Usuario usuario = usuarioAdmin();
+        UserDetails details = userDetails();
+
+        when(usuarioRepository.findByNombre("admin")).thenReturn(Optional.of(usuario));
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(passwordEncoder.upgradeEncoding("hash")).thenReturn(true);
+        when(passwordEncoder.encode("pass")).thenReturn("bcrypt-hash");
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userDetailsService.loadUserByUsername("admin")).thenReturn(details);
+        when(jwtService.generateToken(details)).thenReturn("jwt");
+
+        AuthResponse response = authService.login(request);
+
+        assertEquals("jwt", response.getToken());
+        verify(passwordEncoder).encode("pass");
+        verify(usuarioRepository).save(usuario);
+        assertEquals("bcrypt-hash", usuario.getPassword());
+    }
+
+    @Test
     void login_fail() {
         LoginRequest request = new LoginRequest();
         request.setNombre("admin");
         request.setPassword("mala");
-        when(usuarioRepository.findByNombre("admin")).thenReturn(Optional.of(usuarioAdmin()));
         when(authenticationManager.authenticate(any()))
                 .thenThrow(new BadCredentialsException("bad"));
 
@@ -114,7 +138,6 @@ class AuthServiceTest {
         LoginRequest request = new LoginRequest();
         request.setNombre("ghost");
         request.setPassword("x");
-        when(usuarioRepository.findByNombre("ghost")).thenReturn(Optional.empty());
         when(authenticationManager.authenticate(any()))
                 .thenThrow(new BadCredentialsException("bad"));
 

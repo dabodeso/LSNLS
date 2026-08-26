@@ -3,19 +3,19 @@
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
-<span class="nc" id="L6">public class NoSpecialCharactersValidator implements ConstraintValidator&lt;NoSpecialCharacters, String&gt; {</span>
+<span class="fc" id="L6">public class NoSpecialCharactersValidator implements ConstraintValidator&lt;NoSpecialCharacters, String&gt; {</span>
 
     private String allowedChars;
 
     @Override
     public void initialize(NoSpecialCharacters constraintAnnotation) {
-<span class="nc" id="L12">        this.allowedChars = constraintAnnotation.allowedChars();</span>
-<span class="nc" id="L13">    }</span>
+<span class="fc" id="L12">        this.allowedChars = constraintAnnotation.allowedChars();</span>
+<span class="fc" id="L13">    }</span>
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-<span class="nc bnc" id="L17" title="All 2 branches missed.">        if (value == null) {</span>
-<span class="nc" id="L18">            return true; // Permite valores nulos, otros validadores manejarán esto</span>
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L18">            return true; // Permite valores nulos, otros validadores manejarán esto</span>
         }
         
         // Patrón para caracteres permitidos:
@@ -24,18 +24,18 @@ import javax.validation.ConstraintValidatorContext;
         // - Espacios
         // - Signos de puntuación básicos: .,;:!?¡¿()[]&quot;'-
         // + caracteres adicionales especificados
-<span class="nc" id="L27">        String allowedPattern = &quot;[A-Za-zÀ-ÿÑñ0-9\\s.,;:!?¡¿()\\[\\]\&quot;'\\-&quot; + </span>
-<span class="nc" id="L28">                               escapeRegexChars(allowedChars) + &quot;]*&quot;;</span>
+<span class="fc" id="L27">        String allowedPattern = &quot;[A-Za-zÀ-ÿÑñ0-9\\s.,;:!?¡¿()\\[\\]\&quot;'\\-&quot; + </span>
+<span class="fc" id="L28">                               escapeRegexChars(allowedChars) + &quot;]*&quot;;</span>
         
-<span class="nc" id="L30">        return value.matches(allowedPattern);</span>
+<span class="fc" id="L30">        return value.matches(allowedPattern);</span>
     }
     
     private String escapeRegexChars(String input) {
-<span class="nc bnc" id="L34" title="All 4 branches missed.">        if (input == null || input.isEmpty()) {</span>
-<span class="nc" id="L35">            return &quot;&quot;;</span>
+<span class="fc bfc" id="L34" title="All 4 branches covered.">        if (input == null || input.isEmpty()) {</span>
+<span class="fc" id="L35">            return &quot;&quot;;</span>
         }
         // Escapa caracteres especiales de regex
-<span class="nc" id="L38">        return input.replaceAll(&quot;([\\\\^\\$.*+?{}\\[\\]|()])&quot;, &quot;\\\\$1&quot;);</span>
+<span class="fc" id="L38">        return input.replaceAll(&quot;([\\\\^\\$.*+?{}\\[\\]|()])&quot;, &quot;\\\\$1&quot;);</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

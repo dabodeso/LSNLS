@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.dto.ProgramaDTO;
 import com.lsnls.entity.AuditLog;
 import com.lsnls.service.EditLockService;
@@ -57,7 +59,7 @@ public class ProgramaController {
                 return ResponseEntity.status(404).body("Programa con ID " + id + " no encontrado");
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error interno al buscar programa: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al buscar programa: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -76,9 +78,9 @@ public class ProgramaController {
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al crear programa: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al crear programa: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -105,9 +107,9 @@ public class ProgramaController {
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al actualizar programa: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al actualizar programa: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -123,7 +125,7 @@ public class ProgramaController {
             programaService.updateDuracionObjetivo(id, duracionObjetivo);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al actualizar duración objetivo: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al actualizar duración objetivo: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -147,9 +149,9 @@ public class ProgramaController {
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al actualizar campo: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al actualizar campo: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -167,11 +169,11 @@ public class ProgramaController {
             return ResponseEntity.ok().body("Programa eliminado exitosamente");
         } catch (IllegalArgumentException e) {
             // Mensajes específicos de validación
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             return ResponseEntity.badRequest().body("No se puede eliminar el programa porque tiene concursantes asociados. Desasigna los concursantes primero.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al eliminar programa: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al eliminar programa: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 } 

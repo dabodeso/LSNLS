@@ -257,16 +257,20 @@ INSERT INTO jornadas (nombre, fecha_jornada, lugar, estado, creacion_usuario_id,
 VALUES ('Jornada 2', '2025-02-02', 'SEVILLA', 'preparacion', 1, NOW());
 
 -- Cuestionarios
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id)
-SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 1'), id FROM cuestionarios WHERE tematica IN ('PACK Q1','PACK Q2','PACK Q3','PACK Q4','PACK Q5','PACK Q6');
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id)
-SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 2'), id FROM cuestionarios WHERE tematica IN ('PACK Q7','PACK Q8','PACK Q9','PACK Q10','PACK Q11','PACK Q12');
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 1'), id, ROW_NUMBER() OVER (ORDER BY id)
+FROM cuestionarios WHERE tematica IN ('PACK Q1','PACK Q2','PACK Q3','PACK Q4','PACK Q5','PACK Q6');
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 2'), id, ROW_NUMBER() OVER (ORDER BY id)
+FROM cuestionarios WHERE tematica IN ('PACK Q7','PACK Q8','PACK Q9','PACK Q10','PACK Q11','PACK Q12');
 
 -- Combos
-INSERT INTO jornadas_combos (jornada_id, combo_id)
-SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 1'), id FROM combos WHERE tematica IN ('PACK C1','PACK C2','PACK C3','PACK C4','PACK C5','PACK C6');
-INSERT INTO jornadas_combos (jornada_id, combo_id)
-SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 2'), id FROM combos WHERE tematica IN ('PACK C7','PACK C8','PACK C9','PACK C10','PACK C11','PACK C12');
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 1'), id, ROW_NUMBER() OVER (ORDER BY id)
+FROM combos WHERE tematica IN ('PACK C1','PACK C2','PACK C3','PACK C4','PACK C5','PACK C6');
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 2'), id, ROW_NUMBER() OVER (ORDER BY id)
+FROM combos WHERE tematica IN ('PACK C7','PACK C8','PACK C9','PACK C10','PACK C11','PACK C12');
 
 
 -- Añadir datos_extra a preguntas ya usadas en cuestionarios (IDs 1..48)
@@ -544,13 +548,17 @@ VALUES ('Jornada 4', '2025-02-04', 'BARCELONA', 'preparacion', 1, NOW());
 
 -- Asignar 6 cuestionarios y 6 combos a cada jornada nueva
 -- Jornada 3: Q13..Q18 y C13..C18
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id)
-SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 3'), id FROM cuestionarios WHERE tematica IN ('PACK Q13','PACK Q14','PACK Q15','PACK Q16','PACK Q17','PACK Q18');
-INSERT INTO jornadas_combos (jornada_id, combo_id)
-SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 3'), id FROM combos WHERE tematica IN ('PACK C13','PACK C14','PACK C15','PACK C16','PACK C17','PACK C18');
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 3'), id, ROW_NUMBER() OVER (ORDER BY id)
+FROM cuestionarios WHERE tematica IN ('PACK Q13','PACK Q14','PACK Q15','PACK Q16','PACK Q17','PACK Q18');
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 3'), id, ROW_NUMBER() OVER (ORDER BY id)
+FROM combos WHERE tematica IN ('PACK C13','PACK C14','PACK C15','PACK C16','PACK C17','PACK C18');
 
 -- Jornada 4: Q19..Q24 y C19..C24
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id)
-SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 4'), id FROM cuestionarios WHERE tematica IN ('PACK Q19','PACK Q20','PACK Q21','PACK Q22','PACK Q23','PACK Q24');
-INSERT INTO jornadas_combos (jornada_id, combo_id)
-SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 4'), id FROM combos WHERE tematica IN ('PACK C19','PACK C20','PACK C21','PACK C22','PACK C23','PACK C24');
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 4'), id, ROW_NUMBER() OVER (ORDER BY id)
+FROM cuestionarios WHERE tematica IN ('PACK Q19','PACK Q20','PACK Q21','PACK Q22','PACK Q23','PACK Q24');
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT (SELECT id FROM jornadas WHERE nombre='Jornada 4'), id, ROW_NUMBER() OVER (ORDER BY id)
+FROM combos WHERE tematica IN ('PACK C19','PACK C20','PACK C21','PACK C22','PACK C23','PACK C24');

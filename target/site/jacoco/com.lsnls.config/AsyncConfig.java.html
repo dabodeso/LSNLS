@@ -13,28 +13,28 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 @Configuration
 @EnableAsync
-<span class="nc" id="L16">public class AsyncConfig {</span>
+<span class="fc" id="L16">public class AsyncConfig {</span>
 
     /**
      * Pool de threads para operaciones de auditoría
      */
     @Bean(name = &quot;auditTaskExecutor&quot;)
     public Executor auditTaskExecutor() {
-<span class="nc" id="L23">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
-<span class="nc" id="L24">        executor.setCorePoolSize(2);</span>
-<span class="nc" id="L25">        executor.setMaxPoolSize(5);</span>
-<span class="nc" id="L26">        executor.setQueueCapacity(100);</span>
-<span class="nc" id="L27">        executor.setThreadNamePrefix(&quot;audit-&quot;);</span>
-<span class="nc" id="L28">        executor.setKeepAliveSeconds(60);</span>
+<span class="fc" id="L23">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
+<span class="fc" id="L24">        executor.setCorePoolSize(2);</span>
+<span class="fc" id="L25">        executor.setMaxPoolSize(5);</span>
+<span class="fc" id="L26">        executor.setQueueCapacity(100);</span>
+<span class="fc" id="L27">        executor.setThreadNamePrefix(&quot;audit-&quot;);</span>
+<span class="fc" id="L28">        executor.setKeepAliveSeconds(60);</span>
         
         // Política de rechazo: ejecutar en el hilo llamador si está lleno
-<span class="nc" id="L31">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());</span>
+<span class="fc" id="L31">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());</span>
         
         // Permitir que los threads core mueran si están inactivos
-<span class="nc" id="L34">        executor.setAllowCoreThreadTimeOut(true);</span>
+<span class="fc" id="L34">        executor.setAllowCoreThreadTimeOut(true);</span>
         
-<span class="nc" id="L36">        executor.initialize();</span>
-<span class="nc" id="L37">        return executor;</span>
+<span class="fc" id="L36">        executor.initialize();</span>
+<span class="fc" id="L37">        return executor;</span>
     }
 
     /**
@@ -42,20 +42,20 @@ import java.util.concurrent.ThreadPoolExecutor;
      */
     @Bean(name = &quot;validationTaskExecutor&quot;)
     public Executor validationTaskExecutor() {
-<span class="nc" id="L45">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
-<span class="nc" id="L46">        executor.setCorePoolSize(3);</span>
-<span class="nc" id="L47">        executor.setMaxPoolSize(8);</span>
-<span class="nc" id="L48">        executor.setQueueCapacity(50);</span>
-<span class="nc" id="L49">        executor.setThreadNamePrefix(&quot;validation-&quot;);</span>
-<span class="nc" id="L50">        executor.setKeepAliveSeconds(30);</span>
+<span class="fc" id="L45">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
+<span class="fc" id="L46">        executor.setCorePoolSize(3);</span>
+<span class="fc" id="L47">        executor.setMaxPoolSize(8);</span>
+<span class="fc" id="L48">        executor.setQueueCapacity(50);</span>
+<span class="fc" id="L49">        executor.setThreadNamePrefix(&quot;validation-&quot;);</span>
+<span class="fc" id="L50">        executor.setKeepAliveSeconds(30);</span>
         
         // Política de rechazo: descartar tareas más antiguas si está lleno
-<span class="nc" id="L53">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());</span>
+<span class="fc" id="L53">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());</span>
         
-<span class="nc" id="L55">        executor.setAllowCoreThreadTimeOut(true);</span>
+<span class="fc" id="L55">        executor.setAllowCoreThreadTimeOut(true);</span>
         
-<span class="nc" id="L57">        executor.initialize();</span>
-<span class="nc" id="L58">        return executor;</span>
+<span class="fc" id="L57">        executor.initialize();</span>
+<span class="fc" id="L58">        return executor;</span>
     }
 
     /**
@@ -63,20 +63,20 @@ import java.util.concurrent.ThreadPoolExecutor;
      */
     @Bean(name = &quot;exportTaskExecutor&quot;)
     public Executor exportTaskExecutor() {
-<span class="nc" id="L66">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
-<span class="nc" id="L67">        executor.setCorePoolSize(1);</span>
-<span class="nc" id="L68">        executor.setMaxPoolSize(3);</span>
-<span class="nc" id="L69">        executor.setQueueCapacity(10);</span>
-<span class="nc" id="L70">        executor.setThreadNamePrefix(&quot;export-&quot;);</span>
-<span class="nc" id="L71">        executor.setKeepAliveSeconds(120);</span>
+<span class="fc" id="L66">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
+<span class="fc" id="L67">        executor.setCorePoolSize(1);</span>
+<span class="fc" id="L68">        executor.setMaxPoolSize(3);</span>
+<span class="fc" id="L69">        executor.setQueueCapacity(10);</span>
+<span class="fc" id="L70">        executor.setThreadNamePrefix(&quot;export-&quot;);</span>
+<span class="fc" id="L71">        executor.setKeepAliveSeconds(120);</span>
         
         // Política de rechazo: rechazar tareas nuevas si está lleno
-<span class="nc" id="L74">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());</span>
+<span class="fc" id="L74">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());</span>
         
-<span class="nc" id="L76">        executor.setAllowCoreThreadTimeOut(true);</span>
+<span class="fc" id="L76">        executor.setAllowCoreThreadTimeOut(true);</span>
         
-<span class="nc" id="L78">        executor.initialize();</span>
-<span class="nc" id="L79">        return executor;</span>
+<span class="fc" id="L78">        executor.initialize();</span>
+<span class="fc" id="L79">        return executor;</span>
     }
 
     /**
@@ -84,20 +84,20 @@ import java.util.concurrent.ThreadPoolExecutor;
      */
     @Bean(name = &quot;criticalTaskExecutor&quot;)
     public Executor criticalTaskExecutor() {
-<span class="nc" id="L87">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
-<span class="nc" id="L88">        executor.setCorePoolSize(4);</span>
-<span class="nc" id="L89">        executor.setMaxPoolSize(10);</span>
-<span class="nc" id="L90">        executor.setQueueCapacity(25);</span>
-<span class="nc" id="L91">        executor.setThreadNamePrefix(&quot;critical-&quot;);</span>
-<span class="nc" id="L92">        executor.setKeepAliveSeconds(45);</span>
+<span class="fc" id="L87">        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();</span>
+<span class="fc" id="L88">        executor.setCorePoolSize(4);</span>
+<span class="fc" id="L89">        executor.setMaxPoolSize(10);</span>
+<span class="fc" id="L90">        executor.setQueueCapacity(25);</span>
+<span class="fc" id="L91">        executor.setThreadNamePrefix(&quot;critical-&quot;);</span>
+<span class="fc" id="L92">        executor.setKeepAliveSeconds(45);</span>
         
         // Política de rechazo: ejecutar en el hilo llamador para operaciones críticas
-<span class="nc" id="L95">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());</span>
+<span class="fc" id="L95">        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());</span>
         
-<span class="nc" id="L97">        executor.setAllowCoreThreadTimeOut(false); // Mantener threads core vivos para operaciones críticas</span>
+<span class="fc" id="L97">        executor.setAllowCoreThreadTimeOut(false); // Mantener threads core vivos para operaciones críticas</span>
         
-<span class="nc" id="L99">        executor.initialize();</span>
-<span class="nc" id="L100">        return executor;</span>
+<span class="fc" id="L99">        executor.initialize();</span>
+<span class="fc" id="L100">        return executor;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

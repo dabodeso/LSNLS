@@ -6,86 +6,88 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
 public class DatabaseMigrationRunner {
 
-<span class="nc" id="L15">    private static final Logger log = LoggerFactory.getLogger(DatabaseMigrationRunner.class);</span>
+<span class="nc" id="L17">    private static final Logger log = LoggerFactory.getLogger(DatabaseMigrationRunner.class);</span>
 
     private final JdbcTemplate jdbcTemplate;
 
     @Value(&quot;${spring.datasource.url:jdbc:mysql://localhost:3306/lsnls}&quot;)
     private String datasourceUrl;
 
-<span class="nc" id="L22">    public DatabaseMigrationRunner(JdbcTemplate jdbcTemplate) {</span>
-<span class="nc" id="L23">        this.jdbcTemplate = jdbcTemplate;</span>
-<span class="nc" id="L24">    }</span>
+<span class="nc" id="L24">    public DatabaseMigrationRunner(JdbcTemplate jdbcTemplate) {</span>
+<span class="nc" id="L25">        this.jdbcTemplate = jdbcTemplate;</span>
+<span class="nc" id="L26">    }</span>
 
     @PostConstruct
     public void runMigrations() {
         try {
-<span class="nc" id="L29">            final String schema = extractSchemaName(datasourceUrl);</span>
-<span class="nc bnc" id="L30" title="All 4 branches missed.">            if (schema == null || schema.isEmpty()) {</span>
-<span class="nc" id="L31">                log.warn(&quot;[DB MIGRATION] No se pudo determinar el esquema a partir de la URL. Usando 'lsnls' por defecto.&quot;);</span>
+<span class="nc" id="L31">            final String schema = extractSchemaName(datasourceUrl);</span>
+<span class="nc bnc" id="L32" title="All 4 branches missed.">            if (schema == null || schema.isEmpty()) {</span>
+<span class="nc" id="L33">                log.warn(&quot;[DB MIGRATION] No se pudo determinar el esquema a partir de la URL. Usando 'lsnls' por defecto.&quot;);</span>
             }
-<span class="nc bnc" id="L33" title="All 4 branches missed.">            final String schemaName = (schema == null || schema.isEmpty()) ? &quot;lsnls&quot; : schema;</span>
+<span class="nc bnc" id="L35" title="All 4 branches missed.">            final String schemaName = (schema == null || schema.isEmpty()) ? &quot;lsnls&quot; : schema;</span>
 
             // 1) programas.duracion_objetivo
-<span class="nc" id="L36">            Integer count = jdbcTemplate.queryForObject(</span>
-<span class="nc" id="L37">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND COLUMN_NAME = 'duracion_objetivo'&quot;,</span>
-<span class="nc" id="L38">                    Integer.class,</span>
-<span class="nc" id="L39">                    schemaName</span>
+<span class="nc" id="L38">            Integer count = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L39">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND COLUMN_NAME = 'duracion_objetivo'&quot;,</span>
+<span class="nc" id="L40">                    Integer.class,</span>
+<span class="nc" id="L41">                    schemaName</span>
             );
-<span class="nc bnc" id="L41" title="All 4 branches missed.">            if (count != null &amp;&amp; count == 0) {</span>
-<span class="nc" id="L42">                log.info(&quot;[DB MIGRATION] Añadiendo columna programas.duracion_objetivo ...&quot;);</span>
-<span class="nc" id="L43">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD COLUMN duracion_objetivo VARCHAR(255) DEFAULT '45m'&quot;);</span>
-<span class="nc" id="L44">                log.info(&quot;[DB MIGRATION] Columna programas.duracion_objetivo añadida correctamente.&quot;);</span>
-<span class="nc" id="L45">            } else {</span>
-<span class="nc" id="L46">                log.info(&quot;[DB MIGRATION] Columna programas.duracion_objetivo ya existe. No se realizan cambios.&quot;);</span>
+<span class="nc bnc" id="L43" title="All 4 branches missed.">            if (count != null &amp;&amp; count == 0) {</span>
+<span class="nc" id="L44">                log.info(&quot;[DB MIGRATION] Añadiendo columna programas.duracion_objetivo ...&quot;);</span>
+<span class="nc" id="L45">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD COLUMN duracion_objetivo VARCHAR(255) DEFAULT '45m'&quot;);</span>
+<span class="nc" id="L46">                log.info(&quot;[DB MIGRATION] Columna programas.duracion_objetivo añadida correctamente.&quot;);</span>
+<span class="nc" id="L47">            } else {</span>
+<span class="nc" id="L48">                log.info(&quot;[DB MIGRATION] Columna programas.duracion_objetivo ya existe. No se realizan cambios.&quot;);</span>
             }
 
             // 2) Configuración global de duración objetivo: migrar solo el valor antiguo por defecto.
-<span class="nc" id="L50">            Integer configuracionCount = jdbcTemplate.queryForObject(</span>
-<span class="nc" id="L51">                    &quot;SELECT COUNT(*) FROM configuracion_global WHERE clave = 'DURACION_OBJETIVO_PROGRAMA'&quot;,</span>
-<span class="nc" id="L52">                    Integer.class);</span>
-<span class="nc bnc" id="L53" title="All 4 branches missed.">            if (configuracionCount != null &amp;&amp; configuracionCount == 0) {</span>
-<span class="nc" id="L54">                jdbcTemplate.update(</span>
-<span class="nc" id="L55">                    &quot;INSERT INTO configuracion_global (clave, valor, descripcion, version) VALUES (?, ?, ?, 0)&quot;,</span>
-<span class="nc" id="L56">                    &quot;DURACION_OBJETIVO_PROGRAMA&quot;, &quot;45m&quot;,</span>
-<span class="nc" id="L57">                    &quot;Duración objetivo por defecto para programas&quot;);</span>
-<span class="nc" id="L58">            } else {</span>
-<span class="nc" id="L59">                jdbcTemplate.update(</span>
-<span class="nc" id="L60">                    &quot;UPDATE configuracion_global SET valor = '45m' &quot;</span>
+<span class="nc" id="L52">            Integer configuracionCount = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L53">                    &quot;SELECT COUNT(*) FROM configuracion_global WHERE clave = 'DURACION_OBJETIVO_PROGRAMA'&quot;,</span>
+<span class="nc" id="L54">                    Integer.class);</span>
+<span class="nc bnc" id="L55" title="All 4 branches missed.">            if (configuracionCount != null &amp;&amp; configuracionCount == 0) {</span>
+<span class="nc" id="L56">                jdbcTemplate.update(</span>
+<span class="nc" id="L57">                    &quot;INSERT INTO configuracion_global (clave, valor, descripcion, version) VALUES (?, ?, ?, 0)&quot;,</span>
+<span class="nc" id="L58">                    &quot;DURACION_OBJETIVO_PROGRAMA&quot;, &quot;45m&quot;,</span>
+<span class="nc" id="L59">                    &quot;Duración objetivo por defecto para programas&quot;);</span>
+<span class="nc" id="L60">            } else {</span>
+<span class="nc" id="L61">                jdbcTemplate.update(</span>
+<span class="nc" id="L62">                    &quot;UPDATE configuracion_global SET valor = '45m' &quot;</span>
                         + &quot;WHERE clave = 'DURACION_OBJETIVO_PROGRAMA' AND valor = '1h 5m'&quot;);
             }
 
             // 3) programas.codigo y programas.notas
-<span class="nc" id="L65">            Integer codigoCount = jdbcTemplate.queryForObject(</span>
-<span class="nc" id="L66">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND COLUMN_NAME = 'codigo'&quot;,</span>
-<span class="nc" id="L67">                    Integer.class, schemaName);</span>
-<span class="nc bnc" id="L68" title="All 4 branches missed.">            if (codigoCount != null &amp;&amp; codigoCount == 0) {</span>
-<span class="nc" id="L69">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD COLUMN codigo VARCHAR(32) NULL AFTER id&quot;);</span>
+<span class="nc" id="L67">            Integer codigoCount = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L68">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND COLUMN_NAME = 'codigo'&quot;,</span>
+<span class="nc" id="L69">                    Integer.class, schemaName);</span>
+<span class="nc bnc" id="L70" title="All 4 branches missed.">            if (codigoCount != null &amp;&amp; codigoCount == 0) {</span>
+<span class="nc" id="L71">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD COLUMN codigo VARCHAR(32) NULL AFTER id&quot;);</span>
             }
-<span class="nc" id="L71">            jdbcTemplate.execute(&quot;UPDATE programas SET codigo = CAST(id AS CHAR) WHERE codigo IS NULL OR TRIM(codigo) = ''&quot;);</span>
+<span class="nc" id="L73">            jdbcTemplate.execute(&quot;UPDATE programas SET codigo = CAST(id AS CHAR) WHERE codigo IS NULL OR TRIM(codigo) = ''&quot;);</span>
 
-<span class="nc" id="L73">            Integer codigoIndexCount = jdbcTemplate.queryForObject(</span>
-<span class="nc" id="L74">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND INDEX_NAME = 'uk_programas_codigo'&quot;,</span>
-<span class="nc" id="L75">                    Integer.class, schemaName);</span>
-<span class="nc bnc" id="L76" title="All 4 branches missed.">            if (codigoIndexCount != null &amp;&amp; codigoIndexCount == 0) {</span>
-<span class="nc" id="L77">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD UNIQUE INDEX uk_programas_codigo (codigo)&quot;);</span>
+<span class="nc" id="L75">            Integer codigoIndexCount = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L76">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND INDEX_NAME = 'uk_programas_codigo'&quot;,</span>
+<span class="nc" id="L77">                    Integer.class, schemaName);</span>
+<span class="nc bnc" id="L78" title="All 4 branches missed.">            if (codigoIndexCount != null &amp;&amp; codigoIndexCount == 0) {</span>
+<span class="nc" id="L79">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD UNIQUE INDEX uk_programas_codigo (codigo)&quot;);</span>
             }
 
-<span class="nc" id="L80">            Integer notasCount = jdbcTemplate.queryForObject(</span>
-<span class="nc" id="L81">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND COLUMN_NAME = 'notas'&quot;,</span>
-<span class="nc" id="L82">                    Integer.class, schemaName);</span>
-<span class="nc bnc" id="L83" title="All 4 branches missed.">            if (notasCount != null &amp;&amp; notasCount == 0) {</span>
-<span class="nc" id="L84">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD COLUMN notas TEXT NULL&quot;);</span>
+<span class="nc" id="L82">            Integer notasCount = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L83">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'programas' AND COLUMN_NAME = 'notas'&quot;,</span>
+<span class="nc" id="L84">                    Integer.class, schemaName);</span>
+<span class="nc bnc" id="L85" title="All 4 branches missed.">            if (notasCount != null &amp;&amp; notasCount == 0) {</span>
+<span class="nc" id="L86">                jdbcTemplate.execute(&quot;ALTER TABLE programas ADD COLUMN notas TEXT NULL&quot;);</span>
             }
 
             // 4) Tabla de operaciones deshacibles (Ctrl+Z respaldado por backend)
-<span class="nc" id="L88">            jdbcTemplate.execute(&quot;CREATE TABLE IF NOT EXISTS operaciones_undo (&quot;</span>
+<span class="nc" id="L90">            jdbcTemplate.execute(&quot;CREATE TABLE IF NOT EXISTS operaciones_undo (&quot;</span>
                     + &quot;id BIGINT AUTO_INCREMENT PRIMARY KEY, &quot;
                     + &quot;usuario_id BIGINT NOT NULL, &quot;
                     + &quot;tipo_operacion VARCHAR(64) NOT NULL, &quot;
@@ -97,31 +99,67 @@ public class DatabaseMigrationRunner {
 
             // 5) Concursantes: el estado inicial es grabado (ya no existe borrador)
             try {
-<span class="nc" id="L100">                jdbcTemplate.update(</span>
-<span class="nc" id="L101">                    &quot;UPDATE concursantes SET estado = 'grabado' &quot;</span>
+<span class="nc" id="L102">                jdbcTemplate.update(</span>
+<span class="nc" id="L103">                    &quot;UPDATE concursantes SET estado = 'grabado' &quot;</span>
                         + &quot;WHERE estado IS NULL OR TRIM(estado) = '' OR LOWER(estado) = 'borrador'&quot;
                 );
-<span class="nc" id="L104">            } catch (Exception e) {</span>
-<span class="nc" id="L105">                log.warn(&quot;[DB MIGRATION] No se pudo normalizar estado de concursantes: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L106">            } catch (Exception e) {</span>
+<span class="nc" id="L107">                log.warn(&quot;[DB MIGRATION] No se pudo normalizar estado de concursantes: {}&quot;, e.getMessage());</span>
             }
 
-<span class="nc" id="L108">        } catch (Exception e) {</span>
-<span class="nc" id="L109">            log.error(&quot;[DB MIGRATION] Error ejecutando migraciones: {}&quot;, e.getMessage(), e);</span>
+            // 6) Huecos fijos de cuestionario/combo en jornada
+<span class="nc" id="L111">            migrarSlotJornada(schemaName, &quot;jornadas_cuestionarios&quot;, &quot;cuestionario_id&quot;);</span>
+<span class="nc" id="L112">            migrarSlotJornada(schemaName, &quot;jornadas_combos&quot;, &quot;combo_id&quot;);</span>
+
+<span class="nc" id="L114">        } catch (Exception e) {</span>
+<span class="nc" id="L115">            log.error(&quot;[DB MIGRATION] Error ejecutando migraciones: {}&quot;, e.getMessage(), e);</span>
         }
-<span class="nc" id="L111">    }</span>
+<span class="nc" id="L117">    }</span>
 
     private String extractSchemaName(String url) {
         try {
             // Ej: jdbc:mysql://localhost:3306/lsnls?params
-<span class="nc" id="L116">            Pattern pattern = Pattern.compile(&quot;jdbc:mysql://[^/]+/([^?]+)&quot;);</span>
-<span class="nc" id="L117">            Matcher matcher = pattern.matcher(url);</span>
-<span class="nc bnc" id="L118" title="All 2 branches missed.">            if (matcher.find()) {</span>
-<span class="nc" id="L119">                return matcher.group(1);</span>
+<span class="nc" id="L122">            Pattern pattern = Pattern.compile(&quot;jdbc:mysql://[^/]+/([^?]+)&quot;);</span>
+<span class="nc" id="L123">            Matcher matcher = pattern.matcher(url);</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            if (matcher.find()) {</span>
+<span class="nc" id="L125">                return matcher.group(1);</span>
             }
-<span class="nc" id="L121">        } catch (Exception ignored) {</span>
+<span class="nc" id="L127">        } catch (Exception ignored) {</span>
         }
-<span class="nc" id="L123">        return null;</span>
+<span class="nc" id="L129">        return null;</span>
     }
+
+    private void migrarSlotJornada(String schemaName, String tabla, String columnaId) {
+        try {
+<span class="nc" id="L134">            Integer count = jdbcTemplate.queryForObject(</span>
+<span class="nc" id="L135">                    &quot;SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = 'slot'&quot;,</span>
+<span class="nc" id="L136">                    Integer.class, schemaName, tabla);</span>
+<span class="nc bnc" id="L137" title="All 4 branches missed.">            if (count != null &amp;&amp; count == 0) {</span>
+<span class="nc" id="L138">                log.info(&quot;[DB MIGRATION] Añadiendo columna {}.slot ...&quot;, tabla);</span>
+<span class="nc" id="L139">                jdbcTemplate.execute(&quot;ALTER TABLE &quot; + tabla + &quot; ADD COLUMN slot INT NULL&quot;);</span>
+            }
+<span class="nc" id="L141">            List&lt;Map&lt;String, Object&gt;&gt; filas = jdbcTemplate.queryForList(</span>
+<span class="nc" id="L142">                    &quot;SELECT jornada_id, &quot; + columnaId + &quot; AS elemento_id FROM &quot; + tabla</span>
+<span class="nc" id="L143">                            + &quot; WHERE slot IS NULL ORDER BY jornada_id, &quot; + columnaId);</span>
+<span class="nc" id="L144">            Long jornadaActual = null;</span>
+<span class="nc" id="L145">            int n = 0;</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            for (Map&lt;String, Object&gt; fila : filas) {</span>
+<span class="nc" id="L147">                Long jornadaId = ((Number) fila.get(&quot;jornada_id&quot;)).longValue();</span>
+<span class="nc" id="L148">                Long elementoId = ((Number) fila.get(&quot;elemento_id&quot;)).longValue();</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                if (!jornadaId.equals(jornadaActual)) {</span>
+<span class="nc" id="L150">                    jornadaActual = jornadaId;</span>
+<span class="nc" id="L151">                    n = 0;</span>
+                }
+<span class="nc" id="L153">                n++;</span>
+<span class="nc" id="L154">                jdbcTemplate.update(</span>
+<span class="nc" id="L155">                        &quot;UPDATE &quot; + tabla + &quot; SET slot = ? WHERE jornada_id = ? AND &quot; + columnaId + &quot; = ?&quot;,</span>
+<span class="nc" id="L156">                        n, jornadaId, elementoId);</span>
+            }
+<span class="nc" id="L158">            jdbcTemplate.execute(&quot;UPDATE &quot; + tabla + &quot; SET slot = 1 WHERE slot IS NULL&quot;);</span>
+<span class="nc" id="L159">        } catch (Exception e) {</span>
+<span class="nc" id="L160">            log.warn(&quot;[DB MIGRATION] No se pudo migrar {}.slot: {}&quot;, tabla, e.getMessage());</span>
+        }
+<span class="nc" id="L162">    }</span>
 }
 
 

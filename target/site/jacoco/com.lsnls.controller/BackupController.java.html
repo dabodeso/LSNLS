@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BackupController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">BackupController.java</span></div><h1>BackupController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.service.BackupService;
 import com.lsnls.service.AuthorizationService;
 import lombok.extern.slf4j.Slf4j;
@@ -11,11 +13,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-<span class="nc" id="L14">@Slf4j</span>
+<span class="nc" id="L16">@Slf4j</span>
 @RestController
 @RequestMapping(&quot;/api/backup&quot;)
 @CrossOrigin(origins = &quot;*&quot;)
-<span class="nc" id="L18">public class BackupController {</span>
+<span class="nc" id="L20">public class BackupController {</span>
 
     @Autowired
     private BackupService backupService;
@@ -30,11 +32,11 @@ import java.util.Map;
     @PreAuthorize(&quot;@authorizationService.canValidate()&quot;)
     public ResponseEntity&lt;?&gt; listBackups() {
         try {
-<span class="nc" id="L33">            List&lt;BackupService.BackupInfo&gt; backups = backupService.listBackups();</span>
-<span class="nc" id="L34">            return ResponseEntity.ok(backups);</span>
-<span class="nc" id="L35">        } catch (Exception e) {</span>
-<span class="nc" id="L36">            log.error(&quot;Error al listar backups&quot;, e);</span>
-<span class="nc" id="L37">            return ResponseEntity.internalServerError().body(&quot;Error interno al listar backups: &quot; + e.getMessage());</span>
+<span class="nc" id="L35">            List&lt;BackupService.BackupInfo&gt; backups = backupService.listBackups();</span>
+<span class="nc" id="L36">            return ResponseEntity.ok(backups);</span>
+<span class="nc" id="L37">        } catch (Exception e) {</span>
+<span class="nc" id="L38">            log.error(&quot;Error al listar backups&quot;, e);</span>
+<span class="nc" id="L39">            return ResponseEntity.internalServerError().body(&quot;Error interno al listar backups: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -45,19 +47,19 @@ import java.util.Map;
     @PreAuthorize(&quot;@authorizationService.canValidate()&quot;)
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; createBackup() {
         try {
-<span class="nc" id="L48">            String backupFile = backupService.createBackup();</span>
-<span class="nc" id="L49">            backupService.cleanupOldBackups();</span>
+<span class="nc" id="L50">            String backupFile = backupService.createBackup();</span>
+<span class="nc" id="L51">            backupService.cleanupOldBackups();</span>
             
-<span class="nc" id="L51">            return ResponseEntity.ok(Map.of(</span>
-<span class="nc" id="L52">                &quot;success&quot;, true,</span>
-                &quot;message&quot;, &quot;Backup creado exitosamente&quot;,
-                &quot;fileName&quot;, backupFile
+<span class="nc" id="L53">            return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L54">                &quot;success&quot;, true,</span>
+<span class="nc" id="L55">                &quot;message&quot;, &quot;Backup creado exitosamente&quot;,</span>
+<span class="nc" id="L56">                &quot;fileName&quot;, backupFile</span>
             ));
-<span class="nc" id="L56">        } catch (Exception e) {</span>
-<span class="nc" id="L57">            log.error(&quot;Error al crear backup&quot;, e);</span>
-<span class="nc" id="L58">            return ResponseEntity.internalServerError().body(Map.of(</span>
-<span class="nc" id="L59">                &quot;success&quot;, false,</span>
-<span class="nc" id="L60">                &quot;message&quot;, &quot;Error al crear backup: &quot; + e.getMessage()</span>
+<span class="nc" id="L58">        } catch (Exception e) {</span>
+<span class="nc" id="L59">            log.error(&quot;Error al crear backup&quot;, e);</span>
+<span class="nc" id="L60">            return ResponseEntity.internalServerError().body(Map.of(</span>
+<span class="nc" id="L61">                &quot;success&quot;, false,</span>
+<span class="nc" id="L62">                &quot;message&quot;, &quot;Error al crear backup: &quot; + MensajesUsuario.sanitizar(e.getMessage())</span>
             ));
         }
     }
@@ -69,25 +71,25 @@ import java.util.Map;
     @PreAuthorize(&quot;@authorizationService.canValidate()&quot;)
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; restoreBackup(@PathVariable String fileName) {
         try {
-<span class="nc" id="L72">            boolean success = backupService.restoreBackup(fileName);</span>
+<span class="nc" id="L74">            boolean success = backupService.restoreBackup(fileName);</span>
             
-<span class="nc bnc" id="L74" title="All 2 branches missed.">            if (success) {</span>
-<span class="nc" id="L75">                return ResponseEntity.ok(Map.of(</span>
-<span class="nc" id="L76">                    &quot;success&quot;, true,</span>
-                    &quot;message&quot;, &quot;Base de datos restaurada exitosamente&quot;,
-                    &quot;fileName&quot;, fileName
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            if (success) {</span>
+<span class="nc" id="L77">                return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L78">                    &quot;success&quot;, true,</span>
+<span class="nc" id="L79">                    &quot;message&quot;, &quot;Base de datos restaurada exitosamente&quot;,</span>
+<span class="nc" id="L80">                    &quot;fileName&quot;, fileName</span>
                 ));
             } else {
-<span class="nc" id="L81">                return ResponseEntity.badRequest().body(Map.of(</span>
-<span class="nc" id="L82">                    &quot;success&quot;, false,</span>
-                    &quot;message&quot;, &quot;Error al restaurar la base de datos&quot;
+<span class="nc" id="L83">                return ResponseEntity.badRequest().body(Map.of(</span>
+<span class="nc" id="L84">                    &quot;success&quot;, false,</span>
+<span class="nc" id="L85">                    &quot;message&quot;, &quot;Error al restaurar la base de datos&quot;</span>
                 ));
             }
-<span class="nc" id="L86">        } catch (Exception e) {</span>
-<span class="nc" id="L87">            log.error(&quot;Error al restaurar backup&quot;, e);</span>
-<span class="nc" id="L88">            return ResponseEntity.internalServerError().body(Map.of(</span>
-<span class="nc" id="L89">                &quot;success&quot;, false,</span>
-<span class="nc" id="L90">                &quot;message&quot;, &quot;Error al restaurar backup: &quot; + e.getMessage()</span>
+<span class="nc" id="L88">        } catch (Exception e) {</span>
+<span class="nc" id="L89">            log.error(&quot;Error al restaurar backup&quot;, e);</span>
+<span class="nc" id="L90">            return ResponseEntity.internalServerError().body(Map.of(</span>
+<span class="nc" id="L91">                &quot;success&quot;, false,</span>
+<span class="nc" id="L92">                &quot;message&quot;, &quot;Error al restaurar backup: &quot; + MensajesUsuario.sanitizar(e.getMessage())</span>
             ));
         }
     }
@@ -99,17 +101,17 @@ import java.util.Map;
     @PreAuthorize(&quot;@authorizationService.canValidate()&quot;)
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; cleanupBackups() {
         try {
-<span class="nc" id="L102">            backupService.cleanupOldBackups();</span>
+<span class="nc" id="L104">            backupService.cleanupOldBackups();</span>
             
-<span class="nc" id="L104">            return ResponseEntity.ok(Map.of(</span>
-<span class="nc" id="L105">                &quot;success&quot;, true,</span>
-                &quot;message&quot;, &quot;Limpieza de backups completada&quot;
+<span class="nc" id="L106">            return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L107">                &quot;success&quot;, true,</span>
+<span class="nc" id="L108">                &quot;message&quot;, &quot;Limpieza de backups completada&quot;</span>
             ));
-<span class="nc" id="L108">        } catch (Exception e) {</span>
-<span class="nc" id="L109">            log.error(&quot;Error al limpiar backups&quot;, e);</span>
-<span class="nc" id="L110">            return ResponseEntity.internalServerError().body(Map.of(</span>
-<span class="nc" id="L111">                &quot;success&quot;, false,</span>
-<span class="nc" id="L112">                &quot;message&quot;, &quot;Error al limpiar backups: &quot; + e.getMessage()</span>
+<span class="nc" id="L110">        } catch (Exception e) {</span>
+<span class="nc" id="L111">            log.error(&quot;Error al limpiar backups&quot;, e);</span>
+<span class="nc" id="L112">            return ResponseEntity.internalServerError().body(Map.of(</span>
+<span class="nc" id="L113">                &quot;success&quot;, false,</span>
+<span class="nc" id="L114">                &quot;message&quot;, &quot;Error al limpiar backups: &quot; + MensajesUsuario.sanitizar(e.getMessage())</span>
             ));
         }
     }
@@ -121,22 +123,22 @@ import java.util.Map;
     @PreAuthorize(&quot;@authorizationService.canValidate()&quot;)
     public ResponseEntity&lt;?&gt; getBackupStatus() {
         try {
-<span class="nc" id="L124">            List&lt;BackupService.BackupInfo&gt; backups = backupService.listBackups();</span>
+<span class="nc" id="L126">            List&lt;BackupService.BackupInfo&gt; backups = backupService.listBackups();</span>
             
-<span class="nc" id="L126">            long totalSize = backups.stream()</span>
-<span class="nc" id="L127">                .mapToLong(BackupService.BackupInfo::getSize)</span>
-<span class="nc" id="L128">                .sum();</span>
+<span class="nc" id="L128">            long totalSize = backups.stream()</span>
+<span class="nc" id="L129">                .mapToLong(BackupService.BackupInfo::getSize)</span>
+<span class="nc" id="L130">                .sum();</span>
             
-<span class="nc" id="L130">            return ResponseEntity.ok(Map.of(</span>
-<span class="nc" id="L131">                &quot;totalBackups&quot;, backups.size(),</span>
-<span class="nc" id="L132">                &quot;totalSize&quot;, totalSize,</span>
-<span class="nc" id="L133">                &quot;formattedTotalSize&quot;, formatSize(totalSize),</span>
-<span class="nc bnc" id="L134" title="All 2 branches missed.">                &quot;latestBackup&quot;, backups.isEmpty() ? null : backups.get(0),</span>
-                &quot;backups&quot;, backups
+<span class="nc" id="L132">            return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L133">                &quot;totalBackups&quot;, backups.size(),</span>
+<span class="nc" id="L134">                &quot;totalSize&quot;, totalSize,</span>
+<span class="nc" id="L135">                &quot;formattedTotalSize&quot;, formatSize(totalSize),</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                &quot;latestBackup&quot;, backups.isEmpty() ? null : backups.get(0),</span>
+<span class="nc" id="L137">                &quot;backups&quot;, backups</span>
             ));
-<span class="nc" id="L137">        } catch (Exception e) {</span>
-<span class="nc" id="L138">            log.error(&quot;Error al obtener estado de backup&quot;, e);</span>
-<span class="nc" id="L139">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener estado de backup: &quot; + e.getMessage());</span>
+<span class="nc" id="L139">        } catch (Exception e) {</span>
+<span class="nc" id="L140">            log.error(&quot;Error al obtener estado de backup&quot;, e);</span>
+<span class="nc" id="L141">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener estado de backup: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -144,10 +146,10 @@ import java.util.Map;
      * Formatea el tamaño en bytes a formato legible
      */
     private String formatSize(long bytes) {
-<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (bytes &lt; 1024) return bytes + &quot; B&quot;;</span>
-<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (bytes &lt; 1024 * 1024) return String.format(&quot;%.1f KB&quot;, bytes / 1024.0);</span>
-<span class="nc bnc" id="L149" title="All 2 branches missed.">        if (bytes &lt; 1024 * 1024 * 1024) return String.format(&quot;%.1f MB&quot;, bytes / (1024.0 * 1024.0));</span>
-<span class="nc" id="L150">        return String.format(&quot;%.1f GB&quot;, bytes / (1024.0 * 1024.0 * 1024.0));</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        if (bytes &lt; 1024) return bytes + &quot; B&quot;;</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (bytes &lt; 1024 * 1024) return String.format(&quot;%.1f KB&quot;, bytes / 1024.0);</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (bytes &lt; 1024 * 1024 * 1024) return String.format(&quot;%.1f MB&quot;, bytes / (1024.0 * 1024.0));</span>
+<span class="nc" id="L152">        return String.format(&quot;%.1f GB&quot;, bytes / (1024.0 * 1024.0 * 1024.0));</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

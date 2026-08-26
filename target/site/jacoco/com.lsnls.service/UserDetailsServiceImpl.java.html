@@ -30,14 +30,12 @@ import java.util.Optional;
 <span class="nc" id="L30">            new UsernameNotFoundException(&quot;Usuario no encontrado: &quot; + username));</span>
 
 <span class="nc" id="L32">        String authority = usuario.getRol().toString();</span>
-<span class="nc" id="L33">        String pass = String.valueOf(usuario.getPassword());</span>
-<span class="nc bnc" id="L34" title="All 2 branches missed.">        log.info(&quot;[UDS DEBUG] Cargando usuario '{}': rol={}, passLen={}&quot;, username, authority, pass != null ? pass.length() : -1);</span>
 
-<span class="nc" id="L36">        return User.builder()</span>
-<span class="nc" id="L37">                .username(usuario.getNombre())</span>
-<span class="nc" id="L38">                .password(usuario.getPassword())</span>
-<span class="nc" id="L39">                .authorities(Collections.singletonList(new SimpleGrantedAuthority(authority)))</span>
-<span class="nc" id="L40">                .build();</span>
+<span class="nc" id="L34">        return User.builder()</span>
+<span class="nc" id="L35">                .username(usuario.getNombre())</span>
+<span class="nc" id="L36">                .password(usuario.getPassword())</span>
+<span class="nc" id="L37">                .authorities(Collections.singletonList(new SimpleGrantedAuthority(authority)))</span>
+<span class="nc" id="L38">                .build();</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

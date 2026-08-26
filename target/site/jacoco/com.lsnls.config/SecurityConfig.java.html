@@ -41,78 +41,77 @@ public class SecurityConfig {
 <span class="nc" id="L41">                .authorizeRequests(authz -&gt; authz</span>
 <span class="nc" id="L42">                        .antMatchers(</span>
                                 // Rutas públicas
-                                &quot;/&quot;,
-                                &quot;/index.html&quot;,
-                                &quot;/login.html&quot;,
-                                &quot;/register.html&quot;,
-                                &quot;/api/auth/login&quot;,
-                                &quot;/api/auth/register&quot;,
-                                &quot;/css/**&quot;,
-                                &quot;/js/**&quot;,
-                                &quot;/images/**&quot;,
-                                &quot;/favicon.ico&quot;,
-                                &quot;/.well-known/**&quot;,
-                                &quot;/error&quot;
-<span class="nc" id="L56">                        ).permitAll()</span>
-                        // Rutas protegidas solo API
-<span class="nc" id="L58">                        .antMatchers(&quot;/api/**&quot;).authenticated()</span>
-<span class="nc" id="L59">                        .anyRequest().permitAll()</span>
+<span class="nc" id="L44">                                &quot;/&quot;,</span>
+<span class="nc" id="L45">                                &quot;/index.html&quot;,</span>
+<span class="nc" id="L46">                                &quot;/login.html&quot;,</span>
+<span class="nc" id="L47">                                &quot;/register.html&quot;,</span>
+<span class="nc" id="L48">                                &quot;/api/auth/login&quot;,</span>
+<span class="nc" id="L49">                                &quot;/css/**&quot;,</span>
+<span class="nc" id="L50">                                &quot;/js/**&quot;,</span>
+<span class="nc" id="L51">                                &quot;/images/**&quot;,</span>
+<span class="nc" id="L52">                                &quot;/favicon.ico&quot;,</span>
+<span class="nc" id="L53">                                &quot;/.well-known/**&quot;,</span>
+<span class="nc" id="L54">                                &quot;/error&quot;</span>
+<span class="nc" id="L55">                        ).permitAll()</span>
+<span class="nc" id="L56">                        .antMatchers(&quot;/api/auth/register&quot;).hasRole(&quot;ADMIN&quot;)</span>
+<span class="nc" id="L57">                        .antMatchers(&quot;/api/**&quot;).authenticated()</span>
+<span class="nc" id="L58">                        .anyRequest().permitAll()</span>
                 )
-<span class="nc" id="L61">                .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
-<span class="nc" id="L62">                .exceptionHandling(ex -&gt; ex</span>
-<span class="nc" id="L63">                        .authenticationEntryPoint((request, response, authException) -&gt; {</span>
-<span class="nc" id="L64">                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
-<span class="nc" id="L65">                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());</span>
-<span class="nc" id="L66">                            response.setContentType(&quot;text/plain;charset=UTF-8&quot;);</span>
-<span class="nc" id="L67">                            response.getWriter().write(&quot;Tu sesión ha expirado o no estás autenticado. Vuelve a iniciar sesión.&quot;);</span>
-<span class="nc" id="L68">                        })</span>
-<span class="nc" id="L69">                        .accessDeniedHandler((request, response, accessDeniedException) -&gt; {</span>
-<span class="nc" id="L70">                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);</span>
-<span class="nc" id="L71">                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());</span>
-<span class="nc" id="L72">                            response.setContentType(&quot;text/plain;charset=UTF-8&quot;);</span>
-<span class="nc" id="L73">                            response.getWriter().write(&quot;No tienes permisos para realizar esta acción.&quot;);</span>
-<span class="nc" id="L74">                        }))</span>
-<span class="nc" id="L75">                .authenticationProvider(authenticationProvider())</span>
-<span class="nc" id="L76">                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);</span>
+<span class="nc" id="L60">                .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
+<span class="nc" id="L61">                .exceptionHandling(ex -&gt; ex</span>
+<span class="nc" id="L62">                        .authenticationEntryPoint((request, response, authException) -&gt; {</span>
+<span class="nc" id="L63">                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
+<span class="nc" id="L64">                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());</span>
+<span class="nc" id="L65">                            response.setContentType(&quot;text/plain;charset=UTF-8&quot;);</span>
+<span class="nc" id="L66">                            response.getWriter().write(&quot;Tu sesión ha expirado o no estás autenticado. Vuelve a iniciar sesión.&quot;);</span>
+<span class="nc" id="L67">                        })</span>
+<span class="nc" id="L68">                        .accessDeniedHandler((request, response, accessDeniedException) -&gt; {</span>
+<span class="nc" id="L69">                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);</span>
+<span class="nc" id="L70">                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());</span>
+<span class="nc" id="L71">                            response.setContentType(&quot;text/plain;charset=UTF-8&quot;);</span>
+<span class="nc" id="L72">                            response.getWriter().write(&quot;No tienes permisos para realizar esta acción.&quot;);</span>
+<span class="nc" id="L73">                        }))</span>
+<span class="nc" id="L74">                .authenticationProvider(authenticationProvider())</span>
+<span class="nc" id="L75">                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);</span>
 
-<span class="nc" id="L78">        return http.build();</span>
+<span class="nc" id="L77">        return http.build();</span>
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-<span class="nc" id="L83">        CorsConfiguration configuration = new CorsConfiguration();</span>
-<span class="nc" id="L84">        configuration.setAllowedOrigins(List.of(</span>
-            &quot;http://localhost:8080&quot;, 
-            &quot;http://127.0.0.1:8080&quot;,
-            &quot;https://localhost:8080&quot;, 
-            &quot;https://127.0.0.1:8080&quot;
+<span class="nc" id="L82">        CorsConfiguration configuration = new CorsConfiguration();</span>
+<span class="nc" id="L83">        configuration.setAllowedOrigins(List.of(</span>
+<span class="nc" id="L84">            &quot;http://localhost:8080&quot;, </span>
+<span class="nc" id="L85">            &quot;http://127.0.0.1:8080&quot;,</span>
+<span class="nc" id="L86">            &quot;https://localhost:8080&quot;, </span>
+<span class="nc" id="L87">            &quot;https://127.0.0.1:8080&quot;</span>
         ));
-<span class="nc" id="L90">        configuration.setAllowedMethods(List.of(&quot;GET&quot;, &quot;POST&quot;, &quot;PUT&quot;, &quot;DELETE&quot;, &quot;OPTIONS&quot;));</span>
-<span class="nc" id="L91">        configuration.setAllowedHeaders(List.of(&quot;*&quot;));</span>
-<span class="nc" id="L92">        configuration.setAllowCredentials(true);</span>
-<span class="nc" id="L93">        configuration.setExposedHeaders(List.of(&quot;Authorization&quot;));</span>
+<span class="nc" id="L89">        configuration.setAllowedMethods(List.of(&quot;GET&quot;, &quot;POST&quot;, &quot;PUT&quot;, &quot;DELETE&quot;, &quot;OPTIONS&quot;));</span>
+<span class="nc" id="L90">        configuration.setAllowedHeaders(List.of(&quot;*&quot;));</span>
+<span class="nc" id="L91">        configuration.setAllowCredentials(true);</span>
+<span class="nc" id="L92">        configuration.setExposedHeaders(List.of(&quot;Authorization&quot;));</span>
         
-<span class="nc" id="L95">        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
-<span class="nc" id="L96">        source.registerCorsConfiguration(&quot;/**&quot;, configuration);</span>
-<span class="nc" id="L97">        return source;</span>
+<span class="nc" id="L94">        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
+<span class="nc" id="L95">        source.registerCorsConfiguration(&quot;/**&quot;, configuration);</span>
+<span class="nc" id="L96">        return source;</span>
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-<span class="nc" id="L102">        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();</span>
-<span class="nc" id="L103">        authProvider.setUserDetailsService(userDetailsService);</span>
-<span class="nc" id="L104">        authProvider.setPasswordEncoder(passwordEncoder());</span>
-<span class="nc" id="L105">        return authProvider;</span>
+<span class="nc" id="L101">        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();</span>
+<span class="nc" id="L102">        authProvider.setUserDetailsService(userDetailsService);</span>
+<span class="nc" id="L103">        authProvider.setPasswordEncoder(passwordEncoder());</span>
+<span class="nc" id="L104">        return authProvider;</span>
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-<span class="nc" id="L110">        return config.getAuthenticationManager();</span>
+<span class="nc" id="L109">        return config.getAuthenticationManager();</span>
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-<span class="nc" id="L115">        return org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance();</span>
+<span class="nc" id="L114">        return new CompatiblePasswordEncoder();</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

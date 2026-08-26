@@ -146151,8 +146151,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_88, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_88, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_88)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146183,8 +146184,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_88, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_88, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_88)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146215,8 +146217,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_88, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_88, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_88)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146247,8 +146250,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_88, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_88, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_88)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146284,8 +146288,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_89, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_89, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_89)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146316,8 +146321,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_89, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_89, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_89)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146348,8 +146354,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_89, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_89, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_89)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146380,8 +146387,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_89, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_89, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_89)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146417,8 +146425,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_110, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_110, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_110)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146449,8 +146458,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_110, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_110, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_110)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146481,8 +146491,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_110, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_110, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_110)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146513,8 +146524,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_110, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_110, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_110)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146550,8 +146562,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_111, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_111, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_111)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146582,8 +146595,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_111, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_111, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_111)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146614,8 +146628,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_111, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_111, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_111)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146646,8 +146661,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_111, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_111, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_111)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146683,8 +146699,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_112, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_112, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_112)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146715,8 +146732,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_112, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_112, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_112)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146747,8 +146765,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_112, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_112, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_112)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146779,8 +146798,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_112, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_112, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_112)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146816,8 +146836,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_113, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_113, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_113)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146848,8 +146869,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_113, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_113, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_113)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146880,8 +146902,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_113, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_113, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_113)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146912,8 +146935,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_113, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_113, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_113)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146949,8 +146973,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_114, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_114, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_114)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -146981,8 +147006,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_114, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_114, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_114)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147013,8 +147039,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_114, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_114, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_114)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147045,8 +147072,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_114, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_114, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_114)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147082,8 +147110,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_115, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_115, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_115)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147114,8 +147143,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_115, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_115, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_115)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147146,8 +147176,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_115, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_115, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_115)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147183,8 +147214,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_116, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_116, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_116)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147215,8 +147247,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_116, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_116, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_116)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147247,8 +147280,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_116, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_116, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_116)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147279,8 +147313,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_116, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_116, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_116)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147316,8 +147351,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_90, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_90, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_90)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147348,8 +147384,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_90, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_90, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_90)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147380,8 +147417,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_90, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_90, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_90)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147417,8 +147455,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_117, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_117, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_117)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147449,8 +147488,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_117, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_117, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_117)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147481,8 +147521,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_117, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_117, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_117)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147513,8 +147554,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_117, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_117, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_117)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147550,8 +147592,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_91, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_91, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_91)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147582,8 +147625,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_91, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_91, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_91)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147614,8 +147658,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_91, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_91, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_91)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147646,8 +147691,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_91, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_91, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_91)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147683,8 +147729,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_118, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_118, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_118)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147715,8 +147762,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_118, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_118, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_118)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147747,8 +147795,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_118, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_118, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_118)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147779,8 +147828,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_118, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_118, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_118)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147816,8 +147866,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_92, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_92, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_92)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147848,8 +147899,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_92, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_92, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_92)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147880,8 +147932,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_92, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_92, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_92)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147912,8 +147965,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_92, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_92, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_92)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147949,8 +148003,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_119, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_119, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_119)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -147981,8 +148036,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_119, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_119, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_119)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148013,8 +148069,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_119, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_119, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_119)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148045,8 +148102,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_119, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_119, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_119)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148082,8 +148140,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_93, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_93, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_93)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148114,8 +148173,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_93, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_93, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_93)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148146,8 +148206,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_93, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_93, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_93)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148183,8 +148244,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_94, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_94, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_94)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148215,8 +148277,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_94, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_94, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_94)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148247,8 +148310,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_94, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_94, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_94)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148279,8 +148343,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_94, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_94, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_94)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148316,8 +148381,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_95, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_95, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_95)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148348,8 +148414,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_95, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_95, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_95)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148380,8 +148447,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_95, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_95, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_95)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148417,8 +148485,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_96, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_96, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_96)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148449,8 +148518,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_96, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_96, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_96)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148481,8 +148551,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_96, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_96, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_96)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148513,8 +148584,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_96, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_96, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_96)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148550,8 +148622,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_97, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_97, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_97)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148582,8 +148655,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_97, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_97, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_97)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148614,8 +148688,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_97, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_97, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_97)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148646,8 +148721,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_97, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_97, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_97)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148683,8 +148759,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_10, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_10, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_10)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148715,8 +148792,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_10, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_10, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_10)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148747,8 +148825,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_10, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_10, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_10)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148784,8 +148863,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_98, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_98, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_98)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148816,8 +148896,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_98, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_98, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_98)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148848,8 +148929,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_98, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_98, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_98)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148880,8 +148962,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_98, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_98, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_98)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148917,8 +149000,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_11, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_11, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_11)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148949,8 +149033,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_11, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_11, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_11)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -148981,8 +149066,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_11, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_11, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_11)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149018,8 +149104,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_99, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_99, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_99)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149050,8 +149137,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_99, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_99, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_99)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149082,8 +149170,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_99, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_99, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_99)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149114,8 +149203,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_99, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_99, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_99)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149151,8 +149241,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_12, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_12, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_12)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149183,8 +149274,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_12, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_12, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_12)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149215,8 +149307,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_12, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_12, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_12)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149247,8 +149340,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_12, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_12, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_12)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149284,8 +149378,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_13, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_13, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_13)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149316,8 +149411,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_13, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_13, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_13)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149348,8 +149444,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_13, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_13, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_13)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149385,8 +149482,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_14, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_14, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_14)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149417,8 +149515,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_14, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_14, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_14)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149449,8 +149548,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_14, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_14, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_14)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149486,8 +149586,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_15, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_15, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_15)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149518,8 +149619,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_15, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_15, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_15)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149550,8 +149652,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_15, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_15, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_15)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149582,8 +149685,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_15, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_15, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_15)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149619,8 +149723,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_16, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_16, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_16)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149651,8 +149756,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_16, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_16, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_16)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149683,8 +149789,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_16, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_16, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_16)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149720,8 +149827,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_17, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_17, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_17)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149752,8 +149860,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_17, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_17, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_17)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149784,8 +149893,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_17, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_17, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_17)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149821,8 +149931,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_18, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_18, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_18)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149853,8 +149964,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_18, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_18, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_18)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149885,8 +149997,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_18, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_18, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_18)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149917,8 +150030,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_18, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_18, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_18)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149954,8 +150068,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_19, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_19, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_19)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -149987,8 +150102,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_19, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_19, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_19)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150019,8 +150135,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_19, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_19, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_19)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150056,8 +150173,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_120, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_120, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_120)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150088,8 +150206,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_120, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_120, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_120)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150120,8 +150239,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_120, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_120, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_120)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150157,8 +150277,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_121, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_121, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_121)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150189,8 +150310,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_121, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_121, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_121)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150221,8 +150343,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_121, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_121, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_121)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150258,8 +150381,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_1, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_1, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_1)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150290,8 +150414,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_1, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_1, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_1)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150322,8 +150447,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_1, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_1, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_1)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150359,8 +150485,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_122, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_122, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_122)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150391,8 +150518,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_122, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_122, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_122)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150423,8 +150551,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_122, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_122, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_122)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150460,8 +150589,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_2, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_2, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_2)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150492,8 +150622,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_2, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_2, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_2)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150524,8 +150655,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_2, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_2, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_2)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150561,8 +150693,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_123, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_123, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_123)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150598,8 +150731,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_3, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_3, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_3)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150630,8 +150764,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_3, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_3, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_3)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150662,8 +150797,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_3, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_3, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_3)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150694,8 +150830,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_3, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_3, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_3)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150731,8 +150868,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_124, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_124, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_124)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150768,8 +150906,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_4, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_4, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_4)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150800,8 +150939,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_4, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_4, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_4)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150832,8 +150972,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_4, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_4, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_4)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150869,8 +151010,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_125, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_125, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_125)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150906,8 +151048,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_5, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_5, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_5)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150938,8 +151081,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_5, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_5, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_5)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -150970,8 +151114,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_5, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_5, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_5)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151007,8 +151152,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_126, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_126, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_126)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151044,8 +151190,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_6, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_6, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_6)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151076,8 +151223,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_6, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_6, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_6)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151108,8 +151256,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_6, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_6, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_6)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151140,8 +151289,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_6, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_6, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_6)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151177,8 +151327,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_127, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_127, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_127)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151209,8 +151360,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_127, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_127, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_127)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151241,8 +151393,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_127, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_127, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_127)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151273,8 +151426,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_127, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_127, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_127)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151310,8 +151464,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_7, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_7, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_7)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151342,8 +151497,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_7, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_7, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_7)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151374,8 +151530,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_7, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_7, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_7)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151406,8 +151563,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_7, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_7, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_7)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151443,8 +151601,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_128, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_128, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_128)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151475,8 +151634,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_128, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_128, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_128)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151507,8 +151667,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_128, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_128, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_128)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151544,8 +151705,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_8, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_8, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_8)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151576,8 +151738,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_8, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_8, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_8)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151608,8 +151771,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_8, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_8, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_8)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151645,8 +151809,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_129, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_129, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_129)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151677,8 +151842,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_129, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_129, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_129)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151709,8 +151875,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_129, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_129, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_129)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151741,8 +151908,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_129, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_129, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_129)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151778,8 +151946,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_9, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_9, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_9)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151810,8 +151979,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_9, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_9, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_9)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151842,8 +152012,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_9, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_9, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_9)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151874,8 +152045,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_9, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_9, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_9)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151911,8 +152083,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_20, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_20, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_20)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151943,8 +152116,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_20, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_20, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_20)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -151975,8 +152149,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_20, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_20, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_20)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152012,8 +152187,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_21, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_21, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_21)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152044,8 +152220,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_21, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_21, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_21)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152076,8 +152253,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_21, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_21, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_21)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152108,8 +152286,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_21, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_21, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_21)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152145,8 +152324,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_22, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_22, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_22)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152177,8 +152357,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_22, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_22, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_22)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152209,8 +152390,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_22, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_22, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_22)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152246,8 +152428,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_23, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_23, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_23)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152278,8 +152461,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_23, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_23, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_23)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152310,8 +152494,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_23, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_23, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_23)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152347,8 +152532,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_24, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_24, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_24)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152379,8 +152565,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_24, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_24, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_24)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152411,8 +152598,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_24, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_24, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_24)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152448,8 +152636,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_25, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_25, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_25)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152480,8 +152669,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_25, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_25, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_25)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152512,8 +152702,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_25, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_25, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_25)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152544,8 +152735,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_25, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_25, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_25)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152581,8 +152773,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_26, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_26, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_26)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152613,8 +152806,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_26, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_26, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_26)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152650,8 +152844,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_27, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_27, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_27)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152682,8 +152877,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_27, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_27, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_27)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152714,8 +152910,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_27, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_27, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_27)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152746,8 +152943,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_27, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_27, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_27)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152783,8 +152981,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_28, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_28, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_28)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152815,8 +153014,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_28, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_28, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_28)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152847,8 +153047,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_28, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_28, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_28)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152879,8 +153080,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_28, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_28, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_28)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152916,8 +153118,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_29, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_29, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_29)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152948,8 +153151,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_29, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_29, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_29)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -152985,8 +153189,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_130, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_130, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_130)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153017,8 +153222,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_130, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_130, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_130)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153049,8 +153255,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_130, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_130, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_130)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153081,8 +153288,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_130, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_130, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_130)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153118,8 +153326,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_131, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_131, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_131)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153150,8 +153359,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_131, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_131, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_131)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153182,8 +153392,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_131, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_131, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_131)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153214,8 +153425,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_131, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_131, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_131)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153251,8 +153463,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_132, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_132, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_132)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153283,8 +153496,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_132, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_132, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_132)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153315,8 +153529,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_132, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_132, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_132)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153347,8 +153562,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_132, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_132, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_132)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153384,8 +153600,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_133, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_133, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_133)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153416,8 +153633,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_133, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_133, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_133)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153448,8 +153666,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_133, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_133, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_133)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153480,8 +153699,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_133, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_133, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_133)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153517,8 +153737,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_134, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_134, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_134)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153549,8 +153770,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_134, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_134, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_134)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153581,8 +153803,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_134, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_134, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_134)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153613,8 +153836,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_134, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_134, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_134)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153650,8 +153874,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_135, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_135, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_135)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153682,8 +153907,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_135, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_135, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_135)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153714,8 +153940,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_135, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_135, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_135)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153746,8 +153973,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_135, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_135, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_135)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153783,8 +154011,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_136, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_136, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_136)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153815,8 +154044,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_136, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_136, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_136)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153847,8 +154077,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_136, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_136, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_136)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153879,8 +154110,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_136, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_136, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_136)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153916,8 +154148,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_137, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_137, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_137)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153948,8 +154181,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_137, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_137, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_137)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -153980,8 +154214,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_137, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_137, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_137)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154012,8 +154247,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_137, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_137, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_137)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154049,8 +154285,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_138, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_138, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_138)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154081,8 +154318,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_138, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_138, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_138)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154113,8 +154351,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_138, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_138, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_138)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154145,8 +154384,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_138, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_138, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_138)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154182,8 +154422,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_139, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_139, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_139)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154214,8 +154455,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_139, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_139, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_139)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154246,8 +154488,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_139, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_139, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_139)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154278,8 +154521,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_139, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_139, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_139)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154315,8 +154559,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_30, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_30, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_30)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154347,8 +154592,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_30, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_30, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_30)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154379,8 +154625,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_30, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_30, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_30)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154411,8 +154658,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_30, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_30, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_30)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154448,8 +154696,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_31, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_31, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_31)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154480,8 +154729,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_31, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_31, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_31)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154512,8 +154762,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_31, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_31, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_31)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154549,8 +154800,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_32, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_32, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_32)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154581,8 +154833,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_32, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_32, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_32)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154613,8 +154866,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_32, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_32, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_32)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154650,8 +154904,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_33, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_33, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_33)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154682,8 +154937,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_33, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_33, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_33)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154714,8 +154970,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_33, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_33, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_33)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154746,8 +155003,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_33, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_33, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_33)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154783,8 +155041,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_34, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_34, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_34)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154815,8 +155074,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_34, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_34, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_34)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154847,8 +155107,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_34, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_34, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_34)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154879,8 +155140,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_34, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_34, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_34)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154916,8 +155178,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_35, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_35, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_35)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154948,8 +155211,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_35, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_35, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_35)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -154980,8 +155244,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_35, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_35, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_35)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155017,8 +155282,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_36, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_36, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_36)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155049,8 +155315,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_36, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_36, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_36)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155081,8 +155348,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_36, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_36, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_36)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155113,8 +155381,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_36, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_36, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_36)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155150,8 +155419,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_37, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_37, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_37)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155182,8 +155452,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_37, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_37, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_37)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155214,8 +155485,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_37, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_37, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_37)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155246,8 +155518,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_37, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_37, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_37)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155283,8 +155556,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_38, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_38, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_38)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155315,8 +155589,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_38, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_38, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_38)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155347,8 +155622,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_38, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_38, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_38)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155384,8 +155660,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_39, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_39, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_39)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155416,8 +155693,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_39, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_39, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_39)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155448,8 +155726,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_39, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_39, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_39)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155480,8 +155759,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_39, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_39, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_39)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155517,8 +155797,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_140, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_140, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_140)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155549,8 +155830,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_140, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_140, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_140)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155581,8 +155863,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_140, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_140, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_140)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155613,8 +155896,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_140, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_140, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_140)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155650,8 +155934,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_141, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_141, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_141)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155682,8 +155967,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_141, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_141, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_141)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155714,8 +156000,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_141, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_141, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_141)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155746,8 +156033,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_141, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_141, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_141)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155783,8 +156071,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_142, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_142, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_142)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155815,8 +156104,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_142, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_142, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_142)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155847,8 +156137,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_142, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_142, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_142)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155879,8 +156170,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_142, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_142, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_142)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155916,8 +156208,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_143, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_143, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_143)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155948,8 +156241,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_143, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_143, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_143)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -155980,8 +156274,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_143, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_143, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_143)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156012,8 +156307,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_143, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_143, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_143)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156049,8 +156345,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_144, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_144, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_144)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156081,8 +156378,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_144, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_144, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_144)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156113,8 +156411,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_144, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_144, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_144)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156145,8 +156444,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_144, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_144, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_144)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156182,8 +156482,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_145, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_145, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_145)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156214,8 +156515,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_145, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_145, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_145)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156246,8 +156548,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_145, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_145, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_145)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156278,8 +156581,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_145, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_145, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_145)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156315,8 +156619,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_146, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_146, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_146)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156347,8 +156652,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_146, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_146, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_146)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156379,8 +156685,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_146, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_146, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_146)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156411,8 +156718,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_146, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_146, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_146)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156448,8 +156756,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_147, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_147, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_147)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156480,8 +156789,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_147, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_147, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_147)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156512,8 +156822,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_147, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_147, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_147)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156544,8 +156855,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_147, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_147, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_147)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156581,8 +156893,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_148, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_148, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_148)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156613,8 +156926,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_148, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_148, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_148)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156645,8 +156959,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_148, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_148, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_148)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156682,8 +156997,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_149, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_149, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_149)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156714,8 +157030,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_149, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_149, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_149)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156746,8 +157063,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_149, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_149, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_149)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156778,8 +157096,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_149, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_149, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_149)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156815,8 +157134,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_40, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_40, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_40)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156847,8 +157167,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_40, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_40, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_40)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156879,8 +157200,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_40, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_40, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_40)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156911,8 +157233,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_40, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_40, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_40)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156948,8 +157271,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_41, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_41, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_41)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -156980,8 +157304,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_41, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_41, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_41)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157012,8 +157337,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_41, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_41, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_41)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157044,8 +157370,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_41, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_41, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_41)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157081,8 +157408,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_42, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_42, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_42)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157113,8 +157441,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_42, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_42, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_42)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157145,8 +157474,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_42, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_42, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_42)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157182,8 +157512,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_43, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_43, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_43)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157214,8 +157545,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_43, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_43, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_43)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157246,8 +157578,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_43, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_43, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_43)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157278,8 +157611,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_43, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_43, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_43)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157315,8 +157649,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_44, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_44, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_44)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157347,8 +157682,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_44, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_44, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_44)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157379,8 +157715,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_44, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_44, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_44)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157411,8 +157748,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_44, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_44, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_44)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157448,8 +157786,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_45, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_45, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_45)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157480,8 +157819,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_45, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_45, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_45)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157512,8 +157852,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_45, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_45, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_45)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157549,8 +157890,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_46, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_46, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_46)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157581,8 +157923,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_46, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_46, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_46)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157613,8 +157956,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_46, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_46, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_46)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157645,8 +157989,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_46, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_46, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_46)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157682,8 +158027,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_47, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_47, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_47)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157714,8 +158060,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_47, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_47, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_47)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157746,8 +158093,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_47, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_47, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_47)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157778,8 +158126,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_47, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_47, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_47)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157815,8 +158164,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_48, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_48, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_48)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157847,8 +158197,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_48, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_48, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_48)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157879,8 +158230,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_48, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_48, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_48)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157916,8 +158268,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_49, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_49, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_49)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157948,8 +158301,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_49, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_49, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_49)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -157980,8 +158334,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_49, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_49, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_49)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158017,8 +158372,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_150, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_150, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_150)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158049,8 +158405,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_150, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_150, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_150)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158081,8 +158438,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_150, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_150, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_150)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158113,8 +158471,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_150, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_150, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_150)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158150,8 +158509,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_151, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_151, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_151)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158182,8 +158542,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_151, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_151, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_151)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158214,8 +158575,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_151, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_151, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_151)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158246,8 +158608,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_151, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_151, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_151)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158283,8 +158646,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_152, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_152, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_152)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158315,8 +158679,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_152, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_152, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_152)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158347,8 +158712,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_152, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_152, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_152)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158379,8 +158745,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_152, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_152, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_152)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158416,8 +158783,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_153, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_153, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_153)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158448,8 +158816,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_153, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_153, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_153)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158480,8 +158849,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_153, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_153, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_153)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158512,8 +158882,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_153, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_153, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_153)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158549,8 +158920,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_154, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_154, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_154)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158581,8 +158953,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_154, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_154, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_154)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158613,8 +158986,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_154, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_154, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_154)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158650,8 +159024,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_155, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_155, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_155)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158682,8 +159057,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_155, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_155, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_155)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158714,8 +159090,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_155, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_155, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_155)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158746,8 +159123,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_155, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_155, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_155)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158783,8 +159161,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_156, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_156, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_156)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158815,8 +159194,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_156, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_156, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_156)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158847,8 +159227,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_156, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_156, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_156)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158879,8 +159260,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_156, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_156, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_156)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158916,8 +159298,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_157, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_157, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_157)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158948,8 +159331,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_157, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_157, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_157)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -158980,8 +159364,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_157, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_157, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_157)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159012,8 +159397,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_157, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_157, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_157)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159049,8 +159435,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_158, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_158, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_158)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159081,8 +159468,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_158, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_158, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_158)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159113,8 +159501,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_158, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_158, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_158)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159145,8 +159534,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_158, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_158, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_158)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159182,8 +159572,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_159, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_159, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_159)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159214,8 +159605,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_159, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_159, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_159)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159246,8 +159638,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_159, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_159, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_159)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159278,8 +159671,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_159, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_159, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_159)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159315,8 +159709,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_50, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_50, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_50)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159347,8 +159742,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_50, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_50, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_50)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159379,8 +159775,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_50, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_50, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_50)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159411,8 +159808,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_50, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_50, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_50)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159448,8 +159846,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_51, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_51, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_51)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159480,8 +159879,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_51, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_51, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_51)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159512,8 +159912,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_51, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_51, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_51)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159544,8 +159945,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_51, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_51, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_51)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159581,8 +159983,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_52, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_52, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_52)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159613,8 +160016,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_52, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_52, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_52)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159645,8 +160049,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_52, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_52, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_52)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159677,8 +160082,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_52, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_52, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_52)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159714,8 +160120,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_53, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_53, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_53)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159746,8 +160153,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_53, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_53, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_53)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159778,8 +160186,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_53, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_53, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_53)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159810,8 +160219,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_53, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_53, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_53)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159847,8 +160257,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_54, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_54, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_54)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159879,8 +160290,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_54, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_54, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_54)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159911,8 +160323,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_54, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_54, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_54)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159943,8 +160356,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_54, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_54, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_54)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -159980,8 +160394,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_55, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_55, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_55)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160012,8 +160427,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_55, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_55, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_55)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160044,8 +160460,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_55, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_55, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_55)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160076,8 +160493,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_55, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_55, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_55)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160113,8 +160531,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_56, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_56, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_56)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160145,8 +160564,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_56, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_56, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_56)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160177,8 +160597,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_56, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_56, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_56)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160209,8 +160630,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_56, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_56, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_56)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160246,8 +160668,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_57, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_57, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_57)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160278,8 +160701,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_57, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_57, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_57)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160310,8 +160734,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_57, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_57, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_57)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160347,8 +160772,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_58, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_58, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_58)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160379,8 +160805,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_58, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_58, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_58)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160411,8 +160838,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_58, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_58, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_58)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160443,8 +160871,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_58, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_58, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_58)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160480,8 +160909,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_59, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_59, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_59)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160512,8 +160942,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_59, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_59, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_59)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160544,8 +160975,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_59, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_59, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_59)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160576,8 +161008,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_59, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_59, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_59)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160613,8 +161046,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_160, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_160, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_160)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160645,8 +161079,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_160, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_160, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_160)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160677,8 +161112,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_160, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_160, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_160)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160709,8 +161145,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_160, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_160, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_160)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160746,8 +161183,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_161, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_161, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_161)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160778,8 +161216,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_161, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_161, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_161)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160810,8 +161249,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_161, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_161, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_161)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160842,8 +161282,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_161, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_161, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_161)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160879,8 +161320,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_162, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_162, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_162)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160911,8 +161353,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_162, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_162, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_162)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160943,8 +161386,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_162, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_162, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_162)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -160975,8 +161419,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_162, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_162, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_162)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161012,8 +161457,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_163, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_163, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_163)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161044,8 +161490,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_163, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_163, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_163)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161076,8 +161523,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_163, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_163, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_163)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161113,8 +161561,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_164, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_164, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_164)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161145,8 +161594,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_164, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_164, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_164)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161177,8 +161627,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_164, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_164, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_164)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161209,8 +161660,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_164, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_164, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_164)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161246,8 +161698,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_165, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_165, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_165)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161278,8 +161731,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_165, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_165, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_165)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161310,8 +161764,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_165, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_165, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_165)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161342,8 +161797,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_165, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_165, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_165)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161379,8 +161835,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_166, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_166, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_166)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161411,8 +161868,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_166, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_166, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_166)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161443,8 +161901,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_166, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_166, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_166)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161475,8 +161934,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_166, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_166, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_166)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161512,8 +161972,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_167, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_167, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_167)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161544,8 +162005,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_167, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_167, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_167)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161576,8 +162038,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_167, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_167, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_167)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161608,8 +162071,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_167, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_167, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_167)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161645,8 +162109,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_168, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_168, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_168)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161677,8 +162142,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_168, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_168, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_168)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161709,8 +162175,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_168, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_168, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_168)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161741,8 +162208,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_168, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_168, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_168)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161778,8 +162246,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_169, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_169, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_169)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161810,8 +162279,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_169, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_169, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_169)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161842,8 +162312,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_169, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_169, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_169)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161874,8 +162345,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_169, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_169, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_169)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161911,8 +162383,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_60, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_60, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_60)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161943,8 +162416,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_60, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_60, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_60)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -161975,8 +162449,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_60, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_60, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_60)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162012,8 +162487,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_61, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_61, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_61)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162044,8 +162520,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_61, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_61, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_61)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162076,8 +162553,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_61, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_61, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_61)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162108,8 +162586,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_61, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_61, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_61)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162145,8 +162624,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_62, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_62, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_62)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162177,8 +162657,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_62, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_62, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_62)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162209,8 +162690,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_62, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_62, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_62)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162241,8 +162723,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_62, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_62, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_62)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162278,8 +162761,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_63, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_63, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_63)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162310,8 +162794,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_63, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_63, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_63)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162342,8 +162827,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_63, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_63, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_63)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162374,8 +162860,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_63, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_63, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_63)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162411,8 +162898,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_64, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_64, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_64)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162443,8 +162931,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_64, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_64, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_64)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162475,8 +162964,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_64, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_64, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_64)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162507,8 +162997,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_64, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_64, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_64)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162544,8 +163035,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_65, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_65, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_65)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162576,8 +163068,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_65, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_65, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_65)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162608,8 +163101,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_65, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_65, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_65)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162645,8 +163139,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_66, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_66, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_66)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162677,8 +163172,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_66, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_66, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_66)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162709,8 +163205,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_66, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_66, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_66)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162741,8 +163238,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_66, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_66, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_66)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162778,8 +163276,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_67, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_67, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_67)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162810,8 +163309,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_67, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_67, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_67)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162842,8 +163342,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_67, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_67, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_67)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162879,8 +163380,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_68, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_68, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_68)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162911,8 +163413,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_68, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_68, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_68)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162943,8 +163446,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_68, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_68, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_68)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -162975,8 +163479,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_68, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_68, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_68)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163012,8 +163517,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_69, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_69, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_69)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163044,8 +163550,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_69, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_69, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_69)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163076,8 +163583,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_69, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_69, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_69)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163113,8 +163621,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_170, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_170, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_170)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163145,8 +163654,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_170, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_170, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_170)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163177,8 +163687,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_170, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_170, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_170)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163214,8 +163725,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_171, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_171, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_171)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163246,8 +163758,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_171, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_171, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_171)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163278,8 +163791,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_171, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_171, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_171)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163310,8 +163824,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_171, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_171, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_171)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163347,8 +163862,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_172, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_172, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_172)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163379,8 +163895,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_172, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_172, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_172)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163411,8 +163928,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_172, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_172, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_172)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163443,8 +163961,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_172, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_172, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_172)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163480,8 +163999,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_173, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_173, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_173)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163512,8 +164032,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_173, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_173, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_173)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163544,8 +164065,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_173, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_173, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_173)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163576,8 +164098,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_173, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_173, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_173)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163623,8 +164146,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_70, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_70, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_70)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163655,8 +164179,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_70, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_70, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_70)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163687,8 +164212,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_70, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_70, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_70)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163719,8 +164245,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_70, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_70, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_70)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163756,8 +164283,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_71, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_71, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_71)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163788,8 +164316,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_71, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_71, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_71)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163820,8 +164349,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_71, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_71, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_71)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163852,8 +164382,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_71, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_71, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_71)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163889,8 +164420,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_72, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_72, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_72)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163921,8 +164453,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_72, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_72, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_72)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163953,8 +164486,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_72, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_72, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_72)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -163985,8 +164519,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_72, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_72, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_72)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164022,8 +164557,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_73, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_73, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_73)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164054,8 +164590,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_73, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_73, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_73)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164086,8 +164623,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_73, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_73, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_73)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164118,8 +164656,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_73, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_73, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_73)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164150,8 +164689,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_73, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_73, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_73)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164187,8 +164727,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_74, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_74, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_74)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164219,8 +164760,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_74, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_74, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_74)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164251,8 +164793,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_74, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_74, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_74)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164288,8 +164831,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_75, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_75, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_75)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164320,8 +164864,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_75, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_75, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_75)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164352,8 +164897,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_75, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_75, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_75)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164384,8 +164930,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_75, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_75, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_75)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164421,8 +164968,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_76, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_76, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_76)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164453,8 +165001,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_76, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_76, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_76)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164485,8 +165034,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_76, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_76, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_76)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164517,8 +165067,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_76, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_76, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_76)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164554,8 +165105,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_77, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_77, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_77)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164586,8 +165138,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_77, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_77, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_77)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164618,8 +165171,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_77, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_77, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_77)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164650,8 +165204,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_77, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_77, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_77)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164687,8 +165242,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_78, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_78, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_78)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164719,8 +165275,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_78, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_78, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_78)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164751,8 +165308,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_78, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_78, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_78)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164783,8 +165341,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_78, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_78, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_78)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164820,8 +165379,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_79, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_79, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_79)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164852,8 +165412,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_79, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_79, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_79)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164889,8 +165450,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_100, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_100, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_100)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164921,8 +165483,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_100, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_100, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_100)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164953,8 +165516,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_100, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_100, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_100)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -164990,8 +165554,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_101, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_101, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_101)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165022,8 +165587,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_101, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_101, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_101)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165054,8 +165620,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_101, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_101, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_101)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165086,8 +165653,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_101, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_101, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_101)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165123,8 +165691,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_102, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_102, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_102)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165155,8 +165724,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_102, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_102, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_102)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165187,8 +165757,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_102, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_102, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_102)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165219,8 +165790,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_102, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_102, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_102)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165256,8 +165828,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_103, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_103, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_103)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165288,8 +165861,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_103, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_103, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_103)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165320,8 +165894,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_103, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_103, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_103)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165352,8 +165927,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_103, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_103, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_103)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165389,8 +165965,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_104, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_104, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_104)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165421,8 +165998,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_104, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_104, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_104)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165453,8 +166031,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_104, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_104, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_104)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165485,8 +166064,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_104, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_104, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_104)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165522,8 +166102,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_105, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_105, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_105)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165554,8 +166135,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_105, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_105, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_105)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165586,8 +166168,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_105, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_105, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_105)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165618,8 +166201,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_105, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_105, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_105)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165655,8 +166239,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_106, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_106, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_106)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165688,8 +166273,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_106, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_106, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_106)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165720,8 +166306,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_106, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_106, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_106)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165752,8 +166339,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_106, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_106, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_106)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165789,8 +166377,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_80, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_80, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_80)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165821,8 +166410,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_80, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_80, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_80)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165853,8 +166443,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_80, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_80, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_80)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165890,8 +166481,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_107, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_107, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_107)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165922,8 +166514,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_107, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_107, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_107)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165954,8 +166547,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_107, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_107, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_107)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -165985,8 +166579,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_107, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_107, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_107)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166022,8 +166617,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_81, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_81, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_81)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166054,8 +166650,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_81, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_81, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_81)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166086,8 +166683,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_81, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_81, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_81)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166118,8 +166716,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_81, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_81, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_81)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166155,8 +166754,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_108, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_108, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_108)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166187,8 +166787,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_108, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_108, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_108)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166219,8 +166820,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_108, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_108, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_108)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166251,8 +166853,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_108, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_108, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_108)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166288,8 +166891,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_82, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_82, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_82)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166320,8 +166924,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_82, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_82, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_82)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166352,8 +166957,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_82, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_82, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_82)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166384,8 +166990,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_82, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_82, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_82)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166421,8 +167028,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_109, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_109, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_109)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166453,8 +167061,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_109, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_109, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_109)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166485,8 +167094,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_109, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_109, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_109)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166517,8 +167127,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_109, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_109, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_109)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166554,8 +167165,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_83, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_83, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_83)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166586,8 +167198,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_83, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_83, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_83)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166618,8 +167231,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_83, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_83, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_83)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166655,8 +167269,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_84, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_84, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_84)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166687,8 +167302,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_84, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_84, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_84)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166719,8 +167335,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_84, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_84, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_84)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166751,8 +167368,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_84, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_84, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_84)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166788,8 +167406,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_85, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_85, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_85)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166820,8 +167439,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_85, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_85, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_85)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166852,8 +167472,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_85, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_85, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_85)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166884,8 +167505,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_85, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_85, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_85)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166921,8 +167543,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_86, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_86, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_86)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166953,8 +167576,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_86, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_86, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_86)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -166985,8 +167609,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_86, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_86, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_86)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -167017,8 +167642,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_86, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_86, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_86)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -167054,8 +167680,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_87, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_87, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_87)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -167086,8 +167713,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_87, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_87, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_87)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -167118,8 +167746,9 @@ SELECT IF(@cuestionario_id IS NULL,
     CONCAT('Cuestionario encontrado con ID: ', @cuestionario_id)) AS mensaje;
 
 -- Insertar relación jornada-cuestionario (evitar duplicados)
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id) 
-SELECT @jornada_id_87, @cuestionario_id
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT @jornada_id_87, @cuestionario_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_cuestionarios) t WHERE t.jornada_id = @jornada_id_87)
 WHERE @cuestionario_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_cuestionarios jc
@@ -167156,8 +167785,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_88, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_88, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_88)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167187,8 +167817,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_88, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_88, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_88)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167218,8 +167849,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_88, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_88, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_88)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167249,8 +167881,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_88, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_88, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_88)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167285,8 +167918,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_89, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_89, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_89)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167316,8 +167950,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_89, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_89, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_89)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167347,8 +167982,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_89, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_89, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_89)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167383,8 +168019,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_110, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_110, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_110)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167414,8 +168051,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_110, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_110, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_110)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167450,8 +168088,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_111, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_111, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_111)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167481,8 +168120,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_111, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_111, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_111)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167517,8 +168157,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_112, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_112, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_112)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167548,8 +168189,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_112, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_112, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_112)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167584,8 +168226,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_113, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_113, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_113)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167615,8 +168258,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_113, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_113, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_113)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167646,8 +168290,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_113, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_113, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_113)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167682,8 +168327,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_114, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_114, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_114)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167718,8 +168364,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_115, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_115, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_115)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167754,8 +168401,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_116, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_116, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_116)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167785,8 +168433,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_116, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_116, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_116)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167816,8 +168465,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_116, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_116, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_116)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167852,8 +168502,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_90, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_90, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_90)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167883,8 +168534,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_90, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_90, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_90)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167914,8 +168566,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_90, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_90, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_90)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167950,8 +168603,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_117, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_117, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_117)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -167986,8 +168640,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_91, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_91, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_91)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168017,8 +168672,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_91, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_91, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_91)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168048,8 +168704,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_91, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_91, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_91)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168084,8 +168741,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_118, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_118, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_118)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168115,8 +168773,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_118, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_118, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_118)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168146,8 +168805,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_118, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_118, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_118)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168177,8 +168837,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_118, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_118, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_118)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168213,8 +168874,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_92, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_92, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_92)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168244,8 +168906,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_92, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_92, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_92)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168280,8 +168943,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_119, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_119, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_119)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168311,8 +168975,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_119, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_119, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_119)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168342,8 +169007,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_119, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_119, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_119)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168378,8 +169044,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_93, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_93, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_93)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168409,8 +169076,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_93, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_93, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_93)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168440,8 +169108,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_93, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_93, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_93)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168476,8 +169145,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_94, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_94, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_94)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168507,8 +169177,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_94, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_94, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_94)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168538,8 +169209,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_94, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_94, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_94)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168574,8 +169246,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_95, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_95, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_95)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168605,8 +169278,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_95, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_95, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_95)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168641,8 +169315,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_96, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_96, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_96)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168672,8 +169347,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_96, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_96, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_96)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168708,8 +169384,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_97, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_97, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_97)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168739,8 +169416,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_97, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_97, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_97)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168770,8 +169448,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_97, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_97, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_97)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168806,8 +169485,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_10, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_10, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_10)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168837,8 +169517,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_10, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_10, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_10)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168873,8 +169554,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_98, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_98, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_98)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168904,8 +169586,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_98, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_98, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_98)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168935,8 +169618,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_98, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_98, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_98)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -168966,8 +169650,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_98, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_98, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_98)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169002,8 +169687,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_11, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_11, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_11)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169038,8 +169724,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_99, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_99, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_99)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169069,8 +169756,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_99, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_99, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_99)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169100,8 +169788,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_99, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_99, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_99)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169136,8 +169825,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_12, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_12, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_12)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169167,8 +169857,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_12, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_12, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_12)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169203,8 +169894,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_13, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_13, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_13)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169234,8 +169926,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_13, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_13, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_13)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169265,8 +169958,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_13, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_13, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_13)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169301,8 +169995,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_14, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_14, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_14)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169332,8 +170027,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_14, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_14, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_14)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169363,8 +170059,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_14, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_14, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_14)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169399,8 +170096,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_15, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_15, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_15)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169435,8 +170133,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_16, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_16, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_16)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169466,8 +170165,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_16, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_16, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_16)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169497,8 +170197,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_16, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_16, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_16)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169533,8 +170234,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_17, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_17, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_17)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169564,8 +170266,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_17, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_17, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_17)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169600,8 +170303,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_18, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_18, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_18)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169631,8 +170335,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_18, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_18, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_18)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169667,8 +170372,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_19, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_19, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_19)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169703,8 +170409,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_120, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_120, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_120)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169734,8 +170441,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_120, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_120, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_120)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169765,8 +170473,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_120, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_120, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_120)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169801,8 +170510,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_121, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_121, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_121)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169832,8 +170542,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_121, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_121, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_121)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169868,8 +170579,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_1, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_1, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_1)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169897,8 +170609,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_1, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_1, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_1)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169928,8 +170641,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_1, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_1, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_1)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169964,8 +170678,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_122, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_122, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_122)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -169995,8 +170710,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_122, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_122, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_122)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170031,8 +170747,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_2, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_2, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_2)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170060,8 +170777,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_2, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_2, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_2)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170091,8 +170809,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_2, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_2, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_2)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170127,8 +170846,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_3, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_3, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_3)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170158,8 +170878,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_3, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_3, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_3)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170194,8 +170915,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_4, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_4, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_4)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170225,8 +170947,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_4, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_4, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_4)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170261,8 +170984,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_125, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_125, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_125)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170297,8 +171021,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_5, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_5, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_5)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170328,8 +171053,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_5, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_5, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_5)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170359,8 +171085,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_5, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_5, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_5)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170395,8 +171122,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_126, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_126, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_126)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170431,8 +171159,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_6, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_6, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_6)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170462,8 +171191,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_6, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_6, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_6)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170498,8 +171228,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_127, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_127, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_127)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170529,8 +171260,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_127, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_127, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_127)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170560,8 +171292,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_127, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_127, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_127)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170596,8 +171329,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_7, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_7, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_7)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170627,8 +171361,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_7, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_7, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_7)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170663,8 +171398,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_128, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_128, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_128)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170699,8 +171435,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_8, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_8, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_8)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170730,8 +171467,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_8, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_8, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_8)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170766,8 +171504,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_129, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_129, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_129)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170797,8 +171536,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_129, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_129, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_129)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170828,8 +171568,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_129, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_129, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_129)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170859,8 +171600,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_129, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_129, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_129)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170895,8 +171637,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_9, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_9, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_9)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170931,8 +171674,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_20, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_20, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_20)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170962,8 +171706,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_20, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_20, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_20)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -170998,8 +171743,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_21, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_21, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_21)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171034,8 +171780,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_22, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_22, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_22)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171065,8 +171812,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_22, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_22, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_22)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171101,8 +171849,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_23, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_23, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_23)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171132,8 +171881,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_23, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_23, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_23)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171168,8 +171918,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_24, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_24, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_24)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171199,8 +171950,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_24, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_24, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_24)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171230,8 +171982,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_24, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_24, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_24)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171266,8 +172019,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_25, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_25, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_25)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171297,8 +172051,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_25, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_25, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_25)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171328,8 +172083,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_25, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_25, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_25)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171364,8 +172120,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_26, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_26, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_26)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171395,8 +172152,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_26, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_26, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_26)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171431,8 +172189,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_27, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_27, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_27)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171467,8 +172226,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_28, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_28, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_28)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171498,8 +172258,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_28, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_28, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_28)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171529,8 +172290,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_28, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_28, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_28)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171565,8 +172327,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_130, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_130, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_130)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171596,8 +172359,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_130, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_130, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_130)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171627,8 +172391,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_130, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_130, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_130)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171663,8 +172428,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_131, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_131, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_131)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171694,8 +172460,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_131, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_131, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_131)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171730,8 +172497,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_132, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_132, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_132)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171761,8 +172529,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_132, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_132, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_132)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171792,8 +172561,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_132, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_132, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_132)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171828,8 +172598,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_133, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_133, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_133)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171859,8 +172630,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_133, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_133, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_133)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171890,8 +172662,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_133, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_133, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_133)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171921,8 +172694,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_133, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_133, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_133)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171957,8 +172731,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_134, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_134, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_134)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -171988,8 +172763,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_134, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_134, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_134)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172019,8 +172795,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_134, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_134, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_134)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172055,8 +172832,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_135, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_135, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_135)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172086,8 +172864,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_135, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_135, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_135)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172117,8 +172896,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_135, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_135, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_135)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172148,8 +172928,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_135, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_135, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_135)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172184,8 +172965,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_136, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_136, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_136)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172215,8 +172997,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_136, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_136, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_136)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172251,8 +173034,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_137, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_137, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_137)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172287,8 +173071,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_138, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_138, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_138)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172318,8 +173103,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_138, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_138, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_138)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172349,8 +173135,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_138, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_138, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_138)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172385,8 +173172,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_139, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_139, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_139)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172416,8 +173204,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_139, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_139, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_139)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172452,8 +173241,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_30, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_30, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_30)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172483,8 +173273,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_30, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_30, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_30)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172514,8 +173305,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_30, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_30, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_30)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172550,8 +173342,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_31, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_31, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_31)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172586,8 +173379,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_32, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_32, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_32)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172617,8 +173411,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_32, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_32, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_32)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172648,8 +173443,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_32, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_32, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_32)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172684,8 +173480,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_33, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_33, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_33)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172715,8 +173512,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_33, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_33, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_33)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172746,8 +173544,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_33, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_33, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_33)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172782,8 +173581,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_34, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_34, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_34)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172813,8 +173613,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_34, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_34, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_34)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172844,8 +173645,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_34, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_34, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_34)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172880,8 +173682,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_35, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_35, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_35)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172916,8 +173719,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_36, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_36, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_36)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172947,8 +173751,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_36, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_36, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_36)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -172983,8 +173788,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_38, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_38, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_38)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173014,8 +173820,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_38, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_38, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_38)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173045,8 +173852,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_38, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_38, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_38)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173081,8 +173889,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_39, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_39, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_39)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173112,8 +173921,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_39, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_39, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_39)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173148,8 +173958,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_140, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_140, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_140)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173179,8 +173990,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_140, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_140, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_140)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173210,8 +174022,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_140, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_140, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_140)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173241,8 +174054,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_140, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_140, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_140)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173277,8 +174091,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_141, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_141, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_141)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173308,8 +174123,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_141, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_141, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_141)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173339,8 +174155,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_141, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_141, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_141)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173370,8 +174187,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_141, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_141, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_141)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173406,8 +174224,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_142, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_142, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_142)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173437,8 +174256,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_142, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_142, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_142)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173468,8 +174288,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_142, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_142, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_142)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173504,8 +174325,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_143, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_143, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_143)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173535,8 +174357,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_143, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_143, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_143)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173566,8 +174389,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_143, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_143, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_143)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173602,8 +174426,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_144, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_144, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_144)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173633,8 +174458,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_144, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_144, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_144)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173664,8 +174490,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_144, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_144, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_144)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173700,8 +174527,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_145, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_145, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_145)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173731,8 +174559,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_145, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_145, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_145)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173762,8 +174591,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_145, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_145, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_145)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173798,8 +174628,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_146, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_146, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_146)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173829,8 +174660,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_146, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_146, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_146)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173860,8 +174692,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_146, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_146, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_146)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173891,8 +174724,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_146, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_146, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_146)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173927,8 +174761,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_147, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_147, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_147)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173958,8 +174793,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_147, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_147, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_147)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -173994,8 +174830,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_148, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_148, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_148)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174025,8 +174862,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_148, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_148, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_148)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174056,8 +174894,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_148, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_148, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_148)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174092,8 +174931,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_149, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_149, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_149)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174123,8 +174963,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_149, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_149, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_149)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174154,8 +174995,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_149, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_149, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_149)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174185,8 +175027,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_149, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_149, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_149)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174221,8 +175064,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_40, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_40, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_40)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174252,8 +175096,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_40, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_40, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_40)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174283,8 +175128,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_40, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_40, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_40)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174314,8 +175160,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_40, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_40, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_40)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174350,8 +175197,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_41, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_41, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_41)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174381,8 +175229,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_41, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_41, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_41)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174412,8 +175261,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_41, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_41, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_41)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174448,8 +175298,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_42, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_42, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_42)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174479,8 +175330,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_42, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_42, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_42)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174510,8 +175362,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_42, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_42, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_42)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174546,8 +175399,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_43, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_43, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_43)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174577,8 +175431,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_43, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_43, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_43)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174608,8 +175463,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_43, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_43, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_43)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174644,8 +175500,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_44, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_44, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_44)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174680,8 +175537,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_45, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_45, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_45)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174711,8 +175569,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_45, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_45, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_45)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174747,8 +175606,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_46, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_46, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_46)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174778,8 +175638,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_46, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_46, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_46)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174817,8 +175678,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_47, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_47, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_47)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174848,8 +175710,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_47, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_47, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_47)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174879,8 +175742,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_47, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_47, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_47)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174910,8 +175774,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_47, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_47, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_47)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174946,8 +175811,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_49, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_49, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_49)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -174977,8 +175843,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_49, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_49, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_49)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175013,8 +175880,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_150, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_150, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_150)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175044,8 +175912,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_150, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_150, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_150)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175075,8 +175944,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_150, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_150, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_150)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175106,8 +175976,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_150, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_150, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_150)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175142,8 +176013,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_151, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_151, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_151)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175173,8 +176045,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_151, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_151, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_151)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175204,8 +176077,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_151, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_151, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_151)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175240,8 +176114,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_152, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_152, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_152)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175276,8 +176151,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_153, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_153, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_153)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175307,8 +176183,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_153, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_153, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_153)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175343,8 +176220,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_154, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_154, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_154)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175374,8 +176252,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_154, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_154, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_154)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175405,8 +176284,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_154, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_154, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_154)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175441,8 +176321,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_155, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_155, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_155)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175472,8 +176353,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_155, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_155, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_155)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175508,8 +176390,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_156, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_156, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_156)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175539,8 +176422,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_156, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_156, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_156)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175570,8 +176454,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_156, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_156, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_156)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175606,8 +176491,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_157, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_157, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_157)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175637,8 +176523,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_157, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_157, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_157)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175668,8 +176555,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_157, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_157, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_157)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175704,8 +176592,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_158, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_158, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_158)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175735,8 +176624,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_158, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_158, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_158)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175766,8 +176656,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_158, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_158, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_158)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175802,8 +176693,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_159, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_159, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_159)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175833,8 +176725,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_159, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_159, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_159)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175869,8 +176762,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_50, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_50, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_50)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175900,8 +176794,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_50, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_50, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_50)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175931,8 +176826,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_50, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_50, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_50)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -175967,8 +176863,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_51, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_51, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_51)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176001,8 +176898,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_51, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_51, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_51)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176032,8 +176930,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_51, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_51, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_51)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176068,8 +176967,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_52, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_52, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_52)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176099,8 +176999,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_52, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_52, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_52)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176130,8 +177031,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_52, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_52, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_52)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176166,8 +177068,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_53, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_53, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_53)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176197,8 +177100,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_53, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_53, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_53)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176228,8 +177132,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_53, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_53, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_53)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176264,8 +177169,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_54, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_54, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_54)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176300,8 +177206,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_55, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_55, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_55)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176331,8 +177238,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_55, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_55, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_55)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176365,8 +177273,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_55, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_55, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_55)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176401,8 +177310,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_56, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_56, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_56)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176432,8 +177342,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_56, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_56, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_56)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176463,8 +177374,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_56, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_56, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_56)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176499,8 +177411,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_57, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_57, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_57)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176530,8 +177443,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_57, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_57, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_57)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176561,8 +177475,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_57, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_57, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_57)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176597,8 +177512,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_59, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_59, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_59)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176628,8 +177544,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_59, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_59, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_59)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176664,8 +177581,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_160, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_160, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_160)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176695,8 +177613,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_160, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_160, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_160)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176726,8 +177645,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_160, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_160, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_160)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176762,8 +177682,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_161, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_161, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_161)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176793,8 +177714,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_161, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_161, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_161)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176829,8 +177751,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_162, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_162, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_162)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176865,8 +177788,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_163, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_163, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_163)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176896,8 +177820,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_163, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_163, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_163)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176932,8 +177857,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_164, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_164, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_164)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176963,8 +177889,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_164, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_164, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_164)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -176994,8 +177921,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_164, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_164, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_164)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177030,8 +177958,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_165, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_165, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_165)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177061,8 +177990,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_165, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_165, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_165)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177092,8 +178022,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_165, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_165, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_165)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177128,8 +178059,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_166, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_166, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_166)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177159,8 +178091,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_166, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_166, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_166)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177190,8 +178123,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_166, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_166, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_166)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177226,8 +178160,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_167, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_167, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_167)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177257,8 +178192,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_167, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_167, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_167)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177288,8 +178224,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_167, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_167, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_167)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177324,8 +178261,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_168, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_168, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_168)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177355,8 +178293,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_168, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_168, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_168)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177386,8 +178325,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_168, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_168, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_168)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177422,8 +178362,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_169, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_169, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_169)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177453,8 +178394,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_169, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_169, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_169)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177489,8 +178431,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_60, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_60, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_60)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177520,8 +178463,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_60, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_60, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_60)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177551,8 +178495,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_60, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_60, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_60)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177587,8 +178532,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_61, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_61, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_61)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177618,8 +178564,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_61, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_61, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_61)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177654,8 +178601,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_62, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_62, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_62)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177685,8 +178633,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_62, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_62, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_62)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177716,8 +178665,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_62, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_62, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_62)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177752,8 +178702,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_63, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_63, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_63)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177783,8 +178734,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_63, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_63, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_63)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177819,8 +178771,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_64, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_64, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_64)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177850,8 +178803,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_64, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_64, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_64)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177881,8 +178835,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_64, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_64, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_64)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177917,8 +178872,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_65, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_65, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_65)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177953,8 +178909,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_66, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_66, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_66)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -177984,8 +178941,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_66, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_66, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_66)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178016,8 +178974,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_66, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_66, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_66)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178052,8 +179011,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_67, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_67, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_67)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178083,8 +179043,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_67, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_67, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_67)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178119,8 +179080,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_68, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_68, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_68)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178150,8 +179112,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_68, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_68, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_68)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178186,8 +179149,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_69, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_69, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_69)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178217,8 +179181,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_69, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_69, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_69)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178248,8 +179213,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_69, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_69, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_69)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178284,8 +179250,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_170, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_170, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_170)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178315,8 +179282,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_170, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_170, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_170)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178351,8 +179319,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_171, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_171, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_171)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178382,8 +179351,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_171, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_171, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_171)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178418,8 +179388,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_172, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_172, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_172)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178449,8 +179420,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_172, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_172, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_172)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178480,8 +179452,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_172, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_172, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_172)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178511,8 +179484,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_172, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_172, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_172)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178547,8 +179521,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_173, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_173, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_173)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178578,8 +179553,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_173, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_173, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_173)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178614,8 +179590,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_70, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_70, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_70)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178645,8 +179622,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_70, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_70, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_70)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178676,8 +179654,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_70, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_70, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_70)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178712,8 +179691,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_71, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_71, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_71)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178743,8 +179723,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_71, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_71, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_71)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178779,8 +179760,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_72, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_72, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_72)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178815,8 +179797,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_73, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_73, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_73)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178846,8 +179829,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_73, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_73, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_73)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178882,8 +179866,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_74, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_74, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_74)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178918,8 +179903,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_75, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_75, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_75)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178949,8 +179935,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_75, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_75, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_75)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -178980,8 +179967,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_75, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_75, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_75)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179011,8 +179999,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_75, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_75, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_75)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179047,8 +180036,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_76, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_76, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_76)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179078,8 +180068,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_76, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_76, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_76)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179109,8 +180100,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_76, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_76, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_76)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179145,8 +180137,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_77, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_77, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_77)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179176,8 +180169,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_77, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_77, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_77)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179207,8 +180201,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_77, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_77, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_77)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179243,8 +180238,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_78, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_78, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_78)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179274,8 +180270,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_78, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_78, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_78)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179310,8 +180307,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_79, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_79, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_79)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179341,8 +180339,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_79, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_79, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_79)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179377,8 +180376,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_100, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_100, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_100)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179408,8 +180408,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_100, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_100, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_100)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179444,8 +180445,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_101, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_101, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_101)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179475,8 +180477,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_101, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_101, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_101)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179511,8 +180514,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_102, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_102, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_102)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179542,8 +180546,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_102, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_102, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_102)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179578,8 +180583,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_103, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_103, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_103)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179609,8 +180615,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_103, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_103, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_103)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179645,8 +180652,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_104, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_104, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_104)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179676,8 +180684,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_104, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_104, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_104)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179712,8 +180721,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_105, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_105, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_105)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179743,8 +180753,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_105, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_105, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_105)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179774,8 +180785,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_105, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_105, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_105)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179810,8 +180822,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_106, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_106, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_106)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179841,8 +180854,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_106, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_106, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_106)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179872,8 +180886,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_106, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_106, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_106)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179908,8 +180923,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_80, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_80, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_80)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179944,8 +180960,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_107, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_107, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_107)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -179975,8 +180992,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_107, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_107, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_107)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180006,8 +181024,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_107, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_107, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_107)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180042,8 +181061,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_81, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_81, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_81)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180073,8 +181093,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_81, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_81, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_81)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180104,8 +181125,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_81, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_81, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_81)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180140,8 +181162,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_108, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_108, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_108)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180171,8 +181194,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_108, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_108, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_108)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180202,8 +181226,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_108, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_108, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_108)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180238,8 +181263,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_82, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_82, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_82)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180269,8 +181295,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_82, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_82, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_82)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180305,8 +181332,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_109, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_109, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_109)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180336,8 +181364,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_109, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_109, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_109)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180372,8 +181401,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_83, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_83, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_83)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180403,8 +181433,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_83, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_83, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_83)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180439,8 +181470,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_84, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_84, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_84)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180470,8 +181502,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_84, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_84, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_84)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180506,8 +181539,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_85, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_85, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_85)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180537,8 +181571,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_85, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_85, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_85)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180573,8 +181608,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_86, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_86, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_86)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180604,8 +181640,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_86, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_86, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_86)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180635,8 +181672,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_86, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_86, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_86)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180666,8 +181704,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_86, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_86, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_86)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180702,8 +181741,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_87, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_87, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_87)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco
@@ -180733,8 +181773,9 @@ SELECT IF(@combo_id IS NULL,
     CONCAT('Combo encontrado con ID: ', @combo_id)) AS mensaje;
 
 -- Insertar relación jornada-combo (evitar duplicados)
-INSERT INTO jornadas_combos (jornada_id, combo_id) 
-SELECT @jornada_id_87, @combo_id
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT @jornada_id_87, @combo_id,
+  (SELECT IFNULL(MAX(t.slot), 0) + 1 FROM (SELECT jornada_id, slot FROM jornadas_combos) t WHERE t.jornada_id = @jornada_id_87)
 WHERE @combo_id IS NOT NULL
 AND NOT EXISTS (
   SELECT 1 FROM jornadas_combos jco

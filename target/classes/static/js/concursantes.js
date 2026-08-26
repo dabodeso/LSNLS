@@ -2184,7 +2184,8 @@ if (jornadaFiltroSeleccion) {
     try {
         const jornadaResp = await apiManager.get(`/api/jornadas/${jornadaFiltroSeleccion}`);
         const jornada = (jornadaResp && jornadaResp.datos) ? jornadaResp.datos : jornadaResp;
-        const ids = (jornada && Array.isArray(jornada.cuestionarioIds)) ? jornada.cuestionarioIds : [];
+        const ids = ((jornada && Array.isArray(jornada.cuestionarioIds)) ? jornada.cuestionarioIds : [])
+            .filter(id => id != null);
         const detalles = [];
         for (const id of ids) {
             try { detalles.push(await apiManager.get(`/api/cuestionarios/${id}`)); } catch {}
@@ -2543,7 +2544,8 @@ if (jornadaFiltroSeleccion) {
     try {
         const jornadaResp = await apiManager.get(`/api/jornadas/${jornadaFiltroSeleccion}`);
         const jornada = (jornadaResp && jornadaResp.datos) ? jornadaResp.datos : jornadaResp;
-        const ids = (jornada && Array.isArray(jornada.comboIds)) ? jornada.comboIds : [];
+        const ids = ((jornada && Array.isArray(jornada.comboIds)) ? jornada.comboIds : [])
+            .filter(id => id != null);
         const detalles = [];
         for (const id of ids) {
             try { detalles.push(await apiManager.get(`/api/combos/${id}`)); } catch {}

@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.entity.Tematica;
 import com.lsnls.entity.Usuario;
 import com.lsnls.service.TematicaService;
@@ -78,7 +80,7 @@ public class TematicaController {
         } catch (Exception e) {
             log.error("Error al crear temática: ", e);
             Map<String, Object> error = new HashMap<>();
-            error.put("error", "Error al crear temática: " + e.getMessage());
+            error.put("error", "Error al crear temática: " + MensajesUsuario.sanitizar(e.getMessage()));
             return ResponseEntity.internalServerError().body(error);
         }
     }
@@ -113,7 +115,7 @@ public class TematicaController {
         } catch (Exception e) {
             log.error("Error al actualizar temática: ", e);
             Map<String, Object> error = new HashMap<>();
-            error.put("error", "Error al actualizar temática: " + e.getMessage());
+            error.put("error", "Error al actualizar temática: " + MensajesUsuario.sanitizar(e.getMessage()));
             return ResponseEntity.internalServerError().body(error);
         }
     }
@@ -136,7 +138,7 @@ public class TematicaController {
         } catch (Exception e) {
             log.error("Error al eliminar temática: ", e);
             Map<String, Object> error = new HashMap<>();
-            error.put("error", "Error al eliminar temática: " + e.getMessage());
+            error.put("error", "Error al eliminar temática: " + MensajesUsuario.sanitizar(e.getMessage()));
             return ResponseEntity.internalServerError().body(error);
         }
     }

@@ -1128,31 +1128,6 @@ class PreguntaControllerTest {
     }
 
     @Test
-    void debugPermisos_noAutenticado_devuelve401() {
-        when(authService.getCurrentUser()).thenReturn(Optional.empty());
-
-        ResponseEntity<Map<String, Object>> response = preguntaController.debugPermisos();
-
-        assertEquals(401, response.getStatusCodeValue());
-    }
-
-    @Test
-    void debugPermisos_ok_devuelve200() {
-        Usuario user = usuario(Usuario.RolUsuario.ROLE_ADMIN);
-        when(authService.getCurrentUser()).thenReturn(Optional.of(user));
-        when(authService.canRead()).thenReturn(true);
-        when(authService.canCreatePregunta()).thenReturn(true);
-        when(authService.canDelete()).thenReturn(true);
-        when(authService.canValidate()).thenReturn(true);
-
-        ResponseEntity<Map<String, Object>> response = preguntaController.debugPermisos();
-
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(user, response.getBody().get("usuario"));
-        assertEquals(true, response.getBody().get("canRead"));
-    }
-
-    @Test
     void buscarPreguntas_okConContenido_devuelve200() {
         Pregunta p = pregunta(1L, Pregunta.EstadoPregunta.borrador);
         Page<Pregunta> page = new PageImpl<>(Collections.singletonList(p));
@@ -1258,27 +1233,6 @@ class PreguntaControllerTest {
     }
 
     @Test
-    void debugNiveles_ok_devuelve200() {
-        when(preguntaService.obtenerEstadisticasNiveles()).thenReturn(Collections.singletonMap("_1LS", 3L));
-
-        ResponseEntity<?> response = preguntaController.debugNiveles();
-
-        assertEquals(200, response.getStatusCodeValue());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        assertTrue(body.containsKey("niveles"));
-    }
-
-    @Test
-    void debugNiveles_excepcion_devuelve500() {
-        when(preguntaService.obtenerEstadisticasNiveles()).thenThrow(new RuntimeException("fail"));
-
-        ResponseEntity<?> response = preguntaController.debugNiveles();
-
-        assertEquals(500, response.getStatusCodeValue());
-    }
-
-    @Test
     void obtenerTematicasPreguntas_ok_devuelve200() {
         when(preguntaRepository.findDistinctTematicas()).thenReturn(Collections.singletonList("HISTORIA"));
 
@@ -1293,38 +1247,6 @@ class PreguntaControllerTest {
         when(preguntaRepository.findDistinctTematicas()).thenThrow(new RuntimeException("fail"));
 
         ResponseEntity<List<String>> response = preguntaController.obtenerTematicasPreguntas();
-
-        assertEquals(500, response.getStatusCodeValue());
-    }
-
-    @Test
-    void debugPregunta_ok_devuelve200() {
-        Pregunta p = pregunta(1L, Pregunta.EstadoPregunta.borrador);
-        p.setEstadoDisponibilidad(Pregunta.EstadoDisponibilidad.disponible);
-        when(preguntaService.obtenerPorId(1L)).thenReturn(Optional.of(p));
-
-        ResponseEntity<?> response = preguntaController.debugPregunta(1L);
-
-        assertEquals(200, response.getStatusCodeValue());
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        assertEquals(1L, body.get("id"));
-    }
-
-    @Test
-    void debugPregunta_noEncontrada_devuelve404() {
-        when(preguntaService.obtenerPorId(9L)).thenReturn(Optional.empty());
-
-        ResponseEntity<?> response = preguntaController.debugPregunta(9L);
-
-        assertEquals(404, response.getStatusCodeValue());
-    }
-
-    @Test
-    void debugPregunta_excepcion_devuelve500() {
-        when(preguntaService.obtenerPorId(1L)).thenThrow(new RuntimeException("fail"));
-
-        ResponseEntity<?> response = preguntaController.debugPregunta(1L);
 
         assertEquals(500, response.getStatusCodeValue());
     }

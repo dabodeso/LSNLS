@@ -273,9 +273,9 @@ public class PreguntaService {
     }
 
     public Pregunta actualizar(Long id, Pregunta pregunta) {
-        System.out.println("🔍 [BACKEND] Iniciando actualización de pregunta ID: " + id);
-        System.out.println("🔍 [BACKEND] Datos recibidos - tematica: " + pregunta.getTematica() + ", verificacion: " + pregunta.getVerificacion());
-        System.out.println("🔍 [BACKEND] notasVerificacion recibidas: '" + pregunta.getNotasVerificacion() + "'");
+        log.debug("🔍 [BACKEND] Iniciando actualización de pregunta ID: " + id);
+        log.debug("🔍 [BACKEND] Datos recibidos - tematica: " + pregunta.getTematica() + ", verificacion: " + pregunta.getVerificacion());
+        log.debug("🔍 [BACKEND] notasVerificacion recibidas: '" + pregunta.getNotasVerificacion() + "'");
         
         if (preguntaRepository.existsById(id)) {
             // Obtener pregunta existente PRIMERO
@@ -284,8 +284,8 @@ public class PreguntaService {
                 return null;
             }
             
-            System.out.println("📥 [BACKEND] Pregunta existente - tematica: " + preguntaExistente.getTematica() + ", verificacion: " + preguntaExistente.getVerificacion());
-            System.out.println("📥 [BACKEND] notasVerificacion existentes: '" + preguntaExistente.getNotasVerificacion() + "'");
+            log.debug("📥 [BACKEND] Pregunta existente - tematica: " + preguntaExistente.getTematica() + ", verificacion: " + preguntaExistente.getVerificacion());
+            log.debug("📥 [BACKEND] notasVerificacion existentes: '" + preguntaExistente.getNotasVerificacion() + "'");
             
             // IMPORTANTE: Solo transformar y actualizar los campos que REALMENTE se enviaron (no son null)
             // Copiar todos los valores existentes al objeto a guardar
@@ -348,7 +348,7 @@ public class PreguntaService {
                 pregunta.getEstado() == Pregunta.EstadoPregunta.verificada && 
                 preguntaExistente.getEstado() != Pregunta.EstadoPregunta.verificada) {
                 
-                System.out.println("🔄 [BACKEND] Estado cambiado a VERIFICADA, actualizando verificacion...");
+                log.debug("🔄 [BACKEND] Estado cambiado a VERIFICADA, actualizando verificacion...");
                 
                 // Obtener el usuario actual del contexto de seguridad
                 String nombreUsuario = null;
@@ -367,21 +367,21 @@ public class PreguntaService {
                     
                     if (verificacionActual == null || verificacionActual.trim().isEmpty()) {
                         pregunta.setVerificacion(nombreUsuario);
-                        System.out.println("🆕 [BACKEND] Nueva verificacion: " + nombreUsuario);
+                        log.debug("🆕 [BACKEND] Nueva verificacion: " + nombreUsuario);
                     } else {
                         if (!verificacionActual.contains(nombreUsuario)) {
                             pregunta.setVerificacion(verificacionActual + ", " + nombreUsuario);
-                            System.out.println("📝 [BACKEND] Verificacion actualizada: " + pregunta.getVerificacion());
+                            log.debug("📝 [BACKEND] Verificacion actualizada: " + pregunta.getVerificacion());
                         } else {
                             pregunta.setVerificacion(verificacionActual);
-                            System.out.println("🔄 [BACKEND] Usuario ya incluido, manteniendo: " + verificacionActual);
+                            log.debug("🔄 [BACKEND] Usuario ya incluido, manteniendo: " + verificacionActual);
                         }
                     }
                 }
             } else {
                 // Si no cambia a verificada, mantener verificacion existente
                 pregunta.setVerificacion(preguntaExistente.getVerificacion());
-                System.out.println("🔒 [BACKEND] Estado no cambia a VERIFICADA, manteniendo verificacion: " + preguntaExistente.getVerificacion());
+                log.debug("🔒 [BACKEND] Estado no cambia a VERIFICADA, manteniendo verificacion: " + preguntaExistente.getVerificacion());
             }
             
             // Validar datos finales
@@ -393,7 +393,7 @@ public class PreguntaService {
             }
             
             Pregunta resultado = preguntaRepository.save(pregunta);
-            System.out.println("💾 [BACKEND] Pregunta guardada - ID: " + resultado.getId() + ", tematica: " + resultado.getTematica() + ", verificacion: " + resultado.getVerificacion());
+            log.debug("💾 [BACKEND] Pregunta guardada - ID: " + resultado.getId() + ", tematica: " + resultado.getTematica() + ", verificacion: " + resultado.getVerificacion());
             return resultado;
         }
         return null;
@@ -414,7 +414,7 @@ public class PreguntaService {
             }
             if (nuevoEstado == EstadoPregunta.aprobada) {
                 pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.disponible);
-                System.out.println("✅ Pregunta ID " + id + " aprobada y marcada como DISPONIBLE");
+                log.debug("✅ Pregunta ID " + id + " aprobada y marcada como DISPONIBLE");
             }
             return preguntaRepository.save(pregunta);
         }).orElse(null);
@@ -471,7 +471,7 @@ public class PreguntaService {
                     verificacionActual = result != null ? result.toString() : null;
                 } catch (Exception e) {
                     // Si hay error, dejar verificacionActual como null
-                    System.out.println("No se pudo obtener el valor actual de verificacion: " + e.getMessage());
+                    log.debug("No se pudo obtener el valor actual de verificacion: " + e.getMessage());
                 }
                 
                 // Construir el nuevo valor de verificacion
@@ -490,7 +490,7 @@ public class PreguntaService {
                 parametros.add(nuevoValorVerificacion);
                 paramIndex++;
                 
-                System.out.println("✅ Actualizando campo verificacion a: " + nuevoValorVerificacion);
+                log.debug("✅ Actualizando campo verificacion a: " + nuevoValorVerificacion);
             }
         }
         
@@ -519,7 +519,7 @@ public class PreguntaService {
         }
         
         if (nuevoEstado == EstadoPregunta.aprobada) {
-            System.out.println("✅ Pregunta ID " + id + " aprobada atómicamente y marcada como DISPONIBLE");
+            log.debug("✅ Pregunta ID " + id + " aprobada atómicamente y marcada como DISPONIBLE");
         }
         
         return true;
@@ -616,7 +616,7 @@ public class PreguntaService {
             // Cambiar el estado de la pregunta a 'usada' si estaba en 'aprobada'
             if (pregunta.getEstado() == EstadoPregunta.aprobada) {
                 pregunta.setEstado(EstadoPregunta.usada);
-                System.out.println("✅ Pregunta ID " + id + " marcada como USADA");
+                log.debug("✅ Pregunta ID " + id + " marcada como USADA");
             }
             preguntaRepository.save(pregunta);
         });
@@ -628,7 +628,7 @@ public class PreguntaService {
             // Cambiar el estado de la pregunta a 'aprobada' si estaba en 'usada'
             if (pregunta.getEstado() == EstadoPregunta.usada) {
                 pregunta.setEstado(EstadoPregunta.aprobada);
-                System.out.println("✅ Pregunta ID " + id + " liberada y marcada como APROBADA");
+                log.debug("✅ Pregunta ID " + id + " liberada y marcada como APROBADA");
             }
             preguntaRepository.save(pregunta);
         });
@@ -695,8 +695,8 @@ public class PreguntaService {
             pregunta.setVersion(dto.getVersion());
         }
         
-        System.out.println("✅ [ACTUALIZAR] Iniciando actualización de pregunta ID: " + id);
-        System.out.println("✅ [ACTUALIZAR] Estado actual: " + pregunta.getEstado() + ", Estado solicitado: " + dto.getEstado());
+        log.debug("✅ [ACTUALIZAR] Iniciando actualización de pregunta ID: " + id);
+        log.debug("✅ [ACTUALIZAR] Estado actual: " + pregunta.getEstado() + ", Estado solicitado: " + dto.getEstado());
         
         // Proteger el campo de autoría - no permitir modificaciones
         if (dto.getCreacionUsuarioId() != null && !dto.getCreacionUsuarioId().equals(pregunta.getCreacionUsuario().getId())) {
@@ -724,10 +724,10 @@ public class PreguntaService {
         if (dto.getEstado() != null) {
             try {
                 EstadoPregunta nuevoEstado = EstadoPregunta.valueOf(dto.getEstado());
-                System.out.println("✅ [ACTUALIZAR] Cambiando estado de " + pregunta.getEstado() + " a " + nuevoEstado);
+                log.debug("✅ [ACTUALIZAR] Cambiando estado de " + pregunta.getEstado() + " a " + nuevoEstado);
                 pregunta.setEstado(nuevoEstado);
             } catch (IllegalArgumentException e) {
-                System.err.println("❌ [ACTUALIZAR] Estado inválido: " + dto.getEstado());
+                log.warn("❌ [ACTUALIZAR] Estado inválido: " + dto.getEstado());
                 throw new IllegalArgumentException("Estado inválido: " + dto.getEstado());
             }
         }
@@ -755,7 +755,7 @@ public class PreguntaService {
             EstadoPregunta.verificada.name().equals(dto.getEstado()) && 
             estadoAnterior != EstadoPregunta.verificada) {
             
-            System.out.println("✅ [ACTUALIZAR] Estado cambiado a VERIFICADA, actualizando verificacion");
+            log.debug("✅ [ACTUALIZAR] Estado cambiado a VERIFICADA, actualizando verificacion");
             
             // Obtener el usuario actual del contexto de seguridad
             String nombreUsuario = null;
@@ -795,7 +795,7 @@ public class PreguntaService {
         }
         
         Pregunta preguntaGuardada = preguntaRepository.save(pregunta);
-        System.out.println("✅ [ACTUALIZAR] Pregunta guardada con éxito. Estado final: " + preguntaGuardada.getEstado());
+        log.debug("✅ [ACTUALIZAR] Pregunta guardada con éxito. Estado final: " + preguntaGuardada.getEstado());
         return preguntaGuardada;
     }
 
@@ -1112,7 +1112,7 @@ public class PreguntaService {
         }
         
         String textoLimpio = texto.trim().toLowerCase();
-        System.out.println("🔍 Buscando apariciones para: " + textoLimpio);
+        log.debug("🔍 Buscando apariciones para: " + textoLimpio);
         
         // Buscar en todas las preguntas (no usar filtro de estado para ser exhaustivo)
         List<Pregunta> todasLasPreguntas = preguntaRepository.findAll();
@@ -1127,7 +1127,7 @@ public class PreguntaService {
             })
             .collect(Collectors.toList());
         
-        System.out.println("✅ Encontradas " + preguntasCoincidentes.size() + " coincidencias");
+        log.debug("✅ Encontradas " + preguntasCoincidentes.size() + " coincidencias");
         
         // Convertir a DTOs para la respuesta
         return preguntasCoincidentes.stream()

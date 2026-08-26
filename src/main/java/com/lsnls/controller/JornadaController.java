@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.dto.ApiResponse;
 import com.lsnls.dto.JornadaDTO;
 import com.lsnls.dto.ReciclajeComboDTO;
@@ -61,7 +63,7 @@ public class JornadaController {
             return ResponseEntity.ok(ApiResponse.exitoso("Jornadas obtenidas exitosamente", jornadas));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al obtener jornadas: " + e.getMessage()));
+                .body(ApiResponse.error("Error al obtener jornadas: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -78,7 +80,7 @@ public class JornadaController {
             }
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error interno al obtener jornada: " + e.getMessage()));
+                .body(ApiResponse.error("Error interno al obtener jornada: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -124,10 +126,10 @@ public class JornadaController {
             
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+                .body(ApiResponse.error("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage())));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error interno al crear jornada: " + e.getMessage()));
+                .body(ApiResponse.error("Error interno al crear jornada: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -144,10 +146,10 @@ public class JornadaController {
                 .body(ApiResponse.error("La jornada ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+                .body(ApiResponse.error("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage())));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al actualizar jornada: " + e.getMessage()));
+                .body(ApiResponse.error("Error al actualizar jornada: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -159,10 +161,10 @@ public class JornadaController {
             return ResponseEntity.ok(ApiResponse.exitoso("Jornada eliminada exitosamente", null));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+                .body(ApiResponse.error("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage())));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al eliminar jornada: " + e.getMessage()));
+                .body(ApiResponse.error("Error al eliminar jornada: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -185,10 +187,10 @@ public class JornadaController {
                 .body(ApiResponse.error("La jornada ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+                .body(ApiResponse.error("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage())));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al cambiar estado: " + e.getMessage()));
+                .body(ApiResponse.error("Error al cambiar estado: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -262,7 +264,7 @@ public class JornadaController {
             return ResponseEntity.ok(ApiResponse.exitoso("Cuestionarios disponibles obtenidos", cuestionarios));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al obtener cuestionarios disponibles: " + e.getMessage()));
+                .body(ApiResponse.error("Error al obtener cuestionarios disponibles: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -274,7 +276,7 @@ public class JornadaController {
             return ResponseEntity.ok(ApiResponse.exitoso("Combos disponibles obtenidos", combos));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al obtener combos disponibles: " + e.getMessage()));
+                .body(ApiResponse.error("Error al obtener combos disponibles: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -300,10 +302,10 @@ public class JornadaController {
                 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+                .body(ApiResponse.error("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage())));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al reutilizar cuestionario: " + e.getMessage()));
+                .body(ApiResponse.error("Error al reutilizar cuestionario: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -318,7 +320,7 @@ public class JornadaController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ApiResponse.error("Error al quitar reutilización: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(ApiResponse.error("Error al quitar reutilización: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -344,10 +346,10 @@ public class JornadaController {
                 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+                .body(ApiResponse.error("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage())));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al reutilizar combo: " + e.getMessage()));
+                .body(ApiResponse.error("Error al reutilizar combo: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -362,7 +364,7 @@ public class JornadaController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(ApiResponse.error("Error al quitar reutilización: " + e.getMessage()));
+            return ResponseEntity.internalServerError().body(ApiResponse.error("Error al quitar reutilización: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -388,10 +390,10 @@ public class JornadaController {
                 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+                .body(ApiResponse.error("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage())));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al reciclar combo: " + e.getMessage()));
+                .body(ApiResponse.error("Error al reciclar combo: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -435,10 +437,10 @@ public class JornadaController {
                 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+                .body(ApiResponse.error("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage())));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al reciclar combo parcialmente: " + e.getMessage()));
+                .body(ApiResponse.error("Error al reciclar combo parcialmente: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -454,7 +456,7 @@ public class JornadaController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al cancelar el reciclaje: " + e.getMessage()));
+                .body(ApiResponse.error("Error al cancelar el reciclaje: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 } 

@@ -46,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         try {
             // Si es una ruta pública, permitir sin token
-<span class="nc bnc" id="L49" title="All 4 branches missed.">            if ((path.startsWith(&quot;/api/auth/&quot;) &amp;&amp; !path.equals(&quot;/api/auth/me&quot;)) || </span>
+<span class="nc bnc" id="L49" title="All 6 branches missed.">            if ((path.startsWith(&quot;/api/auth/&quot;) &amp;&amp; !path.equals(&quot;/api/auth/me&quot;) &amp;&amp; !path.equals(&quot;/api/auth/register&quot;)) ||</span>
 <span class="nc bnc" id="L50" title="All 2 branches missed.">                isPublicResource(path)) {</span>
 <span class="nc" id="L51">                log.debug(&quot;✅ Ruta pública, permitiendo acceso: {}&quot;, path);</span>
 <span class="nc" id="L52">                filterChain.doFilter(request, response);</span>
@@ -92,8 +92,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 <span class="nc bnc" id="L92" title="All 2 branches missed.">                if (jwtService.isTokenValid(jwt, userDetails)) {</span>
 <span class="nc" id="L93">                    log.info(&quot;✅ [JWT FILTER] Token validado correctamente para usuario: {}&quot;, username);</span>
 <span class="nc" id="L94">                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(</span>
-                            userDetails,
-                            null,
+<span class="nc" id="L95">                            userDetails,</span>
+<span class="nc" id="L96">                            null,</span>
 <span class="nc" id="L97">                            userDetails.getAuthorities()</span>
                     );
 <span class="nc" id="L99">                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));</span>
@@ -117,15 +117,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
 <span class="nc bnc" id="L118" title="All 2 branches missed.">                if (!path.startsWith(&quot;/api/&quot;)) {</span>
 <span class="nc" id="L119">                    handleAuthError(response, e.getMessage());</span>
-                } else {
+<span class="nc" id="L120">                } else {</span>
 <span class="nc" id="L121">                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);</span>
 <span class="nc" id="L122">                    response.setContentType(&quot;application/json&quot;);</span>
 <span class="nc" id="L123">                    response.getWriter().write(&quot;{\&quot;error\&quot;:\&quot;Error interno del servidor\&quot;}&quot;);</span>
                 }
 <span class="nc" id="L125">            } catch (IOException ioEx) {</span>
 <span class="nc" id="L126">                throw new ServletException(ioEx);</span>
-<span class="nc" id="L127">            }</span>
-<span class="nc" id="L128">        }</span>
+            }
+        }
 <span class="nc" id="L129">        log.info(&quot;⬅️ [JWT FILTER] Saliendo del filtro para ruta: {} {}&quot;, request.getMethod(), request.getServletPath());</span>
 <span class="nc" id="L130">    }</span>
 

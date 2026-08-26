@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JornadaCuestionarioAsignacion.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.entity</a> &gt; <span class="el_source">JornadaCuestionarioAsignacion.java</span></div><h1>JornadaCuestionarioAsignacion.java</h1><pre class="source lang-java linenums">package com.lsnls.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapsId;
+import javax.persistence.Table;
+import java.io.Serializable;
+import java.util.Objects;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@Entity
+@Table(name = &quot;jornadas_cuestionarios&quot;)
+public class JornadaCuestionarioAsignacion {
+
+    @EmbeddedId
+    private Id id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId(&quot;jornadaId&quot;)
+    @JoinColumn(name = &quot;jornada_id&quot;)
+    @JsonIgnore
+    private Jornada jornada;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @MapsId(&quot;cuestionarioId&quot;)
+    @JoinColumn(name = &quot;cuestionario_id&quot;)
+    @JsonIgnoreProperties({&quot;preguntas&quot;, &quot;creacionUsuario&quot;})
+    private Cuestionario cuestionario;
+
+    @Column(name = &quot;slot&quot;)
+    private Integer slot;
+
+    public void vincular(Jornada jornada, Cuestionario cuestionario, int slot) {
+<span class="fc" id="L47">        this.jornada = jornada;</span>
+<span class="fc" id="L48">        this.cuestionario = cuestionario;</span>
+<span class="fc" id="L49">        this.slot = slot;</span>
+<span class="fc" id="L50">        Id clave = new Id();</span>
+<span class="fc" id="L51">        clave.setJornadaId(jornada.getId());</span>
+<span class="fc" id="L52">        clave.setCuestionarioId(cuestionario.getId());</span>
+<span class="fc" id="L53">        this.id = clave;</span>
+<span class="fc" id="L54">    }</span>
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (this == o) return true;</span>
+<span class="nc bnc" id="L59" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="nc" id="L60">        JornadaCuestionarioAsignacion that = (JornadaCuestionarioAsignacion) o;</span>
+<span class="nc bnc" id="L61" title="All 4 branches missed.">        return id != null &amp;&amp; id.equals(that.id);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        return id != null ? id.hashCode() : 0;</span>
+    }
+
+    @Embeddable
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class Id implements Serializable {
+        @Column(name = &quot;jornada_id&quot;)
+        private Long jornadaId;
+        @Column(name = &quot;cuestionario_id&quot;)
+        private Long cuestionarioId;
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (this == o) return true;</span>
+<span class="nc bnc" id="L82" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="nc" id="L83">            Id that = (Id) o;</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            return Objects.equals(jornadaId, that.jornadaId)</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                    &amp;&amp; Objects.equals(cuestionarioId, that.cuestionarioId);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="fc" id="L90">            return Objects.hash(jornadaId, cuestionarioId);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -969,11 +969,12 @@ VALUES
 (5, 'Jornada Bilbao', CURDATE(), 'Bilbao', 'en_grabacion', 1, NOW(6), 'Grabación en Bilbao', 0);
 
 -- Cuestionarios y combos 1-25 (grabados / asignados a concursante) van a las 5 jornadas
-INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id)
-SELECT CEIL(n / 5), n FROM tmp_seq WHERE n <= 25;
+-- 5 por jornada en huecos 1-5
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+SELECT CEIL(n / 5), n, ((n - 1) % 5) + 1 FROM tmp_seq WHERE n <= 25;
 
-INSERT INTO jornadas_combos (jornada_id, combo_id)
-SELECT CEIL(n / 5), n FROM tmp_seq WHERE n <= 25;
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+SELECT CEIL(n / 5), n, ((n - 1) % 5) + 1 FROM tmp_seq WHERE n <= 25;
 
 -- ------------------------------------------------------------
 -- 25 CONCURSANTES (cuestionario y combo del mismo número)

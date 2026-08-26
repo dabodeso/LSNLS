@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -119,6 +120,20 @@ class JornadaControllerTest {
         ResponseEntity<ApiResponse<JornadaDTO>> response = jornadaController.obtenerPorId(1L);
 
         assertEquals(500, response.getStatusCodeValue());
+    }
+
+    @Test
+    void obtenerPorId_sqlHibernateNoLlegaAlCliente() {
+        when(jornadaService.obtenerPorId(1L)).thenThrow(new RuntimeException(
+                "could not execute statement; nested exception is java.sql.SQLException: Duplicate entry"));
+
+        ResponseEntity<ApiResponse<JornadaDTO>> response = jornadaController.obtenerPorId(1L);
+
+        assertEquals(500, response.getStatusCodeValue());
+        String mensaje = response.getBody().getMensaje();
+        assertFalse(mensaje.toLowerCase().contains("sql"));
+        assertFalse(mensaje.toLowerCase().contains("hibernate"));
+        assertFalse(mensaje.contains("Duplicate entry"));
     }
 
     @Test

@@ -191,6 +191,16 @@ class ComboServiceTest {
     }
 
     @Test
+    void cambiarEstado_noAdminAprobadoTambienExigeCompleto() {
+        Combo c = comboBase();
+        c.setEstado(EstadoCombo.revisar);
+        when(typedQuery.getResultList()).thenReturn(Collections.singletonList(c));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> comboService.cambiarEstado(1L, EstadoCombo.aprobado, false));
+        assertTrue(ex.getMessage().contains("exactamente 3"));
+    }
+
+    @Test
     void agregarPregunta_entidadesFaltantes() {
         when(comboRepository.findById(1L)).thenReturn(Optional.empty());
         when(preguntaRepository.findById(5L)).thenReturn(Optional.empty());

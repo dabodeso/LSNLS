@@ -45,12 +45,12 @@ public class ExcelExportService {
             
             // Crear hoja de CUESTIONARIOS
             Sheet hojaCuestionarios = workbook.createSheet("CUESTIONARIOS");
-            configurarPagina(hojaCuestionarios, "Cuestionarios - " + jornada.getNombre());
+            configurarPagina(hojaCuestionarios, "Cuestionarios - " + jornada.getNombre(), jornada.getNombre());
             crearHojaCuestionarios(hojaCuestionarios, jornada, workbook, opciones);
             
             // Crear hoja de COMBOS
             Sheet hojaCombos = workbook.createSheet("COMBOS");
-            configurarPagina(hojaCombos, "Combos - " + jornada.getNombre());
+            configurarPagina(hojaCombos, "Combos - " + jornada.getNombre(), jornada.getNombre());
             crearHojaCombos(hojaCombos, jornada, workbook, opciones);
             
             // Convertir a bytes
@@ -81,9 +81,9 @@ public class ExcelExportService {
 		sheet.setColumnWidth(5, excelWidth(7.67));   // rec
         
         // Procesar cada cuestionario
-        List<Cuestionario> cuestionarios = jornada.getCuestionarios().stream().collect(java.util.stream.Collectors.toList());
+        List<Cuestionario> cuestionarios = jornada.getCuestionariosPorSlot();
         for (int i = 0; i < 6; i++) {
-            Cuestionario cuestionario = i < cuestionarios.size() ? cuestionarios.get(i) : null;
+            Cuestionario cuestionario = cuestionarios.get(i);
             filaActual = crearTablaCuestionario(sheet, cuestionario, i + 1, filaActual, workbook, opciones);
         }
     }
@@ -363,9 +363,9 @@ public class ExcelExportService {
         filaActual++; // Fila en blanco
         
         // Procesar cada combo
-        List<Combo> combos = jornada.getCombos().stream().collect(java.util.stream.Collectors.toList());
+        List<Combo> combos = jornada.getCombosPorSlot();
         for (int i = 0; i < 6; i++) {
-            Combo combo = i < combos.size() ? combos.get(i) : null;
+            Combo combo = combos.get(i);
             filaActual = crearTablaCombo(sheet, combo, i + 1, filaActual, workbook, opciones);
             filaActual += 2; // Espacio entre combos
         }
@@ -703,7 +703,7 @@ public class ExcelExportService {
         return (int) Math.round(width * 256);
     }
 
-    private void configurarPagina(Sheet sheet, String tituloCabecera) {
+    private void configurarPagina(Sheet sheet, String tituloCabecera, String nombreJornada) {
         PrintSetup ps = sheet.getPrintSetup();
         ps.setLandscape(true);
         sheet.setFitToPage(true);
@@ -717,6 +717,18 @@ public class ExcelExportService {
         Header header = sheet.getHeader();
         header.setCenter(tituloCabecera);
         Footer footer = sheet.getFooter();
+        footer.setCenter(formatearPieJornada(nombreJornada));
         footer.setRight("Página &P de &N");
+    }
+
+    /**
+     * Pie de página de impresión: "Nombre jornada - LSNLS" en 9 pt y gris.
+     * Excel usa códigos en el encabezado/pie: {@code &09} = 9 pt, {@code &K808080} = gris RGB.
+     */
+    private String formatearPieJornada(String nombreJornada) {
+        String nombre = (nombreJornada == null || nombreJornada.trim().isEmpty())
+                ? "Jornada"
+                : nombreJornada.trim().replace("&", "&&");
+        return "&K808080&09" + nombre + " - LSNLS";
     }
 } 

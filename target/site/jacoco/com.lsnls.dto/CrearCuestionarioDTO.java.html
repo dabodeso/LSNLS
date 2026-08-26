@@ -2,50 +2,50 @@
 
 import java.util.List;
 
-<span class="nc" id="L5">public class CrearCuestionarioDTO {</span>
+<span class="fc" id="L5">public class CrearCuestionarioDTO {</span>
     private Long version;
     private List&lt;Long&gt; preguntasNormales;
     private List&lt;PreguntaMultiplicadoraDTO&gt; preguntasMultiplicadoras;
     private String tematica;
     private String notasDireccion;
 
-<span class="nc" id="L12">    public Long getVersion() { return version; }</span>
-<span class="nc" id="L13">    public void setVersion(Long version) { this.version = version; }</span>
-<span class="nc" id="L14">    public List&lt;Long&gt; getPreguntasNormales() { return preguntasNormales; }</span>
-<span class="nc" id="L15">    public void setPreguntasNormales(List&lt;Long&gt; preguntasNormales) { this.preguntasNormales = preguntasNormales; }</span>
-<span class="nc" id="L16">    public List&lt;PreguntaMultiplicadoraDTO&gt; getPreguntasMultiplicadoras() { return preguntasMultiplicadoras; }</span>
-<span class="nc" id="L17">    public void setPreguntasMultiplicadoras(List&lt;PreguntaMultiplicadoraDTO&gt; preguntasMultiplicadoras) { this.preguntasMultiplicadoras = preguntasMultiplicadoras; }</span>
-<span class="nc" id="L18">    public String getTematica() { return tematica; }</span>
-<span class="nc" id="L19">    public void setTematica(String tematica) { this.tematica = tematica; }</span>
-<span class="nc" id="L20">    public String getNotasDireccion() { return notasDireccion; }</span>
-<span class="nc" id="L21">    public void setNotasDireccion(String notasDireccion) { this.notasDireccion = notasDireccion; }</span>
+<span class="fc" id="L12">    public Long getVersion() { return version; }</span>
+<span class="fc" id="L13">    public void setVersion(Long version) { this.version = version; }</span>
+<span class="fc" id="L14">    public List&lt;Long&gt; getPreguntasNormales() { return preguntasNormales; }</span>
+<span class="fc" id="L15">    public void setPreguntasNormales(List&lt;Long&gt; preguntasNormales) { this.preguntasNormales = preguntasNormales; }</span>
+<span class="fc" id="L16">    public List&lt;PreguntaMultiplicadoraDTO&gt; getPreguntasMultiplicadoras() { return preguntasMultiplicadoras; }</span>
+<span class="fc" id="L17">    public void setPreguntasMultiplicadoras(List&lt;PreguntaMultiplicadoraDTO&gt; preguntasMultiplicadoras) { this.preguntasMultiplicadoras = preguntasMultiplicadoras; }</span>
+<span class="fc" id="L18">    public String getTematica() { return tematica; }</span>
+<span class="fc" id="L19">    public void setTematica(String tematica) { this.tematica = tematica; }</span>
+<span class="fc" id="L20">    public String getNotasDireccion() { return notasDireccion; }</span>
+<span class="fc" id="L21">    public void setNotasDireccion(String notasDireccion) { this.notasDireccion = notasDireccion; }</span>
 
-<span class="nc" id="L23">    public static class PreguntaMultiplicadoraDTO {</span>
+<span class="fc" id="L23">    public static class PreguntaMultiplicadoraDTO {</span>
         private Long id;
         private String factor;
-<span class="nc" id="L26">        public Long getId() { return id; }</span>
-<span class="nc" id="L27">        public void setId(Long id) { this.id = id; }</span>
-<span class="nc" id="L28">        public String getFactor() { return factor; }</span>
-<span class="nc" id="L29">        public void setFactor(String factor) { this.factor = factor; }</span>
+<span class="fc" id="L26">        public Long getId() { return id; }</span>
+<span class="fc" id="L27">        public void setId(Long id) { this.id = id; }</span>
+<span class="fc" id="L28">        public String getFactor() { return factor; }</span>
+<span class="fc" id="L29">        public void setFactor(String factor) { this.factor = factor; }</span>
     }
 
     // Utilidad para obtener el slot/hueco por índice y tipo
     public static String getSlotPorIndice(int idx, boolean esMultiplicadora) {
-<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (!esMultiplicadora) {</span>
-<span class="nc bnc" id="L35" title="All 5 branches missed.">            switch (idx) {</span>
-<span class="nc" id="L36">                case 0: return &quot;1LS&quot;;</span>
-<span class="nc" id="L37">                case 1: return &quot;2NLS&quot;;</span>
-<span class="nc" id="L38">                case 2: return &quot;3LS&quot;;</span>
-<span class="nc" id="L39">                case 3: return &quot;4NLS&quot;;</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (!esMultiplicadora) {</span>
+<span class="fc bfc" id="L35" title="All 5 branches covered.">            switch (idx) {</span>
+<span class="fc" id="L36">                case 0: return &quot;1LS&quot;;</span>
+<span class="fc" id="L37">                case 1: return &quot;2NLS&quot;;</span>
+<span class="fc" id="L38">                case 2: return &quot;3LS&quot;;</span>
+<span class="fc" id="L39">                case 3: return &quot;4NLS&quot;;</span>
             }
-        } else {
-<span class="nc bnc" id="L42" title="All 4 branches missed.">            switch (idx) {</span>
-<span class="nc" id="L43">                case 0: return &quot;PM1&quot;;</span>
-<span class="nc" id="L44">                case 1: return &quot;PM2&quot;;</span>
-<span class="nc" id="L45">                case 2: return &quot;PM3&quot;;</span>
+<span class="fc" id="L41">        } else {</span>
+<span class="fc bfc" id="L42" title="All 4 branches covered.">            switch (idx) {</span>
+<span class="fc" id="L43">                case 0: return &quot;PM1&quot;;</span>
+<span class="fc" id="L44">                case 1: return &quot;PM2&quot;;</span>
+<span class="fc" id="L45">                case 2: return &quot;PM3&quot;;</span>
             }
         }
-<span class="nc" id="L48">        return null;</span>
+<span class="fc" id="L48">        return null;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

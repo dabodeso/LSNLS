@@ -50,31 +50,31 @@ public class PreguntaCombo {
 
         @Override
         public boolean equals(Object o) {
-<span class="nc bnc" id="L53" title="All 2 branches missed.">            if (this == o) return true;</span>
-<span class="nc bnc" id="L54" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) return false;</span>
-<span class="nc" id="L55">            PreguntaComboId that = (PreguntaComboId) o;</span>
-<span class="nc bnc" id="L56" title="All 6 branches missed.">            return preguntaId != null &amp;&amp; preguntaId.equals(that.preguntaId) &amp;&amp;</span>
-<span class="nc bnc" id="L57" title="All 2 branches missed.">                   comboId != null &amp;&amp; comboId.equals(that.comboId);</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">            if (this == o) return true;</span>
+<span class="fc bfc" id="L54" title="All 4 branches covered.">            if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L55">            PreguntaComboId that = (PreguntaComboId) o;</span>
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">            return preguntaId != null &amp;&amp; preguntaId.equals(that.preguntaId) &amp;&amp;</span>
+<span class="pc bpc" id="L57" title="2 of 4 branches missed.">                   comboId != null &amp;&amp; comboId.equals(that.comboId);</span>
         }
 
         @Override
         public int hashCode() {
-<span class="nc" id="L62">            return java.util.Objects.hash(preguntaId, comboId);</span>
+<span class="fc" id="L62">            return java.util.Objects.hash(preguntaId, comboId);</span>
         }
     }
 
     // Métodos equals y hashCode que evitan el bucle infinito
     @Override
     public boolean equals(Object o) {
-<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (this == o) return true;</span>
-<span class="nc bnc" id="L70" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
-<span class="nc" id="L71">        PreguntaCombo that = (PreguntaCombo) o;</span>
-<span class="nc bnc" id="L72" title="All 4 branches missed.">        return id != null &amp;&amp; id.equals(that.id);</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L70" title="1 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L71">        PreguntaCombo that = (PreguntaCombo) o;</span>
+<span class="pc bpc" id="L72" title="1 of 4 branches missed.">        return id != null &amp;&amp; id.equals(that.id);</span>
     }
 
     @Override
     public int hashCode() {
-<span class="nc bnc" id="L77" title="All 2 branches missed.">        return id != null ? id.hashCode() : 0;</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        return id != null ? id.hashCode() : 0;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

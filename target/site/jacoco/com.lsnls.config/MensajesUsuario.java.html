@@ -21,10 +21,10 @@ public final class MensajesUsuario {
     public static final String RELACIONADOS = &quot;No se puede completar porque hay datos relacionados o duplicados.&quot;;
 
 <span class="nc" id="L23">    private static final Pattern EMOJIS = Pattern.compile(</span>
-            &quot;[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{FE0F}\\x{200D}]&quot;);
+<span class="nc" id="L24">            &quot;[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{FE0F}\\x{200D}]&quot;);</span>
 
 <span class="nc" id="L26">    private static final Pattern TECNICO = Pattern.compile(</span>
-            &quot;(?i)(failed to fetch|networkerror|load failed|net::err|&quot;
+<span class="nc" id="L27">            &quot;(?i)(failed to fetch|networkerror|load failed|net::err|&quot;</span>
                     + &quot;typeerror|referenceerror|syntaxerror|unexpected token|&quot;
                     + &quot;json\\.parse|is not (a function|defined|iterable)|&quot;
                     + &quot;cannot read propert|sql(state|exception|syntax)|hibernate|jdbc|&quot;
@@ -38,7 +38,7 @@ public final class MensajesUsuario {
                     + &quot;caused by:|exception in thread|\\bat\\s+[a-z0-9_.$]+\\(|&quot;
                     + &quot;row was updated or deleted|was concurrently updated|&quot;
                     + &quot;\\bundefined\\b|\\[object object\\]|revisa la consola|&quot;
-                    + &quot;el body debe ser un json)&quot;);
+<span class="nc" id="L41">                    + &quot;el body debe ser un json)&quot;);</span>
 
     private MensajesUsuario() {
     }

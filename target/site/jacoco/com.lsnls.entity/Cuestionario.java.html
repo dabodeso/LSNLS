@@ -54,7 +54,7 @@ public class Cuestionario {
     // Métodos equals y hashCode que evitan el bucle infinito
     @Override
     public boolean equals(Object o) {
-<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (this == o) return true;</span>
 <span class="pc bpc" id="L58" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
 <span class="fc" id="L59">        Cuestionario that = (Cuestionario) o;</span>
 <span class="pc bpc" id="L60" title="2 of 4 branches missed.">        return id != null &amp;&amp; id.equals(that.id);</span>
@@ -62,18 +62,18 @@ public class Cuestionario {
 
     @Override
     public int hashCode() {
-<span class="nc bnc" id="L65" title="All 2 branches missed.">        return id != null ? id.hashCode() : 0;</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        return id != null ? id.hashCode() : 0;</span>
     }
 
-<span class="nc" id="L68">    public enum NivelCuestionario {</span>
-<span class="nc" id="L69">        _1LS(&quot;1LS&quot;), _2NLS(&quot;2NLS&quot;), _3LS(&quot;3LS&quot;), _4NLS(&quot;4NLS&quot;), </span>
-<span class="nc" id="L70">        PM1(&quot;PM1&quot;), PM2(&quot;PM2&quot;), PM3(&quot;PM3&quot;), NORMAL(&quot;NORMAL&quot;);</span>
+<span class="fc" id="L68">    public enum NivelCuestionario {</span>
+<span class="fc" id="L69">        _1LS(&quot;1LS&quot;), _2NLS(&quot;2NLS&quot;), _3LS(&quot;3LS&quot;), _4NLS(&quot;4NLS&quot;), </span>
+<span class="fc" id="L70">        PM1(&quot;PM1&quot;), PM2(&quot;PM2&quot;), PM3(&quot;PM3&quot;), NORMAL(&quot;NORMAL&quot;);</span>
 
         private final String valor;
 
-<span class="nc" id="L74">        NivelCuestionario(String valor) {</span>
-<span class="nc" id="L75">            this.valor = valor;</span>
-<span class="nc" id="L76">        }</span>
+<span class="fc" id="L74">        NivelCuestionario(String valor) {</span>
+<span class="fc" id="L75">            this.valor = valor;</span>
+<span class="fc" id="L76">        }</span>
 
         public String getValor() {
 <span class="nc" id="L79">            return valor;</span>

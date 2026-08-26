@@ -11,10 +11,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * Servicio de rate limiting para proteger endpoints críticos contra abuso
  */
 @Service
-<span class="nc" id="L14">public class RateLimitingService {</span>
+<span class="fc" id="L14">public class RateLimitingService {</span>
 
     // Configuración de límites por endpoint
-<span class="nc" id="L17">    private static final Map&lt;String, RateLimit&gt; RATE_LIMITS = Map.of(</span>
+<span class="fc" id="L17">    private static final Map&lt;String, RateLimit&gt; RATE_LIMITS = Map.of(</span>
         &quot;AUTH_LOGIN&quot;, new RateLimit(5, 15), // 5 intentos por 15 minutos
         &quot;CREATE_PREGUNTA&quot;, new RateLimit(20, 1), // 20 preguntas por minuto
         &quot;CREATE_CUESTIONARIO&quot;, new RateLimit(10, 5), // 10 cuestionarios por 5 minutos
@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
     );
 
     // Cache de contadores por IP y usuario
-<span class="nc" id="L28">    private final Map&lt;String, RequestCounter&gt; requestCounters = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L28">    private final Map&lt;String, RequestCounter&gt; requestCounters = new ConcurrentHashMap&lt;&gt;();</span>
 
     /**
      * Configuración de un límite de rate
@@ -34,10 +34,10 @@ import java.util.concurrent.ConcurrentHashMap;
         final int maxRequests;
         final int windowMinutes;
 
-<span class="nc" id="L37">        RateLimit(int maxRequests, int windowMinutes) {</span>
-<span class="nc" id="L38">            this.maxRequests = maxRequests;</span>
-<span class="nc" id="L39">            this.windowMinutes = windowMinutes;</span>
-<span class="nc" id="L40">        }</span>
+<span class="fc" id="L37">        RateLimit(int maxRequests, int windowMinutes) {</span>
+<span class="fc" id="L38">            this.maxRequests = maxRequests;</span>
+<span class="fc" id="L39">            this.windowMinutes = windowMinutes;</span>
+<span class="fc" id="L40">        }</span>
     }
 
     /**
@@ -48,37 +48,37 @@ import java.util.concurrent.ConcurrentHashMap;
         private LocalDateTime windowStart;
         private final int windowMinutes;
 
-<span class="nc" id="L51">        RequestCounter(int windowMinutes) {</span>
-<span class="nc" id="L52">            this.count = 0;</span>
-<span class="nc" id="L53">            this.windowStart = LocalDateTime.now();</span>
-<span class="nc" id="L54">            this.windowMinutes = windowMinutes;</span>
-<span class="nc" id="L55">        }</span>
+<span class="fc" id="L51">        RequestCounter(int windowMinutes) {</span>
+<span class="fc" id="L52">            this.count = 0;</span>
+<span class="fc" id="L53">            this.windowStart = LocalDateTime.now();</span>
+<span class="fc" id="L54">            this.windowMinutes = windowMinutes;</span>
+<span class="fc" id="L55">        }</span>
 
         synchronized boolean canProceed(int maxRequests) {
-<span class="nc" id="L58">            LocalDateTime now = LocalDateTime.now();</span>
+<span class="fc" id="L58">            LocalDateTime now = LocalDateTime.now();</span>
             
             // Verificar si la ventana ha expirado
-<span class="nc bnc" id="L61" title="All 2 branches missed.">            if (ChronoUnit.MINUTES.between(windowStart, now) &gt;= windowMinutes) {</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if (ChronoUnit.MINUTES.between(windowStart, now) &gt;= windowMinutes) {</span>
                 // Resetear ventana
-<span class="nc" id="L63">                count = 0;</span>
-<span class="nc" id="L64">                windowStart = now;</span>
+<span class="fc" id="L63">                count = 0;</span>
+<span class="fc" id="L64">                windowStart = now;</span>
             }
             
             // Verificar límite
-<span class="nc bnc" id="L68" title="All 2 branches missed.">            if (count &gt;= maxRequests) {</span>
-<span class="nc" id="L69">                return false;</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">            if (count &gt;= maxRequests) {</span>
+<span class="fc" id="L69">                return false;</span>
             }
             
-<span class="nc" id="L72">            count++;</span>
-<span class="nc" id="L73">            return true;</span>
+<span class="fc" id="L72">            count++;</span>
+<span class="fc" id="L73">            return true;</span>
         }
 
         synchronized int getRemainingRequests(int maxRequests) {
-<span class="nc" id="L77">            return Math.max(0, maxRequests - count);</span>
+<span class="fc" id="L77">            return Math.max(0, maxRequests - count);</span>
         }
 
         synchronized LocalDateTime getResetTime() {
-<span class="nc" id="L81">            return windowStart.plusMinutes(windowMinutes);</span>
+<span class="fc" id="L81">            return windowStart.plusMinutes(windowMinutes);</span>
         }
     }
 
@@ -91,49 +91,49 @@ import java.util.concurrent.ConcurrentHashMap;
         private final LocalDateTime resetTime;
         private final String reason;
 
-<span class="nc" id="L94">        private RateLimitResult(boolean allowed, int remainingRequests, LocalDateTime resetTime, String reason) {</span>
-<span class="nc" id="L95">            this.allowed = allowed;</span>
-<span class="nc" id="L96">            this.remainingRequests = remainingRequests;</span>
-<span class="nc" id="L97">            this.resetTime = resetTime;</span>
-<span class="nc" id="L98">            this.reason = reason;</span>
-<span class="nc" id="L99">        }</span>
+<span class="fc" id="L94">        private RateLimitResult(boolean allowed, int remainingRequests, LocalDateTime resetTime, String reason) {</span>
+<span class="fc" id="L95">            this.allowed = allowed;</span>
+<span class="fc" id="L96">            this.remainingRequests = remainingRequests;</span>
+<span class="fc" id="L97">            this.resetTime = resetTime;</span>
+<span class="fc" id="L98">            this.reason = reason;</span>
+<span class="fc" id="L99">        }</span>
 
         public static RateLimitResult allowed(int remainingRequests, LocalDateTime resetTime) {
-<span class="nc" id="L102">            return new RateLimitResult(true, remainingRequests, resetTime, null);</span>
+<span class="fc" id="L102">            return new RateLimitResult(true, remainingRequests, resetTime, null);</span>
         }
 
         public static RateLimitResult blocked(String reason, LocalDateTime resetTime) {
-<span class="nc" id="L106">            return new RateLimitResult(false, 0, resetTime, reason);</span>
+<span class="fc" id="L106">            return new RateLimitResult(false, 0, resetTime, reason);</span>
         }
 
         // Getters
-<span class="nc" id="L110">        public boolean isAllowed() { return allowed; }</span>
-<span class="nc" id="L111">        public int getRemainingRequests() { return remainingRequests; }</span>
-<span class="nc" id="L112">        public LocalDateTime getResetTime() { return resetTime; }</span>
-<span class="nc" id="L113">        public String getReason() { return reason; }</span>
+<span class="fc" id="L110">        public boolean isAllowed() { return allowed; }</span>
+<span class="fc" id="L111">        public int getRemainingRequests() { return remainingRequests; }</span>
+<span class="fc" id="L112">        public LocalDateTime getResetTime() { return resetTime; }</span>
+<span class="fc" id="L113">        public String getReason() { return reason; }</span>
     }
 
     /**
      * Verifica si una request está permitida bajo el rate limit
      */
     public RateLimitResult checkRateLimit(String endpoint, String clientId) {
-<span class="nc" id="L120">        RateLimit limit = RATE_LIMITS.get(endpoint);</span>
-<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (limit == null) {</span>
+<span class="fc" id="L120">        RateLimit limit = RATE_LIMITS.get(endpoint);</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if (limit == null) {</span>
             // Sin límite configurado, permitir
-<span class="nc" id="L123">            return RateLimitResult.allowed(Integer.MAX_VALUE, LocalDateTime.now().plusHours(1));</span>
+<span class="fc" id="L123">            return RateLimitResult.allowed(Integer.MAX_VALUE, LocalDateTime.now().plusHours(1));</span>
         }
 
-<span class="nc" id="L126">        String key = endpoint + &quot;:&quot; + clientId;</span>
-<span class="nc" id="L127">        RequestCounter counter = requestCounters.computeIfAbsent(key, </span>
-<span class="nc" id="L128">            k -&gt; new RequestCounter(limit.windowMinutes));</span>
+<span class="fc" id="L126">        String key = endpoint + &quot;:&quot; + clientId;</span>
+<span class="fc" id="L127">        RequestCounter counter = requestCounters.computeIfAbsent(key, </span>
+<span class="fc" id="L128">            k -&gt; new RequestCounter(limit.windowMinutes));</span>
 
-<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (counter.canProceed(limit.maxRequests)) {</span>
-<span class="nc" id="L131">            int remaining = counter.getRemainingRequests(limit.maxRequests);</span>
-<span class="nc" id="L132">            return RateLimitResult.allowed(remaining, counter.getResetTime());</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        if (counter.canProceed(limit.maxRequests)) {</span>
+<span class="fc" id="L131">            int remaining = counter.getRemainingRequests(limit.maxRequests);</span>
+<span class="fc" id="L132">            return RateLimitResult.allowed(remaining, counter.getResetTime());</span>
         } else {
-<span class="nc" id="L134">            String reason = String.format(&quot;Rate limit excedido para %s. Máximo %d requests por %d minutos&quot;, </span>
-<span class="nc" id="L135">                endpoint, limit.maxRequests, limit.windowMinutes);</span>
-<span class="nc" id="L136">            return RateLimitResult.blocked(reason, counter.getResetTime());</span>
+<span class="fc" id="L134">            String reason = String.format(&quot;Rate limit excedido para %s. Máximo %d requests por %d minutos&quot;, </span>
+<span class="fc" id="L135">                endpoint, limit.maxRequests, limit.windowMinutes);</span>
+<span class="fc" id="L136">            return RateLimitResult.blocked(reason, counter.getResetTime());</span>
         }
     }
 
@@ -141,21 +141,21 @@ import java.util.concurrent.ConcurrentHashMap;
      * Verifica rate limit por IP
      */
     public RateLimitResult checkByIP(String endpoint, String ipAddress) {
-<span class="nc" id="L144">        return checkRateLimit(endpoint, &quot;IP:&quot; + ipAddress);</span>
+<span class="fc" id="L144">        return checkRateLimit(endpoint, &quot;IP:&quot; + ipAddress);</span>
     }
 
     /**
      * Verifica rate limit por usuario
      */
     public RateLimitResult checkByUser(String endpoint, String username) {
-<span class="nc" id="L151">        return checkRateLimit(endpoint, &quot;USER:&quot; + username);</span>
+<span class="fc" id="L151">        return checkRateLimit(endpoint, &quot;USER:&quot; + username);</span>
     }
 
     /**
      * Verifica rate limit global para el endpoint
      */
     public RateLimitResult checkGlobal(String endpoint) {
-<span class="nc" id="L158">        return checkRateLimit(endpoint, &quot;GLOBAL&quot;);</span>
+<span class="fc" id="L158">        return checkRateLimit(endpoint, &quot;GLOBAL&quot;);</span>
     }
 
     /**
@@ -167,48 +167,48 @@ import java.util.concurrent.ConcurrentHashMap;
      */
     public RateLimitResult checkLoginAttempt(String ipAddress, String username) {
         // Verificar por IP primero (más restrictivo)
-<span class="nc" id="L170">        RateLimitResult ipResult = checkByIP(&quot;AUTH_LOGIN&quot;, ipAddress);</span>
-<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (!ipResult.isAllowed()) {</span>
-<span class="nc" id="L172">            return ipResult;</span>
+<span class="fc" id="L170">        RateLimitResult ipResult = checkByIP(&quot;AUTH_LOGIN&quot;, ipAddress);</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        if (!ipResult.isAllowed()) {</span>
+<span class="fc" id="L172">            return ipResult;</span>
         }
 
         // Verificar por usuario
-<span class="nc" id="L176">        return checkByUser(&quot;AUTH_LOGIN&quot;, username);</span>
+<span class="fc" id="L176">        return checkByUser(&quot;AUTH_LOGIN&quot;, username);</span>
     }
 
     /**
      * Verifica límite para creación de preguntas
      */
     public RateLimitResult checkCreatePregunta(String username) {
-<span class="nc" id="L183">        return checkByUser(&quot;CREATE_PREGUNTA&quot;, username);</span>
+<span class="fc" id="L183">        return checkByUser(&quot;CREATE_PREGUNTA&quot;, username);</span>
     }
 
     /**
      * Verifica límite para creación de cuestionarios
      */
     public RateLimitResult checkCreateCuestionario(String username) {
-<span class="nc" id="L190">        return checkByUser(&quot;CREATE_CUESTIONARIO&quot;, username);</span>
+<span class="fc" id="L190">        return checkByUser(&quot;CREATE_CUESTIONARIO&quot;, username);</span>
     }
 
     /**
      * Verifica límite para creación de combos
      */
     public RateLimitResult checkCreateCombo(String username) {
-<span class="nc" id="L197">        return checkByUser(&quot;CREATE_COMBO&quot;, username);</span>
+<span class="fc" id="L197">        return checkByUser(&quot;CREATE_COMBO&quot;, username);</span>
     }
 
     /**
      * Verifica límite para validaciones del sistema
      */
     public RateLimitResult checkSystemValidation(String username) {
-<span class="nc" id="L204">        return checkByUser(&quot;VALIDATION_SISTEMA&quot;, username);</span>
+<span class="fc" id="L204">        return checkByUser(&quot;VALIDATION_SISTEMA&quot;, username);</span>
     }
 
     /**
      * Verifica límite para exportaciones
      */
     public RateLimitResult checkExport(String username) {
-<span class="nc" id="L211">        return checkByUser(&quot;EXPORT_DATA&quot;, username);</span>
+<span class="fc" id="L211">        return checkByUser(&quot;EXPORT_DATA&quot;, username);</span>
     }
 
     /**
@@ -216,68 +216,68 @@ import java.util.concurrent.ConcurrentHashMap;
      */
     public RateLimitResult checkBulkOperation(String username, String ipAddress) {
         // Verificar por usuario
-<span class="nc" id="L219">        RateLimitResult userResult = checkByUser(&quot;BULK_OPERATIONS&quot;, username);</span>
-<span class="nc bnc" id="L220" title="All 2 branches missed.">        if (!userResult.isAllowed()) {</span>
-<span class="nc" id="L221">            return userResult;</span>
+<span class="fc" id="L219">        RateLimitResult userResult = checkByUser(&quot;BULK_OPERATIONS&quot;, username);</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        if (!userResult.isAllowed()) {</span>
+<span class="fc" id="L221">            return userResult;</span>
         }
 
         // Verificar por IP para prevenir abuso desde múltiples cuentas
-<span class="nc" id="L225">        return checkByIP(&quot;BULK_OPERATIONS&quot;, ipAddress);</span>
+<span class="fc" id="L225">        return checkByIP(&quot;BULK_OPERATIONS&quot;, ipAddress);</span>
     }
 
     /**
      * Permite reset manual de límites (para admins)
      */
     public void resetRateLimit(String endpoint, String clientId) {
-<span class="nc" id="L232">        String key = endpoint + &quot;:&quot; + clientId;</span>
-<span class="nc" id="L233">        requestCounters.remove(key);</span>
-<span class="nc" id="L234">    }</span>
+<span class="fc" id="L232">        String key = endpoint + &quot;:&quot; + clientId;</span>
+<span class="fc" id="L233">        requestCounters.remove(key);</span>
+<span class="fc" id="L234">    }</span>
 
     /**
      * Reset por IP
      */
     public void resetByIP(String endpoint, String ipAddress) {
-<span class="nc" id="L240">        resetRateLimit(endpoint, &quot;IP:&quot; + ipAddress);</span>
-<span class="nc" id="L241">    }</span>
+<span class="fc" id="L240">        resetRateLimit(endpoint, &quot;IP:&quot; + ipAddress);</span>
+<span class="fc" id="L241">    }</span>
 
     /**
      * Reset por usuario
      */
     public void resetByUser(String endpoint, String username) {
-<span class="nc" id="L247">        resetRateLimit(endpoint, &quot;USER:&quot; + username);</span>
-<span class="nc" id="L248">    }</span>
+<span class="fc" id="L247">        resetRateLimit(endpoint, &quot;USER:&quot; + username);</span>
+<span class="fc" id="L248">    }</span>
 
     /**
      * Obtiene estadísticas de rate limiting
      */
     public Map&lt;String, Object&gt; getRateLimitStats() {
-<span class="nc" id="L254">        Map&lt;String, Object&gt; stats = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc" id="L255">        stats.put(&quot;totalActiveCounters&quot;, requestCounters.size());</span>
-<span class="nc" id="L256">        stats.put(&quot;configuredEndpoints&quot;, RATE_LIMITS.keySet());</span>
-<span class="nc" id="L257">        stats.put(&quot;timestamp&quot;, LocalDateTime.now());</span>
+<span class="fc" id="L254">        Map&lt;String, Object&gt; stats = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L255">        stats.put(&quot;totalActiveCounters&quot;, requestCounters.size());</span>
+<span class="fc" id="L256">        stats.put(&quot;configuredEndpoints&quot;, RATE_LIMITS.keySet());</span>
+<span class="fc" id="L257">        stats.put(&quot;timestamp&quot;, LocalDateTime.now());</span>
         
         // Contar contadores activos por endpoint
-<span class="nc" id="L260">        Map&lt;String, Integer&gt; countersByEndpoint = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L261" title="All 2 branches missed.">        for (String key : requestCounters.keySet()) {</span>
-<span class="nc" id="L262">            String endpoint = key.split(&quot;:&quot;)[0];</span>
-<span class="nc" id="L263">            countersByEndpoint.merge(endpoint, 1, Integer::sum);</span>
-<span class="nc" id="L264">        }</span>
-<span class="nc" id="L265">        stats.put(&quot;countersByEndpoint&quot;, countersByEndpoint);</span>
+<span class="fc" id="L260">        Map&lt;String, Integer&gt; countersByEndpoint = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        for (String key : requestCounters.keySet()) {</span>
+<span class="fc" id="L262">            String endpoint = key.split(&quot;:&quot;)[0];</span>
+<span class="fc" id="L263">            countersByEndpoint.merge(endpoint, 1, Integer::sum);</span>
+<span class="fc" id="L264">        }</span>
+<span class="fc" id="L265">        stats.put(&quot;countersByEndpoint&quot;, countersByEndpoint);</span>
         
-<span class="nc" id="L267">        return stats;</span>
+<span class="fc" id="L267">        return stats;</span>
     }
 
     /**
      * Limpieza periódica de contadores expirados
      */
     public void cleanupExpiredCounters() {
-<span class="nc" id="L274">        LocalDateTime now = LocalDateTime.now();</span>
-<span class="nc" id="L275">        requestCounters.entrySet().removeIf(entry -&gt; {</span>
-<span class="nc" id="L276">            RequestCounter counter = entry.getValue();</span>
+<span class="fc" id="L274">        LocalDateTime now = LocalDateTime.now();</span>
+<span class="fc" id="L275">        requestCounters.entrySet().removeIf(entry -&gt; {</span>
+<span class="fc" id="L276">            RequestCounter counter = entry.getValue();</span>
             // Remover contadores que no han sido usados en la última hora
-<span class="nc bnc" id="L278" title="All 2 branches missed.">            return ChronoUnit.MINUTES.between(counter.windowStart, now) &gt; 60;</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">            return ChronoUnit.MINUTES.between(counter.windowStart, now) &gt; 60;</span>
         });
-<span class="nc" id="L280">    }</span>
+<span class="fc" id="L280">    }</span>
 
     /**
      * Configuración dinámica de límites (para casos especiales)
@@ -285,60 +285,60 @@ import java.util.concurrent.ConcurrentHashMap;
     public void setTemporaryLimit(String endpoint, int maxRequests, int windowMinutes, int durationMinutes) {
         // En una implementación completa, esto podría almacenarse temporalmente
         // y aplicarse solo durante el período especificado
-<span class="nc" id="L288">        String tempKey = &quot;TEMP_&quot; + endpoint;</span>
-<span class="nc" id="L289">        RateLimit tempLimit = new RateLimit(maxRequests, windowMinutes);</span>
+<span class="fc" id="L288">        String tempKey = &quot;TEMP_&quot; + endpoint;</span>
+<span class="fc" id="L289">        RateLimit tempLimit = new RateLimit(maxRequests, windowMinutes);</span>
         // Almacenar temporalmente...
-<span class="nc" id="L291">    }</span>
+<span class="fc" id="L291">    }</span>
 
     /**
      * Verificar si una IP está en lista negra temporal
      */
     public boolean isTemporarilyBlocked(String ipAddress) {
         // Verificar si la IP ha excedido múltiples límites recientemente
-<span class="nc" id="L298">        String prefix = &quot;IP:&quot; + ipAddress;</span>
-<span class="nc" id="L299">        long blockedEndpoints = requestCounters.entrySet().stream()</span>
-<span class="nc" id="L300">            .filter(entry -&gt; entry.getKey().contains(prefix))</span>
-<span class="nc" id="L301">            .map(entry -&gt; {</span>
-<span class="nc" id="L302">                String endpoint = entry.getKey().split(&quot;:&quot;)[0];</span>
-<span class="nc" id="L303">                RateLimit limit = RATE_LIMITS.get(endpoint);</span>
-<span class="nc bnc" id="L304" title="All 2 branches missed.">                if (limit != null) {</span>
-<span class="nc bnc" id="L305" title="All 2 branches missed.">                    return !entry.getValue().canProceed(limit.maxRequests);</span>
+<span class="fc" id="L298">        String prefix = &quot;IP:&quot; + ipAddress;</span>
+<span class="fc" id="L299">        long blockedEndpoints = requestCounters.entrySet().stream()</span>
+<span class="fc" id="L300">            .filter(entry -&gt; entry.getKey().contains(prefix))</span>
+<span class="fc" id="L301">            .map(entry -&gt; {</span>
+<span class="fc" id="L302">                String endpoint = entry.getKey().split(&quot;:&quot;)[0];</span>
+<span class="fc" id="L303">                RateLimit limit = RATE_LIMITS.get(endpoint);</span>
+<span class="pc bpc" id="L304" title="1 of 2 branches missed.">                if (limit != null) {</span>
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">                    return !entry.getValue().canProceed(limit.maxRequests);</span>
                 }
 <span class="nc" id="L307">                return false;</span>
             })
-<span class="nc bnc" id="L309" title="All 2 branches missed.">            .mapToInt(blocked -&gt; blocked ? 1 : 0)</span>
-<span class="nc" id="L310">            .sum();</span>
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">            .mapToInt(blocked -&gt; blocked ? 1 : 0)</span>
+<span class="fc" id="L310">            .sum();</span>
             
         // Si está bloqueada en 3 o más endpoints, considerar como bloqueada temporalmente
-<span class="nc bnc" id="L313" title="All 2 branches missed.">        return blockedEndpoints &gt;= 3;</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">        return blockedEndpoints &gt;= 3;</span>
     }
 
     /**
      * Obtener información de rate limit para un cliente específico
      */
     public Map&lt;String, Object&gt; getRateLimitInfo(String endpoint, String clientId) {
-<span class="nc" id="L320">        RateLimit limit = RATE_LIMITS.get(endpoint);</span>
-<span class="nc bnc" id="L321" title="All 2 branches missed.">        if (limit == null) {</span>
-<span class="nc" id="L322">            return Map.of(&quot;error&quot;, &quot;Endpoint no configurado&quot;);</span>
+<span class="fc" id="L320">        RateLimit limit = RATE_LIMITS.get(endpoint);</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">        if (limit == null) {</span>
+<span class="fc" id="L322">            return Map.of(&quot;error&quot;, &quot;Endpoint no configurado&quot;);</span>
         }
 
-<span class="nc" id="L325">        String key = endpoint + &quot;:&quot; + clientId;</span>
-<span class="nc" id="L326">        RequestCounter counter = requestCounters.get(key);</span>
+<span class="fc" id="L325">        String key = endpoint + &quot;:&quot; + clientId;</span>
+<span class="fc" id="L326">        RequestCounter counter = requestCounters.get(key);</span>
         
-<span class="nc" id="L328">        Map&lt;String, Object&gt; info = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc" id="L329">        info.put(&quot;endpoint&quot;, endpoint);</span>
-<span class="nc" id="L330">        info.put(&quot;maxRequests&quot;, limit.maxRequests);</span>
-<span class="nc" id="L331">        info.put(&quot;windowMinutes&quot;, limit.windowMinutes);</span>
+<span class="fc" id="L328">        Map&lt;String, Object&gt; info = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L329">        info.put(&quot;endpoint&quot;, endpoint);</span>
+<span class="fc" id="L330">        info.put(&quot;maxRequests&quot;, limit.maxRequests);</span>
+<span class="fc" id="L331">        info.put(&quot;windowMinutes&quot;, limit.windowMinutes);</span>
         
-<span class="nc bnc" id="L333" title="All 2 branches missed.">        if (counter != null) {</span>
-<span class="nc" id="L334">            info.put(&quot;remainingRequests&quot;, counter.getRemainingRequests(limit.maxRequests));</span>
-<span class="nc" id="L335">            info.put(&quot;resetTime&quot;, counter.getResetTime());</span>
+<span class="fc bfc" id="L333" title="All 2 branches covered.">        if (counter != null) {</span>
+<span class="fc" id="L334">            info.put(&quot;remainingRequests&quot;, counter.getRemainingRequests(limit.maxRequests));</span>
+<span class="fc" id="L335">            info.put(&quot;resetTime&quot;, counter.getResetTime());</span>
         } else {
-<span class="nc" id="L337">            info.put(&quot;remainingRequests&quot;, limit.maxRequests);</span>
-<span class="nc" id="L338">            info.put(&quot;resetTime&quot;, LocalDateTime.now().plusMinutes(limit.windowMinutes));</span>
+<span class="fc" id="L337">            info.put(&quot;remainingRequests&quot;, limit.maxRequests);</span>
+<span class="fc" id="L338">            info.put(&quot;resetTime&quot;, LocalDateTime.now().plusMinutes(limit.windowMinutes));</span>
         }
         
-<span class="nc" id="L341">        return info;</span>
+<span class="fc" id="L341">        return info;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -22,7 +22,8 @@ import java.util.Optional;
  * Registra automáticamente operaciones críticas del sistema
  */
 @Service
-<span class="nc" id="L25">public class AuditService {</span>
+<span class="nc" id="L25">@lombok.extern.slf4j.Slf4j</span>
+<span class="nc" id="L26">public class AuditService {</span>
 
     @Autowired
     private AuditLogRepository auditLogRepository;
@@ -30,7 +31,7 @@ import java.util.Optional;
     @Autowired
     private AuthService authService;
 
-<span class="nc" id="L33">    private final ObjectMapper objectMapper = new ObjectMapper();</span>
+<span class="nc" id="L34">    private final ObjectMapper objectMapper = new ObjectMapper();</span>
 
     /**
      * Registra una operación básica de auditoría de forma asíncrona
@@ -42,30 +43,30 @@ import java.util.Optional;
                             String description,
                             AuditLog.OperationResult result) {
         try {
-<span class="nc" id="L45">            Optional&lt;Usuario&gt; currentUser = authService.getCurrentUser();</span>
-<span class="nc" id="L46">            HttpServletRequest request = getCurrentRequest();</span>
+<span class="nc" id="L46">            Optional&lt;Usuario&gt; currentUser = authService.getCurrentUser();</span>
+<span class="nc" id="L47">            HttpServletRequest request = getCurrentRequest();</span>
             
-<span class="nc" id="L48">            AuditLog log = new AuditLog(</span>
-<span class="nc" id="L49">                currentUser.orElse(null),</span>
-                operationType,
-                entityType,
-                entityId,
-                description,
-                result
+<span class="nc" id="L49">            AuditLog log = new AuditLog(</span>
+<span class="nc" id="L50">                currentUser.orElse(null),</span>
+<span class="nc" id="L51">                operationType,</span>
+<span class="nc" id="L52">                entityType,</span>
+<span class="nc" id="L53">                entityId,</span>
+<span class="nc" id="L54">                description,</span>
+<span class="nc" id="L55">                result</span>
             );
             
-<span class="nc bnc" id="L57" title="All 2 branches missed.">            if (request != null) {</span>
-<span class="nc" id="L58">                log.setIpAddress(getClientIpAddress(request));</span>
-<span class="nc" id="L59">                log.setUserAgent(request.getHeader(&quot;User-Agent&quot;));</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (request != null) {</span>
+<span class="nc" id="L59">                log.setIpAddress(getClientIpAddress(request));</span>
+<span class="nc" id="L60">                log.setUserAgent(request.getHeader(&quot;User-Agent&quot;));</span>
             }
             
-<span class="nc" id="L62">            auditLogRepository.save(log);</span>
+<span class="nc" id="L63">            auditLogRepository.save(log);</span>
             
-<span class="nc" id="L64">        } catch (Exception e) {</span>
+<span class="nc" id="L65">        } catch (Exception e) {</span>
             // No fallar la operación principal por errores de auditoría
-<span class="nc" id="L66">            System.err.println(&quot;Error al registrar auditoría: &quot; + e.getMessage());</span>
-<span class="nc" id="L67">        }</span>
-<span class="nc" id="L68">    }</span>
+<span class="nc" id="L67">            log.warn(&quot;Error al registrar auditoría: &quot; + e.getMessage());</span>
+        }
+<span class="nc" id="L69">    }</span>
 
     /**
      * Registra una operación completa con valores antes y después
@@ -79,31 +80,31 @@ import java.util.Optional;
                                       Object newValues,
                                       AuditLog.OperationResult result) {
         try {
-<span class="nc" id="L82">            Optional&lt;Usuario&gt; currentUser = authService.getCurrentUser();</span>
-<span class="nc" id="L83">            HttpServletRequest request = getCurrentRequest();</span>
+<span class="nc" id="L83">            Optional&lt;Usuario&gt; currentUser = authService.getCurrentUser();</span>
+<span class="nc" id="L84">            HttpServletRequest request = getCurrentRequest();</span>
             
-<span class="nc bnc" id="L85" title="All 2 branches missed.">            String oldValuesJson = oldValues != null ? objectMapper.writeValueAsString(oldValues) : null;</span>
-<span class="nc bnc" id="L86" title="All 2 branches missed.">            String newValuesJson = newValues != null ? objectMapper.writeValueAsString(newValues) : null;</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            String oldValuesJson = oldValues != null ? objectMapper.writeValueAsString(oldValues) : null;</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">            String newValuesJson = newValues != null ? objectMapper.writeValueAsString(newValues) : null;</span>
             
-<span class="nc" id="L88">            AuditLog log = new AuditLog(</span>
-<span class="nc" id="L89">                currentUser.orElse(null),</span>
-                operationType,
-                entityType,
-                entityId,
-                description,
-                oldValuesJson,
-                newValuesJson,
-<span class="nc bnc" id="L96" title="All 2 branches missed.">                request != null ? getClientIpAddress(request) : null,</span>
-<span class="nc bnc" id="L97" title="All 2 branches missed.">                request != null ? request.getHeader(&quot;User-Agent&quot;) : null,</span>
-                result
+<span class="nc" id="L89">            AuditLog log = new AuditLog(</span>
+<span class="nc" id="L90">                currentUser.orElse(null),</span>
+<span class="nc" id="L91">                operationType,</span>
+<span class="nc" id="L92">                entityType,</span>
+<span class="nc" id="L93">                entityId,</span>
+<span class="nc" id="L94">                description,</span>
+<span class="nc" id="L95">                oldValuesJson,</span>
+<span class="nc" id="L96">                newValuesJson,</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                request != null ? getClientIpAddress(request) : null,</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                request != null ? request.getHeader(&quot;User-Agent&quot;) : null,</span>
+<span class="nc" id="L99">                result</span>
             );
             
-<span class="nc" id="L101">            auditLogRepository.save(log);</span>
+<span class="nc" id="L102">            auditLogRepository.save(log);</span>
             
-<span class="nc" id="L103">        } catch (Exception e) {</span>
-<span class="nc" id="L104">            System.err.println(&quot;Error al registrar auditoría con valores: &quot; + e.getMessage());</span>
-<span class="nc" id="L105">        }</span>
-<span class="nc" id="L106">    }</span>
+<span class="nc" id="L104">        } catch (Exception e) {</span>
+<span class="nc" id="L105">            log.warn(&quot;Error al registrar auditoría con valores: &quot; + e.getMessage());</span>
+        }
+<span class="nc" id="L107">    }</span>
 
     /**
      * Registra un evento de seguridad
@@ -111,26 +112,26 @@ import java.util.Optional;
     @Async
     public void logSecurityEvent(String description, String ipAddress, String userAgent) {
         try {
-<span class="nc" id="L114">            Optional&lt;Usuario&gt; currentUser = authService.getCurrentUser();</span>
+<span class="nc" id="L115">            Optional&lt;Usuario&gt; currentUser = authService.getCurrentUser();</span>
             
-<span class="nc" id="L116">            AuditLog log = new AuditLog(</span>
-<span class="nc" id="L117">                currentUser.orElse(null),</span>
-                AuditLog.OperationType.SECURITY_EVENT,
-                AuditLog.EntityType.SISTEMA,
-                null,
-                description,
-                AuditLog.OperationResult.BLOCKED
+<span class="nc" id="L117">            AuditLog log = new AuditLog(</span>
+<span class="nc" id="L118">                currentUser.orElse(null),</span>
+<span class="nc" id="L119">                AuditLog.OperationType.SECURITY_EVENT,</span>
+<span class="nc" id="L120">                AuditLog.EntityType.SISTEMA,</span>
+<span class="nc" id="L121">                null,</span>
+<span class="nc" id="L122">                description,</span>
+<span class="nc" id="L123">                AuditLog.OperationResult.BLOCKED</span>
             );
             
-<span class="nc" id="L125">            log.setIpAddress(ipAddress);</span>
-<span class="nc" id="L126">            log.setUserAgent(userAgent);</span>
+<span class="nc" id="L126">            log.setIpAddress(ipAddress);</span>
+<span class="nc" id="L127">            log.setUserAgent(userAgent);</span>
             
-<span class="nc" id="L128">            auditLogRepository.save(log);</span>
+<span class="nc" id="L129">            auditLogRepository.save(log);</span>
             
-<span class="nc" id="L130">        } catch (Exception e) {</span>
-<span class="nc" id="L131">            System.err.println(&quot;Error al registrar evento de seguridad: &quot; + e.getMessage());</span>
-<span class="nc" id="L132">        }</span>
-<span class="nc" id="L133">    }</span>
+<span class="nc" id="L131">        } catch (Exception e) {</span>
+<span class="nc" id="L132">            log.warn(&quot;Error al registrar evento de seguridad: &quot; + e.getMessage());</span>
+        }
+<span class="nc" id="L134">    }</span>
 
     /**
      * Registra login exitoso
@@ -138,28 +139,28 @@ import java.util.Optional;
     @Async
     public void logSuccessfulLogin(Usuario usuario) {
         try {
-<span class="nc" id="L141">            HttpServletRequest request = getCurrentRequest();</span>
+<span class="nc" id="L142">            HttpServletRequest request = getCurrentRequest();</span>
             
-<span class="nc" id="L143">            AuditLog log = new AuditLog(</span>
-                usuario,
-                AuditLog.OperationType.LOGIN,
-                AuditLog.EntityType.USUARIO,
-<span class="nc" id="L147">                usuario.getId(),</span>
-<span class="nc" id="L148">                &quot;Inicio de sesión exitoso para usuario: &quot; + usuario.getNombre(),</span>
-                AuditLog.OperationResult.SUCCESS
+<span class="nc" id="L144">            AuditLog log = new AuditLog(</span>
+<span class="nc" id="L145">                usuario,</span>
+<span class="nc" id="L146">                AuditLog.OperationType.LOGIN,</span>
+<span class="nc" id="L147">                AuditLog.EntityType.USUARIO,</span>
+<span class="nc" id="L148">                usuario.getId(),</span>
+<span class="nc" id="L149">                &quot;Inicio de sesión exitoso para usuario: &quot; + usuario.getNombre(),</span>
+<span class="nc" id="L150">                AuditLog.OperationResult.SUCCESS</span>
             );
             
-<span class="nc bnc" id="L152" title="All 2 branches missed.">            if (request != null) {</span>
-<span class="nc" id="L153">                log.setIpAddress(getClientIpAddress(request));</span>
-<span class="nc" id="L154">                log.setUserAgent(request.getHeader(&quot;User-Agent&quot;));</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            if (request != null) {</span>
+<span class="nc" id="L154">                log.setIpAddress(getClientIpAddress(request));</span>
+<span class="nc" id="L155">                log.setUserAgent(request.getHeader(&quot;User-Agent&quot;));</span>
             }
             
-<span class="nc" id="L157">            auditLogRepository.save(log);</span>
+<span class="nc" id="L158">            auditLogRepository.save(log);</span>
             
-<span class="nc" id="L159">        } catch (Exception e) {</span>
-<span class="nc" id="L160">            System.err.println(&quot;Error al registrar login exitoso: &quot; + e.getMessage());</span>
-<span class="nc" id="L161">        }</span>
-<span class="nc" id="L162">    }</span>
+<span class="nc" id="L160">        } catch (Exception e) {</span>
+<span class="nc" id="L161">            log.warn(&quot;Error al registrar login exitoso: &quot; + e.getMessage());</span>
+        }
+<span class="nc" id="L163">    }</span>
 
     /**
      * Registra intento de login fallido
@@ -167,74 +168,74 @@ import java.util.Optional;
     @Async
     public void logFailedLogin(String username, String reason) {
         try {
-<span class="nc" id="L170">            HttpServletRequest request = getCurrentRequest();</span>
+<span class="nc" id="L171">            HttpServletRequest request = getCurrentRequest();</span>
             
-<span class="nc" id="L172">            AuditLog log = new AuditLog(</span>
-                null,
-                AuditLog.OperationType.LOGIN,
-                AuditLog.EntityType.USUARIO,
-                null,
-                &quot;Intento de login fallido para usuario: &quot; + username + &quot;. Razón: &quot; + reason,
-                AuditLog.OperationResult.FAILURE
+<span class="nc" id="L173">            AuditLog log = new AuditLog(</span>
+<span class="nc" id="L174">                null,</span>
+<span class="nc" id="L175">                AuditLog.OperationType.LOGIN,</span>
+<span class="nc" id="L176">                AuditLog.EntityType.USUARIO,</span>
+<span class="nc" id="L177">                null,</span>
+<span class="nc" id="L178">                &quot;Intento de login fallido para usuario: &quot; + username + &quot;. Razón: &quot; + reason,</span>
+<span class="nc" id="L179">                AuditLog.OperationResult.FAILURE</span>
             );
             
-<span class="nc bnc" id="L181" title="All 2 branches missed.">            if (request != null) {</span>
-<span class="nc" id="L182">                log.setIpAddress(getClientIpAddress(request));</span>
-<span class="nc" id="L183">                log.setUserAgent(request.getHeader(&quot;User-Agent&quot;));</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">            if (request != null) {</span>
+<span class="nc" id="L183">                log.setIpAddress(getClientIpAddress(request));</span>
+<span class="nc" id="L184">                log.setUserAgent(request.getHeader(&quot;User-Agent&quot;));</span>
             }
             
-<span class="nc" id="L186">            log.setErrorMessage(reason);</span>
+<span class="nc" id="L187">            log.setErrorMessage(reason);</span>
             
-<span class="nc" id="L188">            auditLogRepository.save(log);</span>
+<span class="nc" id="L189">            auditLogRepository.save(log);</span>
             
-<span class="nc" id="L190">        } catch (Exception e) {</span>
-<span class="nc" id="L191">            System.err.println(&quot;Error al registrar login fallido: &quot; + e.getMessage());</span>
-<span class="nc" id="L192">        }</span>
-<span class="nc" id="L193">    }</span>
+<span class="nc" id="L191">        } catch (Exception e) {</span>
+<span class="nc" id="L192">            log.warn(&quot;Error al registrar login fallido: &quot; + e.getMessage());</span>
+        }
+<span class="nc" id="L194">    }</span>
 
     /**
      * Métodos de consulta de logs
      */
     public Page&lt;AuditLog&gt; findLogsByUser(Usuario usuario, Pageable pageable) {
-<span class="nc" id="L199">        return auditLogRepository.findByUsuarioOrderByTimestampDesc(usuario, pageable);</span>
+<span class="nc" id="L200">        return auditLogRepository.findByUsuarioOrderByTimestampDesc(usuario, pageable);</span>
     }
 
     public Page&lt;AuditLog&gt; findLogsByOperationType(AuditLog.OperationType operationType, Pageable pageable) {
-<span class="nc" id="L203">        return auditLogRepository.findByOperationTypeOrderByTimestampDesc(operationType, pageable);</span>
+<span class="nc" id="L204">        return auditLogRepository.findByOperationTypeOrderByTimestampDesc(operationType, pageable);</span>
     }
 
     public Page&lt;AuditLog&gt; findLogsByEntityType(AuditLog.EntityType entityType, Pageable pageable) {
-<span class="nc" id="L207">        return auditLogRepository.findByEntityTypeOrderByTimestampDesc(entityType, pageable);</span>
+<span class="nc" id="L208">        return auditLogRepository.findByEntityTypeOrderByTimestampDesc(entityType, pageable);</span>
     }
 
     public List&lt;AuditLog&gt; findLogsByEntity(AuditLog.EntityType entityType, Long entityId) {
-<span class="nc" id="L211">        return auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(entityType, entityId);</span>
+<span class="nc" id="L212">        return auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(entityType, entityId);</span>
     }
 
     public Page&lt;AuditLog&gt; findLogsByDateRange(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
-<span class="nc" id="L215">        return auditLogRepository.findByTimestampBetween(startDate, endDate, pageable);</span>
+<span class="nc" id="L216">        return auditLogRepository.findByTimestampBetween(startDate, endDate, pageable);</span>
     }
 
     public Page&lt;AuditLog&gt; findCriticalEvents(Pageable pageable) {
-<span class="nc" id="L219">        return auditLogRepository.findCriticalEvents(pageable);</span>
+<span class="nc" id="L220">        return auditLogRepository.findCriticalEvents(pageable);</span>
     }
 
     public Page&lt;AuditLog&gt; findSecurityEvents(Pageable pageable) {
-<span class="nc" id="L223">        return auditLogRepository.findSecurityEvents(pageable);</span>
+<span class="nc" id="L224">        return auditLogRepository.findSecurityEvents(pageable);</span>
     }
 
     /**
      * Obtiene estadísticas de operaciones
      */
     public List&lt;Object[]&gt; getOperationStats(LocalDateTime startDate, LocalDateTime endDate) {
-<span class="nc" id="L230">        return auditLogRepository.getOperationStats(startDate, endDate);</span>
+<span class="nc" id="L231">        return auditLogRepository.getOperationStats(startDate, endDate);</span>
     }
 
     /**
      * Detecta actividad sospechosa por IP
      */
     public List&lt;AuditLog&gt; findSuspiciousActivity(String ipAddress, LocalDateTime startDate, LocalDateTime endDate) {
-<span class="nc" id="L237">        return auditLogRepository.findByIpAddressAndTimestampBetween(ipAddress, startDate, endDate);</span>
+<span class="nc" id="L238">        return auditLogRepository.findByIpAddressAndTimestampBetween(ipAddress, startDate, endDate);</span>
     }
 
     /**
@@ -242,85 +243,85 @@ import java.util.Optional;
      */
     public void cleanOldLogs(LocalDateTime cutoffDate) {
         try {
-<span class="nc" id="L245">            auditLogRepository.deleteLogsOlderThan(cutoffDate);</span>
-<span class="nc" id="L246">        } catch (Exception e) {</span>
-<span class="nc" id="L247">            System.err.println(&quot;Error al limpiar logs antiguos: &quot; + e.getMessage());</span>
-<span class="nc" id="L248">        }</span>
-<span class="nc" id="L249">    }</span>
+<span class="nc" id="L246">            auditLogRepository.deleteLogsOlderThan(cutoffDate);</span>
+<span class="nc" id="L247">        } catch (Exception e) {</span>
+<span class="nc" id="L248">            log.warn(&quot;Error al limpiar logs antiguos: &quot; + e.getMessage());</span>
+        }
+<span class="nc" id="L250">    }</span>
 
     /**
      * Métodos auxiliares
      */
     private HttpServletRequest getCurrentRequest() {
         try {
-<span class="nc" id="L256">            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();</span>
-<span class="nc" id="L257">            return attributes.getRequest();</span>
-<span class="nc" id="L258">        } catch (Exception e) {</span>
-<span class="nc" id="L259">            return null;</span>
+<span class="nc" id="L257">            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();</span>
+<span class="nc" id="L258">            return attributes.getRequest();</span>
+<span class="nc" id="L259">        } catch (Exception e) {</span>
+<span class="nc" id="L260">            return null;</span>
         }
     }
 
     private String getClientIpAddress(HttpServletRequest request) {
-<span class="nc" id="L264">        String xForwardedFor = request.getHeader(&quot;X-Forwarded-For&quot;);</span>
-<span class="nc bnc" id="L265" title="All 4 branches missed.">        if (xForwardedFor != null &amp;&amp; !xForwardedFor.isEmpty()) {</span>
-<span class="nc" id="L266">            return xForwardedFor.split(&quot;,&quot;)[0].trim();</span>
+<span class="nc" id="L265">        String xForwardedFor = request.getHeader(&quot;X-Forwarded-For&quot;);</span>
+<span class="nc bnc" id="L266" title="All 4 branches missed.">        if (xForwardedFor != null &amp;&amp; !xForwardedFor.isEmpty()) {</span>
+<span class="nc" id="L267">            return xForwardedFor.split(&quot;,&quot;)[0].trim();</span>
         }
         
-<span class="nc" id="L269">        String xRealIp = request.getHeader(&quot;X-Real-IP&quot;);</span>
-<span class="nc bnc" id="L270" title="All 4 branches missed.">        if (xRealIp != null &amp;&amp; !xRealIp.isEmpty()) {</span>
-<span class="nc" id="L271">            return xRealIp;</span>
+<span class="nc" id="L270">        String xRealIp = request.getHeader(&quot;X-Real-IP&quot;);</span>
+<span class="nc bnc" id="L271" title="All 4 branches missed.">        if (xRealIp != null &amp;&amp; !xRealIp.isEmpty()) {</span>
+<span class="nc" id="L272">            return xRealIp;</span>
         }
         
-<span class="nc" id="L274">        return request.getRemoteAddr();</span>
+<span class="nc" id="L275">        return request.getRemoteAddr();</span>
     }
 
     /**
      * Métodos de conveniencia para operaciones comunes
      */
     public void logPreguntaCreated(Long preguntaId, String descripcion) {
-<span class="nc" id="L281">        logOperation(AuditLog.OperationType.CREATE, AuditLog.EntityType.PREGUNTA, </span>
-                    preguntaId, descripcion, AuditLog.OperationResult.SUCCESS);
-<span class="nc" id="L283">    }</span>
+<span class="nc" id="L282">        logOperation(AuditLog.OperationType.CREATE, AuditLog.EntityType.PREGUNTA, </span>
+<span class="nc" id="L283">                    preguntaId, descripcion, AuditLog.OperationResult.SUCCESS);</span>
+<span class="nc" id="L284">    }</span>
 
     public void logPreguntaStateChange(Long preguntaId, String oldState, String newState) {
-<span class="nc" id="L286">        logOperation(AuditLog.OperationType.STATE_CHANGE, AuditLog.EntityType.PREGUNTA,</span>
-                    preguntaId, &quot;Cambio de estado de &quot; + oldState + &quot; a &quot; + newState, 
-                    AuditLog.OperationResult.SUCCESS);
-<span class="nc" id="L289">    }</span>
+<span class="nc" id="L287">        logOperation(AuditLog.OperationType.STATE_CHANGE, AuditLog.EntityType.PREGUNTA,</span>
+<span class="nc" id="L288">                    preguntaId, &quot;Cambio de estado de &quot; + oldState + &quot; a &quot; + newState, </span>
+<span class="nc" id="L289">                    AuditLog.OperationResult.SUCCESS);</span>
+<span class="nc" id="L290">    }</span>
 
     public void logCuestionarioCreated(Long cuestionarioId, int numPreguntas) {
-<span class="nc" id="L292">        logOperation(AuditLog.OperationType.CREATE, AuditLog.EntityType.CUESTIONARIO,</span>
-                    cuestionarioId, &quot;Cuestionario creado con &quot; + numPreguntas + &quot; preguntas&quot;,
-                    AuditLog.OperationResult.SUCCESS);
-<span class="nc" id="L295">    }</span>
+<span class="nc" id="L293">        logOperation(AuditLog.OperationType.CREATE, AuditLog.EntityType.CUESTIONARIO,</span>
+<span class="nc" id="L294">                    cuestionarioId, &quot;Cuestionario creado con &quot; + numPreguntas + &quot; preguntas&quot;,</span>
+<span class="nc" id="L295">                    AuditLog.OperationResult.SUCCESS);</span>
+<span class="nc" id="L296">    }</span>
 
     public void logComboCreated(Long comboId, int numPreguntas) {
-<span class="nc" id="L298">        logOperation(AuditLog.OperationType.CREATE, AuditLog.EntityType.COMBO,</span>
-                    comboId, &quot;Combo creado con &quot; + numPreguntas + &quot; preguntas multiplicadoras&quot;,
-                    AuditLog.OperationResult.SUCCESS);
-<span class="nc" id="L301">    }</span>
+<span class="nc" id="L299">        logOperation(AuditLog.OperationType.CREATE, AuditLog.EntityType.COMBO,</span>
+<span class="nc" id="L300">                    comboId, &quot;Combo creado con &quot; + numPreguntas + &quot; preguntas multiplicadoras&quot;,</span>
+<span class="nc" id="L301">                    AuditLog.OperationResult.SUCCESS);</span>
+<span class="nc" id="L302">    }</span>
 
     public void logConcursanteAssigned(Long concursanteId, Long cuestionarioId, Long comboId) {
-<span class="nc" id="L304">        String descripcion = &quot;Concursante asignado&quot;;</span>
-<span class="nc bnc" id="L305" title="All 2 branches missed.">        if (cuestionarioId != null) {</span>
-<span class="nc" id="L306">            descripcion += &quot; - Cuestionario: &quot; + cuestionarioId;</span>
+<span class="nc" id="L305">        String descripcion = &quot;Concursante asignado&quot;;</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">        if (cuestionarioId != null) {</span>
+<span class="nc" id="L307">            descripcion += &quot; - Cuestionario: &quot; + cuestionarioId;</span>
         }
-<span class="nc bnc" id="L308" title="All 2 branches missed.">        if (comboId != null) {</span>
-<span class="nc" id="L309">            descripcion += &quot; - Combo: &quot; + comboId;</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">        if (comboId != null) {</span>
+<span class="nc" id="L310">            descripcion += &quot; - Combo: &quot; + comboId;</span>
         }
         
-<span class="nc" id="L312">        logOperation(AuditLog.OperationType.ASSIGN, AuditLog.EntityType.CONCURSANTE,</span>
-                    concursanteId, descripcion, AuditLog.OperationResult.SUCCESS);
-<span class="nc" id="L314">    }</span>
+<span class="nc" id="L313">        logOperation(AuditLog.OperationType.ASSIGN, AuditLog.EntityType.CONCURSANTE,</span>
+<span class="nc" id="L314">                    concursanteId, descripcion, AuditLog.OperationResult.SUCCESS);</span>
+<span class="nc" id="L315">    }</span>
 
     public void logValidationError(Long entityId, AuditLog.EntityType entityType, String error) {
-<span class="nc" id="L317">        logOperation(AuditLog.OperationType.VALIDATION, entityType,</span>
-                    entityId, &quot;Error de validación: &quot; + error, AuditLog.OperationResult.FAILURE);
-<span class="nc" id="L319">    }</span>
+<span class="nc" id="L318">        logOperation(AuditLog.OperationType.VALIDATION, entityType,</span>
+<span class="nc" id="L319">                    entityId, &quot;Error de validación: &quot; + error, AuditLog.OperationResult.FAILURE);</span>
+<span class="nc" id="L320">    }</span>
 
     public void logConcurrencyConflict(AuditLog.EntityType entityType, Long entityId, String operation) {
-<span class="nc" id="L322">        logOperation(AuditLog.OperationType.UPDATE, entityType,</span>
-                    entityId, &quot;Conflicto de concurrencia en &quot; + operation, AuditLog.OperationResult.BLOCKED);
-<span class="nc" id="L324">    }</span>
+<span class="nc" id="L323">        logOperation(AuditLog.OperationType.UPDATE, entityType,</span>
+<span class="nc" id="L324">                    entityId, &quot;Conflicto de concurrencia en &quot; + operation, AuditLog.OperationResult.BLOCKED);</span>
+<span class="nc" id="L325">    }</span>
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

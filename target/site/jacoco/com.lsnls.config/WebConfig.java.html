@@ -14,42 +14,42 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import java.nio.file.Paths;
 
 @Configuration
-<span class="nc" id="L17">public class WebConfig implements WebMvcConfigurer {</span>
+<span class="fc" id="L17">public class WebConfig implements WebMvcConfigurer {</span>
 
     @Value(&quot;${upload.directory}&quot;)
     private String uploadDirectory;
 
     @Override
     public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
-<span class="nc" id="L24">        configurer</span>
-<span class="nc" id="L25">            .favorParameter(false)</span>
-<span class="nc" id="L26">            .ignoreAcceptHeader(false)</span>
-<span class="nc" id="L27">            .useRegisteredExtensionsOnly(false)</span>
-<span class="nc" id="L28">            .defaultContentType(MediaType.APPLICATION_JSON)</span>
-<span class="nc" id="L29">            .mediaType(&quot;json&quot;, MediaType.APPLICATION_JSON);</span>
-<span class="nc" id="L30">    }</span>
+<span class="fc" id="L24">        configurer</span>
+<span class="fc" id="L25">            .favorParameter(false)</span>
+<span class="fc" id="L26">            .ignoreAcceptHeader(false)</span>
+<span class="fc" id="L27">            .useRegisteredExtensionsOnly(false)</span>
+<span class="fc" id="L28">            .defaultContentType(MediaType.APPLICATION_JSON)</span>
+<span class="fc" id="L29">            .mediaType(&quot;json&quot;, MediaType.APPLICATION_JSON);</span>
+<span class="fc" id="L30">    }</span>
 
     @Override
     public void configureMessageConverters(List&lt;HttpMessageConverter&lt;?&gt;&gt; converters) {
-<span class="nc" id="L34">        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();</span>
-<span class="nc" id="L35">        converter.setSupportedMediaTypes(Arrays.asList(</span>
-            MediaType.APPLICATION_JSON,
-<span class="nc" id="L37">            MediaType.valueOf(&quot;application/json;charset=UTF-8&quot;)</span>
+<span class="fc" id="L34">        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();</span>
+<span class="fc" id="L35">        converter.setSupportedMediaTypes(Arrays.asList(</span>
+<span class="fc" id="L36">            MediaType.APPLICATION_JSON,</span>
+<span class="fc" id="L37">            MediaType.valueOf(&quot;application/json;charset=UTF-8&quot;)</span>
         ));
-<span class="nc" id="L39">        converters.add(0, converter);</span>
-<span class="nc" id="L40">    }</span>
+<span class="fc" id="L39">        converters.add(0, converter);</span>
+<span class="fc" id="L40">    }</span>
 
     @Override
     public void addFormatters(FormatterRegistry registry) {
-<span class="nc" id="L44">        registry.addConverter(new EstadoCuestionarioConverter());</span>
-<span class="nc" id="L45">    }</span>
+<span class="fc" id="L44">        registry.addConverter(new EstadoCuestionarioConverter());</span>
+<span class="fc" id="L45">    }</span>
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Servir archivos subidos
-<span class="nc" id="L50">        String uploadPath = Paths.get(uploadDirectory).toAbsolutePath().toString();</span>
-<span class="nc" id="L51">        registry.addResourceHandler(&quot;/uploads/**&quot;)</span>
-<span class="nc" id="L52">                .addResourceLocations(&quot;file:&quot; + uploadPath + &quot;/&quot;);</span>
-<span class="nc" id="L53">    }</span>
+<span class="fc" id="L50">        String uploadPath = Paths.get(uploadDirectory).toAbsolutePath().toString();</span>
+<span class="fc" id="L51">        registry.addResourceHandler(&quot;/uploads/**&quot;)</span>
+<span class="fc" id="L52">                .addResourceLocations(&quot;file:&quot; + uploadPath + &quot;/&quot;);</span>
+<span class="fc" id="L53">    }</span>
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

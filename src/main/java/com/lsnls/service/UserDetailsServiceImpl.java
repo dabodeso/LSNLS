@@ -30,8 +30,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             new UsernameNotFoundException("Usuario no encontrado: " + username));
 
         String authority = usuario.getRol().toString();
-        String pass = String.valueOf(usuario.getPassword());
-        log.info("[UDS DEBUG] Cargando usuario '{}': rol={}, passLen={}", username, authority, pass != null ? pass.length() : -1);
 
         return User.builder()
                 .username(usuario.getNombre())

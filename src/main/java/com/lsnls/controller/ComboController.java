@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.entity.Combo;
 import com.lsnls.entity.Combo.EstadoCombo;
 // import com.lsnls.entity.Combo.NivelCombo;
@@ -84,10 +86,10 @@ public class ComboController {
             return ResponseEntity.ok(ApiResponse.exitoso("Preguntas obtenidas correctamente", preguntas));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Error de validación: " + e.getMessage()));
+                .body(ApiResponse.error("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage())));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al obtener preguntas del combo: " + e.getMessage()));
+                .body(ApiResponse.error("Error al obtener preguntas del combo: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
     
@@ -160,11 +162,11 @@ public class ComboController {
                 combo = comboService.crearComboDesdeDTO(dto, usuarioOpt.get());
             } catch (IllegalArgumentException e) {
                 if (e.getMessage().contains("Error de concurrencia")) {
-                    return ResponseEntity.status(409).body("Conflicto de concurrencia: " + e.getMessage());
+                    return ResponseEntity.status(409).body("Conflicto de concurrencia: " + MensajesUsuario.sanitizar(e.getMessage()));
                 }
-                return ResponseEntity.badRequest().body(e.getMessage());
+                return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
             } catch (RuntimeException e) {
-                return ResponseEntity.badRequest().body("Error al crear combo: " + e.getMessage());
+                return ResponseEntity.badRequest().body("Error al crear combo: " + MensajesUsuario.sanitizar(e.getMessage()));
             }
             
             return ResponseEntity.ok(Map.of(
@@ -172,7 +174,7 @@ public class ComboController {
                 "id", combo.getId()
             ));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al crear combo: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al crear combo: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -205,9 +207,9 @@ public class ComboController {
                 return ResponseEntity.badRequest().body("Error al agregar pregunta: No se pudo completar la operación");
             }
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Error al agregar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al agregar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -237,7 +239,7 @@ public class ComboController {
             }
         } catch (Exception e) {
             log.error("[QUITAR PREGUNTA] Error al quitar pregunta {} del combo {}: {}", preguntaId, comboId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -260,7 +262,7 @@ public class ComboController {
             ));
         } catch (Exception e) {
             log.error("[LIMPIAR PREGUNTAS] Error al limpiar preguntas del combo {}: {}", comboId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -363,7 +365,7 @@ public class ComboController {
             try {
                 comboActualizado = comboService.cambiarEstado(id, nuevoEstado, authService.isAdmin());
             } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body(e.getMessage());
+                return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
             }
             if (comboActualizado != null) {
                 editLockService.logEntityUpdate(AuditLog.EntityType.COMBO, id, "Cambio de estado de combo");
@@ -376,7 +378,7 @@ public class ComboController {
             }
         } catch (Exception e) {
             log.error("Error al cambiar estado del combo {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.internalServerError().body("Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno del servidor: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -436,7 +438,7 @@ public class ComboController {
                     combo.setEstado(nuevoEstado);
                 } catch (IllegalArgumentException e) {
                     if (e.getMessage() != null && !e.getMessage().startsWith("No enum constant")) {
-                        return ResponseEntity.badRequest().body(e.getMessage());
+                        return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
                     }
                     return ResponseEntity.badRequest().body("Estado de combo inválido: " + estadoStr);
                 }
@@ -466,7 +468,7 @@ public class ComboController {
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El combo ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al actualizar combo: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al actualizar combo: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -508,7 +510,7 @@ public class ComboController {
             }
         } catch (Exception e) {
             log.error("Error al actualizar factor de pregunta {} en combo {}: {}", preguntaId, comboId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
     
@@ -547,7 +549,7 @@ public class ComboController {
         } catch (IllegalArgumentException e) {
             // Mensajes específicos de validación
             log.warn("[ELIMINAR COMBO] Validación fallida para combo {}: {}", id, e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
             log.error("[ELIMINAR COMBO] Error al eliminar combo {}: {}", id, e.getMessage(), e);
             String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";

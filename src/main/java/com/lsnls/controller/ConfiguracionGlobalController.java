@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.entity.ConfiguracionGlobal;
 import com.lsnls.service.ConfiguracionGlobalService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +39,7 @@ public class ConfiguracionGlobalController {
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("La configuración ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al actualizar configuración: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al actualizar configuración: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -55,7 +57,7 @@ public class ConfiguracionGlobalController {
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("La configuración de duración ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al actualizar duración objetivo: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al actualizar duración objetivo: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 } 

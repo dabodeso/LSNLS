@@ -46,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         try {
             // Si es una ruta pública, permitir sin token
-            if ((path.startsWith("/api/auth/") && !path.equals("/api/auth/me")) || 
+            if ((path.startsWith("/api/auth/") && !path.equals("/api/auth/me") && !path.equals("/api/auth/register")) ||
                 isPublicResource(path)) {
                 log.debug("✅ Ruta pública, permitiendo acceso: {}", path);
                 filterChain.doFilter(request, response);

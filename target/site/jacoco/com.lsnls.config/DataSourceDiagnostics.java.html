@@ -53,7 +53,7 @@ import java.util.Arrays;
             }
 
 <span class="nc" id="L55">            log.info(&quot;[DS DEBUG] profiles={}, jdbcUrl={}, dbUser={}, driver={}, database={}, host={}, mysqlVersion={}&quot;,</span>
-                    profiles, url, user, driver, dbName, host, version);
+<span class="nc" id="L56">                    profiles, url, user, driver, dbName, host, version);</span>
 
 <span class="nc bnc" id="L58" title="All 2 branches missed.">            log.info(&quot;[SEC DEBUG] PasswordEncoder en uso: {}&quot;, passwordEncoder != null ? passwordEncoder.getClass().getName() : &quot;null&quot;);</span>
 
@@ -63,7 +63,7 @@ import java.util.Arrays;
 
 <span class="nc" id="L64">        } catch (Exception e) {</span>
 <span class="nc" id="L65">            log.warn(&quot;[DS DEBUG] No se pudo obtener información de DataSource: {}&quot;, e.getMessage());</span>
-<span class="nc" id="L66">        }</span>
+        }
 <span class="nc" id="L67">    }</span>
 }
 

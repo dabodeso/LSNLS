@@ -99,8 +99,8 @@ import java.util.stream.Collectors;
 
     private static ResponseEntity&lt;Map&lt;String, String&gt;&gt; cuerpo(HttpStatus status, String mensaje) {
 <span class="nc" id="L101">        return ResponseEntity.status(status).body(Map.of(</span>
-                &quot;mensaje&quot;, mensaje,
-                &quot;message&quot;, mensaje
+<span class="nc" id="L102">                &quot;mensaje&quot;, mensaje,</span>
+<span class="nc" id="L103">                &quot;message&quot;, mensaje</span>
         ));
     }
 }

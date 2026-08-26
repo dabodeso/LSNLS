@@ -195,6 +195,16 @@ class CuestionarioServiceTest {
     }
 
     @Test
+    void cambiarEstado_noAdminAprobadoTambienExigeCompleto() {
+        Cuestionario c = cuestionarioBase();
+        c.setEstado(EstadoCuestionario.revisar);
+        when(typedQuery.getResultList()).thenReturn(Collections.singletonList(c));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> cuestionarioService.cambiarEstado(1L, EstadoCuestionario.aprobado, false));
+        assertTrue(ex.getMessage().contains("exactamente 4"));
+    }
+
+    @Test
     void agregarPregunta_cuestionarioNoExiste() {
         when(cuestionarioRepository.findById(1L)).thenReturn(Optional.empty());
         when(preguntaRepository.findById(5L)).thenReturn(Optional.of(preguntaAprobada(5L, Pregunta.NivelPregunta._1LS)));

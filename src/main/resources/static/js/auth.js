@@ -375,6 +375,14 @@ function mostrarExito(mensaje) {
     }).showToast();
 }
 
+function cambiarPassword() {
+    const el = document.getElementById('modal-cambiar-password');
+    if (!el || typeof bootstrap === 'undefined') {
+        return;
+    }
+    new bootstrap.Modal(el).show();
+}
+
 // Inicialización al cargar la página
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Inicializando autenticación...');

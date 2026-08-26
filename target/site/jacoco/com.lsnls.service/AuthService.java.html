@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
-<span class="fc" id="L18">@Slf4j</span>
+<span class="nc" id="L18">@Slf4j</span>
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -31,69 +31,33 @@ public class AuthService {
      */
     public AuthResponse login(LoginRequest request) {
         try {
-<span class="nc" id="L34">            log.debug(&quot;🔍 Validando credenciales para usuario: {}&quot;, request.getNombre());</span>
-            // DEBUG: registrar lo que llega y lo que hay en BD (solo para diagnóstico)
-            try {
-<span class="nc" id="L37">                String provided = String.valueOf(request.getPassword());</span>
-<span class="nc" id="L38">                Optional&lt;Usuario&gt; dbUserOpt = usuarioRepository.findByNombre(request.getNombre());</span>
-<span class="nc bnc" id="L39" title="All 2 branches missed.">                if (dbUserOpt.isPresent()) {</span>
-<span class="nc" id="L40">                    String dbPass = String.valueOf(dbUserOpt.get().getPassword());</span>
-<span class="nc" id="L41">                    log.info(&quot;[LOGIN DEBUG] usuario='{}' existe. passEnviado='{}' (len={}), passBD='{}' (len={}), encoder={}&quot;,</span>
-<span class="nc bnc" id="L42" title="All 2 branches missed.">                            request.getNombre(), provided, provided != null ? provided.length() : -1,</span>
-<span class="nc bnc" id="L43" title="All 2 branches missed.">                            dbPass, dbPass != null ? dbPass.length() : -1,</span>
-<span class="nc bnc" id="L44" title="All 2 branches missed.">                            passwordEncoder != null ? passwordEncoder.getClass().getName() : &quot;null&quot;);</span>
-<span class="nc" id="L45">                } else {</span>
-<span class="nc" id="L46">                    log.warn(&quot;[LOGIN DEBUG] usuario='{}' NO existe en BD. encoder={} &quot;,</span>
-<span class="nc" id="L47">                            request.getNombre(),</span>
-<span class="nc bnc" id="L48" title="All 2 branches missed.">                            passwordEncoder != null ? passwordEncoder.getClass().getName() : &quot;null&quot;);</span>
-                }
-<span class="nc" id="L50">            } catch (Exception logEx) {</span>
-<span class="nc" id="L51">                log.warn(&quot;[LOGIN DEBUG] No se pudieron registrar datos de diagnóstico: {}&quot;, logEx.getMessage());</span>
-<span class="nc" id="L52">            }</span>
-            
-            // Autenticar usando Spring Security
-<span class="nc" id="L55">            Authentication authentication = authenticationManager.authenticate(</span>
-                new UsernamePasswordAuthenticationToken(
-<span class="nc" id="L57">                    request.getNombre(),</span>
-<span class="nc" id="L58">                    request.getPassword()</span>
+<span class="nc" id="L34">            log.debug(&quot;Validando credenciales para usuario: {}&quot;, request.getNombre());</span>
+<span class="nc" id="L35">            Authentication authentication = authenticationManager.authenticate(</span>
+<span class="nc" id="L36">                new UsernamePasswordAuthenticationToken(</span>
+<span class="nc" id="L37">                    request.getNombre(),</span>
+<span class="nc" id="L38">                    request.getPassword()</span>
                 )
             );
-            
-<span class="nc" id="L62">            log.debug(&quot;✅ Autenticación exitosa, estableciendo contexto de seguridad&quot;);</span>
-<span class="nc" id="L63">            SecurityContextHolder.getContext().setAuthentication(authentication);</span>
-            
-            // Obtener usuario y generar token
-<span class="nc" id="L66">            log.debug(&quot;🔍 Buscando usuario en base de datos&quot;);</span>
-<span class="nc" id="L67">            Usuario usuario = usuarioRepository.findByNombre(request.getNombre())</span>
-<span class="nc" id="L68">                .orElseThrow(() -&gt; {</span>
-<span class="nc" id="L69">                    log.error(&quot;❌ Usuario no encontrado en base de datos: {}&quot;, request.getNombre());</span>
-<span class="nc" id="L70">                    return new RuntimeException(&quot;Usuario no encontrado&quot;);</span>
-                });
-            
-<span class="nc" id="L73">            log.debug(&quot;🔑 Generando token JWT&quot;);</span>
-<span class="nc" id="L74">            UserDetails userDetails = userDetailsService.loadUserByUsername(request.getNombre());</span>
-<span class="nc" id="L75">            String jwtToken = jwtService.generateToken(userDetails);</span>
-            
-<span class="nc" id="L77">            log.info(&quot;✅ Login completado exitosamente para: {}&quot;, request.getNombre());</span>
-<span class="nc" id="L78">            return new AuthResponse(jwtToken, usuario);</span>
-<span class="nc" id="L79">        } catch (Exception e) {</span>
-<span class="nc" id="L80">            log.error(&quot;❌ Error en proceso de login: {} - {}&quot;, e.getClass().getSimpleName(), e.getMessage());</span>
-            // Más diagnóstico tras el fallo
-            try {
-<span class="nc" id="L83">                Optional&lt;Usuario&gt; dbUserOpt = usuarioRepository.findByNombre(request.getNombre());</span>
-<span class="nc bnc" id="L84" title="All 2 branches missed.">                if (dbUserOpt.isPresent()) {</span>
-<span class="nc" id="L85">                    String dbPass = String.valueOf(dbUserOpt.get().getPassword());</span>
-<span class="nc" id="L86">                    log.warn(&quot;[LOGIN DEBUG][POST-ERROR] usuario='{}' existe. passBD='{}' (len={}), encoder={} &quot;,</span>
-<span class="nc bnc" id="L87" title="All 2 branches missed.">                            request.getNombre(), dbPass, dbPass != null ? dbPass.length() : -1,</span>
-<span class="nc bnc" id="L88" title="All 2 branches missed.">                            passwordEncoder != null ? passwordEncoder.getClass().getName() : &quot;null&quot;);</span>
-<span class="nc" id="L89">                } else {</span>
-<span class="nc" id="L90">                    log.warn(&quot;[LOGIN DEBUG][POST-ERROR] usuario='{}' NO existe en BD&quot;, request.getNombre());</span>
-                }
-<span class="nc" id="L92">            } catch (Exception logEx) {</span>
-<span class="nc" id="L93">                log.warn(&quot;[LOGIN DEBUG][POST-ERROR] No se pudo consultar BD para diagnóstico: {}&quot;, logEx.getMessage());</span>
-<span class="nc" id="L94">            }</span>
-<span class="nc" id="L95">            SecurityContextHolder.clearContext();</span>
-<span class="nc" id="L96">            throw new RuntimeException(&quot;Error en la autenticación: &quot; + e.getMessage());</span>
+
+<span class="nc" id="L42">            SecurityContextHolder.getContext().setAuthentication(authentication);</span>
+
+<span class="nc" id="L44">            Usuario usuario = usuarioRepository.findByNombre(request.getNombre())</span>
+<span class="nc" id="L45">                .orElseThrow(() -&gt; new RuntimeException(&quot;Usuario no encontrado&quot;));</span>
+
+<span class="nc bnc" id="L47" title="All 2 branches missed.">            if (passwordEncoder.upgradeEncoding(usuario.getPassword())) {</span>
+<span class="nc" id="L48">                usuario.setPassword(passwordEncoder.encode(request.getPassword()));</span>
+<span class="nc" id="L49">                usuario = usuarioRepository.save(usuario);</span>
+            }
+
+<span class="nc" id="L52">            UserDetails userDetails = userDetailsService.loadUserByUsername(request.getNombre());</span>
+<span class="nc" id="L53">            String jwtToken = jwtService.generateToken(userDetails);</span>
+
+<span class="nc" id="L55">            log.info(&quot;Login completado para: {}&quot;, request.getNombre());</span>
+<span class="nc" id="L56">            return new AuthResponse(jwtToken, usuario);</span>
+<span class="nc" id="L57">        } catch (Exception e) {</span>
+<span class="nc" id="L58">            log.error(&quot;Error en proceso de login: {}&quot;, e.getClass().getSimpleName());</span>
+<span class="nc" id="L59">            SecurityContextHolder.clearContext();</span>
+<span class="nc" id="L60">            throw new RuntimeException(&quot;Error en la autenticación: &quot; + e.getMessage());</span>
         }
     }
 
@@ -105,21 +69,21 @@ public class AuthService {
         try {
             // Encriptar contraseña y guardar
             // La BD manejará la constraint UNIQUE para evitar duplicados
-<span class="nc" id="L108">            usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));</span>
-<span class="nc" id="L109">            Usuario usuarioGuardado = usuarioRepository.save(usuario);</span>
+<span class="nc" id="L72">            usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));</span>
+<span class="nc" id="L73">            Usuario usuarioGuardado = usuarioRepository.save(usuario);</span>
             
             // Generar token
-<span class="nc" id="L112">            UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getNombre());</span>
-<span class="nc" id="L113">            String jwtToken = jwtService.generateToken(userDetails);</span>
+<span class="nc" id="L76">            UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getNombre());</span>
+<span class="nc" id="L77">            String jwtToken = jwtService.generateToken(userDetails);</span>
             
-<span class="nc" id="L115">            return new AuthResponse(jwtToken, usuarioGuardado);</span>
-<span class="nc" id="L116">        } catch (org.springframework.dao.DataIntegrityViolationException e) {</span>
+<span class="nc" id="L79">            return new AuthResponse(jwtToken, usuarioGuardado);</span>
+<span class="nc" id="L80">        } catch (org.springframework.dao.DataIntegrityViolationException e) {</span>
             // La BD detectó un usuario duplicado
-<span class="nc" id="L118">            log.warn(&quot;❌ Intento de registrar usuario duplicado: {}&quot;, usuario.getNombre());</span>
-<span class="nc" id="L119">            throw new RuntimeException(&quot;El usuario ya existe&quot;);</span>
-<span class="nc" id="L120">        } catch (Exception e) {</span>
-<span class="nc" id="L121">            log.error(&quot;❌ Error en registro de usuario: {} - {}&quot;, e.getClass().getSimpleName(), e.getMessage());</span>
-<span class="nc" id="L122">            throw new RuntimeException(&quot;Error interno al registrar usuario: &quot; + e.getMessage());</span>
+<span class="nc" id="L82">            log.warn(&quot;❌ Intento de registrar usuario duplicado: {}&quot;, usuario.getNombre());</span>
+<span class="nc" id="L83">            throw new RuntimeException(&quot;El usuario ya existe&quot;);</span>
+<span class="nc" id="L84">        } catch (Exception e) {</span>
+<span class="nc" id="L85">            log.error(&quot;❌ Error en registro de usuario: {} - {}&quot;, e.getClass().getSimpleName(), e.getMessage());</span>
+<span class="nc" id="L86">            throw new RuntimeException(&quot;Error interno al registrar usuario: &quot; + e.getMessage());</span>
         }
     }
 
@@ -127,55 +91,55 @@ public class AuthService {
      * Obtiene el usuario autenticado actual
      */
     public Optional&lt;Usuario&gt; getCurrentUser() {
-<span class="nc" id="L130">        log.debug(&quot;👤 Obteniendo usuario actual del contexto de seguridad&quot;);</span>
-<span class="nc" id="L131">        Authentication auth = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="nc" id="L94">        log.debug(&quot;👤 Obteniendo usuario actual del contexto de seguridad&quot;);</span>
+<span class="nc" id="L95">        Authentication auth = SecurityContextHolder.getContext().getAuthentication();</span>
         
-<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (auth == null) {</span>
-<span class="nc" id="L134">            log.warn(&quot;❌ No hay autenticación en el contexto de seguridad&quot;);</span>
-<span class="nc" id="L135">            return Optional.empty();</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (auth == null) {</span>
+<span class="nc" id="L98">            log.warn(&quot;❌ No hay autenticación en el contexto de seguridad&quot;);</span>
+<span class="nc" id="L99">            return Optional.empty();</span>
         }
         
-<span class="nc bnc" id="L138" title="All 4 branches missed.">        if (!auth.isAuthenticated() || &quot;anonymousUser&quot;.equals(auth.getPrincipal())) {</span>
-<span class="nc" id="L139">            log.warn(&quot;❌ Usuario no autenticado o anónimo&quot;);</span>
-<span class="nc" id="L140">            return Optional.empty();</span>
+<span class="nc bnc" id="L102" title="All 4 branches missed.">        if (!auth.isAuthenticated() || &quot;anonymousUser&quot;.equals(auth.getPrincipal())) {</span>
+<span class="nc" id="L103">            log.warn(&quot;❌ Usuario no autenticado o anónimo&quot;);</span>
+<span class="nc" id="L104">            return Optional.empty();</span>
         }
 
-<span class="nc" id="L143">        log.debug(&quot;🔍 Buscando usuario en base de datos: {}&quot;, auth.getName());</span>
-<span class="nc" id="L144">        Optional&lt;Usuario&gt; usuario = usuarioRepository.findByNombre(auth.getName());</span>
+<span class="nc" id="L107">        log.debug(&quot;🔍 Buscando usuario en base de datos: {}&quot;, auth.getName());</span>
+<span class="nc" id="L108">        Optional&lt;Usuario&gt; usuario = usuarioRepository.findByNombre(auth.getName());</span>
         
-<span class="nc bnc" id="L146" title="All 2 branches missed.">        if (usuario.isPresent()) {</span>
-<span class="nc" id="L147">            log.debug(&quot;✅ Usuario encontrado: {}&quot;, usuario.get().getNombre());</span>
-        } else {
-<span class="nc" id="L149">            log.warn(&quot;❌ Usuario no encontrado en base de datos: {}&quot;, auth.getName());</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (usuario.isPresent()) {</span>
+<span class="nc" id="L111">            log.debug(&quot;✅ Usuario encontrado: {}&quot;, usuario.get().getNombre());</span>
+<span class="nc" id="L112">        } else {</span>
+<span class="nc" id="L113">            log.warn(&quot;❌ Usuario no encontrado en base de datos: {}&quot;, auth.getName());</span>
         }
         
-<span class="nc" id="L152">        return usuario;</span>
+<span class="nc" id="L116">        return usuario;</span>
     }
 
     /**
      * Verifica si hay un usuario autenticado
      */
     public boolean isAuthenticated() {
-<span class="nc" id="L159">        return getCurrentUser().isPresent();</span>
+<span class="nc" id="L123">        return getCurrentUser().isPresent();</span>
     }
 
     /**
      * Cierra la sesión actual
      */
     public void logout() {
-<span class="nc" id="L166">        SecurityContextHolder.clearContext();</span>
-<span class="nc" id="L167">    }</span>
+<span class="nc" id="L130">        SecurityContextHolder.clearContext();</span>
+<span class="nc" id="L131">    }</span>
 
     /**
      * Verifica si el token es válido
      */
     public boolean validateToken(String token) {
         try {
-<span class="nc" id="L174">            String username = jwtService.extractUsername(token);</span>
-<span class="nc" id="L175">            UserDetails userDetails = userDetailsService.loadUserByUsername(username);</span>
-<span class="nc" id="L176">            return jwtService.isTokenValid(token, userDetails);</span>
-<span class="nc" id="L177">        } catch (Exception e) {</span>
-<span class="nc" id="L178">            return false;</span>
+<span class="nc" id="L138">            String username = jwtService.extractUsername(token);</span>
+<span class="nc" id="L139">            UserDetails userDetails = userDetailsService.loadUserByUsername(username);</span>
+<span class="nc" id="L140">            return jwtService.isTokenValid(token, userDetails);</span>
+<span class="nc" id="L141">        } catch (Exception e) {</span>
+<span class="nc" id="L142">            return false;</span>
         }
     }
 } 

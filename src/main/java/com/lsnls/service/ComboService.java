@@ -30,6 +30,7 @@ import com.lsnls.dto.CrearComboDTO;
 
 @Service
 @Transactional
+@lombok.extern.slf4j.Slf4j
 public class ComboService {
     
     @Autowired
@@ -111,7 +112,7 @@ public class ComboService {
             return Optional.of(resultados.get(0));
             
         } catch (Exception e) {
-            System.err.println("Error al obtener combo con preguntas: " + e.getMessage());
+            log.warn("Error al obtener combo con preguntas: " + e.getMessage());
             return Optional.empty();
         }
     }
@@ -288,7 +289,7 @@ public class ComboService {
         response.put("totalItems", paginaCombos.getTotalElements());
         response.put("totalPages", paginaCombos.getTotalPages());
 
-        System.out.println("Filtrado de combos con paginaci?n optimizada - P?gina: " + page + ", Tama?o: " + size +
+        log.debug("Filtrado de combos con paginaci?n optimizada - P?gina: " + page + ", Tama?o: " + size +
                           ", Total: " + paginaCombos.getTotalElements() +
                           ", Combos en esta p?gina: " + dtos.size());
 
@@ -417,28 +418,7 @@ public class ComboService {
     }
 
     public void validarTransicionEstado(EstadoCombo estadoActual, EstadoCombo nuevoEstado, boolean usuarioEsAdmin) {
-        if (estadoActual == null || nuevoEstado == null || estadoActual == nuevoEstado) {
-            return;
-        }
-        // Admin puede mover a cualquier estado (incluido corregir -> aprobado)
-        if (usuarioEsAdmin) {
-            return;
-        }
-        Map<EstadoCombo, Set<EstadoCombo>> transiciones = new HashMap<>();
-        transiciones.put(EstadoCombo.borrador, Set.of(EstadoCombo.revisar));
-        transiciones.put(EstadoCombo.revisar, Set.of(EstadoCombo.corregir, EstadoCombo.aprobado));
-        transiciones.put(EstadoCombo.corregir, Set.of(EstadoCombo.revisar, EstadoCombo.aprobado));
-        transiciones.put(EstadoCombo.aprobado, Set.of());
-        transiciones.put(EstadoCombo.adjudicado, Set.of());
-        transiciones.put(EstadoCombo.grabado, Set.of());
-        transiciones.put(EstadoCombo.reaprovechado, Set.of());
-        transiciones.put(EstadoCombo.liberado, Set.of());
-
-        Set<EstadoCombo> permitidos = transiciones.getOrDefault(estadoActual, Set.of());
-        if (!permitidos.contains(nuevoEstado)) {
-            throw new IllegalArgumentException(
-                "Transición de estado no permitida: " + estadoActual + " -> " + nuevoEstado);
-        }
+        com.lsnls.config.TransicionesEstado.validar(estadoActual, nuevoEstado, usuarioEsAdmin);
     }
 
     public Combo cambiarEstado(Long id, EstadoCombo nuevoEstado) {
@@ -625,7 +605,7 @@ public class ComboService {
             
             return true;
         } catch (Exception e) {
-            System.err.println("Error al actualizar factor: " + e.getMessage());
+            log.warn("Error al actualizar factor: " + e.getMessage());
             return false;
         }
     }
@@ -708,7 +688,7 @@ public class ComboService {
             }
         } catch (Exception e) {
             // Si hay error al eliminar el historial, continuamos de todas formas
-            System.err.println("Advertencia: No se pudieron eliminar algunos registros del historial para el combo " + id + ": " + e.getMessage());
+            log.warn("Advertencia: No se pudieron eliminar algunos registros del historial para el combo " + id + ": " + e.getMessage());
         }
 
         // Si llegamos aqu?, es seguro eliminar - liberar las preguntas asociadas
@@ -777,10 +757,10 @@ public class ComboService {
                 Object[] registro = historialReutilizado.get(0);
                 dto.put("reutilizadoDeJornadaId", ((Number) registro[0]).longValue());
                 dto.put("reutilizadoDeJornadaNombre", (String) registro[1]);
-                System.out.println("[DTO-COMBO] Combo " + id + " | estado=" + c.getEstado() + " | jornada=" + dto.get("jornadaAsignada") + " | reutilizadoDe=" + dto.get("reutilizadoDeJornadaId"));
+                log.debug("[DTO-COMBO] Combo " + id + " | estado=" + c.getEstado() + " | jornada=" + dto.get("jornadaAsignada") + " | reutilizadoDe=" + dto.get("reutilizadoDeJornadaId"));
             }
         } catch (Exception e) {
-            System.err.println("[DTO-COMBO] ERROR al buscar historial para combo " + id);
+            log.warn("[DTO-COMBO] ERROR al buscar historial para combo " + id);
         }
         
         // Mapear preguntas a slots PM1, PM2, PM3

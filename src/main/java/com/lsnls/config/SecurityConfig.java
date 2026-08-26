@@ -46,7 +46,6 @@ public class SecurityConfig {
                                 "/login.html",
                                 "/register.html",
                                 "/api/auth/login",
-                                "/api/auth/register",
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
@@ -54,7 +53,7 @@ public class SecurityConfig {
                                 "/.well-known/**",
                                 "/error"
                         ).permitAll()
-                        // Rutas protegidas solo API
+                        .antMatchers("/api/auth/register").hasRole("ADMIN")
                         .antMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
@@ -112,6 +111,6 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance();
+        return new CompatiblePasswordEncoder();
     }
 } 

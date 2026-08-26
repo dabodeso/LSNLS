@@ -159,7 +159,7 @@ import org.slf4j.LoggerFactory;
 <span class="nc bnc" id="L159" title="All 2 branches missed.">        Long version = dto.getVersion() != null ? dto.getVersion() : 0L;</span>
 
 <span class="nc" id="L161">        entityManager.createNativeQuery(</span>
-            &quot;INSERT INTO preguntas (&quot; +
+<span class="nc" id="L162">            &quot;INSERT INTO preguntas (&quot; +</span>
             &quot;id, version, creacion_usuario_id, fecha_creacion, fecha_verificacion, &quot; +
             &quot;verificacion_usuario_id, respuesta, tematica, pregunta, subtema, &quot; +
             &quot;datos_extra, fuentes, autor, notas, notas_verificacion, notas_direccion, &quot; +
@@ -220,17 +220,17 @@ import org.slf4j.LoggerFactory;
 
     private void sincronizarAutoIncrementPreguntas() {
 <span class="nc" id="L222">        Number maxId = (Number) entityManager.createNativeQuery(</span>
-            &quot;SELECT COALESCE(MAX(id), 0) FROM preguntas&quot;
+<span class="nc" id="L223">            &quot;SELECT COALESCE(MAX(id), 0) FROM preguntas&quot;</span>
 <span class="nc" id="L224">        ).getSingleResult();</span>
 <span class="nc" id="L225">        long nextId = maxId.longValue() + 1;</span>
 <span class="nc" id="L226">        entityManager.createNativeQuery(</span>
-            &quot;ALTER TABLE preguntas AUTO_INCREMENT = &quot; + nextId
+<span class="nc" id="L227">            &quot;ALTER TABLE preguntas AUTO_INCREMENT = &quot; + nextId</span>
 <span class="nc" id="L228">        ).executeUpdate();</span>
 <span class="nc" id="L229">    }</span>
 
     private Optional&lt;Usuario&gt; obtenerUsuarioActual() {
         try {
-            org.springframework.security.core.Authentication auth =
+<span class="nc" id="L233">            org.springframework.security.core.Authentication auth =</span>
 <span class="nc" id="L234">                SecurityContextHolder.getContext().getAuthentication();</span>
 <span class="nc bnc" id="L235" title="All 8 branches missed.">            if (auth != null &amp;&amp; auth.isAuthenticated() &amp;&amp; !&quot;anonymousUser&quot;.equals(auth.getName()) &amp;&amp; usuarioService != null) {</span>
 <span class="nc" id="L236">                return usuarioService.obtenerPorNombre(auth.getName());</span>
@@ -261,7 +261,7 @@ import org.slf4j.LoggerFactory;
 
     public List&lt;Pregunta&gt; obtenerDisponibles() {
 <span class="nc" id="L263">        return preguntaRepository.findByEstadoAndEstadoDisponibilidad(</span>
-            EstadoPregunta.aprobada, EstadoDisponibilidad.disponible);
+<span class="nc" id="L264">            EstadoPregunta.aprobada, EstadoDisponibilidad.disponible);</span>
     }
 
     public List&lt;Pregunta&gt; buscarPorTematica(String tematica) {
@@ -273,9 +273,9 @@ import org.slf4j.LoggerFactory;
     }
 
     public Pregunta actualizar(Long id, Pregunta pregunta) {
-<span class="nc" id="L276">        System.out.println(&quot;🔍 [BACKEND] Iniciando actualización de pregunta ID: &quot; + id);</span>
-<span class="nc" id="L277">        System.out.println(&quot;🔍 [BACKEND] Datos recibidos - tematica: &quot; + pregunta.getTematica() + &quot;, verificacion: &quot; + pregunta.getVerificacion());</span>
-<span class="nc" id="L278">        System.out.println(&quot;🔍 [BACKEND] notasVerificacion recibidas: '&quot; + pregunta.getNotasVerificacion() + &quot;'&quot;);</span>
+<span class="nc" id="L276">        log.debug(&quot;🔍 [BACKEND] Iniciando actualización de pregunta ID: &quot; + id);</span>
+<span class="nc" id="L277">        log.debug(&quot;🔍 [BACKEND] Datos recibidos - tematica: &quot; + pregunta.getTematica() + &quot;, verificacion: &quot; + pregunta.getVerificacion());</span>
+<span class="nc" id="L278">        log.debug(&quot;🔍 [BACKEND] notasVerificacion recibidas: '&quot; + pregunta.getNotasVerificacion() + &quot;'&quot;);</span>
         
 <span class="nc bnc" id="L280" title="All 2 branches missed.">        if (preguntaRepository.existsById(id)) {</span>
             // Obtener pregunta existente PRIMERO
@@ -284,8 +284,8 @@ import org.slf4j.LoggerFactory;
 <span class="nc" id="L284">                return null;</span>
             }
             
-<span class="nc" id="L287">            System.out.println(&quot;📥 [BACKEND] Pregunta existente - tematica: &quot; + preguntaExistente.getTematica() + &quot;, verificacion: &quot; + preguntaExistente.getVerificacion());</span>
-<span class="nc" id="L288">            System.out.println(&quot;📥 [BACKEND] notasVerificacion existentes: '&quot; + preguntaExistente.getNotasVerificacion() + &quot;'&quot;);</span>
+<span class="nc" id="L287">            log.debug(&quot;📥 [BACKEND] Pregunta existente - tematica: &quot; + preguntaExistente.getTematica() + &quot;, verificacion: &quot; + preguntaExistente.getVerificacion());</span>
+<span class="nc" id="L288">            log.debug(&quot;📥 [BACKEND] notasVerificacion existentes: '&quot; + preguntaExistente.getNotasVerificacion() + &quot;'&quot;);</span>
             
             // IMPORTANTE: Solo transformar y actualizar los campos que REALMENTE se enviaron (no son null)
             // Copiar todos los valores existentes al objeto a guardar
@@ -302,19 +302,19 @@ import org.slf4j.LoggerFactory;
             // Solo actualizar campos específicos si vienen en la petición
 <span class="nc bnc" id="L303" title="All 2 branches missed.">            if (pregunta.getPregunta() == null) {</span>
 <span class="nc" id="L304">                pregunta.setPregunta(preguntaExistente.getPregunta());</span>
-            } else {
+<span class="nc" id="L305">            } else {</span>
 <span class="nc" id="L306">                pregunta.setPregunta(dataTransformationService.normalizarPregunta(pregunta.getPregunta()));</span>
             }
             
 <span class="nc bnc" id="L309" title="All 2 branches missed.">            if (pregunta.getRespuesta() == null) {</span>
 <span class="nc" id="L310">                pregunta.setRespuesta(preguntaExistente.getRespuesta());</span>
-            } else {
+<span class="nc" id="L311">            } else {</span>
 <span class="nc" id="L312">                pregunta.setRespuesta(dataTransformationService.normalizarRespuesta(pregunta.getRespuesta()));</span>
             }
             
 <span class="nc bnc" id="L315" title="All 2 branches missed.">            if (pregunta.getTematica() == null) {</span>
 <span class="nc" id="L316">                pregunta.setTematica(preguntaExistente.getTematica());</span>
-            } else {
+<span class="nc" id="L317">            } else {</span>
 <span class="nc" id="L318">                pregunta.setTematica(dataTransformationService.normalizarTematica(pregunta.getTematica()));</span>
             }
             
@@ -348,40 +348,40 @@ import org.slf4j.LoggerFactory;
 <span class="nc bnc" id="L348" title="All 2 branches missed.">                pregunta.getEstado() == Pregunta.EstadoPregunta.verificada &amp;&amp; </span>
 <span class="nc bnc" id="L349" title="All 2 branches missed.">                preguntaExistente.getEstado() != Pregunta.EstadoPregunta.verificada) {</span>
                 
-<span class="nc" id="L351">                System.out.println(&quot;🔄 [BACKEND] Estado cambiado a VERIFICADA, actualizando verificacion...&quot;);</span>
+<span class="nc" id="L351">                log.debug(&quot;🔄 [BACKEND] Estado cambiado a VERIFICADA, actualizando verificacion...&quot;);</span>
                 
                 // Obtener el usuario actual del contexto de seguridad
 <span class="nc" id="L354">                String nombreUsuario = null;</span>
                 try {
-                    org.springframework.security.core.Authentication auth = 
+<span class="nc" id="L356">                    org.springframework.security.core.Authentication auth = </span>
 <span class="nc" id="L357">                        SecurityContextHolder.getContext().getAuthentication();</span>
 <span class="nc bnc" id="L358" title="All 6 branches missed.">                    if (auth != null &amp;&amp; auth.isAuthenticated() &amp;&amp; !&quot;anonymousUser&quot;.equals(auth.getName())) {</span>
 <span class="nc" id="L359">                        nombreUsuario = auth.getName();</span>
                     }
 <span class="nc" id="L361">                } catch (Exception e) {</span>
 <span class="nc" id="L362">                    nombreUsuario = &quot;Usuario&quot;;</span>
-<span class="nc" id="L363">                }</span>
+                }
                 
 <span class="nc bnc" id="L365" title="All 2 branches missed.">                if (nombreUsuario != null) {</span>
 <span class="nc" id="L366">                    String verificacionActual = preguntaExistente.getVerificacion();</span>
                     
 <span class="nc bnc" id="L368" title="All 4 branches missed.">                    if (verificacionActual == null || verificacionActual.trim().isEmpty()) {</span>
 <span class="nc" id="L369">                        pregunta.setVerificacion(nombreUsuario);</span>
-<span class="nc" id="L370">                        System.out.println(&quot;🆕 [BACKEND] Nueva verificacion: &quot; + nombreUsuario);</span>
-                    } else {
+<span class="nc" id="L370">                        log.debug(&quot;🆕 [BACKEND] Nueva verificacion: &quot; + nombreUsuario);</span>
+<span class="nc" id="L371">                    } else {</span>
 <span class="nc bnc" id="L372" title="All 2 branches missed.">                        if (!verificacionActual.contains(nombreUsuario)) {</span>
 <span class="nc" id="L373">                            pregunta.setVerificacion(verificacionActual + &quot;, &quot; + nombreUsuario);</span>
-<span class="nc" id="L374">                            System.out.println(&quot;📝 [BACKEND] Verificacion actualizada: &quot; + pregunta.getVerificacion());</span>
-                        } else {
+<span class="nc" id="L374">                            log.debug(&quot;📝 [BACKEND] Verificacion actualizada: &quot; + pregunta.getVerificacion());</span>
+<span class="nc" id="L375">                        } else {</span>
 <span class="nc" id="L376">                            pregunta.setVerificacion(verificacionActual);</span>
-<span class="nc" id="L377">                            System.out.println(&quot;🔄 [BACKEND] Usuario ya incluido, manteniendo: &quot; + verificacionActual);</span>
+<span class="nc" id="L377">                            log.debug(&quot;🔄 [BACKEND] Usuario ya incluido, manteniendo: &quot; + verificacionActual);</span>
                         }
                     }
                 }
 <span class="nc" id="L381">            } else {</span>
                 // Si no cambia a verificada, mantener verificacion existente
 <span class="nc" id="L383">                pregunta.setVerificacion(preguntaExistente.getVerificacion());</span>
-<span class="nc" id="L384">                System.out.println(&quot;🔒 [BACKEND] Estado no cambia a VERIFICADA, manteniendo verificacion: &quot; + preguntaExistente.getVerificacion());</span>
+<span class="nc" id="L384">                log.debug(&quot;🔒 [BACKEND] Estado no cambia a VERIFICADA, manteniendo verificacion: &quot; + preguntaExistente.getVerificacion());</span>
             }
             
             // Validar datos finales
@@ -393,7 +393,7 @@ import org.slf4j.LoggerFactory;
             }
             
 <span class="nc" id="L395">            Pregunta resultado = preguntaRepository.save(pregunta);</span>
-<span class="nc" id="L396">            System.out.println(&quot;💾 [BACKEND] Pregunta guardada - ID: &quot; + resultado.getId() + &quot;, tematica: &quot; + resultado.getTematica() + &quot;, verificacion: &quot; + resultado.getVerificacion());</span>
+<span class="nc" id="L396">            log.debug(&quot;💾 [BACKEND] Pregunta guardada - ID: &quot; + resultado.getId() + &quot;, tematica: &quot; + resultado.getTematica() + &quot;, verificacion: &quot; + resultado.getVerificacion());</span>
 <span class="nc" id="L397">            return resultado;</span>
         }
 <span class="nc" id="L399">        return null;</span>
@@ -414,7 +414,7 @@ import org.slf4j.LoggerFactory;
             }
 <span class="nc bnc" id="L415" title="All 2 branches missed.">            if (nuevoEstado == EstadoPregunta.aprobada) {</span>
 <span class="nc" id="L416">                pregunta.setEstadoDisponibilidad(EstadoDisponibilidad.disponible);</span>
-<span class="nc" id="L417">                System.out.println(&quot;✅ Pregunta ID &quot; + id + &quot; aprobada y marcada como DISPONIBLE&quot;);</span>
+<span class="nc" id="L417">                log.debug(&quot;✅ Pregunta ID &quot; + id + &quot; aprobada y marcada como DISPONIBLE&quot;);</span>
             }
 <span class="nc" id="L419">            return preguntaRepository.save(pregunta);</span>
 <span class="nc" id="L420">        }).orElse(null);</span>
@@ -433,8 +433,8 @@ import org.slf4j.LoggerFactory;
     public boolean cambiarEstadoAtomico(Long id, EstadoPregunta estadoActualEsperado, 
                                        EstadoPregunta nuevoEstado, Usuario usuarioActual) {
 
-<span class="nc bnc" id="L436" title="All 4 branches missed.">        if (nuevoEstado == EstadoPregunta.para_verificar</span>
-            &amp;&amp; estadoActualEsperado != EstadoPregunta.para_verificar) {
+<span class="nc bnc" id="L436" title="All 2 branches missed.">        if (nuevoEstado == EstadoPregunta.para_verificar</span>
+<span class="nc bnc" id="L437" title="All 2 branches missed.">            &amp;&amp; estadoActualEsperado != EstadoPregunta.para_verificar) {</span>
 <span class="nc" id="L438">            Pregunta pregunta = preguntaRepository.findById(id)</span>
 <span class="nc" id="L439">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;));</span>
 <span class="nc" id="L440">            validarRequisitosParaVerificar(</span>
@@ -471,18 +471,18 @@ import org.slf4j.LoggerFactory;
 <span class="nc bnc" id="L471" title="All 2 branches missed.">                    verificacionActual = result != null ? result.toString() : null;</span>
 <span class="nc" id="L472">                } catch (Exception e) {</span>
                     // Si hay error, dejar verificacionActual como null
-<span class="nc" id="L474">                    System.out.println(&quot;No se pudo obtener el valor actual de verificacion: &quot; + e.getMessage());</span>
-<span class="nc" id="L475">                }</span>
+<span class="nc" id="L474">                    log.debug(&quot;No se pudo obtener el valor actual de verificacion: &quot; + e.getMessage());</span>
+                }
                 
                 // Construir el nuevo valor de verificacion
                 String nuevoValorVerificacion;
 <span class="nc bnc" id="L479" title="All 4 branches missed.">                if (verificacionActual == null || verificacionActual.trim().isEmpty()) {</span>
 <span class="nc" id="L480">                    nuevoValorVerificacion = usuarioActual.getNombre();</span>
-                } else {
+<span class="nc" id="L481">                } else {</span>
                     // Verificar si el usuario ya está incluido
 <span class="nc bnc" id="L483" title="All 2 branches missed.">                    if (!verificacionActual.contains(usuarioActual.getNombre())) {</span>
 <span class="nc" id="L484">                        nuevoValorVerificacion = verificacionActual + &quot;, &quot; + usuarioActual.getNombre();</span>
-                    } else {
+<span class="nc" id="L485">                    } else {</span>
 <span class="nc" id="L486">                        nuevoValorVerificacion = verificacionActual;</span>
                     }
                 }
@@ -490,7 +490,7 @@ import org.slf4j.LoggerFactory;
 <span class="nc" id="L490">                parametros.add(nuevoValorVerificacion);</span>
 <span class="nc" id="L491">                paramIndex++;</span>
                 
-<span class="nc" id="L493">                System.out.println(&quot;✅ Actualizando campo verificacion a: &quot; + nuevoValorVerificacion);</span>
+<span class="nc" id="L493">                log.debug(&quot;✅ Actualizando campo verificacion a: &quot; + nuevoValorVerificacion);</span>
             }
         }
         
@@ -515,11 +515,11 @@ import org.slf4j.LoggerFactory;
         
 <span class="nc bnc" id="L516" title="All 2 branches missed.">        if (filasActualizadas == 0) {</span>
 <span class="nc" id="L517">            throw new IllegalStateException(&quot;No se pudo cambiar el estado de la pregunta &quot; + id + </span>
-                &quot; porque otro usuario la modificó simultáneamente. Estado esperado: &quot; + estadoActualEsperado);
+<span class="nc" id="L518">                &quot; porque otro usuario la modificó simultáneamente. Estado esperado: &quot; + estadoActualEsperado);</span>
         }
         
 <span class="nc bnc" id="L521" title="All 2 branches missed.">        if (nuevoEstado == EstadoPregunta.aprobada) {</span>
-<span class="nc" id="L522">            System.out.println(&quot;✅ Pregunta ID &quot; + id + &quot; aprobada atómicamente y marcada como DISPONIBLE&quot;);</span>
+<span class="nc" id="L522">            log.debug(&quot;✅ Pregunta ID &quot; + id + &quot; aprobada atómicamente y marcada como DISPONIBLE&quot;);</span>
         }
         
 <span class="nc" id="L525">        return true;</span>
@@ -572,7 +572,7 @@ import org.slf4j.LoggerFactory;
         
 <span class="nc bnc" id="L573" title="All 2 branches missed.">        if (filasActualizadas == 0) {</span>
 <span class="nc" id="L574">            throw new IllegalStateException(&quot;No se pudo rechazar la pregunta &quot; + id + </span>
-                &quot; porque otro usuario la modificó simultáneamente. Estado esperado: &quot; + estadoActualEsperado);
+<span class="nc" id="L575">                &quot; porque otro usuario la modificó simultáneamente. Estado esperado: &quot; + estadoActualEsperado);</span>
         }
         
 <span class="nc" id="L578">        return true;</span>
@@ -616,7 +616,7 @@ import org.slf4j.LoggerFactory;
             // Cambiar el estado de la pregunta a 'usada' si estaba en 'aprobada'
 <span class="nc bnc" id="L617" title="All 2 branches missed.">            if (pregunta.getEstado() == EstadoPregunta.aprobada) {</span>
 <span class="nc" id="L618">                pregunta.setEstado(EstadoPregunta.usada);</span>
-<span class="nc" id="L619">                System.out.println(&quot;✅ Pregunta ID &quot; + id + &quot; marcada como USADA&quot;);</span>
+<span class="nc" id="L619">                log.debug(&quot;✅ Pregunta ID &quot; + id + &quot; marcada como USADA&quot;);</span>
             }
 <span class="nc" id="L621">            preguntaRepository.save(pregunta);</span>
 <span class="nc" id="L622">        });</span>
@@ -628,7 +628,7 @@ import org.slf4j.LoggerFactory;
             // Cambiar el estado de la pregunta a 'aprobada' si estaba en 'usada'
 <span class="nc bnc" id="L629" title="All 2 branches missed.">            if (pregunta.getEstado() == EstadoPregunta.usada) {</span>
 <span class="nc" id="L630">                pregunta.setEstado(EstadoPregunta.aprobada);</span>
-<span class="nc" id="L631">                System.out.println(&quot;✅ Pregunta ID &quot; + id + &quot; liberada y marcada como APROBADA&quot;);</span>
+<span class="nc" id="L631">                log.debug(&quot;✅ Pregunta ID &quot; + id + &quot; liberada y marcada como APROBADA&quot;);</span>
             }
 <span class="nc" id="L633">            preguntaRepository.save(pregunta);</span>
 <span class="nc" id="L634">        });</span>
@@ -645,24 +645,24 @@ import org.slf4j.LoggerFactory;
 
         // Verificar si está siendo usada en cuestionarios
 <span class="nc" id="L647">        Long cuestionariosCount = entityManager.createQuery(</span>
-            &quot;SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)
+<span class="nc" id="L648">            &quot;SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)</span>
 <span class="nc" id="L649">            .setParameter(&quot;preguntaId&quot;, id)</span>
 <span class="nc" id="L650">            .getSingleResult();</span>
         
 <span class="nc bnc" id="L652" title="All 2 branches missed.">        if (cuestionariosCount &gt; 0) {</span>
 <span class="nc" id="L653">            throw new IllegalArgumentException(&quot;No se puede eliminar la pregunta porque está siendo usada en &quot; + </span>
-                cuestionariosCount + &quot; cuestionario(s). Quítala de los cuestionarios primero.&quot;);
+<span class="nc" id="L654">                cuestionariosCount + &quot; cuestionario(s). Quítala de los cuestionarios primero.&quot;);</span>
         }
 
         // Verificar si está siendo usada en combos
 <span class="nc" id="L658">        Long combosCount = entityManager.createQuery(</span>
-            &quot;SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)
+<span class="nc" id="L659">            &quot;SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)</span>
 <span class="nc" id="L660">            .setParameter(&quot;preguntaId&quot;, id)</span>
 <span class="nc" id="L661">            .getSingleResult();</span>
         
 <span class="nc bnc" id="L663" title="All 2 branches missed.">        if (combosCount &gt; 0) {</span>
 <span class="nc" id="L664">            throw new IllegalArgumentException(&quot;No se puede eliminar la pregunta porque está siendo usada en &quot; + </span>
-                combosCount + &quot; combo(s). Quítala de los combos primero.&quot;);
+<span class="nc" id="L665">                combosCount + &quot; combo(s). Quítala de los combos primero.&quot;);</span>
         }
 
         // UNDO: capturar la fila completa antes de borrar (se reinsertará con el mismo id)
@@ -695,8 +695,8 @@ import org.slf4j.LoggerFactory;
 <span class="nc" id="L695">            pregunta.setVersion(dto.getVersion());</span>
         }
         
-<span class="nc" id="L698">        System.out.println(&quot;✅ [ACTUALIZAR] Iniciando actualización de pregunta ID: &quot; + id);</span>
-<span class="nc" id="L699">        System.out.println(&quot;✅ [ACTUALIZAR] Estado actual: &quot; + pregunta.getEstado() + &quot;, Estado solicitado: &quot; + dto.getEstado());</span>
+<span class="nc" id="L698">        log.debug(&quot;✅ [ACTUALIZAR] Iniciando actualización de pregunta ID: &quot; + id);</span>
+<span class="nc" id="L699">        log.debug(&quot;✅ [ACTUALIZAR] Estado actual: &quot; + pregunta.getEstado() + &quot;, Estado solicitado: &quot; + dto.getEstado());</span>
         
         // Proteger el campo de autoría - no permitir modificaciones
 <span class="nc bnc" id="L702" title="All 4 branches missed.">        if (dto.getCreacionUsuarioId() != null &amp;&amp; !dto.getCreacionUsuarioId().equals(pregunta.getCreacionUsuario().getId())) {</span>
@@ -724,12 +724,12 @@ import org.slf4j.LoggerFactory;
 <span class="nc bnc" id="L724" title="All 2 branches missed.">        if (dto.getEstado() != null) {</span>
             try {
 <span class="nc" id="L726">                EstadoPregunta nuevoEstado = EstadoPregunta.valueOf(dto.getEstado());</span>
-<span class="nc" id="L727">                System.out.println(&quot;✅ [ACTUALIZAR] Cambiando estado de &quot; + pregunta.getEstado() + &quot; a &quot; + nuevoEstado);</span>
+<span class="nc" id="L727">                log.debug(&quot;✅ [ACTUALIZAR] Cambiando estado de &quot; + pregunta.getEstado() + &quot; a &quot; + nuevoEstado);</span>
 <span class="nc" id="L728">                pregunta.setEstado(nuevoEstado);</span>
 <span class="nc" id="L729">            } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L730">                System.err.println(&quot;❌ [ACTUALIZAR] Estado inválido: &quot; + dto.getEstado());</span>
+<span class="nc" id="L730">                log.warn(&quot;❌ [ACTUALIZAR] Estado inválido: &quot; + dto.getEstado());</span>
 <span class="nc" id="L731">                throw new IllegalArgumentException(&quot;Estado inválido: &quot; + dto.getEstado());</span>
-<span class="nc" id="L732">            }</span>
+            }
         }
 
 <span class="nc bnc" id="L735" title="All 2 branches missed.">        if (dto.getTematica() != null) pregunta.setTematica(dataTransformationService.normalizarTematica(dto.getTematica()));</span>
@@ -744,23 +744,23 @@ import org.slf4j.LoggerFactory;
 <span class="nc bnc" id="L744" title="All 2 branches missed.">        if (dto.getNotasDireccion() != null) pregunta.setNotasDireccion(dto.getNotasDireccion());</span>
 <span class="nc bnc" id="L745" title="All 2 branches missed.">        if (dto.getSubtema() != null) pregunta.setSubtema(dto.getSubtema());</span>
 
-<span class="nc bnc" id="L747" title="All 4 branches missed.">        if (pregunta.getEstado() == EstadoPregunta.para_verificar</span>
-            &amp;&amp; estadoAnterior != EstadoPregunta.para_verificar) {
+<span class="nc bnc" id="L747" title="All 2 branches missed.">        if (pregunta.getEstado() == EstadoPregunta.para_verificar</span>
+<span class="nc bnc" id="L748" title="All 2 branches missed.">            &amp;&amp; estadoAnterior != EstadoPregunta.para_verificar) {</span>
 <span class="nc" id="L749">            validarRequisitosParaVerificar(</span>
 <span class="nc" id="L750">                pregunta.getTematica(), pregunta.getPregunta(), pregunta.getRespuesta(), pregunta.getFuentes());</span>
         }
         
         // Manejar actualización del campo verificacion SOLO cuando se cambia a estado verificada
 <span class="nc bnc" id="L754" title="All 2 branches missed.">        if (dto.getEstado() != null &amp;&amp; </span>
-<span class="nc bnc" id="L755" title="All 4 branches missed.">            EstadoPregunta.verificada.name().equals(dto.getEstado()) &amp;&amp; </span>
-            estadoAnterior != EstadoPregunta.verificada) {
+<span class="nc bnc" id="L755" title="All 2 branches missed.">            EstadoPregunta.verificada.name().equals(dto.getEstado()) &amp;&amp; </span>
+<span class="nc bnc" id="L756" title="All 2 branches missed.">            estadoAnterior != EstadoPregunta.verificada) {</span>
             
-<span class="nc" id="L758">            System.out.println(&quot;✅ [ACTUALIZAR] Estado cambiado a VERIFICADA, actualizando verificacion&quot;);</span>
+<span class="nc" id="L758">            log.debug(&quot;✅ [ACTUALIZAR] Estado cambiado a VERIFICADA, actualizando verificacion&quot;);</span>
             
             // Obtener el usuario actual del contexto de seguridad
 <span class="nc" id="L761">            String nombreUsuario = null;</span>
             try {
-                org.springframework.security.core.Authentication auth = 
+<span class="nc" id="L763">                org.springframework.security.core.Authentication auth = </span>
 <span class="nc" id="L764">                    SecurityContextHolder.getContext().getAuthentication();</span>
 <span class="nc bnc" id="L765" title="All 6 branches missed.">                if (auth != null &amp;&amp; auth.isAuthenticated() &amp;&amp; !&quot;anonymousUser&quot;.equals(auth.getName())) {</span>
 <span class="nc" id="L766">                    nombreUsuario = auth.getName();</span>
@@ -768,7 +768,7 @@ import org.slf4j.LoggerFactory;
 <span class="nc" id="L768">            } catch (Exception e) {</span>
                 // Si no se puede obtener el usuario, usar un valor por defecto
 <span class="nc" id="L770">                nombreUsuario = &quot;Usuario&quot;;</span>
-<span class="nc" id="L771">            }</span>
+            }
             
 <span class="nc bnc" id="L773" title="All 2 branches missed.">            if (nombreUsuario != null) {</span>
 <span class="nc" id="L774">                String verificacionActual = pregunta.getVerificacion();</span>
@@ -776,7 +776,7 @@ import org.slf4j.LoggerFactory;
 <span class="nc bnc" id="L776" title="All 4 branches missed.">                if (verificacionActual == null || verificacionActual.trim().isEmpty()) {</span>
                     // Si no hay verificacion previa, usar solo el nombre del usuario actual
 <span class="nc" id="L778">                    pregunta.setVerificacion(nombreUsuario);</span>
-                } else {
+<span class="nc" id="L779">                } else {</span>
                     // Si ya hay verificacion previa, agregar el nuevo usuario si no está ya incluido
 <span class="nc bnc" id="L781" title="All 2 branches missed.">                    if (!verificacionActual.contains(nombreUsuario)) {</span>
 <span class="nc" id="L782">                        pregunta.setVerificacion(verificacionActual + &quot;, &quot; + nombreUsuario);</span>
@@ -795,7 +795,7 @@ import org.slf4j.LoggerFactory;
         }
         
 <span class="nc" id="L797">        Pregunta preguntaGuardada = preguntaRepository.save(pregunta);</span>
-<span class="nc" id="L798">        System.out.println(&quot;✅ [ACTUALIZAR] Pregunta guardada con éxito. Estado final: &quot; + preguntaGuardada.getEstado());</span>
+<span class="nc" id="L798">        log.debug(&quot;✅ [ACTUALIZAR] Pregunta guardada con éxito. Estado final: &quot; + preguntaGuardada.getEstado());</span>
 <span class="nc" id="L799">        return preguntaGuardada;</span>
     }
 
@@ -810,19 +810,19 @@ import org.slf4j.LoggerFactory;
 <span class="nc" id="L810">        } catch (Exception ignored) {}</span>
         
 <span class="nc" id="L812">        log.info(&quot;[BUSCAR] Parámetros de búsqueda - Nivel: {}, Factor: {}, ID: {}, Pregunta: {}, Respuesta: {}, Temática: {}&quot;, </span>
-            nivel, factor, id, pregunta, respuesta, tematica);
+<span class="nc" id="L813">            nivel, factor, id, pregunta, respuesta, tematica);</span>
 <span class="nc" id="L814">        log.info(&quot;[BUSCAR] Enums convertidos - NivelEnum: {}, FactorEnum: {}&quot;, nivelEnum, factorEnum);</span>
         
         // TEMPORAL: Usar el método sin filtro de disponibilidad para debug
 <span class="nc" id="L817">        Page&lt;Pregunta&gt; resultado = preguntaRepository.buscarPreguntasSinFiltroDisponibilidad(</span>
-            nivelEnum,
-            factorEnum,
+<span class="nc" id="L818">            nivelEnum,</span>
+<span class="nc" id="L819">            factorEnum,</span>
 <span class="nc bnc" id="L820" title="All 4 branches missed.">            (id != null &amp;&amp; !id.isBlank()) ? id : null,</span>
 <span class="nc bnc" id="L821" title="All 4 branches missed.">            (pregunta != null &amp;&amp; !pregunta.isBlank()) ? pregunta : null,</span>
 <span class="nc bnc" id="L822" title="All 4 branches missed.">            (respuesta != null &amp;&amp; !respuesta.isBlank()) ? respuesta : null,</span>
 <span class="nc bnc" id="L823" title="All 4 branches missed.">            (tematica != null &amp;&amp; !tematica.isBlank()) ? tematica : null,</span>
-            Pregunta.EstadoPregunta.aprobada,
-            pageable
+<span class="nc" id="L824">            Pregunta.EstadoPregunta.aprobada,</span>
+<span class="nc" id="L825">            pageable</span>
         );
         
 <span class="nc" id="L828">        log.info(&quot;[BUSCAR] Resultado - Total elementos: {}, Total páginas: {}, Elementos en esta página: {}&quot;, </span>
@@ -848,24 +848,24 @@ import org.slf4j.LoggerFactory;
         
         // Verificar si está siendo usada en cuestionarios
 <span class="nc" id="L850">        Long cuestionariosCount = entityManager.createQuery(</span>
-            &quot;SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)
+<span class="nc" id="L851">            &quot;SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)</span>
 <span class="nc" id="L852">            .setParameter(&quot;preguntaId&quot;, id)</span>
 <span class="nc" id="L853">            .getSingleResult();</span>
         
 <span class="nc bnc" id="L855" title="All 2 branches missed.">        if (cuestionariosCount &gt; 0) {</span>
 <span class="nc" id="L856">            throw new IllegalArgumentException(&quot;No se puede eliminar la pregunta porque está siendo usada en &quot; + </span>
-                cuestionariosCount + &quot; cuestionario(s). Quítala de los cuestionarios primero.&quot;);
+<span class="nc" id="L857">                cuestionariosCount + &quot; cuestionario(s). Quítala de los cuestionarios primero.&quot;);</span>
         }
 
         // Verificar si está siendo usada en combos
 <span class="nc" id="L861">        Long combosCount = entityManager.createQuery(</span>
-            &quot;SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)
+<span class="nc" id="L862">            &quot;SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)</span>
 <span class="nc" id="L863">            .setParameter(&quot;preguntaId&quot;, id)</span>
 <span class="nc" id="L864">            .getSingleResult();</span>
         
 <span class="nc bnc" id="L866" title="All 2 branches missed.">        if (combosCount &gt; 0) {</span>
 <span class="nc" id="L867">            throw new IllegalArgumentException(&quot;No se puede eliminar la pregunta porque está siendo usada en &quot; + </span>
-                combosCount + &quot; combo(s). Quítala de los combos primero.&quot;);
+<span class="nc" id="L868">                combosCount + &quot; combo(s). Quítala de los combos primero.&quot;);</span>
         }
 
         // UNDO: capturar la fila completa antes de borrar (se reinsertará con el mismo id)
@@ -884,7 +884,7 @@ import org.slf4j.LoggerFactory;
                                                      String tematica, String subtema, String pregunta, String respuesta, String autoria, String texto) {
 <span class="nc" id="L885">        Specification&lt;Pregunta&gt; spec = buildFiltrarSpecification(</span>
 <span class="nc" id="L886">            parseNivel(nivel), parseFactor(factor), estado,</span>
-            tematica, subtema, pregunta, respuesta, autoria, texto);
+<span class="nc" id="L887">            tematica, subtema, pregunta, respuesta, autoria, texto);</span>
 
 <span class="nc" id="L889">        List&lt;Pregunta&gt; preguntas = preguntaRepository.findAll(spec, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
 <span class="nc" id="L890">        return preguntas.stream().map(this::mapPreguntaToDTO).collect(Collectors.toList());</span>
@@ -894,11 +894,11 @@ import org.slf4j.LoggerFactory;
                                                              String tematica, String subtema, String pregunta, String respuesta, 
                                                              String autoria, String texto, Pageable pageable) {
 <span class="nc" id="L896">        log.info(&quot;[FILTRAR] Filtros recibidos - estado: {}, tematica: {}, subtema: {}, autoria: {}, nivel: {}, texto: {}&quot;,</span>
-            estado, tematica, subtema, autoria, nivel, texto);
+<span class="nc" id="L897">            estado, tematica, subtema, autoria, nivel, texto);</span>
 
 <span class="nc" id="L899">        Specification&lt;Pregunta&gt; spec = buildFiltrarSpecification(</span>
 <span class="nc" id="L900">            parseNivel(nivel), parseFactor(factor), estado,</span>
-            tematica, subtema, pregunta, respuesta, autoria, texto);
+<span class="nc" id="L901">            tematica, subtema, pregunta, respuesta, autoria, texto);</span>
 
 <span class="nc" id="L903">        Page&lt;Pregunta&gt; page = preguntaRepository.findAll(spec, pageable);</span>
 <span class="nc" id="L904">        log.info(&quot;[FILTRAR] Resultado tras filtrar - total: {}, pagina: {}, tamPagina: {}&quot;,</span>
@@ -961,7 +961,7 @@ import org.slf4j.LoggerFactory;
 <span class="nc" id="L961">                            estados.add(parseEstadoPregunta(v));</span>
 <span class="nc" id="L962">                        } catch (Exception e) {</span>
 <span class="nc" id="L963">                            log.warn(&quot;[FILTRAR] Estado CSV no reconocido: '{}'&quot;, v);</span>
-<span class="nc" id="L964">                        }</span>
+                        }
                     }
                 }
 <span class="nc bnc" id="L967" title="All 2 branches missed.">                if (!estados.isEmpty()) {</span>
@@ -973,7 +973,7 @@ import org.slf4j.LoggerFactory;
 <span class="nc" id="L973">                    spec = spec.and((root, cq, cb) -&gt; cb.equal(root.get(&quot;estado&quot;), estado));</span>
 <span class="nc" id="L974">                } catch (Exception e) {</span>
 <span class="nc" id="L975">                    log.warn(&quot;[FILTRAR] Estado no reconocido: '{}'&quot;, estadoRaw);</span>
-<span class="nc" id="L976">                }</span>
+                }
             }
         }
 
@@ -999,7 +999,7 @@ import org.slf4j.LoggerFactory;
 <span class="nc" id="L999">                Join&lt;Pregunta, Usuario&gt; creacionUsuario = root.join(&quot;creacionUsuario&quot;, JoinType.LEFT);</span>
 <span class="nc" id="L1000">                return cb.like(</span>
 <span class="nc" id="L1001">                    cb.lower(cb.coalesce(root.get(&quot;autor&quot;), cb.coalesce(creacionUsuario.get(&quot;nombre&quot;), cb.literal(&quot;&quot;)))),</span>
-                    like
+<span class="nc" id="L1002">                    like</span>
                 );
             });
         }
@@ -1008,7 +1008,7 @@ import org.slf4j.LoggerFactory;
 <span class="nc" id="L1008">            spec = spec.and((root, cq, cb) -&gt; cb.or(</span>
 <span class="nc" id="L1009">                cb.like(cb.lower(root.get(&quot;pregunta&quot;)), like),</span>
 <span class="nc" id="L1010">                cb.like(cb.lower(root.get(&quot;respuesta&quot;)), like)</span>
-            ));
+<span class="nc" id="L1011">            ));</span>
         }
 
 <span class="nc" id="L1014">        return spec;</span>
@@ -1089,7 +1089,7 @@ import org.slf4j.LoggerFactory;
                     
 <span class="nc" id="L1090">                } catch (Exception ex) {</span>
 <span class="nc" id="L1091">                    log.error(&quot;[PAGINADAS] Error al verificar datos: {}&quot;, ex.getMessage());</span>
-<span class="nc" id="L1092">                }</span>
+                }
             }
             
 <span class="nc" id="L1095">            throw e;</span>
@@ -1112,7 +1112,7 @@ import org.slf4j.LoggerFactory;
         }
         
 <span class="nc" id="L1114">        String textoLimpio = texto.trim().toLowerCase();</span>
-<span class="nc" id="L1115">        System.out.println(&quot;🔍 Buscando apariciones para: &quot; + textoLimpio);</span>
+<span class="nc" id="L1115">        log.debug(&quot;🔍 Buscando apariciones para: &quot; + textoLimpio);</span>
         
         // Buscar en todas las preguntas (no usar filtro de estado para ser exhaustivo)
 <span class="nc" id="L1118">        List&lt;Pregunta&gt; todasLasPreguntas = preguntaRepository.findAll();</span>
@@ -1127,7 +1127,7 @@ import org.slf4j.LoggerFactory;
             })
 <span class="nc" id="L1128">            .collect(Collectors.toList());</span>
         
-<span class="nc" id="L1130">        System.out.println(&quot;✅ Encontradas &quot; + preguntasCoincidentes.size() + &quot; coincidencias&quot;);</span>
+<span class="nc" id="L1130">        log.debug(&quot;✅ Encontradas &quot; + preguntasCoincidentes.size() + &quot; coincidencias&quot;);</span>
         
         // Convertir a DTOs para la respuesta
 <span class="nc" id="L1133">        return preguntasCoincidentes.stream()</span>

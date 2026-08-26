@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.service.BackupService;
 import com.lsnls.service.AuthorizationService;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +36,7 @@ public class BackupController {
             return ResponseEntity.ok(backups);
         } catch (Exception e) {
             log.error("Error al listar backups", e);
-            return ResponseEntity.internalServerError().body("Error interno al listar backups: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al listar backups: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -57,7 +59,7 @@ public class BackupController {
             log.error("Error al crear backup", e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
-                "message", "Error al crear backup: " + e.getMessage()
+                "message", "Error al crear backup: " + MensajesUsuario.sanitizar(e.getMessage())
             ));
         }
     }
@@ -87,7 +89,7 @@ public class BackupController {
             log.error("Error al restaurar backup", e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
-                "message", "Error al restaurar backup: " + e.getMessage()
+                "message", "Error al restaurar backup: " + MensajesUsuario.sanitizar(e.getMessage())
             ));
         }
     }
@@ -109,7 +111,7 @@ public class BackupController {
             log.error("Error al limpiar backups", e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "success", false,
-                "message", "Error al limpiar backups: " + e.getMessage()
+                "message", "Error al limpiar backups: " + MensajesUsuario.sanitizar(e.getMessage())
             ));
         }
     }
@@ -136,7 +138,7 @@ public class BackupController {
             ));
         } catch (Exception e) {
             log.error("Error al obtener estado de backup", e);
-            return ResponseEntity.internalServerError().body("Error interno al obtener estado de backup: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error interno al obtener estado de backup: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 

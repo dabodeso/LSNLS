@@ -6,6 +6,8 @@ const JornadasManager = {
     jornadaEditando: null,
     cuestionariosSeleccionados: [],
     combosSeleccionados: [],
+    slotDestinoCuestionario: null,
+    slotDestinoCombo: null,
     lastScrollY: 0,
     lastFocusJornadaId: null,
     reabrirEditarTrasSeleccion: false,
@@ -20,11 +22,70 @@ const JornadasManager = {
 
     idEnLista(lista, id) {
         const target = this.normalizeId(id);
-        return (lista || []).findIndex(x => this.normalizeId(x) === target);
+        return (lista || []).findIndex(x => x != null && this.normalizeId(x) === target);
     },
 
     incluyeId(lista, id) {
         return this.idEnLista(lista, id) >= 0;
+    },
+
+    slotsVacios() {
+        return [null, null, null, null, null, null];
+    },
+
+    normalizarSlots(lista) {
+        const slots = this.slotsVacios();
+        if (!Array.isArray(lista)) {
+            return slots;
+        }
+        const posicional = lista.length === 6 || lista.some(x => x == null);
+        if (posicional) {
+            for (let i = 0; i < 6; i++) {
+                slots[i] = lista[i] != null ? lista[i] : null;
+            }
+            return slots;
+        }
+        let j = 0;
+        for (const item of lista) {
+            if (item != null && j < 6) {
+                slots[j++] = item;
+            }
+        }
+        return slots;
+    },
+
+    contarOcupados(lista) {
+        return (lista || []).filter(x => x != null).length;
+    },
+
+    colocarEnHueco(lista, id, desde) {
+        const slots = this.normalizarSlots(lista);
+        if (this.incluyeId(slots, id)) {
+            return slots;
+        }
+        const start = Number.isInteger(desde) ? desde : 0;
+        for (let i = start; i < 6; i++) {
+            if (slots[i] == null) {
+                slots[i] = this.normalizeId(id);
+                return slots;
+            }
+        }
+        for (let i = 0; i < start; i++) {
+            if (slots[i] == null) {
+                slots[i] = this.normalizeId(id);
+                return slots;
+            }
+        }
+        return null;
+    },
+
+    quitarDeSlots(lista, id) {
+        const slots = this.normalizarSlots(lista);
+        const idx = this.idEnLista(slots, id);
+        if (idx >= 0) {
+            slots[idx] = null;
+        }
+        return slots;
     },
 
     reabrirModalJornadaTrasSeleccion() {
@@ -102,28 +163,25 @@ const JornadasManager = {
     },
     
     // Función para seleccionar cuestionarios directamente sin pasar por el editor
-    seleccionarCuestionariosDirecto(jornadaId) {
+    seleccionarCuestionariosDirecto(jornadaId, slotIndex) {
         this.jornadaEditando = this.jornadas.find(j => j.id === jornadaId);
-        // Bloquear si la jornada no es editable (por estado)
         if (!this.puedeEditar(this.jornadaEditando)) {
             Utils.showAlert('Esta jornada está bloqueada por estado y no se puede editar.', 'error');
             return;
         }
-        // Usar los mismos campos que editarJornada para consistencia
-        this.cuestionariosSeleccionados = this.jornadaEditando.cuestionarioIds || [];
+        this.slotDestinoCuestionario = Number.isInteger(slotIndex) ? slotIndex : 0;
+        this.cuestionariosSeleccionados = this.normalizarSlots(this.jornadaEditando.cuestionarioIds);
         this.seleccionarCuestionarios();
     },
-    
-    // Función para seleccionar combos directamente sin pasar por el editor
-    seleccionarCombosDirecto(jornadaId) {
+
+    seleccionarCombosDirecto(jornadaId, slotIndex) {
         this.jornadaEditando = this.jornadas.find(j => j.id === jornadaId);
-        // Bloquear si la jornada no es editable (por estado)
         if (!this.puedeEditar(this.jornadaEditando)) {
             Utils.showAlert('Esta jornada está bloqueada por estado y no se puede editar.', 'error');
             return;
         }
-        // Usar los mismos campos que editarJornada para consistencia
-        this.combosSeleccionados = this.jornadaEditando.comboIds || [];
+        this.slotDestinoCombo = Number.isInteger(slotIndex) ? slotIndex : 0;
+        this.combosSeleccionados = this.normalizarSlots(this.jornadaEditando.comboIds);
         this.seleccionarCombos();
     },
 
@@ -411,16 +469,16 @@ const JornadasManager = {
 
     generarCardJornada(jornada) {
         // Preparar los cuestionarios y combos (asegurar que existan arrays)
-        const cuestionarios = jornada.cuestionarios || [];
-        const combos = jornada.combos || [];
+        const cuestionarios = this.normalizarSlots(jornada.cuestionarios);
+        const combos = this.normalizarSlots(jornada.combos);
         // Mapear estado backend -> etiquetas del front
         const estadoVista = jornada.estado || 'preparacion';
         
         // Generar slots de cuestionarios (6 en total)
         let cuestionariosHtml = '';
         for (let i = 0; i < 6; i++) {
-            if (i < cuestionarios.length) {
-                const c = cuestionarios[i];
+            const c = cuestionarios[i];
+            if (c && c.id) {
                 const esReutilizado = !!c.reutilizado;
                 cuestionariosHtml += `
                     <div class="cuestionario-slot p-2 border rounded ${esReutilizado ? 'bg-success bg-opacity-10' : ''}" style="${esReutilizado ? 'border-color:#28a745 !important;' : 'background-color:#ffffff; border-color:#e9ecef !important;'}">
@@ -458,7 +516,7 @@ const JornadasManager = {
                     <div class="cuestionario-slot empty-slot p-2 border rounded" style="background-color: #f8f9fa; border-color: #e9ecef !important; border-style: dashed !important;">
                         ${JornadasManager.puedeEditar(jornada) ? `
                             <button class="btn btn-sm btn-outline-success w-100" 
-                                    onclick="JornadasManager.seleccionarCuestionariosDirecto(${jornada.id})">
+                                    onclick="JornadasManager.seleccionarCuestionariosDirecto(${jornada.id}, ${i})">
                                 <i class="fas fa-plus"></i> Añadir
                             </button>
                         ` : `<div class="text-muted small text-center">Solo lectura</div>`}
@@ -478,8 +536,8 @@ const JornadasManager = {
         // Generar slots de combos (6 en total)
         let combosHtml = '';
         for (let i = 0; i < 6; i++) {
-            if (i < combos.length) {
-                const c = combos[i];
+            const c = combos[i];
+            if (c && c.id) {
                 const esReutilizado = !!c.reutilizado;
                 // Obtener el nombre completo del tipo o usar el valor original
                 const tipoNombre = tipoComboNombres[c.tipo] || c.tipo || 'Sin tipo';
@@ -520,7 +578,7 @@ const JornadasManager = {
                     <div class="combo-slot empty-slot p-2 border rounded" style="background-color: #f8f9fa; border-color: #e9ecef !important; border-style: dashed !important;">
                         ${JornadasManager.puedeEditar(jornada) ? `
                             <button class="btn btn-sm btn-outline-success w-100" 
-                                    onclick="JornadasManager.seleccionarCombosDirecto(${jornada.id})">
+                                    onclick="JornadasManager.seleccionarCombosDirecto(${jornada.id}, ${i})">
                                 <i class="fas fa-plus"></i> Añadir
                             </button>
                         ` : `<div class="text-muted small text-center">Solo lectura</div>`}
@@ -639,8 +697,8 @@ const JornadasManager = {
         // Generar recuadros del mismo tamaño que los slots de cuestionarios
         let html = '';
         for (let i = 0; i < 6; i++) {
-            if (i < cuestionarios.length) {
-                const c = cuestionarios[i];
+            const c = cuestionarios[i];
+            if (c && c.id) {
                 const notas = c.notasDireccion || '';
                 html += `
                     <div class="cuestionario-slot p-2 border rounded" style="background-color:#ffffff; border-color:#e9ecef !important;">
@@ -672,8 +730,8 @@ const JornadasManager = {
         // Vista 3: Generar recuadros del mismo tamaño que los slots de combos
         let html = '';
         for (let i = 0; i < 6; i++) {
-            if (i < combos.length) {
-                const c = combos[i];
+            const c = combos[i];
+            if (c && c.id) {
                 const notas = c.notasDireccion || '';
                 html += `
                     <div class="combo-slot p-2 border rounded" style="background-color:#ffffff; border-color:#e9ecef !important;">
@@ -763,8 +821,8 @@ const JornadasManager = {
             if (!jornada) throw new Error('No se pudo cargar la jornada');
             
             // Capturar SOLO los campos editables (sin version, creacion_usuario_id, etc.)
-            const prevCuestionarioIds = [...(jornada.cuestionarioIds || [])];
-            const nuevaCuestionarioIds = prevCuestionarioIds.filter(id => id !== cuestionarioId);
+            const prevCuestionarioIds = this.normalizarSlots(jornada.cuestionarioIds);
+            const nuevaCuestionarioIds = this.quitarDeSlots(prevCuestionarioIds, cuestionarioId);
             
             const doAction = async () => {
                 console.log('[UNDO][do][eliminar-cuestionario] Eliminando cuestionario:', { jornadaId, cuestionarioId, nuevaCuestionarioIds });
@@ -822,8 +880,8 @@ const JornadasManager = {
             if (!jornada) throw new Error('No se pudo cargar la jornada');
             
             // Capturar SOLO los campos editables (sin version, creacion_usuario_id, etc.)
-            const prevComboIds = [...(jornada.comboIds || [])];
-            const nuevaComboIds = prevComboIds.filter(id => id !== comboId);
+            const prevComboIds = this.normalizarSlots(jornada.comboIds);
+            const nuevaComboIds = this.quitarDeSlots(prevComboIds, comboId);
             
             const doAction = async () => {
                 console.log('[UNDO][do][eliminar-combo] Eliminando combo:', { jornadaId, comboId, nuevaComboIds });
@@ -914,8 +972,8 @@ const JornadasManager = {
 
     mostrarModalCrear() {
         this.jornadaEditando = null;
-        this.cuestionariosSeleccionados = [];
-        this.combosSeleccionados = [];
+        this.cuestionariosSeleccionados = this.slotsVacios();
+        this.combosSeleccionados = this.slotsVacios();
         
         document.getElementById('modalJornadaTitulo').textContent = 'Nueva Jornada';
         document.getElementById('formJornada').reset();
@@ -937,8 +995,8 @@ const JornadasManager = {
             
             this.jornadaEditando = jornada;
             this.lastFocusJornadaId = id;
-            this.cuestionariosSeleccionados = jornada.cuestionarioIds || [];
-            this.combosSeleccionados = jornada.comboIds || [];
+            this.cuestionariosSeleccionados = this.normalizarSlots(jornada.cuestionarioIds);
+            this.combosSeleccionados = this.normalizarSlots(jornada.comboIds);
             
             document.getElementById('modalJornadaTitulo').textContent = 'Editar Jornada';
             document.getElementById('jornadaId').value = jornada.id;
@@ -1161,6 +1219,16 @@ const JornadasManager = {
             const mensajeError = this.extraerMensajeError(error.message);
             Utils.showAlert(mensajeError, 'error');
         }
+    },
+
+    abrirSelectorCuestionarioEnSlot(slotIndex) {
+        this.slotDestinoCuestionario = Number.isInteger(slotIndex) ? slotIndex : 0;
+        return this.seleccionarCuestionarios();
+    },
+
+    abrirSelectorComboEnSlot(slotIndex) {
+        this.slotDestinoCombo = Number.isInteger(slotIndex) ? slotIndex : 0;
+        return this.seleccionarCombos();
     },
 
     async seleccionarCuestionarios() {
@@ -1449,7 +1517,7 @@ const JornadasManager = {
         console.log('🎯 [AÑADIR] jornadaEditando.id:', this.jornadaEditando?.id);
         
         // Límite visual
-        if (this.cuestionariosSeleccionados.length >= 6 && !this.incluyeId(this.cuestionariosSeleccionados, id)) {
+        if (this.contarOcupados(this.cuestionariosSeleccionados) >= 6 && !this.incluyeId(this.cuestionariosSeleccionados, id)) {
             Utils.showAlert('Máximo 6 cuestionarios por jornada', 'error');
             return;
         }
@@ -1461,8 +1529,12 @@ const JornadasManager = {
             modalInst && modalInst.hide();
 
             const jid = this.jornadaEditando.id;
-            const prevLista = (this.jornadaEditando.cuestionarioIds || []).slice();
-            const nuevaLista = prevLista.includes(id) ? prevLista.slice() : prevLista.concat([id]);
+            const prevLista = this.normalizarSlots(this.jornadaEditando.cuestionarioIds);
+            const nuevaLista = this.colocarEnHueco(prevLista, id, this.slotDestinoCuestionario);
+            if (!nuevaLista) {
+                Utils.showAlert('Máximo 6 cuestionarios por jornada', 'error');
+                return;
+            }
 
             // Los errores del PUT se propagan: el UndoManager necesita saberlos
             // para no dar por hechas acciones que fallaron
@@ -1524,7 +1596,12 @@ const JornadasManager = {
         // Flujo en creación de jornada (modal de crear/editar abierto pero sin id persistido)
         id = this.normalizeId(id);
         if (!this.incluyeId(this.cuestionariosSeleccionados, id)) {
-            this.cuestionariosSeleccionados.push(id);
+            const colocados = this.colocarEnHueco(this.cuestionariosSeleccionados, id, this.slotDestinoCuestionario);
+            if (!colocados) {
+                Utils.showAlert('Máximo 6 cuestionarios por jornada', 'error');
+                return;
+            }
+            this.cuestionariosSeleccionados = colocados;
         }
         this.actualizarSlotsVisual();
         const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios'));
@@ -1539,7 +1616,7 @@ const JornadasManager = {
         console.log('🎯 [AÑADIR] jornadaEditando.id:', this.jornadaEditando?.id);
         
         // Límite visual
-        if (this.combosSeleccionados.length >= 6 && !this.incluyeId(this.combosSeleccionados, id)) {
+        if (this.contarOcupados(this.combosSeleccionados) >= 6 && !this.incluyeId(this.combosSeleccionados, id)) {
             Utils.showAlert('Máximo 6 combos por jornada', 'error');
             return;
         }
@@ -1551,8 +1628,12 @@ const JornadasManager = {
             modalInst && modalInst.hide();
 
             const jid = this.jornadaEditando.id;
-            const prevLista = (this.jornadaEditando.comboIds || []).slice();
-            const nuevaLista = prevLista.includes(id) ? prevLista.slice() : prevLista.concat([id]);
+            const prevLista = this.normalizarSlots(this.jornadaEditando.comboIds);
+            const nuevaLista = this.colocarEnHueco(prevLista, id, this.slotDestinoCombo);
+            if (!nuevaLista) {
+                Utils.showAlert('Máximo 6 combos por jornada', 'error');
+                return;
+            }
 
             // Los errores del PUT se propagan: el UndoManager necesita saberlos
             // para no dar por hechas acciones que fallaron
@@ -1614,7 +1695,12 @@ const JornadasManager = {
         // Flujo en creación de jornada (modal de crear/editar abierto pero sin id persistido)
         id = this.normalizeId(id);
         if (!this.incluyeId(this.combosSeleccionados, id)) {
-            this.combosSeleccionados.push(id);
+            const colocados = this.colocarEnHueco(this.combosSeleccionados, id, this.slotDestinoCombo);
+            if (!colocados) {
+                Utils.showAlert('Máximo 6 combos por jornada', 'error');
+                return;
+            }
+            this.combosSeleccionados = colocados;
         }
         this.actualizarSlotsVisual();
         const modalInst2 = bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos'));
@@ -1625,36 +1711,36 @@ const JornadasManager = {
 
     toggleCuestionario(id) {
         id = this.normalizeId(id);
-        const index = this.idEnLista(this.cuestionariosSeleccionados, id);
-        if (index > -1) {
-            this.cuestionariosSeleccionados.splice(index, 1);
+        if (this.incluyeId(this.cuestionariosSeleccionados, id)) {
+            this.cuestionariosSeleccionados = this.quitarDeSlots(this.cuestionariosSeleccionados, id);
         } else {
-            if (this.cuestionariosSeleccionados.length >= 6) {
+            const colocados = this.colocarEnHueco(this.cuestionariosSeleccionados, id, this.slotDestinoCuestionario);
+            if (!colocados) {
                 Utils.showAlert('Máximo 6 cuestionarios por jornada', 'error');
                 return;
             }
-            this.cuestionariosSeleccionados.push(id);
+            this.cuestionariosSeleccionados = colocados;
         }
         this.mostrarCuestionariosDisponibles();
     },
 
     toggleCombo(id) {
         id = this.normalizeId(id);
-        const index = this.idEnLista(this.combosSeleccionados, id);
-        if (index > -1) {
-            this.combosSeleccionados.splice(index, 1);
+        if (this.incluyeId(this.combosSeleccionados, id)) {
+            this.combosSeleccionados = this.quitarDeSlots(this.combosSeleccionados, id);
         } else {
-            if (this.combosSeleccionados.length >= 6) {
+            const colocados = this.colocarEnHueco(this.combosSeleccionados, id, this.slotDestinoCombo);
+            if (!colocados) {
                 Utils.showAlert('Máximo 6 combos por jornada', 'error');
                 return;
             }
-            this.combosSeleccionados.push(id);
+            this.combosSeleccionados = colocados;
         }
         this.mostrarCombosDisponibles();
     },
 
     confirmarSeleccionCuestionarios() {
-        const count = this.cuestionariosSeleccionados.length;
+        const count = this.contarOcupados(this.cuestionariosSeleccionados);
         this.actualizarSlotsVisual();
         bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios'))?.hide();
 
@@ -1669,7 +1755,7 @@ const JornadasManager = {
     },
 
     confirmarSeleccionCombos() {
-        const count = this.combosSeleccionados.length;
+        const count = this.contarOcupados(this.combosSeleccionados);
         this.actualizarSlotsVisual();
         bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos'))?.hide();
 
@@ -1771,7 +1857,7 @@ const JornadasManager = {
                 html += `
                     <div class="item-slot text-center">
                         <div class="text-muted mb-2">Slot ${i + 1} vacío</div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="JornadasManager.seleccionarCuestionarios()">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="JornadasManager.abrirSelectorCuestionarioEnSlot(${i})">
                             <i class="fas fa-plus"></i> Añadir cuestionario
                         </button>
                     </div>
@@ -1861,7 +1947,7 @@ const JornadasManager = {
                 html += `
                     <div class="item-slot text-center">
                         <div class="text-muted mb-2">Slot ${i + 1} vacío</div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="JornadasManager.seleccionarCombos()">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="JornadasManager.abrirSelectorComboEnSlot(${i})">
                             <i class="fas fa-plus"></i> Añadir combo
                         </button>
                     </div>
@@ -1875,7 +1961,7 @@ const JornadasManager = {
     quitarCuestionario(id) {
         const index = this.idEnLista(this.cuestionariosSeleccionados, id);
         if (index > -1) {
-            this.cuestionariosSeleccionados.splice(index, 1);
+            this.cuestionariosSeleccionados = this.quitarDeSlots(this.cuestionariosSeleccionados, id);
             this.actualizarSlotsVisual();
             
             // Si estamos editando una jornada existente, guardar los cambios
@@ -1989,7 +2075,7 @@ const JornadasManager = {
     quitarCombo(id) {
         const index = this.idEnLista(this.combosSeleccionados, id);
         if (index > -1) {
-            this.combosSeleccionados.splice(index, 1);
+            this.combosSeleccionados = this.quitarDeSlots(this.combosSeleccionados, id);
             this.actualizarSlotsVisual();
             
             // Si estamos editando una jornada existente, guardar los cambios

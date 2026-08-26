@@ -5,6 +5,7 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\validation\Upp
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\config\CacheConfigTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\SessionValidationServiceTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\controller\ValidationControllerTest.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\ExcelExportServiceTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\config\JwtAuthenticationFilterTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\controller\TemasControllerTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\PreguntaServiceCoverageTest.java
@@ -16,9 +17,11 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\entity\Pregunt
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\controller\BackupControllerTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\dto\ErrorResponseTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\HistorialJornadaServiceTest.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\config\CompatiblePasswordEncoderTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\entity\EstadoConcursanteTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\PreguntaServiceTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\UsuarioServiceTest.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\BackupServiceFilesystemTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\validation\NoLineBreaksValidatorTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\config\GlobalExceptionHandlerTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\entity\ProgramaTest.java
@@ -31,13 +34,14 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\Temati
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\controller\ConfiguracionGlobalControllerTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\controller\JornadaControllerTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\entity\EditLockTest.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\EstadoFlujoCompartidoTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\TemasCatalogServiceTest.java
-C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\TimeoutOperationServiceTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\UndoServiceTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\DataTransformationServiceTest.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\security\ApiAuthSecurityTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\entity\ConfiguracionGlobalTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\ComboServiceTest.java
-C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\RateLimitingServiceTest.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\config\TransicionesEstadoTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\controller\ProgramaControllerTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\config\JacksonConfigTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\controller\SyncControllerTest.java
@@ -65,6 +69,7 @@ C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\Cuesti
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\controller\HistorialJornadaControllerTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\config\UndoHeaderAdviceTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\CuestionarioServiceCoverageTest.java
+C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\web\UtilsJsContratosTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\config\WebConfigTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\controller\ComboControllerTest.java
 C:\Users\dabod\Documents\Code\LSNLS\LSNLS\src\test\java\com\lsnls\service\AuthServiceTest.java

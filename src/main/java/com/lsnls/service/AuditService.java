@@ -22,6 +22,7 @@ import java.util.Optional;
  * Registra automáticamente operaciones críticas del sistema
  */
 @Service
+@lombok.extern.slf4j.Slf4j
 public class AuditService {
 
     @Autowired
@@ -63,7 +64,7 @@ public class AuditService {
             
         } catch (Exception e) {
             // No fallar la operación principal por errores de auditoría
-            System.err.println("Error al registrar auditoría: " + e.getMessage());
+            log.warn("Error al registrar auditoría: " + e.getMessage());
         }
     }
 
@@ -101,7 +102,7 @@ public class AuditService {
             auditLogRepository.save(log);
             
         } catch (Exception e) {
-            System.err.println("Error al registrar auditoría con valores: " + e.getMessage());
+            log.warn("Error al registrar auditoría con valores: " + e.getMessage());
         }
     }
 
@@ -128,7 +129,7 @@ public class AuditService {
             auditLogRepository.save(log);
             
         } catch (Exception e) {
-            System.err.println("Error al registrar evento de seguridad: " + e.getMessage());
+            log.warn("Error al registrar evento de seguridad: " + e.getMessage());
         }
     }
 
@@ -157,7 +158,7 @@ public class AuditService {
             auditLogRepository.save(log);
             
         } catch (Exception e) {
-            System.err.println("Error al registrar login exitoso: " + e.getMessage());
+            log.warn("Error al registrar login exitoso: " + e.getMessage());
         }
     }
 
@@ -188,7 +189,7 @@ public class AuditService {
             auditLogRepository.save(log);
             
         } catch (Exception e) {
-            System.err.println("Error al registrar login fallido: " + e.getMessage());
+            log.warn("Error al registrar login fallido: " + e.getMessage());
         }
     }
 
@@ -244,7 +245,7 @@ public class AuditService {
         try {
             auditLogRepository.deleteLogsOlderThan(cutoffDate);
         } catch (Exception e) {
-            System.err.println("Error al limpiar logs antiguos: " + e.getMessage());
+            log.warn("Error al limpiar logs antiguos: " + e.getMessage());
         }
     }
 

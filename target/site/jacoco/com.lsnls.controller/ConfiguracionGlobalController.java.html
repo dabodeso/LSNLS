@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfiguracionGlobalController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">ConfiguracionGlobalController.java</span></div><h1>ConfiguracionGlobalController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.entity.ConfiguracionGlobal;
 import com.lsnls.service.ConfiguracionGlobalService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,14 +16,14 @@ import java.util.Map;
 @RestController
 @RequestMapping(&quot;/api/configuracion&quot;)
 @PreAuthorize(&quot;hasAuthority('ROLE_ADMIN')&quot;)
-<span class="nc" id="L17">public class ConfiguracionGlobalController {</span>
+<span class="nc" id="L19">public class ConfiguracionGlobalController {</span>
 
     @Autowired
     private ConfiguracionGlobalService configuracionService;
 
     @GetMapping
     public ResponseEntity&lt;List&lt;ConfiguracionGlobal&gt;&gt; findAll() {
-<span class="nc" id="L24">        return ResponseEntity.ok(configuracionService.findAll());</span>
+<span class="nc" id="L26">        return ResponseEntity.ok(configuracionService.findAll());</span>
     }
 
     @PutMapping(&quot;/{clave}&quot;)
@@ -29,33 +31,33 @@ import java.util.Map;
             @PathVariable String clave, 
             @RequestBody Map&lt;String, Object&gt; data) {
         try {
-<span class="nc" id="L32">            String valor = (String) data.get(&quot;valor&quot;);</span>
-<span class="nc" id="L33">            String descripcion = (String) data.get(&quot;descripcion&quot;);</span>
+<span class="nc" id="L34">            String valor = (String) data.get(&quot;valor&quot;);</span>
+<span class="nc" id="L35">            String descripcion = (String) data.get(&quot;descripcion&quot;);</span>
             
-<span class="nc" id="L35">            ConfiguracionGlobal actualizada = configuracionService.actualizarConfiguracion(clave, valor, descripcion);</span>
-<span class="nc" id="L36">            return ResponseEntity.ok(actualizada);</span>
-<span class="nc" id="L37">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L38">            return ResponseEntity.status(409).body(&quot;La configuración ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L39">        } catch (Exception e) {</span>
-<span class="nc" id="L40">            return ResponseEntity.badRequest().body(&quot;Error al actualizar configuración: &quot; + e.getMessage());</span>
+<span class="nc" id="L37">            ConfiguracionGlobal actualizada = configuracionService.actualizarConfiguracion(clave, valor, descripcion);</span>
+<span class="nc" id="L38">            return ResponseEntity.ok(actualizada);</span>
+<span class="nc" id="L39">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L40">            return ResponseEntity.status(409).body(&quot;La configuración ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L41">        } catch (Exception e) {</span>
+<span class="nc" id="L42">            return ResponseEntity.badRequest().body(&quot;Error al actualizar configuración: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @GetMapping(&quot;/duracion-objetivo&quot;)
     public ResponseEntity&lt;String&gt; getDuracionObjetivo() {
-<span class="nc" id="L46">        return ResponseEntity.ok(configuracionService.getDuracionObjetivo());</span>
+<span class="nc" id="L48">        return ResponseEntity.ok(configuracionService.getDuracionObjetivo());</span>
     }
 
     @PutMapping(&quot;/duracion-objetivo&quot;)
     public ResponseEntity&lt;?&gt; setDuracionObjetivo(@RequestBody Map&lt;String, String&gt; data) {
         try {
-<span class="nc" id="L52">            String duracion = data.get(&quot;duracion&quot;);</span>
-<span class="nc" id="L53">            configuracionService.setDuracionObjetivo(duracion);</span>
-<span class="nc" id="L54">            return ResponseEntity.ok(&quot;Duración objetivo actualizada correctamente&quot;);</span>
-<span class="nc" id="L55">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L56">            return ResponseEntity.status(409).body(&quot;La configuración de duración ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L57">        } catch (Exception e) {</span>
-<span class="nc" id="L58">            return ResponseEntity.badRequest().body(&quot;Error al actualizar duración objetivo: &quot; + e.getMessage());</span>
+<span class="nc" id="L54">            String duracion = data.get(&quot;duracion&quot;);</span>
+<span class="nc" id="L55">            configuracionService.setDuracionObjetivo(duracion);</span>
+<span class="nc" id="L56">            return ResponseEntity.ok(&quot;Duración objetivo actualizada correctamente&quot;);</span>
+<span class="nc" id="L57">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L58">            return ResponseEntity.status(409).body(&quot;La configuración de duración ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L59">        } catch (Exception e) {</span>
+<span class="nc" id="L60">            return ResponseEntity.badRequest().body(&quot;Error al actualizar duración objetivo: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 } 

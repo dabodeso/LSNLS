@@ -17,7 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-<span class="nc" id="L20">@Slf4j</span>
+<span class="fc" id="L20">@Slf4j</span>
 @Service
 <span class="nc" id="L22">public class BackupService {</span>
 
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
     @Value(&quot;${lsnls.backup.retention-days:7}&quot;)
     private int retentionDays;
 
-<span class="nc" id="L39">    private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern(&quot;yyyyMMdd_HHmmss&quot;);</span>
+<span class="fc" id="L39">    private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern(&quot;yyyyMMdd_HHmmss&quot;);</span>
 
     /**
      * Ejecuta backup automático todos los días a las 22:00 (10 PM) hora española
@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 <span class="nc" id="L50">            log.info(&quot;✅ Backup automático completado: {}&quot;, backupFile);</span>
 <span class="nc" id="L51">        } catch (Exception e) {</span>
 <span class="nc" id="L52">            log.error(&quot;❌ Error en backup automático&quot;, e);</span>
-<span class="nc" id="L53">        }</span>
+        }
 <span class="nc" id="L54">    }</span>
 
     /**
@@ -76,26 +76,26 @@ import java.util.stream.Collectors;
 
         // Comando mysqldump
 <span class="nc" id="L78">        List&lt;String&gt; command = Arrays.asList(</span>
-            &quot;mysqldump&quot;,
-            &quot;-h&quot;, dbConfig.host,
-            &quot;-P&quot;, dbConfig.port,
-            &quot;-u&quot;, dbConfig.username,
-            &quot;-p&quot; + dbConfig.password,
-            &quot;--single-transaction&quot;,
-            &quot;--routines&quot;,
-            &quot;--triggers&quot;,
-            &quot;--events&quot;,
-            &quot;--add-drop-database&quot;,
-            &quot;--create-options&quot;,
-            &quot;--complete-insert&quot;,
-            &quot;--extended-insert&quot;,
-            &quot;--set-charset&quot;,
-            &quot;--default-character-set=utf8mb4&quot;,
-            dbConfig.database
+<span class="nc" id="L79">            &quot;mysqldump&quot;,</span>
+<span class="nc" id="L80">            &quot;-h&quot;, dbConfig.host,</span>
+<span class="nc" id="L81">            &quot;-P&quot;, dbConfig.port,</span>
+<span class="nc" id="L82">            &quot;-u&quot;, dbConfig.username,</span>
+<span class="nc" id="L83">            &quot;-p&quot; + dbConfig.password,</span>
+<span class="nc" id="L84">            &quot;--single-transaction&quot;,</span>
+<span class="nc" id="L85">            &quot;--routines&quot;,</span>
+<span class="nc" id="L86">            &quot;--triggers&quot;,</span>
+<span class="nc" id="L87">            &quot;--events&quot;,</span>
+<span class="nc" id="L88">            &quot;--add-drop-database&quot;,</span>
+<span class="nc" id="L89">            &quot;--create-options&quot;,</span>
+<span class="nc" id="L90">            &quot;--complete-insert&quot;,</span>
+<span class="nc" id="L91">            &quot;--extended-insert&quot;,</span>
+<span class="nc" id="L92">            &quot;--set-charset&quot;,</span>
+<span class="nc" id="L93">            &quot;--default-character-set=utf8mb4&quot;,</span>
+<span class="nc" id="L94">            dbConfig.database</span>
         );
 
 <span class="nc" id="L97">        log.info(&quot;🔧 Ejecutando comando: mysqldump -h {} -P {} -u {} -p*** {}&quot;, </span>
-                dbConfig.host, dbConfig.port, dbConfig.username, dbConfig.database);
+<span class="nc" id="L98">                dbConfig.host, dbConfig.port, dbConfig.username, dbConfig.database);</span>
 
         // Ejecutar comando
 <span class="nc" id="L101">        ProcessBuilder processBuilder = new ProcessBuilder(command);</span>
@@ -109,7 +109,7 @@ import java.util.stream.Collectors;
 <span class="nc" id="L109">        } catch (InterruptedException e) {</span>
 <span class="nc" id="L110">            Thread.currentThread().interrupt();</span>
 <span class="nc" id="L111">            throw new IOException(&quot;Backup interrumpido&quot;, e);</span>
-<span class="nc" id="L112">        }</span>
+        }
 
 <span class="nc bnc" id="L114" title="All 2 branches missed.">        if (exitCode == 0) {</span>
 <span class="nc" id="L115">            long fileSize = Files.size(backupFile);</span>
@@ -131,8 +131,8 @@ import java.util.stream.Collectors;
         try {
 <span class="nc" id="L132">            String zipFile = backupFile.toString() + &quot;.zip&quot;;</span>
 <span class="nc" id="L133">            List&lt;String&gt; command = Arrays.asList(</span>
-                &quot;powershell&quot;,
-                &quot;-command&quot;,
+<span class="nc" id="L134">                &quot;powershell&quot;,</span>
+<span class="nc" id="L135">                &quot;-command&quot;,</span>
 <span class="nc" id="L136">                String.format(&quot;Compress-Archive -Path '%s' -DestinationPath '%s' -Force&quot;, </span>
 <span class="nc" id="L137">                            backupFile.toString(), zipFile)</span>
             );
@@ -145,12 +145,12 @@ import java.util.stream.Collectors;
 <span class="nc" id="L145">                log.info(&quot;📦 Backup comprimido: {}&quot;, zipFile);</span>
                 // Eliminar archivo original
 <span class="nc" id="L147">                Files.delete(backupFile);</span>
-            } else {
+<span class="nc" id="L148">            } else {</span>
 <span class="nc" id="L149">                log.warn(&quot;⚠️ No se pudo comprimir el backup: {}&quot;, backupFile);</span>
             }
 <span class="nc" id="L151">        } catch (Exception e) {</span>
 <span class="nc" id="L152">            log.warn(&quot;⚠️ Error al comprimir backup&quot;, e);</span>
-<span class="nc" id="L153">        }</span>
+        }
 <span class="nc" id="L154">    }</span>
 
     /**
@@ -188,14 +188,14 @@ import java.util.stream.Collectors;
                     }
 <span class="nc" id="L189">                } catch (Exception e) {</span>
 <span class="nc" id="L190">                    log.warn(&quot;⚠️ Error al procesar archivo: {}&quot;, backupFile.getFileName(), e);</span>
-<span class="nc" id="L191">                }</span>
-<span class="nc" id="L192">            }</span>
+                }
+            }
 
 <span class="nc" id="L194">            log.info(&quot;✅ Limpieza completada. {} archivos eliminados&quot;, deletedCount);</span>
 
 <span class="nc" id="L196">        } catch (Exception e) {</span>
 <span class="nc" id="L197">            log.error(&quot;❌ Error durante la limpieza de backups&quot;, e);</span>
-<span class="nc" id="L198">        }</span>
+        }
 <span class="nc" id="L199">    }</span>
 
     /**
@@ -248,12 +248,12 @@ import java.util.stream.Collectors;
 
             // Comando mysql para restaurar
 <span class="nc" id="L250">            List&lt;String&gt; command = Arrays.asList(</span>
-                &quot;mysql&quot;,
-                &quot;-h&quot;, dbConfig.host,
-                &quot;-P&quot;, dbConfig.port,
-                &quot;-u&quot;, dbConfig.username,
-                &quot;-p&quot; + dbConfig.password,
-                dbConfig.database
+<span class="nc" id="L251">                &quot;mysql&quot;,</span>
+<span class="nc" id="L252">                &quot;-h&quot;, dbConfig.host,</span>
+<span class="nc" id="L253">                &quot;-P&quot;, dbConfig.port,</span>
+<span class="nc" id="L254">                &quot;-u&quot;, dbConfig.username,</span>
+<span class="nc" id="L255">                &quot;-p&quot; + dbConfig.password,</span>
+<span class="nc" id="L256">                dbConfig.database</span>
             );
 
 <span class="nc" id="L259">            log.info(&quot;🔧 Ejecutando restauración...&quot;);</span>
@@ -356,21 +356,21 @@ import java.util.stream.Collectors;
         private final long size;
         private final boolean compressed;
 
-<span class="nc" id="L359">        public BackupInfo(String fileName, LocalDateTime createdAt, long size, boolean compressed) {</span>
-<span class="nc" id="L360">            this.fileName = fileName;</span>
-<span class="nc" id="L361">            this.createdAt = createdAt;</span>
-<span class="nc" id="L362">            this.size = size;</span>
-<span class="nc" id="L363">            this.compressed = compressed;</span>
-<span class="nc" id="L364">        }</span>
+<span class="fc" id="L359">        public BackupInfo(String fileName, LocalDateTime createdAt, long size, boolean compressed) {</span>
+<span class="fc" id="L360">            this.fileName = fileName;</span>
+<span class="fc" id="L361">            this.createdAt = createdAt;</span>
+<span class="fc" id="L362">            this.size = size;</span>
+<span class="fc" id="L363">            this.compressed = compressed;</span>
+<span class="fc" id="L364">        }</span>
 
-<span class="nc" id="L366">        public String getFileName() { return fileName; }</span>
-<span class="nc" id="L367">        public LocalDateTime getCreatedAt() { return createdAt; }</span>
-<span class="nc" id="L368">        public long getSize() { return size; }</span>
-<span class="nc" id="L369">        public boolean isCompressed() { return compressed; }</span>
+<span class="fc" id="L366">        public String getFileName() { return fileName; }</span>
+<span class="fc" id="L367">        public LocalDateTime getCreatedAt() { return createdAt; }</span>
+<span class="fc" id="L368">        public long getSize() { return size; }</span>
+<span class="fc" id="L369">        public boolean isCompressed() { return compressed; }</span>
         public String getFormattedSize() {
-<span class="nc bnc" id="L371" title="All 2 branches missed.">            if (size &lt; 1024) return size + &quot; B&quot;;</span>
-<span class="nc bnc" id="L372" title="All 2 branches missed.">            if (size &lt; 1024 * 1024) return String.format(&quot;%.1f KB&quot;, size / 1024.0);</span>
-<span class="nc" id="L373">            return String.format(&quot;%.1f MB&quot;, size / (1024.0 * 1024.0));</span>
+<span class="fc bfc" id="L371" title="All 2 branches covered.">            if (size &lt; 1024) return size + &quot; B&quot;;</span>
+<span class="fc bfc" id="L372" title="All 2 branches covered.">            if (size &lt; 1024 * 1024) return String.format(&quot;%.1f KB&quot;, size / 1024.0);</span>
+<span class="fc" id="L373">            return String.format(&quot;%.1f MB&quot;, size / (1024.0 * 1024.0));</span>
         }
     }
 } 

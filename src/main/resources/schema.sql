@@ -180,18 +180,22 @@ CREATE TABLE IF NOT EXISTS jornadas (
     version BIGINT DEFAULT 0
 );
 
--- Crear tabla de relación jornadas-cuestionarios
+-- Crear tabla de relación jornadas-cuestionarios (slot 1-6: hueco fijo, no se compacta)
 CREATE TABLE IF NOT EXISTS jornadas_cuestionarios (
     jornada_id BIGINT NOT NULL,
     cuestionario_id BIGINT NOT NULL,
-    PRIMARY KEY (jornada_id, cuestionario_id)
+    slot INT NOT NULL,
+    PRIMARY KEY (jornada_id, cuestionario_id),
+    UNIQUE KEY uk_jornada_cuestionario_slot (jornada_id, slot)
 );
 
--- Crear tabla de relación jornadas-combos
+-- Crear tabla de relación jornadas-combos (slot 1-6: hueco fijo, no se compacta)
 CREATE TABLE IF NOT EXISTS jornadas_combos (
     jornada_id BIGINT NOT NULL,
     combo_id BIGINT NOT NULL,
-    PRIMARY KEY (jornada_id, combo_id)
+    slot INT NOT NULL,
+    PRIMARY KEY (jornada_id, combo_id),
+    UNIQUE KEY uk_jornada_combo_slot (jornada_id, slot)
 );
 
 -- Crear tabla de concursantes

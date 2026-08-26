@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.entity.Pregunta;
 import com.lsnls.entity.Usuario;
 import com.lsnls.service.PreguntaService;
@@ -203,12 +205,12 @@ public class PreguntaController {
                 Pregunta nuevaPregunta = preguntaService.crear(pregunta);
                 return ResponseEntity.ok(nuevaPregunta);
             } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body("Error de validación: " + e.getMessage());
+                return ResponseEntity.badRequest().body("Error de validación: " + MensajesUsuario.sanitizar(e.getMessage()));
             } catch (Exception e) {
-                return ResponseEntity.badRequest().body("Error interno al crear pregunta: " + e.getMessage());
+                return ResponseEntity.badRequest().body("Error interno al crear pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al crear pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al crear pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -219,10 +221,10 @@ public class PreguntaController {
             Pregunta restaurada = preguntaService.restaurarDesdeSnapshot(snapshot);
             return ResponseEntity.ok(preguntaService.mapPreguntaToDTO(restaurada));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
         } catch (Exception e) {
             log.error("Error al restaurar pregunta: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body("Error al restaurar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al restaurar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -275,13 +277,13 @@ public class PreguntaController {
             return ResponseEntity.ok(preguntaActualizada);
         } catch (IllegalArgumentException e) {
             log.error("[ACTUALIZAR] Error de validación: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
         } catch (ObjectOptimisticLockingFailureException e) {
             log.error("[ACTUALIZAR] Error de concurrencia: {}", e.getMessage());
             return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario mientras intentabas editarla. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
             log.error("[ACTUALIZAR] Error general: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body("Error al actualizar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al actualizar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -338,13 +340,13 @@ public class PreguntaController {
         } catch (IllegalStateException e) {
             // Error de concurrencia específico del método atómico
             log.error("[CAMBIO ESTADO] Conflicto de concurrencia: {}", e.getMessage());
-            return ResponseEntity.status(409).body("Conflicto de concurrencia: " + e.getMessage());
+            return ResponseEntity.status(409).body("Conflicto de concurrencia: " + MensajesUsuario.sanitizar(e.getMessage()));
         } catch (ObjectOptimisticLockingFailureException e) {
             log.error("[CAMBIO ESTADO] Error de bloqueo optimista: {}", e.getMessage());
             return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario mientras intentabas cambiar su estado. Por favor, recarga e intenta nuevamente.");
         } catch (Exception e) {
             log.error("[CAMBIO ESTADO] Error general: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body("Error al cambiar estado: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al cambiar estado: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -367,13 +369,13 @@ public class PreguntaController {
             return ResponseEntity.ok().body("Pregunta eliminada exitosamente");
         } catch (IllegalArgumentException e) {
             // Mensajes específicos de validación
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             return ResponseEntity.badRequest().body("No se puede eliminar la pregunta porque está siendo utilizada en uno o más cuestionarios. Desasígnala de los cuestionarios primero.");
         } catch (org.springframework.security.access.AccessDeniedException e) {
             return ResponseEntity.status(403).body("No tienes permisos para eliminar preguntas. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar preguntas.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al eliminar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al eliminar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -428,12 +430,12 @@ public class PreguntaController {
                         Pregunta pregunta = preguntaService.verificar(id, nuevoEstado, notas, currentUser);
                         return ResponseEntity.ok(pregunta);
                     } catch (Exception e) {
-                        return ResponseEntity.badRequest().body("Error al verificar pregunta: " + e.getMessage());
+                        return ResponseEntity.badRequest().body("Error al verificar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
                     }
                 })
                 .orElse(ResponseEntity.status(401).build());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al verificar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al verificar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -469,11 +471,11 @@ public class PreguntaController {
             return ResponseEntity.ok(preguntaActualizada);
         } catch (IllegalStateException e) {
             // Error de concurrencia específico del método atómico
-            return ResponseEntity.status(409).body("Conflicto de concurrencia: " + e.getMessage());
+            return ResponseEntity.status(409).body("Conflicto de concurrencia: " + MensajesUsuario.sanitizar(e.getMessage()));
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario mientras intentabas aprobarla. Por favor, recarga y verifica su estado actual.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al aprobar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al aprobar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -512,11 +514,11 @@ public class PreguntaController {
             return ResponseEntity.ok(preguntaActualizada);
         } catch (IllegalStateException e) {
             // Error de concurrencia específico del método atómico
-            return ResponseEntity.status(409).body("Conflicto de concurrencia: " + e.getMessage());
+            return ResponseEntity.status(409).body("Conflicto de concurrencia: " + MensajesUsuario.sanitizar(e.getMessage()));
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("La pregunta ha sido modificada por otro usuario mientras intentabas rechazarla. Por favor, recarga y verifica su estado actual.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al rechazar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al rechazar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -543,7 +545,7 @@ public class PreguntaController {
             }
             return ResponseEntity.badRequest().body("Error al marcar pregunta para revisar");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al marcar pregunta para revisar: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al marcar pregunta para revisar: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -569,7 +571,7 @@ public class PreguntaController {
             }
             return ResponseEntity.badRequest().body("Error al marcar pregunta para corregir");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al marcar pregunta para corregir: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al marcar pregunta para corregir: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -599,7 +601,7 @@ public class PreguntaController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
                 "valid", false,
-                "message", "Error al validar pregunta: " + e.getMessage()
+                "message", "Error al validar pregunta: " + MensajesUsuario.sanitizar(e.getMessage())
             ));
         }
     }
@@ -629,27 +631,8 @@ public class PreguntaController {
                 "message", "Textos transformados correctamente"
             ));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al transformar textos: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al transformar textos: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
-    }
-
-    @GetMapping("/debug/permisos")
-    public ResponseEntity<Map<String, Object>> debugPermisos() {
-        Map<String, Object> permisos = new HashMap<>();
-        Optional<Usuario> currentUserOpt = authService.getCurrentUser();
-        
-        if (currentUserOpt.isEmpty()) {
-            return ResponseEntity.status(401).build();
-        }
-
-        Usuario currentUser = currentUserOpt.get();
-        permisos.put("usuario", currentUser);
-        permisos.put("canRead", authService.canRead());
-        permisos.put("canCreatePregunta", authService.canCreatePregunta());
-        permisos.put("canDelete", authService.canDelete());
-        permisos.put("canValidate", authService.canValidate());
-        
-        return ResponseEntity.ok(permisos);
     }
 
     @GetMapping("/buscar")
@@ -763,20 +746,7 @@ public class PreguntaController {
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
             log.error("Error al buscar apariciones: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body("Error al buscar apariciones: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/debug/niveles")
-    @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<?> debugNiveles() {
-        try {
-            Map<String, Object> resultado = new HashMap<>();
-            resultado.put("niveles", preguntaService.obtenerEstadisticasNiveles());
-            return ResponseEntity.ok(resultado);
-        } catch (Exception e) {
-            log.error("Error al obtener estadísticas de niveles: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error al buscar apariciones: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -794,48 +764,5 @@ public class PreguntaController {
             return ResponseEntity.internalServerError().build();
         }
     }
-
-    @GetMapping("/debug/pregunta/{id}")
-    @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<?> debugPregunta(@PathVariable Long id) {
-        try {
-            Optional<Pregunta> preguntaOpt = preguntaService.obtenerPorId(id);
-            if (preguntaOpt.isPresent()) {
-                Pregunta pregunta = preguntaOpt.get();
-                Map<String, Object> resultado = new HashMap<>();
-                resultado.put("id", pregunta.getId());
-                resultado.put("estado", pregunta.getEstado());
-                resultado.put("estadoDisponibilidad", pregunta.getEstadoDisponibilidad());
-                resultado.put("nivel", pregunta.getNivel());
-                resultado.put("pregunta", pregunta.getPregunta());
-                resultado.put("respuesta", pregunta.getRespuesta());
-                
-                // Log detallado para debug de caracteres especiales
-                log.info("[DEBUG PREGUNTA {}] Pregunta original: '{}'", id, pregunta.getPregunta());
-                log.info("[DEBUG PREGUNTA {}] Respuesta original: '{}'", id, pregunta.getRespuesta());
-                
-                // Verificar codificación de caracteres
-                if (pregunta.getPregunta() != null) {
-                    byte[] preguntaBytes = pregunta.getPregunta().getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                    log.info("[DEBUG PREGUNTA {}] Bytes de pregunta: {}", id, java.util.Arrays.toString(preguntaBytes));
-                }
-                
-                if (pregunta.getRespuesta() != null) {
-                    byte[] respuestaBytes = pregunta.getRespuesta().getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                    log.info("[DEBUG PREGUNTA {}] Bytes de respuesta: {}", id, java.util.Arrays.toString(respuestaBytes));
-                }
-                
-                return ResponseEntity.ok(resultado);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            log.error("Error al obtener pregunta {}: {}", id, e.getMessage(), e);
-            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
-        }
-    }
-
-
-
 
 } 

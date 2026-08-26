@@ -1,5 +1,6 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
 import com.lsnls.service.AuthorizationService;
 import com.lsnls.service.BackupService;
 import org.junit.jupiter.api.Test;
@@ -180,6 +181,8 @@ class BackupControllerTest {
         ResponseEntity<?> response = backupController.getBackupStatus();
 
         assertEquals(500, response.getStatusCodeValue());
-        assertTrue(response.getBody().toString().contains("error"));
+        String body = response.getBody().toString();
+        assertTrue(body.contains("Error interno al obtener estado de backup"));
+        assertTrue(body.contains(MensajesUsuario.GENERICO));
     }
 }

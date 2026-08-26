@@ -13,7 +13,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(&quot;/api/sync&quot;)
 @CrossOrigin(origins = &quot;*&quot;)
-<span class="nc" id="L16">public class SyncController {</span>
+<span class="fc" id="L16">public class SyncController {</span>
 
     @Autowired
     private SyncService syncService;
@@ -21,7 +21,7 @@ import java.util.Map;
     @PostMapping(&quot;/visible-changes&quot;)
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; visibleChanges(@RequestBody List&lt;VisibleEntityDTO&gt; items) {
-<span class="nc" id="L24">        return ResponseEntity.ok(Map.of(&quot;changes&quot;, syncService.checkVisibleChanges(items)));</span>
+<span class="fc" id="L24">        return ResponseEntity.ok(Map.of(&quot;changes&quot;, syncService.checkVisibleChanges(items)));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

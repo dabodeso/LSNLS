@@ -54,25 +54,25 @@ public class Combo {
     private Set&lt;PreguntaCombo&gt; preguntas;
 
     // Enums
-<span class="nc" id="L57">    public enum NivelCombo {</span>
-<span class="nc" id="L58">        _5LS, _5NLS, NORMAL</span>
+<span class="fc" id="L57">    public enum NivelCombo {</span>
+<span class="fc" id="L58">        _5LS, _5NLS, NORMAL</span>
     }
 
 <span class="fc" id="L61">    public enum EstadoCombo {</span>
 <span class="fc" id="L62">        borrador, revisar, corregir, aprobado, adjudicado, grabado, reaprovechado, liberado</span>
     }
 
-<span class="nc" id="L65">    public enum TipoCombo {</span>
-<span class="nc" id="L66">        P, // Premio</span>
-<span class="nc" id="L67">        A, // Asequible </span>
-<span class="nc" id="L68">        D, // Difícil</span>
-<span class="nc" id="L69">        R  // Rescate</span>
+<span class="fc" id="L65">    public enum TipoCombo {</span>
+<span class="fc" id="L66">        P, // Premio</span>
+<span class="fc" id="L67">        A, // Asequible </span>
+<span class="fc" id="L68">        D, // Difícil</span>
+<span class="fc" id="L69">        R  // Rescate</span>
     }
 
     // Métodos equals y hashCode que evitan el bucle infinito
     @Override
     public boolean equals(Object o) {
-<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        if (this == o) return true;</span>
 <span class="nc bnc" id="L76" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
 <span class="nc" id="L77">        Combo that = (Combo) o;</span>
 <span class="nc bnc" id="L78" title="All 4 branches missed.">        return id != null &amp;&amp; id.equals(that.id);</span>
@@ -80,7 +80,7 @@ public class Combo {
 
     @Override
     public int hashCode() {
-<span class="nc bnc" id="L83" title="All 2 branches missed.">        return id != null ? id.hashCode() : 0;</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        return id != null ? id.hashCode() : 0;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

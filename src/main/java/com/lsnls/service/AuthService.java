@@ -31,67 +31,31 @@ public class AuthService {
      */
     public AuthResponse login(LoginRequest request) {
         try {
-            log.debug("🔍 Validando credenciales para usuario: {}", request.getNombre());
-            // DEBUG: registrar lo que llega y lo que hay en BD (solo para diagnóstico)
-            try {
-                String provided = String.valueOf(request.getPassword());
-                Optional<Usuario> dbUserOpt = usuarioRepository.findByNombre(request.getNombre());
-                if (dbUserOpt.isPresent()) {
-                    String dbPass = String.valueOf(dbUserOpt.get().getPassword());
-                    log.info("[LOGIN DEBUG] usuario='{}' existe. passEnviado='{}' (len={}), passBD='{}' (len={}), encoder={}",
-                            request.getNombre(), provided, provided != null ? provided.length() : -1,
-                            dbPass, dbPass != null ? dbPass.length() : -1,
-                            passwordEncoder != null ? passwordEncoder.getClass().getName() : "null");
-                } else {
-                    log.warn("[LOGIN DEBUG] usuario='{}' NO existe en BD. encoder={} ",
-                            request.getNombre(),
-                            passwordEncoder != null ? passwordEncoder.getClass().getName() : "null");
-                }
-            } catch (Exception logEx) {
-                log.warn("[LOGIN DEBUG] No se pudieron registrar datos de diagnóstico: {}", logEx.getMessage());
-            }
-            
-            // Autenticar usando Spring Security
+            log.debug("Validando credenciales para usuario: {}", request.getNombre());
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                     request.getNombre(),
                     request.getPassword()
                 )
             );
-            
-            log.debug("✅ Autenticación exitosa, estableciendo contexto de seguridad");
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            
-            // Obtener usuario y generar token
-            log.debug("🔍 Buscando usuario en base de datos");
+
             Usuario usuario = usuarioRepository.findByNombre(request.getNombre())
-                .orElseThrow(() -> {
-                    log.error("❌ Usuario no encontrado en base de datos: {}", request.getNombre());
-                    return new RuntimeException("Usuario no encontrado");
-                });
-            
-            log.debug("🔑 Generando token JWT");
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            if (passwordEncoder.upgradeEncoding(usuario.getPassword())) {
+                usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+                usuario = usuarioRepository.save(usuario);
+            }
+
             UserDetails userDetails = userDetailsService.loadUserByUsername(request.getNombre());
             String jwtToken = jwtService.generateToken(userDetails);
-            
-            log.info("✅ Login completado exitosamente para: {}", request.getNombre());
+
+            log.info("Login completado para: {}", request.getNombre());
             return new AuthResponse(jwtToken, usuario);
         } catch (Exception e) {
-            log.error("❌ Error en proceso de login: {} - {}", e.getClass().getSimpleName(), e.getMessage());
-            // Más diagnóstico tras el fallo
-            try {
-                Optional<Usuario> dbUserOpt = usuarioRepository.findByNombre(request.getNombre());
-                if (dbUserOpt.isPresent()) {
-                    String dbPass = String.valueOf(dbUserOpt.get().getPassword());
-                    log.warn("[LOGIN DEBUG][POST-ERROR] usuario='{}' existe. passBD='{}' (len={}), encoder={} ",
-                            request.getNombre(), dbPass, dbPass != null ? dbPass.length() : -1,
-                            passwordEncoder != null ? passwordEncoder.getClass().getName() : "null");
-                } else {
-                    log.warn("[LOGIN DEBUG][POST-ERROR] usuario='{}' NO existe en BD", request.getNombre());
-                }
-            } catch (Exception logEx) {
-                log.warn("[LOGIN DEBUG][POST-ERROR] No se pudo consultar BD para diagnóstico: {}", logEx.getMessage());
-            }
+            log.error("Error en proceso de login: {}", e.getClass().getSimpleName());
             SecurityContextHolder.clearContext();
             throw new RuntimeException("Error en la autenticación: " + e.getMessage());
         }

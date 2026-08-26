@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.dto.ApiResponse;
 import com.lsnls.dto.HistorialJornadaDTO;
 import com.lsnls.dto.MarcarNoUsadoDTO;
@@ -36,7 +38,7 @@ public class HistorialJornadaController {
             return ResponseEntity.ok(ApiResponse.exitoso("Historial del cuestionario obtenido", historial));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al obtener historial: " + e.getMessage()));
+                .body(ApiResponse.error("Error al obtener historial: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -51,7 +53,7 @@ public class HistorialJornadaController {
             return ResponseEntity.ok(ApiResponse.exitoso("Historial del combo obtenido", historial));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al obtener historial: " + e.getMessage()));
+                .body(ApiResponse.error("Error al obtener historial: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -66,7 +68,7 @@ public class HistorialJornadaController {
             return ResponseEntity.ok(ApiResponse.exitoso("Elementos no usados obtenidos", noUsados));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al obtener elementos no usados: " + e.getMessage()));
+                .body(ApiResponse.error("Error al obtener elementos no usados: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -102,7 +104,7 @@ public class HistorialJornadaController {
             return ResponseEntity.ok(ApiResponse.exitoso(mensaje, null));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al marcar como no usados: " + e.getMessage()));
+                .body(ApiResponse.error("Error al marcar como no usados: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -136,7 +138,7 @@ public class HistorialJornadaController {
                 nuevoCombo));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al reaprovechar combo: " + e.getMessage()));
+                .body(ApiResponse.error("Error al reaprovechar combo: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -154,7 +156,7 @@ public class HistorialJornadaController {
                 "Cuestionario asignado a jornada correctamente", null));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al asignar cuestionario: " + e.getMessage()));
+                .body(ApiResponse.error("Error al asignar cuestionario: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 
@@ -172,7 +174,7 @@ public class HistorialJornadaController {
                 "Combo asignado a jornada correctamente", null));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("Error al asignar combo: " + e.getMessage()));
+                .body(ApiResponse.error("Error al asignar combo: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 }

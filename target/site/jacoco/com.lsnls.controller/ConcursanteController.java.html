@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConcursanteController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">ConcursanteController.java</span></div><h1>ConcursanteController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.dto.ConcursanteDTO;
 import com.lsnls.service.ConcursanteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +22,7 @@ import org.springframework.data.domain.Sort;
 @RestController
 @RequestMapping(&quot;/api/concursantes&quot;)
 @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_CONSULTA', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
-<span class="nc" id="L23">public class ConcursanteController {</span>
+<span class="nc" id="L25">public class ConcursanteController {</span>
 
     @Autowired
     private ConcursanteService concursanteService;
@@ -42,66 +44,66 @@ import org.springframework.data.domain.Sort;
             @RequestParam(required = false) String busqueda) {
         try {
             // Para numeroConcursante (y en general) los NULLs van siempre al final
-<span class="nc bnc" id="L45" title="All 2 branches missed.">            boolean asc = !sortDir.equalsIgnoreCase(&quot;desc&quot;);</span>
-<span class="nc bnc" id="L46" title="All 2 branches missed.">            Sort.Order order = asc</span>
-<span class="nc" id="L47">                ? Sort.Order.asc(sortBy).nullsLast()</span>
-<span class="nc" id="L48">                : Sort.Order.desc(sortBy).nullsLast();</span>
-<span class="nc" id="L49">            Pageable pageable = PageRequest.of(page, size, Sort.by(order));</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">            boolean asc = !sortDir.equalsIgnoreCase(&quot;desc&quot;);</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">            Sort.Order order = asc</span>
+<span class="nc" id="L49">                ? Sort.Order.asc(sortBy).nullsLast()</span>
+<span class="nc" id="L50">                : Sort.Order.desc(sortBy).nullsLast();</span>
+<span class="nc" id="L51">            Pageable pageable = PageRequest.of(page, size, Sort.by(order));</span>
             
-<span class="nc" id="L51">            Page&lt;ConcursanteDTO&gt; concursantes = concursanteService.findAllPaginatedWithFilters(</span>
-<span class="nc" id="L52">                pageable, estado, jornada, lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico, busqueda);</span>
-<span class="nc" id="L53">            return ResponseEntity.ok(concursantes);</span>
-<span class="nc" id="L54">        } catch (Exception e) {</span>
-<span class="nc" id="L55">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener concursantes: &quot; + e.getMessage());</span>
+<span class="nc" id="L53">            Page&lt;ConcursanteDTO&gt; concursantes = concursanteService.findAllPaginatedWithFilters(</span>
+<span class="nc" id="L54">                pageable, estado, jornada, lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico, busqueda);</span>
+<span class="nc" id="L55">            return ResponseEntity.ok(concursantes);</span>
+<span class="nc" id="L56">        } catch (Exception e) {</span>
+<span class="nc" id="L57">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener concursantes: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
     
     @GetMapping(&quot;/all&quot;)
     public ResponseEntity&lt;?&gt; findAllWithoutPagination() {
         try {
-<span class="nc" id="L62">            List&lt;ConcursanteDTO&gt; concursantes = concursanteService.findAll();</span>
-<span class="nc" id="L63">            return ResponseEntity.ok(concursantes);</span>
-<span class="nc" id="L64">        } catch (Exception e) {</span>
-<span class="nc" id="L65">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener concursantes: &quot; + e.getMessage());</span>
+<span class="nc" id="L64">            List&lt;ConcursanteDTO&gt; concursantes = concursanteService.findAll();</span>
+<span class="nc" id="L65">            return ResponseEntity.ok(concursantes);</span>
+<span class="nc" id="L66">        } catch (Exception e) {</span>
+<span class="nc" id="L67">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener concursantes: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @GetMapping(&quot;/{id}&quot;)
     public ResponseEntity&lt;?&gt; findById(@PathVariable Long id) {
         try {
-<span class="nc" id="L72">            ConcursanteDTO concursante = concursanteService.findById(id);</span>
-<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (concursante == null) {</span>
-<span class="nc" id="L74">                return ResponseEntity.status(404).body(&quot;Concursante con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="nc" id="L74">            ConcursanteDTO concursante = concursanteService.findById(id);</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            if (concursante == null) {</span>
+<span class="nc" id="L76">                return ResponseEntity.status(404).body(&quot;Concursante con ID &quot; + id + &quot; no encontrado&quot;);</span>
             }
-<span class="nc" id="L76">            return ResponseEntity.ok(concursante);</span>
-<span class="nc" id="L77">        } catch (Exception e) {</span>
-<span class="nc" id="L78">            return ResponseEntity.badRequest().body(&quot;Error interno al buscar concursante: &quot; + e.getMessage());</span>
+<span class="nc" id="L78">            return ResponseEntity.ok(concursante);</span>
+<span class="nc" id="L79">        } catch (Exception e) {</span>
+<span class="nc" id="L80">            return ResponseEntity.badRequest().body(&quot;Error interno al buscar concursante: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @GetMapping(&quot;/estado/{estado}&quot;)
     public ResponseEntity&lt;?&gt; findByEstado(@PathVariable String estado) {
         try {
-<span class="nc bnc" id="L85" title="All 4 branches missed.">            if (estado == null || estado.trim().isEmpty()) {</span>
-<span class="nc" id="L86">                return ResponseEntity.badRequest().body(&quot;El estado es requerido&quot;);</span>
+<span class="nc bnc" id="L87" title="All 4 branches missed.">            if (estado == null || estado.trim().isEmpty()) {</span>
+<span class="nc" id="L88">                return ResponseEntity.badRequest().body(&quot;El estado es requerido&quot;);</span>
             }
-<span class="nc" id="L88">            List&lt;ConcursanteDTO&gt; concursantes = concursanteService.findByEstado(estado);</span>
-<span class="nc" id="L89">            return ResponseEntity.ok(concursantes);</span>
-<span class="nc" id="L90">        } catch (Exception e) {</span>
-<span class="nc" id="L91">            return ResponseEntity.internalServerError().body(&quot;Error interno al buscar concursantes por estado: &quot; + e.getMessage());</span>
+<span class="nc" id="L90">            List&lt;ConcursanteDTO&gt; concursantes = concursanteService.findByEstado(estado);</span>
+<span class="nc" id="L91">            return ResponseEntity.ok(concursantes);</span>
+<span class="nc" id="L92">        } catch (Exception e) {</span>
+<span class="nc" id="L93">            return ResponseEntity.internalServerError().body(&quot;Error interno al buscar concursantes por estado: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @GetMapping(&quot;/programa/{programaId}&quot;)
     public ResponseEntity&lt;?&gt; findByProgramaId(@PathVariable Long programaId) {
         try {
-<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (programaId == null) {</span>
-<span class="nc" id="L99">                return ResponseEntity.badRequest().body(&quot;El ID del programa es requerido&quot;);</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (programaId == null) {</span>
+<span class="nc" id="L101">                return ResponseEntity.badRequest().body(&quot;El ID del programa es requerido&quot;);</span>
             }
-<span class="nc" id="L101">            List&lt;ConcursanteDTO&gt; concursantes = concursanteService.findByProgramaId(programaId);</span>
-<span class="nc" id="L102">            return ResponseEntity.ok(concursantes);</span>
-<span class="nc" id="L103">        } catch (Exception e) {</span>
-<span class="nc" id="L104">            return ResponseEntity.internalServerError().body(&quot;Error interno al buscar concursantes por programa: &quot; + e.getMessage());</span>
+<span class="nc" id="L103">            List&lt;ConcursanteDTO&gt; concursantes = concursanteService.findByProgramaId(programaId);</span>
+<span class="nc" id="L104">            return ResponseEntity.ok(concursantes);</span>
+<span class="nc" id="L105">        } catch (Exception e) {</span>
+<span class="nc" id="L106">            return ResponseEntity.internalServerError().body(&quot;Error interno al buscar concursantes por programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -111,11 +113,11 @@ import org.springframework.data.domain.Sort;
             @RequestParam(defaultValue = &quot;10&quot;) int size,
             @RequestParam(required = false) String busqueda) {
         try {
-<span class="nc" id="L114">            Pageable pageable = PageRequest.of(page, size, Sort.by(&quot;id&quot;).descending());</span>
-<span class="nc" id="L115">            Page&lt;ConcursanteDTO&gt; concursantes = concursanteService.findConcursantesSinProgramaPaginated(pageable, busqueda);</span>
-<span class="nc" id="L116">            return ResponseEntity.ok(concursantes);</span>
-<span class="nc" id="L117">        } catch (Exception e) {</span>
-<span class="nc" id="L118">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener concursantes disponibles: &quot; + e.getMessage());</span>
+<span class="nc" id="L116">            Pageable pageable = PageRequest.of(page, size, Sort.by(&quot;id&quot;).descending());</span>
+<span class="nc" id="L117">            Page&lt;ConcursanteDTO&gt; concursantes = concursanteService.findConcursantesSinProgramaPaginated(pageable, busqueda);</span>
+<span class="nc" id="L118">            return ResponseEntity.ok(concursantes);</span>
+<span class="nc" id="L119">        } catch (Exception e) {</span>
+<span class="nc" id="L120">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener concursantes disponibles: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -124,30 +126,30 @@ import org.springframework.data.domain.Sort;
     public ResponseEntity&lt;?&gt; create(@RequestBody ConcursanteDTO concursanteDTO) {
         try {
             // Validaciones específicas de campos requeridos
-<span class="nc bnc" id="L127" title="All 4 branches missed.">            if (concursanteDTO.getNombre() == null || concursanteDTO.getNombre().trim().isEmpty()) {</span>
-<span class="nc" id="L128">                return ResponseEntity.badRequest().body(&quot;El campo 'nombre' es obligatorio para crear un concursante&quot;);</span>
+<span class="nc bnc" id="L129" title="All 4 branches missed.">            if (concursanteDTO.getNombre() == null || concursanteDTO.getNombre().trim().isEmpty()) {</span>
+<span class="nc" id="L130">                return ResponseEntity.badRequest().body(&quot;El campo 'nombre' es obligatorio para crear un concursante&quot;);</span>
             }
 
             // Validar duración si se proporciona
-<span class="nc bnc" id="L132" title="All 4 branches missed.">            if (concursanteDTO.getDuracion() != null &amp;&amp; !concursanteDTO.getDuracion().trim().isEmpty()) {</span>
-<span class="nc bnc" id="L133" title="All 2 branches missed.">                if (!concursanteDTO.getDuracion().matches(&quot;^\\d{1,2}:\\d{2}$&quot;)) {</span>
-<span class="nc" id="L134">                    return ResponseEntity.badRequest().body(&quot;La duración debe tener formato MM:SS (ejemplo: 25:30)&quot;);</span>
+<span class="nc bnc" id="L134" title="All 4 branches missed.">            if (concursanteDTO.getDuracion() != null &amp;&amp; !concursanteDTO.getDuracion().trim().isEmpty()) {</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                if (!concursanteDTO.getDuracion().matches(&quot;^\\d{1,2}:\\d{2}$&quot;)) {</span>
+<span class="nc" id="L136">                    return ResponseEntity.badRequest().body(&quot;La duración debe tener formato MM:SS (ejemplo: 25:30)&quot;);</span>
                 }
             }
 
-<span class="nc" id="L138">            ConcursanteDTO nuevoConcursante = concursanteService.create(concursanteDTO);</span>
-<span class="nc" id="L139">            return ResponseEntity.ok(nuevoConcursante);</span>
-<span class="nc" id="L140">        } catch (RuntimeException e) {</span>
-<span class="nc" id="L141">            String mensaje = e.getMessage();</span>
-<span class="nc bnc" id="L142" title="All 4 branches missed.">            if (mensaje.contains(&quot;cuestionario&quot;) &amp;&amp; mensaje.contains(&quot;estado&quot;)) {</span>
-<span class="nc" id="L143">                return ResponseEntity.badRequest().body(&quot;Error de asignación: &quot; + mensaje);</span>
+<span class="nc" id="L140">            ConcursanteDTO nuevoConcursante = concursanteService.create(concursanteDTO);</span>
+<span class="nc" id="L141">            return ResponseEntity.ok(nuevoConcursante);</span>
+<span class="nc" id="L142">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L143">            String mensaje = e.getMessage();</span>
+<span class="nc bnc" id="L144" title="All 4 branches missed.">            if (mensaje.contains(&quot;cuestionario&quot;) &amp;&amp; mensaje.contains(&quot;estado&quot;)) {</span>
+<span class="nc" id="L145">                return ResponseEntity.badRequest().body(&quot;Error de asignación: &quot; + mensaje);</span>
             }
-<span class="nc bnc" id="L145" title="All 4 branches missed.">            if (mensaje.contains(&quot;combo&quot;) &amp;&amp; mensaje.contains(&quot;estado&quot;)) {</span>
-<span class="nc" id="L146">                return ResponseEntity.badRequest().body(&quot;Error de asignación: &quot; + mensaje);</span>
+<span class="nc bnc" id="L147" title="All 4 branches missed.">            if (mensaje.contains(&quot;combo&quot;) &amp;&amp; mensaje.contains(&quot;estado&quot;)) {</span>
+<span class="nc" id="L148">                return ResponseEntity.badRequest().body(&quot;Error de asignación: &quot; + mensaje);</span>
             }
-<span class="nc" id="L148">            return ResponseEntity.badRequest().body(&quot;Error al crear concursante: &quot; + mensaje);</span>
-<span class="nc" id="L149">        } catch (Exception e) {</span>
-<span class="nc" id="L150">            return ResponseEntity.badRequest().body(&quot;Error interno al crear concursante: &quot; + e.getMessage());</span>
+<span class="nc" id="L150">            return ResponseEntity.badRequest().body(&quot;Error al crear concursante: &quot; + mensaje);</span>
+<span class="nc" id="L151">        } catch (Exception e) {</span>
+<span class="nc" id="L152">            return ResponseEntity.badRequest().body(&quot;Error interno al crear concursante: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -155,12 +157,12 @@ import org.springframework.data.domain.Sort;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; update(@PathVariable Long id, @RequestBody ConcursanteDTO concursanteDTO) {
         try {
-<span class="nc" id="L158">            ConcursanteDTO concursanteActualizado = concursanteService.update(id, concursanteDTO);</span>
-<span class="nc" id="L159">            return ResponseEntity.ok(concursanteActualizado);</span>
-<span class="nc" id="L160">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L161">            return ResponseEntity.status(409).body(&quot;El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L162">        } catch (Exception e) {</span>
-<span class="nc" id="L163">            return ResponseEntity.badRequest().body(&quot;Error al actualizar concursante: &quot; + e.getMessage());</span>
+<span class="nc" id="L160">            ConcursanteDTO concursanteActualizado = concursanteService.update(id, concursanteDTO);</span>
+<span class="nc" id="L161">            return ResponseEntity.ok(concursanteActualizado);</span>
+<span class="nc" id="L162">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L163">            return ResponseEntity.status(409).body(&quot;El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L164">        } catch (Exception e) {</span>
+<span class="nc" id="L165">            return ResponseEntity.badRequest().body(&quot;Error al actualizar concursante: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -168,11 +170,11 @@ import org.springframework.data.domain.Sort;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; updateCampo(@PathVariable Long id, @RequestBody Map&lt;String, Object&gt; campo) {
         try {
-<span class="nc" id="L171">            return ResponseEntity.ok(concursanteService.updateCampo(id, campo));</span>
-<span class="nc" id="L172">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L173">            return ResponseEntity.status(409).body(&quot;El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L174">        } catch (Exception e) {</span>
-<span class="nc" id="L175">            return ResponseEntity.badRequest().body(&quot;Error al actualizar campo: &quot; + e.getMessage());</span>
+<span class="nc" id="L173">            return ResponseEntity.ok(concursanteService.updateCampo(id, campo));</span>
+<span class="nc" id="L174">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L175">            return ResponseEntity.status(409).body(&quot;El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L176">        } catch (Exception e) {</span>
+<span class="nc" id="L177">            return ResponseEntity.badRequest().body(&quot;Error al actualizar campo: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -183,16 +185,16 @@ import org.springframework.data.domain.Sort;
             @PathVariable Long programaId,
             @RequestParam(required = false) Integer posicion) {
         try {
-<span class="nc" id="L186">            ConcursanteDTO concursante = concursanteService.asignarAPrograma(concursanteId, programaId, posicion);</span>
-<span class="nc" id="L187">            return ResponseEntity.ok(concursante);</span>
-<span class="nc" id="L188">        } catch (RuntimeException e) {</span>
-<span class="nc" id="L189">            String mensaje = e.getMessage();</span>
-<span class="nc bnc" id="L190" title="All 2 branches missed.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
-<span class="nc" id="L191">                return ResponseEntity.status(404).body(mensaje);</span>
+<span class="nc" id="L188">            ConcursanteDTO concursante = concursanteService.asignarAPrograma(concursanteId, programaId, posicion);</span>
+<span class="nc" id="L189">            return ResponseEntity.ok(concursante);</span>
+<span class="nc" id="L190">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L191">            String mensaje = e.getMessage();</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
+<span class="nc" id="L193">                return ResponseEntity.status(404).body(mensaje);</span>
             }
-<span class="nc" id="L193">            return ResponseEntity.badRequest().body(&quot;Error al asignar concursante a programa: &quot; + mensaje);</span>
-<span class="nc" id="L194">        } catch (Exception e) {</span>
-<span class="nc" id="L195">            return ResponseEntity.badRequest().body(&quot;Error interno al asignar concursante a programa: &quot; + e.getMessage());</span>
+<span class="nc" id="L195">            return ResponseEntity.badRequest().body(&quot;Error al asignar concursante a programa: &quot; + mensaje);</span>
+<span class="nc" id="L196">        } catch (Exception e) {</span>
+<span class="nc" id="L197">            return ResponseEntity.badRequest().body(&quot;Error interno al asignar concursante a programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -200,16 +202,16 @@ import org.springframework.data.domain.Sort;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; desasignarDePrograma(@PathVariable Long concursanteId) {
         try {
-<span class="nc" id="L203">            ConcursanteDTO concursante = concursanteService.desasignarDePrograma(concursanteId);</span>
-<span class="nc" id="L204">            return ResponseEntity.ok(concursante);</span>
-<span class="nc" id="L205">        } catch (RuntimeException e) {</span>
-<span class="nc" id="L206">            String mensaje = e.getMessage();</span>
-<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
-<span class="nc" id="L208">                return ResponseEntity.status(404).body(mensaje);</span>
+<span class="nc" id="L205">            ConcursanteDTO concursante = concursanteService.desasignarDePrograma(concursanteId);</span>
+<span class="nc" id="L206">            return ResponseEntity.ok(concursante);</span>
+<span class="nc" id="L207">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L208">            String mensaje = e.getMessage();</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
+<span class="nc" id="L210">                return ResponseEntity.status(404).body(mensaje);</span>
             }
-<span class="nc" id="L210">            return ResponseEntity.badRequest().body(&quot;Error al desasignar concursante del programa: &quot; + mensaje);</span>
-<span class="nc" id="L211">        } catch (Exception e) {</span>
-<span class="nc" id="L212">            return ResponseEntity.badRequest().body(&quot;Error interno al desasignar concursante del programa: &quot; + e.getMessage());</span>
+<span class="nc" id="L212">            return ResponseEntity.badRequest().body(&quot;Error al desasignar concursante del programa: &quot; + mensaje);</span>
+<span class="nc" id="L213">        } catch (Exception e) {</span>
+<span class="nc" id="L214">            return ResponseEntity.badRequest().body(&quot;Error interno al desasignar concursante del programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -217,16 +219,16 @@ import org.springframework.data.domain.Sort;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; asignarAJornada(@PathVariable Long concursanteId, @PathVariable Long jornadaId) {
         try {
-<span class="nc" id="L220">            ConcursanteDTO concursante = concursanteService.asignarAJornada(concursanteId, jornadaId);</span>
-<span class="nc" id="L221">            return ResponseEntity.ok(concursante);</span>
-<span class="nc" id="L222">        } catch (RuntimeException e) {</span>
-<span class="nc" id="L223">            String mensaje = e.getMessage();</span>
-<span class="nc bnc" id="L224" title="All 2 branches missed.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
-<span class="nc" id="L225">                return ResponseEntity.status(404).body(mensaje);</span>
+<span class="nc" id="L222">            ConcursanteDTO concursante = concursanteService.asignarAJornada(concursanteId, jornadaId);</span>
+<span class="nc" id="L223">            return ResponseEntity.ok(concursante);</span>
+<span class="nc" id="L224">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L225">            String mensaje = e.getMessage();</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
+<span class="nc" id="L227">                return ResponseEntity.status(404).body(mensaje);</span>
             }
-<span class="nc" id="L227">            return ResponseEntity.badRequest().body(&quot;Error al asignar concursante a jornada: &quot; + mensaje);</span>
-<span class="nc" id="L228">        } catch (Exception e) {</span>
-<span class="nc" id="L229">            return ResponseEntity.badRequest().body(&quot;Error interno al asignar concursante a jornada: &quot; + e.getMessage());</span>
+<span class="nc" id="L229">            return ResponseEntity.badRequest().body(&quot;Error al asignar concursante a jornada: &quot; + mensaje);</span>
+<span class="nc" id="L230">        } catch (Exception e) {</span>
+<span class="nc" id="L231">            return ResponseEntity.badRequest().body(&quot;Error interno al asignar concursante a jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -234,16 +236,16 @@ import org.springframework.data.domain.Sort;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; desasignarDeJornada(@PathVariable Long concursanteId) {
         try {
-<span class="nc" id="L237">            ConcursanteDTO concursante = concursanteService.desasignarDeJornada(concursanteId);</span>
-<span class="nc" id="L238">            return ResponseEntity.ok(concursante);</span>
-<span class="nc" id="L239">        } catch (RuntimeException e) {</span>
-<span class="nc" id="L240">            String mensaje = e.getMessage();</span>
-<span class="nc bnc" id="L241" title="All 2 branches missed.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
-<span class="nc" id="L242">                return ResponseEntity.status(404).body(mensaje);</span>
+<span class="nc" id="L239">            ConcursanteDTO concursante = concursanteService.desasignarDeJornada(concursanteId);</span>
+<span class="nc" id="L240">            return ResponseEntity.ok(concursante);</span>
+<span class="nc" id="L241">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L242">            String mensaje = e.getMessage();</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
+<span class="nc" id="L244">                return ResponseEntity.status(404).body(mensaje);</span>
             }
-<span class="nc" id="L244">            return ResponseEntity.badRequest().body(&quot;Error al desasignar concursante de la jornada: &quot; + mensaje);</span>
-<span class="nc" id="L245">        } catch (Exception e) {</span>
-<span class="nc" id="L246">            return ResponseEntity.badRequest().body(&quot;Error interno al desasignar concursante de la jornada: &quot; + e.getMessage());</span>
+<span class="nc" id="L246">            return ResponseEntity.badRequest().body(&quot;Error al desasignar concursante de la jornada: &quot; + mensaje);</span>
+<span class="nc" id="L247">        } catch (Exception e) {</span>
+<span class="nc" id="L248">            return ResponseEntity.badRequest().body(&quot;Error interno al desasignar concursante de la jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -251,16 +253,16 @@ import org.springframework.data.domain.Sort;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; subirFoto(@PathVariable Long id, @RequestParam(&quot;foto&quot;) MultipartFile foto) {
         try {
-<span class="nc" id="L254">            String urlFoto = concursanteService.subirFoto(id, foto);</span>
-<span class="nc" id="L255">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L256">            response.put(&quot;url&quot;, urlFoto);</span>
-<span class="nc" id="L257">            response.put(&quot;foto&quot;, urlFoto);</span>
-<span class="nc" id="L258">            response.put(&quot;mensaje&quot;, &quot;Foto subida correctamente&quot;);</span>
-<span class="nc" id="L259">            return ResponseEntity.ok(response);</span>
-<span class="nc" id="L260">        } catch (Exception e) {</span>
-<span class="nc" id="L261">            Map&lt;String, String&gt; error = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L262">            error.put(&quot;error&quot;, &quot;Error al subir la foto: &quot; + e.getMessage());</span>
-<span class="nc" id="L263">            return ResponseEntity.badRequest().body(error);</span>
+<span class="nc" id="L256">            String urlFoto = concursanteService.subirFoto(id, foto);</span>
+<span class="nc" id="L257">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L258">            response.put(&quot;url&quot;, urlFoto);</span>
+<span class="nc" id="L259">            response.put(&quot;foto&quot;, urlFoto);</span>
+<span class="nc" id="L260">            response.put(&quot;mensaje&quot;, &quot;Foto subida correctamente&quot;);</span>
+<span class="nc" id="L261">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L262">        } catch (Exception e) {</span>
+<span class="nc" id="L263">            Map&lt;String, String&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L264">            error.put(&quot;error&quot;, &quot;Error al subir la foto: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L265">            return ResponseEntity.badRequest().body(error);</span>
         }
     }
 
@@ -269,20 +271,20 @@ import org.springframework.data.domain.Sort;
     public ResponseEntity&lt;?&gt; delete(@PathVariable Long id) {
         try {
             // Verificar que el concursante existe
-<span class="nc" id="L272">            ConcursanteDTO concursanteExistente = concursanteService.findById(id);</span>
-<span class="nc bnc" id="L273" title="All 2 branches missed.">            if (concursanteExistente == null) {</span>
-<span class="nc" id="L274">                return ResponseEntity.status(404).body(&quot;Concursante con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="nc" id="L274">            ConcursanteDTO concursanteExistente = concursanteService.findById(id);</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">            if (concursanteExistente == null) {</span>
+<span class="nc" id="L276">                return ResponseEntity.status(404).body(&quot;Concursante con ID &quot; + id + &quot; no encontrado&quot;);</span>
             }
 
-<span class="nc" id="L277">            concursanteService.delete(id);</span>
-<span class="nc" id="L278">            return ResponseEntity.ok().body(&quot;Concursante eliminado exitosamente&quot;);</span>
-<span class="nc" id="L279">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L279">            concursanteService.delete(id);</span>
+<span class="nc" id="L280">            return ResponseEntity.ok().body(&quot;Concursante eliminado exitosamente&quot;);</span>
+<span class="nc" id="L281">        } catch (IllegalArgumentException e) {</span>
             // Mensajes específicos de validación
-<span class="nc" id="L281">            return ResponseEntity.badRequest().body(e.getMessage());</span>
-<span class="nc" id="L282">        } catch (org.springframework.dao.DataIntegrityViolationException e) {</span>
-<span class="nc" id="L283">            return ResponseEntity.badRequest().body(&quot;No se puede eliminar el concursante porque tiene datos asociados. Revisa sus asignaciones primero.&quot;);</span>
-<span class="nc" id="L284">        } catch (Exception e) {</span>
-<span class="nc" id="L285">            return ResponseEntity.badRequest().body(&quot;Error interno al eliminar concursante: &quot; + e.getMessage());</span>
+<span class="nc" id="L283">            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L284">        } catch (org.springframework.dao.DataIntegrityViolationException e) {</span>
+<span class="nc" id="L285">            return ResponseEntity.badRequest().body(&quot;No se puede eliminar el concursante porque tiene datos asociados. Revisa sus asignaciones primero.&quot;);</span>
+<span class="nc" id="L286">        } catch (Exception e) {</span>
+<span class="nc" id="L287">            return ResponseEntity.badRequest().body(&quot;Error interno al eliminar concursante: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 } 

@@ -189,8 +189,20 @@ class ConcursanteServiceTest {
 
         ConcursanteDTO result = concursanteService.update(1L, dto);
 
-        assertEquals("Luis", result.getNombre());
+        assertEquals("grabado", result.getEstado());
         verify(concursanteRepository).save(existente);
+    }
+
+    @Test
+    void update_borradorEnDtoQuedaGrabado() {
+        Concursante existente = concursanteBase();
+        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(existente));
+        ConcursanteDTO dto = dtoMinimo();
+        dto.setEstado("borrador");
+
+        ConcursanteDTO result = concursanteService.update(1L, dto);
+
+        assertEquals("grabado", result.getEstado());
     }
 
     @Test
@@ -443,6 +455,29 @@ class ConcursanteServiceTest {
         Map<String, Object> campos = new HashMap<>();
         campos.put("estado", "editado");
         assertThrows(IllegalArgumentException.class, () -> concursanteService.updateCampo(1L, campos));
+    }
+
+    @Test
+    void updateCampo_borradorSeNormalizaAGrabado() {
+        Concursante c = concursanteBase();
+        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
+        Map<String, Object> campos = new HashMap<>();
+        campos.put("estado", "borrador");
+
+        ConcursanteDTO result = concursanteService.updateCampo(1L, campos);
+
+        assertEquals("grabado", result.getEstado());
+    }
+
+    @Test
+    void asignarAPrograma_programadoFalla() {
+        Concursante c = concursanteBase();
+        c.setEstado("programado");
+        c.setDuracion("12:00");
+        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> concursanteService.asignarAPrograma(1L, 8L));
+        assertTrue(ex.getMessage().contains("editado"));
     }
 
     @Test

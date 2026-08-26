@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.dto.ApiResponse;
 import com.lsnls.service.UndoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +34,7 @@ public class UndoController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error("Error al deshacer la operación: " + e.getMessage()));
+                    .body(ApiResponse.error("Error al deshacer la operación: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 }

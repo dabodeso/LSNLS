@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
  * como máximo 50 operaciones por usuario y caducan a la hora.
  */
 @Service
+@lombok.extern.slf4j.Slf4j
 public class UndoService {
 
     public static final String HEADER_OPERACION = "X-Undo-Operacion-Id";
@@ -192,7 +193,7 @@ public class UndoService {
             ULTIMA_OPERACION.set(operacionId);
             limpiarAntiguas(usuarioId);
         } catch (Exception e) {
-            System.err.println("[UNDO] No se pudo registrar la operación deshacible '" + tipoOperacion + "': " + e.getMessage());
+            log.warn("[UNDO] No se pudo registrar la operación deshacible '" + tipoOperacion + "': " + e.getMessage());
         }
     }
 

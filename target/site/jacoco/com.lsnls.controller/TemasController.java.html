@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TemasController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">TemasController.java</span></div><h1>TemasController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.service.TemasCatalogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +13,7 @@ import java.util.*;
 @RestController
 @RequestMapping(&quot;/api/temas&quot;)
 @CrossOrigin(origins = &quot;*&quot;)
-<span class="nc" id="L14">public class TemasController {</span>
+<span class="nc" id="L16">public class TemasController {</span>
 
 
     @Autowired
@@ -26,9 +28,9 @@ import java.util.*;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;?&gt; obtenerTemas() {
         try {
-<span class="nc" id="L29">            return ResponseEntity.ok(temasCatalogService.obtenerTematicasPreguntas());</span>
-<span class="nc" id="L30">        } catch (Exception e) {</span>
-<span class="nc" id="L31">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener temas: &quot; + e.getMessage());</span>
+<span class="nc" id="L31">            return ResponseEntity.ok(temasCatalogService.obtenerTematicasPreguntas());</span>
+<span class="nc" id="L32">        } catch (Exception e) {</span>
+<span class="nc" id="L33">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener temas: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -39,9 +41,9 @@ import java.util.*;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;?&gt; obtenerSubtemas() {
         try {
-<span class="nc" id="L42">            return ResponseEntity.ok(temasCatalogService.obtenerSubtemasPreguntas());</span>
-<span class="nc" id="L43">        } catch (Exception e) {</span>
-<span class="nc" id="L44">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener subtemas: &quot; + e.getMessage());</span>
+<span class="nc" id="L44">            return ResponseEntity.ok(temasCatalogService.obtenerSubtemasPreguntas());</span>
+<span class="nc" id="L45">        } catch (Exception e) {</span>
+<span class="nc" id="L46">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener subtemas: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -52,19 +54,19 @@ import java.util.*;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;?&gt; añadirTema(@RequestBody Map&lt;String, String&gt; request) {
         try {
-<span class="nc" id="L55">            String nuevoTema = request.get(&quot;tema&quot;);</span>
-<span class="nc bnc" id="L56" title="All 4 branches missed.">            if (nuevoTema == null || nuevoTema.trim().isEmpty()) {</span>
-<span class="nc" id="L57">                return ResponseEntity.badRequest().body(&quot;El tema no puede estar vacío. Por favor, introduce un nombre para el tema.&quot;);</span>
+<span class="nc" id="L57">            String nuevoTema = request.get(&quot;tema&quot;);</span>
+<span class="nc bnc" id="L58" title="All 4 branches missed.">            if (nuevoTema == null || nuevoTema.trim().isEmpty()) {</span>
+<span class="nc" id="L59">                return ResponseEntity.badRequest().body(&quot;El tema no puede estar vacío. Por favor, introduce un nombre para el tema.&quot;);</span>
             }
-<span class="nc" id="L59">            String temaNormalizado = temasCatalogService.añadirTematicaPregunta(nuevoTema);</span>
-<span class="nc" id="L60">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L61">            response.put(&quot;mensaje&quot;, &quot;Tema añadido correctamente&quot;);</span>
-<span class="nc" id="L62">            response.put(&quot;tema&quot;, temaNormalizado);</span>
-<span class="nc" id="L63">            response.put(&quot;totalTemas&quot;, temasCatalogService.obtenerTematicasPreguntas().size());</span>
+<span class="nc" id="L61">            String temaNormalizado = temasCatalogService.añadirTematicaPregunta(nuevoTema);</span>
+<span class="nc" id="L62">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L63">            response.put(&quot;mensaje&quot;, &quot;Tema añadido correctamente&quot;);</span>
+<span class="nc" id="L64">            response.put(&quot;tema&quot;, temaNormalizado);</span>
+<span class="nc" id="L65">            response.put(&quot;totalTemas&quot;, temasCatalogService.obtenerTematicasPreguntas().size());</span>
             
-<span class="nc" id="L65">            return ResponseEntity.ok(response);</span>
-<span class="nc" id="L66">        } catch (Exception e) {</span>
-<span class="nc" id="L67">            return ResponseEntity.badRequest().body(&quot;Error al añadir tema: &quot; + e.getMessage());</span>
+<span class="nc" id="L67">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L68">        } catch (Exception e) {</span>
+<span class="nc" id="L69">            return ResponseEntity.badRequest().body(&quot;Error al añadir tema: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -75,20 +77,20 @@ import java.util.*;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;?&gt; añadirSubtema(@RequestBody Map&lt;String, String&gt; request) {
         try {
-<span class="nc" id="L78">            String nuevoSubtema = request.get(&quot;subtema&quot;);</span>
-<span class="nc bnc" id="L79" title="All 4 branches missed.">            if (nuevoSubtema == null || nuevoSubtema.trim().isEmpty()) {</span>
-<span class="nc" id="L80">                return ResponseEntity.badRequest().body(&quot;El subtema no puede estar vacío. Por favor, introduce un nombre para el subtema.&quot;);</span>
+<span class="nc" id="L80">            String nuevoSubtema = request.get(&quot;subtema&quot;);</span>
+<span class="nc bnc" id="L81" title="All 4 branches missed.">            if (nuevoSubtema == null || nuevoSubtema.trim().isEmpty()) {</span>
+<span class="nc" id="L82">                return ResponseEntity.badRequest().body(&quot;El subtema no puede estar vacío. Por favor, introduce un nombre para el subtema.&quot;);</span>
             }
-<span class="nc" id="L82">            String subtemaNormalizado = temasCatalogService.añadirSubtemaPregunta(nuevoSubtema);</span>
+<span class="nc" id="L84">            String subtemaNormalizado = temasCatalogService.añadirSubtemaPregunta(nuevoSubtema);</span>
             
-<span class="nc" id="L84">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L85">            response.put(&quot;mensaje&quot;, &quot;Subtema añadido correctamente&quot;);</span>
-<span class="nc" id="L86">            response.put(&quot;subtema&quot;, subtemaNormalizado);</span>
-<span class="nc" id="L87">            response.put(&quot;totalSubtemas&quot;, temasCatalogService.obtenerSubtemasPreguntas().size());</span>
+<span class="nc" id="L86">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L87">            response.put(&quot;mensaje&quot;, &quot;Subtema añadido correctamente&quot;);</span>
+<span class="nc" id="L88">            response.put(&quot;subtema&quot;, subtemaNormalizado);</span>
+<span class="nc" id="L89">            response.put(&quot;totalSubtemas&quot;, temasCatalogService.obtenerSubtemasPreguntas().size());</span>
             
-<span class="nc" id="L89">            return ResponseEntity.ok(response);</span>
-<span class="nc" id="L90">        } catch (Exception e) {</span>
-<span class="nc" id="L91">            return ResponseEntity.badRequest().body(&quot;Error al añadir subtema: &quot; + e.getMessage());</span>
+<span class="nc" id="L91">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L92">        } catch (Exception e) {</span>
+<span class="nc" id="L93">            return ResponseEntity.badRequest().body(&quot;Error al añadir subtema: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -99,17 +101,17 @@ import java.util.*;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;?&gt; eliminarTema(@PathVariable String tema) {
         try {
-<span class="nc" id="L102">            String temaNormalizado = tema.trim().toUpperCase();</span>
-<span class="nc" id="L103">            temasCatalogService.eliminarTematicaPregunta(temaNormalizado);</span>
+<span class="nc" id="L104">            String temaNormalizado = tema.trim().toUpperCase();</span>
+<span class="nc" id="L105">            temasCatalogService.eliminarTematicaPregunta(temaNormalizado);</span>
             
-<span class="nc" id="L105">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L106">            response.put(&quot;mensaje&quot;, &quot;Tema eliminado correctamente&quot;);</span>
-<span class="nc" id="L107">            response.put(&quot;tema&quot;, temaNormalizado);</span>
-<span class="nc" id="L108">            response.put(&quot;totalTemas&quot;, temasCatalogService.obtenerTematicasPreguntas().size());</span>
+<span class="nc" id="L107">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L108">            response.put(&quot;mensaje&quot;, &quot;Tema eliminado correctamente&quot;);</span>
+<span class="nc" id="L109">            response.put(&quot;tema&quot;, temaNormalizado);</span>
+<span class="nc" id="L110">            response.put(&quot;totalTemas&quot;, temasCatalogService.obtenerTematicasPreguntas().size());</span>
             
-<span class="nc" id="L110">            return ResponseEntity.ok(response);</span>
-<span class="nc" id="L111">        } catch (Exception e) {</span>
-<span class="nc" id="L112">            return ResponseEntity.badRequest().body(&quot;Error al eliminar tema: &quot; + e.getMessage());</span>
+<span class="nc" id="L112">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L113">        } catch (Exception e) {</span>
+<span class="nc" id="L114">            return ResponseEntity.badRequest().body(&quot;Error al eliminar tema: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -120,17 +122,17 @@ import java.util.*;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;?&gt; eliminarSubtema(@PathVariable String subtema) {
         try {
-<span class="nc" id="L123">            String subtemaNormalizado = subtema.trim().toUpperCase();</span>
-<span class="nc" id="L124">            temasCatalogService.eliminarSubtemaPregunta(subtemaNormalizado);</span>
+<span class="nc" id="L125">            String subtemaNormalizado = subtema.trim().toUpperCase();</span>
+<span class="nc" id="L126">            temasCatalogService.eliminarSubtemaPregunta(subtemaNormalizado);</span>
             
-<span class="nc" id="L126">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L127">            response.put(&quot;mensaje&quot;, &quot;Subtema eliminado correctamente&quot;);</span>
-<span class="nc" id="L128">            response.put(&quot;subtema&quot;, subtemaNormalizado);</span>
-<span class="nc" id="L129">            response.put(&quot;totalSubtemas&quot;, temasCatalogService.obtenerSubtemasPreguntas().size());</span>
+<span class="nc" id="L128">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L129">            response.put(&quot;mensaje&quot;, &quot;Subtema eliminado correctamente&quot;);</span>
+<span class="nc" id="L130">            response.put(&quot;subtema&quot;, subtemaNormalizado);</span>
+<span class="nc" id="L131">            response.put(&quot;totalSubtemas&quot;, temasCatalogService.obtenerSubtemasPreguntas().size());</span>
             
-<span class="nc" id="L131">            return ResponseEntity.ok(response);</span>
-<span class="nc" id="L132">        } catch (Exception e) {</span>
-<span class="nc" id="L133">            return ResponseEntity.badRequest().body(&quot;Error al eliminar subtema: &quot; + e.getMessage());</span>
+<span class="nc" id="L133">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L134">        } catch (Exception e) {</span>
+<span class="nc" id="L135">            return ResponseEntity.badRequest().body(&quot;Error al eliminar subtema: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -141,15 +143,15 @@ import java.util.*;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;?&gt; obtenerEstadisticas() {
         try {
-<span class="nc" id="L144">            Map&lt;String, Object&gt; estadisticas = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L145">            estadisticas.put(&quot;totalTemas&quot;, temasCatalogService.obtenerTematicasPreguntas().size());</span>
-<span class="nc" id="L146">            estadisticas.put(&quot;totalSubtemas&quot;, temasCatalogService.obtenerSubtemasPreguntas().size());</span>
-<span class="nc" id="L147">            estadisticas.put(&quot;temas&quot;, temasCatalogService.obtenerTematicasPreguntas());</span>
-<span class="nc" id="L148">            estadisticas.put(&quot;subtemas&quot;, temasCatalogService.obtenerSubtemasPreguntas());</span>
+<span class="nc" id="L146">            Map&lt;String, Object&gt; estadisticas = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L147">            estadisticas.put(&quot;totalTemas&quot;, temasCatalogService.obtenerTematicasPreguntas().size());</span>
+<span class="nc" id="L148">            estadisticas.put(&quot;totalSubtemas&quot;, temasCatalogService.obtenerSubtemasPreguntas().size());</span>
+<span class="nc" id="L149">            estadisticas.put(&quot;temas&quot;, temasCatalogService.obtenerTematicasPreguntas());</span>
+<span class="nc" id="L150">            estadisticas.put(&quot;subtemas&quot;, temasCatalogService.obtenerSubtemasPreguntas());</span>
             
-<span class="nc" id="L150">            return ResponseEntity.ok(estadisticas);</span>
-<span class="nc" id="L151">        } catch (Exception e) {</span>
-<span class="nc" id="L152">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener estadísticas: &quot; + e.getMessage());</span>
+<span class="nc" id="L152">            return ResponseEntity.ok(estadisticas);</span>
+<span class="nc" id="L153">        } catch (Exception e) {</span>
+<span class="nc" id="L154">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener estadísticas: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 } 

@@ -9,45 +9,45 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-<span class="nc" id="L12">public class ConfiguracionGlobalService {</span>
+<span class="fc" id="L12">public class ConfiguracionGlobalService {</span>
 
     @Autowired
     private ConfiguracionGlobalRepository configuracionRepository;
 
     public List&lt;ConfiguracionGlobal&gt; findAll() {
-<span class="nc" id="L18">        return configuracionRepository.findAll();</span>
+<span class="fc" id="L18">        return configuracionRepository.findAll();</span>
     }
 
     public String obtenerValor(String clave, String valorPorDefecto) {
-<span class="nc" id="L22">        Optional&lt;ConfiguracionGlobal&gt; config = configuracionRepository.findByClave(clave);</span>
-<span class="nc" id="L23">        return config.map(ConfiguracionGlobal::getValor).orElse(valorPorDefecto);</span>
+<span class="fc" id="L22">        Optional&lt;ConfiguracionGlobal&gt; config = configuracionRepository.findByClave(clave);</span>
+<span class="fc" id="L23">        return config.map(ConfiguracionGlobal::getValor).orElse(valorPorDefecto);</span>
     }
 
     public ConfiguracionGlobal actualizarConfiguracion(String clave, String valor, String descripcion) {
-<span class="nc" id="L27">        Optional&lt;ConfiguracionGlobal&gt; existente = configuracionRepository.findByClave(clave);</span>
+<span class="fc" id="L27">        Optional&lt;ConfiguracionGlobal&gt; existente = configuracionRepository.findByClave(clave);</span>
         
-<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (existente.isPresent()) {</span>
-<span class="nc" id="L30">            ConfiguracionGlobal config = existente.get();</span>
-<span class="nc" id="L31">            config.setValor(valor);</span>
-<span class="nc bnc" id="L32" title="All 2 branches missed.">            if (descripcion != null) {</span>
-<span class="nc" id="L33">                config.setDescripcion(descripcion);</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (existente.isPresent()) {</span>
+<span class="fc" id="L30">            ConfiguracionGlobal config = existente.get();</span>
+<span class="fc" id="L31">            config.setValor(valor);</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">            if (descripcion != null) {</span>
+<span class="fc" id="L33">                config.setDescripcion(descripcion);</span>
             }
-<span class="nc" id="L35">            return configuracionRepository.save(config);</span>
+<span class="fc" id="L35">            return configuracionRepository.save(config);</span>
         } else {
-<span class="nc" id="L37">            ConfiguracionGlobal nuevaConfig = new ConfiguracionGlobal(clave, valor, descripcion);</span>
-<span class="nc" id="L38">            return configuracionRepository.save(nuevaConfig);</span>
+<span class="fc" id="L37">            ConfiguracionGlobal nuevaConfig = new ConfiguracionGlobal(clave, valor, descripcion);</span>
+<span class="fc" id="L38">            return configuracionRepository.save(nuevaConfig);</span>
         }
     }
 
     public String getDuracionObjetivo() {
-<span class="nc" id="L43">        return obtenerValor(&quot;DURACION_OBJETIVO_PROGRAMA&quot;, &quot;45m&quot;);</span>
+<span class="fc" id="L43">        return obtenerValor(&quot;DURACION_OBJETIVO_PROGRAMA&quot;, &quot;45m&quot;);</span>
     }
 
     public void setDuracionObjetivo(String duracion) {
-<span class="nc bnc" id="L47" title="All 4 branches missed.">        if (duracion == null || !duracion.trim().matches(&quot;^(?=.*\\d)(?:\\d+h)?\\s*(?:\\d+m)?$&quot;)) {</span>
-<span class="nc" id="L48">            throw new IllegalArgumentException(&quot;La duración debe tener formato como 45m o 1h 5m.&quot;);</span>
+<span class="fc bfc" id="L47" title="All 4 branches covered.">        if (duracion == null || !duracion.trim().matches(&quot;^(?=.*\\d)(?:\\d+h)?\\s*(?:\\d+m)?$&quot;)) {</span>
+<span class="fc" id="L48">            throw new IllegalArgumentException(&quot;La duración debe tener formato como 45m o 1h 5m.&quot;);</span>
         }
-<span class="nc" id="L50">        actualizarConfiguracion(&quot;DURACION_OBJETIVO_PROGRAMA&quot;, duracion, &quot;Duración objetivo por defecto para programas&quot;);</span>
-<span class="nc" id="L51">    }</span>
+<span class="fc" id="L50">        actualizarConfiguracion(&quot;DURACION_OBJETIVO_PROGRAMA&quot;, duracion, &quot;Duración objetivo por defecto para programas&quot;);</span>
+<span class="fc" id="L51">    }</span>
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

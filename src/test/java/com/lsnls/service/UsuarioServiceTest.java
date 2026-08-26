@@ -69,8 +69,9 @@ class UsuarioServiceTest {
     @Test
     void crear_asignaPasswordPorDefecto() {
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(passwordEncoder.encode("123456")).thenReturn("hash-123456");
         Usuario creado = usuarioService.crear(new Usuario());
-        assertEquals("123456", creado.getPassword());
+        assertEquals("hash-123456", creado.getPassword());
     }
 
     @Test
@@ -111,12 +112,13 @@ class UsuarioServiceTest {
     void actualizar_nuevaPassword() {
         when(usuarioRepository.existsById(1L)).thenReturn(true);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.encode("nueva")).thenReturn("hash-nueva");
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Usuario incoming = new Usuario();
         incoming.setPassword("nueva");
         Usuario saved = usuarioService.actualizar(1L, incoming);
-        assertEquals("nueva", saved.getPassword());
+        assertEquals("hash-nueva", saved.getPassword());
     }
 
     @Test
@@ -154,8 +156,9 @@ class UsuarioServiceTest {
     @Test
     void resetearPassword_okYNoEncontrado() {
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.encode("123456")).thenReturn("hash-123456");
         when(usuarioRepository.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
-        assertEquals("123456", usuarioService.resetearPassword(1L).getPassword());
+        assertEquals("hash-123456", usuarioService.resetearPassword(1L).getPassword());
 
         when(usuarioRepository.findById(2L)).thenReturn(Optional.empty());
         assertThrows(IllegalArgumentException.class, () -> usuarioService.resetearPassword(2L));

@@ -1,5 +1,7 @@
 package com.lsnls.controller;
 
+import com.lsnls.config.MensajesUsuario;
+
 import com.lsnls.service.ValidationService;
 import com.lsnls.service.ValidationService.ValidationResult;
 import com.lsnls.entity.*;
@@ -71,7 +73,7 @@ public class ValidationController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error interno al validar pregunta: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error interno al validar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -98,7 +100,7 @@ public class ValidationController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al validar cuestionario: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al validar cuestionario: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -125,7 +127,7 @@ public class ValidationController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al validar combo: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al validar combo: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -152,7 +154,7 @@ public class ValidationController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al validar concursante: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al validar concursante: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -179,7 +181,7 @@ public class ValidationController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al validar jornada: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al validar jornada: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -206,7 +208,7 @@ public class ValidationController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al validar programa: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al validar programa: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -234,7 +236,7 @@ public class ValidationController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al validar sistema: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al validar sistema: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
@@ -267,7 +269,7 @@ public class ValidationController {
             return ResponseEntity.ok(resumen);
             
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error al generar resumen: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error al generar resumen: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 } 

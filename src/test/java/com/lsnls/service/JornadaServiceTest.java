@@ -16,9 +16,13 @@ import com.lsnls.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
@@ -37,6 +41,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,6 +49,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -426,6 +432,7 @@ class JornadaServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void reciclarComboEntero_registraUndo() {
         Jornada jornada = new Jornada();
         jornada.setId(1L);
@@ -446,10 +453,72 @@ class JornadaServiceTest {
         jornadaService.reciclarComboEntero(1L, 3L, 9L);
 
         assertEquals(Combo.EstadoCombo.aprobado, combo.getEstado());
-        verify(undoService).registrar(eq("reciclar_combo_entero"), anyString(), any());
+        ArgumentCaptor<List<Map<String, Object>>> captor = ArgumentCaptor.forClass(List.class);
+        verify(undoService).registrar(eq("reciclar_combo_entero"), anyString(), captor.capture());
+        List<Map<String, Object>> acciones = captor.getValue();
+        assertTrue(acciones.stream().anyMatch(a ->
+                "actualizar_campos".equals(a.get("tipo"))
+                        && "combos".equals(a.get("tabla"))
+                        && Long.valueOf(3L).equals(((Number) a.get("id")).longValue())));
+        assertTrue(deshacerAccionesConUndoReal(acciones).stream()
+                .anyMatch(sql -> sql.contains("UPDATE combos SET") && sql.contains("`estado`")));
     }
 
     @Test
+    void reciclarComboEntero_noAsignadoAJornada() {
+        Jornada jornada = new Jornada();
+        jornada.setId(1L);
+        Combo asignado = new Combo();
+        asignado.setId(8L);
+        jornada.setCombos(new HashSet<>(Collections.singletonList(asignado)));
+        Combo otro = new Combo();
+        otro.setId(3L);
+        otro.setEstado(Combo.EstadoCombo.adjudicado);
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(jornada));
+        when(comboRepository.findById(3L)).thenReturn(Optional.of(otro));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> jornadaService.reciclarComboEntero(1L, 3L, 9L));
+        assertTrue(ex.getMessage().contains("no está asignado"));
+    }
+
+    @Test
+    void reciclarComboEntero_estadoIncorrecto() {
+        Jornada jornada = new Jornada();
+        jornada.setId(1L);
+        Combo combo = new Combo();
+        combo.setId(3L);
+        combo.setEstado(Combo.EstadoCombo.aprobado);
+        combo.setPreguntas(new HashSet<>(Arrays.asList(
+            new PreguntaCombo(), new PreguntaCombo(), new PreguntaCombo())));
+        jornada.setCombos(new HashSet<>(Collections.singletonList(combo)));
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(jornada));
+        when(comboRepository.findById(3L)).thenReturn(Optional.of(combo));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> jornadaService.reciclarComboEntero(1L, 3L, 9L));
+        assertTrue(ex.getMessage().contains("adjudicado"));
+    }
+
+    @Test
+    void reciclarComboEntero_sinTresPreguntas() {
+        Jornada jornada = new Jornada();
+        jornada.setId(1L);
+        Combo combo = new Combo();
+        combo.setId(3L);
+        combo.setEstado(Combo.EstadoCombo.grabado);
+        combo.setPreguntas(new HashSet<>());
+        jornada.setCombos(new HashSet<>(Collections.singletonList(combo)));
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(jornada));
+        when(comboRepository.findById(3L)).thenReturn(Optional.of(combo));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> jornadaService.reciclarComboEntero(1L, 3L, 9L));
+        assertTrue(ex.getMessage().contains("exactamente 3"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void reciclarComboParcial_registraUndo() {
         Jornada jornada = new Jornada();
         jornada.setId(1L);
@@ -491,7 +560,43 @@ class JornadaServiceTest {
 
         assertEquals(99L, dto.getComboHijoId());
         assertEquals(3L, dto.getComboPadreId());
-        verify(undoService).registrar(eq("reciclar_combo_parcial"), anyString(), any());
+        assertEquals(Combo.EstadoCombo.adjudicado, combo.getEstado());
+        ArgumentCaptor<List<Map<String, Object>>> captor = ArgumentCaptor.forClass(List.class);
+        verify(undoService).registrar(eq("reciclar_combo_parcial"), anyString(), captor.capture());
+        List<Map<String, Object>> acciones = captor.getValue();
+        assertTrue(acciones.stream().anyMatch(a ->
+                "eliminar_fila".equals(a.get("tipo")) && "combos".equals(a.get("tabla"))));
+        assertTrue(acciones.stream().anyMatch(a ->
+                "eliminar_filas".equals(a.get("tipo")) && "combos_preguntas".equals(a.get("tabla"))));
+        List<String> sqls = deshacerAccionesConUndoReal(acciones);
+        assertTrue(sqls.stream().anyMatch(sql -> sql.contains("DELETE FROM combos_preguntas")));
+        assertTrue(sqls.stream().anyMatch(sql -> sql.contains("DELETE FROM combos WHERE id = ?")));
+    }
+
+    @Test
+    void reciclarComboParcial_preguntaQueNoEstaEnElCombo() {
+        Jornada jornada = new Jornada();
+        jornada.setId(1L);
+        Combo combo = new Combo();
+        combo.setId(3L);
+        combo.setEstado(Combo.EstadoCombo.adjudicado);
+        Pregunta p1 = new Pregunta();
+        p1.setId(10L);
+        Pregunta p2 = new Pregunta();
+        p2.setId(11L);
+        Pregunta p3 = new Pregunta();
+        p3.setId(12L);
+        combo.setPreguntas(new HashSet<>(Arrays.asList(
+            preguntaCombo(combo, p1, 1, "2"),
+            preguntaCombo(combo, p2, 2, "3"),
+            preguntaCombo(combo, p3, 3, "X"))));
+        jornada.setCombos(new HashSet<>(Collections.singletonList(combo)));
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(jornada));
+        when(comboRepository.findById(3L)).thenReturn(Optional.of(combo));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> jornadaService.reciclarComboParcial(1L, 3L, 999L, 5L));
+        assertTrue(ex.getMessage().contains("no pertenece"));
     }
 
     @Test
@@ -606,5 +711,154 @@ class JornadaServiceTest {
 
         JornadaDTO result = jornadaService.actualizar(1L, dto);
         assertEquals("Nueva", result.getNombre());
+        verify(cuestionarioService).cambiarEstadoAtomico(eq(2L),
+            eq(Cuestionario.EstadoCuestionario.aprobado),
+            eq(Cuestionario.EstadoCuestionario.adjudicado));
+        verify(comboService).cambiarEstadoAtomico(eq(4L),
+            eq(Combo.EstadoCombo.aprobado),
+            eq(Combo.EstadoCombo.adjudicado));
+    }
+
+    @Test
+    void crear_asignaCuestionarioYComboComoAdjudicado() {
+        when(jornadaRepository.existsByNombre("Jornada nueva")).thenReturn(false);
+        when(usuarioRepository.findById(10L)).thenReturn(Optional.of(usuarioMinimo()));
+        Cuestionario cuest = new Cuestionario();
+        cuest.setId(2L);
+        cuest.setEstado(Cuestionario.EstadoCuestionario.aprobado);
+        cuest.setNivel(Cuestionario.NivelCuestionario.NORMAL);
+        Combo combo = new Combo();
+        combo.setId(4L);
+        combo.setEstado(Combo.EstadoCombo.aprobado);
+        combo.setNivel(Combo.NivelCombo.NORMAL);
+        when(cuestionarioRepository.findById(2L)).thenReturn(Optional.of(cuest));
+        when(comboRepository.findById(4L)).thenReturn(Optional.of(combo));
+        when(cuestionarioService.cambiarEstadoAtomico(eq(2L),
+            eq(Cuestionario.EstadoCuestionario.aprobado),
+            eq(Cuestionario.EstadoCuestionario.adjudicado))).thenReturn(true);
+        when(comboService.cambiarEstadoAtomico(eq(4L),
+            eq(Combo.EstadoCombo.aprobado),
+            eq(Combo.EstadoCombo.adjudicado))).thenReturn(true);
+
+        JornadaDTO dto = dtoMinimo();
+        dto.setCuestionarioIds(Collections.singletonList(2L));
+        dto.setComboIds(Collections.singletonList(4L));
+
+        jornadaService.crear(dto, 10L);
+
+        verify(cuestionarioService).cambiarEstadoAtomico(eq(2L),
+            eq(Cuestionario.EstadoCuestionario.aprobado),
+            eq(Cuestionario.EstadoCuestionario.adjudicado));
+        verify(comboService).cambiarEstadoAtomico(eq(4L),
+            eq(Combo.EstadoCombo.aprobado),
+            eq(Combo.EstadoCombo.adjudicado));
+    }
+
+    @Test
+    void actualizar_quitarGrabadoNoLoPasaAAprobado() {
+        Jornada jornada = jornadaBase();
+        Cuestionario grabado = cuestionarioAdjudicado(2L);
+        grabado.setEstado(Cuestionario.EstadoCuestionario.grabado);
+        Combo comboGrabado = comboAdjudicado(11L);
+        comboGrabado.setEstado(Combo.EstadoCombo.grabado);
+        Cuestionario seQueda = cuestionarioAdjudicado(1L);
+        Combo comboSeQueda = comboAdjudicado(10L);
+        jornada.reemplazarCuestionariosPorSlot(Arrays.asList(seQueda, grabado, null, null, null, null));
+        jornada.reemplazarCombosPorSlot(Arrays.asList(comboSeQueda, comboGrabado, null, null, null, null));
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(jornada));
+        when(cuestionarioRepository.findById(1L)).thenReturn(Optional.of(seQueda));
+        when(comboRepository.findById(10L)).thenReturn(Optional.of(comboSeQueda));
+
+        JornadaDTO dto = dtoMinimo();
+        dto.setCuestionarioIds(Arrays.asList(1L, null, null, null, null, null));
+        dto.setComboIds(Arrays.asList(10L, null, null, null, null, null));
+
+        jornadaService.actualizar(1L, dto);
+
+        assertEquals(Cuestionario.EstadoCuestionario.grabado, grabado.getEstado());
+        assertEquals(Combo.EstadoCombo.grabado, comboGrabado.getEstado());
+        verify(cuestionarioRepository, never()).save(grabado);
+        verify(comboRepository, never()).save(comboGrabado);
+    }
+
+    @Test
+    void actualizar_quitarHuecoMedioNoCompacta() {
+        Jornada jornada = jornadaBase();
+        Cuestionario c1 = cuestionarioAdjudicado(1L);
+        Cuestionario c2 = cuestionarioAdjudicado(2L);
+        Cuestionario c3 = cuestionarioAdjudicado(3L);
+        Combo k1 = comboAdjudicado(10L);
+        Combo k2 = comboAdjudicado(11L);
+        Combo k3 = comboAdjudicado(12L);
+        jornada.reemplazarCuestionariosPorSlot(Arrays.asList(c1, c2, c3, null, null, null));
+        jornada.reemplazarCombosPorSlot(Arrays.asList(k1, k2, k3, null, null, null));
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(jornada));
+        when(cuestionarioRepository.findById(1L)).thenReturn(Optional.of(c1));
+        when(cuestionarioRepository.findById(3L)).thenReturn(Optional.of(c3));
+        when(comboRepository.findById(10L)).thenReturn(Optional.of(k1));
+        when(comboRepository.findById(12L)).thenReturn(Optional.of(k3));
+
+        JornadaDTO dto = dtoMinimo();
+        dto.setCuestionarioIds(Arrays.asList(1L, null, 3L, null, null, null));
+        dto.setComboIds(Arrays.asList(10L, null, 12L, null, null, null));
+
+        JornadaDTO result = jornadaService.actualizar(1L, dto);
+
+        assertEquals(Arrays.asList(1L, null, 3L, null, null, null), result.getCuestionarioIds());
+        assertEquals(Arrays.asList(10L, null, 12L, null, null, null), result.getComboIds());
+        assertEquals(Cuestionario.EstadoCuestionario.aprobado, c2.getEstado());
+        assertEquals(Combo.EstadoCombo.aprobado, k2.getEstado());
+        assertNull(result.getCuestionarios().get(1));
+        assertEquals(3L, result.getCuestionarios().get(2).getId());
+        assertEquals(12L, result.getCombos().get(2).getId());
+    }
+
+    private Cuestionario cuestionarioAdjudicado(Long id) {
+        Cuestionario c = new Cuestionario();
+        c.setId(id);
+        c.setEstado(Cuestionario.EstadoCuestionario.adjudicado);
+        c.setNivel(Cuestionario.NivelCuestionario.NORMAL);
+        return c;
+    }
+
+    private Combo comboAdjudicado(Long id) {
+        Combo c = new Combo();
+        c.setId(id);
+        c.setEstado(Combo.EstadoCombo.adjudicado);
+        c.setNivel(Combo.NivelCombo.NORMAL);
+        return c;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> deshacerAccionesConUndoReal(List<Map<String, Object>> acciones) {
+        try {
+            UndoService realUndo = new UndoService();
+            JdbcTemplate jdbc = org.mockito.Mockito.mock(JdbcTemplate.class);
+            AuthorizationService auth = org.mockito.Mockito.mock(AuthorizationService.class);
+            ReflectionTestUtils.setField(realUndo, "jdbcTemplate", jdbc);
+            ReflectionTestUtils.setField(realUndo, "authorizationService", auth);
+            Usuario usuario = usuarioMinimo();
+            when(auth.getCurrentUser()).thenReturn(Optional.of(usuario));
+            String json = new ObjectMapper().writeValueAsString(Collections.singletonMap("acciones", acciones));
+            Map<String, Object> operacion = new HashMap<>();
+            operacion.put("usuario_id", usuario.getId());
+            operacion.put("deshecha", 0);
+            operacion.put("fecha_creacion", java.sql.Timestamp.from(java.time.Instant.now()));
+            operacion.put("datos_undo", json);
+            operacion.put("descripcion", "reciclaje");
+            when(jdbc.queryForList(anyString(), eq(77L))).thenReturn(Collections.singletonList(operacion));
+            List<String> sqls = new java.util.ArrayList<>();
+            org.mockito.stubbing.Answer<Integer> recoger = inv -> {
+                sqls.add(inv.getArgument(0));
+                return 1;
+            };
+            org.mockito.Mockito.lenient().when(jdbc.update(anyString(), any(Object.class))).thenAnswer(recoger);
+            org.mockito.Mockito.lenient().when(jdbc.update(anyString(), any(), any())).thenAnswer(recoger);
+            org.mockito.Mockito.lenient().when(jdbc.update(anyString(), any(), any(), any())).thenAnswer(recoger);
+            realUndo.deshacer(77L);
+            return sqls;
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

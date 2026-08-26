@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.lsnls.service.ComboServiceCoverageTest
 -------------------------------------------------------------------------------
-Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.180 s -- in com.lsnls.service.ComboServiceCoverageTest
+Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.359 s -- in com.lsnls.service.ComboServiceCoverageTest

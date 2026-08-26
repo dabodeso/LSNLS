@@ -15,13 +15,13 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-<span class="nc" id="L18">public class ExcelExportService {</span>
+<span class="fc" id="L18">public class ExcelExportService {</span>
 
     /**
      * Exporta una jornada a Excel con la configuración por defecto.
      */
     public byte[] exportarJornada(Jornada jornada) throws IOException {
-<span class="nc" id="L24">        return exportarJornada(jornada, null);</span>
+<span class="fc" id="L24">        return exportarJornada(jornada, null);</span>
     }
     
     /**
@@ -37,26 +37,26 @@ import java.util.Map;
      */
     public byte[] exportarJornada(Jornada jornada, Map&lt;String, Object&gt; opciones) throws IOException {
         // Si las opciones son nulas, usar un mapa vacío para evitar NullPointerException
-<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (opciones == null) {</span>
-<span class="nc" id="L41">            opciones = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (opciones == null) {</span>
+<span class="fc" id="L41">            opciones = new HashMap&lt;&gt;();</span>
         }
         
-<span class="nc" id="L44">        try (XSSFWorkbook workbook = new XSSFWorkbook()) {</span>
+<span class="fc" id="L44">        try (XSSFWorkbook workbook = new XSSFWorkbook()) {</span>
             
             // Crear hoja de CUESTIONARIOS
-<span class="nc" id="L47">            Sheet hojaCuestionarios = workbook.createSheet(&quot;CUESTIONARIOS&quot;);</span>
-<span class="nc" id="L48">            configurarPagina(hojaCuestionarios, &quot;Cuestionarios - &quot; + jornada.getNombre());</span>
-<span class="nc" id="L49">            crearHojaCuestionarios(hojaCuestionarios, jornada, workbook, opciones);</span>
+<span class="fc" id="L47">            Sheet hojaCuestionarios = workbook.createSheet(&quot;CUESTIONARIOS&quot;);</span>
+<span class="fc" id="L48">            configurarPagina(hojaCuestionarios, &quot;Cuestionarios - &quot; + jornada.getNombre(), jornada.getNombre());</span>
+<span class="fc" id="L49">            crearHojaCuestionarios(hojaCuestionarios, jornada, workbook, opciones);</span>
             
             // Crear hoja de COMBOS
-<span class="nc" id="L52">            Sheet hojaCombos = workbook.createSheet(&quot;COMBOS&quot;);</span>
-<span class="nc" id="L53">            configurarPagina(hojaCombos, &quot;Combos - &quot; + jornada.getNombre());</span>
-<span class="nc" id="L54">            crearHojaCombos(hojaCombos, jornada, workbook, opciones);</span>
+<span class="fc" id="L52">            Sheet hojaCombos = workbook.createSheet(&quot;COMBOS&quot;);</span>
+<span class="fc" id="L53">            configurarPagina(hojaCombos, &quot;Combos - &quot; + jornada.getNombre(), jornada.getNombre());</span>
+<span class="fc" id="L54">            crearHojaCombos(hojaCombos, jornada, workbook, opciones);</span>
             
             // Convertir a bytes
-<span class="nc" id="L57">            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();</span>
-<span class="nc" id="L58">            workbook.write(outputStream);</span>
-<span class="nc" id="L59">            return outputStream.toByteArray();</span>
+<span class="fc" id="L57">            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();</span>
+<span class="fc" id="L58">            workbook.write(outputStream);</span>
+<span class="fc" id="L59">            return outputStream.toByteArray();</span>
         }
     }
 
@@ -65,28 +65,28 @@ import java.util.Map;
 <span class="nc" id="L65">    }</span>
     
     private void crearHojaCuestionarios(Sheet sheet, Jornada jornada, Workbook workbook, Map&lt;String, Object&gt; opciones) {
-<span class="nc" id="L68">        int filaActual = 0;</span>
+<span class="fc" id="L68">        int filaActual = 0;</span>
         
         // Si opciones es null, inicializamos un mapa vacío para evitar NullPointerException
-<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (opciones == null) {</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (opciones == null) {</span>
 <span class="nc" id="L72">            opciones = new HashMap&lt;&gt;();</span>
         }
         
         // Configurar anchos exactos en unidades Excel
-<span class="nc" id="L76">		sheet.setColumnWidth(0, excelWidth(6.22));   // cuestionario</span>
-<span class="nc" id="L77">		sheet.setColumnWidth(1, excelWidth(7));      // nivel</span>
-<span class="nc" id="L78">		sheet.setColumnWidth(2, excelWidth(49.78));  // pregunta</span>
-<span class="nc" id="L79">		sheet.setColumnWidth(3, excelWidth(18.78));  // respuesta</span>
-<span class="nc" id="L80">		sheet.setColumnWidth(4, excelWidth(43.56));  // datos extra</span>
-<span class="nc" id="L81">		sheet.setColumnWidth(5, excelWidth(7.67));   // rec</span>
+<span class="fc" id="L76">		sheet.setColumnWidth(0, excelWidth(6.22));   // cuestionario</span>
+<span class="fc" id="L77">		sheet.setColumnWidth(1, excelWidth(7));      // nivel</span>
+<span class="fc" id="L78">		sheet.setColumnWidth(2, excelWidth(49.78));  // pregunta</span>
+<span class="fc" id="L79">		sheet.setColumnWidth(3, excelWidth(18.78));  // respuesta</span>
+<span class="fc" id="L80">		sheet.setColumnWidth(4, excelWidth(43.56));  // datos extra</span>
+<span class="fc" id="L81">		sheet.setColumnWidth(5, excelWidth(7.67));   // rec</span>
         
         // Procesar cada cuestionario
-<span class="nc" id="L84">        List&lt;Cuestionario&gt; cuestionarios = jornada.getCuestionarios().stream().collect(java.util.stream.Collectors.toList());</span>
-<span class="nc bnc" id="L85" title="All 2 branches missed.">        for (int i = 0; i &lt; 6; i++) {</span>
-<span class="nc bnc" id="L86" title="All 2 branches missed.">            Cuestionario cuestionario = i &lt; cuestionarios.size() ? cuestionarios.get(i) : null;</span>
-<span class="nc" id="L87">            filaActual = crearTablaCuestionario(sheet, cuestionario, i + 1, filaActual, workbook, opciones);</span>
+<span class="fc" id="L84">        List&lt;Cuestionario&gt; cuestionarios = jornada.getCuestionariosPorSlot();</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        for (int i = 0; i &lt; 6; i++) {</span>
+<span class="fc" id="L86">            Cuestionario cuestionario = cuestionarios.get(i);</span>
+<span class="fc" id="L87">            filaActual = crearTablaCuestionario(sheet, cuestionario, i + 1, filaActual, workbook, opciones);</span>
         }
-<span class="nc" id="L89">    }</span>
+<span class="fc" id="L89">    }</span>
 
     private int crearTablaCuestionario(Sheet sheet, Cuestionario cuestionario, int numeroCuestionario, 
                                      int filaInicial, Workbook workbook) {
@@ -95,31 +95,31 @@ import java.util.Map;
                                      
     private int crearTablaCuestionario(Sheet sheet, Cuestionario cuestionario, int numeroCuestionario, 
                                      int filaInicial, Workbook workbook, Map&lt;String, Object&gt; opciones) {
-<span class="nc" id="L98">        int filaActual = filaInicial;</span>
+<span class="fc" id="L98">        int filaActual = filaInicial;</span>
         
         // Si opciones es null, inicializamos un mapa vacío para evitar NullPointerException
-<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (opciones == null) {</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        if (opciones == null) {</span>
 <span class="nc" id="L102">            opciones = new HashMap&lt;&gt;();</span>
         }
         
         // Encabezados de tabla: Nº CUEST, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA, REC
-<span class="nc" id="L106">        Row filaEncabezados = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L107">		String[] encabezados = {&quot;CUEST&quot;, &quot;NIVEL&quot;, &quot;PREGUNTA&quot;, &quot;RESPUESTA&quot;, &quot;DATOS EXTRA&quot;, &quot;REC&quot;};</span>
+<span class="fc" id="L106">        Row filaEncabezados = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L107">		String[] encabezados = {&quot;CUEST&quot;, &quot;NIVEL&quot;, &quot;PREGUNTA&quot;, &quot;RESPUESTA&quot;, &quot;DATOS EXTRA&quot;, &quot;REC&quot;};</span>
         
-<span class="nc" id="L109">        CellStyle estiloEncabezado = crearEstiloEncabezado(workbook);</span>
-<span class="nc bnc" id="L110" title="All 2 branches missed.">        for (int i = 0; i &lt; encabezados.length; i++) {</span>
-<span class="nc" id="L111">            Cell celda = filaEncabezados.createCell(i);</span>
-<span class="nc" id="L112">            celda.setCellValue(encabezados[i]);</span>
-<span class="nc" id="L113">            celda.setCellStyle(estiloEncabezado);</span>
+<span class="fc" id="L109">        CellStyle estiloEncabezado = crearEstiloEncabezado(workbook);</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        for (int i = 0; i &lt; encabezados.length; i++) {</span>
+<span class="fc" id="L111">            Cell celda = filaEncabezados.createCell(i);</span>
+<span class="fc" id="L112">            celda.setCellValue(encabezados[i]);</span>
+<span class="fc" id="L113">            celda.setCellStyle(estiloEncabezado);</span>
         }
-<span class="nc" id="L115">        filaEncabezados.setHeightInPoints(15f);</span>
+<span class="fc" id="L115">        filaEncabezados.setHeightInPoints(15f);</span>
         
         // Datos de las preguntas
-<span class="nc bnc" id="L118" title="All 4 branches missed.">        if (cuestionario != null &amp;&amp; cuestionario.getPreguntas() != null) {</span>
-<span class="nc" id="L119">			List&lt;PreguntaCuestionario&gt; preguntas = cuestionario.getPreguntas().stream().collect(java.util.stream.Collectors.toList());</span>
+<span class="pc bpc" id="L118" title="1 of 4 branches missed.">        if (cuestionario != null &amp;&amp; cuestionario.getPreguntas() != null) {</span>
+<span class="fc" id="L119">			List&lt;PreguntaCuestionario&gt; preguntas = cuestionario.getPreguntas().stream().collect(java.util.stream.Collectors.toList());</span>
             
             // Ordenar preguntas por nivel si se solicita
-<span class="nc bnc" id="L122" title="All 2 branches missed.">            if (Boolean.TRUE.equals(opciones.get(&quot;ordenarCuestionariosPorNivel&quot;))) {</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            if (Boolean.TRUE.equals(opciones.get(&quot;ordenarCuestionariosPorNivel&quot;))) {</span>
 <span class="nc" id="L123">                preguntas.sort((pc1, pc2) -&gt; {</span>
 <span class="nc" id="L124">                    Pregunta p1 = pc1.getPregunta();</span>
 <span class="nc" id="L125">                    Pregunta p2 = pc2.getPregunta();</span>
@@ -145,13 +145,13 @@ import java.util.Map;
             }
             
             // Estilos de datos
-<span class="nc" id="L148">            CellStyle estiloDatoWrap = crearEstiloDato(workbook, true);</span>
-<span class="nc" id="L149">            CellStyle estiloDatoPlano = crearEstiloDato(workbook, false);</span>
-<span class="nc" id="L150">            CellStyle estiloPrimeraColumna = crearEstiloPrimeraColumna(workbook);</span>
+<span class="fc" id="L148">            CellStyle estiloDatoWrap = crearEstiloDato(workbook, true);</span>
+<span class="fc" id="L149">            CellStyle estiloDatoPlano = crearEstiloDato(workbook, false);</span>
+<span class="fc" id="L150">            CellStyle estiloPrimeraColumna = crearEstiloPrimeraColumna(workbook);</span>
 
 			// Limitar a 4 preguntas por cuestionario
-<span class="nc" id="L153">			int limite = Math.min(4, preguntas.size());</span>
-<span class="nc bnc" id="L154" title="All 2 branches missed.">			for (int idx = 0; idx &lt; limite; idx++) {</span>
+<span class="fc" id="L153">			int limite = Math.min(4, preguntas.size());</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">			for (int idx = 0; idx &lt; limite; idx++) {</span>
 <span class="nc" id="L155">				PreguntaCuestionario pc = preguntas.get(idx);</span>
 <span class="nc" id="L156">                Row filaPregunta = sheet.createRow(filaActual++);</span>
 <span class="nc" id="L157">                Pregunta p = pc.getPregunta();</span>
@@ -181,7 +181,7 @@ import java.util.Map;
 <span class="nc" id="L181">						valor = &quot;5nls&quot;;</span>
 <span class="nc bnc" id="L182" title="All 2 branches missed.">					} else if (nivelName.equals(&quot;_0&quot;)) {</span>
 <span class="nc" id="L183">						valor = &quot;0&quot;;</span>
-					} else {
+<span class="nc" id="L184">					} else {</span>
 						// Fallback: extraer número y determinar sufijo
 <span class="nc" id="L186">						String numerico = nivelName.replaceAll(&quot;\\D+&quot;, &quot;&quot;);</span>
 <span class="nc bnc" id="L187" title="All 2 branches missed.">						if (!numerico.isEmpty()) {</span>
@@ -190,10 +190,10 @@ import java.util.Map;
 <span class="nc" id="L190">								valor = numerico + &quot;nls&quot;;</span>
 <span class="nc bnc" id="L191" title="All 2 branches missed.">							} else if (nivelName.contains(&quot;LS&quot;)) {</span>
 <span class="nc" id="L192">								valor = numerico + &quot;ls&quot;;</span>
-							} else {
+<span class="nc" id="L193">							} else {</span>
 <span class="nc" id="L194">								valor = nivelName.toLowerCase().replace(&quot;_&quot;, &quot;&quot;);</span>
 							}
-						} else {
+<span class="nc" id="L196">						} else {</span>
 <span class="nc" id="L197">							valor = nivelName.toLowerCase().replace(&quot;_&quot;, &quot;&quot;);</span>
 						}
 					}
@@ -226,150 +226,150 @@ import java.util.Map;
 <span class="nc" id="L226">				filaPregunta.setHeightInPoints(39.6f);</span>
             }
             // Añadir una fila vacía adicional
-<span class="nc" id="L229">            Row filaSeparadora = sheet.createRow(filaActual++);</span>
-<span class="nc bnc" id="L230" title="All 2 branches missed.">            for (int j = 0; j &lt; 6; j++) {</span>
-<span class="nc" id="L231">                Cell c = filaSeparadora.createCell(j);</span>
-<span class="nc" id="L232">                c.setCellValue(&quot;&quot;);</span>
-<span class="nc bnc" id="L233" title="All 2 branches missed.">                c.setCellStyle(j == 0 ? estiloPrimeraColumna : crearEstiloDato(workbook, false));</span>
+<span class="fc" id="L229">            Row filaSeparadora = sheet.createRow(filaActual++);</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">            for (int j = 0; j &lt; 6; j++) {</span>
+<span class="fc" id="L231">                Cell c = filaSeparadora.createCell(j);</span>
+<span class="fc" id="L232">                c.setCellValue(&quot;&quot;);</span>
+<span class="fc bfc" id="L233" title="All 2 branches covered.">                c.setCellStyle(j == 0 ? estiloPrimeraColumna : crearEstiloDato(workbook, false));</span>
             }
-<span class="nc" id="L235">            filaSeparadora.setHeightInPoints(39.6f);</span>
-<span class="nc" id="L236">        } else {</span>
+<span class="fc" id="L235">            filaSeparadora.setHeightInPoints(39.6f);</span>
+<span class="fc" id="L236">        } else {</span>
             // Cuestionario vacío - crear 4 filas en blanco + 1 fila vacía adicional
-<span class="nc" id="L238">            CellStyle estiloPrimeraColumna = crearEstiloPrimeraColumna(workbook);</span>
-<span class="nc bnc" id="L239" title="All 2 branches missed.">            for (int i = 0; i &lt; 5; i++) {</span>
-<span class="nc" id="L240">                Row filaVacia = sheet.createRow(filaActual++);</span>
-<span class="nc bnc" id="L241" title="All 2 branches missed.">                for (int j = 0; j &lt; 6; j++) {</span>
-<span class="nc" id="L242">                    Cell c = filaVacia.createCell(j);</span>
-<span class="nc" id="L243">                    c.setCellValue(&quot;&quot;);</span>
-<span class="nc bnc" id="L244" title="All 2 branches missed.">                    c.setCellStyle(j == 0 ? estiloPrimeraColumna : crearEstiloDato(workbook, false));</span>
+<span class="fc" id="L238">            CellStyle estiloPrimeraColumna = crearEstiloPrimeraColumna(workbook);</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">            for (int i = 0; i &lt; 5; i++) {</span>
+<span class="fc" id="L240">                Row filaVacia = sheet.createRow(filaActual++);</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">                for (int j = 0; j &lt; 6; j++) {</span>
+<span class="fc" id="L242">                    Cell c = filaVacia.createCell(j);</span>
+<span class="fc" id="L243">                    c.setCellValue(&quot;&quot;);</span>
+<span class="fc bfc" id="L244" title="All 2 branches covered.">                    c.setCellStyle(j == 0 ? estiloPrimeraColumna : crearEstiloDato(workbook, false));</span>
                 }
-<span class="nc" id="L246">				filaVacia.setHeightInPoints(39.6f);</span>
+<span class="fc" id="L246">				filaVacia.setHeightInPoints(39.6f);</span>
             }
         }
 
         // Campos adicionales debajo del cuestionario - sin fila extra de separación
         // CONCURSANTE
-<span class="nc" id="L252">        Row filaConcursante = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L253">        CellStyle estiloPrimeraColumna = crearEstiloPrimeraColumna(workbook);</span>
-<span class="nc" id="L254">        Cell cellTituloConc = filaConcursante.createCell(0);</span>
-<span class="nc" id="L255">        cellTituloConc.setCellValue(&quot;CONCURSANTE&quot;);</span>
-<span class="nc" id="L256">        cellTituloConc.setCellStyle(estiloPrimeraColumna);</span>
-<span class="nc" id="L257">        filaConcursante.createCell(1).setCellValue(&quot;&quot;);</span>
-<span class="nc" id="L258">        CellRangeAddress rgLblConc = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);</span>
-<span class="nc" id="L259">        sheet.addMergedRegion(rgLblConc);</span>
-<span class="nc" id="L260">        aplicarBordeRegion(sheet, rgLblConc);</span>
-<span class="nc" id="L261">        Cell celdaConcursante = filaConcursante.createCell(2);</span>
-<span class="nc" id="L262">		celdaConcursante.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
-<span class="nc" id="L263">		celdaConcursante.setCellStyle(crearEstiloDato(workbook, true));</span>
-<span class="nc" id="L264">		CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);</span>
-<span class="nc" id="L265">		sheet.addMergedRegion(rgConc);</span>
-<span class="nc" id="L266">		aplicarBordeRegion(sheet, rgConc);</span>
-<span class="nc" id="L267">		filaConcursante.setHeightInPoints(33f);</span>
+<span class="fc" id="L252">        Row filaConcursante = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L253">        CellStyle estiloPrimeraColumna = crearEstiloPrimeraColumna(workbook);</span>
+<span class="fc" id="L254">        Cell cellTituloConc = filaConcursante.createCell(0);</span>
+<span class="fc" id="L255">        cellTituloConc.setCellValue(&quot;CONCURSANTE&quot;);</span>
+<span class="fc" id="L256">        cellTituloConc.setCellStyle(estiloPrimeraColumna);</span>
+<span class="fc" id="L257">        filaConcursante.createCell(1).setCellValue(&quot;&quot;);</span>
+<span class="fc" id="L258">        CellRangeAddress rgLblConc = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);</span>
+<span class="fc" id="L259">        sheet.addMergedRegion(rgLblConc);</span>
+<span class="fc" id="L260">        aplicarBordeRegion(sheet, rgLblConc);</span>
+<span class="fc" id="L261">        Cell celdaConcursante = filaConcursante.createCell(2);</span>
+<span class="fc" id="L262">		celdaConcursante.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
+<span class="fc" id="L263">		celdaConcursante.setCellStyle(crearEstiloDato(workbook, true));</span>
+<span class="fc" id="L264">		CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);</span>
+<span class="fc" id="L265">		sheet.addMergedRegion(rgConc);</span>
+<span class="fc" id="L266">		aplicarBordeRegion(sheet, rgConc);</span>
+<span class="fc" id="L267">		filaConcursante.setHeightInPoints(33f);</span>
         
         // RESULTADO  
-<span class="nc" id="L270">        Row filaResultado = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L271">        Cell cellTituloRes = filaResultado.createCell(0);</span>
-<span class="nc" id="L272">        cellTituloRes.setCellValue(&quot;RESULTADO&quot;);</span>
-<span class="nc" id="L273">        cellTituloRes.setCellStyle(estiloPrimeraColumna);</span>
-<span class="nc" id="L274">        filaResultado.createCell(1).setCellValue(&quot;&quot;);</span>
-<span class="nc" id="L275">        CellRangeAddress rgLblRes = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);</span>
-<span class="nc" id="L276">        sheet.addMergedRegion(rgLblRes);</span>
-<span class="nc" id="L277">        aplicarBordeRegion(sheet, rgLblRes);</span>
-<span class="nc" id="L278">        Cell celdaResultado = filaResultado.createCell(2);</span>
-<span class="nc" id="L279">		celdaResultado.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
-<span class="nc" id="L280">		celdaResultado.setCellStyle(crearEstiloDato(workbook, true));</span>
-<span class="nc" id="L281">		CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);</span>
-<span class="nc" id="L282">		sheet.addMergedRegion(rgRes);</span>
-<span class="nc" id="L283">		aplicarBordeRegion(sheet, rgRes);</span>
-<span class="nc" id="L284">		filaResultado.setHeightInPoints(33f);</span>
+<span class="fc" id="L270">        Row filaResultado = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L271">        Cell cellTituloRes = filaResultado.createCell(0);</span>
+<span class="fc" id="L272">        cellTituloRes.setCellValue(&quot;RESULTADO&quot;);</span>
+<span class="fc" id="L273">        cellTituloRes.setCellStyle(estiloPrimeraColumna);</span>
+<span class="fc" id="L274">        filaResultado.createCell(1).setCellValue(&quot;&quot;);</span>
+<span class="fc" id="L275">        CellRangeAddress rgLblRes = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);</span>
+<span class="fc" id="L276">        sheet.addMergedRegion(rgLblRes);</span>
+<span class="fc" id="L277">        aplicarBordeRegion(sheet, rgLblRes);</span>
+<span class="fc" id="L278">        Cell celdaResultado = filaResultado.createCell(2);</span>
+<span class="fc" id="L279">		celdaResultado.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
+<span class="fc" id="L280">		celdaResultado.setCellStyle(crearEstiloDato(workbook, true));</span>
+<span class="fc" id="L281">		CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);</span>
+<span class="fc" id="L282">		sheet.addMergedRegion(rgRes);</span>
+<span class="fc" id="L283">		aplicarBordeRegion(sheet, rgRes);</span>
+<span class="fc" id="L284">		filaResultado.setHeightInPoints(33f);</span>
         
         // GRABACIÓN
-<span class="nc" id="L287">        Row filaGrabacion = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L288">        Cell cellTituloGrab = filaGrabacion.createCell(0);</span>
-<span class="nc" id="L289">		cellTituloGrab.setCellValue(&quot;GRABACION&quot;);</span>
-<span class="nc" id="L290">        cellTituloGrab.setCellStyle(estiloPrimeraColumna);</span>
-<span class="nc" id="L291">        filaGrabacion.createCell(1).setCellValue(&quot;&quot;);</span>
-<span class="nc" id="L292">        CellRangeAddress rgLblGrab = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);</span>
-<span class="nc" id="L293">        sheet.addMergedRegion(rgLblGrab);</span>
-<span class="nc" id="L294">        aplicarBordeRegion(sheet, rgLblGrab);</span>
-<span class="nc" id="L295">        Cell celdaGrabacion = filaGrabacion.createCell(2);</span>
-<span class="nc" id="L296">		celdaGrabacion.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
-<span class="nc" id="L297">		celdaGrabacion.setCellStyle(crearEstiloDato(workbook, true));</span>
-<span class="nc" id="L298">		CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);</span>
-<span class="nc" id="L299">		sheet.addMergedRegion(rgGrab);</span>
-<span class="nc" id="L300">		aplicarBordeRegion(sheet, rgGrab);</span>
-<span class="nc" id="L301">		filaGrabacion.setHeightInPoints(33f);</span>
+<span class="fc" id="L287">        Row filaGrabacion = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L288">        Cell cellTituloGrab = filaGrabacion.createCell(0);</span>
+<span class="fc" id="L289">		cellTituloGrab.setCellValue(&quot;GRABACION&quot;);</span>
+<span class="fc" id="L290">        cellTituloGrab.setCellStyle(estiloPrimeraColumna);</span>
+<span class="fc" id="L291">        filaGrabacion.createCell(1).setCellValue(&quot;&quot;);</span>
+<span class="fc" id="L292">        CellRangeAddress rgLblGrab = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);</span>
+<span class="fc" id="L293">        sheet.addMergedRegion(rgLblGrab);</span>
+<span class="fc" id="L294">        aplicarBordeRegion(sheet, rgLblGrab);</span>
+<span class="fc" id="L295">        Cell celdaGrabacion = filaGrabacion.createCell(2);</span>
+<span class="fc" id="L296">		celdaGrabacion.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
+<span class="fc" id="L297">		celdaGrabacion.setCellStyle(crearEstiloDato(workbook, true));</span>
+<span class="fc" id="L298">		CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);</span>
+<span class="fc" id="L299">		sheet.addMergedRegion(rgGrab);</span>
+<span class="fc" id="L300">		aplicarBordeRegion(sheet, rgGrab);</span>
+<span class="fc" id="L301">		filaGrabacion.setHeightInPoints(33f);</span>
         
         // NOTAS GUION
-<span class="nc" id="L304">        Row filaNotasGuion = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L305">        Cell cellTituloNotas = filaNotasGuion.createCell(0);</span>
-<span class="nc" id="L306">        cellTituloNotas.setCellValue(&quot;NOTAS GUION&quot;);</span>
-<span class="nc" id="L307">        cellTituloNotas.setCellStyle(estiloPrimeraColumna);</span>
-<span class="nc" id="L308">        filaNotasGuion.createCell(1).setCellValue(&quot;&quot;);</span>
-<span class="nc" id="L309">        CellRangeAddress rgLblNG = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);</span>
-<span class="nc" id="L310">        sheet.addMergedRegion(rgLblNG);</span>
-<span class="nc" id="L311">        aplicarBordeRegion(sheet, rgLblNG);</span>
-<span class="nc" id="L312">        Cell celdaNotasGuion = filaNotasGuion.createCell(2);</span>
-<span class="nc" id="L313">		celdaNotasGuion.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
-<span class="nc" id="L314">		celdaNotasGuion.setCellStyle(crearEstiloDato(workbook, true));</span>
-<span class="nc" id="L315">		CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);</span>
-<span class="nc" id="L316">		sheet.addMergedRegion(rgNG);</span>
-<span class="nc" id="L317">		aplicarBordeRegion(sheet, rgNG);</span>
-<span class="nc" id="L318">		filaNotasGuion.setHeightInPoints(216f);</span>
+<span class="fc" id="L304">        Row filaNotasGuion = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L305">        Cell cellTituloNotas = filaNotasGuion.createCell(0);</span>
+<span class="fc" id="L306">        cellTituloNotas.setCellValue(&quot;NOTAS GUION&quot;);</span>
+<span class="fc" id="L307">        cellTituloNotas.setCellStyle(estiloPrimeraColumna);</span>
+<span class="fc" id="L308">        filaNotasGuion.createCell(1).setCellValue(&quot;&quot;);</span>
+<span class="fc" id="L309">        CellRangeAddress rgLblNG = new CellRangeAddress(filaActual-1, filaActual-1, 0, 1);</span>
+<span class="fc" id="L310">        sheet.addMergedRegion(rgLblNG);</span>
+<span class="fc" id="L311">        aplicarBordeRegion(sheet, rgLblNG);</span>
+<span class="fc" id="L312">        Cell celdaNotasGuion = filaNotasGuion.createCell(2);</span>
+<span class="fc" id="L313">		celdaNotasGuion.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
+<span class="fc" id="L314">		celdaNotasGuion.setCellStyle(crearEstiloDato(workbook, true));</span>
+<span class="fc" id="L315">		CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 2, 5);</span>
+<span class="fc" id="L316">		sheet.addMergedRegion(rgNG);</span>
+<span class="fc" id="L317">		aplicarBordeRegion(sheet, rgNG);</span>
+<span class="fc" id="L318">		filaNotasGuion.setHeightInPoints(216f);</span>
 
         // Salto de página para imprimir un cuestionario por página
-<span class="nc" id="L321">        sheet.setRowBreak(filaActual);</span>
+<span class="fc" id="L321">        sheet.setRowBreak(filaActual);</span>
         
-<span class="nc" id="L323">        return filaActual;</span>
+<span class="fc" id="L323">        return filaActual;</span>
     }
 
 	private void aplicarBordeRegion(Sheet sheet, CellRangeAddress region) {
-<span class="nc" id="L327">		RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);</span>
-<span class="nc" id="L328">		RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);</span>
-<span class="nc" id="L329">		RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);</span>
-<span class="nc" id="L330">		RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);</span>
-<span class="nc" id="L331">	}</span>
+<span class="fc" id="L327">		RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);</span>
+<span class="fc" id="L328">		RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);</span>
+<span class="fc" id="L329">		RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);</span>
+<span class="fc" id="L330">		RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);</span>
+<span class="fc" id="L331">	}</span>
 
     private void crearHojaCombos(Sheet sheet, Jornada jornada, Workbook workbook) {
 <span class="nc" id="L334">        crearHojaCombos(sheet, jornada, workbook, null);</span>
 <span class="nc" id="L335">    }</span>
     
     private void crearHojaCombos(Sheet sheet, Jornada jornada, Workbook workbook, Map&lt;String, Object&gt; opciones) {
-<span class="nc" id="L338">        int filaActual = 0;</span>
+<span class="fc" id="L338">        int filaActual = 0;</span>
         
         // Si opciones es null, inicializamos un mapa vacío para evitar NullPointerException
-<span class="nc bnc" id="L341" title="All 2 branches missed.">        if (opciones == null) {</span>
+<span class="pc bpc" id="L341" title="1 of 2 branches missed.">        if (opciones == null) {</span>
 <span class="nc" id="L342">            opciones = new HashMap&lt;&gt;();</span>
         }
         
 		// Configurar anchos de columna para COMBOS: TEMÁTICA, TIPO, FAC, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA, REC (8 columnas)
-<span class="nc" id="L346">		sheet.setColumnWidth(0, 5500);  // TEMÁTICA (aumentado para que &quot;NOTAS DIRECCION&quot; no se corte)</span>
-<span class="nc" id="L347">		sheet.setColumnWidth(1, 2000);  // TIPO</span>
-<span class="nc" id="L348">		sheet.setColumnWidth(2, 2000);  // FAC</span>
-<span class="nc" id="L349">		sheet.setColumnWidth(3, 2000);  // NIVEL</span>
-<span class="nc" id="L350">		sheet.setColumnWidth(4, 15000); // PREGUNTA</span>
-<span class="nc" id="L351">		sheet.setColumnWidth(5, 10000); // RESPUESTA</span>
-<span class="nc" id="L352">		sheet.setColumnWidth(6, 8000);  // DATOS EXTRA</span>
-<span class="nc" id="L353">		sheet.setColumnWidth(7, 2000);  // REC</span>
+<span class="fc" id="L346">		sheet.setColumnWidth(0, 5500);  // TEMÁTICA (aumentado para que &quot;NOTAS DIRECCION&quot; no se corte)</span>
+<span class="fc" id="L347">		sheet.setColumnWidth(1, 2000);  // TIPO</span>
+<span class="fc" id="L348">		sheet.setColumnWidth(2, 2000);  // FAC</span>
+<span class="fc" id="L349">		sheet.setColumnWidth(3, 2000);  // NIVEL</span>
+<span class="fc" id="L350">		sheet.setColumnWidth(4, 15000); // PREGUNTA</span>
+<span class="fc" id="L351">		sheet.setColumnWidth(5, 10000); // RESPUESTA</span>
+<span class="fc" id="L352">		sheet.setColumnWidth(6, 8000);  // DATOS EXTRA</span>
+<span class="fc" id="L353">		sheet.setColumnWidth(7, 2000);  // REC</span>
         
         // Título de la jornada
-<span class="nc" id="L356">        Row filaTitulo = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L357">        Cell celdaTitulo = filaTitulo.createCell(0);</span>
-<span class="nc" id="L358">        celdaTitulo.setCellValue(&quot;COMBOS - JORNADA: &quot; + jornada.getNombre() + &quot; - &quot; + jornada.getFechaJornada());</span>
-<span class="nc" id="L359">        CellStyle estiloTitulo = crearEstiloTitulo(workbook);</span>
-<span class="nc" id="L360">        celdaTitulo.setCellStyle(estiloTitulo);</span>
-<span class="nc" id="L361">        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 7));</span>
+<span class="fc" id="L356">        Row filaTitulo = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L357">        Cell celdaTitulo = filaTitulo.createCell(0);</span>
+<span class="fc" id="L358">        celdaTitulo.setCellValue(&quot;COMBOS - JORNADA: &quot; + jornada.getNombre() + &quot; - &quot; + jornada.getFechaJornada());</span>
+<span class="fc" id="L359">        CellStyle estiloTitulo = crearEstiloTitulo(workbook);</span>
+<span class="fc" id="L360">        celdaTitulo.setCellStyle(estiloTitulo);</span>
+<span class="fc" id="L361">        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 7));</span>
         
-<span class="nc" id="L363">        filaActual++; // Fila en blanco</span>
+<span class="fc" id="L363">        filaActual++; // Fila en blanco</span>
         
         // Procesar cada combo
-<span class="nc" id="L366">        List&lt;Combo&gt; combos = jornada.getCombos().stream().collect(java.util.stream.Collectors.toList());</span>
-<span class="nc bnc" id="L367" title="All 2 branches missed.">        for (int i = 0; i &lt; 6; i++) {</span>
-<span class="nc bnc" id="L368" title="All 2 branches missed.">            Combo combo = i &lt; combos.size() ? combos.get(i) : null;</span>
-<span class="nc" id="L369">            filaActual = crearTablaCombo(sheet, combo, i + 1, filaActual, workbook, opciones);</span>
-<span class="nc" id="L370">            filaActual += 2; // Espacio entre combos</span>
+<span class="fc" id="L366">        List&lt;Combo&gt; combos = jornada.getCombosPorSlot();</span>
+<span class="fc bfc" id="L367" title="All 2 branches covered.">        for (int i = 0; i &lt; 6; i++) {</span>
+<span class="fc" id="L368">            Combo combo = combos.get(i);</span>
+<span class="fc" id="L369">            filaActual = crearTablaCombo(sheet, combo, i + 1, filaActual, workbook, opciones);</span>
+<span class="fc" id="L370">            filaActual += 2; // Espacio entre combos</span>
         }
-<span class="nc" id="L372">    }</span>
+<span class="fc" id="L372">    }</span>
 
     private int crearTablaCombo(Sheet sheet, Combo combo, int numeroCombo, 
                                int filaInicial, Workbook workbook) {
@@ -378,56 +378,56 @@ import java.util.Map;
                                
     private int crearTablaCombo(Sheet sheet, Combo combo, int numeroCombo, 
                                int filaInicial, Workbook workbook, Map&lt;String, Object&gt; opciones) {
-<span class="nc" id="L381">        int filaActual = filaInicial;</span>
+<span class="fc" id="L381">        int filaActual = filaInicial;</span>
         
         // Si opciones es null, inicializamos un mapa vacío para evitar NullPointerException
-<span class="nc bnc" id="L384" title="All 2 branches missed.">        if (opciones == null) {</span>
+<span class="pc bpc" id="L384" title="1 of 2 branches missed.">        if (opciones == null) {</span>
 <span class="nc" id="L385">            opciones = new HashMap&lt;&gt;();</span>
         }
         
         // Título del combo
-<span class="nc" id="L389">        Row filaTituloCombo = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L390">        Cell celdaTituloCombo = filaTituloCombo.createCell(0);</span>
+<span class="fc" id="L389">        Row filaTituloCombo = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L390">        Cell celdaTituloCombo = filaTituloCombo.createCell(0);</span>
         String titulo;
-<span class="nc bnc" id="L392" title="All 2 branches missed.">        if (combo != null) {</span>
-<span class="nc bnc" id="L393" title="All 2 branches missed.">            String nivelCombo = combo.getNivel() != null ? combo.getNivel().name() : &quot;&quot;;</span>
+<span class="fc bfc" id="L392" title="All 2 branches covered.">        if (combo != null) {</span>
+<span class="pc bpc" id="L393" title="1 of 2 branches missed.">            String nivelCombo = combo.getNivel() != null ? combo.getNivel().name() : &quot;&quot;;</span>
             // Convertir nivel a formato corto
-<span class="nc" id="L395">            String nivelCorto = &quot;&quot;;</span>
-<span class="nc bnc" id="L396" title="All 2 branches missed.">            if (nivelCombo.equals(&quot;_5LS&quot;)) {</span>
+<span class="fc" id="L395">            String nivelCorto = &quot;&quot;;</span>
+<span class="pc bpc" id="L396" title="1 of 2 branches missed.">            if (nivelCombo.equals(&quot;_5LS&quot;)) {</span>
 <span class="nc" id="L397">                nivelCorto = &quot;5LS&quot;;</span>
-<span class="nc bnc" id="L398" title="All 2 branches missed.">            } else if (nivelCombo.equals(&quot;_5NLS&quot;)) {</span>
+<span class="pc bpc" id="L398" title="1 of 2 branches missed.">            } else if (nivelCombo.equals(&quot;_5NLS&quot;)) {</span>
 <span class="nc" id="L399">                nivelCorto = &quot;5NLS&quot;;</span>
-<span class="nc bnc" id="L400" title="All 2 branches missed.">            } else if (nivelCombo.equals(&quot;NORMAL&quot;)) {</span>
+<span class="pc bpc" id="L400" title="1 of 2 branches missed.">            } else if (nivelCombo.equals(&quot;NORMAL&quot;)) {</span>
 <span class="nc" id="L401">                nivelCorto = &quot;NORMAL&quot;;</span>
-            } else {
-<span class="nc" id="L403">                nivelCorto = nivelCombo.replace(&quot;_&quot;, &quot;&quot;);</span>
+<span class="nc" id="L402">            } else {</span>
+<span class="fc" id="L403">                nivelCorto = nivelCombo.replace(&quot;_&quot;, &quot;&quot;);</span>
             }
-<span class="nc" id="L405">            titulo = &quot;COMBO &quot; + numeroCombo + &quot; (ID: &quot; + combo.getId() + &quot; - NIVEL: &quot; + nivelCorto + &quot;)&quot;;</span>
-<span class="nc" id="L406">        } else {</span>
-<span class="nc" id="L407">            titulo = &quot;COMBO &quot; + numeroCombo + &quot; (VACÍO)&quot;;</span>
+<span class="fc" id="L405">            titulo = &quot;COMBO &quot; + numeroCombo + &quot; (ID: &quot; + combo.getId() + &quot; - NIVEL: &quot; + nivelCorto + &quot;)&quot;;</span>
+<span class="fc" id="L406">        } else {</span>
+<span class="fc" id="L407">            titulo = &quot;COMBO &quot; + numeroCombo + &quot; (VACÍO)&quot;;</span>
         }
-<span class="nc" id="L409">        celdaTituloCombo.setCellValue(titulo);</span>
-<span class="nc" id="L410">        CellStyle estiloSubtitulo = crearEstiloSubtitulo(workbook);</span>
-<span class="nc" id="L411">        celdaTituloCombo.setCellStyle(estiloSubtitulo);</span>
-<span class="nc" id="L412">        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 0, 7));</span>
+<span class="fc" id="L409">        celdaTituloCombo.setCellValue(titulo);</span>
+<span class="fc" id="L410">        CellStyle estiloSubtitulo = crearEstiloSubtitulo(workbook);</span>
+<span class="fc" id="L411">        celdaTituloCombo.setCellStyle(estiloSubtitulo);</span>
+<span class="fc" id="L412">        sheet.addMergedRegion(new CellRangeAddress(filaActual-1, filaActual-1, 0, 7));</span>
         
         // Encabezados de tabla: TEMÁTICA, TIPO, FAC, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA, REC (8 columnas)
-<span class="nc" id="L415">        Row filaEncabezados = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L416">        String[] encabezados = {&quot;TEMÁTICA&quot;, &quot;TIPO&quot;, &quot;FAC&quot;, &quot;NIVEL&quot;, &quot;PREGUNTA&quot;, &quot;RESPUESTA&quot;, &quot;DATOS EXTRA&quot;, &quot;REC&quot;};</span>
+<span class="fc" id="L415">        Row filaEncabezados = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L416">        String[] encabezados = {&quot;TEMÁTICA&quot;, &quot;TIPO&quot;, &quot;FAC&quot;, &quot;NIVEL&quot;, &quot;PREGUNTA&quot;, &quot;RESPUESTA&quot;, &quot;DATOS EXTRA&quot;, &quot;REC&quot;};</span>
         
-<span class="nc" id="L418">        CellStyle estiloEncabezado = crearEstiloEncabezado(workbook);</span>
-<span class="nc bnc" id="L419" title="All 2 branches missed.">        for (int i = 0; i &lt; encabezados.length; i++) {</span>
-<span class="nc" id="L420">            Cell celda = filaEncabezados.createCell(i);</span>
-<span class="nc" id="L421">            celda.setCellValue(encabezados[i]);</span>
-<span class="nc" id="L422">            celda.setCellStyle(estiloEncabezado);</span>
+<span class="fc" id="L418">        CellStyle estiloEncabezado = crearEstiloEncabezado(workbook);</span>
+<span class="fc bfc" id="L419" title="All 2 branches covered.">        for (int i = 0; i &lt; encabezados.length; i++) {</span>
+<span class="fc" id="L420">            Cell celda = filaEncabezados.createCell(i);</span>
+<span class="fc" id="L421">            celda.setCellValue(encabezados[i]);</span>
+<span class="fc" id="L422">            celda.setCellStyle(estiloEncabezado);</span>
         }
         
         // Datos de las preguntas del combo
-<span class="nc bnc" id="L426" title="All 4 branches missed.">        if (combo != null &amp;&amp; combo.getPreguntas() != null) {</span>
-<span class="nc" id="L427">            List&lt;PreguntaCombo&gt; preguntas = combo.getPreguntas().stream().collect(java.util.stream.Collectors.toList());</span>
+<span class="pc bpc" id="L426" title="1 of 4 branches missed.">        if (combo != null &amp;&amp; combo.getPreguntas() != null) {</span>
+<span class="fc" id="L427">            List&lt;PreguntaCombo&gt; preguntas = combo.getPreguntas().stream().collect(java.util.stream.Collectors.toList());</span>
             
             // Ordenar preguntas por factor de multiplicación si se solicita
-<span class="nc bnc" id="L430" title="All 2 branches missed.">            if (Boolean.TRUE.equals(opciones.get(&quot;ordenarCombosPorFactor&quot;))) {</span>
+<span class="pc bpc" id="L430" title="1 of 2 branches missed.">            if (Boolean.TRUE.equals(opciones.get(&quot;ordenarCombosPorFactor&quot;))) {</span>
 <span class="nc" id="L431">                preguntas.sort((pc1, pc2) -&gt; {</span>
 <span class="nc" id="L432">                    int factor1 = 0;</span>
 <span class="nc" id="L433">                    int factor2 = 0;</span>
@@ -444,10 +444,10 @@ import java.util.Map;
             }
             
             // Estilos de datos
-<span class="nc" id="L447">            CellStyle estiloDatoWrap = crearEstiloDato(workbook, true);</span>
-<span class="nc" id="L448">            CellStyle estiloDatoPlano = crearEstiloDato(workbook, false);</span>
+<span class="fc" id="L447">            CellStyle estiloDatoWrap = crearEstiloDato(workbook, true);</span>
+<span class="fc" id="L448">            CellStyle estiloDatoPlano = crearEstiloDato(workbook, false);</span>
 
-<span class="nc bnc" id="L450" title="All 2 branches missed.">            for (PreguntaCombo pc : preguntas) {</span>
+<span class="pc bpc" id="L450" title="1 of 2 branches missed.">            for (PreguntaCombo pc : preguntas) {</span>
 <span class="nc" id="L451">                Row filaPregunta = sheet.createRow(filaActual++);</span>
 <span class="nc" id="L452">                Pregunta p = pc.getPregunta();</span>
                 
@@ -476,7 +476,7 @@ import java.util.Map;
 <span class="nc bnc" id="L476" title="All 4 branches missed.">                    if (factorStr == null || factorStr.trim().isEmpty()) {</span>
 <span class="nc" id="L477">                        factorStr = &quot;x&quot;;</span>
                     }
-<span class="nc" id="L479">                }</span>
+                }
 <span class="nc" id="L480">                c2.setCellValue(factorStr);</span>
 <span class="nc" id="L481">                c2.setCellStyle(estiloDatoPlano);</span>
 
@@ -500,7 +500,7 @@ import java.util.Map;
 <span class="nc" id="L500">                        valor = &quot;5nls&quot;;</span>
 <span class="nc bnc" id="L501" title="All 2 branches missed.">                    } else if (nivelName.equals(&quot;_0&quot;)) {</span>
 <span class="nc" id="L502">                        valor = &quot;0&quot;;</span>
-                    } else {
+<span class="nc" id="L503">                    } else {</span>
                         // Fallback: extraer número y determinar sufijo
 <span class="nc" id="L505">                        String numerico = nivelName.replaceAll(&quot;\\D+&quot;, &quot;&quot;);</span>
 <span class="nc bnc" id="L506" title="All 2 branches missed.">                        if (!numerico.isEmpty()) {</span>
@@ -509,10 +509,10 @@ import java.util.Map;
 <span class="nc" id="L509">                                valor = numerico + &quot;nls&quot;;</span>
 <span class="nc bnc" id="L510" title="All 2 branches missed.">                            } else if (nivelName.contains(&quot;LS&quot;)) {</span>
 <span class="nc" id="L511">                                valor = numerico + &quot;ls&quot;;</span>
-                            } else {
+<span class="nc" id="L512">                            } else {</span>
 <span class="nc" id="L513">                                valor = nivelName.toLowerCase().replace(&quot;_&quot;, &quot;&quot;);</span>
                             }
-                        } else {
+<span class="nc" id="L515">                        } else {</span>
 <span class="nc" id="L516">                            valor = nivelName.toLowerCase().replace(&quot;_&quot;, &quot;&quot;);</span>
                         }
                     }
@@ -544,180 +544,192 @@ import java.util.Map;
 
                 // Altura aumentada un 20% como en cuestionarios
 <span class="nc" id="L546">                filaPregunta.setHeightInPoints(43.2f);</span>
-<span class="nc" id="L547">            }</span>
-<span class="nc" id="L548">        } else {</span>
+            }
+<span class="fc" id="L548">        } else {</span>
             // Combo vacío - crear filas en blanco
-<span class="nc bnc" id="L550" title="All 2 branches missed.">            for (int i = 0; i &lt; 3; i++) {</span>
-<span class="nc" id="L551">                Row filaVacia = sheet.createRow(filaActual++);</span>
-<span class="nc bnc" id="L552" title="All 2 branches missed.">                for (int j = 0; j &lt; 8; j++) {</span>
-<span class="nc" id="L553">                    Cell c = filaVacia.createCell(j);</span>
-<span class="nc" id="L554">                    c.setCellValue(&quot;&quot;);</span>
-<span class="nc" id="L555">                    c.setCellStyle(crearEstiloDato(workbook, false));</span>
+<span class="fc bfc" id="L550" title="All 2 branches covered.">            for (int i = 0; i &lt; 3; i++) {</span>
+<span class="fc" id="L551">                Row filaVacia = sheet.createRow(filaActual++);</span>
+<span class="fc bfc" id="L552" title="All 2 branches covered.">                for (int j = 0; j &lt; 8; j++) {</span>
+<span class="fc" id="L553">                    Cell c = filaVacia.createCell(j);</span>
+<span class="fc" id="L554">                    c.setCellValue(&quot;&quot;);</span>
+<span class="fc" id="L555">                    c.setCellStyle(crearEstiloDato(workbook, false));</span>
                 }
-<span class="nc" id="L557">                filaVacia.setHeightInPoints(43.2f);</span>
+<span class="fc" id="L557">                filaVacia.setHeightInPoints(43.2f);</span>
             }
         }
         
         // Campos adicionales debajo del combo - organizados verticalmente
-<span class="nc" id="L562">        filaActual++; // Fila en blanco</span>
+<span class="fc" id="L562">        filaActual++; // Fila en blanco</span>
         
         // CONCURSANTE
-<span class="nc" id="L565">        Row filaConcursante = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L566">        filaConcursante.createCell(0).setCellValue(&quot;CONCURSANTE:&quot;);</span>
-<span class="nc" id="L567">        Cell celdaConcursante = filaConcursante.createCell(1);</span>
-<span class="nc" id="L568">        celdaConcursante.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
-<span class="nc" id="L569">        celdaConcursante.setCellStyle(crearEstiloDato(workbook, true));</span>
-<span class="nc" id="L570">        CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);</span>
-<span class="nc" id="L571">        sheet.addMergedRegion(rgConc);</span>
-<span class="nc" id="L572">        aplicarBordeRegion(sheet, rgConc);</span>
-<span class="nc" id="L573">        filaConcursante.setHeightInPoints(43.2f);</span>
+<span class="fc" id="L565">        Row filaConcursante = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L566">        filaConcursante.createCell(0).setCellValue(&quot;CONCURSANTE:&quot;);</span>
+<span class="fc" id="L567">        Cell celdaConcursante = filaConcursante.createCell(1);</span>
+<span class="fc" id="L568">        celdaConcursante.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
+<span class="fc" id="L569">        celdaConcursante.setCellStyle(crearEstiloDato(workbook, true));</span>
+<span class="fc" id="L570">        CellRangeAddress rgConc = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);</span>
+<span class="fc" id="L571">        sheet.addMergedRegion(rgConc);</span>
+<span class="fc" id="L572">        aplicarBordeRegion(sheet, rgConc);</span>
+<span class="fc" id="L573">        filaConcursante.setHeightInPoints(43.2f);</span>
         
         // RESULTADO  
-<span class="nc" id="L576">        Row filaResultado = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L577">        filaResultado.createCell(0).setCellValue(&quot;RESULTADO:&quot;);</span>
-<span class="nc" id="L578">        Cell celdaResultado = filaResultado.createCell(1);</span>
-<span class="nc" id="L579">        celdaResultado.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
-<span class="nc" id="L580">        celdaResultado.setCellStyle(crearEstiloDato(workbook, true));</span>
-<span class="nc" id="L581">        CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);</span>
-<span class="nc" id="L582">        sheet.addMergedRegion(rgRes);</span>
-<span class="nc" id="L583">        aplicarBordeRegion(sheet, rgRes);</span>
-<span class="nc" id="L584">        filaResultado.setHeightInPoints(43.2f);</span>
+<span class="fc" id="L576">        Row filaResultado = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L577">        filaResultado.createCell(0).setCellValue(&quot;RESULTADO:&quot;);</span>
+<span class="fc" id="L578">        Cell celdaResultado = filaResultado.createCell(1);</span>
+<span class="fc" id="L579">        celdaResultado.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
+<span class="fc" id="L580">        celdaResultado.setCellStyle(crearEstiloDato(workbook, true));</span>
+<span class="fc" id="L581">        CellRangeAddress rgRes = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);</span>
+<span class="fc" id="L582">        sheet.addMergedRegion(rgRes);</span>
+<span class="fc" id="L583">        aplicarBordeRegion(sheet, rgRes);</span>
+<span class="fc" id="L584">        filaResultado.setHeightInPoints(43.2f);</span>
         
         // GRABACIÓN
-<span class="nc" id="L587">        Row filaGrabacion = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L588">        filaGrabacion.createCell(0).setCellValue(&quot;GRABACION:&quot;);</span>
-<span class="nc" id="L589">        Cell celdaGrabacion = filaGrabacion.createCell(1);</span>
-<span class="nc" id="L590">        celdaGrabacion.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
-<span class="nc" id="L591">        celdaGrabacion.setCellStyle(crearEstiloDato(workbook, true));</span>
-<span class="nc" id="L592">        CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);</span>
-<span class="nc" id="L593">        sheet.addMergedRegion(rgGrab);</span>
-<span class="nc" id="L594">        aplicarBordeRegion(sheet, rgGrab);</span>
-<span class="nc" id="L595">        filaGrabacion.setHeightInPoints(43.2f);</span>
+<span class="fc" id="L587">        Row filaGrabacion = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L588">        filaGrabacion.createCell(0).setCellValue(&quot;GRABACION:&quot;);</span>
+<span class="fc" id="L589">        Cell celdaGrabacion = filaGrabacion.createCell(1);</span>
+<span class="fc" id="L590">        celdaGrabacion.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
+<span class="fc" id="L591">        celdaGrabacion.setCellStyle(crearEstiloDato(workbook, true));</span>
+<span class="fc" id="L592">        CellRangeAddress rgGrab = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);</span>
+<span class="fc" id="L593">        sheet.addMergedRegion(rgGrab);</span>
+<span class="fc" id="L594">        aplicarBordeRegion(sheet, rgGrab);</span>
+<span class="fc" id="L595">        filaGrabacion.setHeightInPoints(43.2f);</span>
         
         // NOTAS DIRECCIÓN
-<span class="nc" id="L598">        Row filaNotasDireccion = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L599">        filaNotasDireccion.createCell(0).setCellValue(&quot;NOTAS DIRECCION:&quot;);</span>
-<span class="nc" id="L600">        Cell celdaNotasDireccion = filaNotasDireccion.createCell(1);</span>
+<span class="fc" id="L598">        Row filaNotasDireccion = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L599">        filaNotasDireccion.createCell(0).setCellValue(&quot;NOTAS DIRECCION:&quot;);</span>
+<span class="fc" id="L600">        Cell celdaNotasDireccion = filaNotasDireccion.createCell(1);</span>
         // Mostrar las notas de dirección si existen (notasDireccion del combo)
-<span class="nc bnc" id="L602" title="All 4 branches missed.">        String notasDireccion = (combo != null &amp;&amp; combo.getNotasDireccion() != null) ? combo.getNotasDireccion() : &quot;&quot;;</span>
-<span class="nc" id="L603">        celdaNotasDireccion.setCellValue(notasDireccion);</span>
-<span class="nc" id="L604">        celdaNotasDireccion.setCellStyle(crearEstiloDato(workbook, true));</span>
-<span class="nc" id="L605">        CellRangeAddress rgND = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);</span>
-<span class="nc" id="L606">        sheet.addMergedRegion(rgND);</span>
-<span class="nc" id="L607">        aplicarBordeRegion(sheet, rgND);</span>
+<span class="pc bpc" id="L602" title="1 of 4 branches missed.">        String notasDireccion = (combo != null &amp;&amp; combo.getNotasDireccion() != null) ? combo.getNotasDireccion() : &quot;&quot;;</span>
+<span class="fc" id="L603">        celdaNotasDireccion.setCellValue(notasDireccion);</span>
+<span class="fc" id="L604">        celdaNotasDireccion.setCellStyle(crearEstiloDato(workbook, true));</span>
+<span class="fc" id="L605">        CellRangeAddress rgND = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);</span>
+<span class="fc" id="L606">        sheet.addMergedRegion(rgND);</span>
+<span class="fc" id="L607">        aplicarBordeRegion(sheet, rgND);</span>
         // Altura aumentada un 20%
-<span class="nc" id="L609">        filaNotasDireccion.setHeightInPoints(43.2f);</span>
+<span class="fc" id="L609">        filaNotasDireccion.setHeightInPoints(43.2f);</span>
         
         // NOTAS GUION (sin tilde)
-<span class="nc" id="L612">        Row filaNotasGuion = sheet.createRow(filaActual++);</span>
-<span class="nc" id="L613">        filaNotasGuion.createCell(0).setCellValue(&quot;NOTAS GUION:&quot;);</span>
-<span class="nc" id="L614">        Cell celdaNotasGuion = filaNotasGuion.createCell(1);</span>
-<span class="nc" id="L615">        celdaNotasGuion.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
-<span class="nc" id="L616">        celdaNotasGuion.setCellStyle(crearEstiloDato(workbook, true));</span>
-<span class="nc" id="L617">        CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);</span>
-<span class="nc" id="L618">        sheet.addMergedRegion(rgNG);</span>
-<span class="nc" id="L619">        aplicarBordeRegion(sheet, rgNG);</span>
-<span class="nc" id="L620">        filaNotasGuion.setHeightInPoints(180f);</span>
+<span class="fc" id="L612">        Row filaNotasGuion = sheet.createRow(filaActual++);</span>
+<span class="fc" id="L613">        filaNotasGuion.createCell(0).setCellValue(&quot;NOTAS GUION:&quot;);</span>
+<span class="fc" id="L614">        Cell celdaNotasGuion = filaNotasGuion.createCell(1);</span>
+<span class="fc" id="L615">        celdaNotasGuion.setCellValue(&quot;&quot;); // Campo editable que se extiende</span>
+<span class="fc" id="L616">        celdaNotasGuion.setCellStyle(crearEstiloDato(workbook, true));</span>
+<span class="fc" id="L617">        CellRangeAddress rgNG = new CellRangeAddress(filaActual-1, filaActual-1, 1, 7);</span>
+<span class="fc" id="L618">        sheet.addMergedRegion(rgNG);</span>
+<span class="fc" id="L619">        aplicarBordeRegion(sheet, rgNG);</span>
+<span class="fc" id="L620">        filaNotasGuion.setHeightInPoints(180f);</span>
 
 
         // Salto de página por combo
-<span class="nc" id="L624">        sheet.setRowBreak(filaActual);</span>
+<span class="fc" id="L624">        sheet.setRowBreak(filaActual);</span>
         
-<span class="nc" id="L626">        return filaActual;</span>
+<span class="fc" id="L626">        return filaActual;</span>
     }
 
     private CellStyle crearEstiloTitulo(Workbook workbook) {
-<span class="nc" id="L630">        CellStyle estilo = workbook.createCellStyle();</span>
-<span class="nc" id="L631">        Font fuente = workbook.createFont();</span>
-<span class="nc" id="L632">        fuente.setBold(true);</span>
-<span class="nc" id="L633">        fuente.setFontHeightInPoints((short) 16);</span>
-<span class="nc" id="L634">        estilo.setFont(fuente);</span>
-<span class="nc" id="L635">        estilo.setAlignment(HorizontalAlignment.CENTER);</span>
-<span class="nc" id="L636">        estilo.setVerticalAlignment(VerticalAlignment.CENTER);</span>
-<span class="nc" id="L637">        estilo.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());</span>
-<span class="nc" id="L638">        estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
-<span class="nc" id="L639">        return estilo;</span>
+<span class="fc" id="L630">        CellStyle estilo = workbook.createCellStyle();</span>
+<span class="fc" id="L631">        Font fuente = workbook.createFont();</span>
+<span class="fc" id="L632">        fuente.setBold(true);</span>
+<span class="fc" id="L633">        fuente.setFontHeightInPoints((short) 16);</span>
+<span class="fc" id="L634">        estilo.setFont(fuente);</span>
+<span class="fc" id="L635">        estilo.setAlignment(HorizontalAlignment.CENTER);</span>
+<span class="fc" id="L636">        estilo.setVerticalAlignment(VerticalAlignment.CENTER);</span>
+<span class="fc" id="L637">        estilo.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());</span>
+<span class="fc" id="L638">        estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
+<span class="fc" id="L639">        return estilo;</span>
     }
 
     private CellStyle crearEstiloSubtitulo(Workbook workbook) {
-<span class="nc" id="L643">        CellStyle estilo = workbook.createCellStyle();</span>
-<span class="nc" id="L644">        Font fuente = workbook.createFont();</span>
-<span class="nc" id="L645">        fuente.setBold(true);</span>
-<span class="nc" id="L646">        fuente.setFontHeightInPoints((short) 12);</span>
-<span class="nc" id="L647">        estilo.setFont(fuente);</span>
-<span class="nc" id="L648">        estilo.setAlignment(HorizontalAlignment.LEFT);</span>
-<span class="nc" id="L649">        estilo.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());</span>
-<span class="nc" id="L650">        estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
-<span class="nc" id="L651">        return estilo;</span>
+<span class="fc" id="L643">        CellStyle estilo = workbook.createCellStyle();</span>
+<span class="fc" id="L644">        Font fuente = workbook.createFont();</span>
+<span class="fc" id="L645">        fuente.setBold(true);</span>
+<span class="fc" id="L646">        fuente.setFontHeightInPoints((short) 12);</span>
+<span class="fc" id="L647">        estilo.setFont(fuente);</span>
+<span class="fc" id="L648">        estilo.setAlignment(HorizontalAlignment.LEFT);</span>
+<span class="fc" id="L649">        estilo.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());</span>
+<span class="fc" id="L650">        estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
+<span class="fc" id="L651">        return estilo;</span>
     }
 
     private CellStyle crearEstiloEncabezado(Workbook workbook) {
-<span class="nc" id="L655">        CellStyle estilo = workbook.createCellStyle();</span>
-<span class="nc" id="L656">        Font fuente = workbook.createFont();</span>
-<span class="nc" id="L657">        fuente.setBold(true);</span>
-<span class="nc" id="L658">        fuente.setFontHeightInPoints((short) 10);</span>
-<span class="nc" id="L659">        fuente.setColor(IndexedColors.WHITE.getIndex());</span>
-<span class="nc" id="L660">        estilo.setFont(fuente);</span>
-<span class="nc" id="L661">        estilo.setAlignment(HorizontalAlignment.CENTER);</span>
-<span class="nc" id="L662">        estilo.setVerticalAlignment(VerticalAlignment.CENTER);</span>
-<span class="nc" id="L663">        estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());</span>
-<span class="nc" id="L664">        estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
-<span class="nc" id="L665">        estilo.setBorderBottom(BorderStyle.THIN);</span>
-<span class="nc" id="L666">        estilo.setBorderTop(BorderStyle.THIN);</span>
-<span class="nc" id="L667">        estilo.setBorderRight(BorderStyle.THIN);</span>
-<span class="nc" id="L668">        estilo.setBorderLeft(BorderStyle.THIN);</span>
-<span class="nc" id="L669">        return estilo;</span>
+<span class="fc" id="L655">        CellStyle estilo = workbook.createCellStyle();</span>
+<span class="fc" id="L656">        Font fuente = workbook.createFont();</span>
+<span class="fc" id="L657">        fuente.setBold(true);</span>
+<span class="fc" id="L658">        fuente.setFontHeightInPoints((short) 10);</span>
+<span class="fc" id="L659">        fuente.setColor(IndexedColors.WHITE.getIndex());</span>
+<span class="fc" id="L660">        estilo.setFont(fuente);</span>
+<span class="fc" id="L661">        estilo.setAlignment(HorizontalAlignment.CENTER);</span>
+<span class="fc" id="L662">        estilo.setVerticalAlignment(VerticalAlignment.CENTER);</span>
+<span class="fc" id="L663">        estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());</span>
+<span class="fc" id="L664">        estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
+<span class="fc" id="L665">        estilo.setBorderBottom(BorderStyle.THIN);</span>
+<span class="fc" id="L666">        estilo.setBorderTop(BorderStyle.THIN);</span>
+<span class="fc" id="L667">        estilo.setBorderRight(BorderStyle.THIN);</span>
+<span class="fc" id="L668">        estilo.setBorderLeft(BorderStyle.THIN);</span>
+<span class="fc" id="L669">        return estilo;</span>
     }
 
     private CellStyle crearEstiloPrimeraColumna(Workbook workbook) {
-<span class="nc" id="L673">        CellStyle estilo = workbook.createCellStyle();</span>
-<span class="nc" id="L674">        Font fuente = workbook.createFont();</span>
-<span class="nc" id="L675">        fuente.setBold(true);</span>
-<span class="nc" id="L676">        fuente.setColor(IndexedColors.WHITE.getIndex());</span>
-<span class="nc" id="L677">        estilo.setFont(fuente);</span>
-<span class="nc" id="L678">        estilo.setAlignment(HorizontalAlignment.LEFT);</span>
-<span class="nc" id="L679">        estilo.setVerticalAlignment(VerticalAlignment.CENTER);</span>
-<span class="nc" id="L680">        estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());</span>
-<span class="nc" id="L681">        estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
-<span class="nc" id="L682">        estilo.setBorderBottom(BorderStyle.THIN);</span>
-<span class="nc" id="L683">        estilo.setBorderTop(BorderStyle.THIN);</span>
-<span class="nc" id="L684">        estilo.setBorderRight(BorderStyle.THIN);</span>
-<span class="nc" id="L685">        estilo.setBorderLeft(BorderStyle.THIN);</span>
-<span class="nc" id="L686">        estilo.setWrapText(true);</span>
-<span class="nc" id="L687">        return estilo;</span>
+<span class="fc" id="L673">        CellStyle estilo = workbook.createCellStyle();</span>
+<span class="fc" id="L674">        Font fuente = workbook.createFont();</span>
+<span class="fc" id="L675">        fuente.setBold(true);</span>
+<span class="fc" id="L676">        fuente.setColor(IndexedColors.WHITE.getIndex());</span>
+<span class="fc" id="L677">        estilo.setFont(fuente);</span>
+<span class="fc" id="L678">        estilo.setAlignment(HorizontalAlignment.LEFT);</span>
+<span class="fc" id="L679">        estilo.setVerticalAlignment(VerticalAlignment.CENTER);</span>
+<span class="fc" id="L680">        estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());</span>
+<span class="fc" id="L681">        estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
+<span class="fc" id="L682">        estilo.setBorderBottom(BorderStyle.THIN);</span>
+<span class="fc" id="L683">        estilo.setBorderTop(BorderStyle.THIN);</span>
+<span class="fc" id="L684">        estilo.setBorderRight(BorderStyle.THIN);</span>
+<span class="fc" id="L685">        estilo.setBorderLeft(BorderStyle.THIN);</span>
+<span class="fc" id="L686">        estilo.setWrapText(true);</span>
+<span class="fc" id="L687">        return estilo;</span>
     }
 
     private CellStyle crearEstiloDato(Workbook workbook, boolean wrap) {
-<span class="nc" id="L691">        CellStyle estilo = workbook.createCellStyle();</span>
-<span class="nc" id="L692">        estilo.setAlignment(HorizontalAlignment.LEFT);</span>
-<span class="nc" id="L693">        estilo.setVerticalAlignment(VerticalAlignment.TOP);</span>
-<span class="nc" id="L694">        estilo.setBorderBottom(BorderStyle.THIN);</span>
-<span class="nc" id="L695">        estilo.setBorderTop(BorderStyle.THIN);</span>
-<span class="nc" id="L696">        estilo.setBorderRight(BorderStyle.THIN);</span>
-<span class="nc" id="L697">        estilo.setBorderLeft(BorderStyle.THIN);</span>
-<span class="nc" id="L698">        estilo.setWrapText(wrap);</span>
-<span class="nc" id="L699">        return estilo;</span>
+<span class="fc" id="L691">        CellStyle estilo = workbook.createCellStyle();</span>
+<span class="fc" id="L692">        estilo.setAlignment(HorizontalAlignment.LEFT);</span>
+<span class="fc" id="L693">        estilo.setVerticalAlignment(VerticalAlignment.TOP);</span>
+<span class="fc" id="L694">        estilo.setBorderBottom(BorderStyle.THIN);</span>
+<span class="fc" id="L695">        estilo.setBorderTop(BorderStyle.THIN);</span>
+<span class="fc" id="L696">        estilo.setBorderRight(BorderStyle.THIN);</span>
+<span class="fc" id="L697">        estilo.setBorderLeft(BorderStyle.THIN);</span>
+<span class="fc" id="L698">        estilo.setWrapText(wrap);</span>
+<span class="fc" id="L699">        return estilo;</span>
     }
 
     private int excelWidth(double width) {
-<span class="nc" id="L703">        return (int) Math.round(width * 256);</span>
+<span class="fc" id="L703">        return (int) Math.round(width * 256);</span>
     }
 
-    private void configurarPagina(Sheet sheet, String tituloCabecera) {
-<span class="nc" id="L707">        PrintSetup ps = sheet.getPrintSetup();</span>
-<span class="nc" id="L708">        ps.setLandscape(true);</span>
-<span class="nc" id="L709">        sheet.setFitToPage(true);</span>
-<span class="nc" id="L710">        ps.setFitWidth((short) 1);</span>
-<span class="nc" id="L711">        ps.setFitHeight((short) 0);</span>
+    private void configurarPagina(Sheet sheet, String tituloCabecera, String nombreJornada) {
+<span class="fc" id="L707">        PrintSetup ps = sheet.getPrintSetup();</span>
+<span class="fc" id="L708">        ps.setLandscape(true);</span>
+<span class="fc" id="L709">        sheet.setFitToPage(true);</span>
+<span class="fc" id="L710">        ps.setFitWidth((short) 1);</span>
+<span class="fc" id="L711">        ps.setFitHeight((short) 0);</span>
         // Ajustar márgenes para mejor uso del espacio
-<span class="nc" id="L713">        sheet.setMargin(Sheet.LeftMargin, 0.25);</span>
-<span class="nc" id="L714">        sheet.setMargin(Sheet.RightMargin, 0.25);</span>
-<span class="nc" id="L715">        sheet.setMargin(Sheet.TopMargin, 0.5);</span>
-<span class="nc" id="L716">        sheet.setMargin(Sheet.BottomMargin, 0.5);</span>
-<span class="nc" id="L717">        Header header = sheet.getHeader();</span>
-<span class="nc" id="L718">        header.setCenter(tituloCabecera);</span>
-<span class="nc" id="L719">        Footer footer = sheet.getFooter();</span>
-<span class="nc" id="L720">        footer.setRight(&quot;Página &amp;P de &amp;N&quot;);</span>
-<span class="nc" id="L721">    }</span>
+<span class="fc" id="L713">        sheet.setMargin(Sheet.LeftMargin, 0.25);</span>
+<span class="fc" id="L714">        sheet.setMargin(Sheet.RightMargin, 0.25);</span>
+<span class="fc" id="L715">        sheet.setMargin(Sheet.TopMargin, 0.5);</span>
+<span class="fc" id="L716">        sheet.setMargin(Sheet.BottomMargin, 0.5);</span>
+<span class="fc" id="L717">        Header header = sheet.getHeader();</span>
+<span class="fc" id="L718">        header.setCenter(tituloCabecera);</span>
+<span class="fc" id="L719">        Footer footer = sheet.getFooter();</span>
+<span class="fc" id="L720">        footer.setCenter(formatearPieJornada(nombreJornada));</span>
+<span class="fc" id="L721">        footer.setRight(&quot;Página &amp;P de &amp;N&quot;);</span>
+<span class="fc" id="L722">    }</span>
+
+    /**
+     * Pie de página de impresión: &quot;Nombre jornada - LSNLS&quot; en 9 pt y gris.
+     * Excel usa códigos en el encabezado/pie: {@code &amp;09} = 9 pt, {@code &amp;K808080} = gris RGB.
+     */
+    private String formatearPieJornada(String nombreJornada) {
+<span class="pc bpc" id="L729" title="2 of 4 branches missed.">        String nombre = (nombreJornada == null || nombreJornada.trim().isEmpty())</span>
+<span class="nc" id="L730">                ? &quot;Jornada&quot;</span>
+<span class="fc" id="L731">                : nombreJornada.trim().replace(&quot;&amp;&quot;, &quot;&amp;&amp;&quot;);</span>
+<span class="fc" id="L732">        return &quot;&amp;K808080&amp;09&quot; + nombre + &quot; - LSNLS&quot;;</span>
+    }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

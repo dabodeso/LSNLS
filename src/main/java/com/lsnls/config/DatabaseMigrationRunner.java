@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -105,6 +107,10 @@ public class DatabaseMigrationRunner {
                 log.warn("[DB MIGRATION] No se pudo normalizar estado de concursantes: {}", e.getMessage());
             }
 
+            // 6) Huecos fijos de cuestionario/combo en jornada
+            migrarSlotJornada(schemaName, "jornadas_cuestionarios", "cuestionario_id");
+            migrarSlotJornada(schemaName, "jornadas_combos", "combo_id");
+
         } catch (Exception e) {
             log.error("[DB MIGRATION] Error ejecutando migraciones: {}", e.getMessage(), e);
         }
@@ -121,6 +127,38 @@ public class DatabaseMigrationRunner {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    private void migrarSlotJornada(String schemaName, String tabla, String columnaId) {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = 'slot'",
+                    Integer.class, schemaName, tabla);
+            if (count != null && count == 0) {
+                log.info("[DB MIGRATION] Añadiendo columna {}.slot ...", tabla);
+                jdbcTemplate.execute("ALTER TABLE " + tabla + " ADD COLUMN slot INT NULL");
+            }
+            List<Map<String, Object>> filas = jdbcTemplate.queryForList(
+                    "SELECT jornada_id, " + columnaId + " AS elemento_id FROM " + tabla
+                            + " WHERE slot IS NULL ORDER BY jornada_id, " + columnaId);
+            Long jornadaActual = null;
+            int n = 0;
+            for (Map<String, Object> fila : filas) {
+                Long jornadaId = ((Number) fila.get("jornada_id")).longValue();
+                Long elementoId = ((Number) fila.get("elemento_id")).longValue();
+                if (!jornadaId.equals(jornadaActual)) {
+                    jornadaActual = jornadaId;
+                    n = 0;
+                }
+                n++;
+                jdbcTemplate.update(
+                        "UPDATE " + tabla + " SET slot = ? WHERE jornada_id = ? AND " + columnaId + " = ?",
+                        n, jornadaId, elementoId);
+            }
+            jdbcTemplate.execute("UPDATE " + tabla + " SET slot = 1 WHERE slot IS NULL");
+        } catch (Exception e) {
+            log.warn("[DB MIGRATION] No se pudo migrar {}.slot: {}", tabla, e.getMessage());
+        }
     }
 }
 

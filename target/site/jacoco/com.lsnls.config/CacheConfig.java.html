@@ -13,7 +13,7 @@ import java.util.Arrays;
  */
 @Configuration
 @EnableCaching
-<span class="nc" id="L16">public class CacheConfig {</span>
+<span class="fc" id="L16">public class CacheConfig {</span>
 
     /**
      * Gestor de cache simple para desarrollo
@@ -21,24 +21,24 @@ import java.util.Arrays;
      */
     @Bean
     public CacheManager cacheManager() {
-<span class="nc" id="L24">        ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager();</span>
+<span class="fc" id="L24">        ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager();</span>
         
         // Configurar caches específicos
-<span class="nc" id="L27">        cacheManager.setCacheNames(Arrays.asList(</span>
-            &quot;preguntas-disponibles&quot;,      // Cache de preguntas disponibles por nivel
-            &quot;cuestionarios-activos&quot;,      // Cache de cuestionarios en estados activos
-            &quot;combos-activos&quot;,             // Cache de combos en estados activos
-            &quot;configuracion-global&quot;,       // Cache de configuración global
-            &quot;estadisticas-sistema&quot;,       // Cache de estadísticas del sistema
-            &quot;usuarios-activos&quot;,           // Cache de usuarios activos
-            &quot;validaciones-integridad&quot;,    // Cache de resultados de validación
-            &quot;programas-vigentes&quot;          // Cache de programas vigentes
+<span class="fc" id="L27">        cacheManager.setCacheNames(Arrays.asList(</span>
+<span class="fc" id="L28">            &quot;preguntas-disponibles&quot;,      // Cache de preguntas disponibles por nivel</span>
+<span class="fc" id="L29">            &quot;cuestionarios-activos&quot;,      // Cache de cuestionarios en estados activos</span>
+<span class="fc" id="L30">            &quot;combos-activos&quot;,             // Cache de combos en estados activos</span>
+<span class="fc" id="L31">            &quot;configuracion-global&quot;,       // Cache de configuración global</span>
+<span class="fc" id="L32">            &quot;estadisticas-sistema&quot;,       // Cache de estadísticas del sistema</span>
+<span class="fc" id="L33">            &quot;usuarios-activos&quot;,           // Cache de usuarios activos</span>
+<span class="fc" id="L34">            &quot;validaciones-integridad&quot;,    // Cache de resultados de validación</span>
+<span class="fc" id="L35">            &quot;programas-vigentes&quot;          // Cache de programas vigentes</span>
         ));
         
         // Permitir la creación dinámica de caches no declarados
-<span class="nc" id="L39">        cacheManager.setAllowNullValues(false);</span>
+<span class="fc" id="L39">        cacheManager.setAllowNullValues(false);</span>
         
-<span class="nc" id="L41">        return cacheManager;</span>
+<span class="fc" id="L41">        return cacheManager;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

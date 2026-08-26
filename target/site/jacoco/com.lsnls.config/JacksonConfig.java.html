@@ -10,25 +10,25 @@ import org.springframework.http.MediaType;
 import java.util.Arrays;
 
 @Configuration
-<span class="nc" id="L13">public class JacksonConfig {</span>
+<span class="fc" id="L13">public class JacksonConfig {</span>
 
     @Bean
     public ObjectMapper objectMapper() {
-<span class="nc" id="L17">        ObjectMapper mapper = new ObjectMapper();</span>
-<span class="nc" id="L18">        mapper.registerModule(new JavaTimeModule());</span>
-<span class="nc" id="L19">        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);</span>
-<span class="nc" id="L20">        return mapper;</span>
+<span class="fc" id="L17">        ObjectMapper mapper = new ObjectMapper();</span>
+<span class="fc" id="L18">        mapper.registerModule(new JavaTimeModule());</span>
+<span class="fc" id="L19">        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);</span>
+<span class="fc" id="L20">        return mapper;</span>
     }
 
     @Bean
     public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter(ObjectMapper objectMapper) {
-<span class="nc" id="L25">        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();</span>
-<span class="nc" id="L26">        converter.setObjectMapper(objectMapper);</span>
-<span class="nc" id="L27">        converter.setSupportedMediaTypes(Arrays.asList(</span>
-            MediaType.APPLICATION_JSON,
-<span class="nc" id="L29">            MediaType.valueOf(&quot;application/json;charset=UTF-8&quot;)</span>
+<span class="fc" id="L25">        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();</span>
+<span class="fc" id="L26">        converter.setObjectMapper(objectMapper);</span>
+<span class="fc" id="L27">        converter.setSupportedMediaTypes(Arrays.asList(</span>
+<span class="fc" id="L28">            MediaType.APPLICATION_JSON,</span>
+<span class="fc" id="L29">            MediaType.valueOf(&quot;application/json;charset=UTF-8&quot;)</span>
         ));
-<span class="nc" id="L31">        return converter;</span>
+<span class="fc" id="L31">        return converter;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.lsnls.service.AuthServiceTest
 -------------------------------------------------------------------------------
-Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.065 s -- in com.lsnls.service.AuthServiceTest
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.146 s -- in com.lsnls.service.AuthServiceTest

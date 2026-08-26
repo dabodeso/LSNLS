@@ -219,7 +219,7 @@ class AuthControllerTest {
         ResponseEntity<?> response = authController.getCurrentUser();
 
         assertEquals(401, response.getStatusCodeValue());
-        assertTrue(((ErrorResponse) response.getBody()).getMensaje().contains("token inválido"));
+        assertTrue(((ErrorResponse) response.getBody()).getMensaje().contains("sesión"));
     }
 
     @Test
@@ -289,6 +289,6 @@ class AuthControllerTest {
         ResponseEntity<?> response = authController.getProfile();
 
         assertEquals(401, response.getStatusCodeValue());
-        assertTrue(((ErrorResponse) response.getBody()).getMensaje().contains("bd caída"));
+        assertTrue(((ErrorResponse) response.getBody()).getMensaje().contains("sesión"));
     }
 }

@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.lsnls.controller.ComboControllerTest
 -------------------------------------------------------------------------------
-Tests run: 73, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.337 s -- in com.lsnls.controller.ComboControllerTest
+Tests run: 73, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.339 s -- in com.lsnls.controller.ComboControllerTest
