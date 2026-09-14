@@ -366,7 +366,24 @@ function mostrarProgramas() {
                     <div class="concursantes-table-header-wrapper">
                         <div class="concursantes-table-header">
                             <table id="tabla-programa-${programa.id}-concursantes-header"
-                                   class="table table-excel table-striped tabla-header">
+                                   class="table table-excel table-striped tabla-header"
+                                   data-resizer-key="programa-concursantes">
+                                <colgroup>
+                                    <col class="col-numero">
+                                    <col class="col-lugar">
+                                    <col class="col-nombre">
+                                    <col class="col-edad">
+                                    <col class="col-ocupacion">
+                                    <col class="col-rrss">
+                                    <col class="col-resultado">
+                                    <col class="col-duracion">
+                                    <col class="col-foto">
+                                    <col class="col-momentos">
+                                    <col class="col-xusoker">
+                                    <col class="col-factor-x">
+                                    <col class="col-valoracion">
+                                    <col class="col-acciones">
+                                </colgroup>
                                 <thead>
                                     <tr>
                                         <th class="col-numero">Nº CONC</th>
@@ -382,7 +399,7 @@ function mostrarProgramas() {
                                         <th class="col-xusoker">XUSÓKER</th>
                                         <th class="col-factor-x">X</th>
                                         <th class="col-valoracion">VAL</th>
-                                        <th class="col-acciones" style="width: 5%;">ACC</th>
+                                        <th class="col-acciones">ACC</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -390,7 +407,24 @@ function mostrarProgramas() {
                     </div>
                     <div class="concursantes-table-body-wrapper">
                         <table id="tabla-programa-${programa.id}-concursantes"
-                               class="table table-excel table-striped">
+                               class="table table-excel table-striped"
+                               data-resizer-key="programa-concursantes">
+                            <colgroup>
+                                <col class="col-numero">
+                                <col class="col-lugar">
+                                <col class="col-nombre">
+                                <col class="col-edad">
+                                <col class="col-ocupacion">
+                                <col class="col-rrss">
+                                <col class="col-resultado">
+                                <col class="col-duracion">
+                                <col class="col-foto">
+                                <col class="col-momentos">
+                                <col class="col-xusoker">
+                                <col class="col-factor-x">
+                                <col class="col-valoracion">
+                                <col class="col-acciones">
+                            </colgroup>
                             <tbody>
                                 ${[1, 2, 3].map(slot => {
                                     const concursante = concursantePorSlot[slot];
@@ -1431,7 +1465,7 @@ function duracionConcursanteEnSegundos(duracion) {
 
 // Aplica filtros de lugar, valoración final, estado y duración efectiva sobre la lista en memoria
 function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
-    const soloEstadosPermitidos = ['EDITADO'];
+    const soloEstadosPermitidos = ['EDITADO', 'EMITIDO'];
     const lugarInput = document.getElementById('filtro-lugar-concursante-disponible');
     const valoracionSelect = document.getElementById('filtro-valoracion-final-concursante-disponible');
     const estadoSelect = document.getElementById('filtro-estado-concursante-disponible');
@@ -1447,7 +1481,7 @@ function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
     return (concursantesDisponibles || []).filter(c => {
         const estado = (c.estado || '').toUpperCase();
 
-        // Solo se puede incorporar a programa a concursantes editados.
+        // Solo se puede incorporar a programa a concursantes editados o emitidos.
         if (!soloEstadosPermitidos.includes(estado)) {
             return false;
         }
@@ -1509,7 +1543,7 @@ async function mostrarConcursantesDisponibles(programaId, posicionPreferida = nu
         const filtroDuracionMax = document.getElementById('filtro-duracion-max-concursante-disponible');
         if (filtroLugar) filtroLugar.value = '';
         if (filtroValoracion) filtroValoracion.value = '';
-        if (filtroEstado) filtroEstado.value = 'EDITADO';
+        if (filtroEstado) filtroEstado.value = '';
         if (filtroDuracionMin) filtroDuracionMin.value = '';
         if (filtroDuracionMax) filtroDuracionMax.value = '';
         
@@ -1541,9 +1575,14 @@ function renderizarConcursantesDisponibles() {
     const infoPaginacion = document.getElementById('info-paginacion-concursantes');
     const listaFiltrada = aplicarFiltrosConcursantesDisponiblesEnMemoria();
     if (infoPaginacion) {
-        infoPaginacion.innerHTML = `Mostrando ${listaFiltrada.length} de ${totalConcursantesDisponibles} concursantes editados (Página ${paginaConcursantesDisponibles + 1} de ${totalPaginasConcursantesDisponibles})`;
+        infoPaginacion.innerHTML = `Mostrando ${listaFiltrada.length} de ${totalConcursantesDisponibles} concursantes editados o emitidos (Página ${paginaConcursantesDisponibles + 1} de ${totalPaginasConcursantesDisponibles})`;
     }
-    
+
+    if (listaFiltrada.length === 0) {
+        lista.innerHTML = '<div class="alert alert-warning">Ningún concursante de los cargados cumple los filtros. Ajusta los filtros o carga más concursantes.</div>';
+        return;
+    }
+
     lista.innerHTML = `
         <div class="table-responsive">
             <table class="table table-hover">
@@ -1796,22 +1835,23 @@ function configurarScrollTablas() {
     document.querySelectorAll('.concursantes-table').forEach(configurarScrollEnTabla);
 }
 
-// Sincroniza anchos de columna de la tabla de cabecera a la tabla de cuerpo (mismo programa)
+// Sincroniza anchos de columna de la tabla de cabecera a la tabla de cuerpo (mismo programa).
+// Con table-layout: fixed manda el <col>, así que se copia el colgroup, no las celdas.
 function sincronizarAnchosCabeceraCuerpo(contenedor) {
     const headerTable = contenedor.querySelector('.concursantes-table-header-wrapper table');
     const bodyTable = contenedor.querySelector('.concursantes-table-body-wrapper table');
     if (!headerTable || !bodyTable) return;
-    const headerCells = headerTable.querySelectorAll('thead tr th');
-    if (!headerCells.length) return;
-    headerCells.forEach((th, colIndex) => {
-        const w = th.offsetWidth || (th.style.width && Number.parseInt(th.style.width, 10));
-        if (!w) return;
-        const px = (typeof w === 'number' ? w : Number.parseInt(w, 10)) + 'px';
-        bodyTable.querySelectorAll('tbody tr').forEach((tr) => {
-            const cell = tr.cells[colIndex];
-            if (cell) cell.style.width = px;
-        });
+    const headerCols = headerTable.querySelectorAll('colgroup col');
+    const bodyCols = bodyTable.querySelectorAll('colgroup col');
+    headerCols.forEach((col, colIndex) => {
+        const ancho = col.style.width;
+        if (!ancho || !bodyCols[colIndex]) return;
+        bodyCols[colIndex].style.width = ancho;
     });
+    if (headerTable.style.width) {
+        bodyTable.style.width = headerTable.style.width;
+        bodyTable.style.minWidth = headerTable.style.width;
+    }
     // Re-ajustar altura de textareas tras cambio de anchos de columna
     requestAnimationFrame(() => {
         bodyTable.querySelectorAll('textarea.campo-editable').forEach(ta => {

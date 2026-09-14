@@ -79,4 +79,14 @@ assert.strictEqual(
 );
 assert.ok(!Utils.mensajeErrorApi(new Error('SQLException: Duplicate entry'), 'guardar').toLowerCase().includes('sql'));
 
+const detalleJsonString = Utils.extraerDetalleErrorCuerpo(
+  '"Error al crear concursante: El cuestionario 19 ya está asignado al concursante 19 (ALICIA). Debe desasignarlo primero antes de asignarlo a otro concursante."'
+);
+assert.ok(detalleJsonString.includes('cuestionario 19'), detalleJsonString);
+assert.ok(detalleJsonString.includes('ALICIA'), detalleJsonString);
+
+const toastUsuario = Utils.mensajeErrorHttp(400, detalleJsonString, 'completar la petición');
+assert.ok(toastUsuario.includes('cuestionario 19'), toastUsuario);
+assert.ok(!/inténtalo de nuevo/i.test(toastUsuario), toastUsuario);
+
 console.log('OK utils contratos');

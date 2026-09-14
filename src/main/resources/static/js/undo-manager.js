@@ -110,7 +110,7 @@
       } catch (e) {
         console.error('[UndoManager] Error al deshacer:', e);
         this.undoStack.push(last);
-        notificarUndo('No se pudo deshacer el cambio', true);
+        notificarUndo(e?.message || 'No se pudo deshacer el cambio', true);
         return false;
       } finally {
         this._busy = false;

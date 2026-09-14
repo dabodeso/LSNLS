@@ -64,6 +64,9 @@ public class ConcursanteService {
     @Autowired
     private UndoService undoService;
 
+    @Autowired
+    private AuthorizationService authorizationService;
+
     @Value("${upload.directory}")
     private String uploadDirectory;
 
@@ -158,6 +161,7 @@ public class ConcursanteService {
     public ConcursanteDTO create(ConcursanteDTO concursanteDTO) {
         Concursante concursante = convertToEntity(concursanteDTO);
         concursante.setEstado(normalizarEstadoConcursante(concursante.getEstado()));
+        aplicarRestriccionProgramacionAlCrear(concursante);
         validarDuracionesYEstado(concursante);
         
         // Generar número de concursante automáticamente
@@ -256,6 +260,12 @@ public class ConcursanteService {
     public ConcursanteDTO update(Long id, ConcursanteDTO concursanteDTO) {
         Concursante concursante = concursanteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
+        exigirPuedeEditarConcursante(concursante);
+
+        Integer numeroProgramaOrig = concursante.getNumeroPrograma();
+        Integer ordenEscaletaOrig = concursante.getOrdenEscaleta();
+        String estadoOrig = concursante.getEstado();
+        String bonicoOrig = concursante.getBonico();
 
         // Obtener el cuestionario anterior para comparar
         Cuestionario cuestionarioAnterior = concursante.getCuestionario();
@@ -267,6 +277,7 @@ public class ConcursanteService {
         if (concursanteDTO.getVersion() != null) {
             concursante.setVersion(concursanteDTO.getVersion());
         }
+        restaurarProgramacionSiNoAutorizado(concursante, numeroProgramaOrig, ordenEscaletaOrig, estadoOrig, bonicoOrig);
         concursante.setEstado(normalizarEstadoConcursante(concursante.getEstado()));
         validarDuracionesYEstado(concursante);
         
@@ -519,7 +530,7 @@ public class ConcursanteService {
     }
 
     public Page<ConcursanteDTO> findConcursantesSinProgramaPaginated(Pageable pageable, String busqueda) {
-        return concursanteRepository.findByNumeroProgramaIsNullWithSearch(pageable, busqueda)
+        return concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, busqueda)
                 .map(this::convertToDTO);
     }
 
@@ -532,8 +543,9 @@ public class ConcursanteService {
     public ConcursanteDTO asignarAPrograma(Long concursanteId, Long programaId, Integer posicion) {
         Concursante concursante = concursanteRepository.findById(concursanteId)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
-        if (!"editado".equalsIgnoreCase(concursante.getEstado())) {
-            throw new IllegalArgumentException("Solo se pueden añadir a programas concursantes en estado editado.");
+        if (!"editado".equalsIgnoreCase(concursante.getEstado())
+                && !"emitido".equalsIgnoreCase(concursante.getEstado())) {
+            throw new IllegalArgumentException("Solo se pueden añadir a programas concursantes en estado editado o emitido.");
         }
 
         Integer numeroPrograma = programaId.intValue();
@@ -585,6 +597,7 @@ public class ConcursanteService {
     public ConcursanteDTO asignarAJornada(Long concursanteId, Long jornadaId) {
         Concursante concursante = concursanteRepository.findById(concursanteId)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
+        exigirPuedeEditarConcursante(concursante);
         
         // Verificar que la jornada existe
         Jornada jornada = jornadaRepository.findById(jornadaId)
@@ -610,6 +623,7 @@ public class ConcursanteService {
     public ConcursanteDTO desasignarDeJornada(Long concursanteId) {
         Concursante concursante = concursanteRepository.findById(concursanteId)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
+        exigirPuedeEditarConcursante(concursante);
 
         validarPuedeDesasignarJornada(concursante);
         
@@ -628,6 +642,7 @@ public class ConcursanteService {
     public ConcursanteDTO updateCampo(Long id, Map<String, Object> campo) {
         Concursante concursante = concursanteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado con id: " + id));
+        exigirPuedeEditarConcursante(concursante);
         
         for (Map.Entry<String, Object> entry : campo.entrySet()) {
             String key = entry.getKey();
@@ -647,7 +662,22 @@ public class ConcursanteService {
                     }
                     break;
                 case "estado":
+                    exigirProgramacionDireccion("el estado");
                     concursante.setEstado(normalizarEstadoConcursante(value != null ? value.toString() : null));
+                    break;
+                case "numeroPrograma":
+                    exigirProgramacionDireccion("el número de programa");
+                    concursante.setNumeroPrograma(value != null && !value.toString().isBlank()
+                        ? Integer.valueOf(value.toString()) : null);
+                    break;
+                case "ordenEscaleta":
+                    exigirProgramacionDireccion("el orden de escaleta");
+                    concursante.setOrdenEscaleta(value != null && !value.toString().isBlank()
+                        ? Integer.valueOf(value.toString()) : null);
+                    break;
+                case "bonico":
+                    exigirProgramacionDireccion("bonico");
+                    concursante.setBonico(value != null ? value.toString() : null);
                     break;
                 case "duracion":
                     concursante.setDuracion(value != null ? value.toString() : null);
@@ -684,6 +714,42 @@ public class ConcursanteService {
         validarDuracionesYEstado(concursante);
         concursante = concursanteRepository.save(concursante);
         return convertToDTO(concursante);
+    }
+
+    private void aplicarRestriccionProgramacionAlCrear(Concursante concursante) {
+        if (authorizationService.canEditProgramacionConcursante()) {
+            return;
+        }
+        concursante.setNumeroPrograma(null);
+        concursante.setOrdenEscaleta(null);
+        concursante.setBonico(null);
+        concursante.setEstado("grabado");
+    }
+
+    private void restaurarProgramacionSiNoAutorizado(Concursante concursante,
+            Integer numeroPrograma, Integer ordenEscaleta, String estado, String bonico) {
+        if (authorizationService.canEditProgramacionConcursante()) {
+            return;
+        }
+        concursante.setNumeroPrograma(numeroPrograma);
+        concursante.setOrdenEscaleta(ordenEscaleta);
+        concursante.setEstado(estado);
+        concursante.setBonico(bonico);
+    }
+
+    private void exigirPuedeEditarConcursante(Concursante concursante) {
+        if (!authorizationService.canEditConcursante(concursante.getEstado())) {
+            String estado = concursante.getEstado() != null ? concursante.getEstado() : "sin estado";
+            throw new org.springframework.security.access.AccessDeniedException(
+                "No puedes editar un concursante en estado " + estado + ".");
+        }
+    }
+
+    private void exigirProgramacionDireccion(String campo) {
+        if (!authorizationService.canEditProgramacionConcursante()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                "Solo Dirección o Admin pueden modificar " + campo + ".");
+        }
     }
 
     private void validarDuracionesYEstado(Concursante concursante) {
@@ -804,6 +870,7 @@ public class ConcursanteService {
         // Buscar el concursante
         Concursante concursante = concursanteRepository.findById(concursanteId)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
+        exigirPuedeEditarConcursante(concursante);
         
         // Crear directorio si no existe
         Path uploadPath = Paths.get(uploadDirectory);

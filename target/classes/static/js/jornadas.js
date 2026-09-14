@@ -29,6 +29,32 @@ const JornadasManager = {
         return this.idEnLista(lista, id) >= 0;
     },
 
+    nivelPreguntaCombo(nivel) {
+        const s = String(nivel || '');
+        if (s.includes('NLS')) return '5NLS';
+        if (s.includes('LS')) return '5LS';
+        return s.replace(/^_/, '') || '';
+    },
+
+    ordenarPreguntasComboOrigen(preguntas) {
+        const lista = [...(preguntas || [])];
+        return lista.sort((a, b) => {
+            const slotA = parseInt(String(a.slot || '').replace(/\D/g, ''), 10);
+            const slotB = parseInt(String(b.slot || '').replace(/\D/g, ''), 10);
+            const pa = a.posicion ?? (Number.isFinite(slotA) ? slotA : 999);
+            const pb = b.posicion ?? (Number.isFinite(slotB) ? slotB : 999);
+            return pa - pb;
+        });
+    },
+
+    celdaDatosExtra(pregunta) {
+        return pregunta?.datosExtra || '';
+    },
+
+    datosExtraPregunta(p) {
+        return this.celdaDatosExtra(p);
+    },
+
     slotsVacios() {
         return [null, null, null, null, null, null];
     },
@@ -569,7 +595,7 @@ const JornadasManager = {
                                 ` : ``}
                             </div>
                         </div>
-                        <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : tipoNombre}</small>
+                        <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : `${tipoNombre}${c.tematica ? ' · ' + c.tematica : ''}`}</small>
                     </div>
                 `;
             } else {
@@ -1178,11 +1204,7 @@ const JornadasManager = {
             const response = await fetch(`/api/jornadas/${id}/exportar-excel`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'X-Excel-Cambiar-Columna-ID-PREGUNTA': 'MULT',     // Cambiar el encabezado ID PREGUNTA a MULT solo en Excel
-                    'X-Excel-Mostrar-Factor-Multiplicacion': 'true',    // Mostrar factor de multiplicación en columna MULT
-                    'X-Excel-Ordenar-Cuestionarios-Por-Nivel': 'true',  // Ordenar preguntas de cuestionarios por nivel (1,2,3,4)
-                    'X-Excel-Ordenar-Combos-Por-Factor': 'true'         // Ordenar preguntas de combos por factor de multiplicación
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
 
@@ -1425,7 +1447,7 @@ const JornadasManager = {
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">Cuestionario #${cuestionario.id}</h6>
-                            <p class="mb-1">Nivel: ${cuestionario.nivel} | Estado: <span class="badge ${Utils.getEstadoBadgeClass(cuestionario.estado, 'cuestionario')}">${Utils.formatearEstadoCuestionario(cuestionario.estado)}</span></p>
+                            <p class="mb-1">Estado: <span class="badge ${Utils.getEstadoBadgeClass(cuestionario.estado, 'cuestionario')}">${Utils.formatearEstadoCuestionario(cuestionario.estado)}</span></p>
                         <small>${cuestionario.tematica || 'Sin temática'}</small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
@@ -1478,8 +1500,8 @@ const JornadasManager = {
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="mb-1">Combo #${combo.id}</h6>
-                            <p class="mb-1">Nivel: ${combo.nivel} | Estado: <span class="badge ${Utils.getEstadoBadgeClass(combo.estado, 'combo')}">${Utils.formatearEstadoCombo(combo.estado)}</span></p>
-                            <small>Tipo: ${combo.tipo || 'No especificado'} ${combo.tematica ? `| Temática: ${combo.tematica}` : ''}</small>
+                            <p class="mb-1">Tipo: ${combo.tipo || 'No especificado'} | Estado: <span class="badge ${Utils.getEstadoBadgeClass(combo.estado, 'combo')}">${Utils.formatearEstadoCombo(combo.estado)}</span></p>
+                            <small>Temática: ${combo.tematica || 'Sin temática'}</small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <button class="btn btn-sm btn-success" 
@@ -1810,8 +1832,9 @@ const JornadasManager = {
                             tabla += `
                                 <tr>
                                     <td style="width:60px"><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
-                                    <td>${p.pregunta || ''}</td>
+                                    <td class="col-pregunta-jornada">${p.pregunta || ''}</td>
                                     <td><strong>${p.respuesta || ''}</strong></td>
+                                    <td>${this.datosExtraPregunta(p)}</td>
                                 </tr>
                             `;
                         });
@@ -1820,7 +1843,6 @@ const JornadasManager = {
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
                                         <strong>Cuestionario #${detalle.id}</strong><br>
-                                        <small>${detalle.nivel || ''}</small><br>
                                         <small>${detalle.tematica || 'Sin temática'}</small>
                                     </div>
                                     <div>
@@ -1832,10 +1854,10 @@ const JornadasManager = {
                                 <div class="table-responsive mt-2">
                                     <table class="table table-sm table-bordered mb-0">
                                         <thead>
-                                            <tr><th>Nivel</th><th>Pregunta</th><th>Respuesta</th></tr>
+                                            <tr><th>Nivel</th><th class="col-pregunta-jornada">Pregunta</th><th>Respuesta</th><th>Datos extra</th></tr>
                                         </thead>
                                         <tbody>
-                                            ${tabla || `<tr><td colspan="3" class="text-muted text-center">Sin preguntas</td></tr>`}
+                                            ${tabla || `<tr><td colspan="4" class="text-muted text-center">Sin preguntas</td></tr>`}
                                         </tbody>
                                     </table>
                                 </div>
@@ -1880,28 +1902,26 @@ const JornadasManager = {
                     const detalle = await apiManager.get(`/api/combos/${comboId}`);
                     if (detalle) {
                         const preguntas = Array.isArray(detalle.preguntas) ? detalle.preguntas : [];
-                        // Ordenar por multiplicador 1..3 según valor numérico extraído
-                        const ordenadas = [...preguntas].sort((a,b) => {
-                            const na = parseInt(String(a.factor || a.factorMultiplicacion || '').replace(/\D/g,'')) || 0;
-                            const nb = parseInt(String(b.factor || b.factorMultiplicacion || '').replace(/\D/g,'')) || 0;
-                            return na - nb;
-                        });
+                        const ordenadas = this.ordenarPreguntasComboOrigen(preguntas);
                         let tabla = '';
                         ordenadas.forEach(pq => {
-                            const p = pq.pregunta || {};
+                            const p = pq.pregunta;
+                            if (!p) return;
                             let factorStr = pq.factorMultiplicacion || pq.factor || '';
                             const num = parseInt(factorStr);
                             if (!isNaN(num)) factorStr = num === 0 ? 'x' : `x${num}`;
                             tabla += `
                                 <tr>
-                                    <td style=\"width:80px\">
-                                        <input class=\"form-control form-control-sm\"
-                                               value=\"${factorStr || ''}\"
-                                               onblur=\"JornadasManager.actualizarFactorDesdeModal(${detalle.id}, ${p.id}, this.value)\"
-                                               title=\"Editar multiplicador (p.ej. X, X2, X3)\">
+                                    <td style="width:80px">
+                                        <input class="form-control form-control-sm"
+                                               value="${factorStr || ''}"
+                                               onblur="JornadasManager.actualizarFactorDesdeModal(${detalle.id}, ${p.id}, this.value)"
+                                               title="Editar multiplicador (p.ej. X, X2, X3)">
                                     </td>
-                                    <td>${p.pregunta || ''}</td>
+                                    <td style="width:70px"><span class="badge bg-light text-secondary fw-bold">${this.nivelPreguntaCombo(p.nivel)}</span></td>
+                                    <td class="col-pregunta-jornada">${p.pregunta || ''}</td>
                                     <td><strong>${p.respuesta || ''}</strong></td>
+                                    <td>${this.datosExtraPregunta(p)}</td>
                                 </tr>
                             `;
                         });
@@ -1910,8 +1930,8 @@ const JornadasManager = {
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
                                         <strong>Combo #${detalle.id}</strong><br>
-                                        <small>${detalle.nivel || ''}</small><br>
-                                        <small>Tipo: ${detalle.tipo || 'N/A'}</small>
+                                        <small>Tipo: ${detalle.tipo || 'N/A'}</small><br>
+                                        <small>${detalle.tematica || 'Sin temática'}</small>
                                     </div>
                                     <div>
                                         <button type="button" class="btn btn-sm btn-outline-danger" onclick="JornadasManager.quitarCombo(${comboId})" title="Quitar">
@@ -1922,10 +1942,10 @@ const JornadasManager = {
                                 <div class="table-responsive mt-2">
                                     <table class="table table-sm table-bordered mb-0">
                                         <thead>
-                                            <tr><th>MULT</th><th>Pregunta</th><th>Respuesta</th></tr>
+                                            <tr><th>MULT</th><th>Nivel</th><th class="col-pregunta-jornada">Pregunta</th><th>Respuesta</th><th>Datos extra</th></tr>
                                         </thead>
                                         <tbody>
-                                            ${tabla || `<tr><td colspan=\"3\" class=\"text-muted text-center\">Sin preguntas</td></tr>`}
+                                            ${tabla || `<tr><td colspan="5" class="text-muted text-center">Sin preguntas</td></tr>`}
                                         </tbody>
                                     </table>
                                 </div>
@@ -2252,8 +2272,7 @@ const JornadasManager = {
                                     ${jornada.cuestionarios ? jornada.cuestionarios.map(c => `
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <div>
-                                                <strong>Cuestionario #${c.id}</strong> - ${c.nivel} - ${c.estado}
-                                                ${c.tematica ? `<br><small>Temática: ${c.tematica}</small>` : ''}
+                                                <strong>Cuestionario #${c.id}</strong> - ${c.tematica || 'Sin temática'} - ${c.estado}
                                             </div>
                                             <button class="btn btn-sm btn-outline-info" onclick="JornadasManager.verPreguntasCuestionario(${c.id})">
                                                 <i class="fas fa-eye"></i> Ver preguntas
@@ -2267,8 +2286,8 @@ const JornadasManager = {
                                     ${jornada.combos ? jornada.combos.map(c => `
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <div>
-                                                <strong>Combo #${c.id}</strong> - ${c.nivel} - ${Utils.formatearEstadoCombo(c.estado)}
-                                                ${c.tipo ? `<br><small>Tipo: ${c.tipo}</small>` : ''}
+                                                <strong>Combo #${c.id}</strong> - ${c.tipo || ''} - ${Utils.formatearEstadoCombo(c.estado)}
+                                                ${c.tematica ? `<br><small>Temática: ${c.tematica}</small>` : ''}
                                             </div>
                                             <button class="btn btn-sm btn-outline-info" onclick="JornadasManager.verPreguntasCombo(${c.id})">
                                                 <i class="fas fa-eye"></i> Ver preguntas
@@ -2369,13 +2388,14 @@ const JornadasManager = {
                 html += `
                     <tr>
                         <td><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
-                        <td>${pregunta.pregunta || 'Sin texto'}</td>
+                        <td class="col-pregunta-jornada">${pregunta.pregunta || 'Sin texto'}</td>
                         <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
+                        <td>${this.datosExtraPregunta(pregunta)}</td>
                     </tr>
                 `;
             });
         } else {
-            html = '<tr><td colspan="3" class="text-center text-muted">No hay preguntas disponibles</td></tr>';
+            html = '<tr><td colspan="4" class="text-center text-muted">No hay preguntas disponibles</td></tr>';
         }
         tbody.innerHTML = html;
         const modalEl = document.getElementById('modalVerPreguntasCuestionario');
@@ -2387,33 +2407,16 @@ const JornadasManager = {
         const titulo = document.getElementById('modalVerPreguntasComboTitulo');
         const tbody = document.getElementById('tablaPreguntasCombo');
         
-        titulo.textContent = `Preguntas del Combo #${combo.id} (Tipo: ${combo.tipo || 'No especificado'})`;
-        
-        // Actualizar las columnas para mostrar MULT en vez de Factor
-        const thFactorElement = document.querySelector('#modalVerPreguntasCombo thead th:first-child');
-        if (thFactorElement) {
-            thFactorElement.textContent = 'MULT';
-        }
+        titulo.textContent = `Preguntas del Combo #${combo.id} (Tipo: ${combo.tipo || 'No especificado'} · ${combo.tematica || 'Sin temática'})`;
         
         let html = '';
         if (combo.preguntas && combo.preguntas.length > 0) {
-            const preguntasParaOrdenar = [...combo.preguntas];
-            // Ordenar por factor de multiplicación
-            const preguntasOrdenadas = preguntasParaOrdenar.sort((a, b) => {
-                if (a.pregunta && b.pregunta) {
-                    const factorA = parseInt(String(a.factorMultiplicacion).replace(/\D/g, '')) || 0;
-                    const factorB = parseInt(String(b.factorMultiplicacion).replace(/\D/g, '')) || 0;
-                    return factorA - factorB;
-                }
-                return 0;
-            });
-            preguntasOrdenadas.forEach((preguntaSlot, index) => {
+            const preguntasOrdenadas = this.ordenarPreguntasComboOrigen(combo.preguntas);
+            preguntasOrdenadas.forEach((preguntaSlot) => {
                 if (preguntaSlot.pregunta) {
                     const pregunta = preguntaSlot.pregunta;
-                    // Mostrar el factor de multiplicación exactamente como está
                     let factorStr = preguntaSlot.factorMultiplicacion || '';
                     
-                    // Intentar formatear para casos comunes
                     const factorNum = parseInt(factorStr);
                     if (!isNaN(factorNum)) {
                         if (factorNum === 2) factorStr = 'x2';
@@ -2421,9 +2424,6 @@ const JornadasManager = {
                         else if (factorNum === 0) factorStr = 'x';
                         else factorStr = `x${factorNum}`;
                     }
-                    
-                    // Mostrar 5LS o 5NLS según el tipo de pregunta
-                    const nivelText = pregunta.nivel?.includes('LS') ? '5LS' : '5NLS';
                     
                     html += `
                         <tr>
@@ -2433,14 +2433,16 @@ const JornadasManager = {
                                        onblur="JornadasManager.actualizarFactorDesdeModal(${combo.id}, ${pregunta.id}, this.value)"
                                        title="Editar multiplicador (p.ej. X, X2, X3)">
                             </td>
-                            <td>${pregunta.pregunta || 'Sin texto'}</td>
+                            <td><span class="badge bg-light text-secondary fw-bold">${this.nivelPreguntaCombo(pregunta.nivel)}</span></td>
+                            <td class="col-pregunta-jornada">${pregunta.pregunta || 'Sin texto'}</td>
                             <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
+                            <td>${this.datosExtraPregunta(pregunta)}</td>
                         </tr>
                     `;
                 }
             });
         } else {
-            html = '<tr><td colspan="3" class="text-center text-muted">No hay preguntas disponibles</td></tr>';
+            html = '<tr><td colspan="5" class="text-center text-muted">No hay preguntas disponibles</td></tr>';
         }
         tbody.innerHTML = html;
         const modalEl = document.getElementById('modalVerPreguntasCombo');
@@ -2703,7 +2705,7 @@ const JornadasManager = {
             if (combo.estado !== 'reaprovechado') {
                 const option = document.createElement('option');
                 option.value = combo.id;
-                option.textContent = `Combo #${combo.id} - ${combo.tipo || 'Sin tipo'} (${combo.nivel})`;
+                option.textContent = `Combo #${combo.id} - ${combo.tipo || 'Sin tipo'}${combo.tematica ? ' · ' + combo.tematica : ''}`;
                 select.appendChild(option);
             }
         });
@@ -2731,7 +2733,7 @@ const JornadasManager = {
             
             let html = `<h6>Combo #${combo.id}</h6>`;
             html += `<p><strong>Tipo:</strong> ${combo.tipo || 'No especificado'}</p>`;
-            html += `<p><strong>Nivel:</strong> ${combo.nivel}</p>`;
+            html += `<p><strong>Temática:</strong> ${combo.tematica || 'Sin temática'}</p>`;
             html += `<p><strong>Estado:</strong> <span class="badge bg-${this.getBadgeColor(combo.estado)}">${combo.estado}</span></p>`;
             
             if (combo.preguntas && combo.preguntas.length > 0) {

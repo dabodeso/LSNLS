@@ -9,6 +9,7 @@ import com.lsnls.entity.Pregunta;
 import com.lsnls.entity.PreguntaCombo;
 import com.lsnls.entity.Usuario;
 import com.lsnls.repository.ComboRepository;
+import com.lsnls.repository.ConcursanteRepository;
 import com.lsnls.repository.CuestionarioRepository;
 import com.lsnls.repository.JornadaRepository;
 import com.lsnls.repository.PreguntaComboRepository;
@@ -67,6 +68,7 @@ class JornadaServiceTest {
     @Mock private PreguntaComboRepository preguntaComboRepository;
     @Mock private EntityManager entityManager;
     @Mock private UndoService undoService;
+    @Mock private ConcursanteRepository concursanteRepository;
     @Mock private TypedQuery<Object> typedQuery;
     @Mock private Query nativeQuery;
 
@@ -860,5 +862,157 @@ class JornadaServiceTest {
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    @Test
+    void listarContenidoOtras_soloSinAsignarAConcursante() {
+        Jornada actual = jornadaBase();
+        Jornada otra = jornadaBase();
+        otra.setId(2L);
+        otra.setNombre("Jornada Barcelona");
+
+        Cuestionario ocupado = new Cuestionario();
+        ocupado.setId(19L);
+        ocupado.setTematica("HISTORIA");
+        ocupado.setEstado(Cuestionario.EstadoCuestionario.grabado);
+        Cuestionario libre = new Cuestionario();
+        libre.setId(30L);
+        libre.setTematica("CINE");
+        libre.setEstado(Cuestionario.EstadoCuestionario.adjudicado);
+        otra.reemplazarCuestionariosPorSlot(Arrays.asList(ocupado, libre, null, null, null, null));
+
+        Combo comboOcupado = new Combo();
+        comboOcupado.setId(7L);
+        comboOcupado.setTematica("ARTE");
+        comboOcupado.setEstado(Combo.EstadoCombo.grabado);
+        Combo comboLibre = new Combo();
+        comboLibre.setId(40L);
+        comboLibre.setTematica("MÚSICA");
+        comboLibre.setEstado(Combo.EstadoCombo.adjudicado);
+        otra.reemplazarCombosPorSlot(Arrays.asList(comboOcupado, comboLibre, null, null, null, null));
+
+        when(jornadaRepository.findAll()).thenReturn(Arrays.asList(actual, otra));
+        when(concursanteRepository.existsByCuestionario_Id(19L)).thenReturn(true);
+        when(concursanteRepository.existsByCuestionario_Id(30L)).thenReturn(false);
+        when(concursanteRepository.existsByCombo_Id(7L)).thenReturn(true);
+        when(concursanteRepository.existsByCombo_Id(40L)).thenReturn(false);
+
+        List<Map<String, Object>> cuestionarios = jornadaService.listarContenidoOtras(1L, "cuestionarios");
+        assertEquals(1, cuestionarios.size());
+        assertEquals(30L, cuestionarios.get(0).get("id"));
+        assertEquals("Jornada Barcelona", cuestionarios.get(0).get("jornadaNombre"));
+
+        List<Map<String, Object>> combos = jornadaService.listarContenidoOtras(1L, "combos");
+        assertEquals(1, combos.size());
+        assertEquals(40L, combos.get(0).get("id"));
+    }
+
+    @Test
+    void listarContenidoOtras_descartaEstadosNoAsignables() {
+        Jornada actual = jornadaBase();
+        Jornada otra = jornadaBase();
+        otra.setId(2L);
+        otra.setNombre("Jornada Barcelona");
+
+        Cuestionario borrador = new Cuestionario();
+        borrador.setId(31L);
+        borrador.setEstado(Cuestionario.EstadoCuestionario.borrador);
+        Cuestionario aprobado = new Cuestionario();
+        aprobado.setId(32L);
+        aprobado.setEstado(Cuestionario.EstadoCuestionario.aprobado);
+        otra.reemplazarCuestionariosPorSlot(Arrays.asList(borrador, aprobado, null, null, null, null));
+
+        Combo comboCorregir = new Combo();
+        comboCorregir.setId(41L);
+        comboCorregir.setEstado(Combo.EstadoCombo.corregir);
+        Combo comboAprobado = new Combo();
+        comboAprobado.setId(42L);
+        comboAprobado.setEstado(Combo.EstadoCombo.aprobado);
+        otra.reemplazarCombosPorSlot(Arrays.asList(comboCorregir, comboAprobado, null, null, null, null));
+
+        when(jornadaRepository.findAll()).thenReturn(Arrays.asList(actual, otra));
+        when(concursanteRepository.existsByCuestionario_Id(32L)).thenReturn(false);
+        when(concursanteRepository.existsByCombo_Id(42L)).thenReturn(false);
+
+        List<Map<String, Object>> cuestionarios = jornadaService.listarContenidoOtras(1L, "cuestionarios");
+        assertEquals(1, cuestionarios.size());
+        assertEquals(32L, cuestionarios.get(0).get("id"));
+
+        List<Map<String, Object>> combos = jornadaService.listarContenidoOtras(1L, "combos");
+        assertEquals(1, combos.size());
+        assertEquals(42L, combos.get(0).get("id"));
+    }
+
+    private Jornada jornadaDestino(String nombre) {
+        Jornada destino = jornadaBase();
+        destino.setId(2L);
+        destino.setNombre(nombre);
+        when(jornadaRepository.findById(2L)).thenReturn(Optional.of(destino));
+        return destino;
+    }
+
+    @Test
+    void registrarArrastre_cuestionario_noRepiteLaPalabraJornada() {
+        jornadaDestino("Jornada Madrid");
+        Cuestionario cuestionario = new Cuestionario();
+        cuestionario.setId(30L);
+        when(cuestionarioRepository.findById(30L)).thenReturn(Optional.of(cuestionario));
+
+        jornadaService.registrarArrastre(2L, "cuestionarios", 30L);
+
+        assertEquals("Arrastrado a Jornada Madrid", cuestionario.getNotasDireccion());
+        verify(cuestionarioRepository).save(cuestionario);
+    }
+
+    @Test
+    void registrarArrastre_combo_conservaNotasPreviasYNoDuplica() {
+        jornadaDestino("Jornada Madrid");
+        Combo combo = new Combo();
+        combo.setId(40L);
+        combo.setNotasDireccion("Revisar audio");
+        when(comboRepository.findById(40L)).thenReturn(Optional.of(combo));
+
+        jornadaService.registrarArrastre(2L, "combos", 40L);
+        jornadaService.registrarArrastre(2L, "combos", 40L);
+
+        assertEquals("Revisar audio\nArrastrado a Jornada Madrid", combo.getNotasDireccion());
+    }
+
+    @Test
+    void registrarArrastre_comboRecicladoLanzaError() {
+        jornadaDestino("Jornada Madrid");
+        Combo combo = new Combo();
+        combo.setId(40L);
+        when(comboRepository.findById(40L)).thenReturn(Optional.of(combo));
+        when(nativeQuery.getSingleResult()).thenReturn(1L);
+
+        assertThrows(IllegalStateException.class, () -> jornadaService.registrarArrastre(2L, "combos", 40L));
+        verify(comboRepository, never()).save(any(Combo.class));
+    }
+
+    @Test
+    void quitarArrastre_eliminaSoloLaMarca() {
+        jornadaDestino("Jornada Madrid");
+        Cuestionario cuestionario = new Cuestionario();
+        cuestionario.setId(30L);
+        cuestionario.setNotasDireccion("Revisar audio\nArrastrado a Jornada Madrid");
+        when(cuestionarioRepository.findById(30L)).thenReturn(Optional.of(cuestionario));
+
+        jornadaService.quitarArrastre(2L, "cuestionarios", 30L);
+
+        assertEquals("Revisar audio", cuestionario.getNotasDireccion());
+    }
+
+    @Test
+    void quitarArrastre_dejaNotasVaciasANulo() {
+        jornadaDestino("Jornada Madrid");
+        Combo combo = new Combo();
+        combo.setId(40L);
+        combo.setNotasDireccion("Arrastrado a Jornada Madrid");
+        when(comboRepository.findById(40L)).thenReturn(Optional.of(combo));
+
+        jornadaService.quitarArrastre(2L, "combos", 40L);
+
+        assertNull(combo.getNotasDireccion());
     }
 }

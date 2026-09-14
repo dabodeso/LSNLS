@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
-<span class="nc" id="L18">@Slf4j</span>
+<span class="fc" id="L18">@Slf4j</span>
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -33,7 +33,7 @@ public class AuthService {
         try {
 <span class="nc" id="L34">            log.debug(&quot;Validando credenciales para usuario: {}&quot;, request.getNombre());</span>
 <span class="nc" id="L35">            Authentication authentication = authenticationManager.authenticate(</span>
-<span class="nc" id="L36">                new UsernamePasswordAuthenticationToken(</span>
+                new UsernamePasswordAuthenticationToken(
 <span class="nc" id="L37">                    request.getNombre(),</span>
 <span class="nc" id="L38">                    request.getPassword()</span>
                 )
@@ -109,7 +109,7 @@ public class AuthService {
         
 <span class="nc bnc" id="L110" title="All 2 branches missed.">        if (usuario.isPresent()) {</span>
 <span class="nc" id="L111">            log.debug(&quot;✅ Usuario encontrado: {}&quot;, usuario.get().getNombre());</span>
-<span class="nc" id="L112">        } else {</span>
+        } else {
 <span class="nc" id="L113">            log.warn(&quot;❌ Usuario no encontrado en base de datos: {}&quot;, auth.getName());</span>
         }
         

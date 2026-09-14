@@ -38,6 +38,14 @@ public class AuthorizationService {
         return getCurrentUser().isPresent();
     }
 
+    public boolean canEditProgramacionConcursante() {
+        return getCurrentUser()
+            .map(usuario ->
+                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
+                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
+            .orElse(false);
+    }
+
     /**
      * Verifica si el usuario actual puede crear preguntas
      */
@@ -128,19 +136,24 @@ public class AuthorizationService {
                         break;
                         
                     case revisar:
-                    // Revisar -> Para Verificar, Para Aprobar o Rechazada (por Guion)
-                    transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_verificar ||
-                                       nuevoEstado == Pregunta.EstadoPregunta.para_aprobar ||
-                                       nuevoEstado == Pregunta.EstadoPregunta.rechazada) &&
-                                      isGuion;
+                    // Revisar -> Para Verificar (Guion o Verificación, para deshacer su paso)
+                    // Revisar -> Para Aprobar o Rechazada (por Guion)
+                    transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_verificar &&
+                                           (isGuion || isVerificacion)) ||
+                                          ((nuevoEstado == Pregunta.EstadoPregunta.para_aprobar ||
+                                            nuevoEstado == Pregunta.EstadoPregunta.rechazada) &&
+                                           isGuion);
                         break;
                         
                     case verificada:
+                        // Verificada -> Para Verificar (Guion o Verificación, para deshacer su paso)
                         // Verificada -> Corregir, Rechazada o Aprobada (por Dirección)
-                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.corregir || 
-                                           nuevoEstado == Pregunta.EstadoPregunta.rechazada || 
-                                           nuevoEstado == Pregunta.EstadoPregunta.aprobada) && 
-                                          isDireccion;
+                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_verificar &&
+                                           (isGuion || isVerificacion)) ||
+                                          ((nuevoEstado == Pregunta.EstadoPregunta.corregir ||
+                                            nuevoEstado == Pregunta.EstadoPregunta.rechazada ||
+                                            nuevoEstado == Pregunta.EstadoPregunta.aprobada) &&
+                                           isDireccion);
                         break;
                         
                     case corregir:
@@ -240,44 +253,33 @@ public class AuthorizationService {
             .map(usuario ->
                 usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
-                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
             .orElse(false);
     }
 
     /**
-     * Verifica si el usuario actual puede editar un concursante según su estado
+     * Verifica si el usuario actual puede editar un concursante según su estado.
+     * Grabado: Guión, Verificación y Dirección. Resto: solo Dirección.
      */
     public boolean canEditConcursante(String estado) {
         return getCurrentUser()
             .map(usuario -> {
-                if (estado == null) {
-                    return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
-                           usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
-                           usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+                Usuario.RolUsuario rol = usuario.getRol();
+                if (rol == Usuario.RolUsuario.ROLE_ADMIN || rol == Usuario.RolUsuario.ROLE_DIRECCION) {
+                    return true;
                 }
-                
-                switch (estado.toUpperCase()) {
-                    case "GRABADO":
-                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
-                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
-                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
-                        
-                    case "EDITADO":
-                        return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
-                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
-                        
-                    case "PROGRAMADO":
-                    case "EMITIDO":
-                    case "ARCHIVADO":
-                        return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
-                        
-                    default:
-                        // Para estados personalizados, permitir edición según roles básicos
-                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
-                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
-                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+
+                String estadoNorm = estado == null ? "GRABADO" : estado.trim().toUpperCase();
+                if (estadoNorm.isEmpty() || "BORRADOR".equals(estadoNorm)) {
+                    estadoNorm = "GRABADO";
                 }
+
+                if ("GRABADO".equals(estadoNorm)) {
+                    return rol == Usuario.RolUsuario.ROLE_GUION ||
+                           rol == Usuario.RolUsuario.ROLE_VERIFICACION;
+                }
+
+                return false;
             })
             .orElse(false);
     }

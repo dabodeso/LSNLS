@@ -50,11 +50,11 @@ public class PreguntaCombo {
 
         @Override
         public boolean equals(Object o) {
-<span class="fc bfc" id="L53" title="All 2 branches covered.">            if (this == o) return true;</span>
-<span class="fc bfc" id="L54" title="All 4 branches covered.">            if (o == null || getClass() != o.getClass()) return false;</span>
-<span class="fc" id="L55">            PreguntaComboId that = (PreguntaComboId) o;</span>
-<span class="pc bpc" id="L56" title="1 of 4 branches missed.">            return preguntaId != null &amp;&amp; preguntaId.equals(that.preguntaId) &amp;&amp;</span>
-<span class="pc bpc" id="L57" title="2 of 4 branches missed.">                   comboId != null &amp;&amp; comboId.equals(that.comboId);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            if (this == o) return true;</span>
+<span class="nc bnc" id="L54" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="nc" id="L55">            PreguntaComboId that = (PreguntaComboId) o;</span>
+<span class="nc bnc" id="L56" title="All 6 branches missed.">            return preguntaId != null &amp;&amp; preguntaId.equals(that.preguntaId) &amp;&amp;</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                   comboId != null &amp;&amp; comboId.equals(that.comboId);</span>
         }
 
         @Override
@@ -66,10 +66,10 @@ public class PreguntaCombo {
     // Métodos equals y hashCode que evitan el bucle infinito
     @Override
     public boolean equals(Object o) {
-<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (this == o) return true;</span>
-<span class="pc bpc" id="L70" title="1 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L70" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
 <span class="fc" id="L71">        PreguntaCombo that = (PreguntaCombo) o;</span>
-<span class="pc bpc" id="L72" title="1 of 4 branches missed.">        return id != null &amp;&amp; id.equals(that.id);</span>
+<span class="pc bpc" id="L72" title="3 of 4 branches missed.">        return id != null &amp;&amp; id.equals(that.id);</span>
     }
 
     @Override

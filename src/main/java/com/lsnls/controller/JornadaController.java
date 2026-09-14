@@ -1,6 +1,7 @@
 package com.lsnls.controller;
 
 import com.lsnls.config.MensajesUsuario;
+import com.lsnls.config.SlotsJornada;
 
 import com.lsnls.dto.ApiResponse;
 import com.lsnls.dto.JornadaDTO;
@@ -94,14 +95,16 @@ public class JornadaController {
                     .body(ApiResponse.error("El campo 'nombre' es obligatorio para crear una jornada"));
             }
 
-            // Validar límites de cuestionarios y combos
-            if (jornadaDTO.getCuestionarioIds() != null && jornadaDTO.getCuestionarioIds().size() > 5) {
+            // Validar límites de cuestionarios y combos: la lista viene por huecos, los nulls no cuentan
+            int cuestionariosElegidos = SlotsJornada.idsAsignados(jornadaDTO.getCuestionarioIds()).size();
+            int combosElegidos = SlotsJornada.idsAsignados(jornadaDTO.getComboIds()).size();
+            if (cuestionariosElegidos > SlotsJornada.TOTAL) {
                 return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Una jornada puede tener máximo 5 cuestionarios. Has seleccionado " + jornadaDTO.getCuestionarioIds().size() + " cuestionarios. Deselecciona " + (jornadaDTO.getCuestionarioIds().size() - 5) + " cuestionarios."));
+                    .body(ApiResponse.error("Una jornada puede tener máximo " + SlotsJornada.TOTAL + " cuestionarios. Has seleccionado " + cuestionariosElegidos + " cuestionarios. Deselecciona " + (cuestionariosElegidos - SlotsJornada.TOTAL) + " cuestionarios."));
             }
-            if (jornadaDTO.getComboIds() != null && jornadaDTO.getComboIds().size() > 5) {
+            if (combosElegidos > SlotsJornada.TOTAL) {
                 return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Una jornada puede tener máximo 5 combos. Has seleccionado " + jornadaDTO.getComboIds().size() + " combos. Deselecciona " + (jornadaDTO.getComboIds().size() - 5) + " combos."));
+                    .body(ApiResponse.error("Una jornada puede tener máximo " + SlotsJornada.TOTAL + " combos. Has seleccionado " + combosElegidos + " combos. Deselecciona " + (combosElegidos - SlotsJornada.TOTAL) + " combos."));
             }
 
             // Verificar autenticación
@@ -115,11 +118,11 @@ public class JornadaController {
             JornadaDTO nuevaJornada = jornadaService.crear(jornadaDTO, currentUser.getId());
             
             String mensaje = "Jornada '" + nuevaJornada.getNombre() + "' creada exitosamente";
-            if (jornadaDTO.getCuestionarioIds() != null && !jornadaDTO.getCuestionarioIds().isEmpty()) {
-                mensaje += " con " + jornadaDTO.getCuestionarioIds().size() + " cuestionarios";
+            if (cuestionariosElegidos > 0) {
+                mensaje += " con " + cuestionariosElegidos + " cuestionarios";
             }
-            if (jornadaDTO.getComboIds() != null && !jornadaDTO.getComboIds().isEmpty()) {
-                mensaje += " y " + jornadaDTO.getComboIds().size() + " combos";
+            if (combosElegidos > 0) {
+                mensaje += " y " + combosElegidos + " combos";
             }
             
             return ResponseEntity.ok(ApiResponse.exitoso(mensaje, nuevaJornada));
@@ -196,38 +199,9 @@ public class JornadaController {
 
     @GetMapping("/{id}/exportar-excel")
     @PreAuthorize("@authorizationService.canRead()")
-    public ResponseEntity<byte[]> exportarExcel(
-            @PathVariable Long id, 
-            @RequestHeader(value = "X-Excel-Cambiar-Columna-ID-PREGUNTA", required = false) String cambiarColumnaID,
-            @RequestHeader(value = "X-Excel-Mostrar-Factor-Multiplicacion", required = false) String mostrarFactor,
-            @RequestHeader(value = "X-Excel-Ordenar-Cuestionarios-Por-Nivel", required = false) String ordenarCuestionarios,
-            @RequestHeader(value = "X-Excel-Ordenar-Combos-Por-Factor", required = false) String ordenarCombos) {
+    public ResponseEntity<byte[]> exportarExcel(@PathVariable Long id) {
         try {
-            // Configurar opciones de exportación basadas en las cabeceras
-            Map<String, Object> opcionesExcel = new HashMap<>();
-            
-            // Si se solicita cambiar la columna ID PREGUNTA por otro valor
-            if (cambiarColumnaID != null && !cambiarColumnaID.isEmpty()) {
-                opcionesExcel.put("cambiarColumnaID", cambiarColumnaID);
-            }
-            
-            // Si se solicita mostrar el factor de multiplicación
-            if ("true".equalsIgnoreCase(mostrarFactor)) {
-                opcionesExcel.put("mostrarFactorMultiplicacion", true);
-            }
-            
-            // Si se solicita ordenar cuestionarios por nivel
-            if ("true".equalsIgnoreCase(ordenarCuestionarios)) {
-                opcionesExcel.put("ordenarCuestionariosPorNivel", true);
-            }
-            
-            // Si se solicita ordenar combos por factor de multiplicación
-            if ("true".equalsIgnoreCase(ordenarCombos)) {
-                opcionesExcel.put("ordenarCombosPorFactor", true);
-            }
-            
-            // Generar el Excel con las opciones especificadas
-            byte[] excelData = jornadaService.exportarExcel(id, opcionesExcel);
+            byte[] excelData = jornadaService.exportarExcel(id);
             
             // Obtener información de la jornada para el nombre del archivo
             Optional<JornadaDTO> jornada = jornadaService.obtenerPorId(id);
@@ -253,6 +227,59 @@ public class JornadaController {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/{id}/contenido-otras")
+    @PreAuthorize("@authorizationService.canRead()")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> contenidoOtras(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "cuestionarios") String tipo) {
+        try {
+            List<Map<String, Object>> contenido = jornadaService.listarContenidoOtras(id, tipo);
+            return ResponseEntity.ok(ApiResponse.exitoso("Contenido de otras jornadas", contenido));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error al listar contenido de otras jornadas: " + MensajesUsuario.sanitizar(e.getMessage())));
+        }
+    }
+
+    @PostMapping("/{id}/arrastre/{tipo}/{itemId}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    public ResponseEntity<ApiResponse<String>> registrarArrastre(
+            @PathVariable Long id,
+            @PathVariable String tipo,
+            @PathVariable Long itemId) {
+        try {
+            jornadaService.registrarArrastre(id, tipo, itemId);
+            return ResponseEntity.ok(ApiResponse.exitoso("Arrastre anotado", null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404)
+                .body(ApiResponse.error(MensajesUsuario.sanitizar(e.getMessage())));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error(MensajesUsuario.sanitizar(e.getMessage())));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error al anotar el arrastre: " + MensajesUsuario.sanitizar(e.getMessage())));
+        }
+    }
+
+    @DeleteMapping("/{id}/arrastre/{tipo}/{itemId}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    public ResponseEntity<ApiResponse<String>> quitarArrastre(
+            @PathVariable Long id,
+            @PathVariable String tipo,
+            @PathVariable Long itemId) {
+        try {
+            jornadaService.quitarArrastre(id, tipo, itemId);
+            return ResponseEntity.ok(ApiResponse.exitoso("Arrastre retirado", null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404)
+                .body(ApiResponse.error(MensajesUsuario.sanitizar(e.getMessage())));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error al retirar el arrastre: " + MensajesUsuario.sanitizar(e.getMessage())));
         }
     }
 

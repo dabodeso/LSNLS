@@ -229,7 +229,7 @@ import java.util.Optional;
             
 <span class="nc bnc" id="L230" title="All 2 branches missed.">            if (result.isValid()) {</span>
 <span class="nc" id="L231">                response.put(&quot;mensaje&quot;, &quot;Sistema validado correctamente sin errores críticos&quot;);</span>
-<span class="nc" id="L232">            } else {</span>
+            } else {
 <span class="nc" id="L233">                response.put(&quot;mensaje&quot;, &quot;Se encontraron &quot; + result.getErrors().size() + &quot; errores críticos que requieren atención&quot;);</span>
             }
             
@@ -261,7 +261,7 @@ import java.util.Optional;
 <span class="nc bnc" id="L261" title="All 2 branches missed.">            if (resultadoSistema.getErrors().isEmpty()) {</span>
 <span class="nc" id="L262">                resumen.put(&quot;estado_general&quot;, &quot;SALUDABLE&quot;);</span>
 <span class="nc" id="L263">                resumen.put(&quot;recomendacion&quot;, &quot;El sistema está funcionando correctamente&quot;);</span>
-<span class="nc" id="L264">            } else {</span>
+            } else {
 <span class="nc" id="L265">                resumen.put(&quot;estado_general&quot;, &quot;REQUIERE_ATENCION&quot;);</span>
 <span class="nc" id="L266">                resumen.put(&quot;recomendacion&quot;, &quot;Revisar errores críticos identificados&quot;);</span>
             }

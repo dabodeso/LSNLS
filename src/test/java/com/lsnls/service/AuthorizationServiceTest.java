@@ -145,6 +145,8 @@ class AuthorizationServiceTest {
                 Pregunta.EstadoPregunta.revisar, Pregunta.EstadoPregunta.para_aprobar));
         assertTrue(authorizationService.canChangeEstadoPregunta(
                 Pregunta.EstadoPregunta.revisar, Pregunta.EstadoPregunta.rechazada));
+        assertTrue(authorizationService.canChangeEstadoPregunta(
+                Pregunta.EstadoPregunta.verificada, Pregunta.EstadoPregunta.para_verificar));
         assertFalse(authorizationService.canChangeEstadoPregunta(
                 Pregunta.EstadoPregunta.verificada, Pregunta.EstadoPregunta.aprobada));
         assertTrue(authorizationService.canChangeEstadoPregunta(
@@ -165,6 +167,12 @@ class AuthorizationServiceTest {
                 Pregunta.EstadoPregunta.para_verificar, Pregunta.EstadoPregunta.verificada));
         assertTrue(authorizationService.canChangeEstadoPregunta(
                 Pregunta.EstadoPregunta.para_verificar, Pregunta.EstadoPregunta.revisar));
+        assertTrue(authorizationService.canChangeEstadoPregunta(
+                Pregunta.EstadoPregunta.verificada, Pregunta.EstadoPregunta.para_verificar));
+        assertTrue(authorizationService.canChangeEstadoPregunta(
+                Pregunta.EstadoPregunta.revisar, Pregunta.EstadoPregunta.para_verificar));
+        assertFalse(authorizationService.canChangeEstadoPregunta(
+                Pregunta.EstadoPregunta.verificada, Pregunta.EstadoPregunta.aprobada));
         assertFalse(authorizationService.canChangeEstadoPregunta(
                 Pregunta.EstadoPregunta.borrador, Pregunta.EstadoPregunta.para_verificar));
 
@@ -211,22 +219,34 @@ class AuthorizationServiceTest {
     void canCreateYEditConcursante() {
         autenticar(RolUsuario.ROLE_ADMIN);
         assertTrue(authorizationService.canCreateConcursante());
+        assertTrue(authorizationService.canEditConcursante("EDITADO"));
+
         autenticar(RolUsuario.ROLE_GUION);
         assertTrue(authorizationService.canCreateConcursante());
         assertTrue(authorizationService.canEditConcursante(null));
         assertTrue(authorizationService.canEditConcursante("GRABADO"));
+        assertTrue(authorizationService.canEditConcursante("borrador"));
         assertFalse(authorizationService.canEditConcursante("EDITADO"));
         assertFalse(authorizationService.canEditConcursante("PROGRAMADO"));
-        assertTrue(authorizationService.canEditConcursante("otro"));
+        assertFalse(authorizationService.canEditConcursante("EMITIDO"));
+        assertFalse(authorizationService.canEditConcursante("ARCHIVADO"));
+        assertFalse(authorizationService.canEditConcursante("otro"));
 
         autenticar(RolUsuario.ROLE_VERIFICACION);
+        assertFalse(authorizationService.canCreateConcursante());
         assertTrue(authorizationService.canEditConcursante("GRABADO"));
-        assertTrue(authorizationService.canEditConcursante("EDITADO"));
+        assertFalse(authorizationService.canEditConcursante("EDITADO"));
         assertFalse(authorizationService.canEditConcursante("PROGRAMADO"));
+        assertFalse(authorizationService.canEditConcursante("EMITIDO"));
+        assertFalse(authorizationService.canEditConcursante("ARCHIVADO"));
 
         autenticar(RolUsuario.ROLE_DIRECCION);
+        assertTrue(authorizationService.canCreateConcursante());
         assertTrue(authorizationService.canEditConcursante("PROGRAMADO"));
         assertTrue(authorizationService.canEditConcursante("GRABADO"));
+        assertTrue(authorizationService.canEditConcursante("EDITADO"));
+        assertTrue(authorizationService.canEditConcursante("EMITIDO"));
+        assertTrue(authorizationService.canEditConcursante("ARCHIVADO"));
 
         autenticar(RolUsuario.ROLE_CONSULTA);
         assertFalse(authorizationService.canCreateConcursante());

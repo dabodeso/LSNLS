@@ -52,7 +52,7 @@ public class CuestionarioService {
 
     public boolean estaAsignadoAJornada(Long cuestionarioId) {
         Long count = entityManager.createQuery(
-            "SELECT COUNT(j) FROM Jornada j JOIN j.cuestionarios c WHERE c.id = :id", Long.class)
+            "SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id", Long.class)
             .setParameter("id", cuestionarioId)
             .getSingleResult();
         return count != null && count > 0;
@@ -394,7 +394,7 @@ public class CuestionarioService {
 
         // Verificar si está en alguna jornada
         Long jornadasCount = entityManager.createQuery(
-            "SELECT COUNT(j) FROM Jornada j JOIN j.cuestionarios c WHERE c.id = :cuestionarioId", Long.class)
+            "SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :cuestionarioId", Long.class)
             .setParameter("cuestionarioId", id)
             .getSingleResult();
             
@@ -988,7 +988,7 @@ public class CuestionarioService {
         // Jornada asignada (si existe)
         try {
             Long jornadaId = entityManager.createQuery(
-                "SELECT j.id FROM Jornada j JOIN j.cuestionarios cu WHERE cu.id = :id", Long.class)
+                "SELECT a.jornada.id FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id", Long.class)
                 .setParameter("id", id)
                 .setMaxResults(1)
                 .getResultList()

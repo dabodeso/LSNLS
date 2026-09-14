@@ -1,0 +1,224 @@
+Asunto: LSNLS - Qué cambia en la aplicación con esta actualización
+
+
+Hola a todos:
+
+Os resumo qué cambia en la aplicación con la última actualización. Va organizado
+por pantalla, y en cada punto tenéis cómo funcionaba antes y cómo funciona ahora.
+Al final os cuento lo poco que hay que hacer para tenerlo.
+
+
+===============================================================================
+1. PREGUNTAS
+===============================================================================
+
+SELECTOR DE SUBTEMAS
+
+Antes: al marcar un subtema el desplegable se cerraba solo, así que para elegir
+varios había que volver a abrirlo una y otra vez. Los subtemas con comillas o
+caracteres especiales podían no llegar a guardarse.
+
+Ahora: el desplegable se queda abierto mientras marcáis y desmarcáis, y solo se
+cierra cuando pasáis a otro campo del formulario. Los subtemas con caracteres
+especiales funcionan con normalidad.
+
+
+DEVOLVER UNA PREGUNTA A "PARA VERIFICAR"
+
+Antes: desde los estados "Revisar" y "Verificada" no había forma de devolver una
+pregunta a "Para verificar". Si os habíais adelantado un paso, había que pedir
+ayuda a Dirección.
+
+Ahora: Guión y Verificación pueden devolver la pregunta a "Para verificar" desde
+esos dos estados, para deshacer su propio paso.
+
+
+MENSAJES DE ERROR
+
+Antes: cuando una acción se rechazaba, el aviso era genérico: "No se pudo deshacer
+el cambio", o un texto largo de permisos que no decía qué había pasado en realidad.
+
+Ahora: se ve el motivo concreto. Por ejemplo, si intentáis devolver una pregunta a
+"Para verificar" sin permiso, el aviso dice "No puedes devolver esta pregunta a
+Para verificar con tu rol". Esto vale para toda la aplicación, incluido el deshacer
+con Ctrl+Z.
+
+
+===============================================================================
+2. CONCURSANTES
+===============================================================================
+
+QUIÉN PUEDE CREAR UN CONCURSANTE
+
+Antes: Admin, Guión, Verificación y Dirección.
+
+Ahora: Admin, Guión y Dirección. Verificación ya no ve el botón "Nuevo Concursante".
+
+
+QUIÉN PUEDE EDITARLO, SEGÚN SU ESTADO
+
+Antes: en grabado editaban Guión, Verificación y Dirección. En editado, Verificación
+y Dirección. En programado, emitido y archivado, solo Dirección. Además, si un
+concursante tenía un estado no previsto, prácticamente cualquiera podía tocarlo.
+
+Ahora: en grabado editan Guión, Verificación y Dirección. En cualquier otro estado
+(editado, programado, emitido y archivado) solo Dirección. Admin puede siempre. Si
+intentáis editar uno bloqueado, el aviso os lo dice sin rodeos: "No puedes editar un
+concursante en estado programado".
+
+
+CAMPOS DE PROGRAMACIÓN
+
+Antes: Guión y Verificación podían escribir el Estado, el Nº de programa, el Orden
+de escaleta y el Bónico.
+
+Ahora: esos cuatro campos aparecen bloqueados para Guión y Verificación. Solo
+Dirección y Admin los cambian. Al crear un concursante, si no sois Dirección ni
+Admin, el estado se pone en grabado automáticamente.
+
+
+SELECTORES DE CUESTIONARIO Y DE COMBO
+
+Antes: el selector se llamaba "Cuestionario (Niveles 1-4)", tenía un filtro por
+nivel (1LS, 2NLS, 3LS, 4NLS) y una columna Nivel.
+
+Ahora: se llama simplemente "Cuestionario". Desaparece el filtro por nivel, que no
+servía de mucho porque todos los cuestionarios tienen los cuatro, y la columna Nivel
+se sustituye por Temática, que es lo que de verdad ayuda a elegir. El selector de
+combos gana también la columna Temática. En el resumen de preguntas de un combo el
+factor se ve como número, sin la "x" delante.
+
+
+TRAER CUESTIONARIOS Y COMBOS DE OTRAS JORNADAS (LOS "ARRASTRADOS")
+
+Antes: esta función daba varios problemas. La nota que se anexaba salía duplicada,
+del tipo "Jornada Jornada 115". Si elegíais un arrastrado en el formulario y luego
+cancelabais, la nota se quedaba puesta igual. Si deshacíais la asignación con Ctrl+Z,
+el cuestionario se desasignaba pero la nota seguía ahí. Verificación no podía usar
+la función. Y la lista de disponibles mostraba también cuestionarios y combos que
+después no se dejaban asignar.
+
+Ahora: la nota se escribe una sola vez y bien. Si cancelais el formulario no queda
+rastro. Al deshacer, la nota se retira también. Verificación ya puede arrastrar. Y
+la lista solo enseña lo que de verdad se puede asignar, además de cargar bastante
+más rápido. Si por lo que sea la nota no llegase a guardarse, sale un aviso claro
+en lugar de quedarse en silencio.
+
+
+===============================================================================
+3. JORNADAS
+===============================================================================
+
+NÚMERO DE CUESTIONARIOS Y COMBOS
+
+Antes: al guardar una jornada saltaba el error "Una jornada puede tener máximo 5
+cuestionarios. Has seleccionado 6 cuestionarios", incluso cuando solo habíais
+elegido uno. Contaba los huecos vacíos como si estuvieran ocupados.
+
+Ahora: el límite es 6, que son los huecos que hay de verdad, y los huecos vacíos no
+cuentan. El mensaje de confirmación al guardar dice cuántos habéis elegido en
+realidad.
+
+
+QUÉ SE VE DE CADA CUESTIONARIO Y CADA COMBO
+
+Antes: en las tarjetas y los listados se mostraba el nivel del cuestionario o del
+combo.
+
+Ahora: se muestra la temática, que dice mucho más de un vistazo. En las tablas de
+preguntas se añaden las columnas Nivel (el de cada pregunta: 5LS o 5NLS) y Datos
+extra, y si no caben aparece una barra para desplazarse.
+
+
+ORDEN DE LAS PREGUNTAS DE UN COMBO
+
+Antes: se ordenaban por el multiplicador, y con combos antiguos el orden podía
+bailar de una pantalla a otra.
+
+Ahora: van siempre en su posición fija PM1, PM2 y PM3. Queda corregido solo al
+arrancar la aplicación; no hay que tocar ningún combo a mano.
+
+
+===============================================================================
+4. EXPORTACIÓN A EXCEL DE UNA JORNADA
+===============================================================================
+
+Antes: el Excel salía con dos hojas, "CUESTIONARIOS" y "COMBOS", en un formato
+propio de la aplicación: un título de colores arriba, un subtítulo por cada combo,
+la temática en la primera columna, los niveles escritos en minúscula ("1ls", "2nls")
+y siempre seis bloques aunque estuvieran vacíos. No se parecía a la plantilla que
+usáis en grabación, así que tocaba recolocarlo a mano cada vez.
+
+Ahora: el Excel es una copia de la plantilla de grabación, la del tipo
+"JORNADA 115_MADRID". Las hojas se llaman "CUESTIONARIOS ADJUDICADOS" y "COMBOS
+ADJUDICADOS". Cada cuestionario ocupa su bloque con las columnas CUEST, Nº DE
+PREGUNTA, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA y REC, sus cuatro preguntas
+ordenadas por nivel, una fila libre para la pregunta multiplicadora, y debajo las
+filas de CONCURSANTE, RESULTADO, GRABACIÓN y NOTAS GUION. Los combos llevan COMBO,
+TIPO, FAC, NIVEL, PREGUNTA, RESPUESTA, DATOS EXTRA y REC, con sus tres preguntas y
+las mismas cuatro filas de cierre. Los niveles salen como en la plantilla, en
+mayúsculas y con NOLS (1LS, 2NOLS, 3LS, 4NOLS, 5NOLS), y el factor como X2, X3, X9.
+
+Tres detalles que conviene saber:
+
+- Las cuatro filas de cierre (CONCURSANTE, RESULTADO, GRABACIÓN y NOTAS GUION) salen
+  en blanco a propósito. El Excel se genera antes de grabar, cuando todavía no hay
+  concursante asignado, y son las que rellenáis a mano durante la jornada.
+
+- Solo se generan los huecos que tengan algo. Los vacíos ya no ocupan papel.
+
+- Si un combo viene de reciclar otros, debajo de su número aparecen entre paréntesis
+  los combos de los que salió.
+
+Como antes, cada bloque se imprime en su propia hoja y en horizontal.
+
+
+===============================================================================
+5. PROGRAMAS
+===============================================================================
+
+CONCURSANTES DISPONIBLES PARA UN HUECO
+
+Antes: al abrir la ventana para añadir un concursante a un hueco, la lista salía
+vacía y no aparecía nadie hasta que pulsabais "Cargar más concursantes", a veces
+varias veces seguidas. Además solo se podían añadir concursantes en estado editado.
+
+Ahora: los concursantes aparecen nada más abrir la ventana. También se pueden añadir
+los que están en estado emitido. El filtro de estado abre en "Todos" y podéis acotar
+a Editado o a Emitido. Si ajustáis los filtros y no queda nadie, en lugar de una
+lista vacía sin explicación sale el aviso "Ningún concursante de los cargados cumple
+los filtros. Ajusta los filtros o carga más concursantes".
+
+
+ANCHO DE LAS COLUMNAS
+
+Antes: no se podían ajustar. El tirador para arrastrar el borde estaba tapado por la
+columna de al lado, así que no había manera de agarrarlo; y las pocas veces que se
+conseguía, la columna volvía a su ancho original en cuanto la pantalla se refrescaba.
+
+Ahora: se ajustan arrastrando el borde derecho del título de cada columna, igual que
+en Preguntas. El ancho que dejéis se guarda y se respeta, aunque editéis campos o
+cambiéis de programa. La cabecera y el cuerpo de la tabla se mueven a la vez.
+
+
+TEXTO QUE NO CABE EN UNA COLUMNA
+
+Antes: cuando el texto no entraba, cada celda sacaba su propia barra de
+desplazamiento y la tabla acababa llena de barritas.
+
+Ahora: el texto simplemente se corta. La única barra que queda es la horizontal de
+abajo, la de la tabla entera, que es la que sirve para moveros por las columnas.
+
+
+===============================================================================
+QUÉ HAY QUE HACER
+===============================================================================
+
+Nada especial. Al entrar, recargad la página. Si algo se ve descolocado la primera
+vez, pulsad Ctrl+F5 para forzar la recarga completa. Los anchos de columna que
+tuvierais guardados en Programas se reinician una sola vez, y a partir de ahí se
+conservan.
+
+Cualquier cosa que veáis rara, avisadme y lo miro.
+
+Un saludo.

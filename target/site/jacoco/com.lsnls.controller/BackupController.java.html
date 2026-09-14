@@ -52,8 +52,8 @@ import java.util.Map;
             
 <span class="nc" id="L53">            return ResponseEntity.ok(Map.of(</span>
 <span class="nc" id="L54">                &quot;success&quot;, true,</span>
-<span class="nc" id="L55">                &quot;message&quot;, &quot;Backup creado exitosamente&quot;,</span>
-<span class="nc" id="L56">                &quot;fileName&quot;, backupFile</span>
+                &quot;message&quot;, &quot;Backup creado exitosamente&quot;,
+                &quot;fileName&quot;, backupFile
             ));
 <span class="nc" id="L58">        } catch (Exception e) {</span>
 <span class="nc" id="L59">            log.error(&quot;Error al crear backup&quot;, e);</span>
@@ -76,13 +76,13 @@ import java.util.Map;
 <span class="nc bnc" id="L76" title="All 2 branches missed.">            if (success) {</span>
 <span class="nc" id="L77">                return ResponseEntity.ok(Map.of(</span>
 <span class="nc" id="L78">                    &quot;success&quot;, true,</span>
-<span class="nc" id="L79">                    &quot;message&quot;, &quot;Base de datos restaurada exitosamente&quot;,</span>
-<span class="nc" id="L80">                    &quot;fileName&quot;, fileName</span>
+                    &quot;message&quot;, &quot;Base de datos restaurada exitosamente&quot;,
+                    &quot;fileName&quot;, fileName
                 ));
             } else {
 <span class="nc" id="L83">                return ResponseEntity.badRequest().body(Map.of(</span>
 <span class="nc" id="L84">                    &quot;success&quot;, false,</span>
-<span class="nc" id="L85">                    &quot;message&quot;, &quot;Error al restaurar la base de datos&quot;</span>
+                    &quot;message&quot;, &quot;Error al restaurar la base de datos&quot;
                 ));
             }
 <span class="nc" id="L88">        } catch (Exception e) {</span>
@@ -105,7 +105,7 @@ import java.util.Map;
             
 <span class="nc" id="L106">            return ResponseEntity.ok(Map.of(</span>
 <span class="nc" id="L107">                &quot;success&quot;, true,</span>
-<span class="nc" id="L108">                &quot;message&quot;, &quot;Limpieza de backups completada&quot;</span>
+                &quot;message&quot;, &quot;Limpieza de backups completada&quot;
             ));
 <span class="nc" id="L110">        } catch (Exception e) {</span>
 <span class="nc" id="L111">            log.error(&quot;Error al limpiar backups&quot;, e);</span>
@@ -134,7 +134,7 @@ import java.util.Map;
 <span class="nc" id="L134">                &quot;totalSize&quot;, totalSize,</span>
 <span class="nc" id="L135">                &quot;formattedTotalSize&quot;, formatSize(totalSize),</span>
 <span class="nc bnc" id="L136" title="All 2 branches missed.">                &quot;latestBackup&quot;, backups.isEmpty() ? null : backups.get(0),</span>
-<span class="nc" id="L137">                &quot;backups&quot;, backups</span>
+                &quot;backups&quot;, backups
             ));
 <span class="nc" id="L139">        } catch (Exception e) {</span>
 <span class="nc" id="L140">            log.error(&quot;Error al obtener estado de backup&quot;, e);</span>

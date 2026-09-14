@@ -41,17 +41,17 @@ public class SecurityConfig {
 <span class="nc" id="L41">                .authorizeRequests(authz -&gt; authz</span>
 <span class="nc" id="L42">                        .antMatchers(</span>
                                 // Rutas públicas
-<span class="nc" id="L44">                                &quot;/&quot;,</span>
-<span class="nc" id="L45">                                &quot;/index.html&quot;,</span>
-<span class="nc" id="L46">                                &quot;/login.html&quot;,</span>
-<span class="nc" id="L47">                                &quot;/register.html&quot;,</span>
-<span class="nc" id="L48">                                &quot;/api/auth/login&quot;,</span>
-<span class="nc" id="L49">                                &quot;/css/**&quot;,</span>
-<span class="nc" id="L50">                                &quot;/js/**&quot;,</span>
-<span class="nc" id="L51">                                &quot;/images/**&quot;,</span>
-<span class="nc" id="L52">                                &quot;/favicon.ico&quot;,</span>
-<span class="nc" id="L53">                                &quot;/.well-known/**&quot;,</span>
-<span class="nc" id="L54">                                &quot;/error&quot;</span>
+                                &quot;/&quot;,
+                                &quot;/index.html&quot;,
+                                &quot;/login.html&quot;,
+                                &quot;/register.html&quot;,
+                                &quot;/api/auth/login&quot;,
+                                &quot;/css/**&quot;,
+                                &quot;/js/**&quot;,
+                                &quot;/images/**&quot;,
+                                &quot;/favicon.ico&quot;,
+                                &quot;/.well-known/**&quot;,
+                                &quot;/error&quot;
 <span class="nc" id="L55">                        ).permitAll()</span>
 <span class="nc" id="L56">                        .antMatchers(&quot;/api/auth/register&quot;).hasRole(&quot;ADMIN&quot;)</span>
 <span class="nc" id="L57">                        .antMatchers(&quot;/api/**&quot;).authenticated()</span>
@@ -81,10 +81,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
 <span class="nc" id="L82">        CorsConfiguration configuration = new CorsConfiguration();</span>
 <span class="nc" id="L83">        configuration.setAllowedOrigins(List.of(</span>
-<span class="nc" id="L84">            &quot;http://localhost:8080&quot;, </span>
-<span class="nc" id="L85">            &quot;http://127.0.0.1:8080&quot;,</span>
-<span class="nc" id="L86">            &quot;https://localhost:8080&quot;, </span>
-<span class="nc" id="L87">            &quot;https://127.0.0.1:8080&quot;</span>
+            &quot;http://localhost:8080&quot;, 
+            &quot;http://127.0.0.1:8080&quot;,
+            &quot;https://localhost:8080&quot;, 
+            &quot;https://127.0.0.1:8080&quot;
         ));
 <span class="nc" id="L89">        configuration.setAllowedMethods(List.of(&quot;GET&quot;, &quot;POST&quot;, &quot;PUT&quot;, &quot;DELETE&quot;, &quot;OPTIONS&quot;));</span>
 <span class="nc" id="L90">        configuration.setAllowedHeaders(List.of(&quot;*&quot;));</span>

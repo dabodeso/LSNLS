@@ -74,6 +74,7 @@ public class ComboController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
+            log.error("Error al obtener combo {}: {}", id, e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }

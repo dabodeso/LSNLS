@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.time.LocalDate;
+import java.util.Comparator;
 import javax.persistence.EntityManager;
 
 @Service
@@ -52,6 +53,9 @@ public class JornadaService {
 
     @Autowired
     private UndoService undoService;
+
+    @Autowired
+    private ConcursanteRepository concursanteRepository;
 
     public List<JornadaDTO> obtenerTodas() {
         // Normalizar estados legacy en BD antes de leer
@@ -408,8 +412,10 @@ public class JornadaService {
         try {
             Jornada jornada = jornadaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada"));
-            
-            return excelExportService.exportarJornada(jornada, opciones);
+
+            Map<String, Object> opcionesExport = opciones == null ? new HashMap<>() : new HashMap<>(opciones);
+            opcionesExport.put(ExcelExportService.OPCION_ANCESTROS_COMBO, ancestrosCombosDeJornada(jornada));
+            return excelExportService.exportarJornada(jornada, opcionesExport);
         } catch (Exception e) {
             throw new RuntimeException("Error al generar Excel: " + e.getMessage(), e);
         }
@@ -435,8 +441,8 @@ public class JornadaService {
         return combos.stream().map(c -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", c.getId());
-            map.put("nivel", c.getNivel().name());
-            map.put("estado", c.getEstado().name());
+            map.put("nivel", c.getNivel() != null ? c.getNivel().name() : null);
+            map.put("estado", c.getEstado() != null ? c.getEstado().name() : null);
             map.put("tipo", c.getTipo() != null ? c.getTipo().name() : null);
             map.put("tematica", c.getTematica());
             map.put("totalPreguntas", c.getPreguntas() != null ? c.getPreguntas().size() : 0);
@@ -494,6 +500,7 @@ public class JornadaService {
             resumen.setNivel(c.getNivel() != null ? c.getNivel().name() : null);
             resumen.setEstado(c.getEstado() != null ? c.getEstado().name() : null);
             resumen.setTipo(c.getTipo() != null ? c.getTipo().name() : null);
+            resumen.setTematica(c.getTematica());
             resumen.setNotasDireccion(c.getNotasDireccion());
             resumen.setTotalPreguntas(c.getPreguntas() != null ? c.getPreguntas().size() : 0);
             resumen.setReutilizado(esReutilizado(jornada.getId(), "combo_id", c.getId()));
@@ -770,14 +777,14 @@ public class JornadaService {
     public void quitarReutilizacionCuestionario(Long jornadaId, Long cuestionarioId) {
         // Si el cuestionario está asignado a otra jornada distinta, impedirlo
         Long countOtras = entityManager.createQuery(
-            "SELECT COUNT(j) FROM Jornada j JOIN j.cuestionarios c WHERE c.id = :cid AND j.id <> :jid", Long.class)
+            "SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :cid AND a.jornada.id <> :jid", Long.class)
             .setParameter("cid", cuestionarioId)
             .setParameter("jid", jornadaId)
             .getSingleResult();
         if (countOtras != null && countOtras > 0) {
             // Obtener alguna jornada para informar
             Long otraId = entityManager.createQuery(
-                "SELECT j.id FROM Jornada j JOIN j.cuestionarios c WHERE c.id = :cid AND j.id <> :jid", Long.class)
+                "SELECT a.jornada.id FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :cid AND a.jornada.id <> :jid", Long.class)
                 .setParameter("cid", cuestionarioId)
                 .setParameter("jid", jornadaId)
                 .setMaxResults(1)
@@ -793,13 +800,13 @@ public class JornadaService {
 
     public void quitarReutilizacionCombo(Long jornadaId, Long comboId) {
         Long countOtras = entityManager.createQuery(
-            "SELECT COUNT(j) FROM Jornada j JOIN j.combos c WHERE c.id = :cid AND j.id <> :jid", Long.class)
+            "SELECT COUNT(a) FROM JornadaComboAsignacion a WHERE a.combo.id = :cid AND a.jornada.id <> :jid", Long.class)
             .setParameter("cid", comboId)
             .setParameter("jid", jornadaId)
             .getSingleResult();
         if (countOtras != null && countOtras > 0) {
             Long otraId = entityManager.createQuery(
-                "SELECT j.id FROM Jornada j JOIN j.combos c WHERE c.id = :cid AND j.id <> :jid", Long.class)
+                "SELECT a.jornada.id FROM JornadaComboAsignacion a WHERE a.combo.id = :cid AND a.jornada.id <> :jid", Long.class)
                 .setParameter("cid", comboId)
                 .setParameter("jid", jornadaId)
                 .setMaxResults(1)
@@ -1210,6 +1217,50 @@ public class JornadaService {
         return numero.length() == 0 ? null : Long.valueOf(numero.toString());
     }
 
+    /**
+     * Para cada combo reciclado de la jornada, la cadena de combos de los que procede,
+     * del más reciente al original: "312/216". Los combos sin origen no aparecen.
+     */
+    Map<Long, String> ancestrosCombosDeJornada(Jornada jornada) {
+        Map<Long, String> porCombo = new HashMap<>();
+        for (Combo combo : jornada.getCombosPorSlot()) {
+            if (combo == null || combo.getId() == null) {
+                continue;
+            }
+            List<Long> ancestros = new ArrayList<>();
+            Set<Long> visitados = new HashSet<>();
+            Long actual = combo.getId();
+            visitados.add(actual);
+            Long padre;
+            while ((padre = comboPadreDe(actual)) != null && visitados.add(padre)) {
+                ancestros.add(padre);
+                actual = padre;
+            }
+            if (!ancestros.isEmpty()) {
+                porCombo.put(combo.getId(), ancestros.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining("/")));
+            }
+        }
+        return porCombo;
+    }
+
+    private Long comboPadreDe(Long comboId) {
+        @SuppressWarnings("unchecked")
+        List<Object> notas = entityManager.createNativeQuery(
+                "SELECT notas FROM historial_jornadas WHERE combo_id = ? "
+                    + "AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'")
+            .setParameter(1, comboId)
+            .getResultList();
+        for (Object nota : notas) {
+            Long padre = extraerComboPadreDesdeNotas(valorTexto(nota));
+            if (padre != null) {
+                return padre;
+            }
+        }
+        return null;
+    }
+
     public boolean esComboDerivadoDeJornada(Long jornadaId, Long comboId) {
         Number count = (Number) entityManager.createNativeQuery(
                 "SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? "
@@ -1227,5 +1278,219 @@ public class JornadaService {
             .setParameter(1, comboId)
             .getSingleResult();
         return count.longValue() > 0;
+    }
+
+    public List<Map<String, Object>> listarContenidoOtras(Long jornadaId, String tipo) {
+        boolean listarCombos = tipo != null && tipo.toLowerCase().startsWith("combo");
+        List<Map<String, Object>> resultado = new ArrayList<>();
+        Set<Long> combosDerivados = listarCombos ? idsCombosDerivados() : Collections.emptySet();
+        for (Jornada jornada : jornadaRepository.findAll()) {
+            if (jornada.getId() == null || jornada.getId().equals(jornadaId)) {
+                continue;
+            }
+            if (listarCombos) {
+                for (Combo combo : jornada.getCombosPorSlot()) {
+                    if (combo == null || combo.getId() == null || combosDerivados.contains(combo.getId())) {
+                        continue;
+                    }
+                    if (!estadoAsignableCombo(combo)) {
+                        continue;
+                    }
+                    if (concursanteRepository.existsByCombo_Id(combo.getId())) {
+                        continue;
+                    }
+                    resultado.add(mapearItemOtraJornadaCombo(combo, jornada));
+                }
+            } else {
+                for (Cuestionario cuestionario : jornada.getCuestionariosPorSlot()) {
+                    if (cuestionario == null || cuestionario.getId() == null) {
+                        continue;
+                    }
+                    if (!estadoAsignableCuestionario(cuestionario)) {
+                        continue;
+                    }
+                    if (concursanteRepository.existsByCuestionario_Id(cuestionario.getId())) {
+                        continue;
+                    }
+                    resultado.add(mapearItemOtraJornadaCuestionario(cuestionario, jornada));
+                }
+            }
+        }
+        return resultado;
+    }
+
+    /** Estados que ConcursanteService admite al asignar un cuestionario. */
+    private boolean estadoAsignableCuestionario(Cuestionario c) {
+        Cuestionario.EstadoCuestionario e = c.getEstado();
+        return e == Cuestionario.EstadoCuestionario.aprobado
+            || e == Cuestionario.EstadoCuestionario.adjudicado
+            || e == Cuestionario.EstadoCuestionario.grabado;
+    }
+
+    /** Estados que ConcursanteService admite al asignar un combo. */
+    private boolean estadoAsignableCombo(Combo c) {
+        Combo.EstadoCombo e = c.getEstado();
+        return e == Combo.EstadoCombo.aprobado
+            || e == Combo.EstadoCombo.adjudicado
+            || e == Combo.EstadoCombo.grabado;
+    }
+
+    private Set<Long> idsCombosDerivados() {
+        @SuppressWarnings("unchecked")
+        List<Object> filas = entityManager.createNativeQuery(
+                "SELECT DISTINCT combo_id FROM historial_jornadas "
+                    + "WHERE combo_id IS NOT NULL AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'")
+            .getResultList();
+        Set<Long> ids = new HashSet<>();
+        for (Object fila : filas) {
+            if (fila instanceof Number) {
+                ids.add(((Number) fila).longValue());
+            }
+        }
+        return ids;
+    }
+
+    @Transactional
+    public void registrarArrastre(Long jornadaDestinoId, String tipo, Long itemId) {
+        String marca = marcaArrastre(jornadaDestinoId);
+        boolean esCombo = tipo != null && tipo.toLowerCase().startsWith("combo");
+        if (esCombo) {
+            Combo combo = comboRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado"));
+            if (esComboDerivado(itemId)) {
+                throw new IllegalStateException("Un combo reciclado no se puede arrastrar a otra jornada.");
+            }
+            combo.setNotasDireccion(anexarNotaDireccion(combo.getNotasDireccion(), marca));
+            comboRepository.save(combo);
+        } else {
+            Cuestionario cuestionario = cuestionarioRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Cuestionario no encontrado"));
+            cuestionario.setNotasDireccion(anexarNotaDireccion(cuestionario.getNotasDireccion(), marca));
+            cuestionarioRepository.save(cuestionario);
+        }
+    }
+
+    @Transactional
+    public void quitarArrastre(Long jornadaDestinoId, String tipo, Long itemId) {
+        String marca = marcaArrastre(jornadaDestinoId);
+        boolean esCombo = tipo != null && tipo.toLowerCase().startsWith("combo");
+        if (esCombo) {
+            Combo combo = comboRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Combo no encontrado"));
+            combo.setNotasDireccion(quitarNotaDireccion(combo.getNotasDireccion(), marca));
+            comboRepository.save(combo);
+        } else {
+            Cuestionario cuestionario = cuestionarioRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Cuestionario no encontrado"));
+            cuestionario.setNotasDireccion(quitarNotaDireccion(cuestionario.getNotasDireccion(), marca));
+            cuestionarioRepository.save(cuestionario);
+        }
+    }
+
+    /** Los nombres de jornada ya suelen empezar por "Jornada", se evita duplicarlo. */
+    private String marcaArrastre(Long jornadaDestinoId) {
+        Jornada destino = jornadaRepository.findById(jornadaDestinoId)
+            .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada"));
+        String nombre = destino.getNombre();
+        String etiqueta = (nombre != null && !nombre.isBlank())
+            ? nombre.trim().replaceFirst("(?i)^jornada\\s+", "")
+            : String.valueOf(destino.getId());
+        if (etiqueta.isBlank()) {
+            etiqueta = String.valueOf(destino.getId());
+        }
+        return "Arrastrado a Jornada " + etiqueta;
+    }
+
+    private String anexarNotaDireccion(String actual, String marca) {
+        if (actual != null && actual.contains(marca)) {
+            return actual;
+        }
+        if (actual == null || actual.isBlank()) {
+            return marca;
+        }
+        return actual.trim() + "\n" + marca;
+    }
+
+    private String quitarNotaDireccion(String actual, String marca) {
+        if (actual == null || !actual.contains(marca)) {
+            return actual;
+        }
+        List<String> lineas = new ArrayList<>();
+        for (String linea : actual.split("\\r?\\n", -1)) {
+            if (!linea.trim().equals(marca)) {
+                lineas.add(linea);
+            }
+        }
+        String restante = String.join("\n", lineas).trim();
+        return restante.isEmpty() ? null : restante;
+    }
+
+    private Map<String, Object> mapearItemOtraJornadaCuestionario(Cuestionario c, Jornada jornada) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", c.getId());
+        map.put("tematica", c.getTematica());
+        map.put("estado", c.getEstado() != null ? c.getEstado().name() : null);
+        map.put("fechaCreacion", c.getFechaCreacion());
+        map.put("jornadaId", jornada.getId());
+        map.put("jornadaNombre", jornada.getNombre());
+        map.put("preguntas", mapearPreguntasCuestionario(c));
+        return map;
+    }
+
+    private Map<String, Object> mapearItemOtraJornadaCombo(Combo c, Jornada jornada) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", c.getId());
+        map.put("tematica", c.getTematica());
+        map.put("tipo", c.getTipo() != null ? c.getTipo().name() : null);
+        map.put("estado", c.getEstado() != null ? c.getEstado().name() : null);
+        map.put("fechaCreacion", c.getFechaCreacion());
+        map.put("jornadaId", jornada.getId());
+        map.put("jornadaNombre", jornada.getNombre());
+        map.put("preguntas", mapearPreguntasCombo(c));
+        return map;
+    }
+
+    private List<Map<String, Object>> mapearPreguntasCuestionario(Cuestionario c) {
+        List<Map<String, Object>> preguntas = new ArrayList<>();
+        if (c.getPreguntas() == null) {
+            return preguntas;
+        }
+        for (PreguntaCuestionario pc : c.getPreguntas()) {
+            Pregunta p = pc.getPregunta();
+            if (p == null) {
+                continue;
+            }
+            Map<String, Object> pm = new HashMap<>();
+            pm.put("pregunta", p.getPregunta());
+            pm.put("respuesta", p.getRespuesta());
+            pm.put("nivel", p.getNivel() != null ? p.getNivel().name() : null);
+            pm.put("datosExtra", p.getDatosExtra());
+            preguntas.add(pm);
+        }
+        return preguntas;
+    }
+
+    private List<Map<String, Object>> mapearPreguntasCombo(Combo c) {
+        List<Map<String, Object>> preguntas = new ArrayList<>();
+        if (c.getPreguntas() == null) {
+            return preguntas;
+        }
+        List<PreguntaCombo> ordenadas = new ArrayList<>(c.getPreguntas());
+        ordenadas.sort(Comparator.comparing(pc -> pc.getPosicion() != null ? pc.getPosicion() : 999));
+        for (PreguntaCombo pc : ordenadas) {
+            Pregunta p = pc.getPregunta();
+            if (p == null) {
+                continue;
+            }
+            Map<String, Object> pm = new HashMap<>();
+            pm.put("pregunta", p.getPregunta());
+            pm.put("respuesta", p.getRespuesta());
+            pm.put("nivel", p.getNivel() != null ? p.getNivel().name() : null);
+            pm.put("datosExtra", p.getDatosExtra());
+            pm.put("factorMultiplicacion", pc.getFactorMultiplicacion());
+            pm.put("posicion", pc.getPosicion());
+            preguntas.add(pm);
+        }
+        return preguntas;
     }
 } 

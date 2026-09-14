@@ -142,7 +142,7 @@ import java.util.ArrayList;
             // Si se proporciona un ID, buscar por ID
 <span class="nc bnc" id="L143" title="All 4 branches missed.">            if (id != null &amp;&amp; !id.isEmpty()) {</span>
 <span class="nc" id="L144">                response = cuestionarioService.filtrarCuestionariosPorId(id, page, size);</span>
-<span class="nc" id="L145">            } else {</span>
+            } else {
 <span class="nc" id="L146">                response = cuestionarioService.filtrarCuestionarios(estado, tematica, subtema, texto, page, size);</span>
             }
 <span class="nc" id="L148">            return ResponseEntity.ok(response);</span>
@@ -182,7 +182,7 @@ import java.util.ArrayList;
 <span class="nc" id="L182">                String estadoDescripcion = getCuestionarioEstadoDescripcion(cuestionarioActual.getEstado());</span>
 <span class="nc" id="L183">                log.warn(&quot;[ACTUALIZAR CUESTIONARIO] Sin permisos para editar en estado: {}&quot;, estadoDescripcion);</span>
 <span class="nc" id="L184">                return ResponseEntity.status(403).body(&quot;No tienes permisos para editar cuestionarios en estado '&quot; + </span>
-<span class="nc" id="L185">                    estadoDescripcion + &quot;'. Solo se pueden editar cuestionarios en borrador o creado.&quot;);</span>
+                    estadoDescripcion + &quot;'. Solo se pueden editar cuestionarios en borrador o creado.&quot;);
             }
 
             // ELIMINADO: Validación que impedía editar cuestionarios adjudicados o grabados
@@ -255,7 +255,7 @@ import java.util.ArrayList;
 <span class="nc" id="L255">                    id, nuevoEstado, authorizationService.isAdmin());</span>
 <span class="nc" id="L256">            } catch (IllegalArgumentException e) {</span>
 <span class="nc" id="L257">                return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
-            }
+<span class="nc" id="L258">            }</span>
 <span class="nc bnc" id="L259" title="All 2 branches missed.">            if (cuestionarioActualizado == null) {</span>
 <span class="nc" id="L260">                return ResponseEntity.notFound().build();</span>
             }
@@ -264,7 +264,7 @@ import java.util.ArrayList;
 <span class="nc" id="L264">            return ResponseEntity.ok(Map.of(</span>
 <span class="nc" id="L265">                &quot;id&quot;, cuestionarioActualizado.getId(),</span>
 <span class="nc" id="L266">                &quot;estado&quot;, cuestionarioActualizado.getEstado(),</span>
-<span class="nc" id="L267">                &quot;message&quot;, &quot;Estado actualizado correctamente&quot;</span>
+                &quot;message&quot;, &quot;Estado actualizado correctamente&quot;
             ));
 <span class="nc" id="L269">        } catch (Exception e) {</span>
 <span class="nc" id="L270">            return ResponseEntity.badRequest().body(&quot;Error al cambiar estado: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
@@ -294,7 +294,7 @@ import java.util.ArrayList;
 <span class="nc" id="L294">            return ResponseEntity.ok(Map.of(</span>
 <span class="nc" id="L295">                &quot;id&quot;, cuestionarioActualizado.getId(),</span>
 <span class="nc" id="L296">                &quot;tematica&quot;, cuestionarioActualizado.getTematica(),</span>
-<span class="nc" id="L297">                &quot;message&quot;, &quot;Temática actualizada correctamente&quot;</span>
+                &quot;message&quot;, &quot;Temática actualizada correctamente&quot;
             ));
 <span class="nc" id="L299">        } catch (Exception e) {</span>
 <span class="nc" id="L300">            return ResponseEntity.badRequest().body(&quot;Error al cambiar temática: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
@@ -347,7 +347,7 @@ import java.util.ArrayList;
 <span class="nc" id="L347">                dto.put(&quot;fechaCreacion&quot;, c.getFechaCreacion());</span>
 <span class="nc" id="L348">                dto.put(&quot;nivel&quot;, c.getNivel());</span>
 <span class="nc" id="L349">                resultado.add(dto);</span>
-            }
+<span class="nc" id="L350">            }</span>
 <span class="nc" id="L351">            return ResponseEntity.ok(resultado);</span>
 <span class="nc" id="L352">        } catch (Exception e) {</span>
 <span class="nc" id="L353">            log.error(&quot;Error al obtener cuestionarios para asignar&quot;, e);</span>

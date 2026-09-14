@@ -3,7 +3,7 @@ let concursantes = [];
 let programas = [];
 let concursanteActual = null;
 
-// Solo ADMIN, GUION y DIRECCION pueden crear/editar concursantes; eliminar solo ADMIN/DIRECCION
+// Crear: ADMIN, GUION y DIRECCION. Editar según estado. Eliminar: ADMIN/DIRECCION
 let puedeEditarConcursantes = false;
 let puedeCrearConcursante = false;
 let puedeEliminarConcursante = false;
@@ -55,6 +55,9 @@ let cargando = false;
 let lastScrollYConcursantes = 0;
 // Jornada activa para filtrar cuestionarios/combos en los selectores (si procede)
 let jornadaFiltroSeleccion = null;
+let selectorModoOtrasJornadas = false;
+// Arrastres elegidos en el formulario, pendientes de anotar hasta guardar: { cuestionario|combo: {itemId, jornadaId} }
+let arrastresPendientes = {};
 
 // Estado de ordenación (server-side) — por defecto ID ascendente
 let sortByConcursantes = 'id';
@@ -167,7 +170,7 @@ function jornadaIdDelFormulario() {
 function actualizarBotonesBusquedaPorJornada() {
     const hayJornada = !!jornadaIdDelFormulario();
     const titulo = hayJornada ? 'Buscar' : 'Asigna una jornada antes de buscar';
-    ['btn-buscar-cuestionario', 'btn-buscar-combo'].forEach((id) => {
+    ['btn-buscar-cuestionario', 'btn-buscar-combo', 'btn-otras-jornadas-cuestionario-form', 'btn-otras-jornadas-combo-form'].forEach((id) => {
         const btn = document.getElementById(id);
         if (!btn) return;
         btn.disabled = !hayJornada;
@@ -201,7 +204,7 @@ async function ejecutarAccionConcursanteUndoable({ doAction, undoAction, label }
     }
 }
 
-async function registrarUndoPutConcursante(concursanteId, buildNextPayload, label, paginaAntes) {
+async function registrarUndoPutConcursante(concursanteId, buildNextPayload, label, paginaAntes, extras = {}) {
     const snapshot = await apiManager.get(`/api/concursantes/${concursanteId}`);
     const prevPayload = buildConcursantePayload(snapshot, concursanteId);
     const nextPayload = typeof buildNextPayload === 'function'
@@ -214,8 +217,14 @@ async function registrarUndoPutConcursante(concursanteId, buildNextPayload, labe
     };
 
     await ejecutarAccionConcursanteUndoable({
-        doAction: async () => aplicar(nextPayload),
-        undoAction: async () => aplicar(prevPayload),
+        doAction: async () => {
+            await aplicar(nextPayload);
+            if (extras.alHacer) await extras.alHacer();
+        },
+        undoAction: async () => {
+            await aplicar(prevPayload);
+            if (extras.alDeshacer) await extras.alDeshacer();
+        },
         label
     });
 }
@@ -316,6 +325,18 @@ function obtenerRolUsuarioActual() {
 function puedeVerColumnasDireccion(rol) {
     const r = rol !== undefined ? rol : obtenerRolUsuarioActual();
     return r === 'admin' || r === 'direccion';
+}
+
+function normalizarEstadoConcursanteUi(estado) {
+    const e = (estado || '').toLowerCase();
+    if (!e || e === 'borrador') return 'grabado';
+    return e;
+}
+
+function puedeEditarConcursanteSegunEstado(estado) {
+    const rol = obtenerRolUsuarioActual();
+    if (rol === 'admin' || rol === 'direccion') return true;
+    return normalizarEstadoConcursanteUi(estado) === 'grabado' && (rol === 'guion' || rol === 'verificacion');
 }
 
 function crearColumnasVisiblesPorDefecto(verColumnasDireccion) {
@@ -494,9 +515,9 @@ function detectarRolUsuario() {
 const rol = obtenerRolUsuarioActual();
 const verColumnasDireccion = puedeVerColumnasDireccion(rol);
 
-// ADMIN, GUION y DIRECCION pueden crear/editar; eliminar solo ADMIN/DIRECCION
+// Crear: ADMIN, GUION, DIRECCION. Editar (algún estado): esos + VERIFICACION en grabado.
 puedeCrearConcursante = (rol === 'admin' || rol === 'guion' || rol === 'direccion');
-puedeEditarConcursantes = puedeCrearConcursante;
+puedeEditarConcursantes = puedeCrearConcursante || rol === 'verificacion';
 puedeEliminarConcursante = (rol === 'admin' || rol === 'direccion');
 
 // Ocultar "Nuevo Concursante" si no puede crear
@@ -548,6 +569,17 @@ function limitarEstadosSegunRol() {
         
         estadoSelect.value = 'grabado';
     }
+    aplicarRestriccionProgramacionFormulario();
+}
+
+function aplicarRestriccionProgramacionFormulario() {
+    const puede = puedeVerColumnasDireccion();
+    ['numero-programa', 'orden-escaleta', 'bonico'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.readOnly = !puede;
+    });
+    const estado = document.getElementById('estado');
+    if (estado) estado.disabled = !puede;
 }
 
 // Carga de datos
@@ -826,6 +858,7 @@ const lista = concursantesFiltrados || concursantes;
 const tbody = document.getElementById('tabla-concursantes');
 
     const htmlGenerado = lista.map(concursante => {
+const puedeEditarFila = puedeEditarConcursanteSegunEstado(concursante.estado);
 const celdas = [];
 
 // ID
@@ -835,7 +868,7 @@ celdas.push(`<td>${concursante.id || ''}</td>`);
 
 // JORNADA
 if (configuracionColumnas.columnasVisibles['jornada']) {
-celdas.push(`<td onclick="abrirSelectorJornadaParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="Click para seleccionar jornada">
+celdas.push(`<td ${puedeEditarFila ? `onclick="abrirSelectorJornadaParaConcursante(${concursante.id})"` : ''} style="cursor: ${puedeEditarFila ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${puedeEditarFila ? 'Click para seleccionar jornada' : ''}">
                ${concursante.jornadaNombre ? `<span class="badge bg-success">${concursante.jornadaNombre}</span>` : '<em class="text-muted">Sin asignar</em>'}
            </td>`);
 }
@@ -887,8 +920,8 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'redesSoc
 if (configuracionColumnas.columnasVisibles['cuest']) {
 const cuéstOnclick = concursante.cuestionarioId
     ? `verCuestionario(${concursante.cuestionarioId}, ${concursante.id})`
-    : (puedeEditarConcursantes ? `abrirSelectorCuestionarioParaConcursante(${concursante.id})` : '');
-const cuéstTitle = concursante.cuestionarioId ? 'Ver cuestionario' : (puedeEditarConcursantes ? 'Seleccionar cuestionario' : '');
+    : (puedeEditarFila ? `abrirSelectorCuestionarioParaConcursante(${concursante.id})` : '');
+const cuéstTitle = concursante.cuestionarioId ? 'Ver cuestionario' : (puedeEditarFila ? 'Seleccionar cuestionario' : '');
 celdas.push(`<td ${cuéstOnclick ? `onclick="${cuéstOnclick}"` : ''} style="cursor: ${cuéstOnclick ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${cuéstTitle}">
                ${concursante.cuestionarioId && concursante.cuestionarioId !== 0 ? `<span class=\"badge bg-primary\">${concursante.cuestionarioId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
@@ -899,8 +932,8 @@ if (configuracionColumnas.columnasVisibles['combo']) {
     const badgeClass = concursante.comboReciclado ? 'bg-success' : 'bg-warning';
     const comboOnclick = concursante.comboId
         ? `verCombo(${concursante.comboId}, ${concursante.id})`
-        : (puedeEditarConcursantes ? `abrirSelectorComboParaConcursante(${concursante.id})` : '');
-    const comboTitle = concursante.comboId ? (concursante.comboReciclado ? 'Combo reciclado' : 'Ver combo') : (puedeEditarConcursantes ? 'Seleccionar combo' : '');
+        : (puedeEditarFila ? `abrirSelectorComboParaConcursante(${concursante.id})` : '');
+    const comboTitle = concursante.comboId ? (concursante.comboReciclado ? 'Combo reciclado' : 'Ver combo') : (puedeEditarFila ? 'Seleccionar combo' : '');
     celdas.push(`<td ${comboOnclick ? `onclick="${comboOnclick}"` : ''} style="cursor: ${comboOnclick ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${comboTitle}">
                ${concursante.comboId && concursante.comboId !== 0 ? `<span class=\"badge ${badgeClass}\">${concursante.comboId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
@@ -924,7 +957,7 @@ if (configuracionColumnas.columnasVisibles['xusoker']) {
     }).join('');
     celdas.push(
         `<td>
-            <select class="form-select form-select-sm xusoker-select" data-id="${concursante.id}"${puedeEditarConcursantes ? '' : ' disabled'}>
+            <select class="form-select form-select-sm xusoker-select" data-id="${concursante.id}"${puedeEditarFila ? '' : ' disabled'}>
                 ${htmlOpcionesXusoker}
             </select>
         </td>`
@@ -944,7 +977,7 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'resultad
 // NOTAS GRABACIÓN
 if (configuracionColumnas.columnasVisibles['notas-grabacion']) {
             const notas = concursante.notasGrabacion || '';
-            const soloLectura = puedeEditarConcursantes ? '' : ' readonly';
+            const soloLectura = puedeEditarFila ? '' : ' readonly';
             celdas.push(`<td class="col-notas-grabacion">
                 <textarea class="form-control form-control-sm notas-grabacion-textarea" rows="3"
                     placeholder="Notas de grabación..."
@@ -974,7 +1007,7 @@ if (configuracionColumnas.columnasVisibles['estado']) {
     }).join('');
     celdas.push(
         `<td>
-            <select class="form-select form-select-sm estado-select" data-id="${concursante.id}"${puedeEditarConcursantes && puedeVerColumnasDireccion() ? '' : ' disabled'}>
+            <select class="form-select form-select-sm estado-select" data-id="${concursante.id}"${puedeEditarFila && puedeVerColumnasDireccion() ? '' : ' disabled'}>
                 ${opcionesEstado}
             </select>
         </td>`
@@ -1023,7 +1056,7 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'bonico',
 
 // ACCIONES (siempre visible)
 celdas.push(`<td>
-           ${puedeEditarConcursantes ? `
+           ${puedeEditarFila ? `
            <button class="btn btn-sm btn-primary" onclick="editarConcursante(${concursante.id})">
                <i class="fas fa-edit"></i>
            </button>` : ''}
@@ -1095,6 +1128,7 @@ function resetFormularioConcursanteNuevo() {
     jornadaFiltroSeleccion = null;
     modalCuestPagina = 1;
     modalComboPagina = 1;
+    limpiarArrastresPendientes();
 
     const titulo = document.getElementById('modal-concursante-titulo');
     if (titulo) titulo.textContent = 'Nuevo Concursante';
@@ -1130,7 +1164,7 @@ function resetFormularioConcursanteNuevo() {
 }
 
 function mostrarFormularioConcursante() {
-if (!puedeEditarConcursantes) return;
+if (!puedeCrearConcursante) return;
 resetFormularioConcursanteNuevo();
 // Limitar estados según rol
 limitarEstadosSegunRol();
@@ -1143,8 +1177,10 @@ modal.show();
 
 async function editarConcursante(id) {
 if (!puedeEditarConcursantes) return;
+limpiarArrastresPendientes();
 try {
 concursanteActual = await apiManager.get(`/api/concursantes/${id}`);
+if (!puedeEditarConcursanteSegunEstado(concursanteActual?.estado)) return;
 document.getElementById('modal-concursante-titulo').textContent = 'Editar Concursante';
 const form = document.getElementById('form-concursante');
 form.reset();
@@ -1431,6 +1467,17 @@ foto: fotoFormulario,
 creditosEspeciales: document.getElementById('creditos-especiales') ? document.getElementById('creditos-especiales').value || null : null
 };
 
+if (!puedeVerColumnasDireccion()) {
+    delete datosConcursante.numeroPrograma;
+    delete datosConcursante.ordenEscaleta;
+    delete datosConcursante.bonico;
+    if (esEdicion) {
+        delete datosConcursante.estado;
+    } else {
+        datosConcursante.estado = 'grabado';
+    }
+}
+
 // Debug: payload enviado
 try {
     console.info('📝 [GUARDAR] Payload concursante', JSON.parse(JSON.stringify(datosConcursante)));
@@ -1532,6 +1579,11 @@ if (response.ok) {
             }
         }
         
+        await aplicarArrastresPendientes({
+            cuestionario: datosConcursante.cuestionarioId,
+            combo: datosConcursante.comboId
+        });
+
         mostrarExito(esEdicion ? 'Concursante editado correctamente' : 'Concursante guardado correctamente');
         $('#modal-concursante').modal('hide');
         const idEditado = datosConcursante.id || (concursanteActual && concursanteActual.id) || idParaFoto;
@@ -1628,6 +1680,8 @@ $(document).on('change', '.estado-select', async function() {
 // Manejar cambio de XUSÓKER desde el select en la tabla
 $(document).on('change', '.xusoker-select', async function() {
     const id = $(this).data('id');
+    const filaX = concursantes.find(c => c.id === id);
+    if (!puedeEditarConcursanteSegunEstado(filaX?.estado)) return;
     const nuevoValor = $(this).val() || null;
     const select = this;
     try {
@@ -1708,6 +1762,8 @@ function crearSelectValoracion(valorActual) {
 
 async function editarCeldaConcursante(id, campo, td) {
 if (!puedeEditarConcursantes) return;
+const fila = concursantes.find(c => c.id === id);
+if (!puedeEditarConcursanteSegunEstado(fila?.estado)) return;
 if (CAMPOS_TABLA_SOLO_DIRECCION.has(campo) && !puedeVerColumnasDireccion()) return;
 if (td.querySelector('input,select,textarea')) return;
 const valorOriginal = (td.innerText || '').trim();
@@ -1883,6 +1939,8 @@ function escapeHtmlForTextarea(text) {
 
 async function actualizarNotasGrabacion(concursanteId, notas) {
     if (!puedeEditarConcursantes) return;
+    const filaNotas = concursantes.find(c => c.id === concursanteId);
+    if (!puedeEditarConcursanteSegunEstado(filaNotas?.estado)) return;
     try {
         const previo = concursantes.find(c => c.id === concursanteId);
         const notasPrevias = previo?.notasGrabacion ?? '';
@@ -2162,25 +2220,145 @@ function mostrarExito(mensaje) {
     Utils.mostrarToastExito(mensaje);
 }
 
+function textosPreguntaSelector(item) {
+    const q = (item && typeof item.pregunta === 'object' && item.pregunta) ? item.pregunta : item;
+    const pregunta = String((q && q.pregunta) || (typeof item?.pregunta === 'string' ? item.pregunta : '') || '');
+    const respuesta = String((q && q.respuesta) || item?.respuesta || '');
+    return `${pregunta} ${respuesta}`.toLowerCase();
+}
+
+function coincideBusquedaIdOTexto(item, filtro) {
+    if (!filtro) return true;
+    if (item && item.id != null && String(item.id).toLowerCase().includes(filtro)) return true;
+    const preguntas = item?.preguntas || [];
+    return preguntas.some(p => textosPreguntaSelector(p).includes(filtro));
+}
+
+function resumenTextosPreguntas(items, limite = 4) {
+    return (items || [])
+        .map(it => {
+            const q = (it && typeof it.pregunta === 'object' && it.pregunta) ? it.pregunta : it;
+            return (typeof q?.pregunta === 'string') ? q.pregunta.trim() : '';
+        })
+        .filter(Boolean)
+        .slice(0, limite)
+        .map(texto => texto.length > 50 ? texto.substring(0, 50) + '…' : texto);
+}
+
+function actualizarUiSelectorOtras(tipo) {
+    const esCombo = tipo === 'combo';
+    const btn = document.getElementById(esCombo ? 'btn-otras-jornadas-combo' : 'btn-otras-jornadas-cuestionario');
+    const th = document.getElementById(esCombo ? 'th-jornada-combo' : 'th-jornada-cuestionario');
+    const titulo = document.getElementById(esCombo ? 'titulo-selector-combo' : 'titulo-selector-cuestionario');
+    if (btn) {
+        btn.classList.toggle('btn-secondary', selectorModoOtrasJornadas);
+        btn.classList.toggle('btn-outline-secondary', !selectorModoOtrasJornadas);
+        btn.textContent = selectorModoOtrasJornadas ? 'Esta jornada' : 'Otras jornadas';
+    }
+    if (th) th.style.display = selectorModoOtrasJornadas ? '' : 'none';
+    if (titulo) {
+        if (selectorModoOtrasJornadas) {
+            titulo.textContent = esCombo
+                ? 'Seleccionar Combo de otras jornadas'
+                : 'Seleccionar Cuestionario de otras jornadas';
+        } else {
+            titulo.textContent = esCombo
+                ? 'Seleccionar Combo (Preguntas Multiplicadoras)'
+                : 'Seleccionar Cuestionario';
+        }
+    }
+}
+
+function toggleSelectorOtrasJornadas(tipo) {
+    selectorModoOtrasJornadas = !selectorModoOtrasJornadas;
+    if (tipo === 'combo') {
+        modalComboPagina = 1;
+        actualizarUiSelectorOtras('combo');
+        buscarCombosModal();
+    } else {
+        modalCuestPagina = 1;
+        actualizarUiSelectorOtras('cuestionario');
+        buscarCuestionariosModal();
+    }
+}
+
+async function anexarNotaArrastre(tipo, itemId, jornadaId) {
+    if (!jornadaId || !itemId) return;
+    try {
+        await apiManager.post(`/api/jornadas/${jornadaId}/arrastre/${tipo}/${itemId}`, {});
+    } catch (e) {
+        console.warn('No se pudo anexar la nota de arrastre', e);
+        mostrarError('Se asignó, pero no se pudo anotar el arrastre: ' + (e.message || e));
+    }
+}
+
+async function quitarNotaArrastre(tipo, itemId, jornadaId) {
+    if (!jornadaId || !itemId) return;
+    try {
+        await apiManager.delete(`/api/jornadas/${jornadaId}/arrastre/${tipo}/${itemId}`);
+    } catch (e) {
+        console.warn('No se pudo retirar la nota de arrastre', e);
+    }
+}
+
+/** El arrastre elegido en el formulario no se anota hasta que el concursante se guarda. */
+function dejarArrastrePendiente(tipo, itemId, jornadaId) {
+    arrastresPendientes[tipo] = { itemId, jornadaId };
+}
+
+function olvidarArrastrePendiente(tipo) {
+    delete arrastresPendientes[tipo];
+}
+
+function limpiarArrastresPendientes() {
+    arrastresPendientes = {};
+}
+
+async function aplicarArrastresPendientes(seleccionGuardada) {
+    const pendientes = arrastresPendientes;
+    limpiarArrastresPendientes();
+    for (const tipo of Object.keys(pendientes)) {
+        const pendiente = pendientes[tipo];
+        if (!pendiente) continue;
+        const seleccionado = seleccionGuardada ? seleccionGuardada[tipo] : null;
+        if (String(seleccionado || '') !== String(pendiente.itemId)) continue;
+        await anexarNotaArrastre(tipo, pendiente.itemId, pendiente.jornadaId);
+    }
+}
+
+function unwrapListaApi(resp) {
+    if (Array.isArray(resp)) return resp;
+    if (resp && Array.isArray(resp.datos)) return resp.datos;
+    return [];
+}
+
 // Modal selector de cuestionario
-function abrirSelectorCuestionario() {
+function abrirSelectorCuestionario(modoOtras = false) {
 concursanteParaAsignar = null;
 const jornadaId = exigirJornadaParaBusqueda(jornadaIdDelFormulario(), 'un cuestionario');
 if (!jornadaId) return;
 jornadaFiltroSeleccion = jornadaId;
+selectorModoOtrasJornadas = !!modoOtras;
+modalCuestPagina = 1;
+actualizarUiSelectorOtras('cuestionario');
 buscarCuestionariosModal();
 const modal = new bootstrap.Modal(document.getElementById('modal-selector-cuestionario'));
 modal.show();
 }
 
+function abrirSelectorCuestionarioOtras() {
+    abrirSelectorCuestionario(true);
+}
+
 async function buscarCuestionariosModal() {
-const filtro = document.getElementById('buscador-cuestionario').value.trim().toLowerCase();
-const nivelFiltro = document.getElementById('filtro-nivel-cuestionario').value;
+const filtro = (document.getElementById('buscador-cuestionario')?.value || '').trim().toLowerCase();
 
 try {
-let cuestionarios;
-// Si el concursante tiene jornada asignada, limitar a los cuestionarios de esa jornada
-if (jornadaFiltroSeleccion) {
+let cuestionarios = [];
+if (jornadaFiltroSeleccion && selectorModoOtrasJornadas) {
+    const resp = await apiManager.get(`/api/jornadas/${jornadaFiltroSeleccion}/contenido-otras?tipo=cuestionarios`);
+    cuestionarios = unwrapListaApi(resp);
+} else if (jornadaFiltroSeleccion) {
     try {
         const jornadaResp = await apiManager.get(`/api/jornadas/${jornadaFiltroSeleccion}`);
         const jornada = (jornadaResp && jornadaResp.datos) ? jornadaResp.datos : jornadaResp;
@@ -2192,7 +2370,6 @@ if (jornadaFiltroSeleccion) {
         }
         cuestionarios = detalles;
     } catch (e) {
-        // Fallback: usar disponibles aprobados
         try {
             cuestionarios = await apiManager.get('/api/cuestionarios/para-asignar?estado=aprobado');
         } catch (_) {
@@ -2207,34 +2384,14 @@ if (jornadaFiltroSeleccion) {
     }
 }
 
-// Solo aprobados si NO estamos filtrando por jornada asignada
 if (!jornadaFiltroSeleccion) {
     cuestionarios = cuestionarios.filter(c => c.estado && c.estado.toLowerCase() === 'aprobado');
 }
 
-console.info('[SELECTOR][CUEST] Lista base recibida', { total: cuestionarios.length, sample: cuestionarios.slice(0,3) });
-
-// Aplicar filtros
-if (nivelFiltro) {
-cuestionarios = cuestionarios.filter(c => c.nivel === nivelFiltro);
-}
-
 if (filtro) {
-cuestionarios = cuestionarios.filter(c => {
-if (c.id && c.id.toString().includes(filtro)) return true;
-if (c.nivel && c.nivel.toLowerCase().includes(filtro)) return true;
-if (c.preguntas && c.preguntas.length > 0) {
-return c.preguntas.some(p => 
-(p.pregunta && p.pregunta.toLowerCase().includes(filtro)) ||
-(p.respuesta && p.respuesta.toLowerCase().includes(filtro)) ||
-(p.tematica && p.tematica.toLowerCase().includes(filtro))
-);
-}
-return false;
-});
+    cuestionarios = cuestionarios.filter(c => coincideBusquedaIdOTexto(c, filtro));
 }
 
-// Paginación
 const total = cuestionarios.length;
 const totalPag = Math.max(1, Math.ceil(total / modalCuestPorPagina));
 modalCuestPagina = Math.min(modalCuestPagina, totalPag);
@@ -2243,67 +2400,49 @@ const pageItems = cuestionarios.slice(start, start + modalCuestPorPagina);
 
 const tbody = document.getElementById('tabla-selector-cuestionario');
 tbody.innerHTML = '';
+const colspan = selectorModoOtrasJornadas ? 7 : 6;
 
 if (!pageItems.length) {
-tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay cuestionarios disponibles</td></tr>';
+tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">No hay cuestionarios disponibles</td></tr>`;
 } else {
 pageItems.forEach(c => {
 const tr = document.createElement('tr');
-// Cargaremos las preguntas de forma diferida por rendimiento
 const resumenId = `resumen-cuestionario-${c.id}`;
-const preguntasResumen = `<em id="${resumenId}">Cargando…</em>`;
+const jornadaCelda = selectorModoOtrasJornadas
+    ? `<td>${c.jornadaNombre || c.jornadaId || ''}</td>`
+    : '';
 tr.innerHTML = `
                <td><strong>${c.id}</strong></td>
-               <td><span class="badge bg-info">${c.nivel || 'N/A'}</span></td>
+               <td>${c.tematica || 'Sin temática'}</td>
                <td><span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'cuestionario')}">${Utils.formatearEstadoCuestionario(c.estado)}</span></td>
                <td>${c.fechaCreacion ? formatFechaFlexible(c.fechaCreacion) : ''}</td>
-               <td style="max-width: 300px; font-size: 0.85em;">${preguntasResumen}</td>
+               <td style="max-width: 300px; font-size: 0.85em;"><em id="${resumenId}">Cargando…</em></td>
+               ${jornadaCelda}
                <td><button class="btn btn-sm btn-success" onclick="seleccionarCuestionarioModal(${c.id})">Seleccionar</button></td>
            `;
 tbody.appendChild(tr);
 
-// Cargar resumen de preguntas (primeras 3) asíncronamente con logs
-setTimeout(async () => {
-    try {
-        console.info('[SELECTOR][CUEST] Cargando detalle', c.id);
-        const det = await apiManager.get(`/api/cuestionarios/${c.id}`);
-        const items = Array.isArray(det?.preguntas) ? det.preguntas : [];
-        console.info('[SELECTOR][CUEST] Detalle recibido', { id: c.id, len: items.length });
-        const nivelOrder = (niv) => {
-            if (!niv) return 999;
-            const s = String(niv);
-            const m = s.match(/(\d+)/);
-            return m ? parseInt(m[1], 10) : 999;
-        };
-        const textos = items
-            .map(it => {
-                const q = it.pregunta ? it.pregunta : (it.pregunta?.pregunta ? it.pregunta : it);
-                return {
-                    nivel: q?.nivel,
-                    texto: (typeof q?.pregunta === 'string') ? q.pregunta.trim() : ''
-                };
-            })
-            .filter(row => row.texto.length > 0)
-            .sort((a,b) => nivelOrder(a.nivel) - nivelOrder(b.nivel))
-            .slice(0,4)
-            .map(row => {
-                const nivelNum = nivelOrder(row.nivel);
-                const corta = row.texto.length > 50 ? row.texto.substring(0,50) + '…' : row.texto;
-                return corta ? `${isFinite(nivelNum) && nivelNum !== 999 ? nivelNum : ''} ${corta}`.trim() : '';
-            })
-            .filter(Boolean);
-        const el = document.getElementById(resumenId);
-        if (el) el.innerHTML = textos.length ? textos.join('<br>') : '<em>Sin preguntas</em>';
-    } catch (e) {
-        console.error('[SELECTOR][CUEST] Error cargando detalle', c.id, e);
-        const el = document.getElementById(resumenId);
-        if (el) el.innerHTML = '<em>Error al cargar</em>';
-    }
-}, 0);
+const pintarResumen = (items) => {
+    const textos = resumenTextosPreguntas(items);
+    const el = document.getElementById(resumenId);
+    if (el) el.innerHTML = textos.length ? textos.join('<br>') : '<em>Sin preguntas</em>';
+};
+if (Array.isArray(c.preguntas) && c.preguntas.length) {
+    pintarResumen(c.preguntas);
+} else {
+    setTimeout(async () => {
+        try {
+            const det = await apiManager.get(`/api/cuestionarios/${c.id}`);
+            pintarResumen(Array.isArray(det?.preguntas) ? det.preguntas : []);
+        } catch (e) {
+            const el = document.getElementById(resumenId);
+            if (el) el.innerHTML = '<em>Error al cargar</em>';
+        }
+    }, 0);
+}
 });
 }
 
-// Render paginación modal
 let pagEl = document.getElementById('paginacion-selector-cuestionario');
 if (!pagEl) {
     pagEl = document.createElement('nav');
@@ -2337,6 +2476,7 @@ if (totalPag > 1) {
 mostrarError('Error al buscar cuestionarios: ' + e.message);
 }
 }
+
 
 // Funciones para asignar desde la tabla
 let concursanteParaAsignar = null;
@@ -2383,31 +2523,37 @@ function registrarUndoReciclajeParcialConAsignacion({ jornadaId, comboPadreId, p
     return true;
 }
 
-function abrirSelectorCuestionarioParaConcursante(concursanteId) {
+function abrirSelectorCuestionarioParaConcursante(concursanteId, modoOtras = false) {
 const c = concursantes.find(x => x && x.id === concursanteId);
 const jornadaId = exigirJornadaParaBusqueda(c && c.jornadaId, 'un cuestionario');
 if (!jornadaId) return;
 concursanteParaAsignar = concursanteId;
 modalCuestPagina = 1;
 jornadaFiltroSeleccion = jornadaId;
+selectorModoOtrasJornadas = !!modoOtras;
+actualizarUiSelectorOtras('cuestionario');
 buscarCuestionariosModal();
 const modal = new bootstrap.Modal(document.getElementById('modal-selector-cuestionario'));
 modal.show();
 }
 
-function abrirSelectorComboParaConcursante(concursanteId) {
+function abrirSelectorComboParaConcursante(concursanteId, modoOtras = false) {
 const c = concursantes.find(x => x && x.id === concursanteId);
 const jornadaId = exigirJornadaParaBusqueda(c && c.jornadaId, 'un combo');
 if (!jornadaId) return;
 concursanteParaAsignar = concursanteId;
 modalComboPagina = 1;
 jornadaFiltroSeleccion = jornadaId;
+selectorModoOtrasJornadas = !!modoOtras;
+actualizarUiSelectorOtras('combo');
 buscarCombosModal();
 const modal = new bootstrap.Modal(document.getElementById('modal-selector-combo'));
 modal.show();
 }
 
 async function seleccionarCuestionarioModal(id) {
+const esArrastre = selectorModoOtrasJornadas;
+const jornadaDestino = jornadaFiltroSeleccion;
 if (concursanteParaAsignar) {
 try {
 const paginaAntes = paginaActual;
@@ -2415,7 +2561,11 @@ await registrarUndoPutConcursante(
     concursanteParaAsignar,
     (prev) => ({ ...prev, cuestionarioId: id }),
     `Asignar cuestionario ${id} a concursante ${concursanteParaAsignar}`,
-    paginaAntes
+    paginaAntes,
+    esArrastre ? {
+        alHacer: () => anexarNotaArrastre('cuestionario', id, jornadaDestino),
+        alDeshacer: () => quitarNotaArrastre('cuestionario', id, jornadaDestino)
+    } : {}
 );
 mostrarExito('Cuestionario asignado correctamente');
 } catch (error) {
@@ -2424,15 +2574,22 @@ mostrarError('Error al asignar cuestionario: ' + error.message);
 concursanteParaAsignar = null;
 concursanteParaReemplazo = null;
 } else {
-// Asignar al formulario
+// Asignar al formulario: la nota se anota al guardar el concursante
 document.getElementById('cuestionario-id').value = id;
 actualizarRestriccionJornadaEnFormulario();
+if (esArrastre) {
+    dejarArrastrePendiente('cuestionario', id, jornadaDestino);
+} else {
+    olvidarArrastrePendiente('cuestionario');
+}
 }
 const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-cuestionario'));
 modal.hide();
 }
 
 async function seleccionarComboModal(id) {
+const esArrastre = selectorModoOtrasJornadas;
+const jornadaDestino = jornadaFiltroSeleccion;
 if (concursanteParaAsignar) {
 try {
 const paginaAntes = paginaActual;
@@ -2440,7 +2597,11 @@ await registrarUndoPutConcursante(
     concursanteParaAsignar,
     (prev) => ({ ...prev, comboId: id }),
     `Asignar combo ${id} a concursante ${concursanteParaAsignar}`,
-    paginaAntes
+    paginaAntes,
+    esArrastre ? {
+        alHacer: () => anexarNotaArrastre('combo', id, jornadaDestino),
+        alDeshacer: () => quitarNotaArrastre('combo', id, jornadaDestino)
+    } : {}
 );
 mostrarExito('Combo asignado correctamente');
 } catch (error) {
@@ -2455,6 +2616,11 @@ concursanteParaReemplazo = null;
     }
     actualizarComboEnFormulario(id);
     actualizarRestriccionJornadaEnFormulario();
+    if (esArrastre) {
+        dejarArrastrePendiente('combo', id, jornadaDestino);
+    } else {
+        olvidarArrastrePendiente('combo');
+    }
 }
 const modal = bootstrap.Modal.getInstance(document.getElementById('modal-selector-combo'));
 modal.hide();
@@ -2462,6 +2628,7 @@ modal.hide();
 
 function limpiarSelectorCuestionario() {
 document.getElementById('cuestionario-id').value = '';
+olvidarArrastrePendiente('cuestionario');
 actualizarRestriccionJornadaEnFormulario();
 }
 
@@ -2524,23 +2691,32 @@ async function desasignarComboDesdePreview() {
 }
 
 // Funciones para selector de combos
-function abrirSelectorCombo() {
+function abrirSelectorCombo(modoOtras = false) {
 concursanteParaAsignar = null;
 const jornadaId = exigirJornadaParaBusqueda(jornadaIdDelFormulario(), 'un combo');
 if (!jornadaId) return;
 jornadaFiltroSeleccion = jornadaId;
+selectorModoOtrasJornadas = !!modoOtras;
+modalComboPagina = 1;
+actualizarUiSelectorOtras('combo');
 buscarCombosModal();
 const modal = new bootstrap.Modal(document.getElementById('modal-selector-combo'));
 modal.show();
 }
 
+function abrirSelectorComboOtras() {
+    abrirSelectorCombo(true);
+}
+
 async function buscarCombosModal() {
-const filtro = document.getElementById('buscador-combo').value.trim().toLowerCase();
+const filtro = (document.getElementById('buscador-combo')?.value || '').trim().toLowerCase();
 
 try {
-let combos;
-// Si el concursante tiene jornada asignada, limitar a los combos de esa jornada
-if (jornadaFiltroSeleccion) {
+let combos = [];
+if (jornadaFiltroSeleccion && selectorModoOtrasJornadas) {
+    const resp = await apiManager.get(`/api/jornadas/${jornadaFiltroSeleccion}/contenido-otras?tipo=combos`);
+    combos = unwrapListaApi(resp);
+} else if (jornadaFiltroSeleccion) {
     try {
         const jornadaResp = await apiManager.get(`/api/jornadas/${jornadaFiltroSeleccion}`);
         const jornada = (jornadaResp && jornadaResp.datos) ? jornadaResp.datos : jornadaResp;
@@ -2552,7 +2728,6 @@ if (jornadaFiltroSeleccion) {
         }
         combos = detalles;
     } catch (e) {
-        // Fallback: usar disponibles aprobados
         try {
             combos = await apiManager.get('/api/combos/para-asignar?estado=aprobado');
         } catch (_) {
@@ -2567,28 +2742,14 @@ if (jornadaFiltroSeleccion) {
     }
 }
 
-// Solo aprobados si NO estamos filtrando por jornada asignada
 if (!jornadaFiltroSeleccion) {
     combos = combos.filter(c => c.estado && c.estado.toLowerCase() === 'aprobado');
 }
-console.info('[SELECTOR][COMBO] Lista base recibida', { total: combos.length, sample: combos.slice(0,3) });
 
-// Filtro de búsqueda
 if (filtro) {
-combos = combos.filter(c => {
-if (c.id && c.id.toString().includes(filtro)) return true;
-if (c.preguntas && c.preguntas.length > 0) {
-return c.preguntas.some(p => 
-(p.pregunta && p.pregunta.toLowerCase().includes(filtro)) ||
-(p.respuesta && p.respuesta.toLowerCase().includes(filtro)) ||
-(p.tematica && p.tematica.toLowerCase().includes(filtro))
-);
-}
-return false;
-});
+    combos = combos.filter(c => coincideBusquedaIdOTexto(c, filtro));
 }
 
-// Paginación
 const total = combos.length;
 const totalPag = Math.max(1, Math.ceil(total / modalComboPorPagina));
 modalComboPagina = Math.min(modalComboPagina, totalPag);
@@ -2597,57 +2758,60 @@ const pageItems = combos.slice(start, start + modalComboPorPagina);
 
 const tbody = document.getElementById('tabla-selector-combo');
 tbody.innerHTML = '';
+const colspan = selectorModoOtrasJornadas ? 7 : 6;
 
 if (!pageItems.length) {
-tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay combos disponibles</td></tr>';
+tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">No hay combos disponibles</td></tr>`;
 } else {
 pageItems.forEach(c => {
 const comboId = c.id ?? c.datos?.id;
 if (!comboId) return;
 const tr = document.createElement('tr');
-let preguntasResumen = '';
-// Diferido
 const resumenId = `resumen-combo-${comboId}`;
-preguntasResumen = `<em id="${resumenId}">Cargando…</em>`;
+const jornadaCelda = selectorModoOtrasJornadas
+    ? `<td>${c.jornadaNombre || c.jornadaId || ''}</td>`
+    : '';
 tr.innerHTML = `
                <td><strong>${comboId}</strong></td>
+               <td>${c.tematica || 'Sin temática'}</td>
                <td><span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span></td>
                <td>${c.fechaCreacion ? formatFechaFlexible(c.fechaCreacion) : ''}</td>
-               <td style="max-width: 350px; font-size: 0.85em;">${preguntasResumen}</td>
+               <td style="max-width: 350px; font-size: 0.85em;"><em id="${resumenId}">Cargando…</em></td>
+               ${jornadaCelda}
                <td class="text-nowrap">
                    <button type="button" class="btn btn-sm btn-success" onclick="seleccionarComboModal(${comboId})">Seleccionar</button>
                </td>
            `;
 tbody.appendChild(tr);
 
-// Cargar resumen de preguntas del combo (primeras 3)
-setTimeout(async () => {
-    try {
-        console.info('[SELECTOR][COMBO] Cargando detalle', comboId);
-        const det = await apiManager.get(`/api/combos/${comboId}`);
-        const items = Array.isArray(det?.preguntas) ? det.preguntas : [];
-        console.info('[SELECTOR][COMBO] Detalle recibido', { id: comboId, len: items.length });
-        const textos = items.slice(0,3).map(it => {
-            const q = it.pregunta ? it.pregunta : (it.pregunta?.pregunta ? it.pregunta : it);
-            const nivel = q?.nivel ? String(q.nivel).replace('_','') : '';
-            const texto = q?.pregunta || '';
-            const corta = texto.length > 40 ? texto.substring(0,40) + '…' : texto;
-            const factor = it.factorMultiplicacion || it.factor || '';
-            const fx = factor ? `<span class=\"badge bg-warning\">x${factor}</span> ` : '';
-            return `${fx}${nivel} ${corta}`.trim();
-        }).filter(Boolean);
-        const el = document.getElementById(resumenId);
-        if (el) el.innerHTML = textos.length ? textos.join('<br>') : '<em>Sin preguntas</em>';
-    } catch (e) {
-        console.error('[SELECTOR][COMBO] Error cargando detalle', comboId, e);
-        const el = document.getElementById(resumenId);
-        if (el) el.innerHTML = '<em>Error al cargar</em>';
-    }
-}, 0);
+const pintarResumen = (items) => {
+    const textos = (items || []).filter(it => it && it.pregunta).slice(0, 3).map(it => {
+        const q = (typeof it.pregunta === 'object' && it.pregunta) ? it.pregunta : it;
+        const texto = q?.pregunta || '';
+        const corta = texto.length > 40 ? texto.substring(0, 40) + '…' : texto;
+        const factor = it.factorMultiplicacion || it.factor || '';
+        const fx = factor ? `<span class="badge bg-warning">${factor}</span> ` : '';
+        return `${fx}${corta}`.trim();
+    }).filter(Boolean);
+    const el = document.getElementById(resumenId);
+    if (el) el.innerHTML = textos.length ? textos.join('<br>') : '<em>Sin preguntas</em>';
+};
+if (Array.isArray(c.preguntas) && c.preguntas.length) {
+    pintarResumen(c.preguntas);
+} else {
+    setTimeout(async () => {
+        try {
+            const det = await apiManager.get(`/api/combos/${comboId}`);
+            pintarResumen(Array.isArray(det?.preguntas) ? det.preguntas : []);
+        } catch (e) {
+            const el = document.getElementById(resumenId);
+            if (el) el.innerHTML = '<em>Error al cargar</em>';
+        }
+    }, 0);
+}
 });
 }
 
-// Render paginación modal
 let pagEl = document.getElementById('paginacion-selector-combo');
 if (!pagEl) {
     pagEl = document.createElement('nav');
@@ -2688,6 +2852,7 @@ if (comboRecicladoPendienteId) {
 }
 document.getElementById('combo-id').value = '';
 document.getElementById('combo-id').dataset.comboId = '';
+olvidarArrastrePendiente('combo');
 const btnReciclar = document.getElementById('btn-reciclar-combo');
 if (btnReciclar) {
     btnReciclar.style.display = 'none';
@@ -3250,6 +3415,8 @@ async function buscarJornadaPorId() {
 }
 
 function abrirSelectorJornadaParaConcursante(concursanteId) {
+const filaJornada = concursantes.find(c => c.id === concursanteId);
+if (!puedeEditarConcursanteSegunEstado(filaJornada?.estado)) return;
 concursanteParaAsignarJornada = concursanteId;
 mostrarModalSelectorJornada();
 }
@@ -3381,6 +3548,8 @@ modal.hide();
 
 // Funciones para manejo de fotos
 function abrirExploradorFoto(concursanteId, event) {
+const filaFoto = concursantes.find(c => c.id === concursanteId);
+if (!puedeEditarConcursanteSegunEstado(filaFoto?.estado)) return;
 // Detener la propagación del evento para evitar que se active el click del row
 if (event) {
 event.stopPropagation();

@@ -20,11 +20,11 @@ public final class MensajesUsuario {
     public static final String ARCHIVO_GRANDE = &quot;El archivo es demasiado grande. El tamaño máximo permitido es 10 MB.&quot;;
     public static final String RELACIONADOS = &quot;No se puede completar porque hay datos relacionados o duplicados.&quot;;
 
-<span class="nc" id="L23">    private static final Pattern EMOJIS = Pattern.compile(</span>
-<span class="nc" id="L24">            &quot;[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{FE0F}\\x{200D}]&quot;);</span>
+<span class="fc" id="L23">    private static final Pattern EMOJIS = Pattern.compile(</span>
+            &quot;[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{FE0F}\\x{200D}]&quot;);
 
-<span class="nc" id="L26">    private static final Pattern TECNICO = Pattern.compile(</span>
-<span class="nc" id="L27">            &quot;(?i)(failed to fetch|networkerror|load failed|net::err|&quot;</span>
+<span class="fc" id="L26">    private static final Pattern TECNICO = Pattern.compile(</span>
+            &quot;(?i)(failed to fetch|networkerror|load failed|net::err|&quot;
                     + &quot;typeerror|referenceerror|syntaxerror|unexpected token|&quot;
                     + &quot;json\\.parse|is not (a function|defined|iterable)|&quot;
                     + &quot;cannot read propert|sql(state|exception|syntax)|hibernate|jdbc|&quot;
@@ -38,41 +38,41 @@ public final class MensajesUsuario {
                     + &quot;caused by:|exception in thread|\\bat\\s+[a-z0-9_.$]+\\(|&quot;
                     + &quot;row was updated or deleted|was concurrently updated|&quot;
                     + &quot;\\bundefined\\b|\\[object object\\]|revisa la consola|&quot;
-<span class="nc" id="L41">                    + &quot;el body debe ser un json)&quot;);</span>
+                    + &quot;el body debe ser un json)&quot;);
 
     private MensajesUsuario() {
     }
 
     public static String sanitizar(String texto) {
-<span class="nc" id="L47">        return sanitizar(texto, GENERICO);</span>
+<span class="fc" id="L47">        return sanitizar(texto, GENERICO);</span>
     }
 
     public static String sanitizar(String texto, String fallback) {
-<span class="nc bnc" id="L51" title="All 4 branches missed.">        String reserva = (fallback == null || fallback.isBlank()) ? GENERICO : fallback;</span>
-<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (texto == null) {</span>
+<span class="pc bpc" id="L51" title="2 of 4 branches missed.">        String reserva = (fallback == null || fallback.isBlank()) ? GENERICO : fallback;</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (texto == null) {</span>
 <span class="nc" id="L53">            return reserva;</span>
         }
-<span class="nc" id="L55">        String t = quitarEmojis(texto).trim();</span>
-<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (t.isEmpty()) {</span>
+<span class="fc" id="L55">        String t = quitarEmojis(texto).trim();</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if (t.isEmpty()) {</span>
 <span class="nc" id="L57">            return reserva;</span>
         }
-<span class="nc" id="L59">        String lower = t.toLowerCase(Locale.ROOT);</span>
-<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (esRed(lower)) {</span>
+<span class="fc" id="L59">        String lower = t.toLowerCase(Locale.ROOT);</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if (esRed(lower)) {</span>
 <span class="nc" id="L61">            return RED;</span>
         }
-<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (esSesion(lower)) {</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">        if (esSesion(lower)) {</span>
 <span class="nc" id="L64">            return SESION;</span>
         }
-<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (esConcurrencia(lower)) {</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (esConcurrencia(lower)) {</span>
 <span class="nc" id="L67">            return CONCURRENCIA;</span>
         }
-<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (esRelacionados(lower)) {</span>
-<span class="nc" id="L70">            return RELACIONADOS;</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (esRelacionados(lower)) {</span>
+<span class="fc" id="L70">            return RELACIONADOS;</span>
         }
-<span class="nc bnc" id="L72" title="All 4 branches missed.">        if (esTecnico(t) || esGenericoIngles(lower)) {</span>
+<span class="pc bpc" id="L72" title="2 of 4 branches missed.">        if (esTecnico(t) || esGenericoIngles(lower)) {</span>
 <span class="nc" id="L73">            return reserva;</span>
         }
-<span class="nc" id="L75">        return t;</span>
+<span class="fc" id="L75">        return t;</span>
     }
 
     public static String de(Throwable error, String accion) {
@@ -108,58 +108,58 @@ public final class MensajesUsuario {
     }
 
     public static boolean esTecnico(String texto) {
-<span class="nc bnc" id="L111" title="All 4 branches missed.">        if (texto == null || texto.isBlank()) {</span>
+<span class="pc bpc" id="L111" title="2 of 4 branches missed.">        if (texto == null || texto.isBlank()) {</span>
 <span class="nc" id="L112">            return true;</span>
         }
-<span class="nc bnc" id="L114" title="All 4 branches missed.">        return TECNICO.matcher(texto).find() || texto.contains(&quot;\n\tat &quot;);</span>
+<span class="pc bpc" id="L114" title="2 of 4 branches missed.">        return TECNICO.matcher(texto).find() || texto.contains(&quot;\n\tat &quot;);</span>
     }
 
     static String quitarEmojis(String texto) {
-<span class="nc bnc" id="L118" title="All 2 branches missed.">        if (texto == null) {</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        if (texto == null) {</span>
 <span class="nc" id="L119">            return &quot;&quot;;</span>
         }
-<span class="nc" id="L121">        return EMOJIS.matcher(texto).replaceAll(&quot;&quot;).replaceAll(&quot;\\s{2,}&quot;, &quot; &quot;).trim();</span>
+<span class="fc" id="L121">        return EMOJIS.matcher(texto).replaceAll(&quot;&quot;).replaceAll(&quot;\\s{2,}&quot;, &quot; &quot;).trim();</span>
     }
 
     private static boolean esRed(String lower) {
-<span class="nc bnc" id="L125" title="All 2 branches missed.">        return lower.contains(&quot;failed to fetch&quot;)</span>
-<span class="nc bnc" id="L126" title="All 2 branches missed.">                || lower.contains(&quot;networkerror&quot;)</span>
-<span class="nc bnc" id="L127" title="All 2 branches missed.">                || lower.contains(&quot;load failed&quot;)</span>
-<span class="nc bnc" id="L128" title="All 2 branches missed.">                || lower.contains(&quot;net::err&quot;);</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        return lower.contains(&quot;failed to fetch&quot;)</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">                || lower.contains(&quot;networkerror&quot;)</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">                || lower.contains(&quot;load failed&quot;)</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">                || lower.contains(&quot;net::err&quot;);</span>
     }
 
     private static boolean esSesion(String lower) {
-<span class="nc bnc" id="L132" title="All 2 branches missed.">        return lower.contains(&quot;unauthorized&quot;)</span>
-<span class="nc bnc" id="L133" title="All 2 branches missed.">                || lower.contains(&quot;token expirado&quot;)</span>
-<span class="nc bnc" id="L134" title="All 2 branches missed.">                || lower.contains(&quot;token inválido&quot;)</span>
-<span class="nc bnc" id="L135" title="All 2 branches missed.">                || lower.contains(&quot;token invalido&quot;)</span>
-<span class="nc bnc" id="L136" title="All 2 branches missed.">                || lower.contains(&quot;jwt&quot;);</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        return lower.contains(&quot;unauthorized&quot;)</span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">                || lower.contains(&quot;token expirado&quot;)</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                || lower.contains(&quot;token inválido&quot;)</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">                || lower.contains(&quot;token invalido&quot;)</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                || lower.contains(&quot;jwt&quot;);</span>
     }
 
     private static boolean esConcurrencia(String lower) {
-<span class="nc bnc" id="L140" title="All 2 branches missed.">        return lower.contains(&quot;optimistic&quot;)</span>
-<span class="nc bnc" id="L141" title="All 2 branches missed.">                || lower.contains(&quot;concurrencia&quot;)</span>
-<span class="nc bnc" id="L142" title="All 2 branches missed.">                || lower.contains(&quot;row was updated&quot;)</span>
-<span class="nc bnc" id="L143" title="All 2 branches missed.">                || lower.contains(&quot;was concurrently updated&quot;);</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        return lower.contains(&quot;optimistic&quot;)</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">                || lower.contains(&quot;concurrencia&quot;)</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">                || lower.contains(&quot;row was updated&quot;)</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                || lower.contains(&quot;was concurrently updated&quot;);</span>
     }
 
     private static boolean esRelacionados(String lower) {
-<span class="nc bnc" id="L147" title="All 2 branches missed.">        return lower.contains(&quot;constraint&quot;)</span>
-<span class="nc bnc" id="L148" title="All 2 branches missed.">                || lower.contains(&quot;duplicate entry&quot;)</span>
-<span class="nc bnc" id="L149" title="All 2 branches missed.">                || lower.contains(&quot;foreign key&quot;)</span>
-<span class="nc bnc" id="L150" title="All 2 branches missed.">                || lower.contains(&quot;integridad&quot;);</span>
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        return lower.contains(&quot;constraint&quot;)</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">                || lower.contains(&quot;duplicate entry&quot;)</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">                || lower.contains(&quot;foreign key&quot;)</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">                || lower.contains(&quot;integridad&quot;);</span>
     }
 
     private static boolean esGenericoIngles(String lower) {
-<span class="nc bnc" id="L154" title="All 2 branches missed.">        return lower.equals(&quot;forbidden&quot;)</span>
-<span class="nc bnc" id="L155" title="All 2 branches missed.">                || lower.equals(&quot;access denied&quot;)</span>
-<span class="nc bnc" id="L156" title="All 2 branches missed.">                || lower.equals(&quot;unauthorized&quot;)</span>
-<span class="nc bnc" id="L157" title="All 2 branches missed.">                || lower.equals(&quot;bad request&quot;)</span>
-<span class="nc bnc" id="L158" title="All 2 branches missed.">                || lower.equals(&quot;not found&quot;)</span>
-<span class="nc bnc" id="L159" title="All 2 branches missed.">                || lower.equals(&quot;internal server error&quot;)</span>
-<span class="nc bnc" id="L160" title="All 2 branches missed.">                || lower.equals(&quot;conflict&quot;)</span>
-<span class="nc bnc" id="L161" title="All 2 branches missed.">                || lower.equals(&quot;error&quot;)</span>
-<span class="nc bnc" id="L162" title="All 2 branches missed.">                || lower.matches(&quot;^(error|http error)\\s*\\d{0,3}$&quot;);</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        return lower.equals(&quot;forbidden&quot;)</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">                || lower.equals(&quot;access denied&quot;)</span>
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">                || lower.equals(&quot;unauthorized&quot;)</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">                || lower.equals(&quot;bad request&quot;)</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">                || lower.equals(&quot;not found&quot;)</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">                || lower.equals(&quot;internal server error&quot;)</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">                || lower.equals(&quot;conflict&quot;)</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">                || lower.equals(&quot;error&quot;)</span>
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">                || lower.matches(&quot;^(error|http error)\\s*\\d{0,3}$&quot;);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

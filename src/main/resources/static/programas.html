@@ -12,7 +12,7 @@
     <!-- Toastify CSS -->
     <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link href="css/styles.css?v=20260821-1" rel="stylesheet">
+    <link href="css/styles.css?v=20260914-resize" rel="stylesheet">
     <link href="css/pagination-programas.css" rel="stylesheet">
     <style>
         .programa-header {
@@ -176,19 +176,20 @@
         .concursantes-table .table-excel {
             table-layout: fixed;
         }
-        .concursantes-table .col-numero { width: 5%; }
-        .concursantes-table .col-lugar { width: 8%; }
-        .concursantes-table .col-nombre { width: 12%; }
-        .concursantes-table .col-edad { width: 4%; }
-        .concursantes-table .col-ocupacion { width: 10%; }
-        .concursantes-table .col-rrss { width: 8%; }
-        .concursantes-table .col-resultado { width: 6%; }
-        .concursantes-table .col-duracion { width: 6%; }
-        .concursantes-table .col-foto { width: 24%; }
-        .concursantes-table .col-momentos { width: 12%; }
-        .concursantes-table .col-xusoker { width: 7%; }
-        .concursantes-table .col-factor-x { width: 4%; }
-        .concursantes-table .col-valoracion { width: 8%; }
+        .concursantes-table .col-numero { width: 50px; }
+        .concursantes-table .col-lugar { width: 100px; }
+        .concursantes-table .col-nombre { width: 140px; }
+        .concursantes-table .col-edad { width: 50px; }
+        .concursantes-table .col-ocupacion { width: 120px; }
+        .concursantes-table .col-rrss { width: 100px; }
+        .concursantes-table .col-resultado { width: 70px; }
+        .concursantes-table .col-duracion { width: 70px; }
+        .concursantes-table .col-foto { width: 240px; }
+        .concursantes-table .col-momentos { width: 260px; }
+        .concursantes-table .col-xusoker { width: 110px; }
+        .concursantes-table .col-factor-x { width: 50px; }
+        .concursantes-table .col-valoracion { width: 70px; }
+        .concursantes-table .col-acciones { width: 50px; }
         
         /* Cabecera fija sin barra de scroll: solo el cuerpo tiene scroll horizontal */
         .concursantes-table-header-wrapper {
@@ -222,11 +223,7 @@
         }
         .concursantes-table-header-wrapper .tabla-header,
         .concursantes-table-body-wrapper .table-excel {
-            min-width: 1400px;
-        }
-        /* Sin barras de redimensionar en los títulos de columna */
-        .concursantes-table .resize-handle {
-            display: none !important;
+            min-width: 1480px;
         }
         
         /* Créditos y notas: recuadros a la derecha del GAP */
@@ -291,6 +288,10 @@
             padding: 7px 4px !important;
         }
 
+        .concursantes-table .table-excel tbody td {
+            max-width: none !important;
+        }
+
         /* Permitir agrandar a mano los cuadros de texto de la tabla */
         .table-excel td textarea.campo-editable {
             overflow: auto !important;
@@ -301,6 +302,21 @@
 
         .concursantes-table td.col-momentos textarea.campo-editable {
             min-height: 58px;
+        }
+
+        /* Si el texto no cabe en la columna, se corta: nada de barras de scroll
+           dentro de cada celda. La tabla ya tiene su barra horizontal abajo. */
+        .concursantes-table .table-excel tbody td {
+            overflow: hidden !important;
+        }
+        .concursantes-table .table-excel td textarea.campo-editable {
+            overflow: hidden !important;
+            resize: vertical !important;
+        }
+        .concursantes-table .table-excel td input.campo-editable,
+        .concursantes-table .table-excel td select.campo-editable {
+            overflow: hidden !important;
+            text-overflow: ellipsis;
         }
 
         /* Asegurar que las celdas se expandan en altura cuando el contenido crece */
@@ -548,7 +564,9 @@
                                 <select class="form-select form-select-sm"
                                         id="filtro-estado-concursante-disponible"
                                         onchange="onCambioFiltrosConcursantesDisponibles()">
+                                    <option value="">Todos</option>
                                     <option value="EDITADO">Editado</option>
+                                    <option value="EMITIDO">Emitido</option>
                                 </select>
                             </div>
                         </div>
@@ -606,12 +624,12 @@
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="js/api.js?v=20260821-3"></script>
     <script src="js/auth.js"></script>
-    <script src="js/utils.js?v=20260821-3"></script>
+    <script src="js/utils.js?v=20260907-1"></script>
     <script src="js/undo-manager.js?v=20260626-3"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
-    <script src="js/table-resizer.js?v=20260128-2"></script>
-    <script src="js/programas.js?v=20260821-5"></script>
+    <script src="js/table-resizer.js?v=20260914-resize"></script>
+    <script src="js/programas.js?v=20260914-disponibles"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();

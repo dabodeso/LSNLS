@@ -3,6 +3,13 @@
  * Permite redimensionar columnas arrastrando los bordes de los encabezados
  */
 
+// Anchos pedidos por columna, en px, compartidos por todas las tablas que usan
+// la misma clave de almacenamiento. En Programas conviven varias instancias
+// (cabecera y cuerpo de cada programa) sobre las mismas columnas: si cada una
+// guardase su propia copia, la última en persistir pisaría el arrastre recién
+// hecho con los anchos viejos y la columna volvería a su sitio al repintar.
+const anchosPorClave = new Map();
+
 class TableResizer {
     constructor(tableId, options = {}) {
         this.table = document.getElementById(tableId);
@@ -20,8 +27,70 @@ class TableResizer {
             console.error(`Tabla con ID '${tableId}' no encontrada`);
             return;
         }
+
+        this.usaColgroup = !!this.table.querySelector('colgroup col');
+
+        // Con table-layout: fixed el navegador reparte el sobrante, así que lo
+        // medido no siempre es lo pedido y hay que recordar lo pedido.
+        this.claveAnchos = this.getStorageKey();
+        if (!anchosPorClave.has(this.claveAnchos)) {
+            anchosPorClave.set(this.claveAnchos, []);
+        }
+        this.anchos = anchosPorClave.get(this.claveAnchos);
         
         this.init();
+    }
+
+    /**
+     * Tablas que comparten anchos: las que llevan el mismo data-resizer-key.
+     * En Programas la cabecera y el cuerpo son dos tablas distintas, y además
+     * todos los programas muestran las mismas columnas.
+     */
+    getLinkedTables() {
+        const key = (this.table.dataset || {}).resizerKey;
+        if (!key) return [this.table];
+        const escapada = (window.CSS && CSS.escape) ? CSS.escape(key) : key;
+        const tablas = Array.from(document.querySelectorAll(`table[data-resizer-key="${escapada}"]`));
+        return tablas.length ? tablas : [this.table];
+    }
+
+    /**
+     * Aplica un ancho a la columna en todas las tablas enlazadas. Con
+     * table-layout: fixed manda el <col>, no el <th>, así que hay que tocar ambos.
+     */
+    applyColumnWidth(index, width) {
+        this.anchos[index] = width;
+        this.getLinkedTables().forEach((tabla) => {
+            const th = tabla.querySelectorAll('thead tr th')[index];
+            if (th) {
+                th.style.width = width + 'px';
+                th.style.minWidth = width + 'px';
+            }
+            const col = tabla.querySelectorAll('colgroup col')[index];
+            if (col) {
+                col.style.width = width + 'px';
+            }
+        });
+    }
+
+    /**
+     * Fija el ancho total de las tablas enlazadas a la suma de sus columnas.
+     * Sin esto, el min-width del CSS reparte el hueco sobrante y las columnas
+     * no respetan lo que ha pedido el usuario.
+     */
+    syncAnchoTabla() {
+        if (!this.usaColgroup) return;
+        const thead = this.table.querySelector('thead tr');
+        if (!thead) return;
+        const total = Array.from(thead.querySelectorAll('th')).reduce((suma, th, index) => {
+            const ancho = this.anchos[index];
+            return suma + (typeof ancho === 'number' && ancho > 0 ? ancho : Math.round(th.getBoundingClientRect().width));
+        }, 0);
+        if (!total) return;
+        this.getLinkedTables().forEach((tabla) => {
+            tabla.style.width = total + 'px';
+            tabla.style.minWidth = total + 'px';
+        });
     }
     
     init() {
@@ -127,7 +196,8 @@ class TableResizer {
         const tableKey = (resizerKey && String(resizerKey).trim()) ? String(resizerKey).trim() : tableId;
         const path = (window && window.location && window.location.pathname) ? window.location.pathname : '';
         const view = this.getViewKey();
-        return `table_${path}__${tableKey}__${view}__column_widths_v2`;
+        const version = path.includes('programas') ? 'column_widths_v4' : 'column_widths_v2';
+        return `table_${path}__${tableKey}__${view}__${version}`;
     }
     
     /**
@@ -141,6 +211,30 @@ class TableResizer {
         columns.forEach((th, index) => {
             const columnName = th.textContent.trim().toLowerCase();
             let defaultWidth = 120; // Ancho por defecto
+            const isProgramaConcursantes = (this.table.id || '').includes('programa')
+                && (this.table.id || '').includes('concursantes');
+            if (isProgramaConcursantes) {
+                const anchosPrograma = {
+                    'nº conc': 50,
+                    'lugar': 100,
+                    'nombre': 140,
+                    'edad': 50,
+                    'ocupación': 120,
+                    'rr ss': 100,
+                    'resultado': 70,
+                    'dur conc': 70,
+                    'foto': 240,
+                    'mom. destacados': 260,
+                    'xusóker': 110,
+                    'x': 50,
+                    'val': 70,
+                    'acc': 50
+                };
+                if (anchosPrograma[columnName]) {
+                    this.applyColumnWidth(index, anchosPrograma[columnName]);
+                    return;
+                }
+            }
             
             // Calcular ancho mínimo basado en el contenido del encabezado
             const headerText = th.textContent.trim();
@@ -179,10 +273,10 @@ class TableResizer {
             }
             
             // Aplicar el ancho
-            th.style.width = defaultWidth + 'px';
-            th.style.minWidth = defaultWidth + 'px';
+            this.applyColumnWidth(index, defaultWidth);
             // No establecer maxWidth para permitir expansión ilimitada
         });
+        this.syncAnchoTabla();
     }
     
     /**
@@ -197,17 +291,20 @@ class TableResizer {
             // No crear handle para la última columna (acciones)
             if (index === columns.length - 1) return;
             
+            // El tirador va dentro de su propio <th>. Si sobresale hacia el
+            // siguiente, la parte que asoma queda tapada: las cabeceras llevan
+            // z-index en el CSS, y la de la derecha gana por ir después.
             const handle = document.createElement('div');
             handle.className = 'resize-handle';
             handle.style.cssText = `
                 position: absolute;
                 top: 0;
-                right: -15px;
-                width: 30px;
+                right: 0;
+                width: 12px;
                 height: 100%;
                 background: transparent;
                 cursor: col-resize;
-                z-index: 10;
+                z-index: 20;
                 user-select: none;
                 border-right: 3px solid transparent;
                 transition: border-color 0.2s ease;
@@ -229,6 +326,7 @@ class TableResizer {
             let startX = 0;
             let startWidth = 0;
             let currentColumn = null;
+            let columnIndex = -1;
             
             handle.addEventListener('mousedown', (e) => {
                 e.preventDefault();
@@ -238,6 +336,7 @@ class TableResizer {
                 isResizing = true;
                 startX = e.clientX;
                 currentColumn = handle.parentElement;
+                columnIndex = Array.prototype.indexOf.call(currentColumn.parentElement.children, currentColumn);
                 startWidth = currentColumn.offsetWidth;
                 
                 // Prevenir selección de texto
@@ -267,8 +366,8 @@ class TableResizer {
                 }
                 
                 // Actualizar ancho de la columna actual
-                currentColumn.style.width = newWidth + 'px';
-                currentColumn.style.minWidth = newWidth + 'px';
+                this.applyColumnWidth(columnIndex, newWidth);
+                this.syncAnchoTabla();
                 // No establecer maxWidth para permitir expansión ilimitada
             });
             
@@ -307,6 +406,11 @@ class TableResizer {
         const columns = thead.querySelectorAll('th');
         const widths = [];
         columns.forEach((th, index) => {
+            const pedido = this.anchos[index];
+            if (this.usaColgroup && typeof pedido === 'number' && pedido > 0) {
+                widths[index] = pedido;
+                return;
+            }
             const w = th.getBoundingClientRect ? th.getBoundingClientRect().width : th.offsetWidth;
             widths[index] = Math.round(w);
         });
@@ -341,23 +445,23 @@ class TableResizer {
                         if (this.options.maxWidth && typeof this.options.maxWidth === 'number') {
                             width = Math.min(this.options.maxWidth, width);
                         }
-                        th.style.width = width + 'px';
-                        th.style.minWidth = width + 'px';
+                        this.applyColumnWidth(index, width);
                     }
                 });
+                this.syncAnchoTabla();
                 return true;
             }
 
             // Compatibilidad retro: formato anterior por nombre de columna
             if (parsed && typeof parsed === 'object') {
-                columns.forEach((th) => {
+                columns.forEach((th, index) => {
                     const columnName = th.textContent.trim();
                     const width = parsed[columnName];
                     if (typeof width === 'number' && width > 0) {
-                        th.style.width = width + 'px';
-                        th.style.minWidth = width + 'px';
+                        this.applyColumnWidth(index, width);
                     }
                 });
+                this.syncAnchoTabla();
                 return true;
             }
         } catch (error) {

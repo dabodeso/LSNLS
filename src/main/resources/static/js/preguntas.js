@@ -1231,7 +1231,7 @@ const PreguntasManager = {
                             if (r.ok) {
                                 await this.recargarConFiltros();
                             } else {
-                                throw new Error('No se pudo deshacer el cambio de estado');
+                                throw new Error(await Utils.mensajeDesdeResponse(r, 'deshacer el cambio de estado'));
                             }
                         };
                         window.UndoManager.record({ do: hacer, undo: deshacer, label: `Estado ${estadoAnterior}→${nuevoValor}` });
@@ -1797,27 +1797,71 @@ const SubtemasPicker = {
         if (dropdown) dropdown.style.display = 'none';
     },
 
+    _abrir() {
+        const dropdown = document.getElementById('subtemas-dropdown');
+        if (!dropdown) return;
+        const input = document.getElementById('subtemas-busqueda');
+        this._renderOpciones(input ? input.value : '');
+        dropdown.style.display = 'block';
+    },
+
+    _cerrarSiOtroCampo(destino) {
+        const picker = document.getElementById('subtemas-picker');
+        const dropdown = document.getElementById('subtemas-dropdown');
+        if (!dropdown || dropdown.style.display === 'none') return;
+        if (picker && picker.contains(destino)) return;
+        const otroCampo = destino && destino.closest
+            ? destino.closest('input, select, textarea, button')
+            : null;
+        if (otroCampo) dropdown.style.display = 'none';
+    },
+
     _bindEvents() {
         const input = document.getElementById('subtemas-busqueda');
         const dropdown = document.getElementById('subtemas-dropdown');
-        if (!input || !dropdown) return;
+        const opciones = document.getElementById('subtemas-opciones');
+        const tags = document.getElementById('subtemas-seleccionados');
+        if (!input || !dropdown || !opciones) return;
 
-        input.oninput = () => {
-            this._renderOpciones(input.value);
-            dropdown.style.display = 'block';
-        };
-        input.onfocus = () => {
-            this._renderOpciones(input.value);
-            dropdown.style.display = 'block';
+        input.oninput = () => this._abrir();
+        input.onfocus = () => this._abrir();
+
+        opciones.onmousedown = (e) => {
+            const opcion = e.target.closest('[data-subtema]');
+            if (!opcion) return;
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggle(decodeURIComponent(opcion.getAttribute('data-subtema')), opcion);
         };
 
-        document._subtemasPickerOutsideHandler && document.removeEventListener('mousedown', document._subtemasPickerOutsideHandler);
-        document._subtemasPickerOutsideHandler = (e) => {
-            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.style.display = 'none';
-            }
-        };
-        document.addEventListener('mousedown', document._subtemasPickerOutsideHandler);
+        if (tags) {
+            tags.onmousedown = (e) => {
+                const btn = e.target.closest('[data-quitar-subtema]');
+                if (!btn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggle(decodeURIComponent(btn.getAttribute('data-quitar-subtema')));
+            };
+        }
+
+        if (document._subtemasPickerOutsideHandler) {
+            document.removeEventListener('pointerdown', document._subtemasPickerOutsideHandler, true);
+            document.removeEventListener('mousedown', document._subtemasPickerOutsideHandler, true);
+            document._subtemasPickerOutsideHandler = null;
+        }
+
+        document._subtemasPickerFocusHandler && document.removeEventListener('focusin', document._subtemasPickerFocusHandler);
+        document._subtemasPickerFocusHandler = (e) => this._cerrarSiOtroCampo(e.target);
+        document.addEventListener('focusin', document._subtemasPickerFocusHandler);
+    },
+
+    _pintarOpcion(nodo, seleccionado) {
+        if (!nodo) return;
+        nodo.classList.toggle('selected', seleccionado);
+        const icono = nodo.querySelector('i');
+        if (icono) {
+            icono.className = `fas ${seleccionado ? 'fa-check-square' : 'fa-square'}`;
+        }
     },
 
     _renderOpciones(filtro) {
@@ -1834,9 +1878,8 @@ const SubtemasPicker = {
         }
         cont.innerHTML = filtrados.map(s => {
             const sel = this._seleccionados.includes(s);
-            const sEsc = s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             return `<div class="subtemas-picker-opcion px-3 py-1 d-flex align-items-center gap-2${sel ? ' selected' : ''}"
-                         style="cursor:pointer;" onmousedown="event.preventDefault(); SubtemasPicker.toggle('${sEsc}')">
+                         style="cursor:pointer;" data-subtema="${encodeURIComponent(s)}">
                         <i class="fas ${sel ? 'fa-check-square' : 'fa-square'}" style="font-size:0.85em; width:14px;"></i>
                         <span>${s}</span>
                     </div>`;
@@ -1847,30 +1890,27 @@ const SubtemasPicker = {
         const cont = document.getElementById('subtemas-seleccionados');
         if (!cont) return;
         cont.innerHTML = this._seleccionados.map(s => {
-            const sEsc = s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             return `<span class="badge bg-primary d-inline-flex align-items-center gap-1" style="font-size:0.82em; padding:4px 8px;">
                         ${s}
                         <button type="button" class="btn-close btn-close-white ms-1"
-                                style="font-size:0.6em;" onmousedown="event.preventDefault(); SubtemasPicker.toggle('${sEsc}')"></button>
+                                style="font-size:0.6em;" data-quitar-subtema="${encodeURIComponent(s)}"></button>
                     </span>`;
         }).join('');
     },
 
-    toggle(subtema) {
+    toggle(subtema, opcionNodo) {
         const idx = this._seleccionados.indexOf(subtema);
-        if (idx >= 0) {
-            this._seleccionados.splice(idx, 1);
-        } else {
+        const ahoraSeleccionado = idx < 0;
+        if (ahoraSeleccionado) {
             this._seleccionados.push(subtema);
+        } else {
+            this._seleccionados.splice(idx, 1);
         }
         this._renderTags();
-        const input = document.getElementById('subtemas-busqueda');
+        const nodo = opcionNodo || document.querySelector(`#subtemas-opciones [data-subtema="${CSS.escape(encodeURIComponent(subtema))}"]`);
+        this._pintarOpcion(nodo, ahoraSeleccionado);
         const dropdown = document.getElementById('subtemas-dropdown');
-        this._renderOpciones(input ? input.value : '');
-        // Mantener el dropdown abierto tras seleccionar (el re-render desvincula e.target del DOM
-        // y el listener exterior lo cerraría erróneamente)
         if (dropdown) dropdown.style.display = 'block';
-        if (input) input.focus();
     },
 
     getSeleccionados() {

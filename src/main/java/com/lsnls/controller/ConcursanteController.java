@@ -154,25 +154,29 @@ public class ConcursanteController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ConcursanteDTO concursanteDTO) {
         try {
             ConcursanteDTO concursanteActualizado = concursanteService.update(id, concursanteDTO);
             return ResponseEntity.ok(concursanteActualizado);
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al actualizar concursante: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
 
     @PatchMapping("/{id}/campo")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> updateCampo(@PathVariable Long id, @RequestBody Map<String, Object> campo) {
         try {
             return ResponseEntity.ok(concursanteService.updateCampo(id, campo));
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al actualizar campo: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
@@ -216,7 +220,7 @@ public class ConcursanteController {
     }
 
     @PostMapping("/{concursanteId}/asignar-jornada/{jornadaId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> asignarAJornada(@PathVariable Long concursanteId, @PathVariable Long jornadaId) {
         try {
             ConcursanteDTO concursante = concursanteService.asignarAJornada(concursanteId, jornadaId);
@@ -233,7 +237,7 @@ public class ConcursanteController {
     }
 
     @DeleteMapping("/{concursanteId}/desasignar-jornada")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> desasignarDeJornada(@PathVariable Long concursanteId) {
         try {
             ConcursanteDTO concursante = concursanteService.desasignarDeJornada(concursanteId);
@@ -250,7 +254,7 @@ public class ConcursanteController {
     }
 
     @PostMapping("/{id}/foto")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> subirFoto(@PathVariable Long id, @RequestParam("foto") MultipartFile foto) {
         try {
             String urlFoto = concursanteService.subirFoto(id, foto);

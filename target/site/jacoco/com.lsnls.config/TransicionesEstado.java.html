@@ -18,7 +18,7 @@ public final class TransicionesEstado {
 <span class="nc" id="L18">            &quot;grabado&quot;, Set.of(),</span>
 <span class="nc" id="L19">            &quot;reaprovechado&quot;, Set.of(),</span>
 <span class="nc" id="L20">            &quot;liberado&quot;, Set.of()</span>
-<span class="nc" id="L21">    );</span>
+    );
 
     private TransicionesEstado() {
     }
@@ -35,7 +35,7 @@ public final class TransicionesEstado {
 <span class="nc" id="L35">        Set&lt;String&gt; permitidos = GRAFO.getOrDefault(actual, Set.of());</span>
 <span class="nc bnc" id="L36" title="All 2 branches missed.">        if (!permitidos.contains(nuevo)) {</span>
 <span class="nc" id="L37">            throw new IllegalArgumentException(</span>
-<span class="nc" id="L38">                    &quot;Transición de estado no permitida: &quot; + actual + &quot; -&gt; &quot; + nuevo);</span>
+                    &quot;Transición de estado no permitida: &quot; + actual + &quot; -&gt; &quot; + nuevo);
         }
 <span class="nc" id="L40">    }</span>
 }

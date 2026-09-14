@@ -80,7 +80,7 @@ import javax.persistence.EntityManager;
         
         // Verificar preguntas creadas por este usuario
 <span class="nc" id="L82">        Long preguntasCount = entityManager.createQuery(</span>
-<span class="nc" id="L83">            &quot;SELECT COUNT(p) FROM Pregunta p WHERE p.creacionUsuario.id = :usuarioId&quot;, Long.class)</span>
+            &quot;SELECT COUNT(p) FROM Pregunta p WHERE p.creacionUsuario.id = :usuarioId&quot;, Long.class)
 <span class="nc" id="L84">            .setParameter(&quot;usuarioId&quot;, id)</span>
 <span class="nc" id="L85">            .getSingleResult();</span>
         
@@ -90,7 +90,7 @@ import javax.persistence.EntityManager;
 
         // Verificar cuestionarios creados por este usuario
 <span class="nc" id="L92">        Long cuestionariosCount = entityManager.createQuery(</span>
-<span class="nc" id="L93">            &quot;SELECT COUNT(c) FROM Cuestionario c WHERE c.creacionUsuario.id = :usuarioId&quot;, Long.class)</span>
+            &quot;SELECT COUNT(c) FROM Cuestionario c WHERE c.creacionUsuario.id = :usuarioId&quot;, Long.class)
 <span class="nc" id="L94">            .setParameter(&quot;usuarioId&quot;, id)</span>
 <span class="nc" id="L95">            .getSingleResult();</span>
         
@@ -100,7 +100,7 @@ import javax.persistence.EntityManager;
 
         // Verificar combos creados por este usuario
 <span class="nc" id="L102">        Long combosCount = entityManager.createQuery(</span>
-<span class="nc" id="L103">            &quot;SELECT COUNT(c) FROM Combo c WHERE c.creacionUsuario.id = :usuarioId&quot;, Long.class)</span>
+            &quot;SELECT COUNT(c) FROM Combo c WHERE c.creacionUsuario.id = :usuarioId&quot;, Long.class)
 <span class="nc" id="L104">            .setParameter(&quot;usuarioId&quot;, id)</span>
 <span class="nc" id="L105">            .getSingleResult();</span>
         
@@ -110,7 +110,7 @@ import javax.persistence.EntityManager;
 
         // Verificar verificaciones de preguntas hechas por este usuario
 <span class="nc" id="L112">        Long verificacionesCount = entityManager.createQuery(</span>
-<span class="nc" id="L113">            &quot;SELECT COUNT(p) FROM Pregunta p WHERE p.verificacionUsuario.id = :usuarioId&quot;, Long.class)</span>
+            &quot;SELECT COUNT(p) FROM Pregunta p WHERE p.verificacionUsuario.id = :usuarioId&quot;, Long.class)
 <span class="nc" id="L114">            .setParameter(&quot;usuarioId&quot;, id)</span>
 <span class="nc" id="L115">            .getSingleResult();</span>
         

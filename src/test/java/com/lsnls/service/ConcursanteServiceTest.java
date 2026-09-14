@@ -18,6 +18,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -55,6 +59,7 @@ class ConcursanteServiceTest {
     @Mock private ComboService comboService;
     @Mock private JornadaService jornadaService;
     @Mock private UndoService undoService;
+    @Mock private AuthorizationService authorizationService;
     @Mock private TypedQuery<Object> typedQuery;
     @Mock private Query nativeQuery;
 
@@ -64,6 +69,8 @@ class ConcursanteServiceTest {
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() {
+        when(authorizationService.canEditProgramacionConcursante()).thenReturn(true);
+        when(authorizationService.canEditConcursante(any())).thenReturn(true);
         when(entityManager.createQuery(anyString(), any(Class.class))).thenReturn((TypedQuery) typedQuery);
         when(entityManager.createQuery(anyString())).thenReturn(typedQuery);
         when(typedQuery.setParameter(anyString(), nullable(Object.class))).thenReturn(typedQuery);
@@ -268,6 +275,22 @@ class ConcursanteServiceTest {
         c.setEstado("grabado");
         when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
         assertThrows(IllegalArgumentException.class, () -> concursanteService.asignarAPrograma(1L, 8L));
+    }
+
+    @Test
+    void asignarAPrograma_emitidoOk() {
+        Concursante c = concursanteBase();
+        c.setEstado("emitido");
+        c.setDuracion("12:30");
+        c.setNumeroPrograma(null);
+        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
+        when(concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(8))
+            .thenReturn(Collections.emptyList());
+
+        ConcursanteDTO result = concursanteService.asignarAPrograma(1L, 8L);
+
+        assertEquals(8, result.getNumeroPrograma());
+        assertEquals(1, result.getNumeroConcursante());
     }
 
     @Test
@@ -492,6 +515,18 @@ class ConcursanteServiceTest {
         List<ConcursanteDTO> result = concursanteService.findConcursantesSinPrograma();
         assertEquals(1, result.size());
         assertEquals("Ana", result.get(0).getNombre());
+    }
+
+    @Test
+    void findConcursantesSinProgramaPaginated_usaLaConsultaQueFiltraPorEstado() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, null))
+            .thenReturn(new PageImpl<>(Collections.singletonList(concursanteBase())));
+
+        Page<ConcursanteDTO> result = concursanteService.findConcursantesSinProgramaPaginated(pageable, null);
+
+        assertEquals(1, result.getTotalElements());
+        verify(concursanteRepository).findDisponiblesParaProgramaWithSearch(pageable, null);
     }
 
     @Test

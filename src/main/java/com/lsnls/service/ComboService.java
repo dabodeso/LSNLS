@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import javax.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -76,7 +77,7 @@ public class ComboService {
         // Convertir a DTOs
         List<Map<String, Object>> dtos = new java.util.ArrayList<>();
         for (Combo c : combosPaginados) {
-            Map<String, Object> dto = obtenerComboConSlots(c.getId());
+            Map<String, Object> dto = mapearComboListado(c.getId());
             if (dto != null) dtos.add(dto);
         }
         
@@ -112,7 +113,7 @@ public class ComboService {
             return Optional.of(resultados.get(0));
             
         } catch (Exception e) {
-            log.warn("Error al obtener combo con preguntas: " + e.getMessage());
+            log.error("Error al obtener combo {} con preguntas: {}", id, e.getMessage(), e);
             return Optional.empty();
         }
     }
@@ -226,7 +227,7 @@ public class ComboService {
             // Convertir a DTOs
             List<Map<String, Object>> dtos = new ArrayList<>();
             for (Combo c : combos) {
-                Map<String, Object> dto = obtenerComboConSlots(c.getId());
+                Map<String, Object> dto = mapearComboListado(c.getId());
                 if (dto != null) dtos.add(dto);
             }
             
@@ -278,7 +279,7 @@ public class ComboService {
         // Convertir a DTOs
         List<Map<String, Object>> dtos = new ArrayList<>();
         for (Combo c : paginaCombos.getContent()) {
-            Map<String, Object> dto = obtenerComboConSlots(c.getId());
+            Map<String, Object> dto = mapearComboListado(c.getId());
             if (dto != null) dtos.add(dto);
         }
 
@@ -326,7 +327,7 @@ public class ComboService {
         // Convertir a DTOs
         List<Map<String, Object>> dtos = new ArrayList<>();
         for (Combo c : paginaCombos.getContent()) {
-            Map<String, Object> dto = obtenerComboConSlots(c.getId());
+            Map<String, Object> dto = mapearComboListado(c.getId());
             if (dto != null) dtos.add(dto);
         }
 
@@ -445,7 +446,7 @@ public class ComboService {
 
     public boolean estaAsignadoAJornada(Long comboId) {
         Long count = entityManager.createQuery(
-            "SELECT COUNT(j) FROM Jornada j JOIN j.combos c WHERE c.id = :id", Long.class)
+            "SELECT COUNT(a) FROM JornadaComboAsignacion a WHERE a.combo.id = :id", Long.class)
             .setParameter("id", comboId)
             .getSingleResult();
         return count != null && count > 0;
@@ -640,7 +641,7 @@ public class ComboService {
 
         // Verificar si est? en alguna jornada
         Long jornadasCount = entityManager.createQuery(
-            "SELECT COUNT(j) FROM Jornada j JOIN j.combos c WHERE c.id = :comboId", Long.class)
+            "SELECT COUNT(a) FROM JornadaComboAsignacion a WHERE a.combo.id = :comboId", Long.class)
             .setParameter("comboId", id)
             .getSingleResult();
             
@@ -712,6 +713,15 @@ public class ComboService {
         return 0;
     }
 
+    private Map<String, Object> mapearComboListado(Long comboId) {
+        try {
+            return obtenerComboConSlots(comboId);
+        } catch (Exception e) {
+            log.error("Error al mapear combo {} para el listado: {}", comboId, e.getMessage(), e);
+            return null;
+        }
+    }
+
     /**
      * Devuelve un combo con las preguntas mapeadas a DTOs con slot/hueco.
      */
@@ -730,7 +740,7 @@ public class ComboService {
         // Jornada asignada (si existe)
         try {
             Long jornadaId = entityManager.createQuery(
-                "SELECT j.id FROM Jornada j JOIN j.combos co WHERE co.id = :id", Long.class)
+                "SELECT a.jornada.id FROM JornadaComboAsignacion a WHERE a.combo.id = :id", Long.class)
                 .setParameter("id", id)
                 .setMaxResults(1)
                 .getResultList()
@@ -763,42 +773,42 @@ public class ComboService {
             log.warn("[DTO-COMBO] ERROR al buscar historial para combo " + id);
         }
         
+        Set<PreguntaCombo> preguntasCombo = c.getPreguntas() == null ? Collections.emptySet() : c.getPreguntas();
+        java.util.List<PreguntaCombo> preguntasValidas = new java.util.ArrayList<>();
+        for (PreguntaCombo pc : preguntasCombo) {
+            if (pc != null && pc.getPregunta() != null && pc.getPregunta().getId() != null) {
+                preguntasValidas.add(pc);
+            }
+        }
+
         // Mapear preguntas a slots PM1, PM2, PM3
         java.util.Map<String, Object> mapPorSlot = new java.util.HashMap<>();
         
         // Mapear preguntas a su slot usando la posicion almacenada (si existe)
         // o fallback por orden de ID para datos legacy sin posicion
-        boolean todosConPosicion = c.getPreguntas().stream()
-            .allMatch(pc -> pc.getPosicion() != null);
+        boolean todosConPosicion = !preguntasValidas.isEmpty()
+            && preguntasValidas.stream().allMatch(pc -> pc.getPosicion() != null);
 
         if (todosConPosicion) {
             // Camino principal: usar posicion persistida — garantiza orden estable
-            for (PreguntaCombo pc : c.getPreguntas()) {
+            for (PreguntaCombo pc : preguntasValidas) {
                 String slot = "PM" + pc.getPosicion();
-                Object pcdto = new java.util.HashMap<>();
-                ((Map<String, Object>) pcdto).put("pregunta", mapPreguntaToDTO(pc.getPregunta()));
-                ((Map<String, Object>) pcdto).put("factorMultiplicacion", pc.getFactorMultiplicacion());
-                ((Map<String, Object>) pcdto).put("slot", slot);
-                mapPorSlot.put(slot, pcdto);
+                mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot));
             }
         } else {
             // Fallback legacy: inferir slot desde el factor convencional (PM1=X2, PM2=X3, PM3=X/0)
             // antes de caer en orden por ID
-            for (PreguntaCombo pc : c.getPreguntas()) {
+            for (PreguntaCombo pc : preguntasValidas) {
                 int pos = posicionDesdeFactor(pc.getFactorMultiplicacion());
                 String slot = "PM" + pos;
                 if (!mapPorSlot.containsKey(slot)) {
-                    Object pcdto = new java.util.HashMap<>();
-                    ((Map<String, Object>) pcdto).put("pregunta", mapPreguntaToDTO(pc.getPregunta()));
-                    ((Map<String, Object>) pcdto).put("factorMultiplicacion", pc.getFactorMultiplicacion());
-                    ((Map<String, Object>) pcdto).put("slot", slot);
-                    mapPorSlot.put(slot, pcdto);
+                    mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot));
                 }
             }
             // Si tras inferir por factor quedan colisiones sin resolver, asignar por ID
-            if (mapPorSlot.size() < c.getPreguntas().size()) {
+            if (mapPorSlot.size() < preguntasValidas.size()) {
                 java.util.List<PreguntaCombo> sinSlot = new java.util.ArrayList<>();
-                for (PreguntaCombo pc : c.getPreguntas()) {
+                for (PreguntaCombo pc : preguntasValidas) {
                     int pos = posicionDesdeFactor(pc.getFactorMultiplicacion());
                     if (!mapPorSlot.containsKey("PM" + pos)) sinSlot.add(pc);
                 }
@@ -808,11 +818,7 @@ public class ComboService {
                 for (int i = 0; i < Math.min(sinSlot.size(), libres.size()); i++) {
                     PreguntaCombo pc = sinSlot.get(i);
                     String slot = libres.get(i);
-                    Object pcdto = new java.util.HashMap<>();
-                    ((Map<String, Object>) pcdto).put("pregunta", mapPreguntaToDTO(pc.getPregunta()));
-                    ((Map<String, Object>) pcdto).put("factorMultiplicacion", pc.getFactorMultiplicacion());
-                    ((Map<String, Object>) pcdto).put("slot", slot);
-                    mapPorSlot.put(slot, pcdto);
+                    mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot));
                 }
             }
         }
@@ -850,15 +856,28 @@ public class ComboService {
             .executeUpdate();
     }
 
+    private Map<String, Object> dtoPreguntaCombo(PreguntaCombo pc, String slot) {
+        Map<String, Object> pcdto = new java.util.HashMap<>();
+        pcdto.put("pregunta", mapPreguntaToDTO(pc.getPregunta()));
+        pcdto.put("factorMultiplicacion", pc.getFactorMultiplicacion());
+        pcdto.put("posicion", pc.getPosicion());
+        pcdto.put("slot", slot);
+        return pcdto;
+    }
+
     private Map<String, Object> mapPreguntaToDTO(Pregunta p) {
         Map<String, Object> dto = new java.util.HashMap<>();
+        if (p == null) {
+            return dto;
+        }
         dto.put("id", p.getId());
         dto.put("pregunta", p.getPregunta());
         dto.put("respuesta", p.getRespuesta());
         dto.put("tematica", p.getTematica());
-        dto.put("nivel", p.getNivel());
-        dto.put("estado", p.getEstado());
+        dto.put("nivel", p.getNivel() != null ? p.getNivel().name() : null);
+        dto.put("estado", p.getEstado() != null ? p.getEstado().name() : null);
         dto.put("fuentes", p.getFuentes());
+        dto.put("datosExtra", p.getDatosExtra());
         return dto;
     }
 
@@ -1132,13 +1151,18 @@ public class ComboService {
         if (combo.getPreguntas() != null) {
             for (PreguntaCombo pc : combo.getPreguntas()) {
                 Pregunta pregunta = pc.getPregunta();
+                if (pregunta == null) {
+                    continue;
+                }
                 Map<String, Object> preguntaMap = new java.util.HashMap<>();
                 preguntaMap.put("id", pregunta.getId());
                 preguntaMap.put("pregunta", pregunta.getPregunta());
                 preguntaMap.put("respuesta", pregunta.getRespuesta());
                 preguntaMap.put("tematica", pregunta.getTematica());
-                preguntaMap.put("nivel", pregunta.getNivel().name());
+                preguntaMap.put("nivel", pregunta.getNivel() != null ? pregunta.getNivel().name() : null);
                 preguntaMap.put("factor", pc.getFactorMultiplicacion());
+                preguntaMap.put("datosExtra", pregunta.getDatosExtra());
+                preguntaMap.put("posicion", pc.getPosicion());
                 preguntas.add(preguntaMap);
             }
         }

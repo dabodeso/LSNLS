@@ -151,7 +151,7 @@ import com.lsnls.service.EditLockService;
 <span class="nc" id="L151">                Pregunta.NivelPregunta.valueOf(dto.nivel);</span>
 <span class="nc" id="L152">            } catch (IllegalArgumentException e) {</span>
 <span class="nc" id="L153">                return ResponseEntity.badRequest().body(&quot;Nivel '&quot; + dto.nivel + &quot;' no válido. Niveles permitidos: _0, _1LS, _2NLS, _3LS, _4NLS, _5LS, _5NLS&quot;);</span>
-            }
+<span class="nc" id="L154">            }</span>
 
             // Verificar permisos específicos
 <span class="nc bnc" id="L157" title="All 2 branches missed.">            if (!authService.canCreatePregunta()) {</span>
@@ -185,19 +185,19 @@ import com.lsnls.service.EditLockService;
 <span class="nc" id="L185">                    estadoInicial = Pregunta.EstadoPregunta.valueOf(dto.estado.trim());</span>
 <span class="nc" id="L186">                } catch (IllegalArgumentException e) {</span>
 <span class="nc" id="L187">                    return ResponseEntity.badRequest().body(&quot;Estado inválido: &quot; + dto.estado);</span>
-                }
+<span class="nc" id="L188">                }</span>
             }
 <span class="nc bnc" id="L190" title="All 2 branches missed.">            if (estadoInicial == Pregunta.EstadoPregunta.para_verificar) {</span>
 <span class="nc" id="L191">                preguntaService.validarRequisitosParaVerificar(</span>
-<span class="nc" id="L192">                    dto.tematica, dto.pregunta, dto.respuesta, dto.fuentes);</span>
-<span class="nc" id="L193">                if (!authService.canChangeEstadoPregunta(</span>
-<span class="nc bnc" id="L194" title="All 2 branches missed.">                        Pregunta.EstadoPregunta.borrador, Pregunta.EstadoPregunta.para_verificar)) {</span>
+                    dto.tematica, dto.pregunta, dto.respuesta, dto.fuentes);
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                if (!authService.canChangeEstadoPregunta(</span>
+                        Pregunta.EstadoPregunta.borrador, Pregunta.EstadoPregunta.para_verificar)) {
 <span class="nc" id="L195">                    return ResponseEntity.status(403).body(</span>
-<span class="nc" id="L196">                        &quot;No tienes permisos para crear preguntas en estado 'para verificar'&quot;);</span>
+                        &quot;No tienes permisos para crear preguntas en estado 'para verificar'&quot;);
                 }
 <span class="nc bnc" id="L198" title="All 2 branches missed.">            } else if (estadoInicial != Pregunta.EstadoPregunta.borrador) {</span>
 <span class="nc" id="L199">                return ResponseEntity.badRequest().body(</span>
-<span class="nc" id="L200">                    &quot;Solo se puede crear en estado 'borrador' o 'para_verificar'&quot;);</span>
+                    &quot;Solo se puede crear en estado 'borrador' o 'para_verificar'&quot;);
             }
 <span class="nc" id="L202">            pregunta.setEstado(estadoInicial);</span>
 
@@ -259,94 +259,100 @@ import com.lsnls.service.EditLockService;
 <span class="nc bnc" id="L259" title="All 2 branches missed.">                    if (!authService.canChangeEstadoPregunta(pregunta.getEstado(), nuevoEstado)) {</span>
 <span class="nc" id="L260">                        log.warn(&quot;[ACTUALIZAR] Permiso denegado para cambiar estado a: {}&quot;, nuevoEstado);</span>
 <span class="nc" id="L261">                        String estadoDescripcion = getEstadoDescripcion(nuevoEstado);</span>
-<span class="nc" id="L262">                        return ResponseEntity.status(403).body(&quot;No tienes permisos para cambiar el estado a '&quot; + estadoDescripcion + &quot;'. Tu rol actual no permite esta transición de estado.&quot;);</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">                        String mensaje = nuevoEstado == Pregunta.EstadoPregunta.para_verificar</span>
+<span class="nc" id="L263">                            ? &quot;No puedes devolver esta pregunta a Para verificar con tu rol&quot;</span>
+<span class="nc" id="L264">                            : &quot;No tienes permisos para cambiar el estado a '&quot; + estadoDescripcion + &quot;'. Tu rol actual no permite esta transición de estado.&quot;;</span>
+<span class="nc" id="L265">                        return ResponseEntity.status(403).body(mensaje);</span>
                     }
-<span class="nc" id="L264">                } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L265">                    log.error(&quot;[ACTUALIZAR] Estado inválido: {}&quot;, dto.getEstado());</span>
-<span class="nc" id="L266">                    return ResponseEntity.badRequest().body(&quot;Estado inválido: &quot; + dto.getEstado());</span>
-                }
+<span class="nc" id="L267">                } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L268">                    log.error(&quot;[ACTUALIZAR] Estado inválido: {}&quot;, dto.getEstado());</span>
+<span class="nc" id="L269">                    return ResponseEntity.badRequest().body(&quot;Estado inválido: &quot; + dto.getEstado());</span>
+<span class="nc" id="L270">                }</span>
             }
             
-<span class="nc" id="L270">            editLockService.assertCanEdit(AuditLog.EntityType.PREGUNTA, id);</span>
+<span class="nc" id="L273">            editLockService.assertCanEdit(AuditLog.EntityType.PREGUNTA, id);</span>
 
             // Actualizar la pregunta
-<span class="nc" id="L273">            Pregunta preguntaActualizada = preguntaService.actualizarDesdeDTO(id, dto);</span>
-<span class="nc" id="L274">            log.info(&quot;[ACTUALIZAR] Pregunta actualizada exitosamente. Nuevo estado: {}&quot;, preguntaActualizada.getEstado());</span>
-<span class="nc" id="L275">            editLockService.logEntityUpdate(AuditLog.EntityType.PREGUNTA, id, &quot;Actualización de pregunta&quot;);</span>
+<span class="nc" id="L276">            Pregunta preguntaActualizada = preguntaService.actualizarDesdeDTO(id, dto);</span>
+<span class="nc" id="L277">            log.info(&quot;[ACTUALIZAR] Pregunta actualizada exitosamente. Nuevo estado: {}&quot;, preguntaActualizada.getEstado());</span>
+<span class="nc" id="L278">            editLockService.logEntityUpdate(AuditLog.EntityType.PREGUNTA, id, &quot;Actualización de pregunta&quot;);</span>
             
-<span class="nc" id="L277">            return ResponseEntity.ok(preguntaActualizada);</span>
-<span class="nc" id="L278">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L279">            log.error(&quot;[ACTUALIZAR] Error de validación: {}&quot;, e.getMessage());</span>
-<span class="nc" id="L280">            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="nc" id="L281">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L282">            log.error(&quot;[ACTUALIZAR] Error de concurrencia: {}&quot;, e.getMessage());</span>
-<span class="nc" id="L283">            return ResponseEntity.status(409).body(&quot;La pregunta ha sido modificada por otro usuario mientras intentabas editarla. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L284">        } catch (Exception e) {</span>
-<span class="nc" id="L285">            log.error(&quot;[ACTUALIZAR] Error general: {}&quot;, e.getMessage(), e);</span>
-<span class="nc" id="L286">            return ResponseEntity.badRequest().body(&quot;Error al actualizar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L280">            return ResponseEntity.ok(preguntaActualizada);</span>
+<span class="nc" id="L281">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L282">            log.error(&quot;[ACTUALIZAR] Error de validación: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L283">            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L284">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L285">            log.error(&quot;[ACTUALIZAR] Error de concurrencia: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L286">            return ResponseEntity.status(409).body(&quot;La pregunta ha sido modificada por otro usuario mientras intentabas editarla. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L287">        } catch (Exception e) {</span>
+<span class="nc" id="L288">            log.error(&quot;[ACTUALIZAR] Error general: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L289">            return ResponseEntity.badRequest().body(&quot;Error al actualizar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     private String getEstadoDescripcion(Pregunta.EstadoPregunta estado) {
-<span class="nc bnc" id="L291" title="All 8 branches missed.">        switch (estado) {</span>
-<span class="nc" id="L292">            case borrador: return &quot;borrador&quot;;</span>
-<span class="nc" id="L293">            case para_verificar: return &quot;para verificar&quot;;</span>
-<span class="nc" id="L294">            case verificada: return &quot;verificada&quot;;</span>
-<span class="nc" id="L295">            case revisar: return &quot;revisar&quot;;</span>
-<span class="nc" id="L296">            case corregir: return &quot;corregir&quot;;</span>
-<span class="nc" id="L297">            case rechazada: return &quot;rechazada&quot;;</span>
-<span class="nc" id="L298">            case aprobada: return &quot;aprobada&quot;;</span>
-<span class="nc" id="L299">            default: return estado.toString();</span>
+<span class="nc bnc" id="L294" title="All 8 branches missed.">        switch (estado) {</span>
+<span class="nc" id="L295">            case borrador: return &quot;borrador&quot;;</span>
+<span class="nc" id="L296">            case para_verificar: return &quot;para verificar&quot;;</span>
+<span class="nc" id="L297">            case verificada: return &quot;verificada&quot;;</span>
+<span class="nc" id="L298">            case revisar: return &quot;revisar&quot;;</span>
+<span class="nc" id="L299">            case corregir: return &quot;corregir&quot;;</span>
+<span class="nc" id="L300">            case rechazada: return &quot;rechazada&quot;;</span>
+<span class="nc" id="L301">            case aprobada: return &quot;aprobada&quot;;</span>
+<span class="nc" id="L302">            default: return estado.toString();</span>
         }
     }
 
     @PutMapping(&quot;/{id}/estado&quot;)
     public ResponseEntity&lt;?&gt; cambiarEstado(@PathVariable Long id, @RequestParam Pregunta.EstadoPregunta nuevoEstado) {
         try {
-<span class="nc" id="L306">            log.info(&quot;[CAMBIO ESTADO] Iniciando cambio de estado para pregunta ID: {}, nuevo estado: {}&quot;, id, nuevoEstado);</span>
+<span class="nc" id="L309">            log.info(&quot;[CAMBIO ESTADO] Iniciando cambio de estado para pregunta ID: {}, nuevo estado: {}&quot;, id, nuevoEstado);</span>
             
-<span class="nc" id="L308">            Optional&lt;Pregunta&gt; preguntaExistente = preguntaService.obtenerPorId(id);</span>
-<span class="nc bnc" id="L309" title="All 2 branches missed.">            if (preguntaExistente.isEmpty()) {</span>
-<span class="nc" id="L310">                log.warn(&quot;[CAMBIO ESTADO] Pregunta no encontrada con ID: {}&quot;, id);</span>
-<span class="nc" id="L311">                return ResponseEntity.notFound().build();</span>
+<span class="nc" id="L311">            Optional&lt;Pregunta&gt; preguntaExistente = preguntaService.obtenerPorId(id);</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">            if (preguntaExistente.isEmpty()) {</span>
+<span class="nc" id="L313">                log.warn(&quot;[CAMBIO ESTADO] Pregunta no encontrada con ID: {}&quot;, id);</span>
+<span class="nc" id="L314">                return ResponseEntity.notFound().build();</span>
             }
 
-<span class="nc" id="L314">            Pregunta pregunta = preguntaExistente.get();</span>
-<span class="nc" id="L315">            Pregunta.EstadoPregunta estadoActual = pregunta.getEstado();</span>
-<span class="nc" id="L316">            log.info(&quot;[CAMBIO ESTADO] Estado actual: {}, Estado solicitado: {}&quot;, estadoActual, nuevoEstado);</span>
+<span class="nc" id="L317">            Pregunta pregunta = preguntaExistente.get();</span>
+<span class="nc" id="L318">            Pregunta.EstadoPregunta estadoActual = pregunta.getEstado();</span>
+<span class="nc" id="L319">            log.info(&quot;[CAMBIO ESTADO] Estado actual: {}, Estado solicitado: {}&quot;, estadoActual, nuevoEstado);</span>
 
             // Verificar permisos para cambiar estado
-<span class="nc bnc" id="L319" title="All 2 branches missed.">            if (!authService.canChangeEstadoPregunta(estadoActual, nuevoEstado)) {</span>
-<span class="nc" id="L320">                String estadoDescripcion = getEstadoDescripcion(nuevoEstado);</span>
-<span class="nc" id="L321">                log.warn(&quot;[CAMBIO ESTADO] Permiso denegado para cambiar estado a: {} - Usuario: {}&quot;, </span>
-<span class="nc" id="L322">                        estadoDescripcion, authService.getCurrentUser().map(u -&gt; u.getNombre()).orElse(&quot;desconocido&quot;));</span>
-<span class="nc" id="L323">                return ResponseEntity.status(403).body(&quot;No tienes permisos para cambiar el estado a '&quot; + estadoDescripcion + &quot;'. Tu rol actual no permite esta transición de estado.&quot;);</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">            if (!authService.canChangeEstadoPregunta(estadoActual, nuevoEstado)) {</span>
+<span class="nc" id="L323">                String estadoDescripcion = getEstadoDescripcion(nuevoEstado);</span>
+<span class="nc" id="L324">                log.warn(&quot;[CAMBIO ESTADO] Permiso denegado para cambiar estado a: {} - Usuario: {}&quot;, </span>
+<span class="nc" id="L325">                        estadoDescripcion, authService.getCurrentUser().map(u -&gt; u.getNombre()).orElse(&quot;desconocido&quot;));</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">                String mensaje = nuevoEstado == Pregunta.EstadoPregunta.para_verificar</span>
+<span class="nc" id="L327">                    ? &quot;No puedes devolver esta pregunta a Para verificar con tu rol&quot;</span>
+<span class="nc" id="L328">                    : &quot;No tienes permisos para cambiar el estado a '&quot; + estadoDescripcion + &quot;'. Tu rol actual no permite esta transición de estado.&quot;;</span>
+<span class="nc" id="L329">                return ResponseEntity.status(403).body(mensaje);</span>
             }
 
-<span class="nc" id="L326">            editLockService.assertCanEdit(AuditLog.EntityType.PREGUNTA, id);</span>
+<span class="nc" id="L332">            editLockService.assertCanEdit(AuditLog.EntityType.PREGUNTA, id);</span>
 
-<span class="nc" id="L328">            Optional&lt;Usuario&gt; usuarioActualOpt = authService.getCurrentUser();</span>
-<span class="nc" id="L329">            Usuario usuarioActual = usuarioActualOpt.orElse(null);</span>
+<span class="nc" id="L334">            Optional&lt;Usuario&gt; usuarioActualOpt = authService.getCurrentUser();</span>
+<span class="nc" id="L335">            Usuario usuarioActual = usuarioActualOpt.orElse(null);</span>
             
             // CAMBIO ATÓMICO DE ESTADO con verificación de concurrencia
-<span class="nc" id="L332">            preguntaService.cambiarEstadoAtomico(id, estadoActual, nuevoEstado, usuarioActual);</span>
-<span class="nc" id="L333">            log.info(&quot;[CAMBIO ESTADO] Estado cambiado exitosamente para pregunta ID: {} - {} → {}&quot;, </span>
-<span class="nc" id="L334">                    id, estadoActual, nuevoEstado);</span>
-<span class="nc" id="L335">            editLockService.logEntityUpdate(AuditLog.EntityType.PREGUNTA, id, &quot;Cambio de estado de pregunta&quot;);</span>
+<span class="nc" id="L338">            preguntaService.cambiarEstadoAtomico(id, estadoActual, nuevoEstado, usuarioActual);</span>
+<span class="nc" id="L339">            log.info(&quot;[CAMBIO ESTADO] Estado cambiado exitosamente para pregunta ID: {} - {} → {}&quot;, </span>
+                    id, estadoActual, nuevoEstado);
+<span class="nc" id="L341">            editLockService.logEntityUpdate(AuditLog.EntityType.PREGUNTA, id, &quot;Cambio de estado de pregunta&quot;);</span>
             
             // Obtener la pregunta actualizada para devolverla
-<span class="nc" id="L338">            Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(pregunta);</span>
-<span class="nc" id="L339">            return ResponseEntity.ok(preguntaActualizada);</span>
-<span class="nc" id="L340">        } catch (IllegalStateException e) {</span>
+<span class="nc" id="L344">            Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(pregunta);</span>
+<span class="nc" id="L345">            return ResponseEntity.ok(preguntaActualizada);</span>
+<span class="nc" id="L346">        } catch (IllegalStateException e) {</span>
             // Error de concurrencia específico del método atómico
-<span class="nc" id="L342">            log.error(&quot;[CAMBIO ESTADO] Conflicto de concurrencia: {}&quot;, e.getMessage());</span>
-<span class="nc" id="L343">            return ResponseEntity.status(409).body(&quot;Conflicto de concurrencia: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="nc" id="L344">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L345">            log.error(&quot;[CAMBIO ESTADO] Error de bloqueo optimista: {}&quot;, e.getMessage());</span>
-<span class="nc" id="L346">            return ResponseEntity.status(409).body(&quot;La pregunta ha sido modificada por otro usuario mientras intentabas cambiar su estado. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L347">        } catch (Exception e) {</span>
-<span class="nc" id="L348">            log.error(&quot;[CAMBIO ESTADO] Error general: {}&quot;, e.getMessage(), e);</span>
-<span class="nc" id="L349">            return ResponseEntity.badRequest().body(&quot;Error al cambiar estado: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L348">            log.error(&quot;[CAMBIO ESTADO] Conflicto de concurrencia: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L349">            return ResponseEntity.status(409).body(&quot;Conflicto de concurrencia: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L350">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L351">            log.error(&quot;[CAMBIO ESTADO] Error de bloqueo optimista: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L352">            return ResponseEntity.status(409).body(&quot;La pregunta ha sido modificada por otro usuario mientras intentabas cambiar su estado. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L353">        } catch (Exception e) {</span>
+<span class="nc" id="L354">            log.error(&quot;[CAMBIO ESTADO] Error general: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L355">            return ResponseEntity.badRequest().body(&quot;Error al cambiar estado: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -355,27 +361,27 @@ import com.lsnls.service.EditLockService;
     public ResponseEntity&lt;?&gt; eliminarPregunta(@PathVariable Long id) {
         try {
             // Verificar permisos específicos
-<span class="nc bnc" id="L358" title="All 2 branches missed.">            if (!authService.canDelete()) {</span>
-<span class="nc" id="L359">                return ResponseEntity.status(403).body(&quot;No tienes permisos para eliminar preguntas. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar preguntas.&quot;);</span>
+<span class="nc bnc" id="L364" title="All 2 branches missed.">            if (!authService.canDelete()) {</span>
+<span class="nc" id="L365">                return ResponseEntity.status(403).body(&quot;No tienes permisos para eliminar preguntas. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar preguntas.&quot;);</span>
             }
 
             // Verificar que la pregunta existe
-<span class="nc" id="L363">            Optional&lt;Pregunta&gt; preguntaExistente = preguntaService.obtenerPorId(id);</span>
-<span class="nc bnc" id="L364" title="All 2 branches missed.">            if (preguntaExistente.isEmpty()) {</span>
-<span class="nc" id="L365">                return ResponseEntity.status(404).body(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;);</span>
+<span class="nc" id="L369">            Optional&lt;Pregunta&gt; preguntaExistente = preguntaService.obtenerPorId(id);</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">            if (preguntaExistente.isEmpty()) {</span>
+<span class="nc" id="L371">                return ResponseEntity.status(404).body(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;);</span>
             }
 
-<span class="nc" id="L368">            preguntaService.eliminarPorId(id);</span>
-<span class="nc" id="L369">            return ResponseEntity.ok().body(&quot;Pregunta eliminada exitosamente&quot;);</span>
-<span class="nc" id="L370">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L374">            preguntaService.eliminarPorId(id);</span>
+<span class="nc" id="L375">            return ResponseEntity.ok().body(&quot;Pregunta eliminada exitosamente&quot;);</span>
+<span class="nc" id="L376">        } catch (IllegalArgumentException e) {</span>
             // Mensajes específicos de validación
-<span class="nc" id="L372">            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="nc" id="L373">        } catch (org.springframework.dao.DataIntegrityViolationException e) {</span>
-<span class="nc" id="L374">            return ResponseEntity.badRequest().body(&quot;No se puede eliminar la pregunta porque está siendo utilizada en uno o más cuestionarios. Desasígnala de los cuestionarios primero.&quot;);</span>
-<span class="nc" id="L375">        } catch (org.springframework.security.access.AccessDeniedException e) {</span>
-<span class="nc" id="L376">            return ResponseEntity.status(403).body(&quot;No tienes permisos para eliminar preguntas. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar preguntas.&quot;);</span>
-<span class="nc" id="L377">        } catch (Exception e) {</span>
-<span class="nc" id="L378">            return ResponseEntity.badRequest().body(&quot;Error interno al eliminar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L378">            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L379">        } catch (org.springframework.dao.DataIntegrityViolationException e) {</span>
+<span class="nc" id="L380">            return ResponseEntity.badRequest().body(&quot;No se puede eliminar la pregunta porque está siendo utilizada en uno o más cuestionarios. Desasígnala de los cuestionarios primero.&quot;);</span>
+<span class="nc" id="L381">        } catch (org.springframework.security.access.AccessDeniedException e) {</span>
+<span class="nc" id="L382">            return ResponseEntity.status(403).body(&quot;No tienes permisos para eliminar preguntas. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar preguntas.&quot;);</span>
+<span class="nc" id="L383">        } catch (Exception e) {</span>
+<span class="nc" id="L384">            return ResponseEntity.badRequest().body(&quot;Error interno al eliminar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -383,10 +389,10 @@ import com.lsnls.service.EditLockService;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;List&lt;Pregunta&gt;&gt; obtenerPorNivel(@PathVariable Pregunta.NivelPregunta nivel) {
         try {
-<span class="nc" id="L386">            List&lt;Pregunta&gt; preguntas = preguntaService.obtenerPorNivel(nivel);</span>
-<span class="nc" id="L387">            return ResponseEntity.ok(preguntas);</span>
-<span class="nc" id="L388">        } catch (Exception e) {</span>
-<span class="nc" id="L389">            return ResponseEntity.internalServerError().build();</span>
+<span class="nc" id="L392">            List&lt;Pregunta&gt; preguntas = preguntaService.obtenerPorNivel(nivel);</span>
+<span class="nc" id="L393">            return ResponseEntity.ok(preguntas);</span>
+<span class="nc" id="L394">        } catch (Exception e) {</span>
+<span class="nc" id="L395">            return ResponseEntity.internalServerError().build();</span>
         }
     }
 
@@ -394,10 +400,10 @@ import com.lsnls.service.EditLockService;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;List&lt;Pregunta&gt;&gt; obtenerPorEstado(@PathVariable Pregunta.EstadoPregunta estado) {
         try {
-<span class="nc" id="L397">            List&lt;Pregunta&gt; preguntas = preguntaService.obtenerPorEstado(estado);</span>
-<span class="nc" id="L398">            return ResponseEntity.ok(preguntas);</span>
-<span class="nc" id="L399">        } catch (Exception e) {</span>
-<span class="nc" id="L400">            return ResponseEntity.internalServerError().build();</span>
+<span class="nc" id="L403">            List&lt;Pregunta&gt; preguntas = preguntaService.obtenerPorEstado(estado);</span>
+<span class="nc" id="L404">            return ResponseEntity.ok(preguntas);</span>
+<span class="nc" id="L405">        } catch (Exception e) {</span>
+<span class="nc" id="L406">            return ResponseEntity.internalServerError().build();</span>
         }
     }
 
@@ -405,10 +411,10 @@ import com.lsnls.service.EditLockService;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;List&lt;Pregunta&gt;&gt; obtenerDisponibles() {
         try {
-<span class="nc" id="L408">            List&lt;Pregunta&gt; preguntas = preguntaService.obtenerDisponibles();</span>
-<span class="nc" id="L409">            return ResponseEntity.ok(preguntas);</span>
-<span class="nc" id="L410">        } catch (Exception e) {</span>
-<span class="nc" id="L411">            return ResponseEntity.internalServerError().build();</span>
+<span class="nc" id="L414">            List&lt;Pregunta&gt; preguntas = preguntaService.obtenerDisponibles();</span>
+<span class="nc" id="L415">            return ResponseEntity.ok(preguntas);</span>
+<span class="nc" id="L416">        } catch (Exception e) {</span>
+<span class="nc" id="L417">            return ResponseEntity.internalServerError().build();</span>
         }
     }
 
@@ -416,26 +422,26 @@ import com.lsnls.service.EditLockService;
     public ResponseEntity&lt;?&gt; verificarPregunta(@PathVariable Long id, @RequestParam boolean aprobada, 
                                               @RequestParam(required = false) String notas) {
         try {
-<span class="nc" id="L419">            return authService.getCurrentUser()</span>
-<span class="nc" id="L420">                .map(currentUser -&gt; {</span>
-<span class="nc bnc" id="L421" title="All 2 branches missed.">                    if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION &amp;&amp; </span>
-<span class="nc bnc" id="L422" title="All 2 branches missed.">                        currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION) {</span>
-<span class="nc" id="L423">                        return ResponseEntity.status(403).body(&quot;No tienes permisos para verificar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden verificar preguntas.&quot;);</span>
+<span class="nc" id="L425">            return authService.getCurrentUser()</span>
+<span class="nc" id="L426">                .map(currentUser -&gt; {</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">                    if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION &amp;&amp; </span>
+<span class="nc bnc" id="L428" title="All 2 branches missed.">                        currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION) {</span>
+<span class="nc" id="L429">                        return ResponseEntity.status(403).body(&quot;No tienes permisos para verificar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden verificar preguntas.&quot;);</span>
                     }
 
-<span class="nc bnc" id="L426" title="All 2 branches missed.">                    Pregunta.EstadoPregunta nuevoEstado = aprobada ? </span>
-<span class="nc" id="L427">                        Pregunta.EstadoPregunta.verificada : Pregunta.EstadoPregunta.rechazada;</span>
+<span class="nc bnc" id="L432" title="All 2 branches missed.">                    Pregunta.EstadoPregunta nuevoEstado = aprobada ? </span>
+<span class="nc" id="L433">                        Pregunta.EstadoPregunta.verificada : Pregunta.EstadoPregunta.rechazada;</span>
 
                     try {
-<span class="nc" id="L430">                        Pregunta pregunta = preguntaService.verificar(id, nuevoEstado, notas, currentUser);</span>
-<span class="nc" id="L431">                        return ResponseEntity.ok(pregunta);</span>
-<span class="nc" id="L432">                    } catch (Exception e) {</span>
-<span class="nc" id="L433">                        return ResponseEntity.badRequest().body(&quot;Error al verificar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L436">                        Pregunta pregunta = preguntaService.verificar(id, nuevoEstado, notas, currentUser);</span>
+<span class="nc" id="L437">                        return ResponseEntity.ok(pregunta);</span>
+<span class="nc" id="L438">                    } catch (Exception e) {</span>
+<span class="nc" id="L439">                        return ResponseEntity.badRequest().body(&quot;Error al verificar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
                     }
                 })
-<span class="nc" id="L436">                .orElse(ResponseEntity.status(401).build());</span>
-<span class="nc" id="L437">        } catch (Exception e) {</span>
-<span class="nc" id="L438">            return ResponseEntity.badRequest().body(&quot;Error al verificar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L442">                .orElse(ResponseEntity.status(401).build());</span>
+<span class="nc" id="L443">        } catch (Exception e) {</span>
+<span class="nc" id="L444">            return ResponseEntity.badRequest().body(&quot;Error al verificar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -444,38 +450,38 @@ import com.lsnls.service.EditLockService;
     public ResponseEntity&lt;?&gt; aprobarPregunta(@PathVariable Long id) {
         try {
             // Verificar que la pregunta existe
-<span class="nc" id="L447">            Optional&lt;Pregunta&gt; preguntaOpt = preguntaService.obtenerPorId(id);</span>
-<span class="nc bnc" id="L448" title="All 2 branches missed.">            if (preguntaOpt.isEmpty()) {</span>
-<span class="nc" id="L449">                return ResponseEntity.status(404).body(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;);</span>
+<span class="nc" id="L453">            Optional&lt;Pregunta&gt; preguntaOpt = preguntaService.obtenerPorId(id);</span>
+<span class="nc bnc" id="L454" title="All 2 branches missed.">            if (preguntaOpt.isEmpty()) {</span>
+<span class="nc" id="L455">                return ResponseEntity.status(404).body(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;);</span>
             }
 
-<span class="nc" id="L452">            Pregunta preguntaActual = preguntaOpt.get();</span>
+<span class="nc" id="L458">            Pregunta preguntaActual = preguntaOpt.get();</span>
 
             // Verificar permisos específicos
-<span class="nc bnc" id="L455" title="All 2 branches missed.">            if (!authService.canValidate()) {</span>
-<span class="nc" id="L456">                return ResponseEntity.status(403).body(&quot;No tienes permisos para aprobar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden aprobar preguntas.&quot;);</span>
+<span class="nc bnc" id="L461" title="All 2 branches missed.">            if (!authService.canValidate()) {</span>
+<span class="nc" id="L462">                return ResponseEntity.status(403).body(&quot;No tienes permisos para aprobar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden aprobar preguntas.&quot;);</span>
             }
 
             // Verificar estado actual
-<span class="nc bnc" id="L460" title="All 2 branches missed.">            if (preguntaActual.getEstado() != Pregunta.EstadoPregunta.verificada &amp;&amp; </span>
-<span class="nc bnc" id="L461" title="All 2 branches missed.">                preguntaActual.getEstado() != Pregunta.EstadoPregunta.revisar) {</span>
-<span class="nc" id="L462">                return ResponseEntity.badRequest().body(&quot;Solo se pueden aprobar preguntas en estado 'verificada' o 'revisar'. Estado actual: &quot; + </span>
-<span class="nc" id="L463">                    getEstadoDescripcion(preguntaActual.getEstado()));</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">            if (preguntaActual.getEstado() != Pregunta.EstadoPregunta.verificada &amp;&amp; </span>
+<span class="nc bnc" id="L467" title="All 2 branches missed.">                preguntaActual.getEstado() != Pregunta.EstadoPregunta.revisar) {</span>
+<span class="nc" id="L468">                return ResponseEntity.badRequest().body(&quot;Solo se pueden aprobar preguntas en estado 'verificada' o 'revisar'. Estado actual: &quot; + </span>
+<span class="nc" id="L469">                    getEstadoDescripcion(preguntaActual.getEstado()));</span>
             }
 
             // CAMBIO ATÓMICO DE ESTADO para aprobar
-<span class="nc" id="L467">            preguntaService.cambiarEstadoAtomico(id, preguntaActual.getEstado(), Pregunta.EstadoPregunta.aprobada, null);</span>
+<span class="nc" id="L473">            preguntaService.cambiarEstadoAtomico(id, preguntaActual.getEstado(), Pregunta.EstadoPregunta.aprobada, null);</span>
             
             // Obtener la pregunta actualizada
-<span class="nc" id="L470">            Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(preguntaActual);</span>
-<span class="nc" id="L471">            return ResponseEntity.ok(preguntaActualizada);</span>
-<span class="nc" id="L472">        } catch (IllegalStateException e) {</span>
+<span class="nc" id="L476">            Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(preguntaActual);</span>
+<span class="nc" id="L477">            return ResponseEntity.ok(preguntaActualizada);</span>
+<span class="nc" id="L478">        } catch (IllegalStateException e) {</span>
             // Error de concurrencia específico del método atómico
-<span class="nc" id="L474">            return ResponseEntity.status(409).body(&quot;Conflicto de concurrencia: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="nc" id="L475">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L476">            return ResponseEntity.status(409).body(&quot;La pregunta ha sido modificada por otro usuario mientras intentabas aprobarla. Por favor, recarga y verifica su estado actual.&quot;);</span>
-<span class="nc" id="L477">        } catch (Exception e) {</span>
-<span class="nc" id="L478">            return ResponseEntity.badRequest().body(&quot;Error interno al aprobar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L480">            return ResponseEntity.status(409).body(&quot;Conflicto de concurrencia: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L481">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L482">            return ResponseEntity.status(409).body(&quot;La pregunta ha sido modificada por otro usuario mientras intentabas aprobarla. Por favor, recarga y verifica su estado actual.&quot;);</span>
+<span class="nc" id="L483">        } catch (Exception e) {</span>
+<span class="nc" id="L484">            return ResponseEntity.badRequest().body(&quot;Error interno al aprobar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -484,41 +490,41 @@ import com.lsnls.service.EditLockService;
     public ResponseEntity&lt;?&gt; rechazarPregunta(@PathVariable Long id, @RequestParam(required = false) String motivo) {
         try {
             // Verificar que la pregunta existe
-<span class="nc" id="L487">            Optional&lt;Pregunta&gt; preguntaOpt = preguntaService.obtenerPorId(id);</span>
-<span class="nc bnc" id="L488" title="All 2 branches missed.">            if (preguntaOpt.isEmpty()) {</span>
-<span class="nc" id="L489">                return ResponseEntity.status(404).body(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;);</span>
+<span class="nc" id="L493">            Optional&lt;Pregunta&gt; preguntaOpt = preguntaService.obtenerPorId(id);</span>
+<span class="nc bnc" id="L494" title="All 2 branches missed.">            if (preguntaOpt.isEmpty()) {</span>
+<span class="nc" id="L495">                return ResponseEntity.status(404).body(&quot;Pregunta con ID &quot; + id + &quot; no encontrada&quot;);</span>
             }
 
-<span class="nc" id="L492">            Pregunta preguntaActual = preguntaOpt.get();</span>
+<span class="nc" id="L498">            Pregunta preguntaActual = preguntaOpt.get();</span>
 
             // Verificar permisos específicos
-<span class="nc bnc" id="L495" title="All 2 branches missed.">            if (!authService.canValidate()) {</span>
-<span class="nc" id="L496">                return ResponseEntity.status(403).body(&quot;No tienes permisos para rechazar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden rechazar preguntas.&quot;);</span>
+<span class="nc bnc" id="L501" title="All 2 branches missed.">            if (!authService.canValidate()) {</span>
+<span class="nc" id="L502">                return ResponseEntity.status(403).body(&quot;No tienes permisos para rechazar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden rechazar preguntas.&quot;);</span>
             }
 
             // Verificar estado actual
-<span class="nc bnc" id="L500" title="All 2 branches missed.">            if (preguntaActual.getEstado() == Pregunta.EstadoPregunta.aprobada) {</span>
-<span class="nc" id="L501">                return ResponseEntity.badRequest().body(&quot;No se puede rechazar una pregunta ya aprobada&quot;);</span>
+<span class="nc bnc" id="L506" title="All 2 branches missed.">            if (preguntaActual.getEstado() == Pregunta.EstadoPregunta.aprobada) {</span>
+<span class="nc" id="L507">                return ResponseEntity.badRequest().body(&quot;No se puede rechazar una pregunta ya aprobada&quot;);</span>
             }
 
             // Verificar que hay un motivo si es requerido
-<span class="nc bnc" id="L505" title="All 4 branches missed.">            if (motivo == null || motivo.trim().isEmpty()) {</span>
-<span class="nc" id="L506">                return ResponseEntity.badRequest().body(&quot;El motivo del rechazo es obligatorio&quot;);</span>
+<span class="nc bnc" id="L511" title="All 4 branches missed.">            if (motivo == null || motivo.trim().isEmpty()) {</span>
+<span class="nc" id="L512">                return ResponseEntity.badRequest().body(&quot;El motivo del rechazo es obligatorio&quot;);</span>
             }
 
             // RECHAZO ATÓMICO con verificación de concurrencia
-<span class="nc" id="L510">            preguntaService.rechazarAtomico(id, preguntaActual.getEstado(), motivo);</span>
+<span class="nc" id="L516">            preguntaService.rechazarAtomico(id, preguntaActual.getEstado(), motivo);</span>
             
             // Obtener la pregunta actualizada
-<span class="nc" id="L513">            Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(preguntaActual);</span>
-<span class="nc" id="L514">            return ResponseEntity.ok(preguntaActualizada);</span>
-<span class="nc" id="L515">        } catch (IllegalStateException e) {</span>
+<span class="nc" id="L519">            Pregunta preguntaActualizada = preguntaService.obtenerPorId(id).orElse(preguntaActual);</span>
+<span class="nc" id="L520">            return ResponseEntity.ok(preguntaActualizada);</span>
+<span class="nc" id="L521">        } catch (IllegalStateException e) {</span>
             // Error de concurrencia específico del método atómico
-<span class="nc" id="L517">            return ResponseEntity.status(409).body(&quot;Conflicto de concurrencia: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="nc" id="L518">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L519">            return ResponseEntity.status(409).body(&quot;La pregunta ha sido modificada por otro usuario mientras intentabas rechazarla. Por favor, recarga y verifica su estado actual.&quot;);</span>
-<span class="nc" id="L520">        } catch (Exception e) {</span>
-<span class="nc" id="L521">            return ResponseEntity.badRequest().body(&quot;Error interno al rechazar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L523">            return ResponseEntity.status(409).body(&quot;Conflicto de concurrencia: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L524">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="nc" id="L525">            return ResponseEntity.status(409).body(&quot;La pregunta ha sido modificada por otro usuario mientras intentabas rechazarla. Por favor, recarga y verifica su estado actual.&quot;);</span>
+<span class="nc" id="L526">        } catch (Exception e) {</span>
+<span class="nc" id="L527">            return ResponseEntity.badRequest().body(&quot;Error interno al rechazar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -526,26 +532,26 @@ import com.lsnls.service.EditLockService;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; marcarParaRevisar(@PathVariable Long id, @RequestParam(required = false) String notas) {
         try {
-<span class="nc" id="L529">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
-<span class="nc bnc" id="L530" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
-<span class="nc" id="L531">                return ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;);</span>
+<span class="nc" id="L535">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="nc bnc" id="L536" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="nc" id="L537">                return ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;);</span>
             }
-<span class="nc" id="L533">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="nc" id="L539">            Usuario currentUser = currentUserOpt.get();</span>
             
             // Solo niveles 3 y 4 (VERIFICACION y DIRECCION) pueden marcar para revisar
-<span class="nc bnc" id="L536" title="All 2 branches missed.">            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION &amp;&amp; </span>
-<span class="nc bnc" id="L537" title="All 2 branches missed.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &amp;&amp;</span>
-<span class="nc bnc" id="L538" title="All 2 branches missed.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {</span>
-<span class="nc" id="L539">                return ResponseEntity.status(403).body(&quot;No tienes permisos para marcar preguntas para revisar. Solo usuarios con rol VERIFICACION, DIRECCION o ADMIN pueden marcar preguntas para revisar.&quot;);</span>
+<span class="nc bnc" id="L542" title="All 2 branches missed.">            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION &amp;&amp; </span>
+<span class="nc bnc" id="L543" title="All 2 branches missed.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &amp;&amp;</span>
+<span class="nc bnc" id="L544" title="All 2 branches missed.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {</span>
+<span class="nc" id="L545">                return ResponseEntity.status(403).body(&quot;No tienes permisos para marcar preguntas para revisar. Solo usuarios con rol VERIFICACION, DIRECCION o ADMIN pueden marcar preguntas para revisar.&quot;);</span>
             }
             
-<span class="nc" id="L542">            Pregunta pregunta = preguntaService.marcarParaRevisar(id, notas, currentUser);</span>
-<span class="nc bnc" id="L543" title="All 2 branches missed.">            if (pregunta != null) {</span>
-<span class="nc" id="L544">                return ResponseEntity.ok(pregunta);</span>
+<span class="nc" id="L548">            Pregunta pregunta = preguntaService.marcarParaRevisar(id, notas, currentUser);</span>
+<span class="nc bnc" id="L549" title="All 2 branches missed.">            if (pregunta != null) {</span>
+<span class="nc" id="L550">                return ResponseEntity.ok(pregunta);</span>
             }
-<span class="nc" id="L546">            return ResponseEntity.badRequest().body(&quot;Error al marcar pregunta para revisar&quot;);</span>
-<span class="nc" id="L547">        } catch (Exception e) {</span>
-<span class="nc" id="L548">            return ResponseEntity.badRequest().body(&quot;Error al marcar pregunta para revisar: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L552">            return ResponseEntity.badRequest().body(&quot;Error al marcar pregunta para revisar&quot;);</span>
+<span class="nc" id="L553">        } catch (Exception e) {</span>
+<span class="nc" id="L554">            return ResponseEntity.badRequest().body(&quot;Error al marcar pregunta para revisar: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -553,25 +559,25 @@ import com.lsnls.service.EditLockService;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; marcarParaCorregir(@PathVariable Long id, @RequestParam(required = false) String notas) {
         try {
-<span class="nc" id="L556">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
-<span class="nc bnc" id="L557" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
-<span class="nc" id="L558">                return ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;);</span>
+<span class="nc" id="L562">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="nc bnc" id="L563" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="nc" id="L564">                return ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;);</span>
             }
-<span class="nc" id="L560">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="nc" id="L566">            Usuario currentUser = currentUserOpt.get();</span>
             
             // Solo nivel 4 (DIRECCION) puede marcar para corregir
-<span class="nc bnc" id="L563" title="All 2 branches missed.">            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &amp;&amp;</span>
-<span class="nc bnc" id="L564" title="All 2 branches missed.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {</span>
-<span class="nc" id="L565">                return ResponseEntity.status(403).body(&quot;No tienes permisos para marcar preguntas para corregir. Solo usuarios con rol DIRECCION o ADMIN pueden marcar preguntas para corregir.&quot;);</span>
+<span class="nc bnc" id="L569" title="All 2 branches missed.">            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &amp;&amp;</span>
+<span class="nc bnc" id="L570" title="All 2 branches missed.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {</span>
+<span class="nc" id="L571">                return ResponseEntity.status(403).body(&quot;No tienes permisos para marcar preguntas para corregir. Solo usuarios con rol DIRECCION o ADMIN pueden marcar preguntas para corregir.&quot;);</span>
             }
             
-<span class="nc" id="L568">            Pregunta pregunta = preguntaService.marcarParaCorregir(id, notas, currentUser);</span>
-<span class="nc bnc" id="L569" title="All 2 branches missed.">            if (pregunta != null) {</span>
-<span class="nc" id="L570">                return ResponseEntity.ok(pregunta);</span>
+<span class="nc" id="L574">            Pregunta pregunta = preguntaService.marcarParaCorregir(id, notas, currentUser);</span>
+<span class="nc bnc" id="L575" title="All 2 branches missed.">            if (pregunta != null) {</span>
+<span class="nc" id="L576">                return ResponseEntity.ok(pregunta);</span>
             }
-<span class="nc" id="L572">            return ResponseEntity.badRequest().body(&quot;Error al marcar pregunta para corregir&quot;);</span>
-<span class="nc" id="L573">        } catch (Exception e) {</span>
-<span class="nc" id="L574">            return ResponseEntity.badRequest().body(&quot;Error al marcar pregunta para corregir: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L578">            return ResponseEntity.badRequest().body(&quot;Error al marcar pregunta para corregir&quot;);</span>
+<span class="nc" id="L579">        } catch (Exception e) {</span>
+<span class="nc" id="L580">            return ResponseEntity.badRequest().body(&quot;Error al marcar pregunta para corregir: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -579,29 +585,29 @@ import com.lsnls.service.EditLockService;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;?&gt; validarPregunta(@Valid @RequestBody Pregunta pregunta) {
         try {
-<span class="nc" id="L582">            var validationResult = preguntaService.validarPregunta(pregunta);</span>
+<span class="nc" id="L588">            var validationResult = preguntaService.validarPregunta(pregunta);</span>
             
-<span class="nc bnc" id="L584" title="All 2 branches missed.">            if (validationResult.isValid()) {</span>
-<span class="nc" id="L585">                return ResponseEntity.ok().body(Map.of(</span>
-<span class="nc" id="L586">                    &quot;valid&quot;, true,</span>
-<span class="nc" id="L587">                    &quot;message&quot;, &quot;La pregunta cumple con todos los requisitos&quot;,</span>
-<span class="nc" id="L588">                    &quot;transformedData&quot;, Map.of(</span>
-<span class="nc" id="L589">                        &quot;pregunta&quot;, pregunta.getPregunta(),</span>
-<span class="nc" id="L590">                        &quot;respuesta&quot;, pregunta.getRespuesta(),</span>
-<span class="nc" id="L591">                        &quot;tematica&quot;, pregunta.getTematica()</span>
+<span class="nc bnc" id="L590" title="All 2 branches missed.">            if (validationResult.isValid()) {</span>
+<span class="nc" id="L591">                return ResponseEntity.ok().body(Map.of(</span>
+<span class="nc" id="L592">                    &quot;valid&quot;, true,</span>
+                    &quot;message&quot;, &quot;La pregunta cumple con todos los requisitos&quot;,
+<span class="nc" id="L594">                    &quot;transformedData&quot;, Map.of(</span>
+<span class="nc" id="L595">                        &quot;pregunta&quot;, pregunta.getPregunta(),</span>
+<span class="nc" id="L596">                        &quot;respuesta&quot;, pregunta.getRespuesta(),</span>
+<span class="nc" id="L597">                        &quot;tematica&quot;, pregunta.getTematica()</span>
                     )
                 ));
             } else {
-<span class="nc" id="L595">                return ResponseEntity.badRequest().body(Map.of(</span>
-<span class="nc" id="L596">                    &quot;valid&quot;, false,</span>
-<span class="nc" id="L597">                    &quot;errors&quot;, validationResult.getErrors(),</span>
-<span class="nc" id="L598">                    &quot;message&quot;, validationResult.getErrorsAsString()</span>
+<span class="nc" id="L601">                return ResponseEntity.badRequest().body(Map.of(</span>
+<span class="nc" id="L602">                    &quot;valid&quot;, false,</span>
+<span class="nc" id="L603">                    &quot;errors&quot;, validationResult.getErrors(),</span>
+<span class="nc" id="L604">                    &quot;message&quot;, validationResult.getErrorsAsString()</span>
                 ));
             }
-<span class="nc" id="L601">        } catch (Exception e) {</span>
-<span class="nc" id="L602">            return ResponseEntity.badRequest().body(Map.of(</span>
-<span class="nc" id="L603">                &quot;valid&quot;, false,</span>
-<span class="nc" id="L604">                &quot;message&quot;, &quot;Error al validar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage())</span>
+<span class="nc" id="L607">        } catch (Exception e) {</span>
+<span class="nc" id="L608">            return ResponseEntity.badRequest().body(Map.of(</span>
+<span class="nc" id="L609">                &quot;valid&quot;, false,</span>
+<span class="nc" id="L610">                &quot;message&quot;, &quot;Error al validar pregunta: &quot; + MensajesUsuario.sanitizar(e.getMessage())</span>
             ));
         }
     }
@@ -610,28 +616,28 @@ import com.lsnls.service.EditLockService;
     @PreAuthorize(&quot;@authorizationService.canCreatePregunta()&quot;)
     public ResponseEntity&lt;?&gt; transformarTexto(@RequestBody Map&lt;String, String&gt; datos) {
         try {
-<span class="nc" id="L613">            String pregunta = datos.get(&quot;pregunta&quot;);</span>
-<span class="nc" id="L614">            String respuesta = datos.get(&quot;respuesta&quot;);</span>
-<span class="nc" id="L615">            String tematica = datos.get(&quot;tematica&quot;);</span>
+<span class="nc" id="L619">            String pregunta = datos.get(&quot;pregunta&quot;);</span>
+<span class="nc" id="L620">            String respuesta = datos.get(&quot;respuesta&quot;);</span>
+<span class="nc" id="L621">            String tematica = datos.get(&quot;tematica&quot;);</span>
 
-<span class="nc" id="L617">            Map&lt;String, String&gt; transformados = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L623">            Map&lt;String, String&gt; transformados = new HashMap&lt;&gt;();</span>
             
-<span class="nc bnc" id="L619" title="All 2 branches missed.">            if (pregunta != null) {</span>
-<span class="nc" id="L620">                transformados.put(&quot;pregunta&quot;, dataTransformationService.normalizarPregunta(pregunta));</span>
+<span class="nc bnc" id="L625" title="All 2 branches missed.">            if (pregunta != null) {</span>
+<span class="nc" id="L626">                transformados.put(&quot;pregunta&quot;, dataTransformationService.normalizarPregunta(pregunta));</span>
             }
-<span class="nc bnc" id="L622" title="All 2 branches missed.">            if (respuesta != null) {</span>
-<span class="nc" id="L623">                transformados.put(&quot;respuesta&quot;, dataTransformationService.normalizarRespuesta(respuesta));</span>
+<span class="nc bnc" id="L628" title="All 2 branches missed.">            if (respuesta != null) {</span>
+<span class="nc" id="L629">                transformados.put(&quot;respuesta&quot;, dataTransformationService.normalizarRespuesta(respuesta));</span>
             }
-<span class="nc bnc" id="L625" title="All 2 branches missed.">            if (tematica != null) {</span>
-<span class="nc" id="L626">                transformados.put(&quot;tematica&quot;, dataTransformationService.normalizarTematica(tematica));</span>
+<span class="nc bnc" id="L631" title="All 2 branches missed.">            if (tematica != null) {</span>
+<span class="nc" id="L632">                transformados.put(&quot;tematica&quot;, dataTransformationService.normalizarTematica(tematica));</span>
             }
 
-<span class="nc" id="L629">            return ResponseEntity.ok(Map.of(</span>
-<span class="nc" id="L630">                &quot;transformados&quot;, transformados,</span>
-<span class="nc" id="L631">                &quot;message&quot;, &quot;Textos transformados correctamente&quot;</span>
+<span class="nc" id="L635">            return ResponseEntity.ok(Map.of(</span>
+                &quot;transformados&quot;, transformados,
+                &quot;message&quot;, &quot;Textos transformados correctamente&quot;
             ));
-<span class="nc" id="L633">        } catch (Exception e) {</span>
-<span class="nc" id="L634">            return ResponseEntity.badRequest().body(&quot;Error al transformar textos: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L639">        } catch (Exception e) {</span>
+<span class="nc" id="L640">            return ResponseEntity.badRequest().body(&quot;Error al transformar textos: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -648,27 +654,27 @@ import com.lsnls.service.EditLockService;
             @RequestParam(defaultValue = &quot;20&quot;) int size
     ) {
         try {
-<span class="nc" id="L651">            Pageable pageable = PageRequest.of(page, size);</span>
-<span class="nc" id="L652">            Page&lt;Pregunta&gt; preguntas = preguntaService.buscarPreguntasPaginadas(nivel, factor, id, pregunta, respuesta, tematica, pageable);</span>
+<span class="nc" id="L657">            Pageable pageable = PageRequest.of(page, size);</span>
+<span class="nc" id="L658">            Page&lt;Pregunta&gt; preguntas = preguntaService.buscarPreguntasPaginadas(nivel, factor, id, pregunta, respuesta, tematica, pageable);</span>
             
             // Log para debug de preguntas problemáticas
-<span class="nc bnc" id="L655" title="All 2 branches missed.">            if (preguntas.getContent().size() &gt; 0) {</span>
-<span class="nc" id="L656">                log.info(&quot;[BUSCAR] Encontradas {} preguntas&quot;, preguntas.getContent().size());</span>
+<span class="nc bnc" id="L661" title="All 2 branches missed.">            if (preguntas.getContent().size() &gt; 0) {</span>
+<span class="nc" id="L662">                log.info(&quot;[BUSCAR] Encontradas {} preguntas&quot;, preguntas.getContent().size());</span>
                 // Log de las primeras 3 preguntas para verificar codificación
-<span class="nc bnc" id="L658" title="All 2 branches missed.">                for (int i = 0; i &lt; Math.min(3, preguntas.getContent().size()); i++) {</span>
-<span class="nc" id="L659">                    Pregunta p = preguntas.getContent().get(i);</span>
-<span class="nc" id="L660">                    log.info(&quot;[BUSCAR] Pregunta {} - ID: {}, Pregunta: '{}', Respuesta: '{}'&quot;, </span>
-<span class="nc" id="L661">                        i+1, p.getId(), p.getPregunta(), p.getRespuesta());</span>
+<span class="nc bnc" id="L664" title="All 2 branches missed.">                for (int i = 0; i &lt; Math.min(3, preguntas.getContent().size()); i++) {</span>
+<span class="nc" id="L665">                    Pregunta p = preguntas.getContent().get(i);</span>
+<span class="nc" id="L666">                    log.info(&quot;[BUSCAR] Pregunta {} - ID: {}, Pregunta: '{}', Respuesta: '{}'&quot;, </span>
+<span class="nc" id="L667">                        i+1, p.getId(), p.getPregunta(), p.getRespuesta());</span>
                 }
             }
             
             // Convertir a DTOs
-<span class="nc" id="L666">            Page&lt;PreguntaDTO&gt; preguntasDTO = preguntas.map(p -&gt; preguntaService.mapPreguntaToDTO(p));</span>
+<span class="nc" id="L672">            Page&lt;PreguntaDTO&gt; preguntasDTO = preguntas.map(p -&gt; preguntaService.mapPreguntaToDTO(p));</span>
             
-<span class="nc" id="L668">            return ResponseEntity.ok(preguntasDTO);</span>
-<span class="nc" id="L669">        } catch (Exception e) {</span>
-<span class="nc" id="L670">            log.error(&quot;Error al buscar preguntas: {}&quot;, e.getMessage(), e);</span>
-<span class="nc" id="L671">            return ResponseEntity.badRequest().build();</span>
+<span class="nc" id="L674">            return ResponseEntity.ok(preguntasDTO);</span>
+<span class="nc" id="L675">        } catch (Exception e) {</span>
+<span class="nc" id="L676">            log.error(&quot;Error al buscar preguntas: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L677">            return ResponseEntity.badRequest().build();</span>
         }
     }
 
@@ -690,36 +696,36 @@ import com.lsnls.service.EditLockService;
             @RequestParam(defaultValue = &quot;desc&quot;) String sortDir
     ) {
         try {
-<span class="nc" id="L693">            log.info(&quot;[FILTRAR] Parámetros recibidos - page: {}, size: {}, sortBy: {}, sortDir: {}, estado: {}, tematica: {}, autoria: {}, nivel: {}, texto: {}&quot;, </span>
-<span class="nc" id="L694">                page, size, sortBy, sortDir, estado, tematica, autoria, nivel, texto);</span>
+<span class="nc" id="L699">            log.info(&quot;[FILTRAR] Parámetros recibidos - page: {}, size: {}, sortBy: {}, sortDir: {}, estado: {}, tematica: {}, autoria: {}, nivel: {}, texto: {}&quot;, </span>
+<span class="nc" id="L700">                page, size, sortBy, sortDir, estado, tematica, autoria, nivel, texto);</span>
             
-<span class="nc" id="L696">            Pageable pageable = PageRequest.of(page, size, </span>
-<span class="nc bnc" id="L697" title="All 2 branches missed.">                sortDir.equalsIgnoreCase(&quot;desc&quot;) ? </span>
-<span class="nc" id="L698">                org.springframework.data.domain.Sort.by(sortBy).descending() :</span>
-<span class="nc" id="L699">                org.springframework.data.domain.Sort.by(sortBy).ascending());</span>
+<span class="nc" id="L702">            Pageable pageable = PageRequest.of(page, size, </span>
+<span class="nc bnc" id="L703" title="All 2 branches missed.">                sortDir.equalsIgnoreCase(&quot;desc&quot;) ? </span>
+<span class="nc" id="L704">                org.springframework.data.domain.Sort.by(sortBy).descending() :</span>
+<span class="nc" id="L705">                org.springframework.data.domain.Sort.by(sortBy).ascending());</span>
             
-<span class="nc" id="L701">            log.info(&quot;[FILTRAR] Pageable creado - sort: {}&quot;, pageable.getSort());</span>
+<span class="nc" id="L707">            log.info(&quot;[FILTRAR] Pageable creado - sort: {}&quot;, pageable.getSort());</span>
             // Nuevo: si llega 'texto', buscarlo tanto en pregunta como en respuesta
-<span class="nc" id="L703">            String preguntaFiltro = pregunta;</span>
-<span class="nc" id="L704">            String respuestaFiltro = respuesta;</span>
-<span class="nc bnc" id="L705" title="All 4 branches missed.">            if (texto != null &amp;&amp; !texto.isBlank()) {</span>
+<span class="nc" id="L709">            String preguntaFiltro = pregunta;</span>
+<span class="nc" id="L710">            String respuestaFiltro = respuesta;</span>
+<span class="nc bnc" id="L711" title="All 4 branches missed.">            if (texto != null &amp;&amp; !texto.isBlank()) {</span>
                 // Cuando se usa 'texto', NO filtrar por pregunta y respuesta individualmente,
                 // delegamos al parámetro 'texto' que aplica OR (pregunta O respuesta)
-<span class="nc" id="L708">                preguntaFiltro = null;</span>
-<span class="nc" id="L709">                respuestaFiltro = null;</span>
+<span class="nc" id="L714">                preguntaFiltro = null;</span>
+<span class="nc" id="L715">                respuestaFiltro = null;</span>
             }
 
             // Soporte de multi-estado via CSV en 'estado' (ej: 'aprobada,verificada')
-<span class="nc" id="L713">            Page&lt;PreguntaDTO&gt; preguntas = preguntaService.filtrarPreguntasCompletoPaginado(</span>
-<span class="nc" id="L714">                nivel, factor, estado, tematica, subtema, preguntaFiltro, respuestaFiltro, autoria, texto, pageable);</span>
+<span class="nc" id="L719">            Page&lt;PreguntaDTO&gt; preguntas = preguntaService.filtrarPreguntasCompletoPaginado(</span>
+                nivel, factor, estado, tematica, subtema, preguntaFiltro, respuestaFiltro, autoria, texto, pageable);
             
-<span class="nc" id="L716">            log.info(&quot;[FILTRAR] Preguntas encontradas - total: {}, página: {}&quot;, </span>
-<span class="nc" id="L717">                preguntas.getTotalElements(), preguntas.getNumber());</span>
+<span class="nc" id="L722">            log.info(&quot;[FILTRAR] Preguntas encontradas - total: {}, página: {}&quot;, </span>
+<span class="nc" id="L723">                preguntas.getTotalElements(), preguntas.getNumber());</span>
             
-<span class="nc" id="L719">            return ResponseEntity.ok(preguntas);</span>
-<span class="nc" id="L720">        } catch (Exception e) {</span>
-<span class="nc" id="L721">            log.error(&quot;Error al filtrar preguntas: {}&quot;, e.getMessage(), e);</span>
-<span class="nc" id="L722">            return ResponseEntity.internalServerError().build();</span>
+<span class="nc" id="L725">            return ResponseEntity.ok(preguntas);</span>
+<span class="nc" id="L726">        } catch (Exception e) {</span>
+<span class="nc" id="L727">            log.error(&quot;Error al filtrar preguntas: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L728">            return ResponseEntity.internalServerError().build();</span>
         }
     }
 
@@ -727,26 +733,26 @@ import com.lsnls.service.EditLockService;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;?&gt; buscarApariciones(@RequestParam String texto) {
         try {
-<span class="nc bnc" id="L730" title="All 4 branches missed.">            if (texto == null || texto.trim().isEmpty()) {</span>
-<span class="nc" id="L731">                return ResponseEntity.badRequest().body(&quot;El texto de búsqueda no puede estar vacío&quot;);</span>
+<span class="nc bnc" id="L736" title="All 4 branches missed.">            if (texto == null || texto.trim().isEmpty()) {</span>
+<span class="nc" id="L737">                return ResponseEntity.badRequest().body(&quot;El texto de búsqueda no puede estar vacío&quot;);</span>
             }
             
-<span class="nc" id="L734">            log.info(&quot;Buscando apariciones del texto: '{}'&quot;, texto);</span>
+<span class="nc" id="L740">            log.info(&quot;Buscando apariciones del texto: '{}'&quot;, texto);</span>
             
             // Buscar apariciones en preguntas y respuestas
-<span class="nc" id="L737">            List&lt;PreguntaDTO&gt; apariciones = preguntaService.buscarApariciones(texto);</span>
+<span class="nc" id="L743">            List&lt;PreguntaDTO&gt; apariciones = preguntaService.buscarApariciones(texto);</span>
             
             // Crear respuesta con estadísticas
-<span class="nc" id="L740">            Map&lt;String, Object&gt; resultado = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L741">            resultado.put(&quot;totalApariciones&quot;, apariciones.size());</span>
-<span class="nc" id="L742">            resultado.put(&quot;apariciones&quot;, apariciones);</span>
+<span class="nc" id="L746">            Map&lt;String, Object&gt; resultado = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L747">            resultado.put(&quot;totalApariciones&quot;, apariciones.size());</span>
+<span class="nc" id="L748">            resultado.put(&quot;apariciones&quot;, apariciones);</span>
             
-<span class="nc" id="L744">            log.info(&quot;Se encontraron {} apariciones para el texto '{}'&quot;, apariciones.size(), texto);</span>
+<span class="nc" id="L750">            log.info(&quot;Se encontraron {} apariciones para el texto '{}'&quot;, apariciones.size(), texto);</span>
             
-<span class="nc" id="L746">            return ResponseEntity.ok(resultado);</span>
-<span class="nc" id="L747">        } catch (Exception e) {</span>
-<span class="nc" id="L748">            log.error(&quot;Error al buscar apariciones: {}&quot;, e.getMessage(), e);</span>
-<span class="nc" id="L749">            return ResponseEntity.internalServerError().body(&quot;Error al buscar apariciones: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="nc" id="L752">            return ResponseEntity.ok(resultado);</span>
+<span class="nc" id="L753">        } catch (Exception e) {</span>
+<span class="nc" id="L754">            log.error(&quot;Error al buscar apariciones: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L755">            return ResponseEntity.internalServerError().body(&quot;Error al buscar apariciones: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -757,11 +763,11 @@ import com.lsnls.service.EditLockService;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;List&lt;String&gt;&gt; obtenerTematicasPreguntas() {
         try {
-<span class="nc" id="L760">            List&lt;String&gt; tematicas = preguntaRepository.findDistinctTematicas();</span>
-<span class="nc" id="L761">            return ResponseEntity.ok(tematicas);</span>
-<span class="nc" id="L762">        } catch (Exception e) {</span>
-<span class="nc" id="L763">            log.error(&quot;Error al obtener temáticas de preguntas: {}&quot;, e.getMessage(), e);</span>
-<span class="nc" id="L764">            return ResponseEntity.internalServerError().build();</span>
+<span class="nc" id="L766">            List&lt;String&gt; tematicas = preguntaRepository.findDistinctTematicas();</span>
+<span class="nc" id="L767">            return ResponseEntity.ok(tematicas);</span>
+<span class="nc" id="L768">        } catch (Exception e) {</span>
+<span class="nc" id="L769">            log.error(&quot;Error al obtener temáticas de preguntas: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L770">            return ResponseEntity.internalServerError().build();</span>
         }
     }
 

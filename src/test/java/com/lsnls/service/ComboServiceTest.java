@@ -26,6 +26,7 @@ import javax.persistence.TypedQuery;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -349,6 +350,28 @@ class ComboServiceTest {
         c.setPreguntas(new HashSet<>(Collections.singletonList(pc)));
         when(comboRepository.findById(1L)).thenReturn(Optional.of(c));
         assertEquals(1, comboService.contarPreguntasCombo(1L));
+    }
+
+    @Test
+    void obtenerComboConSlots_omitePreguntaNula() {
+        Combo c = comboBase();
+        PreguntaCombo huerfana = new PreguntaCombo();
+        huerfana.setPosicion(1);
+        PreguntaCombo valida = new PreguntaCombo();
+        valida.setPosicion(2);
+        valida.setFactorMultiplicacion("X3");
+        valida.setPregunta(preguntaNivel5(7L));
+        c.setPreguntas(new HashSet<>(List.of(huerfana, valida)));
+        when(typedQuery.getResultList()).thenReturn(Collections.singletonList(c));
+
+        Map<String, Object> dto = comboService.obtenerComboConSlots(1L);
+
+        assertNotNull(dto);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> preguntas = (List<Map<String, Object>>) dto.get("preguntas");
+        assertEquals(3, preguntas.size());
+        long ocupadas = preguntas.stream().filter(p -> p.get("pregunta") != null).count();
+        assertEquals(1, ocupadas);
     }
 
     @Test

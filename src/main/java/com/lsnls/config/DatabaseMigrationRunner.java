@@ -111,6 +111,9 @@ public class DatabaseMigrationRunner {
             migrarSlotJornada(schemaName, "jornadas_cuestionarios", "cuestionario_id");
             migrarSlotJornada(schemaName, "jornadas_combos", "combo_id");
 
+            // 7) Slot PM1/PM2/PM3 de cada pregunta en el combo
+            migrarPosicionCombo(schemaName);
+
         } catch (Exception e) {
             log.error("[DB MIGRATION] Error ejecutando migraciones: {}", e.getMessage(), e);
         }
@@ -127,6 +130,28 @@ public class DatabaseMigrationRunner {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    private void migrarPosicionCombo(String schemaName) {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'combos_preguntas' AND COLUMN_NAME = 'posicion'",
+                    Integer.class, schemaName);
+            if (count != null && count == 0) {
+                log.info("[DB MIGRATION] Añadiendo columna combos_preguntas.posicion ...");
+                jdbcTemplate.execute("ALTER TABLE combos_preguntas ADD COLUMN posicion INT NULL");
+            }
+            jdbcTemplate.execute(
+                    "UPDATE combos_preguntas SET posicion = 1 "
+                            + "WHERE posicion IS NULL AND UPPER(TRIM(IFNULL(factor_multiplicacion,''))) IN ('2','X2')");
+            jdbcTemplate.execute(
+                    "UPDATE combos_preguntas SET posicion = 2 "
+                            + "WHERE posicion IS NULL AND UPPER(TRIM(IFNULL(factor_multiplicacion,''))) IN ('3','X3')");
+            jdbcTemplate.execute(
+                    "UPDATE combos_preguntas SET posicion = 3 WHERE posicion IS NULL");
+        } catch (Exception e) {
+            log.warn("[DB MIGRATION] No se pudo migrar combos_preguntas.posicion: {}", e.getMessage());
+        }
     }
 
     private void migrarSlotJornada(String schemaName, String tabla, String columnaId) {

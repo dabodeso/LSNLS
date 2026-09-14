@@ -12,7 +12,7 @@
 <!-- Toastify CSS -->
 <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
 <!-- Custom CSS -->
-<link href="css/styles.css?v=20260821-1" rel="stylesheet">
+<link href="css/styles.css?v=20260914-resize" rel="stylesheet">
     <link href="css/pagination.css" rel="stylesheet">
 <style>
 /* Ancho y diseño general de la tabla (como en preguntas) */
@@ -514,11 +514,14 @@ line-height: 1.2;
 </h6>
 <div class="row mb-3">
 <div class="col-md-6">
-<label class="form-label">Cuestionario (Niveles 1-4):</label>
+<label class="form-label">Cuestionario:</label>
 <div class="input-group">
 <input type="text" class="form-control" id="cuestionario-id" readonly placeholder="Seleccionar cuestionario">
 <button type="button" class="btn btn-outline-primary" id="btn-buscar-cuestionario" onclick="abrirSelectorCuestionario()">
 <i class="fas fa-search"></i>
+</button>
+<button type="button" class="btn btn-outline-secondary" id="btn-otras-jornadas-cuestionario-form" onclick="abrirSelectorCuestionarioOtras()" title="Buscar cuestionarios de otras jornadas">
+Otras jornadas
 </button>
 <button type="button" class="btn btn-outline-danger" onclick="limpiarSelectorCuestionario()">
 <i class="fas fa-times"></i>
@@ -531,6 +534,9 @@ line-height: 1.2;
 <input type="text" class="form-control" id="combo-id" readonly placeholder="Seleccionar combo">
 <button type="button" class="btn btn-outline-primary" id="btn-buscar-combo" onclick="abrirSelectorCombo()">
 <i class="fas fa-search"></i>
+</button>
+<button type="button" class="btn btn-outline-secondary" id="btn-otras-jornadas-combo-form" onclick="abrirSelectorComboOtras()" title="Buscar combos de otras jornadas">
+Otras jornadas
 </button>
 <button type="button" class="btn btn-outline-warning" id="btn-reciclar-combo" onclick="iniciarReciclajeComboDesdeFormulario()" title="Reciclar combo (seleccionar pregunta usada)" style="display: none;">
 <i class="fas fa-recycle"></i>
@@ -679,22 +685,18 @@ line-height: 1.2;
 <div class="modal-dialog modal-xl">
 <div class="modal-content">
 <div class="modal-header">
-<h5 class="modal-title">Seleccionar Cuestionario (Niveles 1-4)</h5>
+<h5 class="modal-title" id="titulo-selector-cuestionario">Seleccionar Cuestionario</h5>
 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
 <div class="modal-body">
-<div class="row mb-3">
-<div class="col-md-6">
-<input type="text" id="buscador-cuestionario" class="form-control" placeholder="Buscar por ID, nivel o texto de preguntas..." onkeyup="buscarCuestionariosModal()">
+<div class="row mb-3 g-2">
+<div class="col-md-8">
+<input type="text" id="buscador-cuestionario" class="form-control" placeholder="Buscar por ID o texto de preguntas..." onkeyup="buscarCuestionariosModal()">
 </div>
-<div class="col-md-6">
-<select id="filtro-nivel-cuestionario" class="form-control" onchange="buscarCuestionariosModal()">
-<option value="">Todos los niveles</option>
-<option value="_1LS">1LS</option>
-<option value="_2NLS">2NLS</option>
-<option value="_3LS">3LS</option>
-<option value="_4NLS">4NLS</option>
-</select>
+<div class="col-md-4">
+<button type="button" class="btn btn-outline-secondary w-100" id="btn-otras-jornadas-cuestionario" onclick="toggleSelectorOtrasJornadas('cuestionario')">
+Otras jornadas
+</button>
 </div>
 </div>
 <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
@@ -702,10 +704,11 @@ line-height: 1.2;
 <thead class="table-dark sticky-top">
 <tr>
 <th>ID</th>
-<th>Nivel</th>
+<th>Temática</th>
 <th>Estado</th>
 <th>Fecha</th>
 <th>Preguntas</th>
+<th id="th-jornada-cuestionario" style="display:none">Jornada origen</th>
 <th>Acción</th>
 </tr>
 </thead>
@@ -728,13 +731,18 @@ line-height: 1.2;
 <div class="modal-dialog modal-xl">
 <div class="modal-content">
 <div class="modal-header">
-<h5 class="modal-title">Seleccionar Combo (Preguntas Multiplicadoras)</h5>
+<h5 class="modal-title" id="titulo-selector-combo">Seleccionar Combo (Preguntas Multiplicadoras)</h5>
 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 </div>
 <div class="modal-body">
-<div class="row mb-3">
-<div class="col-md-12">
-<input type="text" id="buscador-combo" class="form-control" placeholder="Buscar por ID o texto de preguntas multiplicadoras..." onkeyup="buscarCombosModal()">
+<div class="row mb-3 g-2">
+<div class="col-md-8">
+<input type="text" id="buscador-combo" class="form-control" placeholder="Buscar por ID o texto de preguntas..." onkeyup="buscarCombosModal()">
+</div>
+<div class="col-md-4">
+<button type="button" class="btn btn-outline-secondary w-100" id="btn-otras-jornadas-combo" onclick="toggleSelectorOtrasJornadas('combo')">
+Otras jornadas
+</button>
 </div>
 </div>
 <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
@@ -742,9 +750,11 @@ line-height: 1.2;
 <thead class="table-dark sticky-top">
 <tr>
 <th>ID</th>
+<th>Temática</th>
 <th>Estado</th>
 <th>Fecha</th>
 <th>Preguntas Multiplicadoras</th>
+<th id="th-jornada-combo" style="display:none">Jornada origen</th>
 <th>Acción</th>
 </tr>
 </thead>
@@ -1008,11 +1018,11 @@ Borrar
 <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 <!-- Custom JS -->
 <script src="js/auth.js"></script>
-<script src="js/utils.js?v=20260821-3"></script>
+<script src="js/utils.js?v=20260907-1"></script>
 <script src="js/api.js?v=20260821-3"></script>
     <script src="js/undo-manager.js?v=20260626-3"></script>
-<script src="js/table-resizer.js?v=20260128-2"></script>
-    <script src="js/concursantes.js?v=20260824-slots"></script>
+<script src="js/table-resizer.js?v=20260914-resize"></script>
+    <script src="js/concursantes.js?v=20260914-arrastre"></script>
 <script>
 // Inicializar la página cuando se carga
 document.addEventListener('DOMContentLoaded', function() {

@@ -373,7 +373,7 @@ class Utils {
             const envuelto = function (opts) {
                 if (opts && opts.text != null) {
                     let text = Utils.quitarEmojis(opts.text);
-                    if (Utils.esMensajeTecnico(text) || Utils.esMensajeHttpGenerico(text) || /^\s*error\b/i.test(text)) {
+                    if (Utils.esMensajeTecnico(text) || Utils.esMensajeHttpGenerico(text)) {
                         text = Utils.prepararTextoUsuario(text);
                     }
                     opts = Object.assign({}, opts, { text });
@@ -427,12 +427,18 @@ class Utils {
         const trimmed = String(text).trim();
         try {
             const json = JSON.parse(trimmed);
-            const candidatos = [json.message, json.mensaje, json.detail, json.error, json.title];
-            for (const candidato of candidatos) {
-                if (typeof candidato === 'string' && candidato.trim()
-                    && !Utils.esMensajeHttpGenerico(candidato)
-                    && !Utils.esMensajeTecnico(candidato)) {
-                    return candidato.trim();
+            if (typeof json === 'string') {
+                return Utils.extraerDetalleErrorCuerpo(json);
+            }
+            if (json && typeof json === 'object') {
+                const candidatos = [json.message, json.mensaje, json.detail, json.error, json.title];
+                for (const candidato of candidatos) {
+                    if (typeof candidato !== 'string' || !candidato.trim()) continue;
+                    const extraido = Utils.extraerDetalleErrorCuerpo(candidato);
+                    if (extraido) return extraido;
+                    if (!Utils.esMensajeHttpGenerico(candidato) && !Utils.esMensajeTecnico(candidato)) {
+                        return candidato.trim();
+                    }
                 }
             }
         } catch {

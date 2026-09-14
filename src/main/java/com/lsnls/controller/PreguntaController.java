@@ -259,7 +259,10 @@ public class PreguntaController {
                     if (!authService.canChangeEstadoPregunta(pregunta.getEstado(), nuevoEstado)) {
                         log.warn("[ACTUALIZAR] Permiso denegado para cambiar estado a: {}", nuevoEstado);
                         String estadoDescripcion = getEstadoDescripcion(nuevoEstado);
-                        return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado a '" + estadoDescripcion + "'. Tu rol actual no permite esta transición de estado.");
+                        String mensaje = nuevoEstado == Pregunta.EstadoPregunta.para_verificar
+                            ? "No puedes devolver esta pregunta a Para verificar con tu rol"
+                            : "No tienes permisos para cambiar el estado a '" + estadoDescripcion + "'. Tu rol actual no permite esta transición de estado.";
+                        return ResponseEntity.status(403).body(mensaje);
                     }
                 } catch (IllegalArgumentException e) {
                     log.error("[ACTUALIZAR] Estado inválido: {}", dto.getEstado());
@@ -320,7 +323,10 @@ public class PreguntaController {
                 String estadoDescripcion = getEstadoDescripcion(nuevoEstado);
                 log.warn("[CAMBIO ESTADO] Permiso denegado para cambiar estado a: {} - Usuario: {}", 
                         estadoDescripcion, authService.getCurrentUser().map(u -> u.getNombre()).orElse("desconocido"));
-                return ResponseEntity.status(403).body("No tienes permisos para cambiar el estado a '" + estadoDescripcion + "'. Tu rol actual no permite esta transición de estado.");
+                String mensaje = nuevoEstado == Pregunta.EstadoPregunta.para_verificar
+                    ? "No puedes devolver esta pregunta a Para verificar con tu rol"
+                    : "No tienes permisos para cambiar el estado a '" + estadoDescripcion + "'. Tu rol actual no permite esta transición de estado.";
+                return ResponseEntity.status(403).body(mensaje);
             }
 
             editLockService.assertCanEdit(AuditLog.EntityType.PREGUNTA, id);

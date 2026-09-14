@@ -6,3 +6,8 @@
 
 # Copia en salida de compilación (Maven copia resources aquí)
 target/classes/static/uploads/
+
+# Empaquetado de Maven: son cientos de MB y GitHub rechaza los que pasan de 100
+target/*.jar
+target/*.jar.original
+target/*.war

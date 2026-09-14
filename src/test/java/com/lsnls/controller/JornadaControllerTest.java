@@ -147,23 +147,38 @@ class JornadaControllerTest {
     @Test
     void crear_demasiadosCuestionarios_devuelve400() {
         JornadaDTO dto = jornada(null, "J1");
-        dto.setCuestionarioIds(Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L));
+        dto.setCuestionarioIds(Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L));
 
         ResponseEntity<ApiResponse<JornadaDTO>> response = jornadaController.crear(dto);
 
         assertEquals(400, response.getStatusCodeValue());
-        assertTrue(response.getBody().getMensaje().contains("máximo 5 cuestionarios"));
+        assertTrue(response.getBody().getMensaje().contains("máximo 6 cuestionarios"));
     }
 
     @Test
     void crear_demasiadosCombos_devuelve400() {
         JornadaDTO dto = jornada(null, "J1");
-        dto.setComboIds(Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L));
+        dto.setComboIds(Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L));
 
         ResponseEntity<ApiResponse<JornadaDTO>> response = jornadaController.crear(dto);
 
         assertEquals(400, response.getStatusCodeValue());
-        assertTrue(response.getBody().getMensaje().contains("máximo 5 combos"));
+        assertTrue(response.getBody().getMensaje().contains("máximo 6 combos"));
+    }
+
+    @Test
+    void crear_huecosVaciosNoCuentanComoSeleccion() {
+        JornadaDTO dto = jornada(null, "J1");
+        dto.setCuestionarioIds(Arrays.asList(1L, null, null, null, null, null));
+        dto.setComboIds(Arrays.asList(null, null, null, null, null, null));
+        when(authService.getCurrentUser()).thenReturn(Optional.of(usuario(1L)));
+        when(jornadaService.crear(dto, 1L)).thenReturn(jornada(10L, "J1"));
+
+        ResponseEntity<ApiResponse<JornadaDTO>> response = jornadaController.crear(dto);
+
+        assertEquals(200, response.getStatusCodeValue());
+        assertTrue(response.getBody().getMensaje().contains("1 cuestionarios"));
+        assertFalse(response.getBody().getMensaje().contains("combos"));
     }
 
     @Test
@@ -347,10 +362,10 @@ class JornadaControllerTest {
 
     @Test
     void exportarExcel_ok_devuelve200ConNombre() {
-        when(jornadaService.exportarExcel(eq(1L), any())).thenReturn(new byte[] {1, 2, 3});
+        when(jornadaService.exportarExcel(1L)).thenReturn(new byte[] {1, 2, 3});
         when(jornadaService.obtenerPorId(1L)).thenReturn(Optional.of(jornada(1L, "Jornada 1")));
 
-        ResponseEntity<byte[]> response = jornadaController.exportarExcel(1L, "ID", "true", "true", "true");
+        ResponseEntity<byte[]> response = jornadaController.exportarExcel(1L);
 
         assertEquals(200, response.getStatusCodeValue());
         assertNotNull(response.getBody());
@@ -362,20 +377,20 @@ class JornadaControllerTest {
     void exportarExcel_jornadaSinFecha_devuelve200() {
         JornadaDTO dto = jornada(1L, "J1");
         dto.setFechaJornada(null);
-        when(jornadaService.exportarExcel(eq(1L), any())).thenReturn(new byte[] {1});
+        when(jornadaService.exportarExcel(1L)).thenReturn(new byte[] {1});
         when(jornadaService.obtenerPorId(1L)).thenReturn(Optional.of(dto));
 
-        ResponseEntity<byte[]> response = jornadaController.exportarExcel(1L, null, null, null, null);
+        ResponseEntity<byte[]> response = jornadaController.exportarExcel(1L);
 
         assertEquals(200, response.getStatusCodeValue());
     }
 
     @Test
     void exportarExcel_jornadaNoEncontrada_usaNombrePorDefecto() {
-        when(jornadaService.exportarExcel(eq(1L), any())).thenReturn(new byte[] {1});
+        when(jornadaService.exportarExcel(1L)).thenReturn(new byte[] {1});
         when(jornadaService.obtenerPorId(1L)).thenReturn(Optional.empty());
 
-        ResponseEntity<byte[]> response = jornadaController.exportarExcel(1L, "", "false", "false", "false");
+        ResponseEntity<byte[]> response = jornadaController.exportarExcel(1L);
 
         assertEquals(200, response.getStatusCodeValue());
         assertTrue(response.getHeaders().getContentDisposition().toString().contains("jornada_1"));
@@ -383,9 +398,9 @@ class JornadaControllerTest {
 
     @Test
     void exportarExcel_illegalArgument_devuelve404() {
-        when(jornadaService.exportarExcel(eq(9L), any())).thenThrow(new IllegalArgumentException("no"));
+        when(jornadaService.exportarExcel(9L)).thenThrow(new IllegalArgumentException("no"));
 
-        ResponseEntity<byte[]> response = jornadaController.exportarExcel(9L, null, null, null, null);
+        ResponseEntity<byte[]> response = jornadaController.exportarExcel(9L);
 
         assertEquals(404, response.getStatusCodeValue());
         assertNull(response.getBody());
@@ -393,9 +408,9 @@ class JornadaControllerTest {
 
     @Test
     void exportarExcel_excepcion_devuelve500() {
-        when(jornadaService.exportarExcel(eq(1L), any())).thenThrow(new RuntimeException("fail"));
+        when(jornadaService.exportarExcel(1L)).thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<byte[]> response = jornadaController.exportarExcel(1L, null, null, null, null);
+        ResponseEntity<byte[]> response = jornadaController.exportarExcel(1L);
 
         assertEquals(500, response.getStatusCodeValue());
     }

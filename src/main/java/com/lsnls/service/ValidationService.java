@@ -164,7 +164,7 @@ public class ValidationService {
         if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
             // Verificar que realmente esté asignado a una jornada
             Long jornadasCount = entityManager.createQuery(
-                "SELECT COUNT(j) FROM Jornada j JOIN j.cuestionarios c WHERE c.id = :cuestionarioId", Long.class)
+                "SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :cuestionarioId", Long.class)
                 .setParameter("cuestionarioId", cuestionario.getId())
                 .getSingleResult();
             
@@ -405,7 +405,7 @@ public class ValidationService {
             // Validar estados inconsistentes
             Long cuestionariosInconsistentes = entityManager.createQuery(
                 "SELECT COUNT(c) FROM Cuestionario c WHERE c.estado = 'adjudicado' AND " +
-                "c.id NOT IN (SELECT cu.id FROM Jornada j JOIN j.cuestionarios cu)", Long.class)
+                "c.id NOT IN (SELECT a.cuestionario.id FROM JornadaCuestionarioAsignacion a)", Long.class)
                 .getSingleResult();
             if (cuestionariosInconsistentes > 0) {
                 result.addError("Existen " + cuestionariosInconsistentes + " cuestionarios marcados como 'adjudicado' pero no asignados a ninguna jornada");

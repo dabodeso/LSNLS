@@ -21,18 +21,24 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long>,
     List<Concursante> findByNumeroProgramaIsNull();
     Page<Concursante> findByNumeroProgramaIsNull(Pageable pageable);
     
+    // Solo editado y emitido: son los únicos estados que asignarAPrograma acepta
     @Query("SELECT c FROM Concursante c WHERE c.numeroPrograma IS NULL AND " +
+           "LOWER(c.estado) IN ('editado', 'emitido') AND " +
            "(:busqueda IS NULL OR " +
            "LOWER(c.nombre) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "LOWER(c.ocupacion) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "LOWER(c.lugar) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "CAST(c.numeroConcursante AS string) LIKE CONCAT('%', :busqueda, '%'))")
-    Page<Concursante> findByNumeroProgramaIsNullWithSearch(Pageable pageable, @Param("busqueda") String busqueda);
+    Page<Concursante> findDisponiblesParaProgramaWithSearch(Pageable pageable, @Param("busqueda") String busqueda);
     
     @Query("SELECT MAX(c.numeroConcursante) FROM Concursante c")
     Integer findMaxNumeroConcursante();
 
     Long countByNumeroConcursante(Integer numeroConcursante);
+
+    boolean existsByCuestionario_Id(Long cuestionarioId);
+
+    boolean existsByCombo_Id(Long comboId);
 
     @Query("SELECT c FROM Concursante c WHERE " +
            "(:estado IS NULL OR c.estado = :estado) AND " +
