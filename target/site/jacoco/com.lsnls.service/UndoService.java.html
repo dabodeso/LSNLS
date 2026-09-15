@@ -55,32 +55,32 @@ import java.util.regex.Pattern;
 
     /** Devuelve y limpia el id de la última operación registrada en este hilo. */
     public static Long consumirUltimaOperacionId() {
-<span class="nc" id="L58">        Long id = ULTIMA_OPERACION.get();</span>
-<span class="nc" id="L59">        ULTIMA_OPERACION.remove();</span>
-<span class="nc" id="L60">        return id;</span>
+<span class="fc" id="L58">        Long id = ULTIMA_OPERACION.get();</span>
+<span class="fc" id="L59">        ULTIMA_OPERACION.remove();</span>
+<span class="fc" id="L60">        return id;</span>
     }
 
     // ==================== SNAPSHOTS ====================
 
     /** Copia completa de una fila por id, con valores serializables a JSON. */
     public Map&lt;String, Object&gt; snapshotFila(String tabla, Object id) {
-<span class="nc" id="L67">        validarTabla(tabla);</span>
-<span class="nc" id="L68">        List&lt;Map&lt;String, Object&gt;&gt; filas = jdbcTemplate.queryForList(</span>
+<span class="fc" id="L67">        validarTabla(tabla);</span>
+<span class="fc" id="L68">        List&lt;Map&lt;String, Object&gt;&gt; filas = jdbcTemplate.queryForList(</span>
                 &quot;SELECT * FROM &quot; + tabla + &quot; WHERE id = ?&quot;, id);
-<span class="nc bnc" id="L70" title="All 2 branches missed.">        return filas.isEmpty() ? null : normalizarFila(filas.get(0));</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        return filas.isEmpty() ? null : normalizarFila(filas.get(0));</span>
     }
 
     /** Copia completa de las filas que cumplen campo = valor. */
     public List&lt;Map&lt;String, Object&gt;&gt; snapshotFilas(String tabla, String campo, Object valor) {
-<span class="nc" id="L75">        validarTabla(tabla);</span>
-<span class="nc" id="L76">        validarIdentificador(campo);</span>
-<span class="nc" id="L77">        List&lt;Map&lt;String, Object&gt;&gt; filas = jdbcTemplate.queryForList(</span>
+<span class="fc" id="L75">        validarTabla(tabla);</span>
+<span class="fc" id="L76">        validarIdentificador(campo);</span>
+<span class="fc" id="L77">        List&lt;Map&lt;String, Object&gt;&gt; filas = jdbcTemplate.queryForList(</span>
                 &quot;SELECT * FROM &quot; + tabla + &quot; WHERE `&quot; + campo + &quot;` = ?&quot;, valor);
-<span class="nc" id="L79">        List&lt;Map&lt;String, Object&gt;&gt; resultado = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L80" title="All 2 branches missed.">        for (Map&lt;String, Object&gt; fila : filas) {</span>
-<span class="nc" id="L81">            resultado.add(normalizarFila(fila));</span>
-<span class="nc" id="L82">        }</span>
-<span class="nc" id="L83">        return resultado;</span>
+<span class="fc" id="L79">        List&lt;Map&lt;String, Object&gt;&gt; resultado = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; fila : filas) {</span>
+<span class="fc" id="L81">            resultado.add(normalizarFila(fila));</span>
+<span class="fc" id="L82">        }</span>
+<span class="fc" id="L83">        return resultado;</span>
     }
 
     // ==================== CONSTRUCCIÓN DE ACCIONES ====================
@@ -120,51 +120,51 @@ import java.util.regex.Pattern;
     }
 
     public static Long extraerId(Map&lt;String, Object&gt; fila) {
-<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (fila == null) {</span>
-<span class="nc" id="L124">            return null;</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (fila == null) {</span>
+<span class="fc" id="L124">            return null;</span>
         }
-<span class="nc" id="L126">        Object id = fila.get(&quot;id&quot;);</span>
-<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (id instanceof Number) {</span>
-<span class="nc" id="L128">            return ((Number) id).longValue();</span>
+<span class="fc" id="L126">        Object id = fila.get(&quot;id&quot;);</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (id instanceof Number) {</span>
+<span class="fc" id="L128">            return ((Number) id).longValue();</span>
         }
-<span class="nc bnc" id="L130" title="All 4 branches missed.">        if (id instanceof String &amp;&amp; !((String) id).isBlank()) {</span>
+<span class="pc bpc" id="L130" title="1 of 4 branches missed.">        if (id instanceof String &amp;&amp; !((String) id).isBlank()) {</span>
             try {
-<span class="nc" id="L132">                return Long.valueOf((String) id);</span>
-<span class="nc" id="L133">            } catch (NumberFormatException e) {</span>
-<span class="nc" id="L134">                return null;</span>
+<span class="fc" id="L132">                return Long.valueOf((String) id);</span>
+<span class="fc" id="L133">            } catch (NumberFormatException e) {</span>
+<span class="fc" id="L134">                return null;</span>
             }
         }
-<span class="nc" id="L137">        return null;</span>
+<span class="fc" id="L137">        return null;</span>
     }
 
     public static Set&lt;Long&gt; extraerIds(List&lt;Map&lt;String, Object&gt;&gt; filas) {
 <span class="fc" id="L141">        Set&lt;Long&gt; ids = new HashSet&lt;&gt;();</span>
-<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        if (filas == null) {</span>
-<span class="nc" id="L143">            return ids;</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        if (filas == null) {</span>
+<span class="fc" id="L143">            return ids;</span>
         }
-<span class="pc bpc" id="L145" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : filas) {</span>
-<span class="nc" id="L146">            Long id = extraerId(fila);</span>
-<span class="nc bnc" id="L147" title="All 2 branches missed.">            if (id != null) {</span>
-<span class="nc" id="L148">                ids.add(id);</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; fila : filas) {</span>
+<span class="fc" id="L146">            Long id = extraerId(fila);</span>
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">            if (id != null) {</span>
+<span class="fc" id="L148">                ids.add(id);</span>
             }
-<span class="nc" id="L150">        }</span>
+<span class="fc" id="L150">        }</span>
 <span class="fc" id="L151">        return ids;</span>
     }
 
     /** Filas actuales de `campo = valor` cuyo id no estaba en el conjunto previo. */
     public List&lt;Map&lt;String, Object&gt;&gt; snapshotFilasNuevas(String tabla, String campo, Object valor, Set&lt;Long&gt; idsPrevios) {
-<span class="nc" id="L156">        List&lt;Map&lt;String, Object&gt;&gt; ahora = snapshotFilas(tabla, campo, valor);</span>
-<span class="nc bnc" id="L157" title="All 4 branches missed.">        if (idsPrevios == null || idsPrevios.isEmpty()) {</span>
+<span class="fc" id="L156">        List&lt;Map&lt;String, Object&gt;&gt; ahora = snapshotFilas(tabla, campo, valor);</span>
+<span class="pc bpc" id="L157" title="2 of 4 branches missed.">        if (idsPrevios == null || idsPrevios.isEmpty()) {</span>
 <span class="nc" id="L158">            return ahora;</span>
         }
-<span class="nc" id="L160">        List&lt;Map&lt;String, Object&gt;&gt; nuevas = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L161" title="All 2 branches missed.">        for (Map&lt;String, Object&gt; fila : ahora) {</span>
-<span class="nc" id="L162">            Long id = extraerId(fila);</span>
-<span class="nc bnc" id="L163" title="All 4 branches missed.">            if (id == null || !idsPrevios.contains(id)) {</span>
-<span class="nc" id="L164">                nuevas.add(fila);</span>
+<span class="fc" id="L160">        List&lt;Map&lt;String, Object&gt;&gt; nuevas = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; fila : ahora) {</span>
+<span class="fc" id="L162">            Long id = extraerId(fila);</span>
+<span class="pc bpc" id="L163" title="1 of 4 branches missed.">            if (id == null || !idsPrevios.contains(id)) {</span>
+<span class="fc" id="L164">                nuevas.add(fila);</span>
             }
-<span class="nc" id="L166">        }</span>
-<span class="nc" id="L167">        return nuevas;</span>
+<span class="fc" id="L166">        }</span>
+<span class="fc" id="L167">        return nuevas;</span>
     }
 
     // ==================== REGISTRO ====================
@@ -176,37 +176,37 @@ import java.util.regex.Pattern;
      */
     public void registrar(String tipoOperacion, String descripcion, List&lt;Map&lt;String, Object&gt;&gt; acciones) {
         try {
-<span class="nc bnc" id="L179" title="All 4 branches missed.">            if (acciones == null || acciones.isEmpty()) {</span>
-<span class="nc" id="L180">                return;</span>
+<span class="fc bfc" id="L179" title="All 4 branches covered.">            if (acciones == null || acciones.isEmpty()) {</span>
+<span class="fc" id="L180">                return;</span>
             }
-<span class="nc" id="L182">            Optional&lt;Usuario&gt; usuario = authorizationService.getCurrentUser();</span>
-<span class="nc bnc" id="L183" title="All 2 branches missed.">            if (usuario.isEmpty()) {</span>
-<span class="nc" id="L184">                return;</span>
+<span class="fc" id="L182">            Optional&lt;Usuario&gt; usuario = authorizationService.getCurrentUser();</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">            if (usuario.isEmpty()) {</span>
+<span class="fc" id="L184">                return;</span>
             }
-<span class="nc" id="L186">            Long usuarioId = usuario.get().getId();</span>
-<span class="nc" id="L187">            String json = objectMapper.writeValueAsString(Collections.singletonMap(&quot;acciones&quot;, acciones));</span>
-<span class="nc" id="L188">            jdbcTemplate.update(</span>
+<span class="fc" id="L186">            Long usuarioId = usuario.get().getId();</span>
+<span class="fc" id="L187">            String json = objectMapper.writeValueAsString(Collections.singletonMap(&quot;acciones&quot;, acciones));</span>
+<span class="fc" id="L188">            jdbcTemplate.update(</span>
                     &quot;INSERT INTO operaciones_undo (usuario_id, tipo_operacion, descripcion, datos_undo, fecha_creacion, deshecha) &quot;
                             + &quot;VALUES (?, ?, ?, ?, NOW(6), 0)&quot;,
                     usuarioId, tipoOperacion, descripcion, json);
-<span class="nc" id="L192">            Long operacionId = jdbcTemplate.queryForObject(&quot;SELECT LAST_INSERT_ID()&quot;, Long.class);</span>
-<span class="nc" id="L193">            ULTIMA_OPERACION.set(operacionId);</span>
-<span class="nc" id="L194">            limpiarAntiguas(usuarioId);</span>
-<span class="nc" id="L195">        } catch (Exception e) {</span>
-<span class="nc" id="L196">            log.warn(&quot;[UNDO] No se pudo registrar la operación deshacible '&quot; + tipoOperacion + &quot;': &quot; + e.getMessage());</span>
-<span class="nc" id="L197">        }</span>
-<span class="nc" id="L198">    }</span>
+<span class="fc" id="L192">            Long operacionId = jdbcTemplate.queryForObject(&quot;SELECT LAST_INSERT_ID()&quot;, Long.class);</span>
+<span class="fc" id="L193">            ULTIMA_OPERACION.set(operacionId);</span>
+<span class="fc" id="L194">            limpiarAntiguas(usuarioId);</span>
+<span class="fc" id="L195">        } catch (Exception e) {</span>
+<span class="fc" id="L196">            log.warn(&quot;[UNDO] No se pudo registrar la operación deshacible '&quot; + tipoOperacion + &quot;': &quot; + e.getMessage());</span>
+<span class="fc" id="L197">        }</span>
+<span class="fc" id="L198">    }</span>
 
     private void limpiarAntiguas(Long usuarioId) {
-<span class="nc" id="L201">        jdbcTemplate.update(</span>
+<span class="fc" id="L201">        jdbcTemplate.update(</span>
                 &quot;DELETE FROM operaciones_undo WHERE usuario_id = ? AND fecha_creacion &lt; NOW(6) - INTERVAL &quot; + MAX_ANTIGUEDAD_MINUTOS + &quot; MINUTE&quot;,
                 usuarioId);
-<span class="nc" id="L204">        jdbcTemplate.update(</span>
+<span class="fc" id="L204">        jdbcTemplate.update(</span>
                 &quot;DELETE FROM operaciones_undo WHERE usuario_id = ? AND id NOT IN (&quot;
                         + &quot;SELECT id FROM (SELECT id FROM operaciones_undo WHERE usuario_id = ? &quot;
                         + &quot;ORDER BY id DESC LIMIT &quot; + MAX_OPERACIONES_POR_USUARIO + &quot;) t)&quot;,
                 usuarioId, usuarioId);
-<span class="nc" id="L209">    }</span>
+<span class="fc" id="L209">    }</span>
 
     // ==================== DESHACER ====================
 
@@ -218,32 +218,32 @@ import java.util.regex.Pattern;
     @SuppressWarnings(&quot;unchecked&quot;)
     public String deshacer(Long operacionId) {
 <span class="fc" id="L220">        Usuario usuario = authorizationService.getCurrentUser()</span>
-<span class="pc" id="L221">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Usuario no autenticado&quot;));</span>
+<span class="fc" id="L221">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Usuario no autenticado&quot;));</span>
 
 <span class="fc" id="L223">        List&lt;Map&lt;String, Object&gt;&gt; filas = jdbcTemplate.queryForList(</span>
                 &quot;SELECT * FROM operaciones_undo WHERE id = ?&quot;, operacionId);
-<span class="pc bpc" id="L225" title="1 of 2 branches missed.">        if (filas.isEmpty()) {</span>
-<span class="nc" id="L226">            throw new IllegalArgumentException(&quot;La operación ya no está disponible para deshacer&quot;);</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">        if (filas.isEmpty()) {</span>
+<span class="fc" id="L226">            throw new IllegalArgumentException(&quot;La operación ya no está disponible para deshacer&quot;);</span>
         }
 <span class="fc" id="L228">        Map&lt;String, Object&gt; operacion = filas.get(0);</span>
 
 <span class="fc" id="L230">        Number opUsuarioId = (Number) operacion.get(&quot;usuario_id&quot;);</span>
-<span class="pc bpc" id="L231" title="2 of 4 branches missed.">        if (opUsuarioId == null || opUsuarioId.longValue() != usuario.getId()) {</span>
-<span class="nc" id="L232">            throw new IllegalArgumentException(&quot;Solo puedes deshacer tus propias operaciones&quot;);</span>
+<span class="fc bfc" id="L231" title="All 4 branches covered.">        if (opUsuarioId == null || opUsuarioId.longValue() != usuario.getId()) {</span>
+<span class="fc" id="L232">            throw new IllegalArgumentException(&quot;Solo puedes deshacer tus propias operaciones&quot;);</span>
         }
 
 <span class="fc" id="L235">        Object deshechaObj = operacion.get(&quot;deshecha&quot;);</span>
-<span class="pc bpc" id="L236" title="4 of 6 branches missed.">        boolean deshecha = (deshechaObj instanceof Boolean &amp;&amp; (Boolean) deshechaObj)</span>
-<span class="pc bpc" id="L237" title="1 of 2 branches missed.">                || (deshechaObj instanceof Number &amp;&amp; ((Number) deshechaObj).intValue() != 0);</span>
-<span class="pc bpc" id="L238" title="1 of 2 branches missed.">        if (deshecha) {</span>
-<span class="nc" id="L239">            throw new IllegalArgumentException(&quot;Esta operación ya fue deshecha&quot;);</span>
+<span class="fc bfc" id="L236" title="All 6 branches covered.">        boolean deshecha = (deshechaObj instanceof Boolean &amp;&amp; (Boolean) deshechaObj)</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">                || (deshechaObj instanceof Number &amp;&amp; ((Number) deshechaObj).intValue() != 0);</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">        if (deshecha) {</span>
+<span class="fc" id="L239">            throw new IllegalArgumentException(&quot;Esta operación ya fue deshecha&quot;);</span>
         }
 
 <span class="fc" id="L242">        Object fechaObj = operacion.get(&quot;fecha_creacion&quot;);</span>
-<span class="pc bpc" id="L243" title="1 of 2 branches missed.">        if (fechaObj instanceof Timestamp) {</span>
+<span class="fc bfc" id="L243" title="All 2 branches covered.">        if (fechaObj instanceof Timestamp) {</span>
 <span class="fc" id="L244">            Instant limite = Instant.now().minusSeconds(60L * MAX_ANTIGUEDAD_MINUTOS);</span>
-<span class="pc bpc" id="L245" title="1 of 2 branches missed.">            if (((Timestamp) fechaObj).toInstant().isBefore(limite)) {</span>
-<span class="nc" id="L246">                throw new IllegalArgumentException(&quot;La operación tiene más de 1 hora y ya no se puede deshacer&quot;);</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">            if (((Timestamp) fechaObj).toInstant().isBefore(limite)) {</span>
+<span class="fc" id="L246">                throw new IllegalArgumentException(&quot;La operación tiene más de 1 hora y ya no se puede deshacer&quot;);</span>
             }
         }
 
@@ -251,8 +251,8 @@ import java.util.regex.Pattern;
         try {
 <span class="fc" id="L252">            Map&lt;String, Object&gt; payload = objectMapper.readValue((String) operacion.get(&quot;datos_undo&quot;), Map.class);</span>
 <span class="fc" id="L253">            acciones = (List&lt;Map&lt;String, Object&gt;&gt;) payload.get(&quot;acciones&quot;);</span>
-<span class="nc" id="L254">        } catch (Exception e) {</span>
-<span class="nc" id="L255">            throw new IllegalStateException(&quot;No se pudo interpretar la operación de undo: &quot; + e.getMessage());</span>
+<span class="fc" id="L254">        } catch (Exception e) {</span>
+<span class="fc" id="L255">            throw new IllegalStateException(&quot;No se pudo interpretar la operación de undo: &quot; + e.getMessage());</span>
 <span class="fc" id="L256">        }</span>
 
 <span class="fc bfc" id="L258" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; accion : acciones) {</span>
@@ -269,41 +269,41 @@ import java.util.regex.Pattern;
 <span class="fc" id="L269">        String tabla = (String) accion.get(&quot;tabla&quot;);</span>
 <span class="fc" id="L270">        validarTabla(tabla);</span>
 
-<span class="pc bpc" id="L272" title="1 of 2 branches missed.">        if (&quot;insertar_fila&quot;.equals(tipo)) {</span>
-<span class="nc" id="L273">            insertarFila(tabla, (Map&lt;String, Object&gt;) accion.get(&quot;datos&quot;));</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">        if (&quot;insertar_fila&quot;.equals(tipo)) {</span>
+<span class="fc" id="L273">            insertarFila(tabla, (Map&lt;String, Object&gt;) accion.get(&quot;datos&quot;));</span>
 <span class="fc bfc" id="L274" title="All 2 branches covered.">        } else if (&quot;actualizar_campos&quot;.equals(tipo)) {</span>
 <span class="fc" id="L275">            actualizarCampos(tabla, accion.get(&quot;id&quot;), (Map&lt;String, Object&gt;) accion.get(&quot;campos&quot;));</span>
 <span class="fc bfc" id="L276" title="All 2 branches covered.">        } else if (&quot;eliminar_fila&quot;.equals(tipo)) {</span>
 <span class="fc" id="L277">            eliminarFila(tabla, accion.get(&quot;id&quot;));</span>
-<span class="pc bpc" id="L278" title="1 of 2 branches missed.">        } else if (&quot;eliminar_filas&quot;.equals(tipo)) {</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">        } else if (&quot;eliminar_filas&quot;.equals(tipo)) {</span>
 <span class="fc" id="L279">            eliminarFilas(tabla, (String) accion.get(&quot;campo&quot;), accion.get(&quot;valor&quot;));</span>
         } else {
-<span class="nc" id="L281">            throw new IllegalStateException(&quot;Acción de undo desconocida: &quot; + tipo);</span>
+<span class="fc" id="L281">            throw new IllegalStateException(&quot;Acción de undo desconocida: &quot; + tipo);</span>
         }
 <span class="fc" id="L283">    }</span>
 
     private void insertarFila(String tabla, Map&lt;String, Object&gt; datos) {
-<span class="nc bnc" id="L286" title="All 4 branches missed.">        if (datos == null || datos.isEmpty()) {</span>
-<span class="nc" id="L287">            return;</span>
+<span class="pc bpc" id="L286" title="1 of 4 branches missed.">        if (datos == null || datos.isEmpty()) {</span>
+<span class="fc" id="L287">            return;</span>
         }
-<span class="nc" id="L289">        List&lt;String&gt; columnas = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L290">        List&lt;Object&gt; valores = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L291" title="All 2 branches missed.">        for (Map.Entry&lt;String, Object&gt; entrada : datos.entrySet()) {</span>
-<span class="nc" id="L292">            validarIdentificador(entrada.getKey());</span>
-<span class="nc" id="L293">            columnas.add(&quot;`&quot; + entrada.getKey() + &quot;`&quot;);</span>
-<span class="nc" id="L294">            valores.add(entrada.getValue());</span>
-<span class="nc" id="L295">        }</span>
-<span class="nc" id="L296">        StringBuilder placeholders = new StringBuilder();</span>
-<span class="nc bnc" id="L297" title="All 2 branches missed.">        for (int i = 0; i &lt; columnas.size(); i++) {</span>
-<span class="nc bnc" id="L298" title="All 2 branches missed.">            placeholders.append(i &gt; 0 ? &quot;, ?&quot; : &quot;?&quot;);</span>
+<span class="fc" id="L289">        List&lt;String&gt; columnas = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L290">        List&lt;Object&gt; valores = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L291" title="All 2 branches covered.">        for (Map.Entry&lt;String, Object&gt; entrada : datos.entrySet()) {</span>
+<span class="fc" id="L292">            validarIdentificador(entrada.getKey());</span>
+<span class="fc" id="L293">            columnas.add(&quot;`&quot; + entrada.getKey() + &quot;`&quot;);</span>
+<span class="fc" id="L294">            valores.add(entrada.getValue());</span>
+<span class="fc" id="L295">        }</span>
+<span class="fc" id="L296">        StringBuilder placeholders = new StringBuilder();</span>
+<span class="fc bfc" id="L297" title="All 2 branches covered.">        for (int i = 0; i &lt; columnas.size(); i++) {</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">            placeholders.append(i &gt; 0 ? &quot;, ?&quot; : &quot;?&quot;);</span>
         }
-<span class="nc" id="L300">        String sql = &quot;INSERT INTO &quot; + tabla + &quot; (&quot; + String.join(&quot;, &quot;, columnas) + &quot;) VALUES (&quot; + placeholders + &quot;)&quot;;</span>
-<span class="nc" id="L301">        jdbcTemplate.update(sql, valores.toArray());</span>
-<span class="nc" id="L302">    }</span>
+<span class="fc" id="L300">        String sql = &quot;INSERT INTO &quot; + tabla + &quot; (&quot; + String.join(&quot;, &quot;, columnas) + &quot;) VALUES (&quot; + placeholders + &quot;)&quot;;</span>
+<span class="fc" id="L301">        jdbcTemplate.update(sql, valores.toArray());</span>
+<span class="fc" id="L302">    }</span>
 
     private void actualizarCampos(String tabla, Object id, Map&lt;String, Object&gt; campos) {
-<span class="pc bpc" id="L305" title="3 of 6 branches missed.">        if (id == null || campos == null || campos.isEmpty()) {</span>
-<span class="nc" id="L306">            return;</span>
+<span class="pc bpc" id="L305" title="2 of 6 branches missed.">        if (id == null || campos == null || campos.isEmpty()) {</span>
+<span class="fc" id="L306">            return;</span>
         }
 <span class="fc" id="L308">        List&lt;String&gt; asignaciones = new ArrayList&lt;&gt;();</span>
 <span class="fc" id="L309">        List&lt;Object&gt; valores = new ArrayList&lt;&gt;();</span>
@@ -321,7 +321,7 @@ import java.util.regex.Pattern;
 <span class="pc bpc" id="L321" title="1 of 2 branches missed.">        if (id == null) {</span>
 <span class="nc" id="L322">            return;</span>
         }
-<span class="pc bpc" id="L324" title="1 of 2 branches missed.">        if (&quot;combos&quot;.equals(tabla)) {</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">        if (&quot;combos&quot;.equals(tabla)) {</span>
             // Quitar FKs que impedirían borrar un combo creado por reciclaje/reaprovechar.
 <span class="fc" id="L326">            jdbcTemplate.update(&quot;UPDATE concursantes SET combo_id = NULL WHERE combo_id = ?&quot;, id);</span>
 <span class="fc" id="L327">            jdbcTemplate.update(&quot;DELETE FROM combos_preguntas WHERE combo_id = ?&quot;, id);</span>
@@ -343,29 +343,29 @@ import java.util.regex.Pattern;
 
     /** Convierte tipos SQL no serializables (fechas, binarios) a representaciones aptas para JSON y reinserción. */
     private Map&lt;String, Object&gt; normalizarFila(Map&lt;String, Object&gt; fila) {
-<span class="nc" id="L346">        Map&lt;String, Object&gt; normalizada = new LinkedHashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L347" title="All 2 branches missed.">        for (Map.Entry&lt;String, Object&gt; entrada : fila.entrySet()) {</span>
-<span class="nc" id="L348">            Object valor = entrada.getValue();</span>
-<span class="nc bnc" id="L349" title="All 8 branches missed.">            if (valor instanceof Timestamp || valor instanceof java.sql.Date || valor instanceof java.sql.Time</span>
+<span class="fc" id="L346">        Map&lt;String, Object&gt; normalizada = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L347" title="All 2 branches covered.">        for (Map.Entry&lt;String, Object&gt; entrada : fila.entrySet()) {</span>
+<span class="fc" id="L348">            Object valor = entrada.getValue();</span>
+<span class="fc bfc" id="L349" title="All 8 branches covered.">            if (valor instanceof Timestamp || valor instanceof java.sql.Date || valor instanceof java.sql.Time</span>
                     || valor instanceof java.time.temporal.Temporal) {
-<span class="nc" id="L351">                valor = valor.toString();</span>
-<span class="nc bnc" id="L352" title="All 2 branches missed.">            } else if (valor instanceof byte[]) {</span>
-<span class="nc" id="L353">                valor = Base64.getEncoder().encodeToString((byte[]) valor);</span>
+<span class="fc" id="L351">                valor = valor.toString();</span>
+<span class="fc bfc" id="L352" title="All 2 branches covered.">            } else if (valor instanceof byte[]) {</span>
+<span class="fc" id="L353">                valor = Base64.getEncoder().encodeToString((byte[]) valor);</span>
             }
-<span class="nc" id="L355">            normalizada.put(entrada.getKey(), valor);</span>
-<span class="nc" id="L356">        }</span>
-<span class="nc" id="L357">        return normalizada;</span>
+<span class="fc" id="L355">            normalizada.put(entrada.getKey(), valor);</span>
+<span class="fc" id="L356">        }</span>
+<span class="fc" id="L357">        return normalizada;</span>
     }
 
     private void validarTabla(String tabla) {
-<span class="pc bpc" id="L361" title="2 of 4 branches missed.">        if (tabla == null || !TABLAS_PERMITIDAS.contains(tabla)) {</span>
-<span class="nc" id="L362">            throw new IllegalStateException(&quot;Tabla no permitida en operaciones de undo: &quot; + tabla);</span>
+<span class="pc bpc" id="L361" title="1 of 4 branches missed.">        if (tabla == null || !TABLAS_PERMITIDAS.contains(tabla)) {</span>
+<span class="fc" id="L362">            throw new IllegalStateException(&quot;Tabla no permitida en operaciones de undo: &quot; + tabla);</span>
         }
 <span class="fc" id="L364">    }</span>
 
     private void validarIdentificador(String nombre) {
-<span class="pc bpc" id="L367" title="2 of 4 branches missed.">        if (nombre == null || !IDENTIFICADOR_VALIDO.matcher(nombre).matches()) {</span>
-<span class="nc" id="L368">            throw new IllegalStateException(&quot;Identificador no válido en operación de undo: &quot; + nombre);</span>
+<span class="pc bpc" id="L367" title="1 of 4 branches missed.">        if (nombre == null || !IDENTIFICADOR_VALIDO.matcher(nombre).matches()) {</span>
+<span class="fc" id="L368">            throw new IllegalStateException(&quot;Identificador no válido en operación de undo: &quot; + nombre);</span>
         }
 <span class="fc" id="L370">    }</span>
 }

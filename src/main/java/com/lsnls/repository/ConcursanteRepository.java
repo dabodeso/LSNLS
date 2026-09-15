@@ -21,9 +21,9 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long>,
     List<Concursante> findByNumeroProgramaIsNull();
     Page<Concursante> findByNumeroProgramaIsNull(Pageable pageable);
     
-    // Solo editado y emitido: son los únicos estados que asignarAPrograma acepta
+    // Sin programa: grabado, editado o emitido (el flujo real deja la mayoría en grabado)
     @Query("SELECT c FROM Concursante c WHERE c.numeroPrograma IS NULL AND " +
-           "LOWER(c.estado) IN ('editado', 'emitido') AND " +
+           "LOWER(c.estado) IN ('grabado', 'editado', 'emitido') AND " +
            "(:busqueda IS NULL OR " +
            "LOWER(c.nombre) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "LOWER(c.ocupacion) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +

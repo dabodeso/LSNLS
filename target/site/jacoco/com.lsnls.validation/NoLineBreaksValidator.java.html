@@ -3,21 +3,21 @@
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
-<span class="nc" id="L6">public class NoLineBreaksValidator implements ConstraintValidator&lt;NoLineBreaks, String&gt; {</span>
+<span class="fc" id="L6">public class NoLineBreaksValidator implements ConstraintValidator&lt;NoLineBreaks, String&gt; {</span>
 
     @Override
     public void initialize(NoLineBreaks constraintAnnotation) {
         // No inicialización necesaria
-<span class="nc" id="L11">    }</span>
+<span class="fc" id="L11">    }</span>
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-<span class="nc bnc" id="L15" title="All 2 branches missed.">        if (value == null) {</span>
-<span class="nc" id="L16">            return true; // Permite valores nulos, otros validadores manejarán esto</span>
+<span class="fc bfc" id="L15" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L16">            return true; // Permite valores nulos, otros validadores manejarán esto</span>
         }
         
         // Verifica que no contenga saltos de línea (\n, \r, \r\n)
-<span class="nc bnc" id="L20" title="All 4 branches missed.">        return !value.contains(&quot;\n&quot;) &amp;&amp; !value.contains(&quot;\r&quot;);</span>
+<span class="fc bfc" id="L20" title="All 4 branches covered.">        return !value.contains(&quot;\n&quot;) &amp;&amp; !value.contains(&quot;\r&quot;);</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

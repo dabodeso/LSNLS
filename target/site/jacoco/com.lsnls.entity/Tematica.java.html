@@ -32,11 +32,11 @@ public class Tematica {
     private LocalDateTime fechaCreacion;
 
     // Constructor para crear nuevas temáticas
-<span class="nc" id="L35">    public Tematica(String nombre, Usuario creacionUsuario) {</span>
-<span class="nc" id="L36">        this.nombre = nombre;</span>
-<span class="nc" id="L37">        this.creacionUsuario = creacionUsuario;</span>
-<span class="nc" id="L38">        this.fechaCreacion = LocalDateTime.now();</span>
-<span class="nc" id="L39">    }</span>
+<span class="fc" id="L35">    public Tematica(String nombre, Usuario creacionUsuario) {</span>
+<span class="fc" id="L36">        this.nombre = nombre;</span>
+<span class="fc" id="L37">        this.creacionUsuario = creacionUsuario;</span>
+<span class="fc" id="L38">        this.fechaCreacion = LocalDateTime.now();</span>
+<span class="fc" id="L39">    }</span>
 
     @PrePersist
     protected void onCreate() {

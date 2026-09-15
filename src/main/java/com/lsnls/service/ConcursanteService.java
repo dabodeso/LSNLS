@@ -543,9 +543,8 @@ public class ConcursanteService {
     public ConcursanteDTO asignarAPrograma(Long concursanteId, Long programaId, Integer posicion) {
         Concursante concursante = concursanteRepository.findById(concursanteId)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
-        if (!"editado".equalsIgnoreCase(concursante.getEstado())
-                && !"emitido".equalsIgnoreCase(concursante.getEstado())) {
-            throw new IllegalArgumentException("Solo se pueden añadir a programas concursantes en estado editado o emitido.");
+        if (!esEstadoAsignableAPrograma(concursante.getEstado())) {
+            throw new IllegalArgumentException("Solo se pueden añadir a programas concursantes en estado grabado, editado o emitido.");
         }
 
         Integer numeroPrograma = programaId.intValue();
@@ -761,6 +760,16 @@ public class ConcursanteService {
             throw new IllegalArgumentException(
                 "No se puede marcar como editado sin una duración válida de grabación, dirección o final.");
         }
+    }
+
+    private boolean esEstadoAsignableAPrograma(String estado) {
+        if (estado == null || estado.isBlank()) {
+            return false;
+        }
+        String normalizado = estado.trim().toLowerCase();
+        return "grabado".equals(normalizado)
+            || "editado".equals(normalizado)
+            || "emitido".equals(normalizado);
     }
 
     private String normalizarEstadoConcursante(String estado) {

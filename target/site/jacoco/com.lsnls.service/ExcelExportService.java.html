@@ -27,18 +27,18 @@ import java.util.Map;
  * concursante, y se rellenan a mano durante la jornada.
  */
 @Service
-<span class="fc" id="L30">public class ExcelExportService {</span>
+<span class="nc" id="L30">public class ExcelExportService {</span>
 
     /** Clave de opciones con los combos de origen por combo derivado: id -&gt; &quot;312/216&quot;. */
     public static final String OPCION_ANCESTROS_COMBO = &quot;ancestrosCombo&quot;;
 
-<span class="fc" id="L35">    private static final String[] CABECERA_CUESTIONARIOS =</span>
+<span class="nc" id="L35">    private static final String[] CABECERA_CUESTIONARIOS =</span>
             {&quot;CUEST&quot;, &quot;Nº DE PREGUNTA&quot;, &quot;NIVEL&quot;, &quot;PREGUNTA&quot;, &quot;RESPUESTA&quot;, &quot;DATOS EXTRA&quot;, &quot;REC&quot;};
-<span class="fc" id="L37">    private static final double[] ANCHOS_CUESTIONARIOS = {6.9, 0.4, 6.7, 50.6, 19.6, 44.3, 8.4};</span>
+<span class="nc" id="L37">    private static final double[] ANCHOS_CUESTIONARIOS = {6.9, 0.4, 6.7, 50.6, 19.6, 44.3, 8.4};</span>
 
-<span class="fc" id="L39">    private static final String[] CABECERA_COMBOS =</span>
+<span class="nc" id="L39">    private static final String[] CABECERA_COMBOS =</span>
             {&quot;COMBO&quot;, &quot;&quot;, &quot;TIPO&quot;, &quot;FAC&quot;, &quot;NIVEL&quot;, &quot;PREGUNTA&quot;, &quot;RESPUESTA&quot;, &quot;DATOS EXTRA&quot;, &quot;REC&quot;};
-<span class="fc" id="L41">    private static final double[] ANCHOS_COMBOS = {7.3, 0.6, 4.4, 4.7, 6.7, 45, 17.1, 43, 8.4};</span>
+<span class="nc" id="L41">    private static final double[] ANCHOS_COMBOS = {7.3, 0.6, 4.4, 4.7, 6.7, 45, 17.1, 43, 8.4};</span>
 
     /** Filas de pregunta por bloque. La quinta de cuestionarios queda vacía para la pregunta multiplicadora. */
     private static final int FILAS_PREGUNTA_CUESTIONARIO = 5;
@@ -57,7 +57,7 @@ import java.util.Map;
      * Exporta una jornada a Excel con la configuración por defecto.
      */
     public byte[] exportarJornada(Jornada jornada) throws IOException {
-<span class="fc" id="L60">        return exportarJornada(jornada, null);</span>
+<span class="nc" id="L60">        return exportarJornada(jornada, null);</span>
     }
 
     /**
@@ -70,263 +70,263 @@ import java.util.Map;
      * @return Bytes del archivo Excel generado
      */
     public byte[] exportarJornada(Jornada jornada, Map&lt;String, Object&gt; opciones) throws IOException {
-<span class="fc" id="L73">        Map&lt;Long, String&gt; ancestros = leerAncestros(opciones);</span>
+<span class="nc" id="L73">        Map&lt;Long, String&gt; ancestros = leerAncestros(opciones);</span>
 
-<span class="fc" id="L75">        try (XSSFWorkbook workbook = new XSSFWorkbook()) {</span>
-<span class="fc" id="L76">            Estilos estilos = new Estilos(workbook);</span>
+<span class="nc" id="L75">        try (XSSFWorkbook workbook = new XSSFWorkbook()) {</span>
+<span class="nc" id="L76">            Estilos estilos = new Estilos(workbook);</span>
 
-<span class="fc" id="L78">            Sheet hojaCuestionarios = workbook.createSheet(&quot;CUESTIONARIOS ADJUDICADOS&quot;);</span>
-<span class="fc" id="L79">            configurarPagina(hojaCuestionarios, &quot;Cuestionarios - &quot; + jornada.getNombre(), jornada.getNombre());</span>
-<span class="fc" id="L80">            crearHojaCuestionarios(hojaCuestionarios, jornada, estilos);</span>
+<span class="nc" id="L78">            Sheet hojaCuestionarios = workbook.createSheet(&quot;CUESTIONARIOS ADJUDICADOS&quot;);</span>
+<span class="nc" id="L79">            configurarPagina(hojaCuestionarios, &quot;Cuestionarios - &quot; + jornada.getNombre(), jornada.getNombre());</span>
+<span class="nc" id="L80">            crearHojaCuestionarios(hojaCuestionarios, jornada, estilos);</span>
 
-<span class="fc" id="L82">            Sheet hojaCombos = workbook.createSheet(&quot;COMBOS ADJUDICADOS&quot;);</span>
-<span class="fc" id="L83">            configurarPagina(hojaCombos, &quot;Combos - &quot; + jornada.getNombre(), jornada.getNombre());</span>
-<span class="fc" id="L84">            crearHojaCombos(hojaCombos, jornada, estilos, ancestros);</span>
+<span class="nc" id="L82">            Sheet hojaCombos = workbook.createSheet(&quot;COMBOS ADJUDICADOS&quot;);</span>
+<span class="nc" id="L83">            configurarPagina(hojaCombos, &quot;Combos - &quot; + jornada.getNombre(), jornada.getNombre());</span>
+<span class="nc" id="L84">            crearHojaCombos(hojaCombos, jornada, estilos, ancestros);</span>
 
-<span class="fc" id="L86">            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();</span>
-<span class="fc" id="L87">            workbook.write(outputStream);</span>
-<span class="fc" id="L88">            return outputStream.toByteArray();</span>
+<span class="nc" id="L86">            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();</span>
+<span class="nc" id="L87">            workbook.write(outputStream);</span>
+<span class="nc" id="L88">            return outputStream.toByteArray();</span>
         }
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     private Map&lt;Long, String&gt; leerAncestros(Map&lt;String, Object&gt; opciones) {
-<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (opciones == null) {</span>
-<span class="fc" id="L95">            return Collections.emptyMap();</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (opciones == null) {</span>
+<span class="nc" id="L95">            return Collections.emptyMap();</span>
         }
-<span class="fc" id="L97">        Object valor = opciones.get(OPCION_ANCESTROS_COMBO);</span>
-<span class="pc bpc" id="L98" title="1 of 2 branches missed.">        return valor instanceof Map ? (Map&lt;Long, String&gt;) valor : Collections.emptyMap();</span>
+<span class="nc" id="L97">        Object valor = opciones.get(OPCION_ANCESTROS_COMBO);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        return valor instanceof Map ? (Map&lt;Long, String&gt;) valor : Collections.emptyMap();</span>
     }
 
     // ---------------------------------------------------------------- CUESTIONARIOS
 
     private void crearHojaCuestionarios(Sheet sheet, Jornada jornada, Estilos estilos) {
-<span class="fc bfc" id="L104" title="All 2 branches covered.">        for (int i = 0; i &lt; ANCHOS_CUESTIONARIOS.length; i++) {</span>
-<span class="fc" id="L105">            sheet.setColumnWidth(i, excelWidth(ANCHOS_CUESTIONARIOS[i]));</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        for (int i = 0; i &lt; ANCHOS_CUESTIONARIOS.length; i++) {</span>
+<span class="nc" id="L105">            sheet.setColumnWidth(i, excelWidth(ANCHOS_CUESTIONARIOS[i]));</span>
         }
 
-<span class="fc" id="L108">        int filaActual = 0;</span>
-<span class="fc bfc" id="L109" title="All 2 branches covered.">        for (Cuestionario cuestionario : jornada.getCuestionariosPorSlot()) {</span>
-<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (cuestionario == null) {</span>
-<span class="fc" id="L111">                continue;</span>
+<span class="nc" id="L108">        int filaActual = 0;</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        for (Cuestionario cuestionario : jornada.getCuestionariosPorSlot()) {</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            if (cuestionario == null) {</span>
+<span class="nc" id="L111">                continue;</span>
             }
-<span class="fc" id="L113">            filaActual = crearBloqueCuestionario(sheet, cuestionario, filaActual, estilos);</span>
-<span class="fc" id="L114">        }</span>
-<span class="fc" id="L115">    }</span>
+<span class="nc" id="L113">            filaActual = crearBloqueCuestionario(sheet, cuestionario, filaActual, estilos);</span>
+<span class="nc" id="L114">        }</span>
+<span class="nc" id="L115">    }</span>
 
     private int crearBloqueCuestionario(Sheet sheet, Cuestionario cuestionario, int filaInicial, Estilos estilos) {
-<span class="fc" id="L118">        int filaActual = crearCabecera(sheet, filaInicial, CABECERA_CUESTIONARIOS, estilos);</span>
+<span class="nc" id="L118">        int filaActual = crearCabecera(sheet, filaInicial, CABECERA_CUESTIONARIOS, estilos);</span>
 
-<span class="fc" id="L120">        List&lt;PreguntaCuestionario&gt; preguntas = preguntasOrdenadasPorNivel(cuestionario);</span>
-<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        String idCuestionario = cuestionario.getId() != null ? String.valueOf(cuestionario.getId()) : &quot;&quot;;</span>
+<span class="nc" id="L120">        List&lt;PreguntaCuestionario&gt; preguntas = preguntasOrdenadasPorNivel(cuestionario);</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        String idCuestionario = cuestionario.getId() != null ? String.valueOf(cuestionario.getId()) : &quot;&quot;;</span>
 
-<span class="fc bfc" id="L123" title="All 2 branches covered.">        for (int i = 0; i &lt; FILAS_PREGUNTA_CUESTIONARIO; i++) {</span>
-<span class="fc" id="L124">            Row fila = sheet.createRow(filaActual++);</span>
-<span class="fc" id="L125">            fila.setHeightInPoints(ALTO_PREGUNTA_CUESTIONARIO);</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        for (int i = 0; i &lt; FILAS_PREGUNTA_CUESTIONARIO; i++) {</span>
+<span class="nc" id="L124">            Row fila = sheet.createRow(filaActual++);</span>
+<span class="nc" id="L125">            fila.setHeightInPoints(ALTO_PREGUNTA_CUESTIONARIO);</span>
             // La quinta fila es la de la pregunta multiplicadora, que se rellena a mano.
-<span class="fc bfc" id="L127" title="All 2 branches covered.">            PreguntaCuestionario pc = i &lt; Math.min(PREGUNTAS_CUESTIONARIO, preguntas.size()) ? preguntas.get(i) : null;</span>
-<span class="fc bfc" id="L128" title="All 2 branches covered.">            Pregunta pregunta = pc != null ? pc.getPregunta() : null;</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            PreguntaCuestionario pc = i &lt; Math.min(PREGUNTAS_CUESTIONARIO, preguntas.size()) ? preguntas.get(i) : null;</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">            Pregunta pregunta = pc != null ? pc.getPregunta() : null;</span>
 
-<span class="fc bfc" id="L130" title="All 2 branches covered.">            escribir(fila, 0, pc != null ? idCuestionario : &quot;&quot;, estilos.primeraColumna);</span>
-<span class="fc" id="L131">            escribir(fila, 1, &quot;&quot;, estilos.datoPlano);</span>
-<span class="fc" id="L132">            escribir(fila, 2, nivelCorto(pregunta), estilos.datoPlano);</span>
-<span class="fc bfc" id="L133" title="All 2 branches covered.">            escribir(fila, 3, pregunta != null ? pregunta.getPregunta() : &quot;&quot;, estilos.datoAjustado);</span>
-<span class="fc bfc" id="L134" title="All 2 branches covered.">            escribir(fila, 4, pregunta != null ? pregunta.getRespuesta() : &quot;&quot;, estilos.datoAjustado);</span>
-<span class="pc bpc" id="L135" title="1 of 4 branches missed.">            escribir(fila, 5, pregunta != null &amp;&amp; pregunta.getDatosExtra() != null ? pregunta.getDatosExtra() : &quot;&quot;,</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            escribir(fila, 0, pc != null ? idCuestionario : &quot;&quot;, estilos.primeraColumna);</span>
+<span class="nc" id="L131">            escribir(fila, 1, &quot;&quot;, estilos.datoPlano);</span>
+<span class="nc" id="L132">            escribir(fila, 2, nivelCorto(pregunta), estilos.datoPlano);</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            escribir(fila, 3, pregunta != null ? pregunta.getPregunta() : &quot;&quot;, estilos.datoAjustado);</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">            escribir(fila, 4, pregunta != null ? pregunta.getRespuesta() : &quot;&quot;, estilos.datoAjustado);</span>
+<span class="nc bnc" id="L135" title="All 4 branches missed.">            escribir(fila, 5, pregunta != null &amp;&amp; pregunta.getDatosExtra() != null ? pregunta.getDatosExtra() : &quot;&quot;,</span>
                     estilos.datoAjustado);
-<span class="fc" id="L137">            escribir(fila, 6, &quot;&quot;, estilos.datoPlano);</span>
+<span class="nc" id="L137">            escribir(fila, 6, &quot;&quot;, estilos.datoPlano);</span>
         }
 
-<span class="fc" id="L140">        filaActual = crearFilaPie(sheet, filaActual, &quot;CONCURSANTE&quot;, 2, 6, ALTO_PIE_CUESTIONARIO, estilos);</span>
-<span class="fc" id="L141">        filaActual = crearFilaPie(sheet, filaActual, &quot;RESULTADO&quot;, 2, 6, ALTO_PIE_CUESTIONARIO, estilos);</span>
-<span class="fc" id="L142">        filaActual = crearFilaPie(sheet, filaActual, &quot;GRABACIÓN&quot;, 2, 6, ALTO_PIE_CUESTIONARIO, estilos);</span>
-<span class="fc" id="L143">        filaActual = crearFilaPie(sheet, filaActual, &quot;NOTAS GUION&quot;, 2, 6, ALTO_NOTAS_CUESTIONARIO, estilos);</span>
+<span class="nc" id="L140">        filaActual = crearFilaPie(sheet, filaActual, &quot;CONCURSANTE&quot;, 2, 6, ALTO_PIE_CUESTIONARIO, estilos);</span>
+<span class="nc" id="L141">        filaActual = crearFilaPie(sheet, filaActual, &quot;RESULTADO&quot;, 2, 6, ALTO_PIE_CUESTIONARIO, estilos);</span>
+<span class="nc" id="L142">        filaActual = crearFilaPie(sheet, filaActual, &quot;GRABACIÓN&quot;, 2, 6, ALTO_PIE_CUESTIONARIO, estilos);</span>
+<span class="nc" id="L143">        filaActual = crearFilaPie(sheet, filaActual, &quot;NOTAS GUION&quot;, 2, 6, ALTO_NOTAS_CUESTIONARIO, estilos);</span>
 
-<span class="fc" id="L145">        sheet.setRowBreak(filaActual - 1);</span>
-<span class="fc" id="L146">        return filaActual;</span>
+<span class="nc" id="L145">        sheet.setRowBreak(filaActual - 1);</span>
+<span class="nc" id="L146">        return filaActual;</span>
     }
 
     private List&lt;PreguntaCuestionario&gt; preguntasOrdenadasPorNivel(Cuestionario cuestionario) {
-<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        if (cuestionario.getPreguntas() == null) {</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (cuestionario.getPreguntas() == null) {</span>
 <span class="nc" id="L151">            return Collections.emptyList();</span>
         }
-<span class="fc" id="L153">        List&lt;PreguntaCuestionario&gt; preguntas = new ArrayList&lt;&gt;(cuestionario.getPreguntas());</span>
-<span class="fc" id="L154">        preguntas.sort(Comparator.comparingInt(pc -&gt; ordenNivel(pc.getPregunta())));</span>
-<span class="fc" id="L155">        return preguntas;</span>
+<span class="nc" id="L153">        List&lt;PreguntaCuestionario&gt; preguntas = new ArrayList&lt;&gt;(cuestionario.getPreguntas());</span>
+<span class="nc" id="L154">        preguntas.sort(Comparator.comparingInt(pc -&gt; ordenNivel(pc.getPregunta())));</span>
+<span class="nc" id="L155">        return preguntas;</span>
     }
 
     private int ordenNivel(Pregunta pregunta) {
-<span class="pc bpc" id="L159" title="2 of 4 branches missed.">        if (pregunta == null || pregunta.getNivel() == null) {</span>
+<span class="nc bnc" id="L159" title="All 4 branches missed.">        if (pregunta == null || pregunta.getNivel() == null) {</span>
 <span class="nc" id="L160">            return Integer.MAX_VALUE;</span>
         }
-<span class="fc" id="L162">        String digitos = pregunta.getNivel().name().replaceAll(&quot;\\D+&quot;, &quot;&quot;);</span>
-<span class="pc bpc" id="L163" title="1 of 2 branches missed.">        return digitos.isEmpty() ? Integer.MAX_VALUE : Integer.parseInt(digitos);</span>
+<span class="nc" id="L162">        String digitos = pregunta.getNivel().name().replaceAll(&quot;\\D+&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        return digitos.isEmpty() ? Integer.MAX_VALUE : Integer.parseInt(digitos);</span>
     }
 
     // ---------------------------------------------------------------------- COMBOS
 
     private void crearHojaCombos(Sheet sheet, Jornada jornada, Estilos estilos, Map&lt;Long, String&gt; ancestros) {
-<span class="fc bfc" id="L169" title="All 2 branches covered.">        for (int i = 0; i &lt; ANCHOS_COMBOS.length; i++) {</span>
-<span class="fc" id="L170">            sheet.setColumnWidth(i, excelWidth(ANCHOS_COMBOS[i]));</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        for (int i = 0; i &lt; ANCHOS_COMBOS.length; i++) {</span>
+<span class="nc" id="L170">            sheet.setColumnWidth(i, excelWidth(ANCHOS_COMBOS[i]));</span>
         }
 
-<span class="fc" id="L173">        int filaActual = 0;</span>
-<span class="fc bfc" id="L174" title="All 2 branches covered.">        for (Combo combo : jornada.getCombosPorSlot()) {</span>
-<span class="fc bfc" id="L175" title="All 2 branches covered.">            if (combo == null) {</span>
-<span class="fc" id="L176">                continue;</span>
+<span class="nc" id="L173">        int filaActual = 0;</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        for (Combo combo : jornada.getCombosPorSlot()) {</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">            if (combo == null) {</span>
+<span class="nc" id="L176">                continue;</span>
             }
-<span class="fc" id="L178">            filaActual = crearBloqueCombo(sheet, combo, filaActual, estilos, ancestros);</span>
-<span class="fc" id="L179">        }</span>
-<span class="fc" id="L180">    }</span>
+<span class="nc" id="L178">            filaActual = crearBloqueCombo(sheet, combo, filaActual, estilos, ancestros);</span>
+<span class="nc" id="L179">        }</span>
+<span class="nc" id="L180">    }</span>
 
     private int crearBloqueCombo(Sheet sheet, Combo combo, int filaInicial, Estilos estilos,
                                  Map&lt;Long, String&gt; ancestros) {
-<span class="fc" id="L184">        int filaActual = crearCabecera(sheet, filaInicial, CABECERA_COMBOS, estilos);</span>
+<span class="nc" id="L184">        int filaActual = crearCabecera(sheet, filaInicial, CABECERA_COMBOS, estilos);</span>
 
-<span class="fc" id="L186">        String etiquetaCombo = etiquetaCombo(combo, ancestros);</span>
-<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        String tipo = combo.getTipo() != null ? combo.getTipo().name() : &quot;&quot;;</span>
+<span class="nc" id="L186">        String etiquetaCombo = etiquetaCombo(combo, ancestros);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        String tipo = combo.getTipo() != null ? combo.getTipo().name() : &quot;&quot;;</span>
 
-<span class="fc bfc" id="L189" title="All 2 branches covered.">        for (PreguntaCombo pc : preguntasOrdenadasPorFactor(combo)) {</span>
-<span class="fc" id="L190">            Row fila = sheet.createRow(filaActual++);</span>
-<span class="fc" id="L191">            fila.setHeightInPoints(ALTO_PREGUNTA_COMBO);</span>
-<span class="fc" id="L192">            Pregunta pregunta = pc.getPregunta();</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        for (PreguntaCombo pc : preguntasOrdenadasPorFactor(combo)) {</span>
+<span class="nc" id="L190">            Row fila = sheet.createRow(filaActual++);</span>
+<span class="nc" id="L191">            fila.setHeightInPoints(ALTO_PREGUNTA_COMBO);</span>
+<span class="nc" id="L192">            Pregunta pregunta = pc.getPregunta();</span>
 
-<span class="fc" id="L194">            escribir(fila, 0, etiquetaCombo, estilos.primeraColumna);</span>
-<span class="fc" id="L195">            escribir(fila, 1, &quot;&quot;, estilos.datoPlano);</span>
-<span class="fc" id="L196">            escribir(fila, 2, tipo, estilos.datoPlano);</span>
-<span class="fc" id="L197">            escribir(fila, 3, factorCorto(pc), estilos.datoPlano);</span>
-<span class="fc" id="L198">            escribir(fila, 4, nivelCorto(pregunta), estilos.datoPlano);</span>
-<span class="pc bpc" id="L199" title="1 of 2 branches missed.">            escribir(fila, 5, pregunta != null ? pregunta.getPregunta() : &quot;&quot;, estilos.datoAjustado);</span>
-<span class="pc bpc" id="L200" title="1 of 2 branches missed.">            escribir(fila, 6, pregunta != null ? pregunta.getRespuesta() : &quot;&quot;, estilos.datoAjustado);</span>
-<span class="pc bpc" id="L201" title="2 of 4 branches missed.">            escribir(fila, 7, pregunta != null &amp;&amp; pregunta.getDatosExtra() != null ? pregunta.getDatosExtra() : &quot;&quot;,</span>
+<span class="nc" id="L194">            escribir(fila, 0, etiquetaCombo, estilos.primeraColumna);</span>
+<span class="nc" id="L195">            escribir(fila, 1, &quot;&quot;, estilos.datoPlano);</span>
+<span class="nc" id="L196">            escribir(fila, 2, tipo, estilos.datoPlano);</span>
+<span class="nc" id="L197">            escribir(fila, 3, factorCorto(pc), estilos.datoPlano);</span>
+<span class="nc" id="L198">            escribir(fila, 4, nivelCorto(pregunta), estilos.datoPlano);</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">            escribir(fila, 5, pregunta != null ? pregunta.getPregunta() : &quot;&quot;, estilos.datoAjustado);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            escribir(fila, 6, pregunta != null ? pregunta.getRespuesta() : &quot;&quot;, estilos.datoAjustado);</span>
+<span class="nc bnc" id="L201" title="All 4 branches missed.">            escribir(fila, 7, pregunta != null &amp;&amp; pregunta.getDatosExtra() != null ? pregunta.getDatosExtra() : &quot;&quot;,</span>
                     estilos.datoAjustado);
-<span class="fc" id="L203">            escribir(fila, 8, &quot;&quot;, estilos.datoPlano);</span>
-<span class="fc" id="L204">        }</span>
+<span class="nc" id="L203">            escribir(fila, 8, &quot;&quot;, estilos.datoPlano);</span>
+<span class="nc" id="L204">        }</span>
 
-<span class="fc" id="L206">        filaActual = crearFilaPie(sheet, filaActual, &quot;CONCURSANTE&quot;, 4, 8, ALTO_PIE_COMBO, estilos);</span>
-<span class="fc" id="L207">        filaActual = crearFilaPie(sheet, filaActual, &quot;RESULTADO&quot;, 4, 8, ALTO_PIE_COMBO, estilos);</span>
-<span class="fc" id="L208">        filaActual = crearFilaPie(sheet, filaActual, &quot;GRABACIÓN&quot;, 4, 8, ALTO_GRABACION_COMBO, estilos);</span>
-<span class="fc" id="L209">        filaActual = crearFilaPie(sheet, filaActual, &quot;NOTAS GUION&quot;, 4, 8, ALTO_NOTAS_COMBO, estilos);</span>
+<span class="nc" id="L206">        filaActual = crearFilaPie(sheet, filaActual, &quot;CONCURSANTE&quot;, 4, 8, ALTO_PIE_COMBO, estilos);</span>
+<span class="nc" id="L207">        filaActual = crearFilaPie(sheet, filaActual, &quot;RESULTADO&quot;, 4, 8, ALTO_PIE_COMBO, estilos);</span>
+<span class="nc" id="L208">        filaActual = crearFilaPie(sheet, filaActual, &quot;GRABACIÓN&quot;, 4, 8, ALTO_GRABACION_COMBO, estilos);</span>
+<span class="nc" id="L209">        filaActual = crearFilaPie(sheet, filaActual, &quot;NOTAS GUION&quot;, 4, 8, ALTO_NOTAS_COMBO, estilos);</span>
 
-<span class="fc" id="L211">        sheet.setRowBreak(filaActual - 1);</span>
-<span class="fc" id="L212">        return filaActual;</span>
+<span class="nc" id="L211">        sheet.setRowBreak(filaActual - 1);</span>
+<span class="nc" id="L212">        return filaActual;</span>
     }
 
     /** Un combo reciclado muestra debajo del id los combos de los que procede. */
     private String etiquetaCombo(Combo combo, Map&lt;Long, String&gt; ancestros) {
-<span class="pc bpc" id="L217" title="1 of 2 branches missed.">        if (combo.getId() == null) {</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">        if (combo.getId() == null) {</span>
 <span class="nc" id="L218">            return &quot;&quot;;</span>
         }
-<span class="fc" id="L220">        String cadena = ancestros.get(combo.getId());</span>
-<span class="pc bpc" id="L221" title="1 of 4 branches missed.">        return (cadena == null || cadena.isEmpty())</span>
-<span class="fc" id="L222">                ? String.valueOf(combo.getId())</span>
-<span class="fc" id="L223">                : combo.getId() + &quot;\n(&quot; + cadena + &quot;)&quot;;</span>
+<span class="nc" id="L220">        String cadena = ancestros.get(combo.getId());</span>
+<span class="nc bnc" id="L221" title="All 4 branches missed.">        return (cadena == null || cadena.isEmpty())</span>
+<span class="nc" id="L222">                ? String.valueOf(combo.getId())</span>
+<span class="nc" id="L223">                : combo.getId() + &quot;\n(&quot; + cadena + &quot;)&quot;;</span>
     }
 
     private List&lt;PreguntaCombo&gt; preguntasOrdenadasPorFactor(Combo combo) {
-<span class="pc bpc" id="L227" title="1 of 2 branches missed.">        if (combo.getPreguntas() == null) {</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        if (combo.getPreguntas() == null) {</span>
 <span class="nc" id="L228">            return Collections.emptyList();</span>
         }
-<span class="fc" id="L230">        List&lt;PreguntaCombo&gt; preguntas = new ArrayList&lt;&gt;(combo.getPreguntas());</span>
-<span class="pc bpc" id="L231" title="1 of 2 branches missed.">        preguntas.sort(Comparator.comparingInt(pc -&gt; pc.getPosicion() != null ? pc.getPosicion() : 999));</span>
-<span class="fc" id="L232">        return preguntas;</span>
+<span class="nc" id="L230">        List&lt;PreguntaCombo&gt; preguntas = new ArrayList&lt;&gt;(combo.getPreguntas());</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        preguntas.sort(Comparator.comparingInt(pc -&gt; pc.getPosicion() != null ? pc.getPosicion() : 999));</span>
+<span class="nc" id="L232">        return preguntas;</span>
     }
 
     private String factorCorto(PreguntaCombo pc) {
-<span class="fc" id="L236">        String factor = pc.getFactorMultiplicacion();</span>
-<span class="pc bpc" id="L237" title="2 of 4 branches missed.">        if (factor == null || factor.trim().isEmpty()) {</span>
+<span class="nc" id="L236">        String factor = pc.getFactorMultiplicacion();</span>
+<span class="nc bnc" id="L237" title="All 4 branches missed.">        if (factor == null || factor.trim().isEmpty()) {</span>
 <span class="nc" id="L238">            return &quot;&quot;;</span>
         }
-<span class="fc" id="L240">        String digitos = factor.replaceAll(&quot;\\D+&quot;, &quot;&quot;);</span>
-<span class="fc bfc" id="L241" title="All 2 branches covered.">        return digitos.isEmpty() ? factor.trim().toUpperCase() : &quot;X&quot; + digitos;</span>
+<span class="nc" id="L240">        String digitos = factor.replaceAll(&quot;\\D+&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        return digitos.isEmpty() ? factor.trim().toUpperCase() : &quot;X&quot; + digitos;</span>
     }
 
     // ------------------------------------------------------------------- COMPARTIDO
 
     private int crearCabecera(Sheet sheet, int fila, String[] titulos, Estilos estilos) {
-<span class="fc" id="L247">        Row filaCabecera = sheet.createRow(fila);</span>
-<span class="fc" id="L248">        filaCabecera.setHeightInPoints(ALTO_CABECERA);</span>
-<span class="fc bfc" id="L249" title="All 2 branches covered.">        for (int i = 0; i &lt; titulos.length; i++) {</span>
-<span class="fc" id="L250">            escribir(filaCabecera, i, titulos[i], estilos.cabecera);</span>
+<span class="nc" id="L247">        Row filaCabecera = sheet.createRow(fila);</span>
+<span class="nc" id="L248">        filaCabecera.setHeightInPoints(ALTO_CABECERA);</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">        for (int i = 0; i &lt; titulos.length; i++) {</span>
+<span class="nc" id="L250">            escribir(filaCabecera, i, titulos[i], estilos.cabecera);</span>
         }
-<span class="fc" id="L252">        return fila + 1;</span>
+<span class="nc" id="L252">        return fila + 1;</span>
     }
 
     /** Fila de cierre: etiqueta combinada a la izquierda y hueco combinado a la derecha. */
     private int crearFilaPie(Sheet sheet, int fila, String etiqueta, int ultimaColumnaEtiqueta,
                              int ultimaColumnaValor, float alto, Estilos estilos) {
-<span class="fc" id="L258">        Row filaPie = sheet.createRow(fila);</span>
-<span class="fc" id="L259">        filaPie.setHeightInPoints(alto);</span>
+<span class="nc" id="L258">        Row filaPie = sheet.createRow(fila);</span>
+<span class="nc" id="L259">        filaPie.setHeightInPoints(alto);</span>
 
-<span class="fc" id="L261">        escribir(filaPie, 0, etiqueta, estilos.primeraColumna);</span>
-<span class="fc bfc" id="L262" title="All 2 branches covered.">        for (int i = 1; i &lt;= ultimaColumnaEtiqueta; i++) {</span>
-<span class="fc" id="L263">            escribir(filaPie, i, &quot;&quot;, estilos.primeraColumna);</span>
+<span class="nc" id="L261">        escribir(filaPie, 0, etiqueta, estilos.primeraColumna);</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        for (int i = 1; i &lt;= ultimaColumnaEtiqueta; i++) {</span>
+<span class="nc" id="L263">            escribir(filaPie, i, &quot;&quot;, estilos.primeraColumna);</span>
         }
-<span class="fc" id="L265">        combinarConBorde(sheet, fila, 0, ultimaColumnaEtiqueta);</span>
+<span class="nc" id="L265">        combinarConBorde(sheet, fila, 0, ultimaColumnaEtiqueta);</span>
 
-<span class="fc" id="L267">        int primeraColumnaValor = ultimaColumnaEtiqueta + 1;</span>
-<span class="fc bfc" id="L268" title="All 2 branches covered.">        for (int i = primeraColumnaValor; i &lt;= ultimaColumnaValor; i++) {</span>
-<span class="fc" id="L269">            escribir(filaPie, i, &quot;&quot;, estilos.datoAjustado);</span>
+<span class="nc" id="L267">        int primeraColumnaValor = ultimaColumnaEtiqueta + 1;</span>
+<span class="nc bnc" id="L268" title="All 2 branches missed.">        for (int i = primeraColumnaValor; i &lt;= ultimaColumnaValor; i++) {</span>
+<span class="nc" id="L269">            escribir(filaPie, i, &quot;&quot;, estilos.datoAjustado);</span>
         }
-<span class="fc" id="L271">        combinarConBorde(sheet, fila, primeraColumnaValor, ultimaColumnaValor);</span>
+<span class="nc" id="L271">        combinarConBorde(sheet, fila, primeraColumnaValor, ultimaColumnaValor);</span>
 
-<span class="fc" id="L273">        return fila + 1;</span>
+<span class="nc" id="L273">        return fila + 1;</span>
     }
 
     private void combinarConBorde(Sheet sheet, int fila, int primeraColumna, int ultimaColumna) {
-<span class="fc" id="L277">        CellRangeAddress region = new CellRangeAddress(fila, fila, primeraColumna, ultimaColumna);</span>
-<span class="fc" id="L278">        sheet.addMergedRegion(region);</span>
-<span class="fc" id="L279">        RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);</span>
-<span class="fc" id="L280">        RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);</span>
-<span class="fc" id="L281">        RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);</span>
-<span class="fc" id="L282">        RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);</span>
-<span class="fc" id="L283">    }</span>
+<span class="nc" id="L277">        CellRangeAddress region = new CellRangeAddress(fila, fila, primeraColumna, ultimaColumna);</span>
+<span class="nc" id="L278">        sheet.addMergedRegion(region);</span>
+<span class="nc" id="L279">        RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);</span>
+<span class="nc" id="L280">        RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);</span>
+<span class="nc" id="L281">        RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);</span>
+<span class="nc" id="L282">        RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);</span>
+<span class="nc" id="L283">    }</span>
 
     private void escribir(Row fila, int columna, String valor, CellStyle estilo) {
-<span class="fc" id="L286">        Cell celda = fila.createCell(columna);</span>
-<span class="pc bpc" id="L287" title="1 of 2 branches missed.">        celda.setCellValue(valor != null ? valor : &quot;&quot;);</span>
-<span class="fc" id="L288">        celda.setCellStyle(estilo);</span>
-<span class="fc" id="L289">    }</span>
+<span class="nc" id="L286">        Cell celda = fila.createCell(columna);</span>
+<span class="nc bnc" id="L287" title="All 2 branches missed.">        celda.setCellValue(valor != null ? valor : &quot;&quot;);</span>
+<span class="nc" id="L288">        celda.setCellStyle(estilo);</span>
+<span class="nc" id="L289">    }</span>
 
     /** La plantilla escribe los niveles en mayúsculas y con NOLS, no NLS: 1LS, 2NOLS, 3LS, 4NOLS. */
     private String nivelCorto(Pregunta pregunta) {
-<span class="pc bpc" id="L293" title="1 of 4 branches missed.">        if (pregunta == null || pregunta.getNivel() == null) {</span>
-<span class="fc" id="L294">            return &quot;&quot;;</span>
+<span class="nc bnc" id="L293" title="All 4 branches missed.">        if (pregunta == null || pregunta.getNivel() == null) {</span>
+<span class="nc" id="L294">            return &quot;&quot;;</span>
         }
-<span class="fc" id="L296">        String nombre = pregunta.getNivel().name().replace(&quot;_&quot;, &quot;&quot;);</span>
-<span class="fc" id="L297">        return nombre.replace(&quot;NLS&quot;, &quot;NOLS&quot;);</span>
+<span class="nc" id="L296">        String nombre = pregunta.getNivel().name().replace(&quot;_&quot;, &quot;&quot;);</span>
+<span class="nc" id="L297">        return nombre.replace(&quot;NLS&quot;, &quot;NOLS&quot;);</span>
     }
 
     private int excelWidth(double width) {
-<span class="fc" id="L301">        return (int) Math.round(width * 256);</span>
+<span class="nc" id="L301">        return (int) Math.round(width * 256);</span>
     }
 
     private void configurarPagina(Sheet sheet, String tituloCabecera, String nombreJornada) {
-<span class="fc" id="L305">        PrintSetup ps = sheet.getPrintSetup();</span>
-<span class="fc" id="L306">        ps.setLandscape(true);</span>
-<span class="fc" id="L307">        sheet.setFitToPage(true);</span>
-<span class="fc" id="L308">        ps.setFitWidth((short) 1);</span>
-<span class="fc" id="L309">        ps.setFitHeight((short) 0);</span>
-<span class="fc" id="L310">        sheet.setMargin(Sheet.LeftMargin, 0.25);</span>
-<span class="fc" id="L311">        sheet.setMargin(Sheet.RightMargin, 0.25);</span>
-<span class="fc" id="L312">        sheet.setMargin(Sheet.TopMargin, 0.5);</span>
-<span class="fc" id="L313">        sheet.setMargin(Sheet.BottomMargin, 0.5);</span>
-<span class="fc" id="L314">        Header header = sheet.getHeader();</span>
-<span class="fc" id="L315">        header.setCenter(tituloCabecera);</span>
-<span class="fc" id="L316">        Footer footer = sheet.getFooter();</span>
-<span class="fc" id="L317">        footer.setCenter(formatearPieJornada(nombreJornada));</span>
-<span class="fc" id="L318">        footer.setRight(&quot;Página &amp;P de &amp;N&quot;);</span>
-<span class="fc" id="L319">    }</span>
+<span class="nc" id="L305">        PrintSetup ps = sheet.getPrintSetup();</span>
+<span class="nc" id="L306">        ps.setLandscape(true);</span>
+<span class="nc" id="L307">        sheet.setFitToPage(true);</span>
+<span class="nc" id="L308">        ps.setFitWidth((short) 1);</span>
+<span class="nc" id="L309">        ps.setFitHeight((short) 0);</span>
+<span class="nc" id="L310">        sheet.setMargin(Sheet.LeftMargin, 0.25);</span>
+<span class="nc" id="L311">        sheet.setMargin(Sheet.RightMargin, 0.25);</span>
+<span class="nc" id="L312">        sheet.setMargin(Sheet.TopMargin, 0.5);</span>
+<span class="nc" id="L313">        sheet.setMargin(Sheet.BottomMargin, 0.5);</span>
+<span class="nc" id="L314">        Header header = sheet.getHeader();</span>
+<span class="nc" id="L315">        header.setCenter(tituloCabecera);</span>
+<span class="nc" id="L316">        Footer footer = sheet.getFooter();</span>
+<span class="nc" id="L317">        footer.setCenter(formatearPieJornada(nombreJornada));</span>
+<span class="nc" id="L318">        footer.setRight(&quot;Página &amp;P de &amp;N&quot;);</span>
+<span class="nc" id="L319">    }</span>
 
     /**
      * Pie de página de impresión: &quot;Nombre jornada - LSNLS&quot; en 9 pt y gris.
      * Excel usa códigos en el encabezado/pie: {@code &amp;09} = 9 pt, {@code &amp;K808080} = gris RGB.
      */
     private String formatearPieJornada(String nombreJornada) {
-<span class="pc bpc" id="L326" title="2 of 4 branches missed.">        String nombre = (nombreJornada == null || nombreJornada.trim().isEmpty())</span>
+<span class="nc bnc" id="L326" title="All 4 branches missed.">        String nombre = (nombreJornada == null || nombreJornada.trim().isEmpty())</span>
 <span class="nc" id="L327">                ? &quot;Jornada&quot;</span>
-<span class="fc" id="L328">                : nombreJornada.trim().replace(&quot;&amp;&quot;, &quot;&amp;&amp;&quot;);</span>
-<span class="fc" id="L329">        return &quot;&amp;K808080&amp;09&quot; + nombre + &quot; - LSNLS&quot;;</span>
+<span class="nc" id="L328">                : nombreJornada.trim().replace(&quot;&amp;&quot;, &quot;&amp;&amp;&quot;);</span>
+<span class="nc" id="L329">        return &quot;&amp;K808080&amp;09&quot; + nombre + &quot; - LSNLS&quot;;</span>
     }
 
     /** Los estilos se crean una vez por libro: Excel tiene un tope de 64.000. */
@@ -336,58 +336,58 @@ import java.util.Map;
         private final CellStyle datoPlano;
         private final CellStyle datoAjustado;
 
-<span class="fc" id="L339">        private Estilos(Workbook workbook) {</span>
-<span class="fc" id="L340">            this.cabecera = crearCabecera(workbook);</span>
-<span class="fc" id="L341">            this.primeraColumna = crearPrimeraColumna(workbook);</span>
-<span class="fc" id="L342">            this.datoPlano = crearDato(workbook, false);</span>
-<span class="fc" id="L343">            this.datoAjustado = crearDato(workbook, true);</span>
-<span class="fc" id="L344">        }</span>
+<span class="nc" id="L339">        private Estilos(Workbook workbook) {</span>
+<span class="nc" id="L340">            this.cabecera = crearCabecera(workbook);</span>
+<span class="nc" id="L341">            this.primeraColumna = crearPrimeraColumna(workbook);</span>
+<span class="nc" id="L342">            this.datoPlano = crearDato(workbook, false);</span>
+<span class="nc" id="L343">            this.datoAjustado = crearDato(workbook, true);</span>
+<span class="nc" id="L344">        }</span>
 
         private static CellStyle crearCabecera(Workbook workbook) {
-<span class="fc" id="L347">            CellStyle estilo = workbook.createCellStyle();</span>
-<span class="fc" id="L348">            Font fuente = workbook.createFont();</span>
-<span class="fc" id="L349">            fuente.setBold(true);</span>
-<span class="fc" id="L350">            fuente.setFontHeightInPoints((short) 10);</span>
-<span class="fc" id="L351">            fuente.setColor(IndexedColors.WHITE.getIndex());</span>
-<span class="fc" id="L352">            estilo.setFont(fuente);</span>
-<span class="fc" id="L353">            estilo.setAlignment(HorizontalAlignment.CENTER);</span>
-<span class="fc" id="L354">            estilo.setVerticalAlignment(VerticalAlignment.CENTER);</span>
-<span class="fc" id="L355">            estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());</span>
-<span class="fc" id="L356">            estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
-<span class="fc" id="L357">            aplicarBordes(estilo);</span>
-<span class="fc" id="L358">            return estilo;</span>
+<span class="nc" id="L347">            CellStyle estilo = workbook.createCellStyle();</span>
+<span class="nc" id="L348">            Font fuente = workbook.createFont();</span>
+<span class="nc" id="L349">            fuente.setBold(true);</span>
+<span class="nc" id="L350">            fuente.setFontHeightInPoints((short) 10);</span>
+<span class="nc" id="L351">            fuente.setColor(IndexedColors.WHITE.getIndex());</span>
+<span class="nc" id="L352">            estilo.setFont(fuente);</span>
+<span class="nc" id="L353">            estilo.setAlignment(HorizontalAlignment.CENTER);</span>
+<span class="nc" id="L354">            estilo.setVerticalAlignment(VerticalAlignment.CENTER);</span>
+<span class="nc" id="L355">            estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());</span>
+<span class="nc" id="L356">            estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
+<span class="nc" id="L357">            aplicarBordes(estilo);</span>
+<span class="nc" id="L358">            return estilo;</span>
         }
 
         private static CellStyle crearPrimeraColumna(Workbook workbook) {
-<span class="fc" id="L362">            CellStyle estilo = workbook.createCellStyle();</span>
-<span class="fc" id="L363">            Font fuente = workbook.createFont();</span>
-<span class="fc" id="L364">            fuente.setBold(true);</span>
-<span class="fc" id="L365">            fuente.setColor(IndexedColors.WHITE.getIndex());</span>
-<span class="fc" id="L366">            estilo.setFont(fuente);</span>
-<span class="fc" id="L367">            estilo.setAlignment(HorizontalAlignment.LEFT);</span>
-<span class="fc" id="L368">            estilo.setVerticalAlignment(VerticalAlignment.CENTER);</span>
-<span class="fc" id="L369">            estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());</span>
-<span class="fc" id="L370">            estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
-<span class="fc" id="L371">            estilo.setWrapText(true);</span>
-<span class="fc" id="L372">            aplicarBordes(estilo);</span>
-<span class="fc" id="L373">            return estilo;</span>
+<span class="nc" id="L362">            CellStyle estilo = workbook.createCellStyle();</span>
+<span class="nc" id="L363">            Font fuente = workbook.createFont();</span>
+<span class="nc" id="L364">            fuente.setBold(true);</span>
+<span class="nc" id="L365">            fuente.setColor(IndexedColors.WHITE.getIndex());</span>
+<span class="nc" id="L366">            estilo.setFont(fuente);</span>
+<span class="nc" id="L367">            estilo.setAlignment(HorizontalAlignment.LEFT);</span>
+<span class="nc" id="L368">            estilo.setVerticalAlignment(VerticalAlignment.CENTER);</span>
+<span class="nc" id="L369">            estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());</span>
+<span class="nc" id="L370">            estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);</span>
+<span class="nc" id="L371">            estilo.setWrapText(true);</span>
+<span class="nc" id="L372">            aplicarBordes(estilo);</span>
+<span class="nc" id="L373">            return estilo;</span>
         }
 
         private static CellStyle crearDato(Workbook workbook, boolean ajustar) {
-<span class="fc" id="L377">            CellStyle estilo = workbook.createCellStyle();</span>
-<span class="fc" id="L378">            estilo.setAlignment(HorizontalAlignment.LEFT);</span>
-<span class="fc" id="L379">            estilo.setVerticalAlignment(VerticalAlignment.TOP);</span>
-<span class="fc" id="L380">            estilo.setWrapText(ajustar);</span>
-<span class="fc" id="L381">            aplicarBordes(estilo);</span>
-<span class="fc" id="L382">            return estilo;</span>
+<span class="nc" id="L377">            CellStyle estilo = workbook.createCellStyle();</span>
+<span class="nc" id="L378">            estilo.setAlignment(HorizontalAlignment.LEFT);</span>
+<span class="nc" id="L379">            estilo.setVerticalAlignment(VerticalAlignment.TOP);</span>
+<span class="nc" id="L380">            estilo.setWrapText(ajustar);</span>
+<span class="nc" id="L381">            aplicarBordes(estilo);</span>
+<span class="nc" id="L382">            return estilo;</span>
         }
 
         private static void aplicarBordes(CellStyle estilo) {
-<span class="fc" id="L386">            estilo.setBorderTop(BorderStyle.THIN);</span>
-<span class="fc" id="L387">            estilo.setBorderBottom(BorderStyle.THIN);</span>
-<span class="fc" id="L388">            estilo.setBorderLeft(BorderStyle.THIN);</span>
-<span class="fc" id="L389">            estilo.setBorderRight(BorderStyle.THIN);</span>
-<span class="fc" id="L390">        }</span>
+<span class="nc" id="L386">            estilo.setBorderTop(BorderStyle.THIN);</span>
+<span class="nc" id="L387">            estilo.setBorderBottom(BorderStyle.THIN);</span>
+<span class="nc" id="L388">            estilo.setBorderLeft(BorderStyle.THIN);</span>
+<span class="nc" id="L389">            estilo.setBorderRight(BorderStyle.THIN);</span>
+<span class="nc" id="L390">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

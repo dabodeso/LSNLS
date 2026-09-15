@@ -260,21 +260,18 @@ class ConcursanteServiceTest {
     }
 
     @Test
-    void asignarAPrograma_soloEditado() {
+    void asignarAPrograma_grabadoOk() {
         Concursante c = concursanteBase();
         c.setEstado("grabado");
+        c.setNumeroPrograma(null);
         when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> concursanteService.asignarAPrograma(1L, 8L));
-        assertTrue(ex.getMessage().contains("editado"));
-    }
+        when(concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(8))
+            .thenReturn(Collections.emptyList());
 
-    @Test
-    void asignarAPrograma_grabadoFalla() {
-        Concursante c = concursanteBase();
-        c.setEstado("grabado");
-        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
-        assertThrows(IllegalArgumentException.class, () -> concursanteService.asignarAPrograma(1L, 8L));
+        ConcursanteDTO result = concursanteService.asignarAPrograma(1L, 8L);
+
+        assertEquals(8, result.getNumeroPrograma());
+        assertEquals(1, result.getNumeroConcursante());
     }
 
     @Test
@@ -500,7 +497,7 @@ class ConcursanteServiceTest {
         when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
             () -> concursanteService.asignarAPrograma(1L, 8L));
-        assertTrue(ex.getMessage().contains("editado"));
+        assertTrue(ex.getMessage().contains("grabado, editado o emitido"));
     }
 
     @Test

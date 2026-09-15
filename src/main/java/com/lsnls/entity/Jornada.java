@@ -14,9 +14,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Getter
@@ -146,41 +148,81 @@ public class Jornada {
     public void reemplazarCuestionariosPorSlot(List<Cuestionario> porSlot) {
         if (cuestionarioAsignaciones == null) {
             cuestionarioAsignaciones = new HashSet<>();
-        } else {
-            cuestionarioAsignaciones.clear();
         }
-        if (porSlot == null) {
-            return;
-        }
-        for (int i = 0; i < porSlot.size() && i < SlotsJornada.TOTAL; i++) {
-            Cuestionario c = porSlot.get(i);
-            if (c == null) {
-                continue;
+
+        Map<Long, JornadaCuestionarioAsignacion> existentes = new HashMap<>();
+        for (JornadaCuestionarioAsignacion a : cuestionarioAsignaciones) {
+            if (a.getCuestionario() != null && a.getCuestionario().getId() != null) {
+                existentes.put(a.getCuestionario().getId(), a);
             }
-            JornadaCuestionarioAsignacion a = new JornadaCuestionarioAsignacion();
-            a.vincular(this, c, i + 1);
-            cuestionarioAsignaciones.add(a);
         }
+
+        Set<Long> idsDeseados = new HashSet<>();
+        List<JornadaCuestionarioAsignacion> resultado = new ArrayList<>();
+        if (porSlot != null) {
+            for (int i = 0; i < porSlot.size() && i < SlotsJornada.TOTAL; i++) {
+                Cuestionario c = porSlot.get(i);
+                if (c == null || c.getId() == null) {
+                    continue;
+                }
+                idsDeseados.add(c.getId());
+                JornadaCuestionarioAsignacion a = existentes.get(c.getId());
+                if (a != null) {
+                    a.setSlot(i + 1);
+                    resultado.add(a);
+                } else {
+                    JornadaCuestionarioAsignacion nueva = new JornadaCuestionarioAsignacion();
+                    nueva.vincular(this, c, i + 1);
+                    resultado.add(nueva);
+                }
+            }
+        }
+
+        cuestionarioAsignaciones.removeIf(a ->
+            a.getCuestionario() == null
+                || a.getCuestionario().getId() == null
+                || !idsDeseados.contains(a.getCuestionario().getId()));
+        cuestionarioAsignaciones.addAll(resultado);
     }
 
     public void reemplazarCombosPorSlot(List<Combo> porSlot) {
         if (comboAsignaciones == null) {
             comboAsignaciones = new HashSet<>();
-        } else {
-            comboAsignaciones.clear();
         }
-        if (porSlot == null) {
-            return;
-        }
-        for (int i = 0; i < porSlot.size() && i < SlotsJornada.TOTAL; i++) {
-            Combo c = porSlot.get(i);
-            if (c == null) {
-                continue;
+
+        Map<Long, JornadaComboAsignacion> existentes = new HashMap<>();
+        for (JornadaComboAsignacion a : comboAsignaciones) {
+            if (a.getCombo() != null && a.getCombo().getId() != null) {
+                existentes.put(a.getCombo().getId(), a);
             }
-            JornadaComboAsignacion a = new JornadaComboAsignacion();
-            a.vincular(this, c, i + 1);
-            comboAsignaciones.add(a);
         }
+
+        Set<Long> idsDeseados = new HashSet<>();
+        List<JornadaComboAsignacion> resultado = new ArrayList<>();
+        if (porSlot != null) {
+            for (int i = 0; i < porSlot.size() && i < SlotsJornada.TOTAL; i++) {
+                Combo c = porSlot.get(i);
+                if (c == null || c.getId() == null) {
+                    continue;
+                }
+                idsDeseados.add(c.getId());
+                JornadaComboAsignacion a = existentes.get(c.getId());
+                if (a != null) {
+                    a.setSlot(i + 1);
+                    resultado.add(a);
+                } else {
+                    JornadaComboAsignacion nueva = new JornadaComboAsignacion();
+                    nueva.vincular(this, c, i + 1);
+                    resultado.add(nueva);
+                }
+            }
+        }
+
+        comboAsignaciones.removeIf(a ->
+            a.getCombo() == null
+                || a.getCombo().getId() == null
+                || !idsDeseados.contains(a.getCombo().getId()));
+        comboAsignaciones.addAll(resultado);
     }
 
     public enum EstadoJornada {

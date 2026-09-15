@@ -1218,6 +1218,45 @@ function construirNotasDireccionParaGuardar(notasRaw, notasOriginales, esEdicion
     return textoConPrefijoAutor(actualesTrimEnd, autor);
 }
 
+function payloadCuestionarioDesdeDetalle(cuestionario) {
+    const orden = { '_1LS': 0, '_2NLS': 1, '_3LS': 2, '_4NLS': 3, '1LS': 0, '2NLS': 1, '3LS': 2, '4NLS': 3 };
+    const porSlot = [null, null, null, null];
+    (cuestionario?.preguntas || []).forEach(pq => {
+        const p = pq.pregunta || pq;
+        const nivel = (p.nivel || pq.nivel || '').toString();
+        const idx = orden[nivel];
+        if (idx != null && p.id != null) porSlot[idx] = Number(p.id);
+    });
+    return {
+        payload: {
+            preguntasNormales: porSlot.filter(id => id != null),
+            tematica: cuestionario?.tematica || '',
+            notasDireccion: cuestionario?.notasDireccion || ''
+        },
+        estado: cuestionario?.estado || 'borrador'
+    };
+}
+
+async function aplicarGuardadoCuestionario(id, payload, estado) {
+    const resp = await fetch(`/api/cuestionarios/${id}`, {
+        method: 'PUT',
+        headers: { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+        throw new Error(await Utils.mensajeDesdeResponse(resp, 'guardar cuestionarios'));
+    }
+    if (estado) {
+        const respEstado = await fetch(`/api/cuestionarios/${id}/estado?nuevoEstado=${encodeURIComponent(estado)}`, {
+            method: 'PUT',
+            headers: authManager.getAuthHeaders()
+        });
+        if (!respEstado.ok) {
+            throw new Error(await Utils.mensajeDesdeResponse(respEstado, 'cambiar estado del cuestionario'));
+        }
+    }
+}
+
 async function guardarCuestionario() {
     CuestionariosManager.rememberScroll();
     let preguntasNormales = [];
@@ -1477,6 +1516,7 @@ async function guardarCuestionario() {
     
     try {
         let resp, data;
+        const snapshotPrevio = esEdicion ? await apiManager.get(`/api/cuestionarios/${cuestionarioId}`) : null;
         if (esEdicion) {
             // PUT para editar
             console.log(`📤 [FRONTEND] Enviando PUT a /api/cuestionarios/${cuestionarioId}`);
@@ -1552,6 +1592,19 @@ async function guardarCuestionario() {
         }
         const idFinalGuardado = (data && (data.id || data.ID)) || (cuestionarioId || null);
         if (idFinalGuardado) await CuestionariosManager.insertarOActualizarFila(Number(idFinalGuardado));
+        if (esEdicion && snapshotPrevio && window.UndoManager) {
+            const anterior = payloadCuestionarioDesdeDetalle(snapshotPrevio);
+            const idCuest = Number(idFinalGuardado);
+            const rehacer = async () => {
+                await aplicarGuardadoCuestionario(idCuest, payload, estadoSeleccionado);
+                await CuestionariosManager.insertarOActualizarFila(idCuest);
+            };
+            const deshacer = async () => {
+                await aplicarGuardadoCuestionario(idCuest, anterior.payload, anterior.estado);
+                await CuestionariosManager.insertarOActualizarFila(idCuest);
+            };
+            window.UndoManager.record({ do: rehacer, undo: deshacer, label: `Editar cuestionario ${idCuest}` });
+        }
         if (notasElement) notasElement.dataset.originalNotas = notasDireccion || '';
         CuestionariosManager.restoreScrollOrFocus();
     } catch (error) {

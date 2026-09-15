@@ -33,7 +33,7 @@ import org.springframework.data.domain.Sort;
 @Service
 @Transactional
 <span class="fc" id="L35">@lombok.extern.slf4j.Slf4j</span>
-<span class="nc" id="L36">public class CuestionarioService {</span>
+<span class="fc" id="L36">public class CuestionarioService {</span>
     
     @Autowired
     private CuestionarioRepository cuestionarioRepository;
@@ -51,75 +51,75 @@ import org.springframework.data.domain.Sort;
     private UndoService undoService;
 
     public boolean estaAsignadoAJornada(Long cuestionarioId) {
-<span class="nc" id="L54">        Long count = entityManager.createQuery(</span>
+<span class="fc" id="L54">        Long count = entityManager.createQuery(</span>
             &quot;SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id&quot;, Long.class)
-<span class="nc" id="L56">            .setParameter(&quot;id&quot;, cuestionarioId)</span>
-<span class="nc" id="L57">            .getSingleResult();</span>
-<span class="nc bnc" id="L58" title="All 4 branches missed.">        return count != null &amp;&amp; count &gt; 0;</span>
+<span class="fc" id="L56">            .setParameter(&quot;id&quot;, cuestionarioId)</span>
+<span class="fc" id="L57">            .getSingleResult();</span>
+<span class="pc bpc" id="L58" title="1 of 4 branches missed.">        return count != null &amp;&amp; count &gt; 0;</span>
     }
 
     @Autowired
     private TematicaService tematicaService;
 
     public Cuestionario crear(Cuestionario cuestionario) {
-<span class="nc" id="L65">        cuestionario.setFechaCreacion(LocalDateTime.now());</span>
-<span class="nc" id="L66">        cuestionario.setEstado(EstadoCuestionario.borrador);</span>
-<span class="nc" id="L67">        return cuestionarioRepository.save(cuestionario);</span>
+<span class="fc" id="L65">        cuestionario.setFechaCreacion(LocalDateTime.now());</span>
+<span class="fc" id="L66">        cuestionario.setEstado(EstadoCuestionario.borrador);</span>
+<span class="fc" id="L67">        return cuestionarioRepository.save(cuestionario);</span>
     }
 
     public List&lt;Cuestionario&gt; obtenerTodos() {
-<span class="nc" id="L71">        return cuestionarioRepository.findAllOrderByIdDesc();</span>
+<span class="fc" id="L71">        return cuestionarioRepository.findAllOrderByIdDesc();</span>
     }
     
     public Map&lt;String, Object&gt; obtenerTodosPaginados(int page, int size) {
         // Sincronizar estados con asignaciones de jornadas
-<span class="nc" id="L76">        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}</span>
+<span class="pc" id="L76">        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}</span>
         // Crear objeto Pageable para paginación
-<span class="nc" id="L78">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
+<span class="fc" id="L78">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
         
         // Obtener el total de cuestionarios
-<span class="nc" id="L81">        long totalCuestionarios = cuestionarioRepository.count();</span>
+<span class="fc" id="L81">        long totalCuestionarios = cuestionarioRepository.count();</span>
         
         // Obtener cuestionarios paginados
-<span class="nc" id="L84">        List&lt;Cuestionario&gt; cuestionariosPaginados = cuestionarioRepository.findAllPaginados(pageable);</span>
+<span class="fc" id="L84">        List&lt;Cuestionario&gt; cuestionariosPaginados = cuestionarioRepository.findAllPaginados(pageable);</span>
         
         // Convertir a DTOs
-<span class="nc" id="L87">        List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L88" title="All 2 branches missed.">        for (Cuestionario c : cuestionariosPaginados) {</span>
-<span class="nc" id="L89">            Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
-<span class="nc bnc" id="L90" title="All 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
-<span class="nc" id="L91">        }</span>
+<span class="fc" id="L87">        List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        for (Cuestionario c : cuestionariosPaginados) {</span>
+<span class="fc" id="L89">            Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
+<span class="fc" id="L91">        }</span>
         
         // Construir respuesta
-<span class="nc" id="L94">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L95">        response.put(&quot;cuestionarios&quot;, dtos);</span>
-<span class="nc" id="L96">        response.put(&quot;currentPage&quot;, page);</span>
-<span class="nc" id="L97">        response.put(&quot;totalItems&quot;, totalCuestionarios);</span>
-<span class="nc" id="L98">        response.put(&quot;totalPages&quot;, Math.ceil((double) totalCuestionarios / size));</span>
+<span class="fc" id="L94">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L95">        response.put(&quot;cuestionarios&quot;, dtos);</span>
+<span class="fc" id="L96">        response.put(&quot;currentPage&quot;, page);</span>
+<span class="fc" id="L97">        response.put(&quot;totalItems&quot;, totalCuestionarios);</span>
+<span class="fc" id="L98">        response.put(&quot;totalPages&quot;, Math.ceil((double) totalCuestionarios / size));</span>
         
-<span class="nc" id="L100">        return response;</span>
+<span class="fc" id="L100">        return response;</span>
     }
 
     public Optional&lt;Cuestionario&gt; obtenerPorId(Long id) {
-<span class="nc" id="L104">        return cuestionarioRepository.findById(id);</span>
+<span class="fc" id="L104">        return cuestionarioRepository.findById(id);</span>
     }
 
     public Optional&lt;Cuestionario&gt; obtenerConPreguntas(Long id) {
         try {
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L110">            List&lt;Cuestionario&gt; resultados = entityManager.createQuery(</span>
+<span class="fc" id="L110">            List&lt;Cuestionario&gt; resultados = entityManager.createQuery(</span>
                 &quot;SELECT DISTINCT c FROM Cuestionario c &quot; +
                 &quot;LEFT JOIN FETCH c.preguntas pc &quot; +
                 &quot;LEFT JOIN FETCH pc.pregunta p &quot; +
                 &quot;LEFT JOIN FETCH p.creacionUsuario &quot; +
                 &quot;WHERE c.id = :cuestionarioId&quot;
-<span class="nc" id="L116">            ).setParameter(&quot;cuestionarioId&quot;, id).getResultList();</span>
+<span class="fc" id="L116">            ).setParameter(&quot;cuestionarioId&quot;, id).getResultList();</span>
             
-<span class="nc bnc" id="L118" title="All 2 branches missed.">            if (resultados.isEmpty()) {</span>
-<span class="nc" id="L119">                return Optional.empty();</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">            if (resultados.isEmpty()) {</span>
+<span class="fc" id="L119">                return Optional.empty();</span>
             }
             
-<span class="nc" id="L122">            return Optional.of(resultados.get(0));</span>
+<span class="fc" id="L122">            return Optional.of(resultados.get(0));</span>
             
 <span class="nc" id="L124">        } catch (Exception e) {</span>
 <span class="nc" id="L125">            log.warn(&quot;Error al obtener cuestionario con preguntas: &quot; + e.getMessage());</span>
@@ -148,65 +148,65 @@ import org.springframework.data.domain.Sort;
     }
 
     public void validarCompletoParaAprobar(Cuestionario cuestionario) {
-<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (cuestionario == null) {</span>
-<span class="nc" id="L152">            throw new IllegalArgumentException(&quot;Cuestionario no encontrado&quot;);</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (cuestionario == null) {</span>
+<span class="fc" id="L152">            throw new IllegalArgumentException(&quot;Cuestionario no encontrado&quot;);</span>
         }
-<span class="nc" id="L154">        Set&lt;PreguntaCuestionario&gt; preguntas = cuestionario.getPreguntas();</span>
-<span class="nc bnc" id="L155" title="All 2 branches missed.">        int total = preguntas == null ? 0 : preguntas.size();</span>
-<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (total != 4) {</span>
-<span class="nc" id="L157">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L154">        Set&lt;PreguntaCuestionario&gt; preguntas = cuestionario.getPreguntas();</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        int total = preguntas == null ? 0 : preguntas.size();</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (total != 4) {</span>
+<span class="fc" id="L157">            throw new IllegalArgumentException(</span>
                 &quot;Un cuestionario debe tener exactamente 4 preguntas (1LS, 2NLS, 3LS, 4NLS) para un estado distinto de borrador. Actual: &quot; + total);
         }
-<span class="nc" id="L160">        Set&lt;String&gt; nivelesRequeridos = Set.of(&quot;_1LS&quot;, &quot;_2NLS&quot;, &quot;_3LS&quot;, &quot;_4NLS&quot;);</span>
-<span class="nc" id="L161">        Set&lt;String&gt; nivelesPresentes = new HashSet&lt;&gt;();</span>
-<span class="nc bnc" id="L162" title="All 2 branches missed.">        for (PreguntaCuestionario pc : preguntas) {</span>
-<span class="nc bnc" id="L163" title="All 4 branches missed.">            if (pc.getPregunta() == null || pc.getPregunta().getNivel() == null) {</span>
+<span class="fc" id="L160">        Set&lt;String&gt; nivelesRequeridos = Set.of(&quot;_1LS&quot;, &quot;_2NLS&quot;, &quot;_3LS&quot;, &quot;_4NLS&quot;);</span>
+<span class="fc" id="L161">        Set&lt;String&gt; nivelesPresentes = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        for (PreguntaCuestionario pc : preguntas) {</span>
+<span class="pc bpc" id="L163" title="2 of 4 branches missed.">            if (pc.getPregunta() == null || pc.getPregunta().getNivel() == null) {</span>
 <span class="nc" id="L164">                throw new IllegalArgumentException(&quot;El cuestionario tiene preguntas incompletas&quot;);</span>
             }
-<span class="nc" id="L166">            nivelesPresentes.add(pc.getPregunta().getNivel().name());</span>
-<span class="nc" id="L167">        }</span>
-<span class="nc bnc" id="L168" title="All 2 branches missed.">        if (!nivelesPresentes.containsAll(nivelesRequeridos)) {</span>
+<span class="fc" id="L166">            nivelesPresentes.add(pc.getPregunta().getNivel().name());</span>
+<span class="fc" id="L167">        }</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        if (!nivelesPresentes.containsAll(nivelesRequeridos)) {</span>
 <span class="nc" id="L169">            throw new IllegalArgumentException(</span>
                 &quot;El cuestionario debe tener una pregunta en cada nivel (1LS, 2NLS, 3LS, 4NLS) para un estado distinto de borrador&quot;);
         }
-<span class="nc" id="L172">    }</span>
+<span class="fc" id="L172">    }</span>
 
     public void validarTransicionEstado(EstadoCuestionario estadoActual, EstadoCuestionario nuevoEstado, boolean usuarioEsAdmin) {
-<span class="nc" id="L175">        com.lsnls.config.TransicionesEstado.validar(estadoActual, nuevoEstado, usuarioEsAdmin);</span>
-<span class="nc" id="L176">    }</span>
+<span class="fc" id="L175">        com.lsnls.config.TransicionesEstado.validar(estadoActual, nuevoEstado, usuarioEsAdmin);</span>
+<span class="fc" id="L176">    }</span>
 
     public Cuestionario cambiarEstado(Long id, EstadoCuestionario nuevoEstado) {
 <span class="nc" id="L179">        return cambiarEstado(id, nuevoEstado, false);</span>
     }
 
     public Cuestionario cambiarEstado(Long id, EstadoCuestionario nuevoEstado, boolean usuarioEsAdmin) {
-<span class="nc" id="L183">        Optional&lt;Cuestionario&gt; conPreguntas = obtenerConPreguntas(id);</span>
-<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (conPreguntas.isEmpty()) {</span>
-<span class="nc" id="L185">            return null;</span>
+<span class="fc" id="L183">        Optional&lt;Cuestionario&gt; conPreguntas = obtenerConPreguntas(id);</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (conPreguntas.isEmpty()) {</span>
+<span class="fc" id="L185">            return null;</span>
         }
-<span class="nc" id="L187">        Cuestionario cuestionario = conPreguntas.get();</span>
-<span class="nc" id="L188">        validarTransicionEstado(cuestionario.getEstado(), nuevoEstado, usuarioEsAdmin);</span>
+<span class="fc" id="L187">        Cuestionario cuestionario = conPreguntas.get();</span>
+<span class="fc" id="L188">        validarTransicionEstado(cuestionario.getEstado(), nuevoEstado, usuarioEsAdmin);</span>
         // Admin: solo exigir completo al pasar a aprobado.
         // Resto de roles: exigir completo para cualquier estado distinto de borrador.
-<span class="nc bnc" id="L191" title="All 6 branches missed.">        boolean exigeCompleto = nuevoEstado == EstadoCuestionario.aprobado</span>
+<span class="pc bpc" id="L191" title="1 of 6 branches missed.">        boolean exigeCompleto = nuevoEstado == EstadoCuestionario.aprobado</span>
             || (nuevoEstado != EstadoCuestionario.borrador &amp;&amp; !usuarioEsAdmin);
-<span class="nc bnc" id="L193" title="All 2 branches missed.">        if (exigeCompleto) {</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">        if (exigeCompleto) {</span>
 <span class="nc" id="L194">            validarCompletoParaAprobar(cuestionario);</span>
         }
-<span class="nc" id="L196">        cuestionario.setEstado(nuevoEstado);</span>
-<span class="nc" id="L197">        return cuestionarioRepository.save(cuestionario);</span>
+<span class="fc" id="L196">        cuestionario.setEstado(nuevoEstado);</span>
+<span class="fc" id="L197">        return cuestionarioRepository.save(cuestionario);</span>
     }
 
     public Cuestionario cambiarTematica(Long id, String nuevaTematica) {
-<span class="nc" id="L201">        return cuestionarioRepository.findById(id).map(cuestionario -&gt; {</span>
-<span class="nc" id="L202">            cuestionario.setTematica(nuevaTematica);</span>
-<span class="nc" id="L203">            return cuestionarioRepository.save(cuestionario);</span>
-<span class="nc" id="L204">        }).orElse(null);</span>
+<span class="fc" id="L201">        return cuestionarioRepository.findById(id).map(cuestionario -&gt; {</span>
+<span class="fc" id="L202">            cuestionario.setTematica(nuevaTematica);</span>
+<span class="fc" id="L203">            return cuestionarioRepository.save(cuestionario);</span>
+<span class="fc" id="L204">        }).orElse(null);</span>
     }
 
     // Métodos para gestión de temáticas de cuestionarios
     public List&lt;String&gt; obtenerTematicasDisponibles() {
-<span class="nc" id="L209">        return tematicaService.obtenerNombresTematicas();</span>
+<span class="fc" id="L209">        return tematicaService.obtenerNombresTematicas();</span>
     }
 
     public void añadirTematica(String tematica) {
@@ -249,74 +249,74 @@ import org.springframework.data.domain.Sort;
     }
 
     public boolean agregarPregunta(Long cuestionarioId, Long preguntaId, Integer factorMultiplicacion) {
-<span class="nc" id="L252">        Optional&lt;Cuestionario&gt; cuestionarioOpt = cuestionarioRepository.findById(cuestionarioId);</span>
-<span class="nc" id="L253">        Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
+<span class="fc" id="L252">        Optional&lt;Cuestionario&gt; cuestionarioOpt = cuestionarioRepository.findById(cuestionarioId);</span>
+<span class="fc" id="L253">        Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
         
-<span class="nc bnc" id="L255" title="All 2 branches missed.">        if (cuestionarioOpt.isEmpty()) {</span>
-<span class="nc" id="L256">            throw new RuntimeException(&quot;Cuestionario no encontrado: &quot; + cuestionarioId);</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">        if (cuestionarioOpt.isEmpty()) {</span>
+<span class="fc" id="L256">            throw new RuntimeException(&quot;Cuestionario no encontrado: &quot; + cuestionarioId);</span>
         }
         
-<span class="nc bnc" id="L259" title="All 2 branches missed.">        if (preguntaOpt.isEmpty()) {</span>
+<span class="pc bpc" id="L259" title="1 of 2 branches missed.">        if (preguntaOpt.isEmpty()) {</span>
 <span class="nc" id="L260">            throw new RuntimeException(&quot;Pregunta no encontrada: &quot; + preguntaId);</span>
         }
         
-<span class="nc" id="L263">        Cuestionario cuestionario = cuestionarioOpt.get();</span>
-<span class="nc" id="L264">        Pregunta pregunta = preguntaOpt.get();</span>
+<span class="fc" id="L263">        Cuestionario cuestionario = cuestionarioOpt.get();</span>
+<span class="fc" id="L264">        Pregunta pregunta = preguntaOpt.get();</span>
         
         // Verificar que la pregunta esté aprobada; si está verificada, promover a aprobada automáticamente
-<span class="nc bnc" id="L267" title="All 2 branches missed.">        if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {</span>
-<span class="nc bnc" id="L268" title="All 2 branches missed.">            if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {</span>
-<span class="nc" id="L269">                entityManager.createNativeQuery(&quot;UPDATE preguntas SET estado = 'aprobada' WHERE id = ? AND estado = 'verificada'&quot;)</span>
-<span class="nc" id="L270">                    .setParameter(1, preguntaId)</span>
-<span class="nc" id="L271">                    .executeUpdate();</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">        if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">            if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {</span>
+<span class="fc" id="L269">                entityManager.createNativeQuery(&quot;UPDATE preguntas SET estado = 'aprobada' WHERE id = ? AND estado = 'verificada'&quot;)</span>
+<span class="fc" id="L270">                    .setParameter(1, preguntaId)</span>
+<span class="fc" id="L271">                    .executeUpdate();</span>
                 // Refrescar entidad
-<span class="nc" id="L273">                pregunta = preguntaRepository.findById(preguntaId).orElse(pregunta);</span>
+<span class="fc" id="L273">                pregunta = preguntaRepository.findById(preguntaId).orElse(pregunta);</span>
             } else {
-<span class="nc" id="L275">                throw new RuntimeException(&quot;La pregunta debe estar aprobada para ser agregada a un cuestionario&quot;);</span>
+<span class="fc" id="L275">                throw new RuntimeException(&quot;La pregunta debe estar aprobada para ser agregada a un cuestionario&quot;);</span>
             }
         }
         
         // Verificar que la pregunta esté disponible o liberada (puede reutilizarse)
         // Tratar null como disponible para compatibilidad con datos antiguos
-<span class="nc bnc" id="L281" title="All 2 branches missed.">        if (pregunta.getEstadoDisponibilidad() != null &amp;&amp;</span>
-<span class="nc bnc" id="L282" title="All 2 branches missed.">            pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible &amp;&amp; </span>
+<span class="pc bpc" id="L281" title="1 of 2 branches missed.">        if (pregunta.getEstadoDisponibilidad() != null &amp;&amp;</span>
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">            pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible &amp;&amp; </span>
 <span class="nc bnc" id="L283" title="All 2 branches missed.">            pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {</span>
 <span class="nc" id="L284">            throw new RuntimeException(mensajePreguntaNoAsignable(pregunta));</span>
         }
         
         // Verificar que la pregunta no esté ya en este cuestionario
-<span class="nc" id="L288">        PreguntaCuestionario.PreguntaCuestionarioId checkId = new PreguntaCuestionario.PreguntaCuestionarioId();</span>
-<span class="nc" id="L289">        checkId.setPreguntaId(preguntaId);</span>
-<span class="nc" id="L290">        checkId.setCuestionarioId(cuestionarioId);</span>
+<span class="fc" id="L288">        PreguntaCuestionario.PreguntaCuestionarioId checkId = new PreguntaCuestionario.PreguntaCuestionarioId();</span>
+<span class="fc" id="L289">        checkId.setPreguntaId(preguntaId);</span>
+<span class="fc" id="L290">        checkId.setCuestionarioId(cuestionarioId);</span>
         
-<span class="nc" id="L292">        boolean yaExiste = preguntaCuestionarioRepository.existsById(checkId);</span>
+<span class="fc" id="L292">        boolean yaExiste = preguntaCuestionarioRepository.existsById(checkId);</span>
         
-<span class="nc bnc" id="L294" title="All 2 branches missed.">        if (yaExiste) {</span>
-<span class="nc" id="L295">            throw new RuntimeException(&quot;La pregunta ya está agregada a este cuestionario&quot;);</span>
+<span class="fc bfc" id="L294" title="All 2 branches covered.">        if (yaExiste) {</span>
+<span class="fc" id="L295">            throw new RuntimeException(&quot;La pregunta ya está agregada a este cuestionario&quot;);</span>
         }
         
         try {
             // Crear la relación pregunta-cuestionario
-<span class="nc" id="L300">            PreguntaCuestionario pc = new PreguntaCuestionario();</span>
-<span class="nc" id="L301">            PreguntaCuestionario.PreguntaCuestionarioId id = new PreguntaCuestionario.PreguntaCuestionarioId();</span>
-<span class="nc" id="L302">            id.setPreguntaId(preguntaId);</span>
-<span class="nc" id="L303">            id.setCuestionarioId(cuestionarioId);</span>
+<span class="fc" id="L300">            PreguntaCuestionario pc = new PreguntaCuestionario();</span>
+<span class="fc" id="L301">            PreguntaCuestionario.PreguntaCuestionarioId id = new PreguntaCuestionario.PreguntaCuestionarioId();</span>
+<span class="fc" id="L302">            id.setPreguntaId(preguntaId);</span>
+<span class="fc" id="L303">            id.setCuestionarioId(cuestionarioId);</span>
             
-<span class="nc" id="L305">            pc.setId(id);</span>
-<span class="nc" id="L306">            pc.setPregunta(pregunta);</span>
-<span class="nc" id="L307">            pc.setCuestionario(cuestionario);</span>
-<span class="nc bnc" id="L308" title="All 2 branches missed.">            pc.setFactorMultiplicacion(factorMultiplicacion != null ? factorMultiplicacion : 1);</span>
+<span class="fc" id="L305">            pc.setId(id);</span>
+<span class="fc" id="L306">            pc.setPregunta(pregunta);</span>
+<span class="fc" id="L307">            pc.setCuestionario(cuestionario);</span>
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">            pc.setFactorMultiplicacion(factorMultiplicacion != null ? factorMultiplicacion : 1);</span>
             
             // Guardar la relación en la base de datos
-<span class="nc" id="L311">            preguntaCuestionarioRepository.save(pc);</span>
+<span class="fc" id="L311">            preguntaCuestionarioRepository.save(pc);</span>
             
             // Marcar pregunta como usada usando consulta SQL directa para evitar validaciones
-<span class="nc" id="L314">            entityManager.createNativeQuery(</span>
+<span class="fc" id="L314">            entityManager.createNativeQuery(</span>
                 &quot;UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' WHERE id = ?&quot;)
-<span class="nc" id="L316">                .setParameter(1, preguntaId)</span>
-<span class="nc" id="L317">                .executeUpdate();</span>
+<span class="fc" id="L316">                .setParameter(1, preguntaId)</span>
+<span class="fc" id="L317">                .executeUpdate();</span>
             
-<span class="nc" id="L319">            return true;</span>
+<span class="fc" id="L319">            return true;</span>
             
 <span class="nc" id="L321">        } catch (Exception e) {</span>
 <span class="nc" id="L322">            log.warn(&quot;Error al agregar pregunta: &quot; + e.getMessage());</span>
@@ -325,116 +325,116 @@ import org.springframework.data.domain.Sort;
     }
 
     public boolean quitarPregunta(Long cuestionarioId, Long preguntaId) {
-<span class="nc" id="L328">        Optional&lt;Cuestionario&gt; cuestionarioOpt = cuestionarioRepository.findById(cuestionarioId);</span>
-<span class="nc" id="L329">        Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
+<span class="fc" id="L328">        Optional&lt;Cuestionario&gt; cuestionarioOpt = cuestionarioRepository.findById(cuestionarioId);</span>
+<span class="fc" id="L329">        Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
         
-<span class="nc bnc" id="L331" title="All 4 branches missed.">        if (cuestionarioOpt.isPresent() &amp;&amp; preguntaOpt.isPresent()) {</span>
-<span class="nc" id="L332">            Cuestionario cuestionario = cuestionarioOpt.get();</span>
-<span class="nc" id="L333">            Pregunta pregunta = preguntaOpt.get();</span>
+<span class="pc bpc" id="L331" title="1 of 4 branches missed.">        if (cuestionarioOpt.isPresent() &amp;&amp; preguntaOpt.isPresent()) {</span>
+<span class="fc" id="L332">            Cuestionario cuestionario = cuestionarioOpt.get();</span>
+<span class="fc" id="L333">            Pregunta pregunta = preguntaOpt.get();</span>
             
             // Verificar si existe la relación antes de eliminar
-<span class="nc" id="L336">            PreguntaCuestionario.PreguntaCuestionarioId checkId = new PreguntaCuestionario.PreguntaCuestionarioId();</span>
-<span class="nc" id="L337">            checkId.setPreguntaId(preguntaId);</span>
-<span class="nc" id="L338">            checkId.setCuestionarioId(cuestionarioId);</span>
+<span class="fc" id="L336">            PreguntaCuestionario.PreguntaCuestionarioId checkId = new PreguntaCuestionario.PreguntaCuestionarioId();</span>
+<span class="fc" id="L337">            checkId.setPreguntaId(preguntaId);</span>
+<span class="fc" id="L338">            checkId.setCuestionarioId(cuestionarioId);</span>
             
-<span class="nc" id="L340">            boolean existeRelacion = preguntaCuestionarioRepository.existsById(checkId);</span>
+<span class="fc" id="L340">            boolean existeRelacion = preguntaCuestionarioRepository.existsById(checkId);</span>
             
-<span class="nc bnc" id="L342" title="All 2 branches missed.">            if (!existeRelacion) {</span>
-<span class="nc" id="L343">                return false;</span>
+<span class="fc bfc" id="L342" title="All 2 branches covered.">            if (!existeRelacion) {</span>
+<span class="fc" id="L343">                return false;</span>
             }
             
             // Eliminar la relación usando SQL directo para asegurar que funcione
-<span class="nc" id="L347">            int filasEliminadas = entityManager.createNativeQuery(</span>
+<span class="fc" id="L347">            int filasEliminadas = entityManager.createNativeQuery(</span>
                 &quot;DELETE FROM cuestionarios_preguntas WHERE cuestionario_id = ? AND pregunta_id = ?&quot;)
-<span class="nc" id="L349">                .setParameter(1, cuestionarioId)</span>
-<span class="nc" id="L350">                .setParameter(2, preguntaId)</span>
-<span class="nc" id="L351">                .executeUpdate();</span>
+<span class="fc" id="L349">                .setParameter(1, cuestionarioId)</span>
+<span class="fc" id="L350">                .setParameter(2, preguntaId)</span>
+<span class="fc" id="L351">                .executeUpdate();</span>
             
             // Liberar la pregunta usando consulta SQL directa
-<span class="nc bnc" id="L354" title="All 2 branches missed.">            if (pregunta.getEstadoDisponibilidad() == Pregunta.EstadoDisponibilidad.usada) {</span>
-<span class="nc" id="L355">                entityManager.createNativeQuery(</span>
+<span class="pc bpc" id="L354" title="1 of 2 branches missed.">            if (pregunta.getEstadoDisponibilidad() == Pregunta.EstadoDisponibilidad.usada) {</span>
+<span class="fc" id="L355">                entityManager.createNativeQuery(</span>
                     &quot;UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?&quot;)
-<span class="nc" id="L357">                    .setParameter(1, preguntaId)</span>
-<span class="nc" id="L358">                    .executeUpdate();</span>
+<span class="fc" id="L357">                    .setParameter(1, preguntaId)</span>
+<span class="fc" id="L358">                    .executeUpdate();</span>
             }
             
-<span class="nc bnc" id="L361" title="All 2 branches missed.">            return filasEliminadas &gt; 0;</span>
+<span class="pc bpc" id="L361" title="1 of 2 branches missed.">            return filasEliminadas &gt; 0;</span>
         }
         
-<span class="nc" id="L364">        return false;</span>
+<span class="fc" id="L364">        return false;</span>
     }
 
     public void eliminar(Long id) {
         // Verificar que el cuestionario existe
-<span class="nc" id="L369">        Optional&lt;Cuestionario&gt; cuestionarioOpt = cuestionarioRepository.findById(id);</span>
-<span class="nc bnc" id="L370" title="All 2 branches missed.">        if (cuestionarioOpt.isEmpty()) {</span>
-<span class="nc" id="L371">            throw new IllegalArgumentException(&quot;Cuestionario con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="fc" id="L369">        Optional&lt;Cuestionario&gt; cuestionarioOpt = cuestionarioRepository.findById(id);</span>
+<span class="fc bfc" id="L370" title="All 2 branches covered.">        if (cuestionarioOpt.isEmpty()) {</span>
+<span class="fc" id="L371">            throw new IllegalArgumentException(&quot;Cuestionario con ID &quot; + id + &quot; no encontrado&quot;);</span>
         }
 
-<span class="nc" id="L374">        Cuestionario cuestionario = cuestionarioOpt.get();</span>
+<span class="fc" id="L374">        Cuestionario cuestionario = cuestionarioOpt.get();</span>
 
         // Verificar dependencias - no se puede eliminar si está adjudicado o grabado
-<span class="nc bnc" id="L377" title="All 2 branches missed.">        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {</span>
-<span class="nc" id="L378">            throw new IllegalArgumentException(&quot;No se puede eliminar el cuestionario porque está adjudicado a una jornada. Desasígnalo primero.&quot;);</span>
+<span class="fc bfc" id="L377" title="All 2 branches covered.">        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {</span>
+<span class="fc" id="L378">            throw new IllegalArgumentException(&quot;No se puede eliminar el cuestionario porque está adjudicado a una jornada. Desasígnalo primero.&quot;);</span>
         }
-<span class="nc bnc" id="L380" title="All 2 branches missed.">        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.grabado) {</span>
-<span class="nc" id="L381">            throw new IllegalArgumentException(&quot;No se puede eliminar el cuestionario porque está grabado (asignado a concursantes). Desasígnalo primero.&quot;);</span>
+<span class="fc bfc" id="L380" title="All 2 branches covered.">        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.grabado) {</span>
+<span class="fc" id="L381">            throw new IllegalArgumentException(&quot;No se puede eliminar el cuestionario porque está grabado (asignado a concursantes). Desasígnalo primero.&quot;);</span>
         }
 
         // Verificar si hay concursantes usando este cuestionario
-<span class="nc" id="L385">        Long concursantesCount = entityManager.createQuery(</span>
+<span class="fc" id="L385">        Long concursantesCount = entityManager.createQuery(</span>
             &quot;SELECT COUNT(c) FROM Concursante c WHERE c.cuestionario.id = :cuestionarioId&quot;, Long.class)
-<span class="nc" id="L387">            .setParameter(&quot;cuestionarioId&quot;, id)</span>
-<span class="nc" id="L388">            .getSingleResult();</span>
+<span class="fc" id="L387">            .setParameter(&quot;cuestionarioId&quot;, id)</span>
+<span class="fc" id="L388">            .getSingleResult();</span>
         
-<span class="nc bnc" id="L390" title="All 2 branches missed.">        if (concursantesCount &gt; 0) {</span>
-<span class="nc" id="L391">            throw new IllegalArgumentException(&quot;No se puede eliminar el cuestionario porque está siendo usado por &quot; + </span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">        if (concursantesCount &gt; 0) {</span>
+<span class="fc" id="L391">            throw new IllegalArgumentException(&quot;No se puede eliminar el cuestionario porque está siendo usado por &quot; + </span>
                 concursantesCount + &quot; concursante(s). Desasígnalo primero.&quot;);
         }
 
         // Verificar si está en alguna jornada
-<span class="nc" id="L396">        Long jornadasCount = entityManager.createQuery(</span>
+<span class="fc" id="L396">        Long jornadasCount = entityManager.createQuery(</span>
             &quot;SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :cuestionarioId&quot;, Long.class)
-<span class="nc" id="L398">            .setParameter(&quot;cuestionarioId&quot;, id)</span>
-<span class="nc" id="L399">            .getSingleResult();</span>
+<span class="fc" id="L398">            .setParameter(&quot;cuestionarioId&quot;, id)</span>
+<span class="fc" id="L399">            .getSingleResult();</span>
             
-<span class="nc bnc" id="L401" title="All 2 branches missed.">        if (jornadasCount &gt; 0) {</span>
-<span class="nc" id="L402">            throw new IllegalArgumentException(&quot;No se puede eliminar el cuestionario porque está asignado a &quot; + </span>
+<span class="fc bfc" id="L401" title="All 2 branches covered.">        if (jornadasCount &gt; 0) {</span>
+<span class="fc" id="L402">            throw new IllegalArgumentException(&quot;No se puede eliminar el cuestionario porque está asignado a &quot; + </span>
                 jornadasCount + &quot; jornada(s). Desasígnalo primero.&quot;);
         }
 
         // UNDO: capturar todo lo que este borrado destruye o modifica, ANTES de tocarlo:
         // la fila del cuestionario (se reinsertará con el mismo id), sus preguntas
         // asociadas, el historial que se borra y los estados que se liberan
-<span class="nc" id="L409">        List&lt;Map&lt;String, Object&gt;&gt; accionesUndo = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L410">        Map&lt;String, Object&gt; filaCuestionario = undoService.snapshotFila(&quot;cuestionarios&quot;, id);</span>
-<span class="nc bnc" id="L411" title="All 2 branches missed.">        if (filaCuestionario != null) {</span>
-<span class="nc" id="L412">            accionesUndo.add(UndoService.accionInsertarFila(&quot;cuestionarios&quot;, filaCuestionario));</span>
+<span class="fc" id="L409">        List&lt;Map&lt;String, Object&gt;&gt; accionesUndo = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L410">        Map&lt;String, Object&gt; filaCuestionario = undoService.snapshotFila(&quot;cuestionarios&quot;, id);</span>
+<span class="pc bpc" id="L411" title="1 of 2 branches missed.">        if (filaCuestionario != null) {</span>
+<span class="fc" id="L412">            accionesUndo.add(UndoService.accionInsertarFila(&quot;cuestionarios&quot;, filaCuestionario));</span>
         }
-<span class="nc bnc" id="L414" title="All 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;cuestionarios_preguntas&quot;, &quot;cuestionario_id&quot;, id)) {</span>
+<span class="pc bpc" id="L414" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;cuestionarios_preguntas&quot;, &quot;cuestionario_id&quot;, id)) {</span>
 <span class="nc" id="L415">            accionesUndo.add(UndoService.accionInsertarFila(&quot;cuestionarios_preguntas&quot;, fila));</span>
 <span class="nc" id="L416">        }</span>
-<span class="nc bnc" id="L417" title="All 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;cuestionario_id&quot;, id)) {</span>
+<span class="pc bpc" id="L417" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;cuestionario_id&quot;, id)) {</span>
 <span class="nc" id="L418">            accionesUndo.add(UndoService.accionInsertarFila(&quot;historial_jornadas&quot;, fila));</span>
 <span class="nc" id="L419">        }</span>
-<span class="nc bnc" id="L420" title="All 2 branches missed.">        if (cuestionario.getPreguntas() != null) {</span>
-<span class="nc bnc" id="L421" title="All 2 branches missed.">            for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {</span>
-<span class="nc" id="L422">                Map&lt;String, Object&gt; camposPrevios = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L423" title="All 2 branches missed.">                camposPrevios.put(&quot;estado&quot;, pc.getPregunta().getEstado() != null ? pc.getPregunta().getEstado().name() : null);</span>
-<span class="nc bnc" id="L424" title="All 2 branches missed.">                camposPrevios.put(&quot;estado_disponibilidad&quot;, pc.getPregunta().getEstadoDisponibilidad() != null ? pc.getPregunta().getEstadoDisponibilidad().name() : null);</span>
-<span class="nc" id="L425">                accionesUndo.add(UndoService.accionActualizarCampos(&quot;preguntas&quot;, pc.getPregunta().getId(), camposPrevios));</span>
-<span class="nc" id="L426">            }</span>
+<span class="pc bpc" id="L420" title="1 of 2 branches missed.">        if (cuestionario.getPreguntas() != null) {</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">            for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {</span>
+<span class="fc" id="L422">                Map&lt;String, Object&gt; camposPrevios = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L423" title="1 of 2 branches missed.">                camposPrevios.put(&quot;estado&quot;, pc.getPregunta().getEstado() != null ? pc.getPregunta().getEstado().name() : null);</span>
+<span class="pc bpc" id="L424" title="1 of 2 branches missed.">                camposPrevios.put(&quot;estado_disponibilidad&quot;, pc.getPregunta().getEstadoDisponibilidad() != null ? pc.getPregunta().getEstadoDisponibilidad().name() : null);</span>
+<span class="fc" id="L425">                accionesUndo.add(UndoService.accionActualizarCampos(&quot;preguntas&quot;, pc.getPregunta().getId(), camposPrevios));</span>
+<span class="fc" id="L426">            }</span>
         }
 
         // Eliminar registros del historial que referencian este cuestionario (si la tabla existe)
         try {
             // Verificar si la tabla existe antes de intentar eliminar
-<span class="nc" id="L432">            Object result = entityManager.createNativeQuery(</span>
+<span class="fc" id="L432">            Object result = entityManager.createNativeQuery(</span>
                 &quot;SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'historial_jornadas'&quot;)
-<span class="nc" id="L434">                .getSingleResult();</span>
-<span class="nc" id="L435">            Long tableExists = ((Number) result).longValue();</span>
+<span class="fc" id="L434">                .getSingleResult();</span>
+<span class="fc" id="L435">            Long tableExists = ((Number) result).longValue();</span>
             
-<span class="nc bnc" id="L437" title="All 2 branches missed.">            if (tableExists &gt; 0) {</span>
+<span class="pc bpc" id="L437" title="1 of 2 branches missed.">            if (tableExists &gt; 0) {</span>
                 // Verificar si la columna cuestionario_id existe
 <span class="nc" id="L439">                Object columnExists = entityManager.createNativeQuery(</span>
                     &quot;SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'historial_jornadas' AND column_name = 'cuestionario_id'&quot;)
@@ -451,23 +451,23 @@ import org.springframework.data.domain.Sort;
 <span class="nc" id="L451">        } catch (Exception e) {</span>
             // Si hay error al eliminar el historial, continuamos de todas formas
 <span class="nc" id="L453">            log.warn(&quot;Advertencia: No se pudieron eliminar algunos registros del historial para el cuestionario &quot; + id + &quot;: &quot; + e.getMessage());</span>
-<span class="nc" id="L454">        }</span>
+<span class="fc" id="L454">        }</span>
 
         // Si llegamos aquí, es seguro eliminar - liberar las preguntas asociadas
-<span class="nc" id="L457">        Set&lt;PreguntaCuestionario&gt; preguntas = cuestionario.getPreguntas();</span>
-<span class="nc bnc" id="L458" title="All 2 branches missed.">        for (PreguntaCuestionario pc : preguntas) {</span>
+<span class="fc" id="L457">        Set&lt;PreguntaCuestionario&gt; preguntas = cuestionario.getPreguntas();</span>
+<span class="fc bfc" id="L458" title="All 2 branches covered.">        for (PreguntaCuestionario pc : preguntas) {</span>
             // Devolver a aprobada y marcar como liberada para poder reutilizar
-<span class="nc" id="L460">            entityManager.createNativeQuery(</span>
+<span class="fc" id="L460">            entityManager.createNativeQuery(</span>
                 &quot;UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?&quot;)
-<span class="nc" id="L462">                .setParameter(1, pc.getPregunta().getId())</span>
-<span class="nc" id="L463">                .executeUpdate();</span>
-<span class="nc" id="L464">        }</span>
+<span class="fc" id="L462">                .setParameter(1, pc.getPregunta().getId())</span>
+<span class="fc" id="L463">                .executeUpdate();</span>
+<span class="fc" id="L464">        }</span>
         
-<span class="nc" id="L466">        cuestionarioRepository.deleteById(id);</span>
+<span class="fc" id="L466">        cuestionarioRepository.deleteById(id);</span>
 
         // UNDO: registrar el borrado como operación deshacible (reinserta con el mismo id)
-<span class="nc" id="L469">        undoService.registrar(&quot;eliminar_cuestionario&quot;, &quot;Eliminar cuestionario &quot; + id, accionesUndo);</span>
-<span class="nc" id="L470">    }</span>
+<span class="fc" id="L469">        undoService.registrar(&quot;eliminar_cuestionario&quot;, &quot;Eliminar cuestionario &quot; + id, accionesUndo);</span>
+<span class="fc" id="L470">    }</span>
 
     public void eliminarPorId(Long id) {
 <span class="nc" id="L473">        cuestionarioRepository.deleteById(id);</span>
@@ -484,225 +484,225 @@ import org.springframework.data.domain.Sort;
     }
 
     public Map&lt;String, Object&gt; filtrarCuestionarios(String estado, String tematica, String subtema, String texto, int page, int size) {
-<span class="nc" id="L487">        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}</span>
+<span class="pc" id="L487">        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}</span>
         // Crear objeto Pageable para paginación
-<span class="nc" id="L489">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
+<span class="fc" id="L489">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
         
         Page&lt;Cuestionario&gt; paginaCuestionarios;
         
         // Si hay texto, buscar en preguntas y respuestas usando consulta nativa
-<span class="nc bnc" id="L494" title="All 4 branches missed.">        if (texto != null &amp;&amp; !texto.trim().isEmpty()) {</span>
-<span class="nc" id="L495">            String textoBusqueda = &quot;%&quot; + texto.trim().toLowerCase() + &quot;%&quot;;</span>
+<span class="pc bpc" id="L494" title="1 of 4 branches missed.">        if (texto != null &amp;&amp; !texto.trim().isEmpty()) {</span>
+<span class="fc" id="L495">            String textoBusqueda = &quot;%&quot; + texto.trim().toLowerCase() + &quot;%&quot;;</span>
             
             // Construir consulta nativa para buscar cuestionarios que tengan preguntas o respuestas con el texto
-<span class="nc" id="L498">            String sql = &quot;SELECT DISTINCT c.id FROM cuestionarios c &quot; +</span>
+<span class="fc" id="L498">            String sql = &quot;SELECT DISTINCT c.id FROM cuestionarios c &quot; +</span>
                         &quot;INNER JOIN cuestionarios_preguntas cp ON c.id = cp.cuestionario_id &quot; +
                         &quot;INNER JOIN preguntas p ON cp.pregunta_id = p.id &quot; +
                         &quot;WHERE (LOWER(p.pregunta) LIKE :texto OR LOWER(p.respuesta) LIKE :texto)&quot;;
             
-<span class="nc bnc" id="L503" title="All 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
-<span class="nc" id="L504">                sql += &quot; AND c.estado = :estado&quot;;</span>
+<span class="pc bpc" id="L503" title="2 of 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
+<span class="fc" id="L504">                sql += &quot; AND c.estado = :estado&quot;;</span>
             }
-<span class="nc bnc" id="L506" title="All 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
-<span class="nc" id="L507">                sql += &quot; AND LOWER(c.tematica) LIKE :tematica&quot;;</span>
+<span class="pc bpc" id="L506" title="2 of 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L507">                sql += &quot; AND LOWER(c.tematica) LIKE :tematica&quot;;</span>
             }
-<span class="nc bnc" id="L509" title="All 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
-<span class="nc" id="L510">                sql += &quot; AND LOWER(p.subtema) LIKE :subtema&quot;;</span>
+<span class="pc bpc" id="L509" title="2 of 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
+<span class="fc" id="L510">                sql += &quot; AND LOWER(p.subtema) LIKE :subtema&quot;;</span>
             }
             
-<span class="nc" id="L513">            sql += &quot; ORDER BY c.id DESC&quot;;</span>
+<span class="fc" id="L513">            sql += &quot; ORDER BY c.id DESC&quot;;</span>
             
             // Ejecutar consulta nativa
-<span class="nc" id="L516">            javax.persistence.Query query = entityManager.createNativeQuery(sql);</span>
-<span class="nc" id="L517">            query.setParameter(&quot;texto&quot;, textoBusqueda);</span>
-<span class="nc bnc" id="L518" title="All 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
-<span class="nc" id="L519">                query.setParameter(&quot;estado&quot;, estado);</span>
+<span class="fc" id="L516">            javax.persistence.Query query = entityManager.createNativeQuery(sql);</span>
+<span class="fc" id="L517">            query.setParameter(&quot;texto&quot;, textoBusqueda);</span>
+<span class="pc bpc" id="L518" title="2 of 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
+<span class="fc" id="L519">                query.setParameter(&quot;estado&quot;, estado);</span>
             }
-<span class="nc bnc" id="L521" title="All 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
-<span class="nc" id="L522">                query.setParameter(&quot;tematica&quot;, &quot;%&quot; + tematica.toLowerCase() + &quot;%&quot;);</span>
+<span class="pc bpc" id="L521" title="2 of 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L522">                query.setParameter(&quot;tematica&quot;, &quot;%&quot; + tematica.toLowerCase() + &quot;%&quot;);</span>
             }
-<span class="nc bnc" id="L524" title="All 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
-<span class="nc" id="L525">                query.setParameter(&quot;subtema&quot;, &quot;%&quot; + subtema.toLowerCase() + &quot;%&quot;);</span>
+<span class="pc bpc" id="L524" title="2 of 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
+<span class="fc" id="L525">                query.setParameter(&quot;subtema&quot;, &quot;%&quot; + subtema.toLowerCase() + &quot;%&quot;);</span>
             }
-<span class="nc" id="L527">            query.setFirstResult((int) pageable.getOffset());</span>
-<span class="nc" id="L528">            query.setMaxResults(pageable.getPageSize());</span>
+<span class="fc" id="L527">            query.setFirstResult((int) pageable.getOffset());</span>
+<span class="fc" id="L528">            query.setMaxResults(pageable.getPageSize());</span>
             
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L531">            List&lt;Number&gt; resultadoIds = query.getResultList();</span>
+<span class="fc" id="L531">            List&lt;Number&gt; resultadoIds = query.getResultList();</span>
             
             // Obtener el total de resultados
-<span class="nc" id="L534">            String countSql = &quot;SELECT COUNT(DISTINCT c.id) FROM cuestionarios c &quot; +</span>
+<span class="fc" id="L534">            String countSql = &quot;SELECT COUNT(DISTINCT c.id) FROM cuestionarios c &quot; +</span>
                              &quot;INNER JOIN cuestionarios_preguntas cp ON c.id = cp.cuestionario_id &quot; +
                              &quot;INNER JOIN preguntas p ON cp.pregunta_id = p.id &quot; +
                              &quot;WHERE (LOWER(p.pregunta) LIKE :texto OR LOWER(p.respuesta) LIKE :texto)&quot;;
-<span class="nc bnc" id="L538" title="All 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
-<span class="nc" id="L539">                countSql += &quot; AND c.estado = :estado&quot;;</span>
+<span class="pc bpc" id="L538" title="2 of 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
+<span class="fc" id="L539">                countSql += &quot; AND c.estado = :estado&quot;;</span>
             }
-<span class="nc bnc" id="L541" title="All 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
-<span class="nc" id="L542">                countSql += &quot; AND LOWER(c.tematica) LIKE :tematica&quot;;</span>
+<span class="pc bpc" id="L541" title="2 of 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L542">                countSql += &quot; AND LOWER(c.tematica) LIKE :tematica&quot;;</span>
             }
-<span class="nc bnc" id="L544" title="All 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
-<span class="nc" id="L545">                countSql += &quot; AND LOWER(p.subtema) LIKE :subtema&quot;;</span>
-            }
-            
-<span class="nc" id="L548">            javax.persistence.Query countQuery = entityManager.createNativeQuery(countSql);</span>
-<span class="nc" id="L549">            countQuery.setParameter(&quot;texto&quot;, textoBusqueda);</span>
-<span class="nc bnc" id="L550" title="All 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
-<span class="nc" id="L551">                countQuery.setParameter(&quot;estado&quot;, estado);</span>
-            }
-<span class="nc bnc" id="L553" title="All 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
-<span class="nc" id="L554">                countQuery.setParameter(&quot;tematica&quot;, &quot;%&quot; + tematica.toLowerCase() + &quot;%&quot;);</span>
-            }
-<span class="nc bnc" id="L556" title="All 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
-<span class="nc" id="L557">                countQuery.setParameter(&quot;subtema&quot;, &quot;%&quot; + subtema.toLowerCase() + &quot;%&quot;);</span>
+<span class="pc bpc" id="L544" title="2 of 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
+<span class="fc" id="L545">                countSql += &quot; AND LOWER(p.subtema) LIKE :subtema&quot;;</span>
             }
             
-<span class="nc" id="L560">            long total = ((Number) countQuery.getSingleResult()).longValue();</span>
+<span class="fc" id="L548">            javax.persistence.Query countQuery = entityManager.createNativeQuery(countSql);</span>
+<span class="fc" id="L549">            countQuery.setParameter(&quot;texto&quot;, textoBusqueda);</span>
+<span class="pc bpc" id="L550" title="2 of 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
+<span class="fc" id="L551">                countQuery.setParameter(&quot;estado&quot;, estado);</span>
+            }
+<span class="pc bpc" id="L553" title="2 of 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L554">                countQuery.setParameter(&quot;tematica&quot;, &quot;%&quot; + tematica.toLowerCase() + &quot;%&quot;);</span>
+            }
+<span class="pc bpc" id="L556" title="2 of 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
+<span class="fc" id="L557">                countQuery.setParameter(&quot;subtema&quot;, &quot;%&quot; + subtema.toLowerCase() + &quot;%&quot;);</span>
+            }
+            
+<span class="fc" id="L560">            long total = ((Number) countQuery.getSingleResult()).longValue();</span>
             
             // Convertir resultados a cuestionarios
-<span class="nc" id="L563">            List&lt;Cuestionario&gt; cuestionarios = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L564" title="All 2 branches missed.">            for (Number id : resultadoIds) {</span>
-<span class="nc" id="L565">                Optional&lt;Cuestionario&gt; cuestionarioOpt = cuestionarioRepository.findById(id.longValue());</span>
-<span class="nc bnc" id="L566" title="All 2 branches missed.">                if (cuestionarioOpt.isPresent()) {</span>
-<span class="nc" id="L567">                    cuestionarios.add(cuestionarioOpt.get());</span>
+<span class="fc" id="L563">            List&lt;Cuestionario&gt; cuestionarios = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L564" title="All 2 branches covered.">            for (Number id : resultadoIds) {</span>
+<span class="fc" id="L565">                Optional&lt;Cuestionario&gt; cuestionarioOpt = cuestionarioRepository.findById(id.longValue());</span>
+<span class="pc bpc" id="L566" title="1 of 2 branches missed.">                if (cuestionarioOpt.isPresent()) {</span>
+<span class="fc" id="L567">                    cuestionarios.add(cuestionarioOpt.get());</span>
                 }
-<span class="nc" id="L569">            }</span>
+<span class="fc" id="L569">            }</span>
             
             // Convertir a DTOs
-<span class="nc" id="L572">            List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L573" title="All 2 branches missed.">            for (Cuestionario c : cuestionarios) {</span>
-<span class="nc" id="L574">                Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
-<span class="nc bnc" id="L575" title="All 2 branches missed.">                if (dto != null) dtos.add(dto);</span>
-<span class="nc" id="L576">            }</span>
+<span class="fc" id="L572">            List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L573" title="All 2 branches covered.">            for (Cuestionario c : cuestionarios) {</span>
+<span class="fc" id="L574">                Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
+<span class="pc bpc" id="L575" title="1 of 2 branches missed.">                if (dto != null) dtos.add(dto);</span>
+<span class="fc" id="L576">            }</span>
             
             // Construir respuesta
-<span class="nc" id="L579">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L580">            response.put(&quot;cuestionarios&quot;, dtos);</span>
-<span class="nc" id="L581">            response.put(&quot;currentPage&quot;, page);</span>
-<span class="nc" id="L582">            response.put(&quot;totalItems&quot;, total);</span>
-<span class="nc" id="L583">            response.put(&quot;totalPages&quot;, (int) Math.ceil((double) total / size));</span>
+<span class="fc" id="L579">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L580">            response.put(&quot;cuestionarios&quot;, dtos);</span>
+<span class="fc" id="L581">            response.put(&quot;currentPage&quot;, page);</span>
+<span class="fc" id="L582">            response.put(&quot;totalItems&quot;, total);</span>
+<span class="fc" id="L583">            response.put(&quot;totalPages&quot;, (int) Math.ceil((double) total / size));</span>
             
-<span class="nc" id="L585">            return response;</span>
+<span class="fc" id="L585">            return response;</span>
         }
         
         // Aplicar filtros y paginación directamente en la consulta a la base de datos
-<span class="nc bnc" id="L589" title="All 8 branches missed.">        if (estado != null &amp;&amp; !estado.isEmpty() &amp;&amp; tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="pc bpc" id="L589" title="2 of 8 branches missed.">        if (estado != null &amp;&amp; !estado.isEmpty() &amp;&amp; tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
             // Filtrar por estado y temática
-<span class="nc" id="L591">            EstadoCuestionario estadoEnum = EstadoCuestionario.valueOf(estado);</span>
-<span class="nc" id="L592">            paginaCuestionarios = cuestionarioRepository.findByEstadoAndTematicaContainingIgnoreCase(</span>
+<span class="fc" id="L591">            EstadoCuestionario estadoEnum = EstadoCuestionario.valueOf(estado);</span>
+<span class="fc" id="L592">            paginaCuestionarios = cuestionarioRepository.findByEstadoAndTematicaContainingIgnoreCase(</span>
                 estadoEnum, tematica, pageable);
-<span class="nc bnc" id="L594" title="All 4 branches missed.">        } else if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
+<span class="pc bpc" id="L594" title="1 of 4 branches missed.">        } else if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
             // Filtrar solo por estado
-<span class="nc" id="L596">            EstadoCuestionario estadoEnum = EstadoCuestionario.valueOf(estado);</span>
-<span class="nc" id="L597">            paginaCuestionarios = cuestionarioRepository.findByEstado(estadoEnum, pageable);</span>
-<span class="nc bnc" id="L598" title="All 4 branches missed.">        } else if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L596">            EstadoCuestionario estadoEnum = EstadoCuestionario.valueOf(estado);</span>
+<span class="fc" id="L597">            paginaCuestionarios = cuestionarioRepository.findByEstado(estadoEnum, pageable);</span>
+<span class="pc bpc" id="L598" title="1 of 4 branches missed.">        } else if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
             // Filtrar solo por temática
-<span class="nc" id="L600">            paginaCuestionarios = cuestionarioRepository.findByTematicaContainingIgnoreCase(tematica, pageable);</span>
+<span class="fc" id="L600">            paginaCuestionarios = cuestionarioRepository.findByTematicaContainingIgnoreCase(tematica, pageable);</span>
         } else {
             // Si no hay filtros, usar la paginación existente
-<span class="nc" id="L603">            return obtenerTodosPaginados(page, size);</span>
+<span class="fc" id="L603">            return obtenerTodosPaginados(page, size);</span>
         }
         
         // Convertir a DTOs
-<span class="nc" id="L607">        List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L608" title="All 2 branches missed.">        for (Cuestionario c : paginaCuestionarios.getContent()) {</span>
-<span class="nc" id="L609">            Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
-<span class="nc bnc" id="L610" title="All 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
-<span class="nc" id="L611">        }</span>
+<span class="fc" id="L607">        List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L608" title="All 2 branches covered.">        for (Cuestionario c : paginaCuestionarios.getContent()) {</span>
+<span class="fc" id="L609">            Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
+<span class="pc bpc" id="L610" title="1 of 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
+<span class="fc" id="L611">        }</span>
         
         // Construir respuesta
-<span class="nc" id="L614">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L615">        response.put(&quot;cuestionarios&quot;, dtos);</span>
-<span class="nc" id="L616">        response.put(&quot;currentPage&quot;, paginaCuestionarios.getNumber());</span>
-<span class="nc" id="L617">        response.put(&quot;totalItems&quot;, paginaCuestionarios.getTotalElements());</span>
-<span class="nc" id="L618">        response.put(&quot;totalPages&quot;, paginaCuestionarios.getTotalPages());</span>
+<span class="fc" id="L614">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L615">        response.put(&quot;cuestionarios&quot;, dtos);</span>
+<span class="fc" id="L616">        response.put(&quot;currentPage&quot;, paginaCuestionarios.getNumber());</span>
+<span class="fc" id="L617">        response.put(&quot;totalItems&quot;, paginaCuestionarios.getTotalElements());</span>
+<span class="fc" id="L618">        response.put(&quot;totalPages&quot;, paginaCuestionarios.getTotalPages());</span>
         
-<span class="nc" id="L620">        log.debug(&quot;Filtrado con paginación optimizada - Página: &quot; + page + &quot;, Tamaño: &quot; + size + </span>
-<span class="nc" id="L621">                          &quot;, Total: &quot; + paginaCuestionarios.getTotalElements() + </span>
-<span class="nc" id="L622">                          &quot;, Cuestionarios en esta página: &quot; + dtos.size());</span>
+<span class="fc" id="L620">        log.debug(&quot;Filtrado con paginación optimizada - Página: &quot; + page + &quot;, Tamaño: &quot; + size + </span>
+<span class="fc" id="L621">                          &quot;, Total: &quot; + paginaCuestionarios.getTotalElements() + </span>
+<span class="fc" id="L622">                          &quot;, Cuestionarios en esta página: &quot; + dtos.size());</span>
         
-<span class="nc" id="L624">        return response;</span>
+<span class="fc" id="L624">        return response;</span>
     }
 
     /** Sincroniza estados adjudicado/aprobado con asignaciones de jornada (lote) */
     private void sincronizarEstadosAsignaciones() {
         // Cuestionarios adjudicados por estar en jornadas
         // IMPORTANTE: no tocar los que ya están en 'aprobado' porque pueden estar marcados como reutilizados/liberados
-<span class="nc" id="L631">        entityManager.createNativeQuery(</span>
+<span class="fc" id="L631">        entityManager.createNativeQuery(</span>
             &quot;UPDATE cuestionarios SET estado='adjudicado' &quot; +
             &quot;WHERE id IN (SELECT cuestionario_id FROM jornadas_cuestionarios) &quot; +
             &quot;AND estado NOT IN ('adjudicado','grabado','aprobado')&quot;)
-<span class="nc" id="L635">            .executeUpdate();</span>
+<span class="fc" id="L635">            .executeUpdate();</span>
         // Cuestionarios sin jornada → aprobado (solo si estaban adjudicados)
-<span class="nc" id="L637">        entityManager.createNativeQuery(</span>
+<span class="fc" id="L637">        entityManager.createNativeQuery(</span>
             &quot;UPDATE cuestionarios SET estado='aprobado' WHERE estado='adjudicado' AND id NOT IN (SELECT cuestionario_id FROM jornadas_cuestionarios)&quot;)
-<span class="nc" id="L639">            .executeUpdate();</span>
-<span class="nc" id="L640">    }</span>
+<span class="fc" id="L639">            .executeUpdate();</span>
+<span class="fc" id="L640">    }</span>
     
     public Map&lt;String, Object&gt; filtrarCuestionariosPorId(String idStr, int page, int size) {
         // Crear objeto Pageable para paginación
-<span class="nc" id="L644">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
+<span class="fc" id="L644">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
         
         try {
             // Intentar buscar por ID exacto
-<span class="nc" id="L648">            Long id = Long.parseLong(idStr);</span>
-<span class="nc" id="L649">            Optional&lt;Cuestionario&gt; cuestionario = cuestionarioRepository.findById(id);</span>
+<span class="fc" id="L648">            Long id = Long.parseLong(idStr);</span>
+<span class="fc" id="L649">            Optional&lt;Cuestionario&gt; cuestionario = cuestionarioRepository.findById(id);</span>
             
-<span class="nc bnc" id="L651" title="All 2 branches missed.">            if (cuestionario.isPresent()) {</span>
+<span class="fc bfc" id="L651" title="All 2 branches covered.">            if (cuestionario.isPresent()) {</span>
                 // Para búsqueda exacta por ID, creamos una respuesta con un solo elemento
-<span class="nc" id="L653">                List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L654">                Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(id);</span>
-<span class="nc bnc" id="L655" title="All 2 branches missed.">                if (dto != null) {</span>
-<span class="nc" id="L656">                    dtos.add(dto);</span>
+<span class="fc" id="L653">                List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L654">                Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(id);</span>
+<span class="pc bpc" id="L655" title="1 of 2 branches missed.">                if (dto != null) {</span>
+<span class="fc" id="L656">                    dtos.add(dto);</span>
                 }
                 
                 // Construir respuesta para un solo elemento
-<span class="nc" id="L660">                Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L661">                response.put(&quot;cuestionarios&quot;, dtos);</span>
-<span class="nc" id="L662">                response.put(&quot;currentPage&quot;, 0);</span>
-<span class="nc" id="L663">                response.put(&quot;totalItems&quot;, 1);</span>
-<span class="nc" id="L664">                response.put(&quot;totalPages&quot;, 1);</span>
+<span class="fc" id="L660">                Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L661">                response.put(&quot;cuestionarios&quot;, dtos);</span>
+<span class="fc" id="L662">                response.put(&quot;currentPage&quot;, 0);</span>
+<span class="fc" id="L663">                response.put(&quot;totalItems&quot;, 1);</span>
+<span class="fc" id="L664">                response.put(&quot;totalPages&quot;, 1);</span>
                 
-<span class="nc bnc" id="L666" title="All 2 branches missed.">                log.debug(&quot;Búsqueda exacta por ID - ID: &quot; + id + &quot;, Encontrado: &quot; + (dto != null));</span>
+<span class="pc bpc" id="L666" title="1 of 2 branches missed.">                log.debug(&quot;Búsqueda exacta por ID - ID: &quot; + id + &quot;, Encontrado: &quot; + (dto != null));</span>
                 
-<span class="nc" id="L668">                return response;</span>
+<span class="fc" id="L668">                return response;</span>
             } else {
                 // No se encontró el cuestionario con el ID exacto
-<span class="nc" id="L671">                Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L672">                response.put(&quot;cuestionarios&quot;, new ArrayList&lt;&gt;());</span>
-<span class="nc" id="L673">                response.put(&quot;currentPage&quot;, 0);</span>
-<span class="nc" id="L674">                response.put(&quot;totalItems&quot;, 0);</span>
-<span class="nc" id="L675">                response.put(&quot;totalPages&quot;, 0);</span>
+<span class="fc" id="L671">                Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L672">                response.put(&quot;cuestionarios&quot;, new ArrayList&lt;&gt;());</span>
+<span class="fc" id="L673">                response.put(&quot;currentPage&quot;, 0);</span>
+<span class="fc" id="L674">                response.put(&quot;totalItems&quot;, 0);</span>
+<span class="fc" id="L675">                response.put(&quot;totalPages&quot;, 0);</span>
                 
-<span class="nc" id="L677">                log.debug(&quot;Búsqueda exacta por ID - ID: &quot; + id + &quot;, No encontrado&quot;);</span>
+<span class="fc" id="L677">                log.debug(&quot;Búsqueda exacta por ID - ID: &quot; + id + &quot;, No encontrado&quot;);</span>
                 
-<span class="nc" id="L679">                return response;</span>
+<span class="fc" id="L679">                return response;</span>
             }
-<span class="nc" id="L681">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L681">        } catch (NumberFormatException e) {</span>
             // Si no es un número, buscar por coincidencia parcial usando paginación nativa
             // Implementar método en el repositorio para buscar por ID con paginación
-<span class="nc" id="L684">            Page&lt;Cuestionario&gt; paginaCuestionarios = cuestionarioRepository.findByIdContaining(idStr, pageable);</span>
+<span class="fc" id="L684">            Page&lt;Cuestionario&gt; paginaCuestionarios = cuestionarioRepository.findByIdContaining(idStr, pageable);</span>
             
             // Convertir a DTOs
-<span class="nc" id="L687">            List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L688" title="All 2 branches missed.">            for (Cuestionario c : paginaCuestionarios.getContent()) {</span>
-<span class="nc" id="L689">                Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
-<span class="nc bnc" id="L690" title="All 2 branches missed.">                if (dto != null) dtos.add(dto);</span>
-<span class="nc" id="L691">            }</span>
+<span class="fc" id="L687">            List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L688" title="All 2 branches covered.">            for (Cuestionario c : paginaCuestionarios.getContent()) {</span>
+<span class="fc" id="L689">                Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
+<span class="pc bpc" id="L690" title="1 of 2 branches missed.">                if (dto != null) dtos.add(dto);</span>
+<span class="fc" id="L691">            }</span>
             
             // Construir respuesta
-<span class="nc" id="L694">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L695">            response.put(&quot;cuestionarios&quot;, dtos);</span>
-<span class="nc" id="L696">            response.put(&quot;currentPage&quot;, paginaCuestionarios.getNumber());</span>
-<span class="nc" id="L697">            response.put(&quot;totalItems&quot;, paginaCuestionarios.getTotalElements());</span>
-<span class="nc" id="L698">            response.put(&quot;totalPages&quot;, paginaCuestionarios.getTotalPages());</span>
+<span class="fc" id="L694">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L695">            response.put(&quot;cuestionarios&quot;, dtos);</span>
+<span class="fc" id="L696">            response.put(&quot;currentPage&quot;, paginaCuestionarios.getNumber());</span>
+<span class="fc" id="L697">            response.put(&quot;totalItems&quot;, paginaCuestionarios.getTotalElements());</span>
+<span class="fc" id="L698">            response.put(&quot;totalPages&quot;, paginaCuestionarios.getTotalPages());</span>
             
-<span class="nc" id="L700">            log.debug(&quot;Búsqueda parcial por ID - Término: &quot; + idStr + </span>
+<span class="fc" id="L700">            log.debug(&quot;Búsqueda parcial por ID - Término: &quot; + idStr + </span>
                               &quot;, Página: &quot; + page + &quot;, Tamaño: &quot; + size + 
-<span class="nc" id="L702">                              &quot;, Total: &quot; + paginaCuestionarios.getTotalElements() + </span>
-<span class="nc" id="L703">                              &quot;, Cuestionarios en esta página: &quot; + dtos.size());</span>
+<span class="fc" id="L702">                              &quot;, Total: &quot; + paginaCuestionarios.getTotalElements() + </span>
+<span class="fc" id="L703">                              &quot;, Cuestionarios en esta página: &quot; + dtos.size());</span>
             
-<span class="nc" id="L705">            return response;</span>
+<span class="fc" id="L705">            return response;</span>
         }
     }
 
@@ -731,28 +731,28 @@ import org.springframework.data.domain.Sort;
     @Transactional
     public boolean verificarYReservarPreguntasAtomico(List&lt;Long&gt; preguntaIds) {
         // Verificar que la lista no sea nula
-<span class="nc bnc" id="L734" title="All 4 branches missed.">        if (preguntaIds == null || preguntaIds.isEmpty()) {</span>
-<span class="nc" id="L735">            return true; // No hay nada que reservar</span>
+<span class="pc bpc" id="L734" title="1 of 4 branches missed.">        if (preguntaIds == null || preguntaIds.isEmpty()) {</span>
+<span class="fc" id="L735">            return true; // No hay nada que reservar</span>
         }
 
         // Normalizar IDs: quitar nulos y duplicados para evitar falsos positivos
-<span class="nc" id="L739">        java.util.List&lt;Long&gt; idsNormalizados = new java.util.ArrayList&lt;&gt;();</span>
-<span class="nc" id="L740">        java.util.Set&lt;Long&gt; vistos = new java.util.LinkedHashSet&lt;&gt;();</span>
-<span class="nc bnc" id="L741" title="All 2 branches missed.">        for (Long id : preguntaIds) {</span>
-<span class="nc bnc" id="L742" title="All 2 branches missed.">            if (id == null) continue;</span>
-<span class="nc bnc" id="L743" title="All 2 branches missed.">            if (vistos.add(id)) {</span>
-<span class="nc" id="L744">                idsNormalizados.add(id);</span>
+<span class="fc" id="L739">        java.util.List&lt;Long&gt; idsNormalizados = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc" id="L740">        java.util.Set&lt;Long&gt; vistos = new java.util.LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L741" title="All 2 branches covered.">        for (Long id : preguntaIds) {</span>
+<span class="pc bpc" id="L742" title="1 of 2 branches missed.">            if (id == null) continue;</span>
+<span class="pc bpc" id="L743" title="1 of 2 branches missed.">            if (vistos.add(id)) {</span>
+<span class="fc" id="L744">                idsNormalizados.add(id);</span>
             }
-<span class="nc" id="L746">        }</span>
+<span class="fc" id="L746">        }</span>
 
-<span class="nc bnc" id="L748" title="All 2 branches missed.">        if (idsNormalizados.isEmpty()) {</span>
+<span class="pc bpc" id="L748" title="1 of 2 branches missed.">        if (idsNormalizados.isEmpty()) {</span>
 <span class="nc" id="L749">            return true;</span>
         }
 
         // PASO 1: Verificar que todas las preguntas existen y están en estado correcto
-<span class="nc" id="L753">        List&lt;Pregunta&gt; preguntas = preguntaRepository.findAllById(idsNormalizados);</span>
+<span class="fc" id="L753">        List&lt;Pregunta&gt; preguntas = preguntaRepository.findAllById(idsNormalizados);</span>
 
-<span class="nc bnc" id="L755" title="All 2 branches missed.">        if (preguntas.size() != idsNormalizados.size()) {</span>
+<span class="pc bpc" id="L755" title="1 of 2 branches missed.">        if (preguntas.size() != idsNormalizados.size()) {</span>
             // Construir una lista explícita de IDs que faltan para facilitar el debug en el frontend
 <span class="nc" id="L757">            java.util.Set&lt;Long&gt; encontrados = new java.util.HashSet&lt;&gt;();</span>
 <span class="nc bnc" id="L758" title="All 2 branches missed.">            for (Pregunta p : preguntas) {</span>
@@ -773,8 +773,8 @@ import org.springframework.data.domain.Sort;
         }
         
         // Verificar el estado de cada pregunta (promover 'verificada' -&gt; 'aprobada' si aplica)
-<span class="nc bnc" id="L776" title="All 2 branches missed.">        for (Pregunta pregunta : preguntas) {</span>
-<span class="nc bnc" id="L777" title="All 2 branches missed.">            if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {</span>
+<span class="fc bfc" id="L776" title="All 2 branches covered.">        for (Pregunta pregunta : preguntas) {</span>
+<span class="pc bpc" id="L777" title="1 of 2 branches missed.">            if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {</span>
 <span class="nc bnc" id="L778" title="All 2 branches missed.">                if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {</span>
 <span class="nc" id="L779">                    entityManager.createNativeQuery(&quot;UPDATE preguntas SET estado = 'aprobada' WHERE id = ? AND estado = 'verificada'&quot;)</span>
 <span class="nc" id="L780">                        .setParameter(1, pregunta.getId())</span>
@@ -787,39 +787,39 @@ import org.springframework.data.domain.Sort;
             }
             
             // Tratar null como disponible para compatibilidad con datos antiguos
-<span class="nc bnc" id="L790" title="All 2 branches missed.">            if (pregunta.getEstadoDisponibilidad() != null &amp;&amp;</span>
-<span class="nc bnc" id="L791" title="All 2 branches missed.">                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible &amp;&amp; </span>
+<span class="pc bpc" id="L790" title="1 of 2 branches missed.">            if (pregunta.getEstadoDisponibilidad() != null &amp;&amp;</span>
+<span class="pc bpc" id="L791" title="1 of 2 branches missed.">                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible &amp;&amp; </span>
 <span class="nc bnc" id="L792" title="All 2 branches missed.">                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {</span>
 <span class="nc" id="L793">                throw new IllegalArgumentException(mensajePreguntaNoAsignable(pregunta));</span>
             }
             
             // Verificar que sea pregunta de nivel 1-4 para cuestionarios
-<span class="nc bnc" id="L797" title="All 2 branches missed.">            if (pregunta.getNivel().name().startsWith(&quot;_5&quot;)) {</span>
+<span class="pc bpc" id="L797" title="1 of 2 branches missed.">            if (pregunta.getNivel().name().startsWith(&quot;_5&quot;)) {</span>
 <span class="nc" id="L798">                throw new IllegalArgumentException(&quot;La pregunta &quot; + pregunta.getId() + &quot; es de nivel 5 y debe ir en combos, no en cuestionarios&quot;);</span>
             }
-<span class="nc" id="L800">        }</span>
+<span class="fc" id="L800">        }</span>
         
         // PASO 2: Reservar todas las preguntas ATÓMICAMENTE con una sola query
-<span class="nc" id="L803">        String preguntaIdsStr = idsNormalizados.stream()</span>
-<span class="nc" id="L804">            .map(String::valueOf)</span>
-<span class="nc" id="L805">            .reduce((a, b) -&gt; a + &quot;,&quot; + b)</span>
-<span class="nc" id="L806">            .orElse(&quot;&quot;);</span>
+<span class="fc" id="L803">        String preguntaIdsStr = idsNormalizados.stream()</span>
+<span class="fc" id="L804">            .map(String::valueOf)</span>
+<span class="pc" id="L805">            .reduce((a, b) -&gt; a + &quot;,&quot; + b)</span>
+<span class="fc" id="L806">            .orElse(&quot;&quot;);</span>
             
-<span class="nc" id="L808">        int preguntasReservadas = entityManager.createNativeQuery(</span>
+<span class="fc" id="L808">        int preguntasReservadas = entityManager.createNativeQuery(</span>
             &quot;UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' &quot; +
             &quot;WHERE id IN (&quot; + preguntaIdsStr + &quot;) &quot; +
             &quot;AND (estado_disponibilidad IN ('disponible', 'liberada') OR estado_disponibilidad IS NULL) &quot; +
             &quot;AND estado = 'aprobada'&quot;
-<span class="nc" id="L813">        ).executeUpdate();</span>
+<span class="fc" id="L813">        ).executeUpdate();</span>
         
         // PASO 3: Verificar que se reservaron TODAS las preguntas
-<span class="nc bnc" id="L816" title="All 2 branches missed.">        if (preguntasReservadas != idsNormalizados.size()) {</span>
+<span class="pc bpc" id="L816" title="1 of 2 branches missed.">        if (preguntasReservadas != idsNormalizados.size()) {</span>
             // Rollback - alguna pregunta fue tomada por otro usuario
 <span class="nc" id="L818">            throw new IllegalStateException(&quot;Conflicto de concurrencia: &quot; + (idsNormalizados.size() - preguntasReservadas) + </span>
                 &quot; pregunta(s) fueron reservadas por otro usuario. Por favor, verifica la disponibilidad e intenta nuevamente.&quot;);
         }
         
-<span class="nc" id="L822">        return true;</span>
+<span class="fc" id="L822">        return true;</span>
     }
 
     /**
@@ -844,43 +844,43 @@ import org.springframework.data.domain.Sort;
     public Cuestionario crearDesdeDTO(CrearCuestionarioDTO dto, Usuario usuario) {
         // PASO 1: VERIFICACIÓN Y RESERVA ATÓMICA de todas las preguntas
         try {
-<span class="nc" id="L847">            verificarYReservarPreguntasAtomico(dto.getPreguntasNormales());</span>
+<span class="fc" id="L847">            verificarYReservarPreguntasAtomico(dto.getPreguntasNormales());</span>
 <span class="nc" id="L848">        } catch (IllegalStateException e) {</span>
             // Error de concurrencia - mensaje específico
 <span class="nc" id="L850">            throw new IllegalArgumentException(&quot;Error de concurrencia al reservar preguntas: &quot; + e.getMessage());</span>
 <span class="nc" id="L851">        } catch (IllegalArgumentException e) {</span>
             // Error de validación - reenviar tal como está
 <span class="nc" id="L853">            throw e;</span>
-<span class="nc" id="L854">        }</span>
+<span class="fc" id="L854">        }</span>
         
         // PASO 2: Crear el cuestionario (las preguntas ya están reservadas)
-<span class="nc" id="L857">        Cuestionario cuestionario = new Cuestionario();</span>
-<span class="nc" id="L858">        cuestionario.setCreacionUsuario(usuario);</span>
-<span class="nc" id="L859">        cuestionario.setEstado(Cuestionario.EstadoCuestionario.borrador);</span>
-<span class="nc" id="L860">        cuestionario.setFechaCreacion(LocalDateTime.now());</span>
-<span class="nc" id="L861">        cuestionario.setNivel(Cuestionario.NivelCuestionario.NORMAL);</span>
-<span class="nc" id="L862">        cuestionario.setTematica(dto.getTematica());</span>
-<span class="nc" id="L863">        cuestionario.setNotasDireccion(dto.getNotasDireccion());</span>
-<span class="nc" id="L864">        cuestionario = cuestionarioRepository.save(cuestionario);</span>
+<span class="fc" id="L857">        Cuestionario cuestionario = new Cuestionario();</span>
+<span class="fc" id="L858">        cuestionario.setCreacionUsuario(usuario);</span>
+<span class="fc" id="L859">        cuestionario.setEstado(Cuestionario.EstadoCuestionario.borrador);</span>
+<span class="fc" id="L860">        cuestionario.setFechaCreacion(LocalDateTime.now());</span>
+<span class="fc" id="L861">        cuestionario.setNivel(Cuestionario.NivelCuestionario.NORMAL);</span>
+<span class="fc" id="L862">        cuestionario.setTematica(dto.getTematica());</span>
+<span class="fc" id="L863">        cuestionario.setNotasDireccion(dto.getNotasDireccion());</span>
+<span class="fc" id="L864">        cuestionario = cuestionarioRepository.save(cuestionario);</span>
 
         // PASO 3: Crear las relaciones pregunta-cuestionario (preguntas ya reservadas)
         try {
-<span class="nc bnc" id="L868" title="All 2 branches missed.">            for (Long idPregunta : dto.getPreguntasNormales()) {</span>
-<span class="nc" id="L869">                Pregunta pregunta = preguntaRepository.findById(idPregunta)</span>
-<span class="nc" id="L870">                    .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Pregunta no encontrada: &quot; + idPregunta));</span>
+<span class="fc bfc" id="L868" title="All 2 branches covered.">            for (Long idPregunta : dto.getPreguntasNormales()) {</span>
+<span class="fc" id="L869">                Pregunta pregunta = preguntaRepository.findById(idPregunta)</span>
+<span class="pc" id="L870">                    .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Pregunta no encontrada: &quot; + idPregunta));</span>
                 
-<span class="nc" id="L872">                PreguntaCuestionario pc = new PreguntaCuestionario();</span>
-<span class="nc" id="L873">                PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();</span>
-<span class="nc" id="L874">                pcid.setPreguntaId(idPregunta);</span>
-<span class="nc" id="L875">                pcid.setCuestionarioId(cuestionario.getId());</span>
-<span class="nc" id="L876">                pc.setId(pcid);</span>
-<span class="nc" id="L877">                pc.setPregunta(pregunta);</span>
-<span class="nc" id="L878">                pc.setCuestionario(cuestionario);</span>
-<span class="nc" id="L879">                pc.setFactorMultiplicacion(1);</span>
-<span class="nc" id="L880">                preguntaCuestionarioRepository.save(pc);</span>
+<span class="fc" id="L872">                PreguntaCuestionario pc = new PreguntaCuestionario();</span>
+<span class="fc" id="L873">                PreguntaCuestionario.PreguntaCuestionarioId pcid = new PreguntaCuestionario.PreguntaCuestionarioId();</span>
+<span class="fc" id="L874">                pcid.setPreguntaId(idPregunta);</span>
+<span class="fc" id="L875">                pcid.setCuestionarioId(cuestionario.getId());</span>
+<span class="fc" id="L876">                pc.setId(pcid);</span>
+<span class="fc" id="L877">                pc.setPregunta(pregunta);</span>
+<span class="fc" id="L878">                pc.setCuestionario(cuestionario);</span>
+<span class="fc" id="L879">                pc.setFactorMultiplicacion(1);</span>
+<span class="fc" id="L880">                preguntaCuestionarioRepository.save(pc);</span>
                 // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasAtomico()
-<span class="nc" id="L882">            }</span>
-<span class="nc" id="L883">            return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);</span>
+<span class="fc" id="L882">            }</span>
+<span class="fc" id="L883">            return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);</span>
 <span class="nc" id="L884">        } catch (Exception e) {</span>
             // En caso de error, liberar las preguntas reservadas
 <span class="nc" id="L886">            liberarPreguntasAtomico(dto.getPreguntasNormales());</span>
@@ -891,44 +891,44 @@ import org.springframework.data.domain.Sort;
     }
 
     public Cuestionario actualizarDesdeDTO(Long id, CrearCuestionarioDTO dto) {
-<span class="nc" id="L894">        Optional&lt;Cuestionario&gt; optCuestionario = cuestionarioRepository.findById(id);</span>
-<span class="nc bnc" id="L895" title="All 2 branches missed.">        if (optCuestionario.isEmpty()) {</span>
+<span class="fc" id="L894">        Optional&lt;Cuestionario&gt; optCuestionario = cuestionarioRepository.findById(id);</span>
+<span class="pc bpc" id="L895" title="1 of 2 branches missed.">        if (optCuestionario.isEmpty()) {</span>
 <span class="nc" id="L896">            throw new IllegalArgumentException(&quot;Cuestionario no encontrado&quot;);</span>
         }
-<span class="nc" id="L898">        Cuestionario cuestionario = optCuestionario.get();</span>
+<span class="fc" id="L898">        Cuestionario cuestionario = optCuestionario.get();</span>
 
-<span class="nc bnc" id="L900" title="All 2 branches missed.">        if (dto.getVersion() != null) {</span>
-<span class="nc" id="L901">            cuestionario.setVersion(dto.getVersion());</span>
+<span class="pc bpc" id="L900" title="1 of 2 branches missed.">        if (dto.getVersion() != null) {</span>
+<span class="fc" id="L901">            cuestionario.setVersion(dto.getVersion());</span>
         }
 
         // Conjuntos para calcular diferencias
-<span class="nc" id="L905">        Set&lt;Long&gt; actualesIds = new HashSet&lt;&gt;();</span>
-<span class="nc bnc" id="L906" title="All 2 branches missed.">        for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {</span>
-<span class="nc" id="L907">            actualesIds.add(pc.getPregunta().getId());</span>
-<span class="nc" id="L908">        }</span>
-<span class="nc" id="L909">        Set&lt;Long&gt; nuevosIds = new HashSet&lt;&gt;(dto.getPreguntasNormales());</span>
+<span class="fc" id="L905">        Set&lt;Long&gt; actualesIds = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L906" title="All 2 branches covered.">        for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {</span>
+<span class="fc" id="L907">            actualesIds.add(pc.getPregunta().getId());</span>
+<span class="fc" id="L908">        }</span>
+<span class="fc" id="L909">        Set&lt;Long&gt; nuevosIds = new HashSet&lt;&gt;(dto.getPreguntasNormales());</span>
 
         // Calcular listas: reservar solo nuevas; liberar solo eliminadas; mantener intersección
-<span class="nc" id="L912">        List&lt;Long&gt; aReservar = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L913" title="All 2 branches missed.">        for (Long pid : nuevosIds) {</span>
-<span class="nc bnc" id="L914" title="All 2 branches missed.">            if (!actualesIds.contains(pid)) aReservar.add(pid);</span>
-<span class="nc" id="L915">        }</span>
-<span class="nc" id="L916">        List&lt;Long&gt; aLiberar = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L917" title="All 2 branches missed.">        for (Long pid : actualesIds) {</span>
-<span class="nc bnc" id="L918" title="All 2 branches missed.">            if (!nuevosIds.contains(pid)) aLiberar.add(pid);</span>
-<span class="nc" id="L919">        }</span>
+<span class="fc" id="L912">        List&lt;Long&gt; aReservar = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L913" title="All 2 branches covered.">        for (Long pid : nuevosIds) {</span>
+<span class="pc bpc" id="L914" title="1 of 2 branches missed.">            if (!actualesIds.contains(pid)) aReservar.add(pid);</span>
+<span class="fc" id="L915">        }</span>
+<span class="fc" id="L916">        List&lt;Long&gt; aLiberar = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L917" title="All 2 branches covered.">        for (Long pid : actualesIds) {</span>
+<span class="pc bpc" id="L918" title="1 of 2 branches missed.">            if (!nuevosIds.contains(pid)) aLiberar.add(pid);</span>
+<span class="fc" id="L919">        }</span>
 
         // PASO 1: Verificar y reservar SOLO las nuevas preguntas
         try {
-<span class="nc" id="L923">            verificarYReservarPreguntasAtomico(aReservar);</span>
+<span class="fc" id="L923">            verificarYReservarPreguntasAtomico(aReservar);</span>
 <span class="nc" id="L924">        } catch (IllegalStateException e) {</span>
 <span class="nc" id="L925">            throw new IllegalArgumentException(&quot;Error de concurrencia al reservar preguntas: &quot; + e.getMessage());</span>
 <span class="nc" id="L926">        } catch (IllegalArgumentException e) {</span>
 <span class="nc" id="L927">            throw e;</span>
-<span class="nc" id="L928">        }</span>
+<span class="fc" id="L928">        }</span>
 
         // PASO 2: Eliminar relaciones solo de las preguntas a liberar
-<span class="nc bnc" id="L931" title="All 2 branches missed.">        if (!aLiberar.isEmpty()) {</span>
+<span class="pc bpc" id="L931" title="1 of 2 branches missed.">        if (!aLiberar.isEmpty()) {</span>
             // Eliminar relaciones y liberar disponibilidad
 <span class="nc bnc" id="L933" title="All 2 branches missed.">            for (PreguntaCuestionario pc : new HashSet&lt;&gt;(cuestionario.getPreguntas())) {</span>
 <span class="nc bnc" id="L934" title="All 2 branches missed.">                if (aLiberar.contains(pc.getPregunta().getId())) {</span>
@@ -941,7 +941,7 @@ import org.springframework.data.domain.Sort;
 
         // PASO 3: Crear relaciones SOLO para las nuevas (aReservar)
         try {
-<span class="nc bnc" id="L944" title="All 2 branches missed.">            for (Long idPregunta : aReservar) {</span>
+<span class="pc bpc" id="L944" title="1 of 2 branches missed.">            for (Long idPregunta : aReservar) {</span>
 <span class="nc" id="L945">                Pregunta pregunta = preguntaRepository.findById(idPregunta)</span>
 <span class="nc" id="L946">                    .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Pregunta no encontrada: &quot; + idPregunta));</span>
 
@@ -958,11 +958,11 @@ import org.springframework.data.domain.Sort;
 <span class="nc" id="L958">            }</span>
 
             // Actualizar campos
-<span class="nc" id="L961">            cuestionario.setTematica(dto.getTematica());</span>
-<span class="nc" id="L962">            cuestionario.setNotasDireccion(dto.getNotasDireccion());</span>
-<span class="nc" id="L963">            cuestionarioRepository.save(cuestionario);</span>
+<span class="fc" id="L961">            cuestionario.setTematica(dto.getTematica());</span>
+<span class="fc" id="L962">            cuestionario.setNotasDireccion(dto.getNotasDireccion());</span>
+<span class="fc" id="L963">            cuestionarioRepository.save(cuestionario);</span>
 
-<span class="nc" id="L965">            return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);</span>
+<span class="fc" id="L965">            return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);</span>
 <span class="nc" id="L966">        } catch (Exception e) {</span>
             // Revertir reserva de nuevas si falla
 <span class="nc" id="L968">            liberarPreguntasAtomico(aReservar);</span>
@@ -974,64 +974,64 @@ import org.springframework.data.domain.Sort;
      * Devuelve un cuestionario con las preguntas mapeadas a DTOs con slot/hueco.
      */
     public Map&lt;String, Object&gt; obtenerCuestionarioConSlots(Long id) {
-<span class="nc" id="L977">        Optional&lt;Cuestionario&gt; opt = obtenerConPreguntas(id);</span>
-<span class="nc bnc" id="L978" title="All 2 branches missed.">        if (opt.isEmpty()) return null;</span>
-<span class="nc" id="L979">        Cuestionario c = opt.get();</span>
-<span class="nc" id="L980">        Map&lt;String, Object&gt; dto = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc" id="L981">        dto.put(&quot;id&quot;, c.getId());</span>
-<span class="nc" id="L982">        dto.put(&quot;version&quot;, c.getVersion());</span>
-<span class="nc" id="L983">        dto.put(&quot;estado&quot;, c.getEstado());</span>
-<span class="nc bnc" id="L984" title="All 2 branches missed.">        dto.put(&quot;fechaCreacion&quot;, c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);</span>
+<span class="fc" id="L977">        Optional&lt;Cuestionario&gt; opt = obtenerConPreguntas(id);</span>
+<span class="pc bpc" id="L978" title="1 of 2 branches missed.">        if (opt.isEmpty()) return null;</span>
+<span class="fc" id="L979">        Cuestionario c = opt.get();</span>
+<span class="fc" id="L980">        Map&lt;String, Object&gt; dto = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L981">        dto.put(&quot;id&quot;, c.getId());</span>
+<span class="fc" id="L982">        dto.put(&quot;version&quot;, c.getVersion());</span>
+<span class="fc" id="L983">        dto.put(&quot;estado&quot;, c.getEstado());</span>
+<span class="pc bpc" id="L984" title="1 of 2 branches missed.">        dto.put(&quot;fechaCreacion&quot;, c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);</span>
         // Campos visibles en la tabla
-<span class="nc" id="L986">        dto.put(&quot;tematica&quot;, c.getTematica());</span>
-<span class="nc" id="L987">        dto.put(&quot;notasDireccion&quot;, c.getNotasDireccion());</span>
+<span class="fc" id="L986">        dto.put(&quot;tematica&quot;, c.getTematica());</span>
+<span class="fc" id="L987">        dto.put(&quot;notasDireccion&quot;, c.getNotasDireccion());</span>
         // Jornada asignada (si existe)
         try {
-<span class="nc" id="L990">            Long jornadaId = entityManager.createQuery(</span>
+<span class="fc" id="L990">            Long jornadaId = entityManager.createQuery(</span>
                 &quot;SELECT a.jornada.id FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id&quot;, Long.class)
-<span class="nc" id="L992">                .setParameter(&quot;id&quot;, id)</span>
-<span class="nc" id="L993">                .setMaxResults(1)</span>
-<span class="nc" id="L994">                .getResultList()</span>
-<span class="nc" id="L995">                .stream().findFirst().orElse(null);</span>
-<span class="nc bnc" id="L996" title="All 2 branches missed.">            if (jornadaId != null) {</span>
-<span class="nc" id="L997">                dto.put(&quot;jornadaAsignada&quot;, jornadaId);</span>
+<span class="fc" id="L992">                .setParameter(&quot;id&quot;, id)</span>
+<span class="fc" id="L993">                .setMaxResults(1)</span>
+<span class="fc" id="L994">                .getResultList()</span>
+<span class="fc" id="L995">                .stream().findFirst().orElse(null);</span>
+<span class="pc bpc" id="L996" title="1 of 2 branches missed.">            if (jornadaId != null) {</span>
+<span class="fc" id="L997">                dto.put(&quot;jornadaAsignada&quot;, jornadaId);</span>
             }
-<span class="nc" id="L999">        } catch (Exception ignored) {}</span>
+<span class="fc" id="L999">        } catch (Exception ignored) {}</span>
         
         // Verificar si fue reutilizado de alguna jornada
         try {
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L1004">            java.util.List&lt;Object[]&gt; historialReutilizado = entityManager.createNativeQuery(</span>
+<span class="fc" id="L1004">            java.util.List&lt;Object[]&gt; historialReutilizado = entityManager.createNativeQuery(</span>
                 &quot;SELECT h.jornada_id, j.nombre &quot; +
                 &quot;FROM historial_jornadas h &quot; +
                 &quot;JOIN jornadas j ON h.jornada_id = j.id &quot; +
                 &quot;WHERE h.cuestionario_id = :cid AND h.estado_asignacion = 'reaprovechado' &quot; +
                 &quot;ORDER BY h.fecha_asignacion DESC &quot; +
                 &quot;LIMIT 1&quot;)
-<span class="nc" id="L1011">                .setParameter(&quot;cid&quot;, id)</span>
-<span class="nc" id="L1012">                .getResultList();</span>
+<span class="fc" id="L1011">                .setParameter(&quot;cid&quot;, id)</span>
+<span class="fc" id="L1012">                .getResultList();</span>
             
-<span class="nc bnc" id="L1014" title="All 2 branches missed.">            if (!historialReutilizado.isEmpty()) {</span>
-<span class="nc" id="L1015">                Object[] registro = historialReutilizado.get(0);</span>
-<span class="nc" id="L1016">                dto.put(&quot;reutilizadoDeJornadaId&quot;, ((Number) registro[0]).longValue());</span>
-<span class="nc" id="L1017">                dto.put(&quot;reutilizadoDeJornadaNombre&quot;, (String) registro[1]);</span>
-<span class="nc" id="L1018">                log.debug(&quot;[DTO-CUEST] Cuest &quot; + id + &quot; | estado=&quot; + c.getEstado() + &quot; | jornada=&quot; + dto.get(&quot;jornadaAsignada&quot;) + &quot; | reutilizadoDe=&quot; + dto.get(&quot;reutilizadoDeJornadaId&quot;));</span>
+<span class="fc bfc" id="L1014" title="All 2 branches covered.">            if (!historialReutilizado.isEmpty()) {</span>
+<span class="fc" id="L1015">                Object[] registro = historialReutilizado.get(0);</span>
+<span class="fc" id="L1016">                dto.put(&quot;reutilizadoDeJornadaId&quot;, ((Number) registro[0]).longValue());</span>
+<span class="fc" id="L1017">                dto.put(&quot;reutilizadoDeJornadaNombre&quot;, (String) registro[1]);</span>
+<span class="fc" id="L1018">                log.debug(&quot;[DTO-CUEST] Cuest &quot; + id + &quot; | estado=&quot; + c.getEstado() + &quot; | jornada=&quot; + dto.get(&quot;jornadaAsignada&quot;) + &quot; | reutilizadoDe=&quot; + dto.get(&quot;reutilizadoDeJornadaId&quot;));</span>
             }
-<span class="nc" id="L1020">        } catch (Exception e) {</span>
-<span class="nc" id="L1021">            log.warn(&quot;[DTO-CUEST] ERROR al buscar historial para cuest &quot; + id);</span>
-<span class="nc" id="L1022">        }</span>
+<span class="fc" id="L1020">        } catch (Exception e) {</span>
+<span class="fc" id="L1021">            log.warn(&quot;[DTO-CUEST] ERROR al buscar historial para cuest &quot; + id);</span>
+<span class="fc" id="L1022">        }</span>
         
-<span class="nc" id="L1024">        java.util.Map&lt;String, PreguntaCuestionario&gt; mapPorSlot = mapearPreguntasPorSlot(c);</span>
-<span class="nc" id="L1025">        java.util.List&lt;PreguntaCuestionarioDTO&gt; preguntasDTO = new java.util.ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L1026" title="All 2 branches missed.">        for (String slot : new String[]{&quot;1LS&quot;, &quot;2NLS&quot;, &quot;3LS&quot;, &quot;4NLS&quot;}) {</span>
-<span class="nc" id="L1027">            PreguntaCuestionario pc = mapPorSlot.get(slot);</span>
-<span class="nc bnc" id="L1028" title="All 2 branches missed.">            if (pc != null) {</span>
-<span class="nc" id="L1029">                PreguntaCuestionarioDTO pcdto = new PreguntaCuestionarioDTO();</span>
-<span class="nc" id="L1030">                pcdto.setPregunta(mapPreguntaToDTO(pc.getPregunta()));</span>
-<span class="nc" id="L1031">                pcdto.setFactorMultiplicacion(pc.getFactorMultiplicacion());</span>
-<span class="nc" id="L1032">                pcdto.setSlot(slot);</span>
-<span class="nc" id="L1033">                preguntasDTO.add(pcdto);</span>
-<span class="nc" id="L1034">            } else {</span>
+<span class="fc" id="L1024">        java.util.Map&lt;String, PreguntaCuestionario&gt; mapPorSlot = mapearPreguntasPorSlot(c);</span>
+<span class="fc" id="L1025">        java.util.List&lt;PreguntaCuestionarioDTO&gt; preguntasDTO = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L1026" title="All 2 branches covered.">        for (String slot : new String[]{&quot;1LS&quot;, &quot;2NLS&quot;, &quot;3LS&quot;, &quot;4NLS&quot;}) {</span>
+<span class="fc" id="L1027">            PreguntaCuestionario pc = mapPorSlot.get(slot);</span>
+<span class="pc bpc" id="L1028" title="1 of 2 branches missed.">            if (pc != null) {</span>
+<span class="fc" id="L1029">                PreguntaCuestionarioDTO pcdto = new PreguntaCuestionarioDTO();</span>
+<span class="fc" id="L1030">                pcdto.setPregunta(mapPreguntaToDTO(pc.getPregunta()));</span>
+<span class="fc" id="L1031">                pcdto.setFactorMultiplicacion(pc.getFactorMultiplicacion());</span>
+<span class="fc" id="L1032">                pcdto.setSlot(slot);</span>
+<span class="fc" id="L1033">                preguntasDTO.add(pcdto);</span>
+<span class="fc" id="L1034">            } else {</span>
 <span class="nc" id="L1035">                PreguntaCuestionarioDTO vacio = new PreguntaCuestionarioDTO();</span>
 <span class="nc" id="L1036">                vacio.setSlot(slot);</span>
 <span class="nc" id="L1037">                vacio.setPregunta(null);</span>
@@ -1039,51 +1039,51 @@ import org.springframework.data.domain.Sort;
 <span class="nc" id="L1039">                preguntasDTO.add(vacio);</span>
             }
         }
-<span class="nc" id="L1042">        dto.put(&quot;preguntas&quot;, preguntasDTO);</span>
-<span class="nc" id="L1043">        return dto;</span>
+<span class="fc" id="L1042">        dto.put(&quot;preguntas&quot;, preguntasDTO);</span>
+<span class="fc" id="L1043">        return dto;</span>
     }
 
     private java.util.Map&lt;String, PreguntaCuestionario&gt; mapearPreguntasPorSlot(Cuestionario c) {
-<span class="nc" id="L1047">        java.util.Map&lt;String, PreguntaCuestionario&gt; map = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L1048" title="All 2 branches missed.">        for (PreguntaCuestionario pc : c.getPreguntas()) {</span>
-<span class="nc" id="L1049">            Pregunta p = pc.getPregunta();</span>
-<span class="nc bnc" id="L1050" title="All 4 branches missed.">            if (p == null || p.getNivel() == null) continue;</span>
-<span class="nc" id="L1051">            String slot = slotNormalDesdeNivel(p.getNivel().name());</span>
-<span class="nc bnc" id="L1052" title="All 4 branches missed.">            if (slot != null &amp;&amp; !map.containsKey(slot)) {</span>
-<span class="nc" id="L1053">                map.put(slot, pc);</span>
+<span class="fc" id="L1047">        java.util.Map&lt;String, PreguntaCuestionario&gt; map = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L1048" title="All 2 branches covered.">        for (PreguntaCuestionario pc : c.getPreguntas()) {</span>
+<span class="fc" id="L1049">            Pregunta p = pc.getPregunta();</span>
+<span class="pc bpc" id="L1050" title="2 of 4 branches missed.">            if (p == null || p.getNivel() == null) continue;</span>
+<span class="fc" id="L1051">            String slot = slotNormalDesdeNivel(p.getNivel().name());</span>
+<span class="pc bpc" id="L1052" title="2 of 4 branches missed.">            if (slot != null &amp;&amp; !map.containsKey(slot)) {</span>
+<span class="fc" id="L1053">                map.put(slot, pc);</span>
             }
-<span class="nc" id="L1055">        }</span>
-<span class="nc" id="L1056">        return map;</span>
+<span class="fc" id="L1055">        }</span>
+<span class="fc" id="L1056">        return map;</span>
     }
 
     private String slotNormalDesdeNivel(String nivel) {
-<span class="nc bnc" id="L1060" title="All 5 branches missed.">        switch (nivel) {</span>
-<span class="nc" id="L1061">            case &quot;_1LS&quot;: return &quot;1LS&quot;;</span>
-<span class="nc" id="L1062">            case &quot;_2NLS&quot;: return &quot;2NLS&quot;;</span>
-<span class="nc" id="L1063">            case &quot;_3LS&quot;: return &quot;3LS&quot;;</span>
-<span class="nc" id="L1064">            case &quot;_4NLS&quot;: return &quot;4NLS&quot;;</span>
+<span class="pc bpc" id="L1060" title="1 of 5 branches missed.">        switch (nivel) {</span>
+<span class="fc" id="L1061">            case &quot;_1LS&quot;: return &quot;1LS&quot;;</span>
+<span class="fc" id="L1062">            case &quot;_2NLS&quot;: return &quot;2NLS&quot;;</span>
+<span class="fc" id="L1063">            case &quot;_3LS&quot;: return &quot;3LS&quot;;</span>
+<span class="fc" id="L1064">            case &quot;_4NLS&quot;: return &quot;4NLS&quot;;</span>
 <span class="nc" id="L1065">            default: return null;</span>
         }
     }
 
     private PreguntaDTO mapPreguntaToDTO(Pregunta p) {
-<span class="nc" id="L1070">        PreguntaDTO dto = new PreguntaDTO();</span>
-<span class="nc" id="L1071">        dto.setId(p.getId());</span>
-<span class="nc" id="L1072">        dto.setTematica(p.getTematica());</span>
-<span class="nc" id="L1073">        dto.setPregunta(p.getPregunta());</span>
-<span class="nc" id="L1074">        dto.setRespuesta(p.getRespuesta());</span>
-<span class="nc" id="L1075">        dto.setDatosExtra(p.getDatosExtra());</span>
-<span class="nc" id="L1076">        dto.setFuentes(p.getFuentes());</span>
-<span class="nc" id="L1077">        dto.setNivel(p.getNivel());</span>
-<span class="nc bnc" id="L1078" title="All 2 branches missed.">        dto.setCreacionUsuarioId(p.getCreacionUsuario() != null ? p.getCreacionUsuario().getId() : null);</span>
-<span class="nc" id="L1079">        dto.setSubtema(p.getSubtema());</span>
-<span class="nc" id="L1080">        dto.setNotas(p.getNotas());</span>
-<span class="nc" id="L1081">        dto.setFactor(p.getFactor());</span>
-<span class="nc" id="L1082">        dto.setNotasVerificacion(p.getNotasVerificacion());</span>
-<span class="nc" id="L1083">        dto.setNotasDireccion(p.getNotasDireccion());</span>
-<span class="nc bnc" id="L1084" title="All 2 branches missed.">        dto.setFechaCreacion(p.getFechaCreacion() != null ? p.getFechaCreacion().toString() : null);</span>
-<span class="nc bnc" id="L1085" title="All 2 branches missed.">        dto.setFechaVerificacion(p.getFechaVerificacion() != null ? p.getFechaVerificacion().toString() : null);</span>
-<span class="nc" id="L1086">        return dto;</span>
+<span class="fc" id="L1070">        PreguntaDTO dto = new PreguntaDTO();</span>
+<span class="fc" id="L1071">        dto.setId(p.getId());</span>
+<span class="fc" id="L1072">        dto.setTematica(p.getTematica());</span>
+<span class="fc" id="L1073">        dto.setPregunta(p.getPregunta());</span>
+<span class="fc" id="L1074">        dto.setRespuesta(p.getRespuesta());</span>
+<span class="fc" id="L1075">        dto.setDatosExtra(p.getDatosExtra());</span>
+<span class="fc" id="L1076">        dto.setFuentes(p.getFuentes());</span>
+<span class="fc" id="L1077">        dto.setNivel(p.getNivel());</span>
+<span class="pc bpc" id="L1078" title="1 of 2 branches missed.">        dto.setCreacionUsuarioId(p.getCreacionUsuario() != null ? p.getCreacionUsuario().getId() : null);</span>
+<span class="fc" id="L1079">        dto.setSubtema(p.getSubtema());</span>
+<span class="fc" id="L1080">        dto.setNotas(p.getNotas());</span>
+<span class="fc" id="L1081">        dto.setFactor(p.getFactor());</span>
+<span class="fc" id="L1082">        dto.setNotasVerificacion(p.getNotasVerificacion());</span>
+<span class="fc" id="L1083">        dto.setNotasDireccion(p.getNotasDireccion());</span>
+<span class="pc bpc" id="L1084" title="1 of 2 branches missed.">        dto.setFechaCreacion(p.getFechaCreacion() != null ? p.getFechaCreacion().toString() : null);</span>
+<span class="pc bpc" id="L1085" title="1 of 2 branches missed.">        dto.setFechaVerificacion(p.getFechaVerificacion() != null ? p.getFechaVerificacion().toString() : null);</span>
+<span class="fc" id="L1086">        return dto;</span>
     }
 
     public boolean quitarPreguntaPorSlot(Long cuestionarioId, String slot) {
@@ -1124,19 +1124,19 @@ import org.springframework.data.domain.Sort;
     public boolean cambiarEstadoAtomico(Long cuestionarioId, Cuestionario.EstadoCuestionario estadoActualEsperado, 
                                        Cuestionario.EstadoCuestionario nuevoEstado) {
         // Usar query nativa para cambio atómico con verificación de estado
-<span class="nc" id="L1127">        int filasActualizadas = entityManager.createNativeQuery(</span>
+<span class="fc" id="L1127">        int filasActualizadas = entityManager.createNativeQuery(</span>
             &quot;UPDATE cuestionarios SET estado = ? WHERE id = ? AND estado = ?&quot;)
-<span class="nc" id="L1129">            .setParameter(1, nuevoEstado.name())</span>
-<span class="nc" id="L1130">            .setParameter(2, cuestionarioId)</span>
-<span class="nc" id="L1131">            .setParameter(3, estadoActualEsperado.name())</span>
-<span class="nc" id="L1132">            .executeUpdate();</span>
+<span class="fc" id="L1129">            .setParameter(1, nuevoEstado.name())</span>
+<span class="fc" id="L1130">            .setParameter(2, cuestionarioId)</span>
+<span class="fc" id="L1131">            .setParameter(3, estadoActualEsperado.name())</span>
+<span class="fc" id="L1132">            .executeUpdate();</span>
             
-<span class="nc bnc" id="L1134" title="All 2 branches missed.">        if (filasActualizadas == 0) {</span>
-<span class="nc" id="L1135">            throw new IllegalStateException(&quot;No se pudo cambiar el estado del cuestionario &quot; + cuestionarioId + </span>
+<span class="fc bfc" id="L1134" title="All 2 branches covered.">        if (filasActualizadas == 0) {</span>
+<span class="fc" id="L1135">            throw new IllegalStateException(&quot;No se pudo cambiar el estado del cuestionario &quot; + cuestionarioId + </span>
                 &quot; porque otro usuario lo modificó simultáneamente. Estado esperado: &quot; + estadoActualEsperado);
         }
         
-<span class="nc" id="L1139">        return true;</span>
+<span class="fc" id="L1139">        return true;</span>
     }
 
     private String mensajePreguntaNoAsignable(Pregunta pregunta) {

@@ -17,7 +17,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(&quot;/api/usuarios&quot;)
 @CrossOrigin(origins = &quot;*&quot;)
-<span class="nc" id="L20">public class UsuarioController {</span>
+<span class="fc" id="L20">public class UsuarioController {</span>
 
     @Autowired
     private UsuarioService usuarioService;
@@ -30,107 +30,107 @@ import java.util.Map;
     public ResponseEntity&lt;?&gt; crear(@RequestBody Usuario usuario) {
         try {
             // Validaciones específicas de campos requeridos
-<span class="nc bnc" id="L33" title="All 4 branches missed.">            if (usuario.getNombre() == null || usuario.getNombre().trim().isEmpty()) {</span>
-<span class="nc" id="L34">                return ResponseEntity.badRequest().body(&quot;El campo 'nombre' es obligatorio&quot;);</span>
+<span class="pc bpc" id="L33" title="1 of 4 branches missed.">            if (usuario.getNombre() == null || usuario.getNombre().trim().isEmpty()) {</span>
+<span class="fc" id="L34">                return ResponseEntity.badRequest().body(&quot;El campo 'nombre' es obligatorio&quot;);</span>
             }
-<span class="nc bnc" id="L36" title="All 2 branches missed.">            if (usuario.getRol() == null) {</span>
-<span class="nc" id="L37">                return ResponseEntity.badRequest().body(&quot;El campo 'rol' es obligatorio&quot;);</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            if (usuario.getRol() == null) {</span>
+<span class="fc" id="L37">                return ResponseEntity.badRequest().body(&quot;El campo 'rol' es obligatorio&quot;);</span>
             }
 
             // Validación de permisos específica
-<span class="nc bnc" id="L41" title="All 2 branches missed.">            if (!authService.canValidate()) {</span>
-<span class="nc" id="L42">                return ResponseEntity.status(403).body(&quot;No tienes permisos para crear usuarios. Solo usuarios con rol ADMIN, VERIFICACION o DIRECCION pueden crear usuarios.&quot;);</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (!authService.canValidate()) {</span>
+<span class="fc" id="L42">                return ResponseEntity.status(403).body(&quot;No tienes permisos para crear usuarios. Solo usuarios con rol ADMIN, VERIFICACION o DIRECCION pueden crear usuarios.&quot;);</span>
             }
 
             // Validar que el nombre no esté duplicado
-<span class="nc bnc" id="L46" title="All 2 branches missed.">            if (usuarioService.obtenerPorNombre(usuario.getNombre()).isPresent()) {</span>
-<span class="nc" id="L47">                return ResponseEntity.badRequest().body(&quot;Ya existe un usuario con el nombre '&quot; + usuario.getNombre() + &quot;'&quot;);</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">            if (usuarioService.obtenerPorNombre(usuario.getNombre()).isPresent()) {</span>
+<span class="fc" id="L47">                return ResponseEntity.badRequest().body(&quot;Ya existe un usuario con el nombre '&quot; + usuario.getNombre() + &quot;'&quot;);</span>
             }
 
-<span class="nc" id="L50">            Usuario nuevoUsuario = usuarioService.crear(usuario);</span>
-<span class="nc" id="L51">            return ResponseEntity.ok(nuevoUsuario);</span>
-<span class="nc" id="L52">        } catch (Exception e) {</span>
-<span class="nc" id="L53">            return ResponseEntity.badRequest().body(&quot;Error interno al crear usuario: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L50">            Usuario nuevoUsuario = usuarioService.crear(usuario);</span>
+<span class="fc" id="L51">            return ResponseEntity.ok(nuevoUsuario);</span>
+<span class="fc" id="L52">        } catch (Exception e) {</span>
+<span class="fc" id="L53">            return ResponseEntity.badRequest().body(&quot;Error interno al crear usuario: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @GetMapping
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;List&lt;Usuario&gt;&gt; obtenerTodos() {
-<span class="nc" id="L60">        return ResponseEntity.ok(usuarioService.obtenerTodos());</span>
+<span class="fc" id="L60">        return ResponseEntity.ok(usuarioService.obtenerTodos());</span>
     }
 
     @GetMapping(&quot;/{id}&quot;)
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;Usuario&gt; obtenerPorId(@PathVariable Long id) {
-<span class="nc" id="L66">        return usuarioService.obtenerPorId(id)</span>
-<span class="nc" id="L67">                .map(ResponseEntity::ok)</span>
-<span class="nc" id="L68">                .orElse(ResponseEntity.notFound().build());</span>
+<span class="fc" id="L66">        return usuarioService.obtenerPorId(id)</span>
+<span class="fc" id="L67">                .map(ResponseEntity::ok)</span>
+<span class="fc" id="L68">                .orElse(ResponseEntity.notFound().build());</span>
     }
 
     @GetMapping(&quot;/nombre/{nombre}&quot;)
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;Usuario&gt; obtenerPorNombre(@PathVariable String nombre) {
-<span class="nc" id="L74">        return usuarioService.obtenerPorNombre(nombre)</span>
-<span class="nc" id="L75">            .map(ResponseEntity::ok)</span>
-<span class="nc" id="L76">            .orElse(ResponseEntity.notFound().build());</span>
+<span class="fc" id="L74">        return usuarioService.obtenerPorNombre(nombre)</span>
+<span class="fc" id="L75">            .map(ResponseEntity::ok)</span>
+<span class="fc" id="L76">            .orElse(ResponseEntity.notFound().build());</span>
     }
 
     @PutMapping(&quot;/{id}&quot;)
     public ResponseEntity&lt;?&gt; actualizar(@PathVariable Long id, @RequestBody Usuario usuario) {
         try {
             // Validaciones específicas de campos requeridos
-<span class="nc bnc" id="L83" title="All 4 branches missed.">            if (usuario.getNombre() == null || usuario.getNombre().trim().isEmpty()) {</span>
-<span class="nc" id="L84">                return ResponseEntity.badRequest().body(&quot;El campo 'nombre' es obligatorio&quot;);</span>
+<span class="pc bpc" id="L83" title="1 of 4 branches missed.">            if (usuario.getNombre() == null || usuario.getNombre().trim().isEmpty()) {</span>
+<span class="fc" id="L84">                return ResponseEntity.badRequest().body(&quot;El campo 'nombre' es obligatorio&quot;);</span>
             }
-<span class="nc bnc" id="L86" title="All 2 branches missed.">            if (usuario.getRol() == null) {</span>
-<span class="nc" id="L87">                return ResponseEntity.badRequest().body(&quot;El campo 'rol' es obligatorio&quot;);</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">            if (usuario.getRol() == null) {</span>
+<span class="fc" id="L87">                return ResponseEntity.badRequest().body(&quot;El campo 'rol' es obligatorio&quot;);</span>
             }
 
             // Verificar autenticación
-<span class="nc" id="L91">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
-<span class="nc bnc" id="L92" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
-<span class="nc" id="L93">                return ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;);</span>
+<span class="fc" id="L91">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="fc" id="L93">                return ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;);</span>
             }
 
-<span class="nc" id="L96">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="fc" id="L96">            Usuario currentUser = currentUserOpt.get();</span>
 
             // Verificar que el usuario a editar existe
-<span class="nc" id="L99">            Optional&lt;Usuario&gt; usuarioExistenteOpt = usuarioService.obtenerPorId(id);</span>
-<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (usuarioExistenteOpt.isEmpty()) {</span>
-<span class="nc" id="L101">                return ResponseEntity.status(404).body(&quot;Usuario con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="fc" id="L99">            Optional&lt;Usuario&gt; usuarioExistenteOpt = usuarioService.obtenerPorId(id);</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            if (usuarioExistenteOpt.isEmpty()) {</span>
+<span class="fc" id="L101">                return ResponseEntity.status(404).body(&quot;Usuario con ID &quot; + id + &quot; no encontrado&quot;);</span>
             }
 
-<span class="nc" id="L104">            Usuario usuarioExistente = usuarioExistenteOpt.get();</span>
+<span class="fc" id="L104">            Usuario usuarioExistente = usuarioExistenteOpt.get();</span>
 
             // Verificar permisos de edición
-<span class="nc bnc" id="L107" title="All 2 branches missed.">            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &amp;&amp; </span>
-<span class="nc bnc" id="L108" title="All 2 branches missed.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN &amp;&amp; </span>
-<span class="nc bnc" id="L109" title="All 2 branches missed.">                !currentUser.getId().equals(id)) {</span>
-<span class="nc" id="L110">                return ResponseEntity.status(403).body(&quot;No tienes permisos para editar otros usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden editar otros usuarios, o puedes editar tu propio perfil.&quot;);</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &amp;&amp; </span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN &amp;&amp; </span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                !currentUser.getId().equals(id)) {</span>
+<span class="fc" id="L110">                return ResponseEntity.status(403).body(&quot;No tienes permisos para editar otros usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden editar otros usuarios, o puedes editar tu propio perfil.&quot;);</span>
             }
 
             // Validar duplicación de nombre (excepto si es el mismo usuario)
-<span class="nc bnc" id="L114" title="All 2 branches missed.">            if (!usuario.getNombre().trim().equals(usuarioExistente.getNombre().trim())) {</span>
-<span class="nc bnc" id="L115" title="All 2 branches missed.">                if (usuarioService.obtenerPorNombre(usuario.getNombre().trim()).isPresent()) {</span>
-<span class="nc" id="L116">                    return ResponseEntity.badRequest().body(&quot;Ya existe otro usuario con el nombre '&quot; + usuario.getNombre() + &quot;'&quot;);</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            if (!usuario.getNombre().trim().equals(usuarioExistente.getNombre().trim())) {</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">                if (usuarioService.obtenerPorNombre(usuario.getNombre().trim()).isPresent()) {</span>
+<span class="fc" id="L116">                    return ResponseEntity.badRequest().body(&quot;Ya existe otro usuario con el nombre '&quot; + usuario.getNombre() + &quot;'&quot;);</span>
                 }
             }
 
             // Verificar permisos para cambiar roles
-<span class="nc bnc" id="L121" title="All 2 branches missed.">            if (!usuario.getRol().equals(usuarioExistente.getRol()) &amp;&amp; </span>
-<span class="nc bnc" id="L122" title="All 2 branches missed.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &amp;&amp;</span>
-<span class="nc bnc" id="L123" title="All 2 branches missed.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {</span>
-<span class="nc" id="L124">                return ResponseEntity.status(403).body(&quot;No tienes permisos para cambiar roles de otros usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden cambiar roles de otros usuarios.&quot;);</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">            if (!usuario.getRol().equals(usuarioExistente.getRol()) &amp;&amp; </span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &amp;&amp;</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">                currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {</span>
+<span class="fc" id="L124">                return ResponseEntity.status(403).body(&quot;No tienes permisos para cambiar roles de otros usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden cambiar roles de otros usuarios.&quot;);</span>
             }
 
             try {
-<span class="nc" id="L128">                Usuario usuarioActualizado = usuarioService.actualizar(id, usuario);</span>
-<span class="nc" id="L129">                return ResponseEntity.ok(usuarioActualizado);</span>
-<span class="nc" id="L130">            } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L131">                return ResponseEntity.status(409).body(&quot;El usuario ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L132">            } catch (Exception e) {</span>
-<span class="nc" id="L133">                return ResponseEntity.badRequest().body(&quot;Error interno al actualizar usuario: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L128">                Usuario usuarioActualizado = usuarioService.actualizar(id, usuario);</span>
+<span class="fc" id="L129">                return ResponseEntity.ok(usuarioActualizado);</span>
+<span class="fc" id="L130">            } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="fc" id="L131">                return ResponseEntity.status(409).body(&quot;El usuario ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="fc" id="L132">            } catch (Exception e) {</span>
+<span class="fc" id="L133">                return ResponseEntity.badRequest().body(&quot;Error interno al actualizar usuario: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
             }
 <span class="nc" id="L135">        } catch (Exception e) {</span>
 <span class="nc" id="L136">            return ResponseEntity.badRequest().body(&quot;Error al actualizar usuario: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
@@ -142,39 +142,39 @@ import java.util.Map;
     public ResponseEntity&lt;?&gt; eliminar(@PathVariable Long id) {
         try {
             // Verificar permisos específicos
-<span class="nc bnc" id="L145" title="All 2 branches missed.">            if (!authService.canDelete()) {</span>
-<span class="nc" id="L146">                return ResponseEntity.status(403).body(&quot;No tienes permisos para eliminar usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar usuarios.&quot;);</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">            if (!authService.canDelete()) {</span>
+<span class="fc" id="L146">                return ResponseEntity.status(403).body(&quot;No tienes permisos para eliminar usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden eliminar usuarios.&quot;);</span>
             }
 
             // Verificar que el usuario existe
-<span class="nc" id="L150">            Optional&lt;Usuario&gt; usuarioOpt = usuarioService.obtenerPorId(id);</span>
-<span class="nc bnc" id="L151" title="All 2 branches missed.">            if (usuarioOpt.isEmpty()) {</span>
-<span class="nc" id="L152">                return ResponseEntity.status(404).body(&quot;Usuario con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="fc" id="L150">            Optional&lt;Usuario&gt; usuarioOpt = usuarioService.obtenerPorId(id);</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">            if (usuarioOpt.isEmpty()) {</span>
+<span class="fc" id="L152">                return ResponseEntity.status(404).body(&quot;Usuario con ID &quot; + id + &quot; no encontrado&quot;);</span>
             }
 
-<span class="nc" id="L155">            Usuario usuario = usuarioOpt.get();</span>
+<span class="fc" id="L155">            Usuario usuario = usuarioOpt.get();</span>
 
             // Impedir auto-eliminación
-<span class="nc" id="L158">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
-<span class="nc bnc" id="L159" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
-<span class="nc" id="L160">                return ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;);</span>
+<span class="fc" id="L158">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="fc" id="L160">                return ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;);</span>
             }
 
-<span class="nc" id="L163">            Usuario currentUser = currentUserOpt.get();</span>
-<span class="nc bnc" id="L164" title="All 2 branches missed.">            if (currentUser.getId().equals(id)) {</span>
-<span class="nc" id="L165">                return ResponseEntity.badRequest().body(&quot;No puedes eliminar tu propio usuario&quot;);</span>
+<span class="fc" id="L163">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            if (currentUser.getId().equals(id)) {</span>
+<span class="fc" id="L165">                return ResponseEntity.badRequest().body(&quot;No puedes eliminar tu propio usuario&quot;);</span>
             }
 
             try {
-<span class="nc" id="L169">                usuarioService.eliminar(id);</span>
-<span class="nc" id="L170">                return ResponseEntity.ok().build();</span>
-<span class="nc" id="L171">            } catch (Exception e) {</span>
-<span class="nc bnc" id="L172" title="All 2 branches missed.">                String mensaje = e.getMessage() != null ? e.getMessage().toLowerCase() : &quot;&quot;;</span>
-<span class="nc bnc" id="L173" title="All 6 branches missed.">                if (mensaje.contains(&quot;foreign key&quot;) || mensaje.contains(&quot;constraint&quot;) || mensaje.contains(&quot;referenced&quot;)) {</span>
-<span class="nc" id="L174">                    return ResponseEntity.badRequest().body(&quot;No se puede eliminar el usuario '&quot; + usuario.getNombre() + </span>
+<span class="fc" id="L169">                usuarioService.eliminar(id);</span>
+<span class="fc" id="L170">                return ResponseEntity.ok().build();</span>
+<span class="fc" id="L171">            } catch (Exception e) {</span>
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">                String mensaje = e.getMessage() != null ? e.getMessage().toLowerCase() : &quot;&quot;;</span>
+<span class="pc bpc" id="L173" title="2 of 6 branches missed.">                if (mensaje.contains(&quot;foreign key&quot;) || mensaje.contains(&quot;constraint&quot;) || mensaje.contains(&quot;referenced&quot;)) {</span>
+<span class="fc" id="L174">                    return ResponseEntity.badRequest().body(&quot;No se puede eliminar el usuario '&quot; + usuario.getNombre() + </span>
                         &quot;' porque tiene preguntas, cuestionarios o combos asociados. Reasigna estos elementos a otro usuario primero.&quot;);
                 }
-<span class="nc" id="L177">                return ResponseEntity.badRequest().body(&quot;Error interno al eliminar usuario: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L177">                return ResponseEntity.badRequest().body(&quot;Error interno al eliminar usuario: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
             }
 <span class="nc" id="L179">        } catch (Exception e) {</span>
 <span class="nc" id="L180">            return ResponseEntity.badRequest().body(&quot;Error interno al eliminar usuario: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
@@ -183,47 +183,47 @@ import java.util.Map;
 
     @GetMapping(&quot;/perfil&quot;)
     public ResponseEntity&lt;Usuario&gt; obtenerPerfilActual() {
-<span class="nc" id="L186">        return authService.getCurrentUser()</span>
-<span class="nc" id="L187">            .map(ResponseEntity::ok)</span>
-<span class="nc" id="L188">            .orElse(ResponseEntity.status(401).build());</span>
+<span class="fc" id="L186">        return authService.getCurrentUser()</span>
+<span class="fc" id="L187">            .map(ResponseEntity::ok)</span>
+<span class="fc" id="L188">            .orElse(ResponseEntity.status(401).build());</span>
     }
 
     @PostMapping(&quot;/{id}/reset-password&quot;)
     @PreAuthorize(&quot;hasAuthority('ROLE_ADMIN')&quot;)
     public ResponseEntity&lt;?&gt; resetearPassword(@PathVariable Long id) {
         try {
-<span class="nc" id="L195">            Usuario usuario = usuarioService.resetearPassword(id);</span>
-<span class="nc" id="L196">            return ResponseEntity.ok(usuario);</span>
-<span class="nc" id="L197">        } catch (Exception e) {</span>
-<span class="nc" id="L198">            return ResponseEntity.badRequest().body(&quot;Error al resetear contraseña: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L195">            Usuario usuario = usuarioService.resetearPassword(id);</span>
+<span class="fc" id="L196">            return ResponseEntity.ok(usuario);</span>
+<span class="fc" id="L197">        } catch (Exception e) {</span>
+<span class="fc" id="L198">            return ResponseEntity.badRequest().body(&quot;Error al resetear contraseña: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @PostMapping(&quot;/{id}/cambiar-password&quot;)
     public ResponseEntity&lt;?&gt; cambiarPassword(@PathVariable Long id, @RequestBody Map&lt;String, String&gt; body) {
         try {
-<span class="nc" id="L205">            String actual = body.get(&quot;actual&quot;);</span>
-<span class="nc" id="L206">            String nueva = body.get(&quot;nueva&quot;);</span>
-<span class="nc bnc" id="L207" title="All 4 branches missed.">            if (actual == null || nueva == null) {</span>
-<span class="nc" id="L208">                return ResponseEntity.badRequest().body(&quot;Faltan campos obligatorios&quot;);</span>
+<span class="fc" id="L205">            String actual = body.get(&quot;actual&quot;);</span>
+<span class="fc" id="L206">            String nueva = body.get(&quot;nueva&quot;);</span>
+<span class="pc bpc" id="L207" title="1 of 4 branches missed.">            if (actual == null || nueva == null) {</span>
+<span class="fc" id="L208">                return ResponseEntity.badRequest().body(&quot;Faltan campos obligatorios&quot;);</span>
             }
             // Validación de la nueva contraseña
-<span class="nc bnc" id="L211" title="All 2 branches missed.">            if (!nueva.matches(&quot;^(?=.*[A-Z])(?=.*[!@#$%^&amp;*()_+\\-=\\[\\]\\{\\};':\&quot;\\\\|,.&lt;&gt;/?]).{8,}$&quot;)) {</span>
-<span class="nc" id="L212">                return ResponseEntity.badRequest().body(&quot;La nueva contraseña no cumple los requisitos de seguridad&quot;);</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            if (!nueva.matches(&quot;^(?=.*[A-Z])(?=.*[!@#$%^&amp;*()_+\\-=\\[\\]\\{\\};':\&quot;\\\\|,.&lt;&gt;/?]).{8,}$&quot;)) {</span>
+<span class="fc" id="L212">                return ResponseEntity.badRequest().body(&quot;La nueva contraseña no cumple los requisitos de seguridad&quot;);</span>
             }
-<span class="nc" id="L214">            return authService.getCurrentUser().map(currentUser -&gt; {</span>
-<span class="nc bnc" id="L215" title="All 2 branches missed.">                if (!currentUser.getId().equals(id)) {</span>
-<span class="nc" id="L216">                    return ResponseEntity.status(403).body(&quot;No puedes cambiar la contraseña de otro usuario&quot;);</span>
+<span class="fc" id="L214">            return authService.getCurrentUser().map(currentUser -&gt; {</span>
+<span class="fc bfc" id="L215" title="All 2 branches covered.">                if (!currentUser.getId().equals(id)) {</span>
+<span class="fc" id="L216">                    return ResponseEntity.status(403).body(&quot;No puedes cambiar la contraseña de otro usuario&quot;);</span>
                 }
-<span class="nc" id="L218">                boolean ok = usuarioService.cambiarPassword(id, actual, nueva);</span>
-<span class="nc bnc" id="L219" title="All 2 branches missed.">                if (ok) {</span>
-<span class="nc" id="L220">                    return ResponseEntity.ok(&quot;Contraseña cambiada correctamente&quot;);</span>
+<span class="fc" id="L218">                boolean ok = usuarioService.cambiarPassword(id, actual, nueva);</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">                if (ok) {</span>
+<span class="fc" id="L220">                    return ResponseEntity.ok(&quot;Contraseña cambiada correctamente&quot;);</span>
                 } else {
-<span class="nc" id="L222">                    return ResponseEntity.status(400).body(&quot;La contraseña actual no es correcta&quot;);</span>
+<span class="fc" id="L222">                    return ResponseEntity.status(400).body(&quot;La contraseña actual no es correcta&quot;);</span>
                 }
-<span class="nc" id="L224">            }).orElse(ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;));</span>
-<span class="nc" id="L225">        } catch (Exception e) {</span>
-<span class="nc" id="L226">            return ResponseEntity.badRequest().body(&quot;Error al cambiar contraseña: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L224">            }).orElse(ResponseEntity.status(401).body(&quot;Usuario no autenticado&quot;));</span>
+<span class="fc" id="L225">        } catch (Exception e) {</span>
+<span class="fc" id="L226">            return ResponseEntity.badRequest().body(&quot;Error al cambiar contraseña: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 } 

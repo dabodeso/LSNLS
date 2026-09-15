@@ -16,7 +16,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(&quot;/api/edit-locks&quot;)
 @CrossOrigin(origins = &quot;*&quot;)
-<span class="nc" id="L19">public class EditLockController {</span>
+<span class="fc" id="L19">public class EditLockController {</span>
 
     @Autowired
     private EditLockService editLockService;
@@ -24,30 +24,30 @@ import java.util.Map;
     @PostMapping(&quot;/acquire&quot;)
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; acquire(@RequestBody EditLockRequestDTO request) {
-<span class="nc" id="L27">        AuditLog.EntityType type = EditLockService.parseEntityType(request.getEntityType());</span>
-<span class="nc" id="L28">        return ResponseEntity.ok(editLockService.acquire(type, request.getEntityId()));</span>
+<span class="fc" id="L27">        AuditLog.EntityType type = EditLockService.parseEntityType(request.getEntityType());</span>
+<span class="fc" id="L28">        return ResponseEntity.ok(editLockService.acquire(type, request.getEntityId()));</span>
     }
 
     @PostMapping(&quot;/renew&quot;)
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; renew(@RequestBody EditLockRequestDTO request) {
-<span class="nc" id="L34">        AuditLog.EntityType type = EditLockService.parseEntityType(request.getEntityType());</span>
-<span class="nc" id="L35">        return ResponseEntity.ok(editLockService.renew(type, request.getEntityId()));</span>
+<span class="fc" id="L34">        AuditLog.EntityType type = EditLockService.parseEntityType(request.getEntityType());</span>
+<span class="fc" id="L35">        return ResponseEntity.ok(editLockService.renew(type, request.getEntityId()));</span>
     }
 
     @PostMapping(&quot;/release&quot;)
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;Void&gt; release(@RequestBody EditLockRequestDTO request) {
-<span class="nc" id="L41">        AuditLog.EntityType type = EditLockService.parseEntityType(request.getEntityType());</span>
-<span class="nc" id="L42">        editLockService.release(type, request.getEntityId());</span>
-<span class="nc" id="L43">        return ResponseEntity.noContent().build();</span>
+<span class="fc" id="L41">        AuditLog.EntityType type = EditLockService.parseEntityType(request.getEntityType());</span>
+<span class="fc" id="L42">        editLockService.release(type, request.getEntityId());</span>
+<span class="fc" id="L43">        return ResponseEntity.noContent().build();</span>
     }
 
     @GetMapping(&quot;/status&quot;)
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; status(@RequestParam String entityType, @RequestParam Long entityId) {
-<span class="nc" id="L49">        AuditLog.EntityType type = EditLockService.parseEntityType(entityType);</span>
-<span class="nc" id="L50">        return ResponseEntity.ok(editLockService.status(type, entityId));</span>
+<span class="fc" id="L49">        AuditLog.EntityType type = EditLockService.parseEntityType(entityType);</span>
+<span class="fc" id="L50">        return ResponseEntity.ok(editLockService.status(type, entityId));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -5,13 +5,13 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
 @Component
-<span class="nc" id="L8">public class EstadoCuestionarioConverter implements Converter&lt;String, EstadoCuestionario&gt; {</span>
+<span class="fc" id="L8">public class EstadoCuestionarioConverter implements Converter&lt;String, EstadoCuestionario&gt; {</span>
     @Override
     public EstadoCuestionario convert(String source) {
         try {
-<span class="nc" id="L12">            return EstadoCuestionario.valueOf(source.toLowerCase());</span>
-<span class="nc" id="L13">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L14">            return null;</span>
+<span class="fc" id="L12">            return EstadoCuestionario.valueOf(source.toLowerCase());</span>
+<span class="fc" id="L13">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L14">            return null;</span>
         }
     }
 } 

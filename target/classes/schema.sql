@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     password VARCHAR(255) NOT NULL,
     rol ENUM('ROLE_ADMIN', 'ROLE_CONSULTA', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION') NOT NULL,
     version BIGINT DEFAULT 0
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de temáticas
 CREATE TABLE IF NOT EXISTS tematicas (
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS tematicas (
     creacion_usuario_id BIGINT,
     version BIGINT DEFAULT 0,
     FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Catálogo de temáticas para preguntas
 CREATE TABLE IF NOT EXISTS tematicas_preguntas (
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS tematicas_preguntas (
     creacion_usuario_id BIGINT,
     version BIGINT DEFAULT 0,
     FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Catálogo de temáticas para combos
 CREATE TABLE IF NOT EXISTS tematicas_combos (
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS tematicas_combos (
     creacion_usuario_id BIGINT,
     version BIGINT DEFAULT 0,
     FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Catálogo de subtemas para preguntas
 CREATE TABLE IF NOT EXISTS subtemas_preguntas (
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS subtemas_preguntas (
     creacion_usuario_id BIGINT,
     version BIGINT DEFAULT 0,
     FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de temáticas
 CREATE TABLE IF NOT EXISTS tematicas (
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS tematicas (
     creacion_usuario_id BIGINT,
     version BIGINT DEFAULT 0,
     FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de preguntas
 CREATE TABLE IF NOT EXISTS preguntas (
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS preguntas (
     factor ENUM('X', 'X2', 'X3'),
     nivel ENUM('_0', '_1LS', '_2NLS', '_3LS', '_4NLS', '_5LS', '_5NLS') NOT NULL,
     version BIGINT DEFAULT 0
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de cuestionarios
 CREATE TABLE IF NOT EXISTS cuestionarios (
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS cuestionarios (
     tematica VARCHAR(100),
     notas_direccion TEXT,
     version BIGINT DEFAULT 0
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de combos
 CREATE TABLE IF NOT EXISTS combos (
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS combos (
     tematica VARCHAR(100),
     notas_direccion TEXT,
     version BIGINT DEFAULT 0
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de relación cuestionarios-preguntas
 CREATE TABLE IF NOT EXISTS cuestionarios_preguntas (
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS cuestionarios_preguntas (
     pregunta_id BIGINT NOT NULL,
     factor_multiplicacion INTEGER,
     PRIMARY KEY (cuestionario_id, pregunta_id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de relación combos-preguntas
 CREATE TABLE IF NOT EXISTS combos_preguntas (
@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS combos_preguntas (
     factor_multiplicacion VARCHAR(10),
     posicion INT,
     PRIMARY KEY (combo_id, pregunta_id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de configuración global
 CREATE TABLE IF NOT EXISTS configuracion_global (
@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS configuracion_global (
     descripcion VARCHAR(255),
     valor VARCHAR(255) NOT NULL,
     version BIGINT DEFAULT 0
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de programas
 CREATE TABLE IF NOT EXISTS programas (
@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS programas (
     creditos_especiales TEXT,
     notas TEXT,
     version BIGINT DEFAULT 0
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de jornadas
 CREATE TABLE IF NOT EXISTS jornadas (
@@ -178,7 +178,7 @@ CREATE TABLE IF NOT EXISTS jornadas (
     fecha_creacion datetime(6),
     notas TEXT,
     version BIGINT DEFAULT 0
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de relación jornadas-cuestionarios (slot 1-6: hueco fijo, no se compacta)
 CREATE TABLE IF NOT EXISTS jornadas_cuestionarios (
@@ -187,7 +187,7 @@ CREATE TABLE IF NOT EXISTS jornadas_cuestionarios (
     slot INT NOT NULL,
     PRIMARY KEY (jornada_id, cuestionario_id),
     UNIQUE KEY uk_jornada_cuestionario_slot (jornada_id, slot)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de relación jornadas-combos (slot 1-6: hueco fijo, no se compacta)
 CREATE TABLE IF NOT EXISTS jornadas_combos (
@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS jornadas_combos (
     slot INT NOT NULL,
     PRIMARY KEY (jornada_id, combo_id),
     UNIQUE KEY uk_jornada_combo_slot (jornada_id, slot)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Crear tabla de concursantes
 CREATE TABLE IF NOT EXISTS concursantes (
@@ -252,7 +252,7 @@ CREATE TABLE IF NOT EXISTS historial_jornadas (
     FOREIGN KEY (cuestionario_id) REFERENCES cuestionarios (id),
     FOREIGN KEY (combo_id) REFERENCES combos (id),
     FOREIGN KEY (pregunta_usada_id) REFERENCES preguntas (id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bloqueos exclusivos de edición (modal / sincronización entre usuarios)
 CREATE TABLE IF NOT EXISTS edit_locks (
@@ -265,7 +265,7 @@ CREATE TABLE IF NOT EXISTS edit_locks (
     created_at datetime(6) NOT NULL,
     updated_at datetime(6) NOT NULL,
     UNIQUE KEY uk_edit_locks_entity (entity_type, entity_id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Operaciones deshacibles (Ctrl+Z respaldado por backend)
 -- Guarda, por usuario, las acciones inversas necesarias para revertir una operación.
@@ -279,7 +279,7 @@ CREATE TABLE IF NOT EXISTS operaciones_undo (
     fecha_creacion datetime(6) NOT NULL,
     deshecha TINYINT(1) NOT NULL DEFAULT 0,
     INDEX idx_undo_usuario_fecha (usuario_id, fecha_creacion)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Registro de auditoría de operaciones críticas
 CREATE TABLE IF NOT EXISTS audit_logs (
@@ -299,7 +299,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     error_message VARCHAR(1000),
     duration_ms BIGINT,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-);
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Actualizar enum de estados de combos para incluir 'reaprovechado' y 'liberado'
 ALTER TABLE combos MODIFY COLUMN estado ENUM('borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado', 'reaprovechado', 'liberado') NOT NULL; 

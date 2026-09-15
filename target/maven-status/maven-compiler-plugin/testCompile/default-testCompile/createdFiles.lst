@@ -42,6 +42,7 @@ com\lsnls\controller\ComboControllerTest.class
 com\lsnls\service\JornadaServiceTest.class
 com\lsnls\entity\TematicaTest.class
 com\lsnls\controller\ConfiguracionGlobalControllerTest.class
+com\lsnls\entity\JornadaTest.class
 com\lsnls\service\EditLockServiceTest.class
 com\lsnls\entity\PreguntaComboIdTest.class
 com\lsnls\config\CompatiblePasswordEncoderTest.class

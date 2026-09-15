@@ -565,6 +565,7 @@
                                         id="filtro-estado-concursante-disponible"
                                         onchange="onCambioFiltrosConcursantesDisponibles()">
                                     <option value="">Todos</option>
+                                    <option value="GRABADO">Grabado</option>
                                     <option value="EDITADO">Editado</option>
                                     <option value="EMITIDO">Emitido</option>
                                 </select>
@@ -625,11 +626,11 @@
     <script src="js/api.js?v=20260821-3"></script>
     <script src="js/auth.js"></script>
     <script src="js/utils.js?v=20260907-1"></script>
-    <script src="js/undo-manager.js?v=20260626-3"></script>
+    <script src="js/undo-manager.js?v=20260915-modal"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/programas.js?v=20260914-disponibles"></script>
+    <script src="js/programas.js?v=20260915-grabado"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();

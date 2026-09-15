@@ -19,7 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping(&quot;/api/historial-jornadas&quot;)
 @CrossOrigin(origins = &quot;*&quot;)
-<span class="nc" id="L22">public class HistorialJornadaController {</span>
+<span class="fc" id="L22">public class HistorialJornadaController {</span>
 
     @Autowired
     private HistorialJornadaService historialService;
@@ -34,11 +34,11 @@ import java.util.List;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;ApiResponse&lt;List&lt;HistorialJornadaDTO&gt;&gt;&gt; obtenerHistorialCuestionario(@PathVariable Long cuestionarioId) {
         try {
-<span class="nc" id="L37">            List&lt;HistorialJornadaDTO&gt; historial = historialService.obtenerHistorialCuestionario(cuestionarioId);</span>
-<span class="nc" id="L38">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Historial del cuestionario obtenido&quot;, historial));</span>
-<span class="nc" id="L39">        } catch (Exception e) {</span>
-<span class="nc" id="L40">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L41">                .body(ApiResponse.error(&quot;Error al obtener historial: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L37">            List&lt;HistorialJornadaDTO&gt; historial = historialService.obtenerHistorialCuestionario(cuestionarioId);</span>
+<span class="fc" id="L38">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Historial del cuestionario obtenido&quot;, historial));</span>
+<span class="fc" id="L39">        } catch (Exception e) {</span>
+<span class="fc" id="L40">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L41">                .body(ApiResponse.error(&quot;Error al obtener historial: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -49,11 +49,11 @@ import java.util.List;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;ApiResponse&lt;List&lt;HistorialJornadaDTO&gt;&gt;&gt; obtenerHistorialCombo(@PathVariable Long comboId) {
         try {
-<span class="nc" id="L52">            List&lt;HistorialJornadaDTO&gt; historial = historialService.obtenerHistorialCombo(comboId);</span>
-<span class="nc" id="L53">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Historial del combo obtenido&quot;, historial));</span>
-<span class="nc" id="L54">        } catch (Exception e) {</span>
-<span class="nc" id="L55">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L56">                .body(ApiResponse.error(&quot;Error al obtener historial: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L52">            List&lt;HistorialJornadaDTO&gt; historial = historialService.obtenerHistorialCombo(comboId);</span>
+<span class="fc" id="L53">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Historial del combo obtenido&quot;, historial));</span>
+<span class="fc" id="L54">        } catch (Exception e) {</span>
+<span class="fc" id="L55">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L56">                .body(ApiResponse.error(&quot;Error al obtener historial: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -64,11 +64,11 @@ import java.util.List;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;ApiResponse&lt;List&lt;HistorialJornadaDTO&gt;&gt;&gt; obtenerNoUsados(@PathVariable Long jornadaId) {
         try {
-<span class="nc" id="L67">            List&lt;HistorialJornadaDTO&gt; noUsados = historialService.obtenerNoUsados(jornadaId);</span>
-<span class="nc" id="L68">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Elementos no usados obtenidos&quot;, noUsados));</span>
-<span class="nc" id="L69">        } catch (Exception e) {</span>
-<span class="nc" id="L70">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L71">                .body(ApiResponse.error(&quot;Error al obtener elementos no usados: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L67">            List&lt;HistorialJornadaDTO&gt; noUsados = historialService.obtenerNoUsados(jornadaId);</span>
+<span class="fc" id="L68">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Elementos no usados obtenidos&quot;, noUsados));</span>
+<span class="fc" id="L69">        } catch (Exception e) {</span>
+<span class="fc" id="L70">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L71">                .body(ApiResponse.error(&quot;Error al obtener elementos no usados: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -80,31 +80,31 @@ import java.util.List;
     public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; marcarNoUsados(@RequestBody MarcarNoUsadoDTO dto) {
         try {
             // Validaciones
-<span class="nc bnc" id="L83" title="All 2 branches missed.">            if (dto.getJornadaId() == null) {</span>
-<span class="nc" id="L84">                return ResponseEntity.badRequest()</span>
-<span class="nc" id="L85">                    .body(ApiResponse.error(&quot;El ID de la jornada es obligatorio&quot;));</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (dto.getJornadaId() == null) {</span>
+<span class="fc" id="L84">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L85">                    .body(ApiResponse.error(&quot;El ID de la jornada es obligatorio&quot;));</span>
             }
             
-<span class="nc bnc" id="L88" title="All 4 branches missed.">            if ((dto.getCuestionarioIds() == null || dto.getCuestionarioIds().isEmpty()) &amp;&amp;</span>
-<span class="nc bnc" id="L89" title="All 4 branches missed.">                (dto.getComboIds() == null || dto.getComboIds().isEmpty())) {</span>
-<span class="nc" id="L90">                return ResponseEntity.badRequest()</span>
-<span class="nc" id="L91">                    .body(ApiResponse.error(&quot;Debe seleccionar al menos un cuestionario o combo&quot;));</span>
+<span class="pc bpc" id="L88" title="1 of 4 branches missed.">            if ((dto.getCuestionarioIds() == null || dto.getCuestionarioIds().isEmpty()) &amp;&amp;</span>
+<span class="pc bpc" id="L89" title="3 of 4 branches missed.">                (dto.getComboIds() == null || dto.getComboIds().isEmpty())) {</span>
+<span class="fc" id="L90">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L91">                    .body(ApiResponse.error(&quot;Debe seleccionar al menos un cuestionario o combo&quot;));</span>
             }
 
-<span class="nc" id="L94">            historialService.marcarNoUsados(dto);</span>
+<span class="fc" id="L94">            historialService.marcarNoUsados(dto);</span>
             
-<span class="nc" id="L96">            String mensaje = &quot;Elementos marcados como no usados correctamente&quot;;</span>
-<span class="nc bnc" id="L97" title="All 4 branches missed.">            if (dto.getCuestionarioIds() != null &amp;&amp; !dto.getCuestionarioIds().isEmpty()) {</span>
-<span class="nc" id="L98">                mensaje += &quot;. Cuestionarios: &quot; + dto.getCuestionarioIds().size();</span>
+<span class="fc" id="L96">            String mensaje = &quot;Elementos marcados como no usados correctamente&quot;;</span>
+<span class="pc bpc" id="L97" title="2 of 4 branches missed.">            if (dto.getCuestionarioIds() != null &amp;&amp; !dto.getCuestionarioIds().isEmpty()) {</span>
+<span class="fc" id="L98">                mensaje += &quot;. Cuestionarios: &quot; + dto.getCuestionarioIds().size();</span>
             }
-<span class="nc bnc" id="L100" title="All 4 branches missed.">            if (dto.getComboIds() != null &amp;&amp; !dto.getComboIds().isEmpty()) {</span>
-<span class="nc" id="L101">                mensaje += &quot;. Combos: &quot; + dto.getComboIds().size();</span>
+<span class="pc bpc" id="L100" title="2 of 4 branches missed.">            if (dto.getComboIds() != null &amp;&amp; !dto.getComboIds().isEmpty()) {</span>
+<span class="fc" id="L101">                mensaje += &quot;. Combos: &quot; + dto.getComboIds().size();</span>
             }
             
-<span class="nc" id="L104">            return ResponseEntity.ok(ApiResponse.exitoso(mensaje, null));</span>
-<span class="nc" id="L105">        } catch (Exception e) {</span>
-<span class="nc" id="L106">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L107">                .body(ApiResponse.error(&quot;Error al marcar como no usados: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L104">            return ResponseEntity.ok(ApiResponse.exitoso(mensaje, null));</span>
+<span class="fc" id="L105">        } catch (Exception e) {</span>
+<span class="fc" id="L106">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L107">                .body(ApiResponse.error(&quot;Error al marcar como no usados: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -116,29 +116,29 @@ import java.util.List;
     public ResponseEntity&lt;ApiResponse&lt;Combo&gt;&gt; reaprovecharCombo(@RequestBody ReaprovecharComboDTO dto) {
         try {
             // Validaciones
-<span class="nc bnc" id="L119" title="All 2 branches missed.">            if (dto.getComboOriginalId() == null) {</span>
-<span class="nc" id="L120">                return ResponseEntity.badRequest()</span>
-<span class="nc" id="L121">                    .body(ApiResponse.error(&quot;El ID del combo original es obligatorio&quot;));</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            if (dto.getComboOriginalId() == null) {</span>
+<span class="fc" id="L120">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L121">                    .body(ApiResponse.error(&quot;El ID del combo original es obligatorio&quot;));</span>
             }
             
-<span class="nc bnc" id="L124" title="All 2 branches missed.">            if (dto.getPreguntaUsadaId() == null) {</span>
-<span class="nc" id="L125">                return ResponseEntity.badRequest()</span>
-<span class="nc" id="L126">                    .body(ApiResponse.error(&quot;El ID de la pregunta usada es obligatorio&quot;));</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (dto.getPreguntaUsadaId() == null) {</span>
+<span class="fc" id="L125">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L126">                    .body(ApiResponse.error(&quot;El ID de la pregunta usada es obligatorio&quot;));</span>
             }
             
-<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (dto.getNuevaPreguntaId() == null) {</span>
-<span class="nc" id="L130">                return ResponseEntity.badRequest()</span>
-<span class="nc" id="L131">                    .body(ApiResponse.error(&quot;El ID de la nueva pregunta es obligatorio&quot;));</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">            if (dto.getNuevaPreguntaId() == null) {</span>
+<span class="fc" id="L130">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L131">                    .body(ApiResponse.error(&quot;El ID de la nueva pregunta es obligatorio&quot;));</span>
             }
 
-<span class="nc" id="L134">            Combo nuevoCombo = historialService.reaprovecharCombo(dto);</span>
+<span class="fc" id="L134">            Combo nuevoCombo = historialService.reaprovecharCombo(dto);</span>
             
-<span class="nc" id="L136">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
-<span class="nc" id="L137">                &quot;Combo reaprovechado correctamente. Nuevo combo ID: &quot; + nuevoCombo.getId(), </span>
+<span class="fc" id="L136">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+<span class="fc" id="L137">                &quot;Combo reaprovechado correctamente. Nuevo combo ID: &quot; + nuevoCombo.getId(), </span>
                 nuevoCombo));
-<span class="nc" id="L139">        } catch (Exception e) {</span>
-<span class="nc" id="L140">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L141">                .body(ApiResponse.error(&quot;Error al reaprovechar combo: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L139">        } catch (Exception e) {</span>
+<span class="fc" id="L140">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L141">                .body(ApiResponse.error(&quot;Error al reaprovechar combo: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -151,12 +151,12 @@ import java.util.List;
             @RequestParam Long jornadaId, 
             @RequestParam Long cuestionarioId) {
         try {
-<span class="nc" id="L154">            historialService.registrarAsignacionCuestionario(jornadaId, cuestionarioId);</span>
-<span class="nc" id="L155">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+<span class="fc" id="L154">            historialService.registrarAsignacionCuestionario(jornadaId, cuestionarioId);</span>
+<span class="fc" id="L155">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
                 &quot;Cuestionario asignado a jornada correctamente&quot;, null));
-<span class="nc" id="L157">        } catch (Exception e) {</span>
-<span class="nc" id="L158">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L159">                .body(ApiResponse.error(&quot;Error al asignar cuestionario: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L157">        } catch (Exception e) {</span>
+<span class="fc" id="L158">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L159">                .body(ApiResponse.error(&quot;Error al asignar cuestionario: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -169,12 +169,12 @@ import java.util.List;
             @RequestParam Long jornadaId, 
             @RequestParam Long comboId) {
         try {
-<span class="nc" id="L172">            historialService.registrarAsignacionCombo(jornadaId, comboId);</span>
-<span class="nc" id="L173">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+<span class="fc" id="L172">            historialService.registrarAsignacionCombo(jornadaId, comboId);</span>
+<span class="fc" id="L173">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
                 &quot;Combo asignado a jornada correctamente&quot;, null));
-<span class="nc" id="L175">        } catch (Exception e) {</span>
-<span class="nc" id="L176">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L177">                .body(ApiResponse.error(&quot;Error al asignar combo: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L175">        } catch (Exception e) {</span>
+<span class="fc" id="L176">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L177">                .body(ApiResponse.error(&quot;Error al asignar combo: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 }

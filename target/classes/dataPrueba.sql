@@ -40,6 +40,22 @@ SET character_set_client=utf8mb4;
 SET character_set_results=utf8mb4;
 SET collation_connection=utf8mb4_unicode_ci;
 
+-- Si las tablas se crearon en latin1 (MySQL antiguo), un INSERT con letras
+-- como la ă de Comăneci o la ł de Wisława salta Error 1366. Esto las pasa a
+-- utf8mb4. Si ya lo están, no cambia nada. El script largo está en
+-- fix-charset-utf8mb4.sql por si hace falta ejecutarlo a mano.
+ALTER DATABASE lsnls CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE preguntas              CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE cuestionarios          CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE combos                 CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE cuestionarios_preguntas CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE combos_preguntas       CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE jornadas               CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE jornadas_cuestionarios CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE jornadas_combos        CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE concursantes           CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE historial_jornadas     CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- ------------------------------------------------------------
 -- Limpieza total de datos de prueba
 -- ------------------------------------------------------------

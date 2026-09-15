@@ -543,386 +543,395 @@ import javax.persistence.PersistenceContext;
     public ConcursanteDTO asignarAPrograma(Long concursanteId, Long programaId, Integer posicion) {
 <span class="fc" id="L544">        Concursante concursante = concursanteRepository.findById(concursanteId)</span>
 <span class="fc" id="L545">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado&quot;));</span>
-<span class="fc bfc" id="L546" title="All 2 branches covered.">        if (!&quot;editado&quot;.equalsIgnoreCase(concursante.getEstado())</span>
-<span class="fc bfc" id="L547" title="All 2 branches covered.">                &amp;&amp; !&quot;emitido&quot;.equalsIgnoreCase(concursante.getEstado())) {</span>
-<span class="fc" id="L548">            throw new IllegalArgumentException(&quot;Solo se pueden añadir a programas concursantes en estado editado o emitido.&quot;);</span>
+<span class="fc bfc" id="L546" title="All 2 branches covered.">        if (!esEstadoAsignableAPrograma(concursante.getEstado())) {</span>
+<span class="fc" id="L547">            throw new IllegalArgumentException(&quot;Solo se pueden añadir a programas concursantes en estado grabado, editado o emitido.&quot;);</span>
         }
 
-<span class="fc" id="L551">        Integer numeroPrograma = programaId.intValue();</span>
-<span class="fc" id="L552">        Integer posicionAsignada = posicion;</span>
+<span class="fc" id="L550">        Integer numeroPrograma = programaId.intValue();</span>
+<span class="fc" id="L551">        Integer posicionAsignada = posicion;</span>
 
-<span class="fc bfc" id="L554" title="All 2 branches covered.">        if (posicionAsignada != null) {</span>
-<span class="pc bpc" id="L555" title="1 of 4 branches missed.">            if (posicionAsignada &lt; 1 || posicionAsignada &gt; 3) {</span>
-<span class="fc" id="L556">                throw new RuntimeException(&quot;La posición debe estar entre 1 y 3&quot;);</span>
+<span class="fc bfc" id="L553" title="All 2 branches covered.">        if (posicionAsignada != null) {</span>
+<span class="pc bpc" id="L554" title="1 of 4 branches missed.">            if (posicionAsignada &lt; 1 || posicionAsignada &gt; 3) {</span>
+<span class="fc" id="L555">                throw new RuntimeException(&quot;La posición debe estar entre 1 y 3&quot;);</span>
             }
-<span class="fc" id="L558">            long ocupada = concursanteRepository.countByNumeroProgramaAndNumeroConcursante(numeroPrograma, posicionAsignada);</span>
-<span class="pc bpc" id="L559" title="1 of 2 branches missed.">            if (ocupada &gt; 0) {</span>
-<span class="fc" id="L560">                throw new RuntimeException(&quot;La posición &quot; + posicionAsignada + &quot; ya está ocupada en este programa&quot;);</span>
+<span class="fc" id="L557">            long ocupada = concursanteRepository.countByNumeroProgramaAndNumeroConcursante(numeroPrograma, posicionAsignada);</span>
+<span class="pc bpc" id="L558" title="1 of 2 branches missed.">            if (ocupada &gt; 0) {</span>
+<span class="fc" id="L559">                throw new RuntimeException(&quot;La posición &quot; + posicionAsignada + &quot; ya está ocupada en este programa&quot;);</span>
             }
-<span class="nc" id="L562">        } else {</span>
+<span class="nc" id="L561">        } else {</span>
             // Fallback: asignar primer hueco libre entre 1..3
-<span class="fc" id="L564">            java.util.Set&lt;Integer&gt; usadas = concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(numeroPrograma)</span>
-<span class="fc" id="L565">                .stream()</span>
-<span class="fc" id="L566">                .map(Concursante::getNumeroConcursante)</span>
-<span class="fc" id="L567">                .filter(java.util.Objects::nonNull)</span>
-<span class="fc" id="L568">                .collect(java.util.stream.Collectors.toSet());</span>
-<span class="fc bfc" id="L569" title="All 2 branches covered.">            for (int i = 1; i &lt;= 3; i++) {</span>
-<span class="fc bfc" id="L570" title="All 2 branches covered.">                if (!usadas.contains(i)) {</span>
-<span class="fc" id="L571">                    posicionAsignada = i;</span>
-<span class="fc" id="L572">                    break;</span>
+<span class="fc" id="L563">            java.util.Set&lt;Integer&gt; usadas = concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(numeroPrograma)</span>
+<span class="fc" id="L564">                .stream()</span>
+<span class="fc" id="L565">                .map(Concursante::getNumeroConcursante)</span>
+<span class="fc" id="L566">                .filter(java.util.Objects::nonNull)</span>
+<span class="fc" id="L567">                .collect(java.util.stream.Collectors.toSet());</span>
+<span class="fc bfc" id="L568" title="All 2 branches covered.">            for (int i = 1; i &lt;= 3; i++) {</span>
+<span class="fc bfc" id="L569" title="All 2 branches covered.">                if (!usadas.contains(i)) {</span>
+<span class="fc" id="L570">                    posicionAsignada = i;</span>
+<span class="fc" id="L571">                    break;</span>
                 }
             }
-<span class="fc bfc" id="L575" title="All 2 branches covered.">            if (posicionAsignada == null) {</span>
-<span class="fc" id="L576">                throw new RuntimeException(&quot;El programa ya tiene ocupadas las 3 posiciones de concursante&quot;);</span>
+<span class="fc bfc" id="L574" title="All 2 branches covered.">            if (posicionAsignada == null) {</span>
+<span class="fc" id="L575">                throw new RuntimeException(&quot;El programa ya tiene ocupadas las 3 posiciones de concursante&quot;);</span>
             }
         }
 
-<span class="fc" id="L580">        concursante.setNumeroPrograma(numeroPrograma);</span>
-<span class="fc" id="L581">        concursante.setNumeroConcursante(posicionAsignada);</span>
-<span class="fc" id="L582">        concursante = concursanteRepository.save(concursante);</span>
-<span class="fc" id="L583">        return convertToDTO(concursante);</span>
+<span class="fc" id="L579">        concursante.setNumeroPrograma(numeroPrograma);</span>
+<span class="fc" id="L580">        concursante.setNumeroConcursante(posicionAsignada);</span>
+<span class="fc" id="L581">        concursante = concursanteRepository.save(concursante);</span>
+<span class="fc" id="L582">        return convertToDTO(concursante);</span>
     }
 
     @Transactional
     public ConcursanteDTO desasignarDePrograma(Long concursanteId) {
-<span class="fc" id="L588">        Concursante concursante = concursanteRepository.findById(concursanteId)</span>
-<span class="fc" id="L589">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado&quot;));</span>
+<span class="fc" id="L587">        Concursante concursante = concursanteRepository.findById(concursanteId)</span>
+<span class="fc" id="L588">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado&quot;));</span>
         
-<span class="fc" id="L591">        concursante.setNumeroPrograma(null);</span>
-<span class="fc" id="L592">        concursante = concursanteRepository.save(concursante);</span>
-<span class="fc" id="L593">        return convertToDTO(concursante);</span>
+<span class="fc" id="L590">        concursante.setNumeroPrograma(null);</span>
+<span class="fc" id="L591">        concursante = concursanteRepository.save(concursante);</span>
+<span class="fc" id="L592">        return convertToDTO(concursante);</span>
     }
 
     @Transactional
     public ConcursanteDTO asignarAJornada(Long concursanteId, Long jornadaId) {
-<span class="fc" id="L598">        Concursante concursante = concursanteRepository.findById(concursanteId)</span>
-<span class="pc" id="L599">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado&quot;));</span>
-<span class="fc" id="L600">        exigirPuedeEditarConcursante(concursante);</span>
+<span class="fc" id="L597">        Concursante concursante = concursanteRepository.findById(concursanteId)</span>
+<span class="pc" id="L598">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado&quot;));</span>
+<span class="fc" id="L599">        exigirPuedeEditarConcursante(concursante);</span>
         
         // Verificar que la jornada existe
-<span class="fc" id="L603">        Jornada jornada = jornadaRepository.findById(jornadaId)</span>
-<span class="fc" id="L604">                .orElseThrow(() -&gt; new RuntimeException(&quot;Jornada no encontrada&quot;));</span>
+<span class="fc" id="L602">        Jornada jornada = jornadaRepository.findById(jornadaId)</span>
+<span class="fc" id="L603">                .orElseThrow(() -&gt; new RuntimeException(&quot;Jornada no encontrada&quot;));</span>
         
         // Validar que la jornada esté en un estado válido para asignación
         // Permitir jornadas en cualquier estado (preparacion, lista, en_grabacion, completada, archivada)
         // No hay restricción de estado para jornadas
         
         // Si ya tenía una jornada asignada distinta, comprobar antes de cambiar
-<span class="pc bpc" id="L611" title="1 of 4 branches missed.">        if (concursante.getJornada() != null &amp;&amp; !concursante.getJornada().getId().equals(jornadaId)) {</span>
-<span class="nc" id="L612">            validarPuedeDesasignarJornada(concursante);</span>
-<span class="nc" id="L613">            concursante.setJornada(null);</span>
-<span class="nc" id="L614">            concursante = concursanteRepository.save(concursante);</span>
+<span class="pc bpc" id="L610" title="1 of 4 branches missed.">        if (concursante.getJornada() != null &amp;&amp; !concursante.getJornada().getId().equals(jornadaId)) {</span>
+<span class="nc" id="L611">            validarPuedeDesasignarJornada(concursante);</span>
+<span class="nc" id="L612">            concursante.setJornada(null);</span>
+<span class="nc" id="L613">            concursante = concursanteRepository.save(concursante);</span>
         }
         
-<span class="fc" id="L617">        concursante.setJornada(jornada);</span>
-<span class="fc" id="L618">        concursante = concursanteRepository.save(concursante);</span>
-<span class="fc" id="L619">        return convertToDTO(concursante);</span>
+<span class="fc" id="L616">        concursante.setJornada(jornada);</span>
+<span class="fc" id="L617">        concursante = concursanteRepository.save(concursante);</span>
+<span class="fc" id="L618">        return convertToDTO(concursante);</span>
     }
 
     @Transactional
     public ConcursanteDTO desasignarDeJornada(Long concursanteId) {
-<span class="fc" id="L624">        Concursante concursante = concursanteRepository.findById(concursanteId)</span>
-<span class="pc" id="L625">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado&quot;));</span>
-<span class="fc" id="L626">        exigirPuedeEditarConcursante(concursante);</span>
+<span class="fc" id="L623">        Concursante concursante = concursanteRepository.findById(concursanteId)</span>
+<span class="pc" id="L624">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado&quot;));</span>
+<span class="fc" id="L625">        exigirPuedeEditarConcursante(concursante);</span>
 
-<span class="fc" id="L628">        validarPuedeDesasignarJornada(concursante);</span>
+<span class="fc" id="L627">        validarPuedeDesasignarJornada(concursante);</span>
         
-<span class="fc" id="L630">        concursante.setJornada(null);</span>
-<span class="fc" id="L631">        concursante = concursanteRepository.save(concursante);</span>
-<span class="fc" id="L632">        return convertToDTO(concursante);</span>
+<span class="fc" id="L629">        concursante.setJornada(null);</span>
+<span class="fc" id="L630">        concursante = concursanteRepository.save(concursante);</span>
+<span class="fc" id="L631">        return convertToDTO(concursante);</span>
     }
 
     private void validarPuedeDesasignarJornada(Concursante concursante) {
-<span class="fc bfc" id="L636" title="All 4 branches covered.">        if (concursante.getCuestionario() != null || concursante.getCombo() != null) {</span>
-<span class="fc" id="L637">            throw new IllegalArgumentException(</span>
+<span class="fc bfc" id="L635" title="All 4 branches covered.">        if (concursante.getCuestionario() != null || concursante.getCombo() != null) {</span>
+<span class="fc" id="L636">            throw new IllegalArgumentException(</span>
                 &quot;No se puede quitar la jornada mientras el concursante tenga cuestionario o combo asignado. Desasígnalos primero.&quot;);
         }
-<span class="fc" id="L640">    }</span>
+<span class="fc" id="L639">    }</span>
 
     public ConcursanteDTO updateCampo(Long id, Map&lt;String, Object&gt; campo) {
-<span class="fc" id="L643">        Concursante concursante = concursanteRepository.findById(id)</span>
-<span class="pc" id="L644">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado con id: &quot; + id));</span>
-<span class="fc" id="L645">        exigirPuedeEditarConcursante(concursante);</span>
+<span class="fc" id="L642">        Concursante concursante = concursanteRepository.findById(id)</span>
+<span class="pc" id="L643">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado con id: &quot; + id));</span>
+<span class="fc" id="L644">        exigirPuedeEditarConcursante(concursante);</span>
         
-<span class="fc bfc" id="L647" title="All 2 branches covered.">        for (Map.Entry&lt;String, Object&gt; entry : campo.entrySet()) {</span>
-<span class="fc" id="L648">            String key = entry.getKey();</span>
-<span class="fc" id="L649">            Object value = entry.getValue();</span>
+<span class="fc bfc" id="L646" title="All 2 branches covered.">        for (Map.Entry&lt;String, Object&gt; entry : campo.entrySet()) {</span>
+<span class="fc" id="L647">            String key = entry.getKey();</span>
+<span class="fc" id="L648">            Object value = entry.getValue();</span>
             
-<span class="pc bpc" id="L651" title="6 of 16 branches missed.">            switch (key) {</span>
+<span class="pc bpc" id="L650" title="6 of 16 branches missed.">            switch (key) {</span>
                 case &quot;resultado&quot;:
-<span class="pc bpc" id="L653" title="1 of 2 branches missed.">                    if (value != null) {</span>
+<span class="pc bpc" id="L652" title="1 of 2 branches missed.">                    if (value != null) {</span>
                         try {
-<span class="fc" id="L655">                            Integer resultadoInt = Integer.valueOf(value.toString());</span>
-<span class="fc" id="L656">                            concursante.setResultado(resultadoInt);</span>
-<span class="fc" id="L657">                        } catch (NumberFormatException e) {</span>
-<span class="fc" id="L658">                            throw new RuntimeException(&quot;El campo resultado debe ser un número entero&quot;);</span>
-<span class="fc" id="L659">                        }</span>
+<span class="fc" id="L654">                            Integer resultadoInt = Integer.valueOf(value.toString());</span>
+<span class="fc" id="L655">                            concursante.setResultado(resultadoInt);</span>
+<span class="fc" id="L656">                        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L657">                            throw new RuntimeException(&quot;El campo resultado debe ser un número entero&quot;);</span>
+<span class="fc" id="L658">                        }</span>
                     } else {
-<span class="nc" id="L661">                        concursante.setResultado(null);</span>
+<span class="nc" id="L660">                        concursante.setResultado(null);</span>
                     }
-<span class="nc" id="L663">                    break;</span>
+<span class="nc" id="L662">                    break;</span>
                 case &quot;estado&quot;:
-<span class="fc" id="L665">                    exigirProgramacionDireccion(&quot;el estado&quot;);</span>
-<span class="pc bpc" id="L666" title="1 of 2 branches missed.">                    concursante.setEstado(normalizarEstadoConcursante(value != null ? value.toString() : null));</span>
-<span class="fc" id="L667">                    break;</span>
+<span class="fc" id="L664">                    exigirProgramacionDireccion(&quot;el estado&quot;);</span>
+<span class="pc bpc" id="L665" title="1 of 2 branches missed.">                    concursante.setEstado(normalizarEstadoConcursante(value != null ? value.toString() : null));</span>
+<span class="fc" id="L666">                    break;</span>
                 case &quot;numeroPrograma&quot;:
-<span class="nc" id="L669">                    exigirProgramacionDireccion(&quot;el número de programa&quot;);</span>
-<span class="nc bnc" id="L670" title="All 4 branches missed.">                    concursante.setNumeroPrograma(value != null &amp;&amp; !value.toString().isBlank()</span>
-<span class="nc" id="L671">                        ? Integer.valueOf(value.toString()) : null);</span>
-<span class="nc" id="L672">                    break;</span>
+<span class="nc" id="L668">                    exigirProgramacionDireccion(&quot;el número de programa&quot;);</span>
+<span class="nc bnc" id="L669" title="All 4 branches missed.">                    concursante.setNumeroPrograma(value != null &amp;&amp; !value.toString().isBlank()</span>
+<span class="nc" id="L670">                        ? Integer.valueOf(value.toString()) : null);</span>
+<span class="nc" id="L671">                    break;</span>
                 case &quot;ordenEscaleta&quot;:
-<span class="nc" id="L674">                    exigirProgramacionDireccion(&quot;el orden de escaleta&quot;);</span>
-<span class="nc bnc" id="L675" title="All 4 branches missed.">                    concursante.setOrdenEscaleta(value != null &amp;&amp; !value.toString().isBlank()</span>
-<span class="nc" id="L676">                        ? Integer.valueOf(value.toString()) : null);</span>
-<span class="nc" id="L677">                    break;</span>
+<span class="nc" id="L673">                    exigirProgramacionDireccion(&quot;el orden de escaleta&quot;);</span>
+<span class="nc bnc" id="L674" title="All 4 branches missed.">                    concursante.setOrdenEscaleta(value != null &amp;&amp; !value.toString().isBlank()</span>
+<span class="nc" id="L675">                        ? Integer.valueOf(value.toString()) : null);</span>
+<span class="nc" id="L676">                    break;</span>
                 case &quot;bonico&quot;:
-<span class="nc" id="L679">                    exigirProgramacionDireccion(&quot;bonico&quot;);</span>
-<span class="nc bnc" id="L680" title="All 2 branches missed.">                    concursante.setBonico(value != null ? value.toString() : null);</span>
-<span class="nc" id="L681">                    break;</span>
+<span class="nc" id="L678">                    exigirProgramacionDireccion(&quot;bonico&quot;);</span>
+<span class="nc bnc" id="L679" title="All 2 branches missed.">                    concursante.setBonico(value != null ? value.toString() : null);</span>
+<span class="nc" id="L680">                    break;</span>
                 case &quot;duracion&quot;:
-<span class="pc bpc" id="L683" title="1 of 2 branches missed.">                    concursante.setDuracion(value != null ? value.toString() : null);</span>
-<span class="fc" id="L684">                    break;</span>
+<span class="pc bpc" id="L682" title="1 of 2 branches missed.">                    concursante.setDuracion(value != null ? value.toString() : null);</span>
+<span class="fc" id="L683">                    break;</span>
                 case &quot;duracionDireccion&quot;:
-<span class="nc bnc" id="L686" title="All 2 branches missed.">                    concursante.setDuracionDireccion(value != null ? value.toString() : null);</span>
-<span class="nc" id="L687">                    break;</span>
+<span class="nc bnc" id="L685" title="All 2 branches missed.">                    concursante.setDuracionDireccion(value != null ? value.toString() : null);</span>
+<span class="nc" id="L686">                    break;</span>
                 case &quot;duracionFinal&quot;:
-<span class="nc bnc" id="L689" title="All 2 branches missed.">                    concursante.setDuracionFinal(value != null ? value.toString() : null);</span>
-<span class="nc" id="L690">                    break;</span>
+<span class="nc bnc" id="L688" title="All 2 branches missed.">                    concursante.setDuracionFinal(value != null ? value.toString() : null);</span>
+<span class="nc" id="L689">                    break;</span>
                 case &quot;premio&quot;:
-<span class="pc bpc" id="L692" title="1 of 2 branches missed.">                    concursante.setPremio(value != null ? new BigDecimal(value.toString()) : null);</span>
-<span class="fc" id="L693">                    break;</span>
+<span class="pc bpc" id="L691" title="1 of 2 branches missed.">                    concursante.setPremio(value != null ? new BigDecimal(value.toString()) : null);</span>
+<span class="fc" id="L692">                    break;</span>
                 case &quot;foto&quot;:
-<span class="fc" id="L695">                    concursante.setFoto((String) value);</span>
-<span class="fc" id="L696">                    break;</span>
+<span class="fc" id="L694">                    concursante.setFoto((String) value);</span>
+<span class="fc" id="L695">                    break;</span>
                 case &quot;momentosDestacados&quot;:
-<span class="fc" id="L698">                    concursante.setMomentosDestacados((String) value);</span>
-<span class="fc" id="L699">                    break;</span>
+<span class="fc" id="L697">                    concursante.setMomentosDestacados((String) value);</span>
+<span class="fc" id="L698">                    break;</span>
                 case &quot;factorX&quot;:
-<span class="fc" id="L701">                    concursante.setFactorX((String) value);</span>
-<span class="fc" id="L702">                    break;</span>
+<span class="fc" id="L700">                    concursante.setFactorX((String) value);</span>
+<span class="fc" id="L701">                    break;</span>
                 case &quot;valoracionFinal&quot;:
-<span class="fc" id="L704">                    concursante.setValoracionFinal((String) value);</span>
-<span class="fc" id="L705">                    break;</span>
+<span class="fc" id="L703">                    concursante.setValoracionFinal((String) value);</span>
+<span class="fc" id="L704">                    break;</span>
                 case &quot;creditosEspeciales&quot;:
-<span class="fc" id="L707">                    concursante.setCreditosEspeciales((String) value);</span>
-<span class="fc" id="L708">                    break;</span>
+<span class="fc" id="L706">                    concursante.setCreditosEspeciales((String) value);</span>
+<span class="fc" id="L707">                    break;</span>
                 case &quot;xusoker&quot;:
-<span class="fc" id="L710">                    concursante.setXusoker((String) value);</span>
+<span class="fc" id="L709">                    concursante.setXusoker((String) value);</span>
                     break;
             }
-<span class="fc" id="L713">        }</span>
-<span class="fc" id="L714">        validarDuracionesYEstado(concursante);</span>
-<span class="fc" id="L715">        concursante = concursanteRepository.save(concursante);</span>
-<span class="fc" id="L716">        return convertToDTO(concursante);</span>
+<span class="fc" id="L712">        }</span>
+<span class="fc" id="L713">        validarDuracionesYEstado(concursante);</span>
+<span class="fc" id="L714">        concursante = concursanteRepository.save(concursante);</span>
+<span class="fc" id="L715">        return convertToDTO(concursante);</span>
     }
 
     private void aplicarRestriccionProgramacionAlCrear(Concursante concursante) {
-<span class="pc bpc" id="L720" title="1 of 2 branches missed.">        if (authorizationService.canEditProgramacionConcursante()) {</span>
-<span class="fc" id="L721">            return;</span>
+<span class="pc bpc" id="L719" title="1 of 2 branches missed.">        if (authorizationService.canEditProgramacionConcursante()) {</span>
+<span class="fc" id="L720">            return;</span>
         }
-<span class="nc" id="L723">        concursante.setNumeroPrograma(null);</span>
-<span class="nc" id="L724">        concursante.setOrdenEscaleta(null);</span>
-<span class="nc" id="L725">        concursante.setBonico(null);</span>
-<span class="nc" id="L726">        concursante.setEstado(&quot;grabado&quot;);</span>
-<span class="nc" id="L727">    }</span>
+<span class="nc" id="L722">        concursante.setNumeroPrograma(null);</span>
+<span class="nc" id="L723">        concursante.setOrdenEscaleta(null);</span>
+<span class="nc" id="L724">        concursante.setBonico(null);</span>
+<span class="nc" id="L725">        concursante.setEstado(&quot;grabado&quot;);</span>
+<span class="nc" id="L726">    }</span>
 
     private void restaurarProgramacionSiNoAutorizado(Concursante concursante,
             Integer numeroPrograma, Integer ordenEscaleta, String estado, String bonico) {
-<span class="pc bpc" id="L731" title="1 of 2 branches missed.">        if (authorizationService.canEditProgramacionConcursante()) {</span>
-<span class="fc" id="L732">            return;</span>
+<span class="pc bpc" id="L730" title="1 of 2 branches missed.">        if (authorizationService.canEditProgramacionConcursante()) {</span>
+<span class="fc" id="L731">            return;</span>
         }
-<span class="nc" id="L734">        concursante.setNumeroPrograma(numeroPrograma);</span>
-<span class="nc" id="L735">        concursante.setOrdenEscaleta(ordenEscaleta);</span>
-<span class="nc" id="L736">        concursante.setEstado(estado);</span>
-<span class="nc" id="L737">        concursante.setBonico(bonico);</span>
-<span class="nc" id="L738">    }</span>
+<span class="nc" id="L733">        concursante.setNumeroPrograma(numeroPrograma);</span>
+<span class="nc" id="L734">        concursante.setOrdenEscaleta(ordenEscaleta);</span>
+<span class="nc" id="L735">        concursante.setEstado(estado);</span>
+<span class="nc" id="L736">        concursante.setBonico(bonico);</span>
+<span class="nc" id="L737">    }</span>
 
     private void exigirPuedeEditarConcursante(Concursante concursante) {
-<span class="pc bpc" id="L741" title="1 of 2 branches missed.">        if (!authorizationService.canEditConcursante(concursante.getEstado())) {</span>
-<span class="nc bnc" id="L742" title="All 2 branches missed.">            String estado = concursante.getEstado() != null ? concursante.getEstado() : &quot;sin estado&quot;;</span>
-<span class="nc" id="L743">            throw new org.springframework.security.access.AccessDeniedException(</span>
+<span class="pc bpc" id="L740" title="1 of 2 branches missed.">        if (!authorizationService.canEditConcursante(concursante.getEstado())) {</span>
+<span class="nc bnc" id="L741" title="All 2 branches missed.">            String estado = concursante.getEstado() != null ? concursante.getEstado() : &quot;sin estado&quot;;</span>
+<span class="nc" id="L742">            throw new org.springframework.security.access.AccessDeniedException(</span>
                 &quot;No puedes editar un concursante en estado &quot; + estado + &quot;.&quot;);
         }
-<span class="fc" id="L746">    }</span>
+<span class="fc" id="L745">    }</span>
 
     private void exigirProgramacionDireccion(String campo) {
-<span class="pc bpc" id="L749" title="1 of 2 branches missed.">        if (!authorizationService.canEditProgramacionConcursante()) {</span>
-<span class="nc" id="L750">            throw new org.springframework.security.access.AccessDeniedException(</span>
+<span class="pc bpc" id="L748" title="1 of 2 branches missed.">        if (!authorizationService.canEditProgramacionConcursante()) {</span>
+<span class="nc" id="L749">            throw new org.springframework.security.access.AccessDeniedException(</span>
                 &quot;Solo Dirección o Admin pueden modificar &quot; + campo + &quot;.&quot;);
         }
-<span class="fc" id="L753">    }</span>
+<span class="fc" id="L752">    }</span>
 
     private void validarDuracionesYEstado(Concursante concursante) {
-<span class="fc" id="L756">        validarFormatoDuracion(concursante.getDuracion(), &quot;duración de grabación&quot;);</span>
-<span class="fc" id="L757">        validarFormatoDuracion(concursante.getDuracionDireccion(), &quot;duración de dirección&quot;);</span>
-<span class="fc" id="L758">        validarFormatoDuracion(concursante.getDuracionFinal(), &quot;duración final&quot;);</span>
-<span class="fc bfc" id="L759" title="All 2 branches covered.">        if (&quot;editado&quot;.equalsIgnoreCase(concursante.getEstado())</span>
-<span class="pc bpc" id="L760" title="1 of 2 branches missed.">                &amp;&amp; !tieneDuracionEfectiva(concursante)) {</span>
-<span class="fc" id="L761">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L755">        validarFormatoDuracion(concursante.getDuracion(), &quot;duración de grabación&quot;);</span>
+<span class="fc" id="L756">        validarFormatoDuracion(concursante.getDuracionDireccion(), &quot;duración de dirección&quot;);</span>
+<span class="fc" id="L757">        validarFormatoDuracion(concursante.getDuracionFinal(), &quot;duración final&quot;);</span>
+<span class="fc bfc" id="L758" title="All 2 branches covered.">        if (&quot;editado&quot;.equalsIgnoreCase(concursante.getEstado())</span>
+<span class="pc bpc" id="L759" title="1 of 2 branches missed.">                &amp;&amp; !tieneDuracionEfectiva(concursante)) {</span>
+<span class="fc" id="L760">            throw new IllegalArgumentException(</span>
                 &quot;No se puede marcar como editado sin una duración válida de grabación, dirección o final.&quot;);
         }
-<span class="fc" id="L764">    }</span>
+<span class="fc" id="L763">    }</span>
+
+    private boolean esEstadoAsignableAPrograma(String estado) {
+<span class="pc bpc" id="L766" title="2 of 4 branches missed.">        if (estado == null || estado.isBlank()) {</span>
+<span class="nc" id="L767">            return false;</span>
+        }
+<span class="fc" id="L769">        String normalizado = estado.trim().toLowerCase();</span>
+<span class="fc bfc" id="L770" title="All 2 branches covered.">        return &quot;grabado&quot;.equals(normalizado)</span>
+<span class="fc bfc" id="L771" title="All 2 branches covered.">            || &quot;editado&quot;.equals(normalizado)</span>
+<span class="fc bfc" id="L772" title="All 2 branches covered.">            || &quot;emitido&quot;.equals(normalizado);</span>
+    }
 
     private String normalizarEstadoConcursante(String estado) {
-<span class="pc bpc" id="L767" title="1 of 6 branches missed.">        if (estado == null || estado.isBlank() || &quot;borrador&quot;.equalsIgnoreCase(estado.trim())) {</span>
-<span class="fc" id="L768">            return &quot;grabado&quot;;</span>
+<span class="pc bpc" id="L776" title="1 of 6 branches missed.">        if (estado == null || estado.isBlank() || &quot;borrador&quot;.equalsIgnoreCase(estado.trim())) {</span>
+<span class="fc" id="L777">            return &quot;grabado&quot;;</span>
         }
-<span class="fc" id="L770">        return estado.trim().toLowerCase();</span>
+<span class="fc" id="L779">        return estado.trim().toLowerCase();</span>
     }
 
     private void validarFormatoDuracion(String duracion, String campo) {
-<span class="pc bpc" id="L774" title="1 of 6 branches missed.">        if (duracion != null &amp;&amp; !duracion.trim().isEmpty() &amp;&amp; !duracion.trim().matches(&quot;^\\d{1,3}:[0-5]\\d$&quot;)) {</span>
-<span class="fc" id="L775">            throw new IllegalArgumentException(&quot;La &quot; + campo + &quot; debe tener formato MM:SS.&quot;);</span>
+<span class="pc bpc" id="L783" title="1 of 6 branches missed.">        if (duracion != null &amp;&amp; !duracion.trim().isEmpty() &amp;&amp; !duracion.trim().matches(&quot;^\\d{1,3}:[0-5]\\d$&quot;)) {</span>
+<span class="fc" id="L784">            throw new IllegalArgumentException(&quot;La &quot; + campo + &quot; debe tener formato MM:SS.&quot;);</span>
         }
-<span class="fc" id="L777">    }</span>
+<span class="fc" id="L786">    }</span>
 
     private boolean tieneDuracionEfectiva(Concursante concursante) {
-<span class="pc bpc" id="L780" title="1 of 2 branches missed.">        return esDuracionValida(concursante.getDuracionFinal())</span>
-<span class="pc bpc" id="L781" title="1 of 2 branches missed.">            || esDuracionValida(concursante.getDuracionDireccion())</span>
-<span class="pc bpc" id="L782" title="1 of 2 branches missed.">            || esDuracionValida(concursante.getDuracion());</span>
+<span class="pc bpc" id="L789" title="1 of 2 branches missed.">        return esDuracionValida(concursante.getDuracionFinal())</span>
+<span class="pc bpc" id="L790" title="1 of 2 branches missed.">            || esDuracionValida(concursante.getDuracionDireccion())</span>
+<span class="pc bpc" id="L791" title="1 of 2 branches missed.">            || esDuracionValida(concursante.getDuracion());</span>
     }
 
     private boolean esDuracionValida(String duracion) {
-<span class="pc bpc" id="L786" title="3 of 4 branches missed.">        return duracion != null &amp;&amp; duracion.trim().matches(&quot;^\\d{1,3}:[0-5]\\d$&quot;);</span>
+<span class="pc bpc" id="L795" title="3 of 4 branches missed.">        return duracion != null &amp;&amp; duracion.trim().matches(&quot;^\\d{1,3}:[0-5]\\d$&quot;);</span>
     }
 
     private ConcursanteDTO convertToDTO(Concursante concursante) {
-<span class="fc" id="L790">        ConcursanteDTO dto = new ConcursanteDTO();</span>
-<span class="fc" id="L791">        BeanUtils.copyProperties(concursante, dto);</span>
+<span class="fc" id="L799">        ConcursanteDTO dto = new ConcursanteDTO();</span>
+<span class="fc" id="L800">        BeanUtils.copyProperties(concursante, dto);</span>
         
-<span class="fc bfc" id="L793" title="All 2 branches covered.">        if (concursante.getCuestionario() != null) {</span>
-<span class="fc" id="L794">            dto.setCuestionarioId(concursante.getCuestionario().getId());</span>
+<span class="fc bfc" id="L802" title="All 2 branches covered.">        if (concursante.getCuestionario() != null) {</span>
+<span class="fc" id="L803">            dto.setCuestionarioId(concursante.getCuestionario().getId());</span>
         }
         
-<span class="fc bfc" id="L797" title="All 2 branches covered.">        if (concursante.getCombo() != null) {</span>
-<span class="fc" id="L798">            dto.setComboId(concursante.getCombo().getId());</span>
+<span class="fc bfc" id="L806" title="All 2 branches covered.">        if (concursante.getCombo() != null) {</span>
+<span class="fc" id="L807">            dto.setComboId(concursante.getCombo().getId());</span>
             
             // Verificar si el combo ha sido reciclado para esta jornada
-<span class="pc bpc" id="L801" title="1 of 4 branches missed.">            if (concursante.getJornada() != null &amp;&amp; concursante.getJornada().getId() != null) {</span>
+<span class="pc bpc" id="L810" title="1 of 4 branches missed.">            if (concursante.getJornada() != null &amp;&amp; concursante.getJornada().getId() != null) {</span>
                 try {
-<span class="fc" id="L803">                    Long count = entityManager.createNativeQuery(</span>
+<span class="fc" id="L812">                    Long count = entityManager.createNativeQuery(</span>
                         &quot;SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND combo_id = :cid AND estado_asignacion = 'reaprovechado'&quot;)
-<span class="fc" id="L805">                        .setParameter(&quot;jid&quot;, concursante.getJornada().getId())</span>
-<span class="fc" id="L806">                        .setParameter(&quot;cid&quot;, concursante.getCombo().getId())</span>
-<span class="pc bpc" id="L807" title="1 of 2 branches missed.">                        .getSingleResult() instanceof Number ? ((Number) entityManager.createNativeQuery(</span>
+<span class="fc" id="L814">                        .setParameter(&quot;jid&quot;, concursante.getJornada().getId())</span>
+<span class="fc" id="L815">                        .setParameter(&quot;cid&quot;, concursante.getCombo().getId())</span>
+<span class="pc bpc" id="L816" title="1 of 2 branches missed.">                        .getSingleResult() instanceof Number ? ((Number) entityManager.createNativeQuery(</span>
                             &quot;SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND combo_id = :cid AND estado_asignacion = 'reaprovechado'&quot;)
-<span class="fc" id="L809">                            .setParameter(&quot;jid&quot;, concursante.getJornada().getId())</span>
-<span class="fc" id="L810">                            .setParameter(&quot;cid&quot;, concursante.getCombo().getId())</span>
-<span class="pc" id="L811">                            .getSingleResult()).longValue() : 0L;</span>
-<span class="pc bpc" id="L812" title="2 of 4 branches missed.">                    dto.setComboReciclado(count != null &amp;&amp; count &gt; 0);</span>
-<span class="nc" id="L813">                } catch (Exception e) {</span>
+<span class="fc" id="L818">                            .setParameter(&quot;jid&quot;, concursante.getJornada().getId())</span>
+<span class="fc" id="L819">                            .setParameter(&quot;cid&quot;, concursante.getCombo().getId())</span>
+<span class="pc" id="L820">                            .getSingleResult()).longValue() : 0L;</span>
+<span class="pc bpc" id="L821" title="2 of 4 branches missed.">                    dto.setComboReciclado(count != null &amp;&amp; count &gt; 0);</span>
+<span class="nc" id="L822">                } catch (Exception e) {</span>
                     // Si hay error, asumir que no está reciclado
-<span class="nc" id="L815">                    dto.setComboReciclado(false);</span>
-<span class="pc" id="L816">                }</span>
+<span class="nc" id="L824">                    dto.setComboReciclado(false);</span>
+<span class="pc" id="L825">                }</span>
             } else {
-<span class="fc" id="L818">                dto.setComboReciclado(false);</span>
+<span class="fc" id="L827">                dto.setComboReciclado(false);</span>
             }
         } else {
-<span class="fc" id="L821">            dto.setComboReciclado(false);</span>
+<span class="fc" id="L830">            dto.setComboReciclado(false);</span>
         }
         
-<span class="fc bfc" id="L824" title="All 2 branches covered.">        if (concursante.getJornada() != null) {</span>
-<span class="fc" id="L825">            dto.setJornadaId(concursante.getJornada().getId());</span>
-<span class="fc" id="L826">            dto.setJornadaNombre(concursante.getJornada().getNombre());</span>
+<span class="fc bfc" id="L833" title="All 2 branches covered.">        if (concursante.getJornada() != null) {</span>
+<span class="fc" id="L834">            dto.setJornadaId(concursante.getJornada().getId());</span>
+<span class="fc" id="L835">            dto.setJornadaNombre(concursante.getJornada().getNombre());</span>
         }
         
-<span class="fc" id="L829">        return dto;</span>
+<span class="fc" id="L838">        return dto;</span>
     }
 
     private Concursante convertToEntity(ConcursanteDTO dto) {
-<span class="fc" id="L833">        Concursante concursante = new Concursante();</span>
-<span class="fc" id="L834">        BeanUtils.copyProperties(dto, concursante, &quot;id&quot;, &quot;cuestionarioId&quot;, &quot;comboId&quot;, &quot;jornadaId&quot;, &quot;jornadaNombre&quot;);</span>
+<span class="fc" id="L842">        Concursante concursante = new Concursante();</span>
+<span class="fc" id="L843">        BeanUtils.copyProperties(dto, concursante, &quot;id&quot;, &quot;cuestionarioId&quot;, &quot;comboId&quot;, &quot;jornadaId&quot;, &quot;jornadaNombre&quot;);</span>
         
-<span class="fc bfc" id="L836" title="All 2 branches covered.">        if (dto.getCuestionarioId() != null) {</span>
-<span class="fc" id="L837">            Cuestionario cuestionario = cuestionarioRepository.findById(dto.getCuestionarioId())</span>
-<span class="pc" id="L838">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Cuestionario no encontrado: &quot; + dto.getCuestionarioId()));</span>
-<span class="fc" id="L839">            concursante.setCuestionario(cuestionario);</span>
+<span class="fc bfc" id="L845" title="All 2 branches covered.">        if (dto.getCuestionarioId() != null) {</span>
+<span class="fc" id="L846">            Cuestionario cuestionario = cuestionarioRepository.findById(dto.getCuestionarioId())</span>
+<span class="pc" id="L847">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Cuestionario no encontrado: &quot; + dto.getCuestionarioId()));</span>
+<span class="fc" id="L848">            concursante.setCuestionario(cuestionario);</span>
         }
 
-<span class="fc bfc" id="L842" title="All 2 branches covered.">        if (dto.getComboId() != null) {</span>
-<span class="fc" id="L843">            Combo combo = comboRepository.findById(dto.getComboId())</span>
-<span class="pc" id="L844">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Combo no encontrado: &quot; + dto.getComboId()));</span>
-<span class="fc" id="L845">            concursante.setCombo(combo);</span>
+<span class="fc bfc" id="L851" title="All 2 branches covered.">        if (dto.getComboId() != null) {</span>
+<span class="fc" id="L852">            Combo combo = comboRepository.findById(dto.getComboId())</span>
+<span class="pc" id="L853">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Combo no encontrado: &quot; + dto.getComboId()));</span>
+<span class="fc" id="L854">            concursante.setCombo(combo);</span>
         }
         
-<span class="pc bpc" id="L848" title="1 of 2 branches missed.">        if (dto.getJornadaId() != null) {</span>
-<span class="nc" id="L849">            Jornada jornada = jornadaRepository.findById(dto.getJornadaId())</span>
-<span class="nc" id="L850">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Jornada no encontrada: &quot; + dto.getJornadaId()));</span>
-<span class="nc" id="L851">            concursante.setJornada(jornada);</span>
+<span class="pc bpc" id="L857" title="1 of 2 branches missed.">        if (dto.getJornadaId() != null) {</span>
+<span class="nc" id="L858">            Jornada jornada = jornadaRepository.findById(dto.getJornadaId())</span>
+<span class="nc" id="L859">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Jornada no encontrada: &quot; + dto.getJornadaId()));</span>
+<span class="nc" id="L860">            concursante.setJornada(jornada);</span>
         }
         
-<span class="fc" id="L854">        return concursante;</span>
+<span class="fc" id="L863">        return concursante;</span>
     }
 
     @Transactional
     public String subirFoto(Long concursanteId, MultipartFile file) throws IOException {
         // Validar el archivo
-<span class="nc bnc" id="L860" title="All 2 branches missed.">        if (file.isEmpty()) {</span>
-<span class="nc" id="L861">            throw new RuntimeException(&quot;El archivo está vacío&quot;);</span>
+<span class="nc bnc" id="L869" title="All 2 branches missed.">        if (file.isEmpty()) {</span>
+<span class="nc" id="L870">            throw new RuntimeException(&quot;El archivo está vacío&quot;);</span>
         }
         
         // Validar tipo de archivo
-<span class="nc" id="L865">        String contentType = file.getContentType();</span>
-<span class="nc bnc" id="L866" title="All 4 branches missed.">        if (contentType == null || !contentType.startsWith(&quot;image/&quot;)) {</span>
-<span class="nc" id="L867">            throw new RuntimeException(&quot;El archivo debe ser una imagen&quot;);</span>
+<span class="nc" id="L874">        String contentType = file.getContentType();</span>
+<span class="nc bnc" id="L875" title="All 4 branches missed.">        if (contentType == null || !contentType.startsWith(&quot;image/&quot;)) {</span>
+<span class="nc" id="L876">            throw new RuntimeException(&quot;El archivo debe ser una imagen&quot;);</span>
         }
         
         // Buscar el concursante
-<span class="nc" id="L871">        Concursante concursante = concursanteRepository.findById(concursanteId)</span>
-<span class="nc" id="L872">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado&quot;));</span>
-<span class="nc" id="L873">        exigirPuedeEditarConcursante(concursante);</span>
+<span class="nc" id="L880">        Concursante concursante = concursanteRepository.findById(concursanteId)</span>
+<span class="nc" id="L881">                .orElseThrow(() -&gt; new RuntimeException(&quot;Concursante no encontrado&quot;));</span>
+<span class="nc" id="L882">        exigirPuedeEditarConcursante(concursante);</span>
         
         // Crear directorio si no existe
-<span class="nc" id="L876">        Path uploadPath = Paths.get(uploadDirectory);</span>
-<span class="nc bnc" id="L877" title="All 2 branches missed.">        if (!Files.exists(uploadPath)) {</span>
-<span class="nc" id="L878">            Files.createDirectories(uploadPath);</span>
+<span class="nc" id="L885">        Path uploadPath = Paths.get(uploadDirectory);</span>
+<span class="nc bnc" id="L886" title="All 2 branches missed.">        if (!Files.exists(uploadPath)) {</span>
+<span class="nc" id="L887">            Files.createDirectories(uploadPath);</span>
         }
         
         // Generar nombre único para el archivo
-<span class="nc" id="L882">        String fileName = UUID.randomUUID().toString() + &quot;_&quot; + file.getOriginalFilename();</span>
-<span class="nc" id="L883">        Path filePath = uploadPath.resolve(fileName);</span>
+<span class="nc" id="L891">        String fileName = UUID.randomUUID().toString() + &quot;_&quot; + file.getOriginalFilename();</span>
+<span class="nc" id="L892">        Path filePath = uploadPath.resolve(fileName);</span>
         
-<span class="nc" id="L885">        String fotoAnterior = concursante.getFoto();</span>
+<span class="nc" id="L894">        String fotoAnterior = concursante.getFoto();</span>
 
         // Guardar el archivo
-<span class="nc" id="L888">        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="nc" id="L897">        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);</span>
         
         // Actualizar solo el nombre del archivo en el concursante
-<span class="nc" id="L891">        concursante.setFoto(fileName);</span>
-<span class="nc" id="L892">        concursanteRepository.save(concursante);</span>
+<span class="nc" id="L900">        concursante.setFoto(fileName);</span>
+<span class="nc" id="L901">        concursanteRepository.save(concursante);</span>
 
-<span class="nc" id="L894">        Map&lt;String, Object&gt; camposPrevios = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L895">        camposPrevios.put(&quot;foto&quot;, fotoAnterior);</span>
-<span class="nc" id="L896">        undoService.registrar(&quot;cambiar_foto_concursante&quot;,</span>
+<span class="nc" id="L903">        Map&lt;String, Object&gt; camposPrevios = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L904">        camposPrevios.put(&quot;foto&quot;, fotoAnterior);</span>
+<span class="nc" id="L905">        undoService.registrar(&quot;cambiar_foto_concursante&quot;,</span>
                 &quot;Cambiar foto del concursante &quot; + concursanteId,
-<span class="nc" id="L898">                Collections.singletonList(UndoService.accionActualizarCampos(&quot;concursantes&quot;, concursanteId, camposPrevios)));</span>
+<span class="nc" id="L907">                Collections.singletonList(UndoService.accionActualizarCampos(&quot;concursantes&quot;, concursanteId, camposPrevios)));</span>
         
-<span class="nc" id="L900">        return fileName;</span>
+<span class="nc" id="L909">        return fileName;</span>
     }
 
     private BigDecimal extraerNumerosDelTexto(String texto) {
-<span class="nc bnc" id="L904" title="All 4 branches missed.">        if (texto == null || texto.trim().isEmpty()) {</span>
-<span class="nc" id="L905">            return BigDecimal.ZERO;</span>
+<span class="nc bnc" id="L913" title="All 4 branches missed.">        if (texto == null || texto.trim().isEmpty()) {</span>
+<span class="nc" id="L914">            return BigDecimal.ZERO;</span>
         }
         
-<span class="nc" id="L908">        BigDecimal total = BigDecimal.ZERO;</span>
+<span class="nc" id="L917">        BigDecimal total = BigDecimal.ZERO;</span>
         
         // Buscar patrones de números incluyendo decimales con punto o coma
-<span class="nc" id="L911">        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(&quot;\\d+(?:[.,]\\d+)?&quot;);</span>
-<span class="nc" id="L912">        java.util.regex.Matcher matcher = pattern.matcher(texto);</span>
+<span class="nc" id="L920">        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(&quot;\\d+(?:[.,]\\d+)?&quot;);</span>
+<span class="nc" id="L921">        java.util.regex.Matcher matcher = pattern.matcher(texto);</span>
         
-<span class="nc bnc" id="L914" title="All 2 branches missed.">        while (matcher.find()) {</span>
+<span class="nc bnc" id="L923" title="All 2 branches missed.">        while (matcher.find()) {</span>
             try {
-<span class="nc" id="L916">                String numeroStr = matcher.group().replace(',', '.');</span>
-<span class="nc" id="L917">                BigDecimal numero = new BigDecimal(numeroStr);</span>
-<span class="nc" id="L918">                total = total.add(numero);</span>
-<span class="nc" id="L919">            } catch (NumberFormatException e) {</span>
+<span class="nc" id="L925">                String numeroStr = matcher.group().replace(',', '.');</span>
+<span class="nc" id="L926">                BigDecimal numero = new BigDecimal(numeroStr);</span>
+<span class="nc" id="L927">                total = total.add(numero);</span>
+<span class="nc" id="L928">            } catch (NumberFormatException e) {</span>
                 // Ignorar números mal formateados
-<span class="nc" id="L921">                continue;</span>
-<span class="nc" id="L922">            }</span>
+<span class="nc" id="L930">                continue;</span>
+<span class="nc" id="L931">            }</span>
         }
         
-<span class="nc" id="L925">        return total;</span>
+<span class="nc" id="L934">        return total;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

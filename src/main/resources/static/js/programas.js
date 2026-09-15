@@ -1456,6 +1456,9 @@ let totalPaginasConcursantesDisponibles = 1;
 let debounceTimer = null;
 let posicionPreferidaPrograma = null;
 
+const TAMANO_PAGINA_CONCURSANTES_DISPONIBLES = 50;
+const ESTADOS_ASIGNABLES_PROGRAMA = ['GRABADO', 'EDITADO', 'EMITIDO'];
+
 function duracionConcursanteEnSegundos(duracion) {
     const texto = (duracion || '').trim();
     const match = texto.match(/^(\d{1,3}):([0-5]\d)$/);
@@ -1463,9 +1466,42 @@ function duracionConcursanteEnSegundos(duracion) {
     return Number(match[1]) * 60 + Number(match[2]);
 }
 
+function extraerPaginaConcursantes(response) {
+    if (!response) {
+        return { content: [], totalElements: 0, totalPages: 1 };
+    }
+    if (Array.isArray(response)) {
+        return { content: response, totalElements: response.length, totalPages: 1 };
+    }
+    const content = response.content || response.datos?.content || [];
+    const lista = Array.isArray(content) ? content : [];
+    return {
+        content: lista,
+        totalElements: response.totalElements ?? response.total_elements ?? lista.length,
+        totalPages: response.totalPages ?? response.total_pages ?? 1
+    };
+}
+
+function urlConcursantesDisponibles(pagina = 0, busqueda = '') {
+    let url = `/api/concursantes/disponibles?page=${pagina}&size=${TAMANO_PAGINA_CONCURSANTES_DISPONIBLES}`;
+    if (busqueda) {
+        url += `&busqueda=${encodeURIComponent(busqueda)}`;
+    }
+    return url;
+}
+
+function aplicarPaginaConcursantesDisponibles(response, { acumular = false, pagina = 0 } = {}) {
+    const paginaResp = extraerPaginaConcursantes(response);
+    concursantesDisponibles = acumular
+        ? [...concursantesDisponibles, ...paginaResp.content]
+        : paginaResp.content;
+    totalConcursantesDisponibles = paginaResp.totalElements;
+    paginaConcursantesDisponibles = pagina;
+    totalPaginasConcursantesDisponibles = paginaResp.totalPages || 1;
+}
+
 // Aplica filtros de lugar, valoración final, estado y duración efectiva sobre la lista en memoria
 function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
-    const soloEstadosPermitidos = ['EDITADO', 'EMITIDO'];
     const lugarInput = document.getElementById('filtro-lugar-concursante-disponible');
     const valoracionSelect = document.getElementById('filtro-valoracion-final-concursante-disponible');
     const estadoSelect = document.getElementById('filtro-estado-concursante-disponible');
@@ -1479,10 +1515,9 @@ function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
     const duracionMax = duracionConcursanteEnSegundos(duracionMaxInput?.value);
 
     return (concursantesDisponibles || []).filter(c => {
-        const estado = (c.estado || '').toUpperCase();
+        const estado = (c.estado || '').trim().toUpperCase();
 
-        // Solo se puede incorporar a programa a concursantes editados o emitidos.
-        if (!soloEstadosPermitidos.includes(estado)) {
+        if (!ESTADOS_ASIGNABLES_PROGRAMA.includes(estado)) {
             return false;
         }
 
@@ -1547,13 +1582,9 @@ async function mostrarConcursantesDisponibles(programaId, posicionPreferida = nu
         if (filtroDuracionMin) filtroDuracionMin.value = '';
         if (filtroDuracionMax) filtroDuracionMax.value = '';
         
-        // Cargar concursantes disponibles con paginación (10 por página)
-        const response = await apiManager.get('/api/concursantes/disponibles?page=0&size=10');
-        concursantesDisponibles = response.content || [];
-        totalConcursantesDisponibles = response.totalElements || 0;
-        paginaConcursantesDisponibles = 0;
-        totalPaginasConcursantesDisponibles = response.totalPages || 1;
-        
+        const response = await apiManager.get(urlConcursantesDisponibles(0));
+        aplicarPaginaConcursantesDisponibles(response, { pagina: 0 });
+
         renderizarConcursantesDisponibles();
         
         const modal = new bootstrap.Modal(document.getElementById('modal-añadir-concursantes'));
@@ -1567,7 +1598,7 @@ function renderizarConcursantesDisponibles() {
     const lista = document.getElementById('lista-concursantes-disponibles');
     
     if (concursantesDisponibles.length === 0) {
-        lista.innerHTML = '<div class="alert alert-info">No hay concursantes disponibles sin asignar a programas.</div>';
+        lista.innerHTML = '<div class="alert alert-info">No hay concursantes sin asignar a un programa (grabado, editado o emitido).</div>';
         return;
     }
     
@@ -1575,7 +1606,7 @@ function renderizarConcursantesDisponibles() {
     const infoPaginacion = document.getElementById('info-paginacion-concursantes');
     const listaFiltrada = aplicarFiltrosConcursantesDisponiblesEnMemoria();
     if (infoPaginacion) {
-        infoPaginacion.innerHTML = `Mostrando ${listaFiltrada.length} de ${totalConcursantesDisponibles} concursantes editados o emitidos (Página ${paginaConcursantesDisponibles + 1} de ${totalPaginasConcursantesDisponibles})`;
+        infoPaginacion.innerHTML = `Mostrando ${listaFiltrada.length} de ${totalConcursantesDisponibles} concursantes (Página ${paginaConcursantesDisponibles + 1} de ${totalPaginasConcursantesDisponibles})`;
     }
 
     if (listaFiltrada.length === 0) {
@@ -1590,6 +1621,7 @@ function renderizarConcursantesDisponibles() {
                     <tr>
                         <th>Lugar</th>
                         <th>Nombre</th>
+                        <th>Estado</th>
                         <th>Edad</th>
                         <th>Premio</th>
                         <th>Valoración final</th>
@@ -1603,6 +1635,7 @@ function renderizarConcursantesDisponibles() {
                         <tr style="cursor: pointer;" onclick="asignarConcursanteAPrograma(${concursante.id})">
                             <td>${concursante.lugar || ''}</td>
                             <td><strong>${concursante.nombre || ''}</strong></td>
+                            <td>${concursante.estado || ''}</td>
                             <td>${concursante.edad || ''}</td>
                             <td>${concursante.premio != null && concursante.premio !== '' ? concursante.premio : ''}</td>
                             <td>${concursante.valoracionFinal || ''}</td>
@@ -1631,18 +1664,10 @@ async function filtrarConcursantesDisponibles() {
     try {
         // Resetear a la primera página cuando se filtra
         paginaConcursantesDisponibles = 0;
-        
-        // Construir URL con filtro
-        let url = '/api/concursantes/disponibles?page=0&size=10';
-        if (filtro) {
-            url += `&busqueda=${encodeURIComponent(filtro)}`;
-        }
-        
-        const response = await apiManager.get(url);
-        concursantesDisponibles = response.content || [];
-        totalConcursantesDisponibles = response.totalElements || 0;
-        totalPaginasConcursantesDisponibles = response.totalPages || 1;
-        
+
+        const response = await apiManager.get(urlConcursantesDisponibles(0, filtro));
+        aplicarPaginaConcursantesDisponibles(response, { pagina: 0 });
+
         renderizarConcursantesDisponibles();
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'filtrado de concursantes'));
@@ -1910,20 +1935,9 @@ async function cargarMasConcursantesDisponibles() {
     try {
         const siguientePagina = paginaConcursantesDisponibles + 1;
         const filtro = document.getElementById('buscar-concursante-disponible').value.trim();
-        
-        // Construir URL con filtro si existe
-        let url = `/api/concursantes/disponibles?page=${siguientePagina}&size=10`;
-        if (filtro) {
-            url += `&busqueda=${encodeURIComponent(filtro)}`;
-        }
-        
-        const response = await apiManager.get(url);
-        
-        // Agregar nuevos concursantes a la lista existente
-        concursantesDisponibles = [...concursantesDisponibles, ...(response.content || [])];
-        paginaConcursantesDisponibles = siguientePagina;
-        totalPaginasConcursantesDisponibles = response.totalPages || 1;
-        
+        const response = await apiManager.get(urlConcursantesDisponibles(siguientePagina, filtro));
+        aplicarPaginaConcursantesDisponibles(response, { acumular: true, pagina: siguientePagina });
+
         renderizarConcursantesDisponibles();
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'carga de más concursantes'));
@@ -1934,18 +1948,9 @@ async function cargarMasConcursantesDisponibles() {
 async function cargarPaginaConcursantesDisponibles(pagina) {
     try {
         const filtro = document.getElementById('buscar-concursante-disponible').value.trim();
-        
-        // Construir URL con filtro si existe
-        let url = `/api/concursantes/disponibles?page=${pagina}&size=10`;
-        if (filtro) {
-            url += `&busqueda=${encodeURIComponent(filtro)}`;
-        }
-        
-        const response = await apiManager.get(url);
-        concursantesDisponibles = response.content || [];
-        paginaConcursantesDisponibles = pagina;
-        totalPaginasConcursantesDisponibles = response.totalPages || 1;
-        
+        const response = await apiManager.get(urlConcursantesDisponibles(pagina, filtro));
+        aplicarPaginaConcursantesDisponibles(response, { pagina });
+
         renderizarConcursantesDisponibles();
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'carga de página de concursantes'));

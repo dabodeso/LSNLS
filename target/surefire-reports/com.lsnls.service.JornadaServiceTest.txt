@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.lsnls.service.JornadaServiceTest
 -------------------------------------------------------------------------------
-Tests run: 46, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.431 s -- in com.lsnls.service.JornadaServiceTest
+Tests run: 47, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.080 s -- in com.lsnls.service.JornadaServiceTest

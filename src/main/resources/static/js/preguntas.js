@@ -791,36 +791,17 @@ const PreguntasManager = {
             
             let response;
             if (esEdicion) {
-                // Editar pregunta existente
                 console.log('📤 [GUARDAR] Enviando PUT a /api/preguntas/' + editId);
-                console.log('📤 [GUARDAR] Datos JSON:', JSON.stringify(preguntaData, null, 2));
-                
-                response = await fetch(`/api/preguntas/${editId}`, {
-                    method: 'PUT',
-                    headers: {
-                        ...authManager.getAuthHeaders(),
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(preguntaData)
-                });
-                
-                // Verificar respuesta específicamente para cambios de estado
-                if (response.ok) {
-                    const preguntaActualizada = await response.json();
-                    console.log('✅ [GUARDAR] Pregunta actualizada exitosamente:', preguntaActualizada);
-                    console.log('✅ [GUARDAR] Estado actualizado:', preguntaActualizada.estado);
-                    
-                    // Actualizar la pregunta en la lista local
-                    const preguntaIndex = this.preguntas.findIndex(p => p.id === parseInt(editId));
-                    if (preguntaIndex !== -1) {
-                        this.preguntas[preguntaIndex] = preguntaActualizada;
-                        console.log('✅ [GUARDAR] Pregunta actualizada en la lista local');
-                    }
-                } else {
-                    const msg = await Utils.mensajeDesdeResponse(response, 'editar preguntas');
-                    console.error('❌ [GUARDAR] Error del servidor:', msg);
-                    throw new Error(msg);
+                const preguntaActualizada = await apiManager.putUndoable(
+                    `/api/preguntas/${editId}`,
+                    preguntaData,
+                    { label: `Editar pregunta ${editId}` }
+                );
+                const preguntaIndex = this.preguntas.findIndex(p => p.id === parseInt(editId));
+                if (preguntaIndex !== -1 && preguntaActualizada) {
+                    this.preguntas[preguntaIndex] = preguntaActualizada;
                 }
+                response = { ok: true, status: 200, statusText: 'OK' };
             } else {
                 // Crear nueva pregunta
                 console.log('📤 [GUARDAR] Enviando POST a /api/preguntas');

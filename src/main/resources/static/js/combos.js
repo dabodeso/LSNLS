@@ -1743,6 +1743,54 @@ function seleccionarPreguntaModal(id, pregunta, tematica, respuesta, subtema, es
     }
 }
 
+function payloadComboDesdeDetalle(combo) {
+    const preguntasMultiplicadoras = (combo?.preguntas || [])
+        .filter(pc => pc && pc.pregunta && pc.pregunta.id != null)
+        .map(pc => ({
+            id: Number(pc.pregunta.id),
+            factor: pc.factorMultiplicacion || pc.factor || '',
+            slot: pc.slot
+        }));
+    return {
+        preguntasMultiplicadoras,
+        tipo: combo?.tipo || '',
+        tematica: combo?.tematica || '',
+        notasDireccion: combo?.notasDireccion || '',
+        estado: combo?.estado || 'borrador'
+    };
+}
+
+async function aplicarGuardadoCombo(comboId, payload, esEdicion) {
+    const headers = { ...authManager.getAuthHeaders(), 'Content-Type': 'application/json' };
+    const resp = await fetch(`/api/combos/${comboId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+        throw new Error(await Utils.mensajeDesdeResponse(resp, 'guardar combos'));
+    }
+    if (esEdicion) {
+        await sincronizarPreguntasComboEnEdicion(comboId, payload.preguntasMultiplicadoras || []);
+    }
+    await Promise.all((payload.preguntasMultiplicadoras || []).map(pm => (
+        fetch(`/api/combos/${comboId}/preguntas/${pm.id}/factor`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({ factorMultiplicacion: pm.factor || 'X' })
+        }).catch(() => {})
+    )));
+    if (payload.estado) {
+        const respEstado = await fetch(`/api/combos/${comboId}/estado?nuevoEstado=${encodeURIComponent(payload.estado)}`, {
+            method: 'PUT',
+            headers: authManager.getAuthHeaders()
+        });
+        if (!respEstado.ok) {
+            throw new Error(await Utils.mensajeDesdeResponse(respEstado, 'cambiar estado del combo'));
+        }
+    }
+}
+
 async function guardarCombo() {
     CombosManager.rememberScroll();
     const tipo = document.getElementById('combo-tipo').value;
@@ -1959,6 +2007,7 @@ async function guardarCombo() {
     const estadoSeleccionado = (document.getElementById('combo-estado')?.value) || 'borrador';
     
     try {
+        const snapshotPrevio = esEdicion ? await apiManager.get(`/api/combos/${comboId}`) : null;
         const notasElement = document.getElementById('combo-notas');
         const notasOriginales = notasElement ? (notasElement.dataset.originalNotas || '') : '';
         const notasDireccion = notasElement
@@ -2045,6 +2094,20 @@ async function guardarCombo() {
         }
         const idFinal = (data && (data.id || data.ID)) || (comboId || null);
         if (idFinal) await CombosManager.insertarOActualizarFila(Number(idFinal));
+        if (esEdicion && snapshotPrevio && window.UndoManager) {
+            const payloadNuevo = { preguntasMultiplicadoras, tipo, tematica, notasDireccion, estado: estadoSeleccionado };
+            const payloadAnterior = payloadComboDesdeDetalle(snapshotPrevio);
+            const idCombo = Number(idFinal);
+            const rehacer = async () => {
+                await aplicarGuardadoCombo(idCombo, payloadNuevo, true);
+                await CombosManager.insertarOActualizarFila(idCombo);
+            };
+            const deshacer = async () => {
+                await aplicarGuardadoCombo(idCombo, payloadAnterior, true);
+                await CombosManager.insertarOActualizarFila(idCombo);
+            };
+            window.UndoManager.record({ do: rehacer, undo: deshacer, label: `Editar combo ${idCombo}` });
+        }
         CombosManager.restoreScrollOrFocus();
     } catch (error) {
         Toastify({

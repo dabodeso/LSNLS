@@ -5,6 +5,7 @@ import com.lsnls.dto.ReciclajeComboDTO;
 import com.lsnls.entity.Combo;
 import com.lsnls.entity.Cuestionario;
 import com.lsnls.entity.Jornada;
+import com.lsnls.entity.JornadaCuestionarioAsignacion;
 import com.lsnls.entity.Pregunta;
 import com.lsnls.entity.PreguntaCombo;
 import com.lsnls.entity.Usuario;
@@ -43,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -227,6 +229,33 @@ class JornadaServiceTest {
         assertEquals("Jornada editada", result.getNombre());
         assertEquals("Sevilla", result.getLugar());
         verify(jornadaRepository).save(any(Jornada.class));
+    }
+
+    @Test
+    void actualizar_asignarComboNoRecreaAsignacionesDeCuestionario() {
+        Jornada jornada = jornadaBase();
+        Cuestionario cuestionario = cuestionarioAdjudicado(2L);
+        jornada.reemplazarCuestionariosPorSlot(Arrays.asList(cuestionario, null, null, null, null, null));
+        JornadaCuestionarioAsignacion asignacionOriginal = jornada.getCuestionarioAsignaciones().iterator().next();
+        Combo combo = comboAdjudicado(4L);
+        combo.setEstado(Combo.EstadoCombo.aprobado);
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(jornada));
+        when(cuestionarioRepository.findById(2L)).thenReturn(Optional.of(cuestionario));
+        when(comboRepository.findById(4L)).thenReturn(Optional.of(combo));
+        when(comboService.cambiarEstadoAtomico(eq(4L),
+            eq(Combo.EstadoCombo.aprobado),
+            eq(Combo.EstadoCombo.adjudicado))).thenReturn(true);
+
+        JornadaDTO dto = dtoMinimo();
+        dto.setCuestionarioIds(Arrays.asList(2L, null, null, null, null, null));
+        dto.setComboIds(Collections.singletonList(4L));
+
+        jornadaService.actualizar(1L, dto);
+
+        assertEquals(1, jornada.getCuestionarioAsignaciones().size());
+        assertSame(asignacionOriginal, jornada.getCuestionarioAsignaciones().iterator().next());
+        assertEquals(1, jornada.getComboAsignaciones().size());
+        assertEquals(4L, jornada.getComboAsignaciones().iterator().next().getCombo().getId());
     }
 
     @Test

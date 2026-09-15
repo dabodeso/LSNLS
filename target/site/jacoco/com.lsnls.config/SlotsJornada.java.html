@@ -24,13 +24,13 @@ public final class SlotsJornada {
      */
     public static List&lt;Long&gt; normalizarIds(List&lt;Long&gt; ids) {
 <span class="fc" id="L26">        List&lt;Long&gt; slots = new ArrayList&lt;&gt;(Collections.nCopies(TOTAL, null));</span>
-<span class="pc bpc" id="L27" title="2 of 4 branches missed.">        if (ids == null || ids.isEmpty()) {</span>
-<span class="nc" id="L28">            return slots;</span>
+<span class="pc bpc" id="L27" title="1 of 4 branches missed.">        if (ids == null || ids.isEmpty()) {</span>
+<span class="fc" id="L28">            return slots;</span>
         }
 <span class="fc bfc" id="L30" title="All 2 branches covered.">        if (ids.size() &gt; TOTAL) {</span>
 <span class="fc" id="L31">            throw new IllegalArgumentException(&quot;Máximo &quot; + TOTAL + &quot; cuestionarios o combos por jornada&quot;);</span>
         }
-<span class="pc bpc" id="L33" title="1 of 4 branches missed.">        boolean posicional = ids.size() == TOTAL || ids.stream().anyMatch(Objects::isNull);</span>
+<span class="fc bfc" id="L33" title="All 4 branches covered.">        boolean posicional = ids.size() == TOTAL || ids.stream().anyMatch(Objects::isNull);</span>
 <span class="fc bfc" id="L34" title="All 2 branches covered.">        if (posicional) {</span>
 <span class="fc bfc" id="L35" title="All 2 branches covered.">            for (int i = 0; i &lt; ids.size(); i++) {</span>
 <span class="fc" id="L36">                slots.set(i, ids.get(i));</span>
@@ -46,8 +46,8 @@ public final class SlotsJornada {
 <span class="fc bfc" id="L46" title="All 2 branches covered.">            if (id == null) {</span>
 <span class="fc" id="L47">                continue;</span>
             }
-<span class="pc bpc" id="L49" title="1 of 2 branches missed.">            if (!vistos.add(id)) {</span>
-<span class="nc" id="L50">                throw new IllegalArgumentException(&quot;El mismo elemento no puede ocupar dos huecos de la jornada&quot;);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            if (!vistos.add(id)) {</span>
+<span class="fc" id="L50">                throw new IllegalArgumentException(&quot;El mismo elemento no puede ocupar dos huecos de la jornada&quot;);</span>
             }
 <span class="fc" id="L52">        }</span>
 <span class="fc" id="L53">        return slots;</span>
@@ -55,8 +55,8 @@ public final class SlotsJornada {
 
     public static Set&lt;Long&gt; idsAsignados(List&lt;Long&gt; slots) {
 <span class="fc" id="L57">        Set&lt;Long&gt; ids = new LinkedHashSet&lt;&gt;();</span>
-<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (slots == null) {</span>
-<span class="fc" id="L59">            return ids;</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        if (slots == null) {</span>
+<span class="nc" id="L59">            return ids;</span>
         }
 <span class="fc bfc" id="L61" title="All 2 branches covered.">        for (Long id : slots) {</span>
 <span class="fc bfc" id="L62" title="All 2 branches covered.">            if (id != null) {</span>

@@ -22,6 +22,46 @@
     return false;
   };
 
+  const valorBaseline = (el) => {
+    if (!el) return '';
+    if (el.type === 'checkbox' || el.type === 'radio') return el.checked ? 'true' : 'false';
+    return el.value == null ? '' : String(el.value);
+  };
+
+  const marcarBaseline = (el) => {
+    if (!el || !el.dataset) return;
+    el.dataset.undoBaseline = valorBaseline(el);
+  };
+
+  const marcarBaselinesEn = (root) => {
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('input, textarea, select').forEach(marcarBaseline);
+  };
+
+  const controlEstaSucio = (el) => {
+    if (!el || el.dataset.undoBaseline === undefined) return false;
+    return valorBaseline(el) !== el.dataset.undoBaseline;
+  };
+
+  // Restaura los campos del modal abierto a como estaban al abrirlo.
+  // Así Ctrl+Z deshace un cambio de estado (o de otro select) sin haber guardado.
+  const restaurarFormularioModalAbierto = () => {
+    const modal = document.querySelector('.modal.show');
+    if (!modal) return false;
+    let restaurado = false;
+    modal.querySelectorAll('select, input[type="checkbox"], input[type="radio"]').forEach((el) => {
+      if (!controlEstaSucio(el)) return;
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        el.checked = el.dataset.undoBaseline === 'true';
+      } else {
+        el.value = el.dataset.undoBaseline;
+      }
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      restaurado = true;
+    });
+    return restaurado;
+  };
+
   function notificarUndo(mensaje, esError = false) {
     if (typeof Toastify === 'function') {
       Toastify({
@@ -172,6 +212,15 @@
     }
 
     _installGlobalShortcuts() {
+      document.addEventListener('focusin', (e) => {
+        if (e.target && e.target.dataset && e.target.dataset.undoBaseline === undefined) {
+          marcarBaseline(e.target);
+        }
+      });
+      document.addEventListener('shown.bs.modal', (e) => {
+        if (e && e.target) marcarBaselinesEn(e.target);
+      });
+
       document.addEventListener('keydown', (e) => {
         const isCtrl = e.ctrlKey || e.metaKey;
         if (!isCtrl || e.altKey) return;
@@ -179,14 +228,23 @@
         const key = (e.key || '').toLowerCase();
         if (key !== 'z' && key !== 'y') return;
 
-        // Con el foco en un campo de texto, el atajo es siempre del navegador
-        // (deshacer/rehacer el texto escrito). La pila de la app queda para
-        // cuando el foco está fuera de campos de texto, o para los botones.
-        if (isTextEntryElement(e.target)) return;
+        const esRedo = key === 'y' || (key === 'z' && e.shiftKey);
+
+        // Si el usuario está escribiendo y el texto ya no es el de al abrir,
+        // el Ctrl+Z es el del navegador (deshacer letras).
+        if (!esRedo && isTextEntryElement(e.target) && controlEstaSucio(e.target)) return;
+
+        // En el menú de edición: si cambió el estado (u otro campo) y aún
+        // no ha guardado, primero se restauran esos campos.
+        if (!esRedo && restaurarFormularioModalAbierto()) {
+          e.preventDefault();
+          e.stopPropagation();
+          notificarUndo('Deshecho: cambios del formulario');
+          return;
+        }
 
         e.preventDefault();
         e.stopPropagation();
-        const esRedo = key === 'y' || (key === 'z' && e.shiftKey);
         if (esRedo) {
           this.redo();
         } else {

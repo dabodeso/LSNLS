@@ -32,7 +32,7 @@ import com.lsnls.dto.CrearComboDTO;
 @Service
 @Transactional
 <span class="fc" id="L34">@lombok.extern.slf4j.Slf4j</span>
-<span class="nc" id="L35">public class ComboService {</span>
+<span class="fc" id="L35">public class ComboService {</span>
     
     @Autowired
     private ComboRepository comboRepository;
@@ -53,64 +53,64 @@ import com.lsnls.dto.CrearComboDTO;
     private UndoService undoService;
 
     public Combo crear(Combo combo) {
-<span class="nc" id="L56">        combo.setFechaCreacion(LocalDateTime.now());</span>
-<span class="nc" id="L57">        combo.setEstado(EstadoCombo.borrador);</span>
-<span class="nc" id="L58">        return comboRepository.save(combo);</span>
+<span class="fc" id="L56">        combo.setFechaCreacion(LocalDateTime.now());</span>
+<span class="fc" id="L57">        combo.setEstado(EstadoCombo.borrador);</span>
+<span class="fc" id="L58">        return comboRepository.save(combo);</span>
     }
 
     public List&lt;Combo&gt; obtenerTodos() {
-<span class="nc" id="L62">        return comboRepository.findAll();</span>
+<span class="fc" id="L62">        return comboRepository.findAll();</span>
     }
     
     public Map&lt;String, Object&gt; obtenerTodosPaginados(int page, int size) {
         // Sincronizar estados con asignaciones de jornadas
-<span class="nc" id="L67">        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}</span>
+<span class="pc" id="L67">        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}</span>
         // Crear objeto Pageable para paginaci?n
-<span class="nc" id="L69">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
+<span class="fc" id="L69">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
         
         // Obtener el total de combos
-<span class="nc" id="L72">        long totalCombos = comboRepository.count();</span>
+<span class="fc" id="L72">        long totalCombos = comboRepository.count();</span>
         
         // Obtener combos paginados
-<span class="nc" id="L75">        List&lt;Combo&gt; combosPaginados = comboRepository.findAllPaginados(pageable);</span>
+<span class="fc" id="L75">        List&lt;Combo&gt; combosPaginados = comboRepository.findAllPaginados(pageable);</span>
         
         // Convertir a DTOs
-<span class="nc" id="L78">        List&lt;Map&lt;String, Object&gt;&gt; dtos = new java.util.ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L79" title="All 2 branches missed.">        for (Combo c : combosPaginados) {</span>
-<span class="nc" id="L80">            Map&lt;String, Object&gt; dto = mapearComboListado(c.getId());</span>
-<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
-<span class="nc" id="L82">        }</span>
+<span class="fc" id="L78">        List&lt;Map&lt;String, Object&gt;&gt; dtos = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        for (Combo c : combosPaginados) {</span>
+<span class="fc" id="L80">            Map&lt;String, Object&gt; dto = mapearComboListado(c.getId());</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
+<span class="fc" id="L82">        }</span>
         
         // Construir respuesta
-<span class="nc" id="L85">        Map&lt;String, Object&gt; response = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc" id="L86">        response.put(&quot;combos&quot;, dtos);</span>
-<span class="nc" id="L87">        response.put(&quot;currentPage&quot;, page);</span>
-<span class="nc" id="L88">        response.put(&quot;totalItems&quot;, totalCombos);</span>
-<span class="nc" id="L89">        response.put(&quot;totalPages&quot;, Math.ceil((double) totalCombos / size));</span>
+<span class="fc" id="L85">        Map&lt;String, Object&gt; response = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L86">        response.put(&quot;combos&quot;, dtos);</span>
+<span class="fc" id="L87">        response.put(&quot;currentPage&quot;, page);</span>
+<span class="fc" id="L88">        response.put(&quot;totalItems&quot;, totalCombos);</span>
+<span class="fc" id="L89">        response.put(&quot;totalPages&quot;, Math.ceil((double) totalCombos / size));</span>
         
-<span class="nc" id="L91">        return response;</span>
+<span class="fc" id="L91">        return response;</span>
     }
 
     public Optional&lt;Combo&gt; obtenerPorId(Long id) {
-<span class="nc" id="L95">        return comboRepository.findById(id);</span>
+<span class="fc" id="L95">        return comboRepository.findById(id);</span>
     }
 
     public Optional&lt;Combo&gt; obtenerConPreguntas(Long id) {
         try {
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L101">            List&lt;Combo&gt; resultados = entityManager.createQuery(</span>
+<span class="fc" id="L101">            List&lt;Combo&gt; resultados = entityManager.createQuery(</span>
                 &quot;SELECT DISTINCT c FROM Combo c &quot; +
                 &quot;LEFT JOIN FETCH c.preguntas pc &quot; +
                 &quot;LEFT JOIN FETCH pc.pregunta p &quot; +
                 &quot;LEFT JOIN FETCH p.creacionUsuario &quot; +
                 &quot;WHERE c.id = :comboId&quot;
-<span class="nc" id="L107">            ).setParameter(&quot;comboId&quot;, id).getResultList();</span>
+<span class="fc" id="L107">            ).setParameter(&quot;comboId&quot;, id).getResultList();</span>
             
-<span class="nc bnc" id="L109" title="All 2 branches missed.">            if (resultados.isEmpty()) {</span>
-<span class="nc" id="L110">                return Optional.empty();</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            if (resultados.isEmpty()) {</span>
+<span class="fc" id="L110">                return Optional.empty();</span>
             }
             
-<span class="nc" id="L113">            return Optional.of(resultados.get(0));</span>
+<span class="fc" id="L113">            return Optional.of(resultados.get(0));</span>
             
 <span class="nc" id="L115">        } catch (Exception e) {</span>
 <span class="nc" id="L116">            log.error(&quot;Error al obtener combo {} con preguntas: {}&quot;, id, e.getMessage(), e);</span>
@@ -128,217 +128,217 @@ import com.lsnls.dto.CrearComboDTO;
     
     
     public Map&lt;String, Object&gt; filtrarCombos(String estado, String tipo, String tematica, String subtema, String texto, int page, int size) {
-<span class="nc" id="L131">        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}</span>
+<span class="pc" id="L131">        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}</span>
         // Crear objeto Pageable para paginaci?n
-<span class="nc" id="L133">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
+<span class="fc" id="L133">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
 
         Page&lt;Combo&gt; paginaCombos;
 
         // Si hay texto, buscar en preguntas y respuestas usando consulta nativa
-<span class="nc bnc" id="L138" title="All 4 branches missed.">        if (texto != null &amp;&amp; !texto.trim().isEmpty()) {</span>
-<span class="nc" id="L139">            String textoBusqueda = &quot;%&quot; + texto.trim().toLowerCase() + &quot;%&quot;;</span>
+<span class="pc bpc" id="L138" title="1 of 4 branches missed.">        if (texto != null &amp;&amp; !texto.trim().isEmpty()) {</span>
+<span class="fc" id="L139">            String textoBusqueda = &quot;%&quot; + texto.trim().toLowerCase() + &quot;%&quot;;</span>
             
             // Construir consulta nativa para buscar combos que tengan preguntas o respuestas con el texto
-<span class="nc" id="L142">            String sql = &quot;SELECT DISTINCT c.id FROM combos c &quot; +</span>
+<span class="fc" id="L142">            String sql = &quot;SELECT DISTINCT c.id FROM combos c &quot; +</span>
                         &quot;INNER JOIN combos_preguntas cp ON c.id = cp.combo_id &quot; +
                         &quot;INNER JOIN preguntas p ON cp.pregunta_id = p.id &quot; +
                         &quot;WHERE (LOWER(p.pregunta) LIKE :texto OR LOWER(p.respuesta) LIKE :texto)&quot;;
             
-<span class="nc bnc" id="L147" title="All 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
-<span class="nc" id="L148">                sql += &quot; AND c.estado = :estado&quot;;</span>
+<span class="pc bpc" id="L147" title="2 of 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
+<span class="fc" id="L148">                sql += &quot; AND c.estado = :estado&quot;;</span>
             }
-<span class="nc bnc" id="L150" title="All 4 branches missed.">            if (tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
-<span class="nc" id="L151">                sql += &quot; AND c.tipo = :tipo&quot;;</span>
+<span class="pc bpc" id="L150" title="2 of 4 branches missed.">            if (tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
+<span class="fc" id="L151">                sql += &quot; AND c.tipo = :tipo&quot;;</span>
             }
-<span class="nc bnc" id="L153" title="All 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
-<span class="nc" id="L154">                sql += &quot; AND LOWER(c.tematica) LIKE :tematica&quot;;</span>
+<span class="pc bpc" id="L153" title="2 of 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L154">                sql += &quot; AND LOWER(c.tematica) LIKE :tematica&quot;;</span>
             }
-<span class="nc bnc" id="L156" title="All 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
-<span class="nc" id="L157">                sql += &quot; AND LOWER(p.subtema) LIKE :subtema&quot;;</span>
+<span class="pc bpc" id="L156" title="2 of 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
+<span class="fc" id="L157">                sql += &quot; AND LOWER(p.subtema) LIKE :subtema&quot;;</span>
             }
             
-<span class="nc" id="L160">            sql += &quot; ORDER BY c.id DESC&quot;;</span>
+<span class="fc" id="L160">            sql += &quot; ORDER BY c.id DESC&quot;;</span>
             
             // Ejecutar consulta nativa
-<span class="nc" id="L163">            javax.persistence.Query query = entityManager.createNativeQuery(sql);</span>
-<span class="nc" id="L164">            query.setParameter(&quot;texto&quot;, textoBusqueda);</span>
-<span class="nc bnc" id="L165" title="All 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
-<span class="nc" id="L166">                query.setParameter(&quot;estado&quot;, estado);</span>
+<span class="fc" id="L163">            javax.persistence.Query query = entityManager.createNativeQuery(sql);</span>
+<span class="fc" id="L164">            query.setParameter(&quot;texto&quot;, textoBusqueda);</span>
+<span class="pc bpc" id="L165" title="2 of 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
+<span class="fc" id="L166">                query.setParameter(&quot;estado&quot;, estado);</span>
             }
-<span class="nc bnc" id="L168" title="All 4 branches missed.">            if (tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
-<span class="nc" id="L169">                query.setParameter(&quot;tipo&quot;, tipo);</span>
+<span class="pc bpc" id="L168" title="2 of 4 branches missed.">            if (tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
+<span class="fc" id="L169">                query.setParameter(&quot;tipo&quot;, tipo);</span>
             }
-<span class="nc bnc" id="L171" title="All 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
-<span class="nc" id="L172">                query.setParameter(&quot;tematica&quot;, &quot;%&quot; + tematica.toLowerCase() + &quot;%&quot;);</span>
+<span class="pc bpc" id="L171" title="2 of 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L172">                query.setParameter(&quot;tematica&quot;, &quot;%&quot; + tematica.toLowerCase() + &quot;%&quot;);</span>
             }
-<span class="nc bnc" id="L174" title="All 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
-<span class="nc" id="L175">                query.setParameter(&quot;subtema&quot;, &quot;%&quot; + subtema.toLowerCase() + &quot;%&quot;);</span>
+<span class="pc bpc" id="L174" title="2 of 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
+<span class="fc" id="L175">                query.setParameter(&quot;subtema&quot;, &quot;%&quot; + subtema.toLowerCase() + &quot;%&quot;);</span>
             }
-<span class="nc" id="L177">            query.setFirstResult((int) pageable.getOffset());</span>
-<span class="nc" id="L178">            query.setMaxResults(pageable.getPageSize());</span>
+<span class="fc" id="L177">            query.setFirstResult((int) pageable.getOffset());</span>
+<span class="fc" id="L178">            query.setMaxResults(pageable.getPageSize());</span>
             
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L181">            List&lt;Number&gt; resultadoIds = query.getResultList();</span>
+<span class="fc" id="L181">            List&lt;Number&gt; resultadoIds = query.getResultList();</span>
             
             // Obtener el total de resultados
-<span class="nc" id="L184">            String countSql = &quot;SELECT COUNT(DISTINCT c.id) FROM combos c &quot; +</span>
+<span class="fc" id="L184">            String countSql = &quot;SELECT COUNT(DISTINCT c.id) FROM combos c &quot; +</span>
                              &quot;INNER JOIN combos_preguntas cp ON c.id = cp.combo_id &quot; +
                              &quot;INNER JOIN preguntas p ON cp.pregunta_id = p.id &quot; +
                              &quot;WHERE (LOWER(p.pregunta) LIKE :texto OR LOWER(p.respuesta) LIKE :texto)&quot;;
-<span class="nc bnc" id="L188" title="All 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
-<span class="nc" id="L189">                countSql += &quot; AND c.estado = :estado&quot;;</span>
+<span class="pc bpc" id="L188" title="2 of 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
+<span class="fc" id="L189">                countSql += &quot; AND c.estado = :estado&quot;;</span>
             }
-<span class="nc bnc" id="L191" title="All 4 branches missed.">            if (tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
-<span class="nc" id="L192">                countSql += &quot; AND c.tipo = :tipo&quot;;</span>
+<span class="pc bpc" id="L191" title="2 of 4 branches missed.">            if (tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
+<span class="fc" id="L192">                countSql += &quot; AND c.tipo = :tipo&quot;;</span>
             }
-<span class="nc bnc" id="L194" title="All 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
-<span class="nc" id="L195">                countSql += &quot; AND LOWER(c.tematica) LIKE :tematica&quot;;</span>
+<span class="pc bpc" id="L194" title="2 of 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L195">                countSql += &quot; AND LOWER(c.tematica) LIKE :tematica&quot;;</span>
             }
-<span class="nc bnc" id="L197" title="All 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
-<span class="nc" id="L198">                countSql += &quot; AND LOWER(p.subtema) LIKE :subtema&quot;;</span>
-            }
-            
-<span class="nc" id="L201">            javax.persistence.Query countQuery = entityManager.createNativeQuery(countSql);</span>
-<span class="nc" id="L202">            countQuery.setParameter(&quot;texto&quot;, textoBusqueda);</span>
-<span class="nc bnc" id="L203" title="All 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
-<span class="nc" id="L204">                countQuery.setParameter(&quot;estado&quot;, estado);</span>
-            }
-<span class="nc bnc" id="L206" title="All 4 branches missed.">            if (tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
-<span class="nc" id="L207">                countQuery.setParameter(&quot;tipo&quot;, tipo);</span>
-            }
-<span class="nc bnc" id="L209" title="All 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
-<span class="nc" id="L210">                countQuery.setParameter(&quot;tematica&quot;, &quot;%&quot; + tematica.toLowerCase() + &quot;%&quot;);</span>
-            }
-<span class="nc bnc" id="L212" title="All 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
-<span class="nc" id="L213">                countQuery.setParameter(&quot;subtema&quot;, &quot;%&quot; + subtema.toLowerCase() + &quot;%&quot;);</span>
+<span class="pc bpc" id="L197" title="2 of 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
+<span class="fc" id="L198">                countSql += &quot; AND LOWER(p.subtema) LIKE :subtema&quot;;</span>
             }
             
-<span class="nc" id="L216">            long total = ((Number) countQuery.getSingleResult()).longValue();</span>
+<span class="fc" id="L201">            javax.persistence.Query countQuery = entityManager.createNativeQuery(countSql);</span>
+<span class="fc" id="L202">            countQuery.setParameter(&quot;texto&quot;, textoBusqueda);</span>
+<span class="pc bpc" id="L203" title="2 of 4 branches missed.">            if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
+<span class="fc" id="L204">                countQuery.setParameter(&quot;estado&quot;, estado);</span>
+            }
+<span class="pc bpc" id="L206" title="2 of 4 branches missed.">            if (tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
+<span class="fc" id="L207">                countQuery.setParameter(&quot;tipo&quot;, tipo);</span>
+            }
+<span class="pc bpc" id="L209" title="2 of 4 branches missed.">            if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L210">                countQuery.setParameter(&quot;tematica&quot;, &quot;%&quot; + tematica.toLowerCase() + &quot;%&quot;);</span>
+            }
+<span class="pc bpc" id="L212" title="2 of 4 branches missed.">            if (subtema != null &amp;&amp; !subtema.isEmpty()) {</span>
+<span class="fc" id="L213">                countQuery.setParameter(&quot;subtema&quot;, &quot;%&quot; + subtema.toLowerCase() + &quot;%&quot;);</span>
+            }
+            
+<span class="fc" id="L216">            long total = ((Number) countQuery.getSingleResult()).longValue();</span>
             
             // Convertir resultados a combos
-<span class="nc" id="L219">            List&lt;Combo&gt; combos = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L220" title="All 2 branches missed.">            for (Number id : resultadoIds) {</span>
-<span class="nc" id="L221">                Optional&lt;Combo&gt; comboOpt = comboRepository.findById(id.longValue());</span>
-<span class="nc bnc" id="L222" title="All 2 branches missed.">                if (comboOpt.isPresent()) {</span>
-<span class="nc" id="L223">                    combos.add(comboOpt.get());</span>
+<span class="fc" id="L219">            List&lt;Combo&gt; combos = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">            for (Number id : resultadoIds) {</span>
+<span class="fc" id="L221">                Optional&lt;Combo&gt; comboOpt = comboRepository.findById(id.longValue());</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">                if (comboOpt.isPresent()) {</span>
+<span class="fc" id="L223">                    combos.add(comboOpt.get());</span>
                 }
-<span class="nc" id="L225">            }</span>
+<span class="fc" id="L225">            }</span>
             
             // Convertir a DTOs
-<span class="nc" id="L228">            List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L229" title="All 2 branches missed.">            for (Combo c : combos) {</span>
-<span class="nc" id="L230">                Map&lt;String, Object&gt; dto = mapearComboListado(c.getId());</span>
-<span class="nc bnc" id="L231" title="All 2 branches missed.">                if (dto != null) dtos.add(dto);</span>
-<span class="nc" id="L232">            }</span>
+<span class="fc" id="L228">            List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">            for (Combo c : combos) {</span>
+<span class="fc" id="L230">                Map&lt;String, Object&gt; dto = mapearComboListado(c.getId());</span>
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">                if (dto != null) dtos.add(dto);</span>
+<span class="fc" id="L232">            }</span>
             
             // Construir respuesta
-<span class="nc" id="L235">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L236">            response.put(&quot;combos&quot;, dtos);</span>
-<span class="nc" id="L237">            response.put(&quot;currentPage&quot;, page);</span>
-<span class="nc" id="L238">            response.put(&quot;totalItems&quot;, total);</span>
-<span class="nc" id="L239">            response.put(&quot;totalPages&quot;, (int) Math.ceil((double) total / size));</span>
+<span class="fc" id="L235">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L236">            response.put(&quot;combos&quot;, dtos);</span>
+<span class="fc" id="L237">            response.put(&quot;currentPage&quot;, page);</span>
+<span class="fc" id="L238">            response.put(&quot;totalItems&quot;, total);</span>
+<span class="fc" id="L239">            response.put(&quot;totalPages&quot;, (int) Math.ceil((double) total / size));</span>
             
-<span class="nc" id="L241">            return response;</span>
+<span class="fc" id="L241">            return response;</span>
         }
 
         // Aplicar filtros y paginaci?n directamente en la consulta a la base de datos
-<span class="nc bnc" id="L245" title="All 12 branches missed.">        if (estado != null &amp;&amp; !estado.isEmpty() &amp;&amp; tipo != null &amp;&amp; !tipo.isEmpty() &amp;&amp; tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="pc bpc" id="L245" title="3 of 12 branches missed.">        if (estado != null &amp;&amp; !estado.isEmpty() &amp;&amp; tipo != null &amp;&amp; !tipo.isEmpty() &amp;&amp; tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
             // Filtrar por estado, tipo y tem?tica
-<span class="nc" id="L247">            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);</span>
-<span class="nc" id="L248">            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);</span>
-<span class="nc" id="L249">            paginaCombos = comboRepository.findByEstadoAndTipoAndTematica(estadoEnum, tipoEnum, tematica, pageable);</span>
-<span class="nc bnc" id="L250" title="All 8 branches missed.">        } else if (estado != null &amp;&amp; !estado.isEmpty() &amp;&amp; tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
+<span class="fc" id="L247">            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);</span>
+<span class="fc" id="L248">            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);</span>
+<span class="fc" id="L249">            paginaCombos = comboRepository.findByEstadoAndTipoAndTematica(estadoEnum, tipoEnum, tematica, pageable);</span>
+<span class="pc bpc" id="L250" title="2 of 8 branches missed.">        } else if (estado != null &amp;&amp; !estado.isEmpty() &amp;&amp; tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
             // Filtrar por estado y tipo
-<span class="nc" id="L252">            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);</span>
-<span class="nc" id="L253">            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);</span>
-<span class="nc" id="L254">            paginaCombos = comboRepository.findByEstadoAndTipo(estadoEnum, tipoEnum, pageable);</span>
-<span class="nc bnc" id="L255" title="All 8 branches missed.">        } else if (estado != null &amp;&amp; !estado.isEmpty() &amp;&amp; tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L252">            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);</span>
+<span class="fc" id="L253">            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);</span>
+<span class="fc" id="L254">            paginaCombos = comboRepository.findByEstadoAndTipo(estadoEnum, tipoEnum, pageable);</span>
+<span class="pc bpc" id="L255" title="2 of 8 branches missed.">        } else if (estado != null &amp;&amp; !estado.isEmpty() &amp;&amp; tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
             // Filtrar por estado y tem?tica
-<span class="nc" id="L257">            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);</span>
-<span class="nc" id="L258">            paginaCombos = comboRepository.findByEstadoAndTematica(estadoEnum, tematica, pageable);</span>
-<span class="nc bnc" id="L259" title="All 8 branches missed.">        } else if (tipo != null &amp;&amp; !tipo.isEmpty() &amp;&amp; tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L257">            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);</span>
+<span class="fc" id="L258">            paginaCombos = comboRepository.findByEstadoAndTematica(estadoEnum, tematica, pageable);</span>
+<span class="pc bpc" id="L259" title="2 of 8 branches missed.">        } else if (tipo != null &amp;&amp; !tipo.isEmpty() &amp;&amp; tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
             // Filtrar por tipo y tem?tica
-<span class="nc" id="L261">            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);</span>
-<span class="nc" id="L262">            paginaCombos = comboRepository.findByTipoAndTematica(tipoEnum, tematica, pageable);</span>
-<span class="nc bnc" id="L263" title="All 4 branches missed.">        } else if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
+<span class="fc" id="L261">            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);</span>
+<span class="fc" id="L262">            paginaCombos = comboRepository.findByTipoAndTematica(tipoEnum, tematica, pageable);</span>
+<span class="pc bpc" id="L263" title="1 of 4 branches missed.">        } else if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
             // Filtrar solo por estado
-<span class="nc" id="L265">            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);</span>
-<span class="nc" id="L266">            paginaCombos = comboRepository.findByEstado(estadoEnum, pageable);</span>
-<span class="nc bnc" id="L267" title="All 4 branches missed.">        } else if (tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
+<span class="fc" id="L265">            EstadoCombo estadoEnum = EstadoCombo.valueOf(estado);</span>
+<span class="fc" id="L266">            paginaCombos = comboRepository.findByEstado(estadoEnum, pageable);</span>
+<span class="pc bpc" id="L267" title="1 of 4 branches missed.">        } else if (tipo != null &amp;&amp; !tipo.isEmpty()) {</span>
             // Filtrar solo por tipo
-<span class="nc" id="L269">            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);</span>
-<span class="nc" id="L270">            paginaCombos = comboRepository.findByTipo(tipoEnum, pageable);</span>
-<span class="nc bnc" id="L271" title="All 4 branches missed.">        } else if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
+<span class="fc" id="L269">            Combo.TipoCombo tipoEnum = Combo.TipoCombo.valueOf(tipo);</span>
+<span class="fc" id="L270">            paginaCombos = comboRepository.findByTipo(tipoEnum, pageable);</span>
+<span class="pc bpc" id="L271" title="1 of 4 branches missed.">        } else if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
             // Filtrar solo por tem?tica
-<span class="nc" id="L273">            paginaCombos = comboRepository.findByTematica(tematica, pageable);</span>
+<span class="fc" id="L273">            paginaCombos = comboRepository.findByTematica(tematica, pageable);</span>
         } else {
             // Si no hay filtros, usar la paginaci?n existente
-<span class="nc" id="L276">            return obtenerTodosPaginados(page, size);</span>
+<span class="fc" id="L276">            return obtenerTodosPaginados(page, size);</span>
         }
 
         // Convertir a DTOs
-<span class="nc" id="L280">        List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L281" title="All 2 branches missed.">        for (Combo c : paginaCombos.getContent()) {</span>
-<span class="nc" id="L282">            Map&lt;String, Object&gt; dto = mapearComboListado(c.getId());</span>
-<span class="nc bnc" id="L283" title="All 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
-<span class="nc" id="L284">        }</span>
+<span class="fc" id="L280">        List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">        for (Combo c : paginaCombos.getContent()) {</span>
+<span class="fc" id="L282">            Map&lt;String, Object&gt; dto = mapearComboListado(c.getId());</span>
+<span class="pc bpc" id="L283" title="1 of 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
+<span class="fc" id="L284">        }</span>
 
         // Construir respuesta
-<span class="nc" id="L287">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L288">        response.put(&quot;combos&quot;, dtos);</span>
-<span class="nc" id="L289">        response.put(&quot;currentPage&quot;, paginaCombos.getNumber());</span>
-<span class="nc" id="L290">        response.put(&quot;totalItems&quot;, paginaCombos.getTotalElements());</span>
-<span class="nc" id="L291">        response.put(&quot;totalPages&quot;, paginaCombos.getTotalPages());</span>
+<span class="fc" id="L287">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L288">        response.put(&quot;combos&quot;, dtos);</span>
+<span class="fc" id="L289">        response.put(&quot;currentPage&quot;, paginaCombos.getNumber());</span>
+<span class="fc" id="L290">        response.put(&quot;totalItems&quot;, paginaCombos.getTotalElements());</span>
+<span class="fc" id="L291">        response.put(&quot;totalPages&quot;, paginaCombos.getTotalPages());</span>
 
-<span class="nc" id="L293">        log.debug(&quot;Filtrado de combos con paginaci?n optimizada - P?gina: &quot; + page + &quot;, Tama?o: &quot; + size +</span>
-<span class="nc" id="L294">                          &quot;, Total: &quot; + paginaCombos.getTotalElements() +</span>
-<span class="nc" id="L295">                          &quot;, Combos en esta p?gina: &quot; + dtos.size());</span>
+<span class="fc" id="L293">        log.debug(&quot;Filtrado de combos con paginaci?n optimizada - P?gina: &quot; + page + &quot;, Tama?o: &quot; + size +</span>
+<span class="fc" id="L294">                          &quot;, Total: &quot; + paginaCombos.getTotalElements() +</span>
+<span class="fc" id="L295">                          &quot;, Combos en esta p?gina: &quot; + dtos.size());</span>
 
-<span class="nc" id="L297">        return response;</span>
+<span class="fc" id="L297">        return response;</span>
     }
     
     public Map&lt;String, Object&gt; filtrarCombosPorId(String idStr, int page, int size) {
         // Crear objeto Pageable para paginaci?n
-<span class="nc" id="L302">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
+<span class="fc" id="L302">        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, &quot;id&quot;));</span>
         
         try {
             // Intentar buscar por ID exacto
-<span class="nc" id="L306">            Long id = Long.parseLong(idStr);</span>
-<span class="nc" id="L307">            Optional&lt;Combo&gt; combo = comboRepository.findById(id);</span>
-<span class="nc bnc" id="L308" title="All 2 branches missed.">            if (combo.isPresent()) {</span>
+<span class="fc" id="L306">            Long id = Long.parseLong(idStr);</span>
+<span class="fc" id="L307">            Optional&lt;Combo&gt; combo = comboRepository.findById(id);</span>
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">            if (combo.isPresent()) {</span>
                 // Si se encuentra el combo exacto, devolverlo
-<span class="nc" id="L310">                Map&lt;String, Object&gt; dto = obtenerComboConSlots(combo.get().getId());</span>
-<span class="nc bnc" id="L311" title="All 2 branches missed.">                if (dto != null) {</span>
-<span class="nc" id="L312">                    Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L313">                    response.put(&quot;combos&quot;, List.of(dto));</span>
-<span class="nc" id="L314">                    response.put(&quot;currentPage&quot;, 0);</span>
-<span class="nc" id="L315">                    response.put(&quot;totalItems&quot;, 1);</span>
-<span class="nc" id="L316">                    response.put(&quot;totalPages&quot;, 1);</span>
-<span class="nc" id="L317">                    return response;</span>
+<span class="fc" id="L310">                Map&lt;String, Object&gt; dto = obtenerComboConSlots(combo.get().getId());</span>
+<span class="pc bpc" id="L311" title="1 of 2 branches missed.">                if (dto != null) {</span>
+<span class="fc" id="L312">                    Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L313">                    response.put(&quot;combos&quot;, List.of(dto));</span>
+<span class="fc" id="L314">                    response.put(&quot;currentPage&quot;, 0);</span>
+<span class="fc" id="L315">                    response.put(&quot;totalItems&quot;, 1);</span>
+<span class="fc" id="L316">                    response.put(&quot;totalPages&quot;, 1);</span>
+<span class="fc" id="L317">                    return response;</span>
                 }
             }
-<span class="nc" id="L320">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L320">        } catch (NumberFormatException e) {</span>
             // Si no es un n?mero, buscar por coincidencia parcial
 <span class="nc" id="L322">        }</span>
         
         // Buscar por coincidencia parcial en el ID
-<span class="nc" id="L325">        Page&lt;Combo&gt; paginaCombos = comboRepository.findByIdContaining(idStr, pageable);</span>
+<span class="fc" id="L325">        Page&lt;Combo&gt; paginaCombos = comboRepository.findByIdContaining(idStr, pageable);</span>
         
         // Convertir a DTOs
-<span class="nc" id="L328">        List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L329" title="All 2 branches missed.">        for (Combo c : paginaCombos.getContent()) {</span>
-<span class="nc" id="L330">            Map&lt;String, Object&gt; dto = mapearComboListado(c.getId());</span>
-<span class="nc bnc" id="L331" title="All 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
-<span class="nc" id="L332">        }</span>
+<span class="fc" id="L328">        List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        for (Combo c : paginaCombos.getContent()) {</span>
+<span class="fc" id="L330">            Map&lt;String, Object&gt; dto = mapearComboListado(c.getId());</span>
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
+<span class="fc" id="L332">        }</span>
 
         // Construir respuesta
-<span class="nc" id="L335">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L336">        response.put(&quot;combos&quot;, dtos);</span>
-<span class="nc" id="L337">        response.put(&quot;currentPage&quot;, paginaCombos.getNumber());</span>
-<span class="nc" id="L338">        response.put(&quot;totalItems&quot;, paginaCombos.getTotalElements());</span>
-<span class="nc" id="L339">        response.put(&quot;totalPages&quot;, paginaCombos.getTotalPages());</span>
+<span class="fc" id="L335">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L336">        response.put(&quot;combos&quot;, dtos);</span>
+<span class="fc" id="L337">        response.put(&quot;currentPage&quot;, paginaCombos.getNumber());</span>
+<span class="fc" id="L338">        response.put(&quot;totalItems&quot;, paginaCombos.getTotalElements());</span>
+<span class="fc" id="L339">        response.put(&quot;totalPages&quot;, paginaCombos.getTotalPages());</span>
 
-<span class="nc" id="L341">        return response;</span>
+<span class="fc" id="L341">        return response;</span>
     }
 
     /**
@@ -346,19 +346,19 @@ import com.lsnls.dto.CrearComboDTO;
      */
     public List&lt;Combo&gt; obtenerDisponiblesParaConcursantes() {
         // Obtener combos aprobados, adjudicados o grabados (disponibles para asignar)
-<span class="nc" id="L349">        List&lt;Combo&gt; aprobados = comboRepository.findByEstado(EstadoCombo.aprobado);</span>
-<span class="nc" id="L350">        List&lt;Combo&gt; adjudicados = comboRepository.findByEstado(EstadoCombo.adjudicado);</span>
-<span class="nc" id="L351">        List&lt;Combo&gt; grabados = comboRepository.findByEstado(EstadoCombo.grabado);</span>
+<span class="fc" id="L349">        List&lt;Combo&gt; aprobados = comboRepository.findByEstado(EstadoCombo.aprobado);</span>
+<span class="fc" id="L350">        List&lt;Combo&gt; adjudicados = comboRepository.findByEstado(EstadoCombo.adjudicado);</span>
+<span class="fc" id="L351">        List&lt;Combo&gt; grabados = comboRepository.findByEstado(EstadoCombo.grabado);</span>
         
         // Combinar todas las listas - permitir cualquiera de estos estados
-<span class="nc" id="L354">        List&lt;Combo&gt; disponibles = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L355">        disponibles.addAll(aprobados);</span>
-<span class="nc" id="L356">        disponibles.addAll(adjudicados);</span>
-<span class="nc" id="L357">        disponibles.addAll(grabados);</span>
+<span class="fc" id="L354">        List&lt;Combo&gt; disponibles = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L355">        disponibles.addAll(aprobados);</span>
+<span class="fc" id="L356">        disponibles.addAll(adjudicados);</span>
+<span class="fc" id="L357">        disponibles.addAll(grabados);</span>
         
         // Ordenar por ID descendente (más recientes primero)
-<span class="nc" id="L360">        disponibles.sort((a, b) -&gt; b.getId().compareTo(a.getId()));</span>
-<span class="nc" id="L361">        return disponibles;</span>
+<span class="pc" id="L360">        disponibles.sort((a, b) -&gt; b.getId().compareTo(a.getId()));</span>
+<span class="fc" id="L361">        return disponibles;</span>
     }
 
     public List&lt;Combo&gt; obtenerPorUsuario(Usuario usuario) {
@@ -366,51 +366,51 @@ import com.lsnls.dto.CrearComboDTO;
     }
 
     public Combo actualizar(Long id, Combo combo) {
-<span class="nc bnc" id="L369" title="All 2 branches missed.">        if (comboRepository.existsById(id)) {</span>
-<span class="nc" id="L370">            combo.setId(id);</span>
-<span class="nc" id="L371">            return comboRepository.save(combo);</span>
+<span class="fc bfc" id="L369" title="All 2 branches covered.">        if (comboRepository.existsById(id)) {</span>
+<span class="fc" id="L370">            combo.setId(id);</span>
+<span class="fc" id="L371">            return comboRepository.save(combo);</span>
         }
-<span class="nc" id="L373">        return null;</span>
+<span class="fc" id="L373">        return null;</span>
     }
 
     public void validarCompletoParaAprobar(Combo combo) {
-<span class="nc bnc" id="L377" title="All 2 branches missed.">        if (combo == null) {</span>
-<span class="nc" id="L378">            throw new IllegalArgumentException(&quot;Combo no encontrado&quot;);</span>
+<span class="fc bfc" id="L377" title="All 2 branches covered.">        if (combo == null) {</span>
+<span class="fc" id="L378">            throw new IllegalArgumentException(&quot;Combo no encontrado&quot;);</span>
         }
-<span class="nc" id="L380">        Set&lt;PreguntaCombo&gt; preguntas = combo.getPreguntas();</span>
-<span class="nc bnc" id="L381" title="All 2 branches missed.">        int total = preguntas == null ? 0 : preguntas.size();</span>
-<span class="nc bnc" id="L382" title="All 2 branches missed.">        if (total != 3) {</span>
-<span class="nc" id="L383">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L380">        Set&lt;PreguntaCombo&gt; preguntas = combo.getPreguntas();</span>
+<span class="pc bpc" id="L381" title="1 of 2 branches missed.">        int total = preguntas == null ? 0 : preguntas.size();</span>
+<span class="fc bfc" id="L382" title="All 2 branches covered.">        if (total != 3) {</span>
+<span class="fc" id="L383">            throw new IllegalArgumentException(</span>
                 &quot;Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para un estado distinto de borrador. Actual: &quot; + total);
         }
-<span class="nc" id="L386">        boolean factorX2 = false;</span>
-<span class="nc" id="L387">        boolean factorX3 = false;</span>
-<span class="nc" id="L388">        boolean factorX = false;</span>
-<span class="nc" id="L389">        Set&lt;Integer&gt; posiciones = new HashSet&lt;&gt;();</span>
-<span class="nc bnc" id="L390" title="All 2 branches missed.">        for (PreguntaCombo pc : preguntas) {</span>
-<span class="nc bnc" id="L391" title="All 4 branches missed.">            if (pc.getPregunta() == null || pc.getPregunta().getNivel() == null) {</span>
+<span class="fc" id="L386">        boolean factorX2 = false;</span>
+<span class="fc" id="L387">        boolean factorX3 = false;</span>
+<span class="fc" id="L388">        boolean factorX = false;</span>
+<span class="fc" id="L389">        Set&lt;Integer&gt; posiciones = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">        for (PreguntaCombo pc : preguntas) {</span>
+<span class="pc bpc" id="L391" title="2 of 4 branches missed.">            if (pc.getPregunta() == null || pc.getPregunta().getNivel() == null) {</span>
 <span class="nc" id="L392">                throw new IllegalArgumentException(&quot;El combo tiene preguntas incompletas&quot;);</span>
             }
-<span class="nc bnc" id="L394" title="All 2 branches missed.">            if (!pc.getPregunta().getNivel().name().startsWith(&quot;_5&quot;)) {</span>
+<span class="pc bpc" id="L394" title="1 of 2 branches missed.">            if (!pc.getPregunta().getNivel().name().startsWith(&quot;_5&quot;)) {</span>
 <span class="nc" id="L395">                throw new IllegalArgumentException(&quot;Todas las preguntas del combo deben ser de nivel 5&quot;);</span>
             }
-<span class="nc bnc" id="L397" title="All 2 branches missed.">            if (pc.getPosicion() != null) {</span>
-<span class="nc" id="L398">                posiciones.add(pc.getPosicion());</span>
+<span class="pc bpc" id="L397" title="1 of 2 branches missed.">            if (pc.getPosicion() != null) {</span>
+<span class="fc" id="L398">                posiciones.add(pc.getPosicion());</span>
             }
-<span class="nc" id="L400">            String factor = pc.getFactorMultiplicacion();</span>
-<span class="nc bnc" id="L401" title="All 2 branches missed.">            if (factor == null) {</span>
+<span class="fc" id="L400">            String factor = pc.getFactorMultiplicacion();</span>
+<span class="pc bpc" id="L401" title="1 of 2 branches missed.">            if (factor == null) {</span>
 <span class="nc" id="L402">                throw new IllegalArgumentException(&quot;Todas las preguntas del combo deben tener factor (X2, X3, X)&quot;);</span>
             }
-<span class="nc bnc" id="L404" title="All 4 branches missed.">            if (&quot;X2&quot;.equals(factor) || &quot;2&quot;.equals(factor)) {</span>
-<span class="nc" id="L405">                factorX2 = true;</span>
-<span class="nc bnc" id="L406" title="All 4 branches missed.">            } else if (&quot;X3&quot;.equals(factor) || &quot;3&quot;.equals(factor)) {</span>
-<span class="nc" id="L407">                factorX3 = true;</span>
-<span class="nc bnc" id="L408" title="All 6 branches missed.">            } else if (&quot;X&quot;.equals(factor) || &quot;0&quot;.equals(factor) || &quot;1&quot;.equals(factor)) {</span>
-<span class="nc" id="L409">                factorX = true;</span>
+<span class="pc bpc" id="L404" title="1 of 4 branches missed.">            if (&quot;X2&quot;.equals(factor) || &quot;2&quot;.equals(factor)) {</span>
+<span class="fc" id="L405">                factorX2 = true;</span>
+<span class="pc bpc" id="L406" title="1 of 4 branches missed.">            } else if (&quot;X3&quot;.equals(factor) || &quot;3&quot;.equals(factor)) {</span>
+<span class="fc" id="L407">                factorX3 = true;</span>
+<span class="pc bpc" id="L408" title="5 of 6 branches missed.">            } else if (&quot;X&quot;.equals(factor) || &quot;0&quot;.equals(factor) || &quot;1&quot;.equals(factor)) {</span>
+<span class="fc" id="L409">                factorX = true;</span>
             }
-<span class="nc" id="L411">        }</span>
-<span class="nc bnc" id="L412" title="All 8 branches missed.">        if (posiciones.size() == 3 &amp;&amp; posiciones.contains(1) &amp;&amp; posiciones.contains(2) &amp;&amp; posiciones.contains(3)) {</span>
-<span class="nc" id="L413">            return;</span>
+<span class="fc" id="L411">        }</span>
+<span class="pc bpc" id="L412" title="4 of 8 branches missed.">        if (posiciones.size() == 3 &amp;&amp; posiciones.contains(1) &amp;&amp; posiciones.contains(2) &amp;&amp; posiciones.contains(3)) {</span>
+<span class="fc" id="L413">            return;</span>
         }
 <span class="nc bnc" id="L415" title="All 6 branches missed.">        if (!factorX2 || !factorX3 || !factorX) {</span>
 <span class="nc" id="L416">            throw new IllegalArgumentException(</span>
@@ -419,192 +419,192 @@ import com.lsnls.dto.CrearComboDTO;
 <span class="nc" id="L419">    }</span>
 
     public void validarTransicionEstado(EstadoCombo estadoActual, EstadoCombo nuevoEstado, boolean usuarioEsAdmin) {
-<span class="nc" id="L422">        com.lsnls.config.TransicionesEstado.validar(estadoActual, nuevoEstado, usuarioEsAdmin);</span>
-<span class="nc" id="L423">    }</span>
+<span class="fc" id="L422">        com.lsnls.config.TransicionesEstado.validar(estadoActual, nuevoEstado, usuarioEsAdmin);</span>
+<span class="fc" id="L423">    }</span>
 
     public Combo cambiarEstado(Long id, EstadoCombo nuevoEstado) {
-<span class="nc" id="L426">        return cambiarEstado(id, nuevoEstado, false);</span>
+<span class="fc" id="L426">        return cambiarEstado(id, nuevoEstado, false);</span>
     }
 
     public Combo cambiarEstado(Long id, EstadoCombo nuevoEstado, boolean usuarioEsAdmin) {
-<span class="nc" id="L430">        Optional&lt;Combo&gt; conPreguntas = obtenerConPreguntas(id);</span>
-<span class="nc bnc" id="L431" title="All 2 branches missed.">        if (conPreguntas.isEmpty()) {</span>
-<span class="nc" id="L432">            return null;</span>
+<span class="fc" id="L430">        Optional&lt;Combo&gt; conPreguntas = obtenerConPreguntas(id);</span>
+<span class="fc bfc" id="L431" title="All 2 branches covered.">        if (conPreguntas.isEmpty()) {</span>
+<span class="fc" id="L432">            return null;</span>
         }
-<span class="nc" id="L434">        Combo combo = conPreguntas.get();</span>
-<span class="nc" id="L435">        validarTransicionEstado(combo.getEstado(), nuevoEstado, usuarioEsAdmin);</span>
+<span class="fc" id="L434">        Combo combo = conPreguntas.get();</span>
+<span class="fc" id="L435">        validarTransicionEstado(combo.getEstado(), nuevoEstado, usuarioEsAdmin);</span>
         // Admin: solo exigir completo al pasar a aprobado.
         // Resto de roles: exigir completo para cualquier estado distinto de borrador.
-<span class="nc bnc" id="L438" title="All 6 branches missed.">        boolean exigeCompleto = nuevoEstado == EstadoCombo.aprobado</span>
+<span class="pc bpc" id="L438" title="1 of 6 branches missed.">        boolean exigeCompleto = nuevoEstado == EstadoCombo.aprobado</span>
             || (nuevoEstado != EstadoCombo.borrador &amp;&amp; !usuarioEsAdmin);
-<span class="nc bnc" id="L440" title="All 2 branches missed.">        if (exigeCompleto) {</span>
+<span class="fc bfc" id="L440" title="All 2 branches covered.">        if (exigeCompleto) {</span>
 <span class="nc" id="L441">            validarCompletoParaAprobar(combo);</span>
         }
-<span class="nc" id="L443">        combo.setEstado(nuevoEstado);</span>
-<span class="nc" id="L444">        return comboRepository.save(combo);</span>
+<span class="fc" id="L443">        combo.setEstado(nuevoEstado);</span>
+<span class="fc" id="L444">        return comboRepository.save(combo);</span>
     }
 
     public boolean estaAsignadoAJornada(Long comboId) {
-<span class="nc" id="L448">        Long count = entityManager.createQuery(</span>
+<span class="fc" id="L448">        Long count = entityManager.createQuery(</span>
             &quot;SELECT COUNT(a) FROM JornadaComboAsignacion a WHERE a.combo.id = :id&quot;, Long.class)
-<span class="nc" id="L450">            .setParameter(&quot;id&quot;, comboId)</span>
-<span class="nc" id="L451">            .getSingleResult();</span>
-<span class="nc bnc" id="L452" title="All 4 branches missed.">        return count != null &amp;&amp; count &gt; 0;</span>
+<span class="fc" id="L450">            .setParameter(&quot;id&quot;, comboId)</span>
+<span class="fc" id="L451">            .getSingleResult();</span>
+<span class="pc bpc" id="L452" title="1 of 4 branches missed.">        return count != null &amp;&amp; count &gt; 0;</span>
     }
 
     public boolean agregarPregunta(Long comboId, Long preguntaId, Integer factorMultiplicacion, Integer posicion) {
-<span class="nc" id="L456">        Optional&lt;Combo&gt; comboOpt = comboRepository.findById(comboId);</span>
-<span class="nc" id="L457">        Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
+<span class="fc" id="L456">        Optional&lt;Combo&gt; comboOpt = comboRepository.findById(comboId);</span>
+<span class="fc" id="L457">        Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
         
-<span class="nc bnc" id="L459" title="All 4 branches missed.">        if (comboOpt.isPresent() &amp;&amp; preguntaOpt.isPresent()) {</span>
-<span class="nc" id="L460">            Combo combo = comboOpt.get();</span>
-<span class="nc" id="L461">            Pregunta pregunta = preguntaOpt.get();</span>
+<span class="pc bpc" id="L459" title="1 of 4 branches missed.">        if (comboOpt.isPresent() &amp;&amp; preguntaOpt.isPresent()) {</span>
+<span class="fc" id="L460">            Combo combo = comboOpt.get();</span>
+<span class="fc" id="L461">            Pregunta pregunta = preguntaOpt.get();</span>
             
             // Verificar que la pregunta est? aprobada; si est? verificada, promover a aprobada autom?ticamente
-<span class="nc bnc" id="L464" title="All 2 branches missed.">            if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {</span>
-<span class="nc bnc" id="L465" title="All 2 branches missed.">                if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {</span>
+<span class="fc bfc" id="L464" title="All 2 branches covered.">            if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {</span>
+<span class="pc bpc" id="L465" title="1 of 2 branches missed.">                if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {</span>
 <span class="nc" id="L466">                    entityManager.createNativeQuery(&quot;UPDATE preguntas SET estado = 'aprobada' WHERE id = ? AND estado = 'verificada'&quot;)</span>
 <span class="nc" id="L467">                        .setParameter(1, preguntaId)</span>
 <span class="nc" id="L468">                        .executeUpdate();</span>
 <span class="nc" id="L469">                    pregunta = preguntaRepository.findById(preguntaId).orElse(pregunta);</span>
                 } else {
-<span class="nc" id="L471">                    throw new RuntimeException(&quot;La pregunta debe estar aprobada para ser agregada a un combo&quot;);</span>
+<span class="fc" id="L471">                    throw new RuntimeException(&quot;La pregunta debe estar aprobada para ser agregada a un combo&quot;);</span>
                 }
             }
             
             // Verificar que sea pregunta de nivel 5
-<span class="nc bnc" id="L476" title="All 2 branches missed.">            if (!pregunta.getNivel().name().startsWith(&quot;_5&quot;)) {</span>
-<span class="nc" id="L477">                throw new RuntimeException(&quot;Solo se pueden agregar preguntas de nivel 5 (5LS/5NLS) a los combos&quot;);</span>
+<span class="fc bfc" id="L476" title="All 2 branches covered.">            if (!pregunta.getNivel().name().startsWith(&quot;_5&quot;)) {</span>
+<span class="fc" id="L477">                throw new RuntimeException(&quot;Solo se pueden agregar preguntas de nivel 5 (5LS/5NLS) a los combos&quot;);</span>
             }
             
             // Verificar que la pregunta está disponible o liberada
             // Tratar null como disponible para compatibilidad con datos antiguos
-<span class="nc bnc" id="L482" title="All 2 branches missed.">            if (pregunta.getEstadoDisponibilidad() != null &amp;&amp;</span>
-<span class="nc bnc" id="L483" title="All 2 branches missed.">                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible &amp;&amp; </span>
+<span class="pc bpc" id="L482" title="1 of 2 branches missed.">            if (pregunta.getEstadoDisponibilidad() != null &amp;&amp;</span>
+<span class="pc bpc" id="L483" title="1 of 2 branches missed.">                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible &amp;&amp; </span>
 <span class="nc bnc" id="L484" title="All 2 branches missed.">                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {</span>
 <span class="nc" id="L485">                throw new RuntimeException(mensajePreguntaNoAsignable(pregunta));</span>
             }
             
             // Verificar que la pregunta no est? ya en este combo
-<span class="nc" id="L489">            PreguntaCombo.PreguntaComboId checkId = new PreguntaCombo.PreguntaComboId();</span>
-<span class="nc" id="L490">            checkId.setPreguntaId(preguntaId);</span>
-<span class="nc" id="L491">            checkId.setComboId(comboId);</span>
+<span class="fc" id="L489">            PreguntaCombo.PreguntaComboId checkId = new PreguntaCombo.PreguntaComboId();</span>
+<span class="fc" id="L490">            checkId.setPreguntaId(preguntaId);</span>
+<span class="fc" id="L491">            checkId.setComboId(comboId);</span>
             
-<span class="nc bnc" id="L493" title="All 2 branches missed.">            if (preguntaComboRepository.existsById(checkId)) {</span>
-<span class="nc" id="L494">                throw new RuntimeException(&quot;La pregunta ya est? agregada a este combo&quot;);</span>
+<span class="fc bfc" id="L493" title="All 2 branches covered.">            if (preguntaComboRepository.existsById(checkId)) {</span>
+<span class="fc" id="L494">                throw new RuntimeException(&quot;La pregunta ya est? agregada a este combo&quot;);</span>
             }
             
             // Crear la relaci?n pregunta-combo
-<span class="nc" id="L498">            PreguntaCombo pc = new PreguntaCombo();</span>
-<span class="nc" id="L499">            PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();</span>
-<span class="nc" id="L500">            id.setPreguntaId(preguntaId);</span>
-<span class="nc" id="L501">            id.setComboId(comboId);</span>
+<span class="fc" id="L498">            PreguntaCombo pc = new PreguntaCombo();</span>
+<span class="fc" id="L499">            PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();</span>
+<span class="fc" id="L500">            id.setPreguntaId(preguntaId);</span>
+<span class="fc" id="L501">            id.setComboId(comboId);</span>
             
-<span class="nc" id="L503">            pc.setId(id);</span>
-<span class="nc" id="L504">            pc.setPregunta(pregunta);</span>
-<span class="nc" id="L505">            pc.setCombo(combo);</span>
-<span class="nc bnc" id="L506" title="All 2 branches missed.">            pc.setFactorMultiplicacion(factorMultiplicacion != null ? factorMultiplicacion.toString() : &quot;1&quot;);</span>
-<span class="nc" id="L507">            pc.setPosicion(posicion);</span>
+<span class="fc" id="L503">            pc.setId(id);</span>
+<span class="fc" id="L504">            pc.setPregunta(pregunta);</span>
+<span class="fc" id="L505">            pc.setCombo(combo);</span>
+<span class="pc bpc" id="L506" title="1 of 2 branches missed.">            pc.setFactorMultiplicacion(factorMultiplicacion != null ? factorMultiplicacion.toString() : &quot;1&quot;);</span>
+<span class="fc" id="L507">            pc.setPosicion(posicion);</span>
             
             // Guardar la relaci?n en la base de datos
-<span class="nc" id="L510">            preguntaComboRepository.save(pc);</span>
+<span class="fc" id="L510">            preguntaComboRepository.save(pc);</span>
             
             // Marcar pregunta como usada
-<span class="nc" id="L513">            int rowsUpdated = entityManager.createNativeQuery(</span>
+<span class="fc" id="L513">            int rowsUpdated = entityManager.createNativeQuery(</span>
                 &quot;UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' WHERE id = ?&quot;)
-<span class="nc" id="L515">                .setParameter(1, preguntaId)</span>
-<span class="nc" id="L516">                .executeUpdate();</span>
+<span class="fc" id="L515">                .setParameter(1, preguntaId)</span>
+<span class="fc" id="L516">                .executeUpdate();</span>
             
-<span class="nc" id="L518">            return true;</span>
+<span class="fc" id="L518">            return true;</span>
         }
-<span class="nc" id="L520">        return false;</span>
+<span class="fc" id="L520">        return false;</span>
     }
 
     public long contarPreguntasCombo(Long comboId) {
-<span class="nc" id="L524">        Optional&lt;Combo&gt; comboOpt = comboRepository.findById(comboId);</span>
-<span class="nc bnc" id="L525" title="All 2 branches missed.">        if (comboOpt.isEmpty()) {</span>
-<span class="nc" id="L526">            return 0;</span>
+<span class="fc" id="L524">        Optional&lt;Combo&gt; comboOpt = comboRepository.findById(comboId);</span>
+<span class="fc bfc" id="L525" title="All 2 branches covered.">        if (comboOpt.isEmpty()) {</span>
+<span class="fc" id="L526">            return 0;</span>
         }
-<span class="nc" id="L528">        Combo combo = comboOpt.get();</span>
-<span class="nc bnc" id="L529" title="All 2 branches missed.">        return combo.getPreguntas() != null ? combo.getPreguntas().size() : 0;</span>
+<span class="fc" id="L528">        Combo combo = comboOpt.get();</span>
+<span class="fc bfc" id="L529" title="All 2 branches covered.">        return combo.getPreguntas() != null ? combo.getPreguntas().size() : 0;</span>
     }
 
     public boolean quitarPregunta(Long comboId, Long preguntaId) {
-<span class="nc" id="L533">        Optional&lt;Combo&gt; comboOpt = comboRepository.findById(comboId);</span>
-<span class="nc" id="L534">        Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
+<span class="fc" id="L533">        Optional&lt;Combo&gt; comboOpt = comboRepository.findById(comboId);</span>
+<span class="fc" id="L534">        Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
         
-<span class="nc bnc" id="L536" title="All 4 branches missed.">        if (comboOpt.isPresent() &amp;&amp; preguntaOpt.isPresent()) {</span>
-<span class="nc" id="L537">            Combo combo = comboOpt.get();</span>
-<span class="nc" id="L538">            Pregunta pregunta = preguntaOpt.get();</span>
+<span class="pc bpc" id="L536" title="1 of 4 branches missed.">        if (comboOpt.isPresent() &amp;&amp; preguntaOpt.isPresent()) {</span>
+<span class="fc" id="L537">            Combo combo = comboOpt.get();</span>
+<span class="fc" id="L538">            Pregunta pregunta = preguntaOpt.get();</span>
             
             // Eliminar la relaci?n directamente con consulta nativa
-<span class="nc" id="L541">            int relacionesEliminadas = entityManager.createNativeQuery(</span>
+<span class="fc" id="L541">            int relacionesEliminadas = entityManager.createNativeQuery(</span>
                 &quot;DELETE FROM combos_preguntas WHERE combo_id = ? AND pregunta_id = ?&quot;)
-<span class="nc" id="L543">                .setParameter(1, comboId)</span>
-<span class="nc" id="L544">                .setParameter(2, preguntaId)</span>
-<span class="nc" id="L545">                .executeUpdate();</span>
+<span class="fc" id="L543">                .setParameter(1, comboId)</span>
+<span class="fc" id="L544">                .setParameter(2, preguntaId)</span>
+<span class="fc" id="L545">                .executeUpdate();</span>
             
             // Liberar la pregunta solo si no est? en otros combos
-<span class="nc" id="L548">            long otrosCombos = entityManager.createQuery(</span>
+<span class="fc" id="L548">            long otrosCombos = entityManager.createQuery(</span>
                 &quot;SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta.id = :preguntaId&quot;, Long.class)
-<span class="nc" id="L550">                .setParameter(&quot;preguntaId&quot;, preguntaId)</span>
-<span class="nc" id="L551">                .getSingleResult();</span>
+<span class="fc" id="L550">                .setParameter(&quot;preguntaId&quot;, preguntaId)</span>
+<span class="fc" id="L551">                .getSingleResult();</span>
                 
-<span class="nc bnc" id="L553" title="All 4 branches missed.">            if (otrosCombos == 0 &amp;&amp; pregunta.getEstadoDisponibilidad() == Pregunta.EstadoDisponibilidad.usada) {</span>
-<span class="nc" id="L554">                entityManager.createNativeQuery(</span>
+<span class="pc bpc" id="L553" title="2 of 4 branches missed.">            if (otrosCombos == 0 &amp;&amp; pregunta.getEstadoDisponibilidad() == Pregunta.EstadoDisponibilidad.usada) {</span>
+<span class="fc" id="L554">                entityManager.createNativeQuery(</span>
                     &quot;UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?&quot;)
-<span class="nc" id="L556">                    .setParameter(1, preguntaId)</span>
-<span class="nc" id="L557">                    .executeUpdate();</span>
+<span class="fc" id="L556">                    .setParameter(1, preguntaId)</span>
+<span class="fc" id="L557">                    .executeUpdate();</span>
             }
             
-<span class="nc bnc" id="L560" title="All 2 branches missed.">            return relacionesEliminadas &gt; 0;</span>
+<span class="pc bpc" id="L560" title="1 of 2 branches missed.">            return relacionesEliminadas &gt; 0;</span>
         }
-<span class="nc" id="L562">        return false;</span>
+<span class="fc" id="L562">        return false;</span>
     }
 
     @Transactional
     public boolean actualizarFactorPregunta(Long comboId, Long preguntaId, String factorMultiplicacion) {
         try {
             // Validar que el factor no est? vac?o
-<span class="nc bnc" id="L569" title="All 4 branches missed.">            if (factorMultiplicacion == null || factorMultiplicacion.trim().isEmpty()) {</span>
-<span class="nc" id="L570">                factorMultiplicacion = &quot;X&quot;; // Valor por defecto</span>
+<span class="pc bpc" id="L569" title="1 of 4 branches missed.">            if (factorMultiplicacion == null || factorMultiplicacion.trim().isEmpty()) {</span>
+<span class="fc" id="L570">                factorMultiplicacion = &quot;X&quot;; // Valor por defecto</span>
             }
             
             // Verificar que el combo existe
-<span class="nc" id="L574">            Optional&lt;Combo&gt; comboOpt = comboRepository.findById(comboId);</span>
-<span class="nc bnc" id="L575" title="All 2 branches missed.">            if (comboOpt.isEmpty()) {</span>
-<span class="nc" id="L576">                return false;</span>
+<span class="fc" id="L574">            Optional&lt;Combo&gt; comboOpt = comboRepository.findById(comboId);</span>
+<span class="fc bfc" id="L575" title="All 2 branches covered.">            if (comboOpt.isEmpty()) {</span>
+<span class="fc" id="L576">                return false;</span>
             }
             
             // Verificar que la pregunta existe
-<span class="nc" id="L580">            Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
-<span class="nc bnc" id="L581" title="All 2 branches missed.">            if (preguntaOpt.isEmpty()) {</span>
-<span class="nc" id="L582">                return false;</span>
+<span class="fc" id="L580">            Optional&lt;Pregunta&gt; preguntaOpt = preguntaRepository.findById(preguntaId);</span>
+<span class="fc bfc" id="L581" title="All 2 branches covered.">            if (preguntaOpt.isEmpty()) {</span>
+<span class="fc" id="L582">                return false;</span>
             }
             
             // Crear la clave primaria compuesta para buscar la relaci?n
-<span class="nc" id="L586">            PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();</span>
-<span class="nc" id="L587">            id.setComboId(comboId);</span>
-<span class="nc" id="L588">            id.setPreguntaId(preguntaId);</span>
+<span class="fc" id="L586">            PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();</span>
+<span class="fc" id="L587">            id.setComboId(comboId);</span>
+<span class="fc" id="L588">            id.setPreguntaId(preguntaId);</span>
             
             // Buscar la relaci?n
-<span class="nc" id="L591">            Optional&lt;PreguntaCombo&gt; pcOpt = preguntaComboRepository.findById(id);</span>
-<span class="nc bnc" id="L592" title="All 2 branches missed.">            if (pcOpt.isEmpty()) {</span>
-<span class="nc" id="L593">                return false;</span>
+<span class="fc" id="L591">            Optional&lt;PreguntaCombo&gt; pcOpt = preguntaComboRepository.findById(id);</span>
+<span class="fc bfc" id="L592" title="All 2 branches covered.">            if (pcOpt.isEmpty()) {</span>
+<span class="fc" id="L593">                return false;</span>
             }
             
-<span class="nc" id="L596">            PreguntaCombo preguntaCombo = pcOpt.get();</span>
+<span class="fc" id="L596">            PreguntaCombo preguntaCombo = pcOpt.get();</span>
             
             // Actualizar el factor
-<span class="nc" id="L599">            preguntaCombo.setFactorMultiplicacion(factorMultiplicacion);</span>
+<span class="fc" id="L599">            preguntaCombo.setFactorMultiplicacion(factorMultiplicacion);</span>
             
             // Guardar la relaci?n actualizada
-<span class="nc" id="L602">            preguntaComboRepository.save(preguntaCombo);</span>
+<span class="fc" id="L602">            preguntaComboRepository.save(preguntaCombo);</span>
             
             // Forzar flush para asegurar que se guarde en la base de datos
-<span class="nc" id="L605">            entityManager.flush();</span>
+<span class="fc" id="L605">            entityManager.flush();</span>
             
-<span class="nc" id="L607">            return true;</span>
+<span class="fc" id="L607">            return true;</span>
 <span class="nc" id="L608">        } catch (Exception e) {</span>
 <span class="nc" id="L609">            log.warn(&quot;Error al actualizar factor: &quot; + e.getMessage());</span>
 <span class="nc" id="L610">            return false;</span>
@@ -613,75 +613,75 @@ import com.lsnls.dto.CrearComboDTO;
 
     public void eliminar(Long id) {
         // Verificar que el combo existe
-<span class="nc" id="L616">        Optional&lt;Combo&gt; comboOpt = comboRepository.findById(id);</span>
-<span class="nc bnc" id="L617" title="All 2 branches missed.">        if (comboOpt.isEmpty()) {</span>
-<span class="nc" id="L618">            throw new IllegalArgumentException(&quot;Combo con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="fc" id="L616">        Optional&lt;Combo&gt; comboOpt = comboRepository.findById(id);</span>
+<span class="fc bfc" id="L617" title="All 2 branches covered.">        if (comboOpt.isEmpty()) {</span>
+<span class="fc" id="L618">            throw new IllegalArgumentException(&quot;Combo con ID &quot; + id + &quot; no encontrado&quot;);</span>
         }
 
-<span class="nc" id="L621">        Combo combo = comboOpt.get();</span>
+<span class="fc" id="L621">        Combo combo = comboOpt.get();</span>
 
         // Verificar dependencias - no se puede eliminar si est? adjudicado o grabado
-<span class="nc bnc" id="L624" title="All 2 branches missed.">        if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {</span>
-<span class="nc" id="L625">            throw new IllegalArgumentException(&quot;No se puede eliminar el combo porque est? adjudicado a una jornada. Desas?gnalo primero.&quot;);</span>
+<span class="fc bfc" id="L624" title="All 2 branches covered.">        if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {</span>
+<span class="fc" id="L625">            throw new IllegalArgumentException(&quot;No se puede eliminar el combo porque est? adjudicado a una jornada. Desas?gnalo primero.&quot;);</span>
         }
-<span class="nc bnc" id="L627" title="All 2 branches missed.">        if (combo.getEstado() == Combo.EstadoCombo.grabado) {</span>
-<span class="nc" id="L628">            throw new IllegalArgumentException(&quot;No se puede eliminar el combo porque est? grabado (asignado a concursantes). Desas?gnalo primero.&quot;);</span>
+<span class="fc bfc" id="L627" title="All 2 branches covered.">        if (combo.getEstado() == Combo.EstadoCombo.grabado) {</span>
+<span class="fc" id="L628">            throw new IllegalArgumentException(&quot;No se puede eliminar el combo porque est? grabado (asignado a concursantes). Desas?gnalo primero.&quot;);</span>
         }
 
         // Verificar si hay concursantes usando este combo
-<span class="nc" id="L632">        Long concursantesCount = entityManager.createQuery(</span>
+<span class="fc" id="L632">        Long concursantesCount = entityManager.createQuery(</span>
             &quot;SELECT COUNT(c) FROM Concursante c WHERE c.combo.id = :comboId&quot;, Long.class)
-<span class="nc" id="L634">            .setParameter(&quot;comboId&quot;, id)</span>
-<span class="nc" id="L635">            .getSingleResult();</span>
+<span class="fc" id="L634">            .setParameter(&quot;comboId&quot;, id)</span>
+<span class="fc" id="L635">            .getSingleResult();</span>
         
-<span class="nc bnc" id="L637" title="All 2 branches missed.">        if (concursantesCount &gt; 0) {</span>
-<span class="nc" id="L638">            throw new IllegalArgumentException(&quot;No se puede eliminar el combo porque est? siendo usado por &quot; + </span>
+<span class="fc bfc" id="L637" title="All 2 branches covered.">        if (concursantesCount &gt; 0) {</span>
+<span class="fc" id="L638">            throw new IllegalArgumentException(&quot;No se puede eliminar el combo porque est? siendo usado por &quot; + </span>
                 concursantesCount + &quot; concursante(s). Desas?gnalo primero.&quot;);
         }
 
         // Verificar si est? en alguna jornada
-<span class="nc" id="L643">        Long jornadasCount = entityManager.createQuery(</span>
+<span class="fc" id="L643">        Long jornadasCount = entityManager.createQuery(</span>
             &quot;SELECT COUNT(a) FROM JornadaComboAsignacion a WHERE a.combo.id = :comboId&quot;, Long.class)
-<span class="nc" id="L645">            .setParameter(&quot;comboId&quot;, id)</span>
-<span class="nc" id="L646">            .getSingleResult();</span>
+<span class="fc" id="L645">            .setParameter(&quot;comboId&quot;, id)</span>
+<span class="fc" id="L646">            .getSingleResult();</span>
             
-<span class="nc bnc" id="L648" title="All 2 branches missed.">        if (jornadasCount &gt; 0) {</span>
-<span class="nc" id="L649">            throw new IllegalArgumentException(&quot;No se puede eliminar el combo porque est? asignado a &quot; + </span>
+<span class="fc bfc" id="L648" title="All 2 branches covered.">        if (jornadasCount &gt; 0) {</span>
+<span class="fc" id="L649">            throw new IllegalArgumentException(&quot;No se puede eliminar el combo porque est? asignado a &quot; + </span>
                 jornadasCount + &quot; jornada(s). Desas?gnalo primero.&quot;);
         }
 
         // UNDO: capturar todo lo que este borrado destruye o modifica, ANTES de tocarlo:
         // la fila del combo (se reinsertará con el mismo id), sus preguntas asociadas,
         // el historial que se borra y los estados que se liberan
-<span class="nc" id="L656">        List&lt;Map&lt;String, Object&gt;&gt; accionesUndo = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L657">        Map&lt;String, Object&gt; filaCombo = undoService.snapshotFila(&quot;combos&quot;, id);</span>
-<span class="nc bnc" id="L658" title="All 2 branches missed.">        if (filaCombo != null) {</span>
-<span class="nc" id="L659">            accionesUndo.add(UndoService.accionInsertarFila(&quot;combos&quot;, filaCombo));</span>
+<span class="fc" id="L656">        List&lt;Map&lt;String, Object&gt;&gt; accionesUndo = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L657">        Map&lt;String, Object&gt; filaCombo = undoService.snapshotFila(&quot;combos&quot;, id);</span>
+<span class="pc bpc" id="L658" title="1 of 2 branches missed.">        if (filaCombo != null) {</span>
+<span class="fc" id="L659">            accionesUndo.add(UndoService.accionInsertarFila(&quot;combos&quot;, filaCombo));</span>
         }
-<span class="nc bnc" id="L661" title="All 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;combos_preguntas&quot;, &quot;combo_id&quot;, id)) {</span>
+<span class="pc bpc" id="L661" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;combos_preguntas&quot;, &quot;combo_id&quot;, id)) {</span>
 <span class="nc" id="L662">            accionesUndo.add(UndoService.accionInsertarFila(&quot;combos_preguntas&quot;, fila));</span>
 <span class="nc" id="L663">        }</span>
-<span class="nc bnc" id="L664" title="All 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, id)) {</span>
+<span class="pc bpc" id="L664" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, id)) {</span>
 <span class="nc" id="L665">            accionesUndo.add(UndoService.accionInsertarFila(&quot;historial_jornadas&quot;, fila));</span>
 <span class="nc" id="L666">        }</span>
-<span class="nc bnc" id="L667" title="All 2 branches missed.">        if (combo.getPreguntas() != null) {</span>
-<span class="nc bnc" id="L668" title="All 2 branches missed.">            for (PreguntaCombo pc : combo.getPreguntas()) {</span>
-<span class="nc" id="L669">                Map&lt;String, Object&gt; camposPrevios = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L670" title="All 2 branches missed.">                camposPrevios.put(&quot;estado&quot;, pc.getPregunta().getEstado() != null ? pc.getPregunta().getEstado().name() : null);</span>
-<span class="nc bnc" id="L671" title="All 2 branches missed.">                camposPrevios.put(&quot;estado_disponibilidad&quot;, pc.getPregunta().getEstadoDisponibilidad() != null ? pc.getPregunta().getEstadoDisponibilidad().name() : null);</span>
-<span class="nc" id="L672">                accionesUndo.add(UndoService.accionActualizarCampos(&quot;preguntas&quot;, pc.getPregunta().getId(), camposPrevios));</span>
-<span class="nc" id="L673">            }</span>
+<span class="pc bpc" id="L667" title="1 of 2 branches missed.">        if (combo.getPreguntas() != null) {</span>
+<span class="fc bfc" id="L668" title="All 2 branches covered.">            for (PreguntaCombo pc : combo.getPreguntas()) {</span>
+<span class="fc" id="L669">                Map&lt;String, Object&gt; camposPrevios = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L670" title="1 of 2 branches missed.">                camposPrevios.put(&quot;estado&quot;, pc.getPregunta().getEstado() != null ? pc.getPregunta().getEstado().name() : null);</span>
+<span class="pc bpc" id="L671" title="1 of 2 branches missed.">                camposPrevios.put(&quot;estado_disponibilidad&quot;, pc.getPregunta().getEstadoDisponibilidad() != null ? pc.getPregunta().getEstadoDisponibilidad().name() : null);</span>
+<span class="fc" id="L672">                accionesUndo.add(UndoService.accionActualizarCampos(&quot;preguntas&quot;, pc.getPregunta().getId(), camposPrevios));</span>
+<span class="fc" id="L673">            }</span>
         }
 
         // Eliminar registros del historial que referencian este combo (si la tabla existe)
         try {
             // Verificar si la tabla existe antes de intentar eliminar
-<span class="nc" id="L679">            Object result = entityManager.createNativeQuery(</span>
+<span class="fc" id="L679">            Object result = entityManager.createNativeQuery(</span>
                 &quot;SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'historial_jornadas'&quot;)
-<span class="nc" id="L681">                .getSingleResult();</span>
-<span class="nc" id="L682">            Long tableExists = ((Number) result).longValue();</span>
+<span class="fc" id="L681">                .getSingleResult();</span>
+<span class="fc" id="L682">            Long tableExists = ((Number) result).longValue();</span>
             
-<span class="nc bnc" id="L684" title="All 2 branches missed.">            if (tableExists &gt; 0) {</span>
+<span class="pc bpc" id="L684" title="1 of 2 branches missed.">            if (tableExists &gt; 0) {</span>
 <span class="nc" id="L685">                entityManager.createNativeQuery(</span>
                     &quot;DELETE FROM historial_jornadas WHERE combo_id = ?&quot;)
 <span class="nc" id="L687">                    .setParameter(1, id)</span>
@@ -690,23 +690,23 @@ import com.lsnls.dto.CrearComboDTO;
 <span class="nc" id="L690">        } catch (Exception e) {</span>
             // Si hay error al eliminar el historial, continuamos de todas formas
 <span class="nc" id="L692">            log.warn(&quot;Advertencia: No se pudieron eliminar algunos registros del historial para el combo &quot; + id + &quot;: &quot; + e.getMessage());</span>
-<span class="nc" id="L693">        }</span>
+<span class="fc" id="L693">        }</span>
 
         // Si llegamos aqu?, es seguro eliminar - liberar las preguntas asociadas
-<span class="nc" id="L696">        Set&lt;PreguntaCombo&gt; preguntas = combo.getPreguntas();</span>
-<span class="nc bnc" id="L697" title="All 2 branches missed.">        for (PreguntaCombo pc : preguntas) {</span>
+<span class="fc" id="L696">        Set&lt;PreguntaCombo&gt; preguntas = combo.getPreguntas();</span>
+<span class="fc bfc" id="L697" title="All 2 branches covered.">        for (PreguntaCombo pc : preguntas) {</span>
             // Devolver a aprobada y marcar como liberada para poder reutilizar
-<span class="nc" id="L699">            entityManager.createNativeQuery(</span>
+<span class="fc" id="L699">            entityManager.createNativeQuery(</span>
                 &quot;UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?&quot;)
-<span class="nc" id="L701">                .setParameter(1, pc.getPregunta().getId())</span>
-<span class="nc" id="L702">                .executeUpdate();</span>
-<span class="nc" id="L703">        }</span>
+<span class="fc" id="L701">                .setParameter(1, pc.getPregunta().getId())</span>
+<span class="fc" id="L702">                .executeUpdate();</span>
+<span class="fc" id="L703">        }</span>
         
-<span class="nc" id="L705">        comboRepository.deleteById(id);</span>
+<span class="fc" id="L705">        comboRepository.deleteById(id);</span>
 
         // UNDO: registrar el borrado como operación deshacible (reinserta con el mismo id)
-<span class="nc" id="L708">        undoService.registrar(&quot;eliminar_combo&quot;, &quot;Eliminar combo &quot; + id, accionesUndo);</span>
-<span class="nc" id="L709">    }</span>
+<span class="fc" id="L708">        undoService.registrar(&quot;eliminar_combo&quot;, &quot;Eliminar combo &quot; + id, accionesUndo);</span>
+<span class="fc" id="L709">    }</span>
 
     public int limpiarPreguntasInvalidas(Long comboId) {
         // Ya no eliminamos preguntas basadas en el factor, ya que ahora es un campo de texto libre
@@ -715,7 +715,7 @@ import com.lsnls.dto.CrearComboDTO;
 
     private Map&lt;String, Object&gt; mapearComboListado(Long comboId) {
         try {
-<span class="nc" id="L718">            return obtenerComboConSlots(comboId);</span>
+<span class="fc" id="L718">            return obtenerComboConSlots(comboId);</span>
 <span class="nc" id="L719">        } catch (Exception e) {</span>
 <span class="nc" id="L720">            log.error(&quot;Error al mapear combo {} para el listado: {}&quot;, comboId, e.getMessage(), e);</span>
 <span class="nc" id="L721">            return null;</span>
@@ -726,87 +726,87 @@ import com.lsnls.dto.CrearComboDTO;
      * Devuelve un combo con las preguntas mapeadas a DTOs con slot/hueco.
      */
     public Map&lt;String, Object&gt; obtenerComboConSlots(Long id) {
-<span class="nc" id="L729">        Optional&lt;Combo&gt; opt = obtenerConPreguntas(id);</span>
-<span class="nc bnc" id="L730" title="All 2 branches missed.">        if (opt.isEmpty()) return null;</span>
-<span class="nc" id="L731">        Combo c = opt.get();</span>
-<span class="nc" id="L732">        Map&lt;String, Object&gt; dto = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc" id="L733">        dto.put(&quot;id&quot;, c.getId());</span>
-<span class="nc" id="L734">        dto.put(&quot;version&quot;, c.getVersion());</span>
-<span class="nc" id="L735">        dto.put(&quot;estado&quot;, c.getEstado());</span>
-<span class="nc" id="L736">        dto.put(&quot;tipo&quot;, c.getTipo());</span>
-<span class="nc" id="L737">        dto.put(&quot;tematica&quot;, c.getTematica());</span>
-<span class="nc" id="L738">        dto.put(&quot;notasDireccion&quot;, c.getNotasDireccion());</span>
-<span class="nc bnc" id="L739" title="All 2 branches missed.">        dto.put(&quot;fechaCreacion&quot;, c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);</span>
+<span class="fc" id="L729">        Optional&lt;Combo&gt; opt = obtenerConPreguntas(id);</span>
+<span class="fc bfc" id="L730" title="All 2 branches covered.">        if (opt.isEmpty()) return null;</span>
+<span class="fc" id="L731">        Combo c = opt.get();</span>
+<span class="fc" id="L732">        Map&lt;String, Object&gt; dto = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L733">        dto.put(&quot;id&quot;, c.getId());</span>
+<span class="fc" id="L734">        dto.put(&quot;version&quot;, c.getVersion());</span>
+<span class="fc" id="L735">        dto.put(&quot;estado&quot;, c.getEstado());</span>
+<span class="fc" id="L736">        dto.put(&quot;tipo&quot;, c.getTipo());</span>
+<span class="fc" id="L737">        dto.put(&quot;tematica&quot;, c.getTematica());</span>
+<span class="fc" id="L738">        dto.put(&quot;notasDireccion&quot;, c.getNotasDireccion());</span>
+<span class="pc bpc" id="L739" title="1 of 2 branches missed.">        dto.put(&quot;fechaCreacion&quot;, c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);</span>
         // Jornada asignada (si existe)
         try {
-<span class="nc" id="L742">            Long jornadaId = entityManager.createQuery(</span>
+<span class="fc" id="L742">            Long jornadaId = entityManager.createQuery(</span>
                 &quot;SELECT a.jornada.id FROM JornadaComboAsignacion a WHERE a.combo.id = :id&quot;, Long.class)
-<span class="nc" id="L744">                .setParameter(&quot;id&quot;, id)</span>
-<span class="nc" id="L745">                .setMaxResults(1)</span>
-<span class="nc" id="L746">                .getResultList()</span>
-<span class="nc" id="L747">                .stream().findFirst().orElse(null);</span>
-<span class="nc bnc" id="L748" title="All 2 branches missed.">            if (jornadaId != null) {</span>
-<span class="nc" id="L749">                dto.put(&quot;jornadaAsignada&quot;, jornadaId);</span>
+<span class="fc" id="L744">                .setParameter(&quot;id&quot;, id)</span>
+<span class="fc" id="L745">                .setMaxResults(1)</span>
+<span class="fc" id="L746">                .getResultList()</span>
+<span class="fc" id="L747">                .stream().findFirst().orElse(null);</span>
+<span class="pc bpc" id="L748" title="1 of 2 branches missed.">            if (jornadaId != null) {</span>
+<span class="fc" id="L749">                dto.put(&quot;jornadaAsignada&quot;, jornadaId);</span>
             }
-<span class="nc" id="L751">        } catch (Exception ignored) {}</span>
+<span class="fc" id="L751">        } catch (Exception ignored) {}</span>
         
         // Verificar si fue reutilizado de alguna jornada
         try {
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L756">            java.util.List&lt;Object[]&gt; historialReutilizado = entityManager.createNativeQuery(</span>
+<span class="fc" id="L756">            java.util.List&lt;Object[]&gt; historialReutilizado = entityManager.createNativeQuery(</span>
                 &quot;SELECT h.jornada_id, j.nombre &quot; +
                 &quot;FROM historial_jornadas h &quot; +
                 &quot;JOIN jornadas j ON h.jornada_id = j.id &quot; +
                 &quot;WHERE h.combo_id = :cid AND h.estado_asignacion = 'reaprovechado' &quot; +
                 &quot;ORDER BY h.fecha_asignacion DESC &quot; +
                 &quot;LIMIT 1&quot;)
-<span class="nc" id="L763">                .setParameter(&quot;cid&quot;, id)</span>
-<span class="nc" id="L764">                .getResultList();</span>
+<span class="fc" id="L763">                .setParameter(&quot;cid&quot;, id)</span>
+<span class="fc" id="L764">                .getResultList();</span>
             
-<span class="nc bnc" id="L766" title="All 2 branches missed.">            if (!historialReutilizado.isEmpty()) {</span>
-<span class="nc" id="L767">                Object[] registro = historialReutilizado.get(0);</span>
-<span class="nc" id="L768">                dto.put(&quot;reutilizadoDeJornadaId&quot;, ((Number) registro[0]).longValue());</span>
-<span class="nc" id="L769">                dto.put(&quot;reutilizadoDeJornadaNombre&quot;, (String) registro[1]);</span>
-<span class="nc" id="L770">                log.debug(&quot;[DTO-COMBO] Combo &quot; + id + &quot; | estado=&quot; + c.getEstado() + &quot; | jornada=&quot; + dto.get(&quot;jornadaAsignada&quot;) + &quot; | reutilizadoDe=&quot; + dto.get(&quot;reutilizadoDeJornadaId&quot;));</span>
+<span class="fc bfc" id="L766" title="All 2 branches covered.">            if (!historialReutilizado.isEmpty()) {</span>
+<span class="fc" id="L767">                Object[] registro = historialReutilizado.get(0);</span>
+<span class="fc" id="L768">                dto.put(&quot;reutilizadoDeJornadaId&quot;, ((Number) registro[0]).longValue());</span>
+<span class="fc" id="L769">                dto.put(&quot;reutilizadoDeJornadaNombre&quot;, (String) registro[1]);</span>
+<span class="fc" id="L770">                log.debug(&quot;[DTO-COMBO] Combo &quot; + id + &quot; | estado=&quot; + c.getEstado() + &quot; | jornada=&quot; + dto.get(&quot;jornadaAsignada&quot;) + &quot; | reutilizadoDe=&quot; + dto.get(&quot;reutilizadoDeJornadaId&quot;));</span>
             }
-<span class="nc" id="L772">        } catch (Exception e) {</span>
-<span class="nc" id="L773">            log.warn(&quot;[DTO-COMBO] ERROR al buscar historial para combo &quot; + id);</span>
-<span class="nc" id="L774">        }</span>
+<span class="fc" id="L772">        } catch (Exception e) {</span>
+<span class="fc" id="L773">            log.warn(&quot;[DTO-COMBO] ERROR al buscar historial para combo &quot; + id);</span>
+<span class="fc" id="L774">        }</span>
         
-<span class="nc bnc" id="L776" title="All 2 branches missed.">        Set&lt;PreguntaCombo&gt; preguntasCombo = c.getPreguntas() == null ? Collections.emptySet() : c.getPreguntas();</span>
-<span class="nc" id="L777">        java.util.List&lt;PreguntaCombo&gt; preguntasValidas = new java.util.ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L778" title="All 2 branches missed.">        for (PreguntaCombo pc : preguntasCombo) {</span>
-<span class="nc bnc" id="L779" title="All 6 branches missed.">            if (pc != null &amp;&amp; pc.getPregunta() != null &amp;&amp; pc.getPregunta().getId() != null) {</span>
-<span class="nc" id="L780">                preguntasValidas.add(pc);</span>
+<span class="pc bpc" id="L776" title="1 of 2 branches missed.">        Set&lt;PreguntaCombo&gt; preguntasCombo = c.getPreguntas() == null ? Collections.emptySet() : c.getPreguntas();</span>
+<span class="fc" id="L777">        java.util.List&lt;PreguntaCombo&gt; preguntasValidas = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L778" title="All 2 branches covered.">        for (PreguntaCombo pc : preguntasCombo) {</span>
+<span class="pc bpc" id="L779" title="2 of 6 branches missed.">            if (pc != null &amp;&amp; pc.getPregunta() != null &amp;&amp; pc.getPregunta().getId() != null) {</span>
+<span class="fc" id="L780">                preguntasValidas.add(pc);</span>
             }
-<span class="nc" id="L782">        }</span>
+<span class="fc" id="L782">        }</span>
 
         // Mapear preguntas a slots PM1, PM2, PM3
-<span class="nc" id="L785">        java.util.Map&lt;String, Object&gt; mapPorSlot = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L785">        java.util.Map&lt;String, Object&gt; mapPorSlot = new java.util.HashMap&lt;&gt;();</span>
         
         // Mapear preguntas a su slot usando la posicion almacenada (si existe)
         // o fallback por orden de ID para datos legacy sin posicion
-<span class="nc bnc" id="L789" title="All 2 branches missed.">        boolean todosConPosicion = !preguntasValidas.isEmpty()</span>
-<span class="nc bnc" id="L790" title="All 4 branches missed.">            &amp;&amp; preguntasValidas.stream().allMatch(pc -&gt; pc.getPosicion() != null);</span>
+<span class="pc bpc" id="L789" title="1 of 2 branches missed.">        boolean todosConPosicion = !preguntasValidas.isEmpty()</span>
+<span class="fc bfc" id="L790" title="All 4 branches covered.">            &amp;&amp; preguntasValidas.stream().allMatch(pc -&gt; pc.getPosicion() != null);</span>
 
-<span class="nc bnc" id="L792" title="All 2 branches missed.">        if (todosConPosicion) {</span>
+<span class="fc bfc" id="L792" title="All 2 branches covered.">        if (todosConPosicion) {</span>
             // Camino principal: usar posicion persistida — garantiza orden estable
-<span class="nc bnc" id="L794" title="All 2 branches missed.">            for (PreguntaCombo pc : preguntasValidas) {</span>
-<span class="nc" id="L795">                String slot = &quot;PM&quot; + pc.getPosicion();</span>
-<span class="nc" id="L796">                mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot));</span>
-<span class="nc" id="L797">            }</span>
+<span class="fc bfc" id="L794" title="All 2 branches covered.">            for (PreguntaCombo pc : preguntasValidas) {</span>
+<span class="fc" id="L795">                String slot = &quot;PM&quot; + pc.getPosicion();</span>
+<span class="fc" id="L796">                mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot));</span>
+<span class="fc" id="L797">            }</span>
         } else {
             // Fallback legacy: inferir slot desde el factor convencional (PM1=X2, PM2=X3, PM3=X/0)
             // antes de caer en orden por ID
-<span class="nc bnc" id="L801" title="All 2 branches missed.">            for (PreguntaCombo pc : preguntasValidas) {</span>
-<span class="nc" id="L802">                int pos = posicionDesdeFactor(pc.getFactorMultiplicacion());</span>
-<span class="nc" id="L803">                String slot = &quot;PM&quot; + pos;</span>
-<span class="nc bnc" id="L804" title="All 2 branches missed.">                if (!mapPorSlot.containsKey(slot)) {</span>
-<span class="nc" id="L805">                    mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot));</span>
+<span class="fc bfc" id="L801" title="All 2 branches covered.">            for (PreguntaCombo pc : preguntasValidas) {</span>
+<span class="fc" id="L802">                int pos = posicionDesdeFactor(pc.getFactorMultiplicacion());</span>
+<span class="fc" id="L803">                String slot = &quot;PM&quot; + pos;</span>
+<span class="pc bpc" id="L804" title="1 of 2 branches missed.">                if (!mapPorSlot.containsKey(slot)) {</span>
+<span class="fc" id="L805">                    mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot));</span>
                 }
-<span class="nc" id="L807">            }</span>
+<span class="fc" id="L807">            }</span>
             // Si tras inferir por factor quedan colisiones sin resolver, asignar por ID
-<span class="nc bnc" id="L809" title="All 2 branches missed.">            if (mapPorSlot.size() &lt; preguntasValidas.size()) {</span>
+<span class="pc bpc" id="L809" title="1 of 2 branches missed.">            if (mapPorSlot.size() &lt; preguntasValidas.size()) {</span>
 <span class="nc" id="L810">                java.util.List&lt;PreguntaCombo&gt; sinSlot = new java.util.ArrayList&lt;&gt;();</span>
 <span class="nc bnc" id="L811" title="All 2 branches missed.">                for (PreguntaCombo pc : preguntasValidas) {</span>
 <span class="nc" id="L812">                    int pos = posicionDesdeFactor(pc.getFactorMultiplicacion());</span>
@@ -824,61 +824,61 @@ import com.lsnls.dto.CrearComboDTO;
         }
         
         // Asegurar los 3 slots PM
-<span class="nc" id="L827">        java.util.List&lt;Object&gt; preguntasDTO = new java.util.ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L828" title="All 2 branches missed.">        for (String slot : java.util.Arrays.asList(&quot;PM1&quot;, &quot;PM2&quot;, &quot;PM3&quot;)) {</span>
-<span class="nc bnc" id="L829" title="All 2 branches missed.">            if (mapPorSlot.containsKey(slot)) {</span>
-<span class="nc" id="L830">                preguntasDTO.add(mapPorSlot.get(slot));</span>
+<span class="fc" id="L827">        java.util.List&lt;Object&gt; preguntasDTO = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L828" title="All 2 branches covered.">        for (String slot : java.util.Arrays.asList(&quot;PM1&quot;, &quot;PM2&quot;, &quot;PM3&quot;)) {</span>
+<span class="fc bfc" id="L829" title="All 2 branches covered.">            if (mapPorSlot.containsKey(slot)) {</span>
+<span class="fc" id="L830">                preguntasDTO.add(mapPorSlot.get(slot));</span>
             } else {
                 // Slot vac?o
-<span class="nc" id="L833">                Object vacio = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc" id="L834">                ((Map&lt;String, Object&gt;) vacio).put(&quot;slot&quot;, slot);</span>
-<span class="nc" id="L835">                ((Map&lt;String, Object&gt;) vacio).put(&quot;pregunta&quot;, null);</span>
-<span class="nc" id="L836">                ((Map&lt;String, Object&gt;) vacio).put(&quot;factorMultiplicacion&quot;, null);</span>
-<span class="nc" id="L837">                preguntasDTO.add(vacio);</span>
+<span class="fc" id="L833">                Object vacio = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L834">                ((Map&lt;String, Object&gt;) vacio).put(&quot;slot&quot;, slot);</span>
+<span class="fc" id="L835">                ((Map&lt;String, Object&gt;) vacio).put(&quot;pregunta&quot;, null);</span>
+<span class="fc" id="L836">                ((Map&lt;String, Object&gt;) vacio).put(&quot;factorMultiplicacion&quot;, null);</span>
+<span class="fc" id="L837">                preguntasDTO.add(vacio);</span>
             }
-<span class="nc" id="L839">        }</span>
-<span class="nc" id="L840">        dto.put(&quot;preguntas&quot;, preguntasDTO);</span>
-<span class="nc" id="L841">        return dto;</span>
+<span class="fc" id="L839">        }</span>
+<span class="fc" id="L840">        dto.put(&quot;preguntas&quot;, preguntasDTO);</span>
+<span class="fc" id="L841">        return dto;</span>
     }
 
     /** Sincroniza estados adjudicado/aprobado con asignaciones de jornada (lote) */
     private void sincronizarEstadosAsignaciones() {
         // Combos adjudicados por estar en jornadas
         // IMPORTANTE: no tocar los que ya est?n en 'aprobado' porque pueden estar marcados como reutilizados/liberados
-<span class="nc" id="L848">        entityManager.createNativeQuery(</span>
+<span class="fc" id="L848">        entityManager.createNativeQuery(</span>
             &quot;UPDATE combos SET estado='adjudicado' &quot; +
             &quot;WHERE id IN (SELECT combo_id FROM jornadas_combos) &quot; +
             &quot;AND estado NOT IN ('adjudicado','grabado','aprobado')&quot;)
-<span class="nc" id="L852">            .executeUpdate();</span>
+<span class="fc" id="L852">            .executeUpdate();</span>
         // Combos sin jornada ? aprobado (solo si estaban adjudicados)
-<span class="nc" id="L854">        entityManager.createNativeQuery(</span>
+<span class="fc" id="L854">        entityManager.createNativeQuery(</span>
             &quot;UPDATE combos SET estado='aprobado' WHERE estado='adjudicado' AND id NOT IN (SELECT combo_id FROM jornadas_combos)&quot;)
-<span class="nc" id="L856">            .executeUpdate();</span>
-<span class="nc" id="L857">    }</span>
+<span class="fc" id="L856">            .executeUpdate();</span>
+<span class="fc" id="L857">    }</span>
 
     private Map&lt;String, Object&gt; dtoPreguntaCombo(PreguntaCombo pc, String slot) {
-<span class="nc" id="L860">        Map&lt;String, Object&gt; pcdto = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc" id="L861">        pcdto.put(&quot;pregunta&quot;, mapPreguntaToDTO(pc.getPregunta()));</span>
-<span class="nc" id="L862">        pcdto.put(&quot;factorMultiplicacion&quot;, pc.getFactorMultiplicacion());</span>
-<span class="nc" id="L863">        pcdto.put(&quot;posicion&quot;, pc.getPosicion());</span>
-<span class="nc" id="L864">        pcdto.put(&quot;slot&quot;, slot);</span>
-<span class="nc" id="L865">        return pcdto;</span>
+<span class="fc" id="L860">        Map&lt;String, Object&gt; pcdto = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L861">        pcdto.put(&quot;pregunta&quot;, mapPreguntaToDTO(pc.getPregunta()));</span>
+<span class="fc" id="L862">        pcdto.put(&quot;factorMultiplicacion&quot;, pc.getFactorMultiplicacion());</span>
+<span class="fc" id="L863">        pcdto.put(&quot;posicion&quot;, pc.getPosicion());</span>
+<span class="fc" id="L864">        pcdto.put(&quot;slot&quot;, slot);</span>
+<span class="fc" id="L865">        return pcdto;</span>
     }
 
     private Map&lt;String, Object&gt; mapPreguntaToDTO(Pregunta p) {
-<span class="nc" id="L869">        Map&lt;String, Object&gt; dto = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L870" title="All 2 branches missed.">        if (p == null) {</span>
+<span class="fc" id="L869">        Map&lt;String, Object&gt; dto = new java.util.HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L870" title="1 of 2 branches missed.">        if (p == null) {</span>
 <span class="nc" id="L871">            return dto;</span>
         }
-<span class="nc" id="L873">        dto.put(&quot;id&quot;, p.getId());</span>
-<span class="nc" id="L874">        dto.put(&quot;pregunta&quot;, p.getPregunta());</span>
-<span class="nc" id="L875">        dto.put(&quot;respuesta&quot;, p.getRespuesta());</span>
-<span class="nc" id="L876">        dto.put(&quot;tematica&quot;, p.getTematica());</span>
-<span class="nc bnc" id="L877" title="All 2 branches missed.">        dto.put(&quot;nivel&quot;, p.getNivel() != null ? p.getNivel().name() : null);</span>
-<span class="nc bnc" id="L878" title="All 2 branches missed.">        dto.put(&quot;estado&quot;, p.getEstado() != null ? p.getEstado().name() : null);</span>
-<span class="nc" id="L879">        dto.put(&quot;fuentes&quot;, p.getFuentes());</span>
-<span class="nc" id="L880">        dto.put(&quot;datosExtra&quot;, p.getDatosExtra());</span>
-<span class="nc" id="L881">        return dto;</span>
+<span class="fc" id="L873">        dto.put(&quot;id&quot;, p.getId());</span>
+<span class="fc" id="L874">        dto.put(&quot;pregunta&quot;, p.getPregunta());</span>
+<span class="fc" id="L875">        dto.put(&quot;respuesta&quot;, p.getRespuesta());</span>
+<span class="fc" id="L876">        dto.put(&quot;tematica&quot;, p.getTematica());</span>
+<span class="pc bpc" id="L877" title="1 of 2 branches missed.">        dto.put(&quot;nivel&quot;, p.getNivel() != null ? p.getNivel().name() : null);</span>
+<span class="pc bpc" id="L878" title="1 of 2 branches missed.">        dto.put(&quot;estado&quot;, p.getEstado() != null ? p.getEstado().name() : null);</span>
+<span class="fc" id="L879">        dto.put(&quot;fuentes&quot;, p.getFuentes());</span>
+<span class="fc" id="L880">        dto.put(&quot;datosExtra&quot;, p.getDatosExtra());</span>
+<span class="fc" id="L881">        return dto;</span>
     }
 
     /**
@@ -904,19 +904,19 @@ import com.lsnls.dto.CrearComboDTO;
     public boolean cambiarEstadoAtomico(Long comboId, Combo.EstadoCombo estadoActualEsperado, 
                                        Combo.EstadoCombo nuevoEstado) {
         // Usar query nativa para cambio at?mico con verificaci?n de estado
-<span class="nc" id="L907">        int filasActualizadas = entityManager.createNativeQuery(</span>
+<span class="fc" id="L907">        int filasActualizadas = entityManager.createNativeQuery(</span>
             &quot;UPDATE combos SET estado = ? WHERE id = ? AND estado = ?&quot;)
-<span class="nc" id="L909">            .setParameter(1, nuevoEstado.name())</span>
-<span class="nc" id="L910">            .setParameter(2, comboId)</span>
-<span class="nc" id="L911">            .setParameter(3, estadoActualEsperado.name())</span>
-<span class="nc" id="L912">            .executeUpdate();</span>
+<span class="fc" id="L909">            .setParameter(1, nuevoEstado.name())</span>
+<span class="fc" id="L910">            .setParameter(2, comboId)</span>
+<span class="fc" id="L911">            .setParameter(3, estadoActualEsperado.name())</span>
+<span class="fc" id="L912">            .executeUpdate();</span>
             
-<span class="nc bnc" id="L914" title="All 2 branches missed.">        if (filasActualizadas == 0) {</span>
-<span class="nc" id="L915">            throw new IllegalStateException(&quot;No se pudo cambiar el estado del combo &quot; + comboId + </span>
+<span class="fc bfc" id="L914" title="All 2 branches covered.">        if (filasActualizadas == 0) {</span>
+<span class="fc" id="L915">            throw new IllegalStateException(&quot;No se pudo cambiar el estado del combo &quot; + comboId + </span>
                 &quot; porque otro usuario lo modific? simult?neamente. Estado esperado: &quot; + estadoActualEsperado);
         }
         
-<span class="nc" id="L919">        return true;</span>
+<span class="fc" id="L919">        return true;</span>
     }
 
     /**
@@ -928,45 +928,45 @@ import com.lsnls.dto.CrearComboDTO;
     @Transactional
     public boolean verificarYReservarPreguntasComboAtomico(Map&lt;Long, Integer&gt; preguntaIdsConFactores) {
         // Normalizar IDs: quitar nulos y duplicados para evitar falsos positivos de validaci?n
-<span class="nc" id="L931">        java.util.List&lt;Long&gt; preguntaIds = new java.util.ArrayList&lt;&gt;();</span>
-<span class="nc" id="L932">        java.util.Set&lt;Long&gt; vistos = new java.util.LinkedHashSet&lt;&gt;();</span>
-<span class="nc bnc" id="L933" title="All 2 branches missed.">        for (Long id : preguntaIdsConFactores.keySet()) {</span>
-<span class="nc bnc" id="L934" title="All 2 branches missed.">            if (id == null) continue;</span>
-<span class="nc bnc" id="L935" title="All 2 branches missed.">            if (vistos.add(id)) {</span>
-<span class="nc" id="L936">                preguntaIds.add(id);</span>
+<span class="fc" id="L931">        java.util.List&lt;Long&gt; preguntaIds = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc" id="L932">        java.util.Set&lt;Long&gt; vistos = new java.util.LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L933" title="All 2 branches covered.">        for (Long id : preguntaIdsConFactores.keySet()) {</span>
+<span class="pc bpc" id="L934" title="1 of 2 branches missed.">            if (id == null) continue;</span>
+<span class="pc bpc" id="L935" title="1 of 2 branches missed.">            if (vistos.add(id)) {</span>
+<span class="fc" id="L936">                preguntaIds.add(id);</span>
             }
-<span class="nc" id="L938">        }</span>
+<span class="fc" id="L938">        }</span>
         
-<span class="nc bnc" id="L940" title="All 2 branches missed.">        if (preguntaIds.isEmpty()) {</span>
+<span class="pc bpc" id="L940" title="1 of 2 branches missed.">        if (preguntaIds.isEmpty()) {</span>
 <span class="nc" id="L941">            return true;</span>
         }
         
         // PASO 1: Verificar que todas las preguntas existen y est?n en estado correcto
-<span class="nc" id="L945">        List&lt;Pregunta&gt; preguntas = preguntaRepository.findAllById(preguntaIds);</span>
+<span class="fc" id="L945">        List&lt;Pregunta&gt; preguntas = preguntaRepository.findAllById(preguntaIds);</span>
         
-<span class="nc bnc" id="L947" title="All 2 branches missed.">        if (preguntas.size() != preguntaIds.size()) {</span>
+<span class="fc bfc" id="L947" title="All 2 branches covered.">        if (preguntas.size() != preguntaIds.size()) {</span>
             // Construir lista expl?cita de IDs faltantes para facilitar el debug
-<span class="nc" id="L949">            java.util.Set&lt;Long&gt; encontrados = new java.util.HashSet&lt;&gt;();</span>
-<span class="nc bnc" id="L950" title="All 2 branches missed.">            for (Pregunta p : preguntas) {</span>
+<span class="fc" id="L949">            java.util.Set&lt;Long&gt; encontrados = new java.util.HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L950" title="1 of 2 branches missed.">            for (Pregunta p : preguntas) {</span>
 <span class="nc bnc" id="L951" title="All 4 branches missed.">                if (p != null &amp;&amp; p.getId() != null) {</span>
 <span class="nc" id="L952">                    encontrados.add(p.getId());</span>
                 }
 <span class="nc" id="L954">            }</span>
-<span class="nc" id="L955">            java.util.List&lt;Long&gt; faltantes = new java.util.ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L956" title="All 2 branches missed.">            for (Long id : preguntaIds) {</span>
-<span class="nc bnc" id="L957" title="All 4 branches missed.">                if (id != null &amp;&amp; !encontrados.contains(id)) {</span>
-<span class="nc" id="L958">                    faltantes.add(id);</span>
+<span class="fc" id="L955">            java.util.List&lt;Long&gt; faltantes = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L956" title="All 2 branches covered.">            for (Long id : preguntaIds) {</span>
+<span class="pc bpc" id="L957" title="2 of 4 branches missed.">                if (id != null &amp;&amp; !encontrados.contains(id)) {</span>
+<span class="fc" id="L958">                    faltantes.add(id);</span>
                 }
-<span class="nc" id="L960">            }</span>
-<span class="nc bnc" id="L961" title="All 2 branches missed.">            String detalle = faltantes.isEmpty()</span>
+<span class="fc" id="L960">            }</span>
+<span class="pc bpc" id="L961" title="1 of 2 branches missed.">            String detalle = faltantes.isEmpty()</span>
 <span class="nc" id="L962">                ? &quot;&quot;</span>
-<span class="nc" id="L963">                : &quot; (IDs faltantes: &quot; + faltantes + &quot;)&quot;;</span>
-<span class="nc" id="L964">            throw new IllegalArgumentException(&quot;Una o m?s preguntas no fueron encontradas&quot; + detalle);</span>
+<span class="fc" id="L963">                : &quot; (IDs faltantes: &quot; + faltantes + &quot;)&quot;;</span>
+<span class="fc" id="L964">            throw new IllegalArgumentException(&quot;Una o m?s preguntas no fueron encontradas&quot; + detalle);</span>
         }
         
         // Verificar el estado de cada pregunta (promover 'verificada' -&gt; 'aprobada' si aplica)
-<span class="nc bnc" id="L968" title="All 2 branches missed.">        for (Pregunta pregunta : preguntas) {</span>
-<span class="nc bnc" id="L969" title="All 2 branches missed.">            if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {</span>
+<span class="fc bfc" id="L968" title="All 2 branches covered.">        for (Pregunta pregunta : preguntas) {</span>
+<span class="pc bpc" id="L969" title="1 of 2 branches missed.">            if (pregunta.getEstado() != Pregunta.EstadoPregunta.aprobada) {</span>
 <span class="nc bnc" id="L970" title="All 2 branches missed.">                if (pregunta.getEstado() == Pregunta.EstadoPregunta.verificada) {</span>
 <span class="nc" id="L971">                    entityManager.createNativeQuery(&quot;UPDATE preguntas SET estado = 'aprobada' WHERE id = ? AND estado = 'verificada'&quot;)</span>
 <span class="nc" id="L972">                        .setParameter(1, pregunta.getId())</span>
@@ -977,39 +977,39 @@ import com.lsnls.dto.CrearComboDTO;
                 }
             }
             
-<span class="nc bnc" id="L980" title="All 2 branches missed.">            if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible &amp;&amp; </span>
+<span class="pc bpc" id="L980" title="1 of 2 branches missed.">            if (pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.disponible &amp;&amp; </span>
 <span class="nc bnc" id="L981" title="All 2 branches missed.">                pregunta.getEstadoDisponibilidad() != Pregunta.EstadoDisponibilidad.liberada) {</span>
 <span class="nc" id="L982">                throw new IllegalArgumentException(mensajePreguntaNoAsignable(pregunta));</span>
             }
             
             // Verificar que sea pregunta de nivel 5 para combos
-<span class="nc bnc" id="L986" title="All 2 branches missed.">            if (!pregunta.getNivel().name().startsWith(&quot;_5&quot;)) {</span>
+<span class="pc bpc" id="L986" title="1 of 2 branches missed.">            if (!pregunta.getNivel().name().startsWith(&quot;_5&quot;)) {</span>
 <span class="nc" id="L987">                throw new IllegalArgumentException(&quot;La pregunta &quot; + pregunta.getId() + &quot; no es de nivel 5. Solo se pueden usar preguntas de nivel 5 (5LS/5NLS) en combos&quot;);</span>
             }
-<span class="nc" id="L989">        }</span>
+<span class="fc" id="L989">        }</span>
         
         // PASO 2: Reservar todas las preguntas AT?MICAMENTE con una sola query
-<span class="nc" id="L992">        String preguntaIdsStr = preguntaIds.stream()</span>
-<span class="nc" id="L993">            .map(String::valueOf)</span>
-<span class="nc" id="L994">            .reduce((a, b) -&gt; a + &quot;,&quot; + b)</span>
-<span class="nc" id="L995">            .orElse(&quot;&quot;);</span>
+<span class="fc" id="L992">        String preguntaIdsStr = preguntaIds.stream()</span>
+<span class="fc" id="L993">            .map(String::valueOf)</span>
+<span class="pc" id="L994">            .reduce((a, b) -&gt; a + &quot;,&quot; + b)</span>
+<span class="fc" id="L995">            .orElse(&quot;&quot;);</span>
             
-<span class="nc" id="L997">        int preguntasReservadas = entityManager.createNativeQuery(</span>
+<span class="fc" id="L997">        int preguntasReservadas = entityManager.createNativeQuery(</span>
             &quot;UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' &quot; +
             &quot;WHERE id IN (&quot; + preguntaIdsStr + &quot;) &quot; +
             &quot;AND estado_disponibilidad IN ('disponible', 'liberada') &quot; +
             &quot;AND estado = 'aprobada' &quot; +
             &quot;AND nivel LIKE '_5%'&quot;
-<span class="nc" id="L1003">        ).executeUpdate();</span>
+<span class="fc" id="L1003">        ).executeUpdate();</span>
         
         // PASO 3: Verificar que se reservaron TODAS las preguntas
-<span class="nc bnc" id="L1006" title="All 2 branches missed.">        if (preguntasReservadas != preguntaIds.size()) {</span>
+<span class="pc bpc" id="L1006" title="1 of 2 branches missed.">        if (preguntasReservadas != preguntaIds.size()) {</span>
             // Rollback - alguna pregunta fue tomada por otro usuario
 <span class="nc" id="L1008">            throw new IllegalStateException(&quot;Conflicto de concurrencia: &quot; + (preguntaIds.size() - preguntasReservadas) + </span>
                 &quot; pregunta(s) fueron reservadas por otro usuario. Por favor, verifica la disponibilidad e intenta nuevamente.&quot;);
         }
         
-<span class="nc" id="L1012">        return true;</span>
+<span class="fc" id="L1012">        return true;</span>
     }
 
     /**
@@ -1038,80 +1038,80 @@ import com.lsnls.dto.CrearComboDTO;
     @Transactional
     public Combo crearComboDesdeDTO(CrearComboDTO dto, Usuario usuario) {
         // PASO 1: Preparar mapa de preguntas con factores
-<span class="nc" id="L1041">        Map&lt;Long, Integer&gt; preguntaIdsConFactores = new java.util.HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L1042" title="All 2 branches missed.">        for (CrearComboDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {</span>
-<span class="nc" id="L1043">            String factor = pm.getFactor();</span>
-<span class="nc bnc" id="L1044" title="All 4 branches missed.">            if (factor == null || factor.trim().isEmpty()) {</span>
+<span class="fc" id="L1041">        Map&lt;Long, Integer&gt; preguntaIdsConFactores = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L1042" title="All 2 branches covered.">        for (CrearComboDTO.PreguntaMultiplicadoraDTO pm : dto.getPreguntasMultiplicadoras()) {</span>
+<span class="fc" id="L1043">            String factor = pm.getFactor();</span>
+<span class="pc bpc" id="L1044" title="2 of 4 branches missed.">            if (factor == null || factor.trim().isEmpty()) {</span>
 <span class="nc" id="L1045">                factor = &quot;1&quot;;</span>
             }
             // Extraer el n?mero del factor (X2 -&gt; 2, X3 -&gt; 3, X -&gt; 1)
-<span class="nc" id="L1048">            String numeroFactor = factor.replaceAll(&quot;[^0-9]&quot;, &quot;&quot;);</span>
-<span class="nc bnc" id="L1049" title="All 2 branches missed.">            if (numeroFactor.isEmpty()) {</span>
-<span class="nc" id="L1050">                numeroFactor = &quot;1&quot;; // Si no hay n?mero, usar 1</span>
+<span class="fc" id="L1048">            String numeroFactor = factor.replaceAll(&quot;[^0-9]&quot;, &quot;&quot;);</span>
+<span class="fc bfc" id="L1049" title="All 2 branches covered.">            if (numeroFactor.isEmpty()) {</span>
+<span class="fc" id="L1050">                numeroFactor = &quot;1&quot;; // Si no hay n?mero, usar 1</span>
             }
-<span class="nc" id="L1052">            preguntaIdsConFactores.put(pm.getId(), Integer.valueOf(numeroFactor));</span>
-<span class="nc" id="L1053">        }</span>
+<span class="fc" id="L1052">            preguntaIdsConFactores.put(pm.getId(), Integer.valueOf(numeroFactor));</span>
+<span class="fc" id="L1053">        }</span>
         
         // PASO 2: VERIFICACI?N Y RESERVA AT?MICA de todas las preguntas
         try {
-<span class="nc" id="L1057">            verificarYReservarPreguntasComboAtomico(preguntaIdsConFactores);</span>
+<span class="fc" id="L1057">            verificarYReservarPreguntasComboAtomico(preguntaIdsConFactores);</span>
 <span class="nc" id="L1058">        } catch (IllegalStateException e) {</span>
             // Error de concurrencia - mensaje espec?fico
 <span class="nc" id="L1060">            throw new IllegalArgumentException(&quot;Error de concurrencia al reservar preguntas: &quot; + e.getMessage());</span>
-<span class="nc" id="L1061">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L1061">        } catch (IllegalArgumentException e) {</span>
             // Error de validaci?n - reenviar tal como est?
-<span class="nc" id="L1063">            throw e;</span>
-<span class="nc" id="L1064">        }</span>
+<span class="fc" id="L1063">            throw e;</span>
+<span class="fc" id="L1064">        }</span>
         
         // PASO 3: Crear el combo (las preguntas ya est?n reservadas)
-<span class="nc" id="L1067">        Combo combo = new Combo();</span>
-<span class="nc" id="L1068">        combo.setCreacionUsuario(usuario);</span>
+<span class="fc" id="L1067">        Combo combo = new Combo();</span>
+<span class="fc" id="L1068">        combo.setCreacionUsuario(usuario);</span>
         // Usar el estado del DTO si se proporciona, sino usar &quot;borrador&quot; por defecto
-<span class="nc bnc" id="L1070" title="All 4 branches missed.">        if (dto.getEstado() != null &amp;&amp; !dto.getEstado().trim().isEmpty()) {</span>
+<span class="pc bpc" id="L1070" title="2 of 4 branches missed.">        if (dto.getEstado() != null &amp;&amp; !dto.getEstado().trim().isEmpty()) {</span>
             try {
-<span class="nc" id="L1072">                combo.setEstado(EstadoCombo.valueOf(dto.getEstado()));</span>
+<span class="fc" id="L1072">                combo.setEstado(EstadoCombo.valueOf(dto.getEstado()));</span>
 <span class="nc" id="L1073">            } catch (IllegalArgumentException e) {</span>
 <span class="nc" id="L1074">                combo.setEstado(EstadoCombo.borrador); // Si el estado no es válido, usar borrador</span>
-<span class="nc" id="L1075">            }</span>
+<span class="pc" id="L1075">            }</span>
         } else {
 <span class="nc" id="L1077">            combo.setEstado(EstadoCombo.borrador);</span>
         }
-<span class="nc" id="L1079">        combo.setNivel(NivelCombo.NORMAL);</span>
-<span class="nc" id="L1080">        combo.setTipo(Combo.TipoCombo.valueOf(dto.getTipo()));</span>
-<span class="nc" id="L1081">        combo.setTematica(dto.getTematica());</span>
-<span class="nc" id="L1082">        combo.setNotasDireccion(dto.getNotasDireccion());</span>
-<span class="nc" id="L1083">        combo = comboRepository.save(combo);</span>
+<span class="fc" id="L1079">        combo.setNivel(NivelCombo.NORMAL);</span>
+<span class="fc" id="L1080">        combo.setTipo(Combo.TipoCombo.valueOf(dto.getTipo()));</span>
+<span class="fc" id="L1081">        combo.setTematica(dto.getTematica());</span>
+<span class="fc" id="L1082">        combo.setNotasDireccion(dto.getNotasDireccion());</span>
+<span class="fc" id="L1083">        combo = comboRepository.save(combo);</span>
 
         // PASO 4: Crear las relaciones pregunta-combo (preguntas ya reservadas)
         // Iteramos sobre la lista del DTO para preservar el orden y asignar posicion 1,2,3
         try {
-<span class="nc" id="L1088">            java.util.List&lt;CrearComboDTO.PreguntaMultiplicadoraDTO&gt; pmList = dto.getPreguntasMultiplicadoras();</span>
-<span class="nc bnc" id="L1089" title="All 2 branches missed.">            for (int idx = 0; idx &lt; pmList.size(); idx++) {</span>
-<span class="nc" id="L1090">                CrearComboDTO.PreguntaMultiplicadoraDTO pmDto = pmList.get(idx);</span>
-<span class="nc" id="L1091">                Long preguntaId = pmDto.getId();</span>
-<span class="nc" id="L1092">                String factorStr = pmDto.getFactor();</span>
-<span class="nc bnc" id="L1093" title="All 4 branches missed.">                if (factorStr == null || factorStr.trim().isEmpty()) factorStr = &quot;1&quot;;</span>
-<span class="nc" id="L1094">                String numeroFactor = factorStr.replaceAll(&quot;[^0-9]&quot;, &quot;&quot;);</span>
-<span class="nc bnc" id="L1095" title="All 2 branches missed.">                if (numeroFactor.isEmpty()) numeroFactor = &quot;1&quot;;</span>
+<span class="fc" id="L1088">            java.util.List&lt;CrearComboDTO.PreguntaMultiplicadoraDTO&gt; pmList = dto.getPreguntasMultiplicadoras();</span>
+<span class="fc bfc" id="L1089" title="All 2 branches covered.">            for (int idx = 0; idx &lt; pmList.size(); idx++) {</span>
+<span class="fc" id="L1090">                CrearComboDTO.PreguntaMultiplicadoraDTO pmDto = pmList.get(idx);</span>
+<span class="fc" id="L1091">                Long preguntaId = pmDto.getId();</span>
+<span class="fc" id="L1092">                String factorStr = pmDto.getFactor();</span>
+<span class="pc bpc" id="L1093" title="2 of 4 branches missed.">                if (factorStr == null || factorStr.trim().isEmpty()) factorStr = &quot;1&quot;;</span>
+<span class="fc" id="L1094">                String numeroFactor = factorStr.replaceAll(&quot;[^0-9]&quot;, &quot;&quot;);</span>
+<span class="pc bpc" id="L1095" title="1 of 2 branches missed.">                if (numeroFactor.isEmpty()) numeroFactor = &quot;1&quot;;</span>
                 
-<span class="nc" id="L1097">                Pregunta pregunta = preguntaRepository.findById(preguntaId)</span>
-<span class="nc" id="L1098">                    .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Pregunta no encontrada: &quot; + preguntaId));</span>
+<span class="fc" id="L1097">                Pregunta pregunta = preguntaRepository.findById(preguntaId)</span>
+<span class="pc" id="L1098">                    .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Pregunta no encontrada: &quot; + preguntaId));</span>
                 
-<span class="nc" id="L1100">                PreguntaCombo pc = new PreguntaCombo();</span>
-<span class="nc" id="L1101">                PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();</span>
-<span class="nc" id="L1102">                id.setPreguntaId(preguntaId);</span>
-<span class="nc" id="L1103">                id.setComboId(combo.getId());</span>
+<span class="fc" id="L1100">                PreguntaCombo pc = new PreguntaCombo();</span>
+<span class="fc" id="L1101">                PreguntaCombo.PreguntaComboId id = new PreguntaCombo.PreguntaComboId();</span>
+<span class="fc" id="L1102">                id.setPreguntaId(preguntaId);</span>
+<span class="fc" id="L1103">                id.setComboId(combo.getId());</span>
                 
-<span class="nc" id="L1105">                pc.setId(id);</span>
-<span class="nc" id="L1106">                pc.setPregunta(pregunta);</span>
-<span class="nc" id="L1107">                pc.setCombo(combo);</span>
-<span class="nc" id="L1108">                pc.setFactorMultiplicacion(numeroFactor);</span>
-<span class="nc" id="L1109">                pc.setPosicion(idx + 1); // PM1=1, PM2=2, PM3=3</span>
+<span class="fc" id="L1105">                pc.setId(id);</span>
+<span class="fc" id="L1106">                pc.setPregunta(pregunta);</span>
+<span class="fc" id="L1107">                pc.setCombo(combo);</span>
+<span class="fc" id="L1108">                pc.setFactorMultiplicacion(numeroFactor);</span>
+<span class="fc" id="L1109">                pc.setPosicion(idx + 1); // PM1=1, PM2=2, PM3=3</span>
                 
-<span class="nc" id="L1111">                preguntaComboRepository.save(pc);</span>
+<span class="fc" id="L1111">                preguntaComboRepository.save(pc);</span>
                 // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasComboAtomico()
             }
-<span class="nc" id="L1114">            return comboRepository.findById(combo.getId()).orElse(combo);</span>
+<span class="fc" id="L1114">            return comboRepository.findById(combo.getId()).orElse(combo);</span>
 <span class="nc" id="L1115">        } catch (Exception e) {</span>
             // En caso de error, liberar las preguntas reservadas
 <span class="nc" id="L1117">            liberarPreguntasComboAtomico(new java.util.ArrayList&lt;&gt;(preguntaIdsConFactores.keySet()));</span>
@@ -1126,17 +1126,17 @@ import com.lsnls.dto.CrearComboDTO;
      * Convención: PM1=X2 (&quot;2&quot;), PM2=X3 (&quot;3&quot;), PM3=X (&quot;0&quot; o &quot;1&quot;).
      */
     private int posicionDesdeFactor(String factor) {
-<span class="nc bnc" id="L1129" title="All 2 branches missed.">        if (factor == null) return 3;</span>
-<span class="nc" id="L1130">        String f = factor.trim();</span>
+<span class="pc bpc" id="L1129" title="1 of 2 branches missed.">        if (factor == null) return 3;</span>
+<span class="fc" id="L1130">        String f = factor.trim();</span>
         // Formato numérico directo (&quot;2&quot;, &quot;3&quot;, &quot;0&quot;, &quot;1&quot;)
-<span class="nc bnc" id="L1132" title="All 2 branches missed.">        if (&quot;2&quot;.equals(f)) return 1;</span>
-<span class="nc bnc" id="L1133" title="All 2 branches missed.">        if (&quot;3&quot;.equals(f)) return 2;</span>
-<span class="nc bnc" id="L1134" title="All 4 branches missed.">        if (&quot;0&quot;.equals(f) || &quot;1&quot;.equals(f)) return 3;</span>
+<span class="pc bpc" id="L1132" title="1 of 2 branches missed.">        if (&quot;2&quot;.equals(f)) return 1;</span>
+<span class="pc bpc" id="L1133" title="1 of 2 branches missed.">        if (&quot;3&quot;.equals(f)) return 2;</span>
+<span class="pc bpc" id="L1134" title="2 of 4 branches missed.">        if (&quot;0&quot;.equals(f) || &quot;1&quot;.equals(f)) return 3;</span>
         // Formato texto (&quot;X2&quot;, &quot;X3&quot;, &quot;X&quot;)
-<span class="nc" id="L1136">        String num = f.replaceAll(&quot;[^0-9]&quot;, &quot;&quot;);</span>
-<span class="nc bnc" id="L1137" title="All 2 branches missed.">        if (&quot;2&quot;.equals(num)) return 1;</span>
-<span class="nc bnc" id="L1138" title="All 2 branches missed.">        if (&quot;3&quot;.equals(num)) return 2;</span>
-<span class="nc" id="L1139">        return 3; // &quot;X&quot; sin número → PM3</span>
+<span class="fc" id="L1136">        String num = f.replaceAll(&quot;[^0-9]&quot;, &quot;&quot;);</span>
+<span class="fc bfc" id="L1137" title="All 2 branches covered.">        if (&quot;2&quot;.equals(num)) return 1;</span>
+<span class="fc bfc" id="L1138" title="All 2 branches covered.">        if (&quot;3&quot;.equals(num)) return 2;</span>
+<span class="fc" id="L1139">        return 3; // &quot;X&quot; sin número → PM3</span>
     }
 
     /**

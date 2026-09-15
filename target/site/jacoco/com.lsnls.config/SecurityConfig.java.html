@@ -35,11 +35,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-<span class="nc" id="L38">        http</span>
-<span class="nc" id="L39">                .csrf(AbstractHttpConfigurer::disable)</span>
-<span class="nc" id="L40">                .cors(cors -&gt; cors.configurationSource(corsConfigurationSource()))</span>
-<span class="nc" id="L41">                .authorizeRequests(authz -&gt; authz</span>
-<span class="nc" id="L42">                        .antMatchers(</span>
+<span class="fc" id="L38">        http</span>
+<span class="fc" id="L39">                .csrf(AbstractHttpConfigurer::disable)</span>
+<span class="fc" id="L40">                .cors(cors -&gt; cors.configurationSource(corsConfigurationSource()))</span>
+<span class="fc" id="L41">                .authorizeRequests(authz -&gt; authz</span>
+<span class="fc" id="L42">                        .antMatchers(</span>
                                 // Rutas públicas
                                 &quot;/&quot;,
                                 &quot;/index.html&quot;,
@@ -52,66 +52,66 @@ public class SecurityConfig {
                                 &quot;/favicon.ico&quot;,
                                 &quot;/.well-known/**&quot;,
                                 &quot;/error&quot;
-<span class="nc" id="L55">                        ).permitAll()</span>
-<span class="nc" id="L56">                        .antMatchers(&quot;/api/auth/register&quot;).hasRole(&quot;ADMIN&quot;)</span>
-<span class="nc" id="L57">                        .antMatchers(&quot;/api/**&quot;).authenticated()</span>
-<span class="nc" id="L58">                        .anyRequest().permitAll()</span>
+<span class="fc" id="L55">                        ).permitAll()</span>
+<span class="fc" id="L56">                        .antMatchers(&quot;/api/auth/register&quot;).hasRole(&quot;ADMIN&quot;)</span>
+<span class="fc" id="L57">                        .antMatchers(&quot;/api/**&quot;).authenticated()</span>
+<span class="fc" id="L58">                        .anyRequest().permitAll()</span>
                 )
-<span class="nc" id="L60">                .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
-<span class="nc" id="L61">                .exceptionHandling(ex -&gt; ex</span>
-<span class="nc" id="L62">                        .authenticationEntryPoint((request, response, authException) -&gt; {</span>
-<span class="nc" id="L63">                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
-<span class="nc" id="L64">                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());</span>
-<span class="nc" id="L65">                            response.setContentType(&quot;text/plain;charset=UTF-8&quot;);</span>
-<span class="nc" id="L66">                            response.getWriter().write(&quot;Tu sesión ha expirado o no estás autenticado. Vuelve a iniciar sesión.&quot;);</span>
-<span class="nc" id="L67">                        })</span>
-<span class="nc" id="L68">                        .accessDeniedHandler((request, response, accessDeniedException) -&gt; {</span>
+<span class="fc" id="L60">                .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
+<span class="fc" id="L61">                .exceptionHandling(ex -&gt; ex</span>
+<span class="fc" id="L62">                        .authenticationEntryPoint((request, response, authException) -&gt; {</span>
+<span class="fc" id="L63">                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
+<span class="fc" id="L64">                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());</span>
+<span class="fc" id="L65">                            response.setContentType(&quot;text/plain;charset=UTF-8&quot;);</span>
+<span class="fc" id="L66">                            response.getWriter().write(&quot;Tu sesión ha expirado o no estás autenticado. Vuelve a iniciar sesión.&quot;);</span>
+<span class="fc" id="L67">                        })</span>
+<span class="fc" id="L68">                        .accessDeniedHandler((request, response, accessDeniedException) -&gt; {</span>
 <span class="nc" id="L69">                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);</span>
 <span class="nc" id="L70">                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());</span>
 <span class="nc" id="L71">                            response.setContentType(&quot;text/plain;charset=UTF-8&quot;);</span>
 <span class="nc" id="L72">                            response.getWriter().write(&quot;No tienes permisos para realizar esta acción.&quot;);</span>
 <span class="nc" id="L73">                        }))</span>
-<span class="nc" id="L74">                .authenticationProvider(authenticationProvider())</span>
-<span class="nc" id="L75">                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);</span>
+<span class="fc" id="L74">                .authenticationProvider(authenticationProvider())</span>
+<span class="fc" id="L75">                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);</span>
 
-<span class="nc" id="L77">        return http.build();</span>
+<span class="fc" id="L77">        return http.build();</span>
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-<span class="nc" id="L82">        CorsConfiguration configuration = new CorsConfiguration();</span>
-<span class="nc" id="L83">        configuration.setAllowedOrigins(List.of(</span>
+<span class="fc" id="L82">        CorsConfiguration configuration = new CorsConfiguration();</span>
+<span class="fc" id="L83">        configuration.setAllowedOrigins(List.of(</span>
             &quot;http://localhost:8080&quot;, 
             &quot;http://127.0.0.1:8080&quot;,
             &quot;https://localhost:8080&quot;, 
             &quot;https://127.0.0.1:8080&quot;
         ));
-<span class="nc" id="L89">        configuration.setAllowedMethods(List.of(&quot;GET&quot;, &quot;POST&quot;, &quot;PUT&quot;, &quot;DELETE&quot;, &quot;OPTIONS&quot;));</span>
-<span class="nc" id="L90">        configuration.setAllowedHeaders(List.of(&quot;*&quot;));</span>
-<span class="nc" id="L91">        configuration.setAllowCredentials(true);</span>
-<span class="nc" id="L92">        configuration.setExposedHeaders(List.of(&quot;Authorization&quot;));</span>
+<span class="fc" id="L89">        configuration.setAllowedMethods(List.of(&quot;GET&quot;, &quot;POST&quot;, &quot;PUT&quot;, &quot;DELETE&quot;, &quot;OPTIONS&quot;));</span>
+<span class="fc" id="L90">        configuration.setAllowedHeaders(List.of(&quot;*&quot;));</span>
+<span class="fc" id="L91">        configuration.setAllowCredentials(true);</span>
+<span class="fc" id="L92">        configuration.setExposedHeaders(List.of(&quot;Authorization&quot;));</span>
         
-<span class="nc" id="L94">        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
-<span class="nc" id="L95">        source.registerCorsConfiguration(&quot;/**&quot;, configuration);</span>
-<span class="nc" id="L96">        return source;</span>
+<span class="fc" id="L94">        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
+<span class="fc" id="L95">        source.registerCorsConfiguration(&quot;/**&quot;, configuration);</span>
+<span class="fc" id="L96">        return source;</span>
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-<span class="nc" id="L101">        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();</span>
-<span class="nc" id="L102">        authProvider.setUserDetailsService(userDetailsService);</span>
-<span class="nc" id="L103">        authProvider.setPasswordEncoder(passwordEncoder());</span>
-<span class="nc" id="L104">        return authProvider;</span>
+<span class="fc" id="L101">        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();</span>
+<span class="fc" id="L102">        authProvider.setUserDetailsService(userDetailsService);</span>
+<span class="fc" id="L103">        authProvider.setPasswordEncoder(passwordEncoder());</span>
+<span class="fc" id="L104">        return authProvider;</span>
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-<span class="nc" id="L109">        return config.getAuthenticationManager();</span>
+<span class="fc" id="L109">        return config.getAuthenticationManager();</span>
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-<span class="nc" id="L114">        return new CompatiblePasswordEncoder();</span>
+<span class="fc" id="L114">        return new CompatiblePasswordEncoder();</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -12,7 +12,7 @@ import javax.persistence.EntityManager;
 
 @Service
 @Transactional
-<span class="nc" id="L15">public class UsuarioService {</span>
+<span class="fc" id="L15">public class UsuarioService {</span>
     
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -24,136 +24,136 @@ import javax.persistence.EntityManager;
     private EntityManager entityManager;
 
     public Usuario crear(Usuario usuario) {
-<span class="nc" id="L27">        usuario.setPassword(passwordEncoder.encode(&quot;123456&quot;));</span>
-<span class="nc" id="L28">        return usuarioRepository.save(usuario);</span>
+<span class="fc" id="L27">        usuario.setPassword(passwordEncoder.encode(&quot;123456&quot;));</span>
+<span class="fc" id="L28">        return usuarioRepository.save(usuario);</span>
     }
 
     public List&lt;Usuario&gt; obtenerTodos() {
-<span class="nc" id="L32">        return usuarioRepository.findAll();</span>
+<span class="fc" id="L32">        return usuarioRepository.findAll();</span>
     }
 
     public Optional&lt;Usuario&gt; obtenerPorId(Long id) {
-<span class="nc" id="L36">        return usuarioRepository.findById(id);</span>
+<span class="fc" id="L36">        return usuarioRepository.findById(id);</span>
     }
 
     public Optional&lt;Usuario&gt; obtenerPorNombre(String nombre) {
-<span class="nc" id="L40">        return usuarioRepository.findByNombre(nombre);</span>
+<span class="fc" id="L40">        return usuarioRepository.findByNombre(nombre);</span>
     }
 
     public Usuario actualizar(Long id, Usuario usuario) {
-<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (usuarioRepository.existsById(id)) {</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (usuarioRepository.existsById(id)) {</span>
             // Obtener el usuario existente para preservar datos importantes
-<span class="nc" id="L46">            Usuario usuarioExistente = usuarioRepository.findById(id).orElse(null);</span>
-<span class="nc bnc" id="L47" title="All 2 branches missed.">            if (usuarioExistente == null) {</span>
-<span class="nc" id="L48">                return null;</span>
+<span class="fc" id="L46">            Usuario usuarioExistente = usuarioRepository.findById(id).orElse(null);</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            if (usuarioExistente == null) {</span>
+<span class="fc" id="L48">                return null;</span>
             }
             
             // Preservar la contraseña existente si no se proporciona una nueva
-<span class="nc bnc" id="L52" title="All 4 branches missed.">            if (usuario.getPassword() == null || usuario.getPassword().isEmpty()) {</span>
-<span class="nc" id="L53">                usuario.setPassword(usuarioExistente.getPassword());</span>
-<span class="nc bnc" id="L54" title="All 2 branches missed.">            } else if (!usuario.getPassword().equals(usuarioExistente.getPassword())) {</span>
-<span class="nc" id="L55">                usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));</span>
+<span class="pc bpc" id="L52" title="1 of 4 branches missed.">            if (usuario.getPassword() == null || usuario.getPassword().isEmpty()) {</span>
+<span class="fc" id="L53">                usuario.setPassword(usuarioExistente.getPassword());</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            } else if (!usuario.getPassword().equals(usuarioExistente.getPassword())) {</span>
+<span class="fc" id="L55">                usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));</span>
             }
             
             // Preservar la versión para control de concurrencia
-<span class="nc" id="L59">            usuario.setVersion(usuarioExistente.getVersion());</span>
+<span class="fc" id="L59">            usuario.setVersion(usuarioExistente.getVersion());</span>
             
             // Establecer el ID
-<span class="nc" id="L62">            usuario.setId(id);</span>
+<span class="fc" id="L62">            usuario.setId(id);</span>
             
-<span class="nc" id="L64">            return usuarioRepository.save(usuario);</span>
+<span class="fc" id="L64">            return usuarioRepository.save(usuario);</span>
         }
-<span class="nc" id="L66">        return null;</span>
+<span class="fc" id="L66">        return null;</span>
     }
 
     public void eliminar(Long id) {
         // Verificar que el usuario existe
-<span class="nc" id="L71">        Optional&lt;Usuario&gt; usuarioOpt = usuarioRepository.findById(id);</span>
-<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (usuarioOpt.isEmpty()) {</span>
-<span class="nc" id="L73">            throw new IllegalArgumentException(&quot;Usuario con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="fc" id="L71">        Optional&lt;Usuario&gt; usuarioOpt = usuarioRepository.findById(id);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (usuarioOpt.isEmpty()) {</span>
+<span class="fc" id="L73">            throw new IllegalArgumentException(&quot;Usuario con ID &quot; + id + &quot; no encontrado&quot;);</span>
         }
 
-<span class="nc" id="L76">        Usuario usuario = usuarioOpt.get();</span>
+<span class="fc" id="L76">        Usuario usuario = usuarioOpt.get();</span>
 
         // Verificar dependencias - contar entidades creadas por este usuario
-<span class="nc" id="L79">        StringBuilder dependencias = new StringBuilder();</span>
+<span class="fc" id="L79">        StringBuilder dependencias = new StringBuilder();</span>
         
         // Verificar preguntas creadas por este usuario
-<span class="nc" id="L82">        Long preguntasCount = entityManager.createQuery(</span>
+<span class="fc" id="L82">        Long preguntasCount = entityManager.createQuery(</span>
             &quot;SELECT COUNT(p) FROM Pregunta p WHERE p.creacionUsuario.id = :usuarioId&quot;, Long.class)
-<span class="nc" id="L84">            .setParameter(&quot;usuarioId&quot;, id)</span>
-<span class="nc" id="L85">            .getSingleResult();</span>
+<span class="fc" id="L84">            .setParameter(&quot;usuarioId&quot;, id)</span>
+<span class="fc" id="L85">            .getSingleResult();</span>
         
-<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (preguntasCount &gt; 0) {</span>
-<span class="nc" id="L88">            dependencias.append(&quot;- &quot;).append(preguntasCount).append(&quot; pregunta(s)\n&quot;);</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if (preguntasCount &gt; 0) {</span>
+<span class="fc" id="L88">            dependencias.append(&quot;- &quot;).append(preguntasCount).append(&quot; pregunta(s)\n&quot;);</span>
         }
 
         // Verificar cuestionarios creados por este usuario
-<span class="nc" id="L92">        Long cuestionariosCount = entityManager.createQuery(</span>
+<span class="fc" id="L92">        Long cuestionariosCount = entityManager.createQuery(</span>
             &quot;SELECT COUNT(c) FROM Cuestionario c WHERE c.creacionUsuario.id = :usuarioId&quot;, Long.class)
-<span class="nc" id="L94">            .setParameter(&quot;usuarioId&quot;, id)</span>
-<span class="nc" id="L95">            .getSingleResult();</span>
+<span class="fc" id="L94">            .setParameter(&quot;usuarioId&quot;, id)</span>
+<span class="fc" id="L95">            .getSingleResult();</span>
         
-<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (cuestionariosCount &gt; 0) {</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (cuestionariosCount &gt; 0) {</span>
 <span class="nc" id="L98">            dependencias.append(&quot;- &quot;).append(cuestionariosCount).append(&quot; cuestionario(s)\n&quot;);</span>
         }
 
         // Verificar combos creados por este usuario
-<span class="nc" id="L102">        Long combosCount = entityManager.createQuery(</span>
+<span class="fc" id="L102">        Long combosCount = entityManager.createQuery(</span>
             &quot;SELECT COUNT(c) FROM Combo c WHERE c.creacionUsuario.id = :usuarioId&quot;, Long.class)
-<span class="nc" id="L104">            .setParameter(&quot;usuarioId&quot;, id)</span>
-<span class="nc" id="L105">            .getSingleResult();</span>
+<span class="fc" id="L104">            .setParameter(&quot;usuarioId&quot;, id)</span>
+<span class="fc" id="L105">            .getSingleResult();</span>
         
-<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (combosCount &gt; 0) {</span>
-<span class="nc" id="L108">            dependencias.append(&quot;- &quot;).append(combosCount).append(&quot; combo(s)\n&quot;);</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (combosCount &gt; 0) {</span>
+<span class="fc" id="L108">            dependencias.append(&quot;- &quot;).append(combosCount).append(&quot; combo(s)\n&quot;);</span>
         }
 
         // Verificar verificaciones de preguntas hechas por este usuario
-<span class="nc" id="L112">        Long verificacionesCount = entityManager.createQuery(</span>
+<span class="fc" id="L112">        Long verificacionesCount = entityManager.createQuery(</span>
             &quot;SELECT COUNT(p) FROM Pregunta p WHERE p.verificacionUsuario.id = :usuarioId&quot;, Long.class)
-<span class="nc" id="L114">            .setParameter(&quot;usuarioId&quot;, id)</span>
-<span class="nc" id="L115">            .getSingleResult();</span>
+<span class="fc" id="L114">            .setParameter(&quot;usuarioId&quot;, id)</span>
+<span class="fc" id="L115">            .getSingleResult();</span>
         
-<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (verificacionesCount &gt; 0) {</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (verificacionesCount &gt; 0) {</span>
 <span class="nc" id="L118">            dependencias.append(&quot;- &quot;).append(verificacionesCount).append(&quot; verificación(es) de preguntas\n&quot;);</span>
         }
 
         // Si hay dependencias, no permitir la eliminación
-<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (dependencias.length() &gt; 0) {</span>
-<span class="nc" id="L123">            throw new IllegalArgumentException(&quot;No se puede eliminar el usuario '&quot; + usuario.getNombre() + </span>
-<span class="nc" id="L124">                &quot;' porque tiene las siguientes dependencias:\n&quot; + dependencias.toString() + </span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (dependencias.length() &gt; 0) {</span>
+<span class="fc" id="L123">            throw new IllegalArgumentException(&quot;No se puede eliminar el usuario '&quot; + usuario.getNombre() + </span>
+<span class="fc" id="L124">                &quot;' porque tiene las siguientes dependencias:\n&quot; + dependencias.toString() + </span>
                 &quot;Reasigna estos elementos a otro usuario antes de eliminar.&quot;);
         }
 
         // Si llegamos aquí, es seguro eliminar
-<span class="nc" id="L129">        usuarioRepository.deleteById(id);</span>
-<span class="nc" id="L130">    }</span>
+<span class="fc" id="L129">        usuarioRepository.deleteById(id);</span>
+<span class="fc" id="L130">    }</span>
 
     public Usuario resetearPassword(Long id) {
-<span class="nc" id="L133">        Optional&lt;Usuario&gt; usuarioOpt = usuarioRepository.findById(id);</span>
-<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (usuarioOpt.isPresent()) {</span>
-<span class="nc" id="L135">            Usuario usuario = usuarioOpt.get();</span>
-<span class="nc" id="L136">            usuario.setPassword(passwordEncoder.encode(&quot;123456&quot;));</span>
-<span class="nc" id="L137">            return usuarioRepository.save(usuario);</span>
+<span class="fc" id="L133">        Optional&lt;Usuario&gt; usuarioOpt = usuarioRepository.findById(id);</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (usuarioOpt.isPresent()) {</span>
+<span class="fc" id="L135">            Usuario usuario = usuarioOpt.get();</span>
+<span class="fc" id="L136">            usuario.setPassword(passwordEncoder.encode(&quot;123456&quot;));</span>
+<span class="fc" id="L137">            return usuarioRepository.save(usuario);</span>
         }
-<span class="nc" id="L139">        throw new IllegalArgumentException(&quot;Usuario no encontrado&quot;);</span>
+<span class="fc" id="L139">        throw new IllegalArgumentException(&quot;Usuario no encontrado&quot;);</span>
     }
 
     public boolean cambiarPassword(Long id, String actual, String nueva) {
-<span class="nc" id="L143">        Optional&lt;Usuario&gt; usuarioOpt = usuarioRepository.findById(id);</span>
-<span class="nc bnc" id="L144" title="All 2 branches missed.">        if (usuarioOpt.isPresent()) {</span>
-<span class="nc" id="L145">            Usuario usuario = usuarioOpt.get();</span>
+<span class="fc" id="L143">        Optional&lt;Usuario&gt; usuarioOpt = usuarioRepository.findById(id);</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (usuarioOpt.isPresent()) {</span>
+<span class="fc" id="L145">            Usuario usuario = usuarioOpt.get();</span>
             // Si las contraseñas están encriptadas, usar passwordEncoder.matches
-<span class="nc" id="L147">            boolean coincide = passwordEncoder.matches(actual, usuario.getPassword());</span>
+<span class="fc" id="L147">            boolean coincide = passwordEncoder.matches(actual, usuario.getPassword());</span>
             // Si no están encriptadas, usar equals (descomentar para desarrollo)
             // boolean coincide = usuario.getPassword().equals(actual);
-<span class="nc bnc" id="L150" title="All 2 branches missed.">            if (coincide) {</span>
-<span class="nc" id="L151">                usuario.setPassword(passwordEncoder.encode(nueva));</span>
-<span class="nc" id="L152">                usuarioRepository.save(usuario);</span>
-<span class="nc" id="L153">                return true;</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            if (coincide) {</span>
+<span class="fc" id="L151">                usuario.setPassword(passwordEncoder.encode(nueva));</span>
+<span class="fc" id="L152">                usuarioRepository.save(usuario);</span>
+<span class="fc" id="L153">                return true;</span>
             }
         }
-<span class="nc" id="L156">        return false;</span>
+<span class="fc" id="L156">        return false;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

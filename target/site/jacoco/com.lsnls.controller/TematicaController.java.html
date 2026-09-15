@@ -20,9 +20,9 @@ import java.util.HashMap;
 @RestController
 @RequestMapping(&quot;/api/tematicas&quot;)
 @CrossOrigin(origins = &quot;*&quot;)
-<span class="nc" id="L23">public class TematicaController {</span>
+<span class="fc" id="L23">public class TematicaController {</span>
 
-<span class="nc" id="L25">    private static final Logger log = LoggerFactory.getLogger(TematicaController.class);</span>
+<span class="fc" id="L25">    private static final Logger log = LoggerFactory.getLogger(TematicaController.class);</span>
 
     @Autowired
     private TematicaService tematicaService;
@@ -34,11 +34,11 @@ import java.util.HashMap;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;List&lt;Tematica&gt;&gt; obtenerTodas() {
         try {
-<span class="nc" id="L37">            List&lt;Tematica&gt; tematicas = tematicaService.obtenerTodas();</span>
-<span class="nc" id="L38">            return ResponseEntity.ok(tematicas);</span>
-<span class="nc" id="L39">        } catch (Exception e) {</span>
-<span class="nc" id="L40">            log.error(&quot;Error al obtener temáticas: &quot;, e);</span>
-<span class="nc" id="L41">            return ResponseEntity.internalServerError().build();</span>
+<span class="fc" id="L37">            List&lt;Tematica&gt; tematicas = tematicaService.obtenerTodas();</span>
+<span class="fc" id="L38">            return ResponseEntity.ok(tematicas);</span>
+<span class="fc" id="L39">        } catch (Exception e) {</span>
+<span class="fc" id="L40">            log.error(&quot;Error al obtener temáticas: &quot;, e);</span>
+<span class="fc" id="L41">            return ResponseEntity.internalServerError().build();</span>
         }
     }
 
@@ -46,11 +46,11 @@ import java.util.HashMap;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;List&lt;Tematica&gt;&gt; buscarPorTexto(@RequestParam String texto) {
         try {
-<span class="nc" id="L49">            List&lt;Tematica&gt; tematicas = tematicaService.buscarPorTexto(texto);</span>
-<span class="nc" id="L50">            return ResponseEntity.ok(tematicas);</span>
-<span class="nc" id="L51">        } catch (Exception e) {</span>
-<span class="nc" id="L52">            log.error(&quot;Error al buscar temáticas: &quot;, e);</span>
-<span class="nc" id="L53">            return ResponseEntity.internalServerError().build();</span>
+<span class="fc" id="L49">            List&lt;Tematica&gt; tematicas = tematicaService.buscarPorTexto(texto);</span>
+<span class="fc" id="L50">            return ResponseEntity.ok(tematicas);</span>
+<span class="fc" id="L51">        } catch (Exception e) {</span>
+<span class="fc" id="L52">            log.error(&quot;Error al buscar temáticas: &quot;, e);</span>
+<span class="fc" id="L53">            return ResponseEntity.internalServerError().build();</span>
         }
     }
 
@@ -58,30 +58,30 @@ import java.util.HashMap;
     @PreAuthorize(&quot;@authorizationService.canWrite()&quot;)
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; crearTematica(@RequestBody Map&lt;String, String&gt; request) {
         try {
-<span class="nc" id="L61">            String nombre = request.get(&quot;nombre&quot;);</span>
-<span class="nc bnc" id="L62" title="All 4 branches missed.">            if (nombre == null || nombre.trim().isEmpty()) {</span>
-<span class="nc" id="L63">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L64">                error.put(&quot;error&quot;, &quot;El nombre de la temática es obligatorio&quot;);</span>
-<span class="nc" id="L65">                return ResponseEntity.badRequest().body(error);</span>
+<span class="fc" id="L61">            String nombre = request.get(&quot;nombre&quot;);</span>
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">            if (nombre == null || nombre.trim().isEmpty()) {</span>
+<span class="fc" id="L63">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L64">                error.put(&quot;error&quot;, &quot;El nombre de la temática es obligatorio&quot;);</span>
+<span class="fc" id="L65">                return ResponseEntity.badRequest().body(error);</span>
             }
 
             // Obtener el usuario actual (esto debería venir del contexto de seguridad)
             // Por ahora, asumimos que existe un usuario con ID 1
-<span class="nc" id="L70">            Usuario usuario = new Usuario();</span>
-<span class="nc" id="L71">            usuario.setId(1L);</span>
+<span class="fc" id="L70">            Usuario usuario = new Usuario();</span>
+<span class="fc" id="L71">            usuario.setId(1L);</span>
 
-<span class="nc" id="L73">            Tematica tematica = tematicaService.crearTematica(nombre.trim(), usuario);</span>
+<span class="fc" id="L73">            Tematica tematica = tematicaService.crearTematica(nombre.trim(), usuario);</span>
             
-<span class="nc" id="L75">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L76">            response.put(&quot;tematica&quot;, tematica);</span>
-<span class="nc" id="L77">            response.put(&quot;mensaje&quot;, &quot;Temática creada exitosamente&quot;);</span>
+<span class="fc" id="L75">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L76">            response.put(&quot;tematica&quot;, tematica);</span>
+<span class="fc" id="L77">            response.put(&quot;mensaje&quot;, &quot;Temática creada exitosamente&quot;);</span>
             
-<span class="nc" id="L79">            return ResponseEntity.ok(response);</span>
-<span class="nc" id="L80">        } catch (Exception e) {</span>
-<span class="nc" id="L81">            log.error(&quot;Error al crear temática: &quot;, e);</span>
-<span class="nc" id="L82">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L83">            error.put(&quot;error&quot;, &quot;Error al crear temática: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="nc" id="L84">            return ResponseEntity.internalServerError().body(error);</span>
+<span class="fc" id="L79">            return ResponseEntity.ok(response);</span>
+<span class="fc" id="L80">        } catch (Exception e) {</span>
+<span class="fc" id="L81">            log.error(&quot;Error al crear temática: &quot;, e);</span>
+<span class="fc" id="L82">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L83">            error.put(&quot;error&quot;, &quot;Error al crear temática: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L84">            return ResponseEntity.internalServerError().body(error);</span>
         }
     }
 
@@ -89,34 +89,34 @@ import java.util.HashMap;
     @PreAuthorize(&quot;@authorizationService.canWrite()&quot;)
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; actualizarTematica(@PathVariable Long id, @RequestBody Map&lt;String, String&gt; request) {
         try {
-<span class="nc" id="L92">            String nuevoNombre = request.get(&quot;nombre&quot;);</span>
-<span class="nc bnc" id="L93" title="All 4 branches missed.">            if (nuevoNombre == null || nuevoNombre.trim().isEmpty()) {</span>
-<span class="nc" id="L94">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L95">                error.put(&quot;error&quot;, &quot;El nombre de la temática es obligatorio&quot;);</span>
-<span class="nc" id="L96">                return ResponseEntity.badRequest().body(error);</span>
+<span class="fc" id="L92">            String nuevoNombre = request.get(&quot;nombre&quot;);</span>
+<span class="pc bpc" id="L93" title="1 of 4 branches missed.">            if (nuevoNombre == null || nuevoNombre.trim().isEmpty()) {</span>
+<span class="fc" id="L94">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L95">                error.put(&quot;error&quot;, &quot;El nombre de la temática es obligatorio&quot;);</span>
+<span class="fc" id="L96">                return ResponseEntity.badRequest().body(error);</span>
             }
 
-<span class="nc" id="L99">            Tematica tematica = tematicaService.actualizarTematica(id, nuevoNombre.trim());</span>
-<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (tematica == null) {</span>
-<span class="nc" id="L101">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L102">                error.put(&quot;error&quot;, &quot;Temática no encontrada&quot;);</span>
-<span class="nc" id="L103">                return ResponseEntity.notFound().build();</span>
+<span class="fc" id="L99">            Tematica tematica = tematicaService.actualizarTematica(id, nuevoNombre.trim());</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            if (tematica == null) {</span>
+<span class="fc" id="L101">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L102">                error.put(&quot;error&quot;, &quot;Temática no encontrada&quot;);</span>
+<span class="fc" id="L103">                return ResponseEntity.notFound().build();</span>
             }
             
-<span class="nc" id="L106">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L107">            response.put(&quot;tematica&quot;, tematica);</span>
-<span class="nc" id="L108">            response.put(&quot;mensaje&quot;, &quot;Temática actualizada exitosamente&quot;);</span>
+<span class="fc" id="L106">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L107">            response.put(&quot;tematica&quot;, tematica);</span>
+<span class="fc" id="L108">            response.put(&quot;mensaje&quot;, &quot;Temática actualizada exitosamente&quot;);</span>
             
-<span class="nc" id="L110">            return ResponseEntity.ok(response);</span>
-<span class="nc" id="L111">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L112">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L113">            error.put(&quot;error&quot;, e.getMessage());</span>
-<span class="nc" id="L114">            return ResponseEntity.badRequest().body(error);</span>
-<span class="nc" id="L115">        } catch (Exception e) {</span>
-<span class="nc" id="L116">            log.error(&quot;Error al actualizar temática: &quot;, e);</span>
-<span class="nc" id="L117">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L118">            error.put(&quot;error&quot;, &quot;Error al actualizar temática: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="nc" id="L119">            return ResponseEntity.internalServerError().body(error);</span>
+<span class="fc" id="L110">            return ResponseEntity.ok(response);</span>
+<span class="fc" id="L111">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L112">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L113">            error.put(&quot;error&quot;, e.getMessage());</span>
+<span class="fc" id="L114">            return ResponseEntity.badRequest().body(error);</span>
+<span class="fc" id="L115">        } catch (Exception e) {</span>
+<span class="fc" id="L116">            log.error(&quot;Error al actualizar temática: &quot;, e);</span>
+<span class="fc" id="L117">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L118">            error.put(&quot;error&quot;, &quot;Error al actualizar temática: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L119">            return ResponseEntity.internalServerError().body(error);</span>
         }
     }
 
@@ -124,22 +124,22 @@ import java.util.HashMap;
     @PreAuthorize(&quot;@authorizationService.canWrite()&quot;)
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; eliminarTematica(@PathVariable Long id) {
         try {
-<span class="nc" id="L127">            boolean eliminada = tematicaService.eliminarTematica(id);</span>
-<span class="nc bnc" id="L128" title="All 2 branches missed.">            if (!eliminada) {</span>
-<span class="nc" id="L129">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L130">                error.put(&quot;error&quot;, &quot;Temática no encontrada&quot;);</span>
-<span class="nc" id="L131">                return ResponseEntity.notFound().build();</span>
+<span class="fc" id="L127">            boolean eliminada = tematicaService.eliminarTematica(id);</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (!eliminada) {</span>
+<span class="fc" id="L129">                Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L130">                error.put(&quot;error&quot;, &quot;Temática no encontrada&quot;);</span>
+<span class="fc" id="L131">                return ResponseEntity.notFound().build();</span>
             }
             
-<span class="nc" id="L134">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L135">            response.put(&quot;mensaje&quot;, &quot;Temática eliminada exitosamente&quot;);</span>
+<span class="fc" id="L134">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L135">            response.put(&quot;mensaje&quot;, &quot;Temática eliminada exitosamente&quot;);</span>
             
-<span class="nc" id="L137">            return ResponseEntity.ok(response);</span>
-<span class="nc" id="L138">        } catch (Exception e) {</span>
-<span class="nc" id="L139">            log.error(&quot;Error al eliminar temática: &quot;, e);</span>
-<span class="nc" id="L140">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L141">            error.put(&quot;error&quot;, &quot;Error al eliminar temática: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="nc" id="L142">            return ResponseEntity.internalServerError().body(error);</span>
+<span class="fc" id="L137">            return ResponseEntity.ok(response);</span>
+<span class="fc" id="L138">        } catch (Exception e) {</span>
+<span class="fc" id="L139">            log.error(&quot;Error al eliminar temática: &quot;, e);</span>
+<span class="fc" id="L140">            Map&lt;String, Object&gt; error = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L141">            error.put(&quot;error&quot;, &quot;Error al eliminar temática: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L142">            return ResponseEntity.internalServerError().body(error);</span>
         }
     }
 }
