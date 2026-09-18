@@ -114,6 +114,12 @@ class Utils {
         return valor.replace(/^_+/, '');
     }
 
+    // Formatear roles para UI sin el prefijo ROLE_ ni "_" inicial
+    static formatearRol(rol) {
+        if (rol == null) return '';
+        return String(rol).replace(/^ROLE_/, '').replace(/^_+/, '');
+    }
+
     // Obtener clase CSS para badges de estado optimizado
     static getEstadoBadgeClass(estado, tipo = 'pregunta') {
         const classes = {
@@ -205,8 +211,8 @@ class Utils {
             canDelete: 'DIRECCION',
             canValidate: 'DIRECCION',
             canVerify: 'VERIFICACION o DIRECCION',
-            canCreate: 'GUION, VERIFICACION o DIRECCION',
-            canEdit: 'GUION, VERIFICACION o DIRECCION'
+            canCreate: 'GUION o DIRECCION',
+            canEdit: 'GUION o DIRECCION'
         };
         return roleMap[permission] || 'DESCONOCIDO';
     }
@@ -510,6 +516,63 @@ class Utils {
             return Utils.prepararTextoUsuario(detalle, accion);
         }
         return Utils.prepararTextoUsuario(msg, accion);
+    }
+
+    /** Factor de una pregunta de combo (API plana o anidada). */
+    static extraerFactorPreguntaCombo(item) {
+        if (!item || typeof item !== 'object') return '';
+        const anidada = (item.pregunta && typeof item.pregunta === 'object') ? item.pregunta : null;
+        return item.factorMultiplicacion ?? item.factor ?? anidada?.factorMultiplicacion ?? anidada?.factor ?? '';
+    }
+
+    /** Slot/posición estable para desempate al ordenar por multiplicador. */
+    static extraerPosicionPreguntaCombo(item) {
+        if (!item || typeof item !== 'object') return 999;
+        const anidada = (item.pregunta && typeof item.pregunta === 'object') ? item.pregunta : null;
+        const pos = item.posicion ?? anidada?.posicion;
+        if (pos != null && Number.isFinite(Number(pos))) return Number(pos);
+        const slotRaw = String(item.slot || anidada?.slot || '');
+        const slot = parseInt(slotRaw.replace(/\D/g, ''), 10);
+        return Number.isFinite(slot) ? slot : 999;
+    }
+
+    /**
+     * Valor numérico del multiplicador para ordenar de menor a mayor.
+     * X / 0 / vacío se tratan como el más alto (derecha).
+     */
+    static valorNumericoMultiplicador(factor) {
+        const raw = String(factor ?? '').trim().toUpperCase();
+        if (!raw || raw === 'X') return Number.POSITIVE_INFINITY;
+        const n = parseInt(raw.replace(/[^0-9]/g, ''), 10);
+        if (!Number.isFinite(n) || n === 0) return Number.POSITIVE_INFINITY;
+        return n;
+    }
+
+    static formatearMultiplicador(factor) {
+        const raw = String(factor ?? '').trim();
+        if (!raw) return '';
+        const n = Utils.valorNumericoMultiplicador(raw);
+        if (!Number.isFinite(n)) {
+            const up = raw.toUpperCase();
+            return (up === '0' || up === 'X') ? 'X' : raw.toUpperCase();
+        }
+        return `X${n}`;
+    }
+
+    /** Ordena preguntas de combo: multiplicador ascendente, luego slot/posición, luego índice original. */
+    static ordenarPreguntasPorMultiplicador(preguntas) {
+        return [...(preguntas || [])]
+            .map((item, index) => ({ item, index }))
+            .sort((a, b) => {
+                const va = Utils.valorNumericoMultiplicador(Utils.extraerFactorPreguntaCombo(a.item));
+                const vb = Utils.valorNumericoMultiplicador(Utils.extraerFactorPreguntaCombo(b.item));
+                if (va !== vb) return va - vb;
+                const pa = Utils.extraerPosicionPreguntaCombo(a.item);
+                const pb = Utils.extraerPosicionPreguntaCombo(b.item);
+                if (pa !== pb) return pa - pb;
+                return a.index - b.index;
+            })
+            .map(x => x.item);
     }
 }
 

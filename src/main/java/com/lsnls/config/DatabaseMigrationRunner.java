@@ -114,6 +114,9 @@ public class DatabaseMigrationRunner {
             // 7) Slot PM1/PM2/PM3 de cada pregunta en el combo
             migrarPosicionCombo(schemaName);
 
+            // 8) Pregunta usada en reciclaje parcial, persistida en el combo original
+            migrarPreguntaUsadaCombo(schemaName);
+
         } catch (Exception e) {
             log.error("[DB MIGRATION] Error ejecutando migraciones: {}", e.getMessage(), e);
         }
@@ -130,6 +133,41 @@ public class DatabaseMigrationRunner {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    private void migrarPreguntaUsadaCombo(String schemaName) {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'combos' AND COLUMN_NAME = 'pregunta_usada_id'",
+                    Integer.class);
+            if (count != null && count == 0) {
+                log.info("[DB MIGRATION] Añadiendo columna combos.pregunta_usada_id (esquema {}) ...", schemaName);
+                jdbcTemplate.execute("ALTER TABLE combos ADD COLUMN pregunta_usada_id BIGINT NULL");
+                log.info("[DB MIGRATION] Columna combos.pregunta_usada_id añadida.");
+            }
+        } catch (Exception e) {
+            log.warn("[DB MIGRATION] No se pudo añadir combos.pregunta_usada_id: {}", e.getMessage());
+            return;
+        }
+        try {
+            jdbcTemplate.execute(
+                    "UPDATE combos c "
+                            + "INNER JOIN ("
+                            + "  SELECT h1.combo_id, h1.pregunta_usada_id "
+                            + "  FROM historial_jornadas h1 "
+                            + "  INNER JOIN ("
+                            + "    SELECT combo_id, MAX(fecha_asignacion) AS max_fecha "
+                            + "    FROM historial_jornadas "
+                            + "    WHERE pregunta_usada_id IS NOT NULL AND combo_id IS NOT NULL "
+                            + "      AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_PADRE:%' "
+                            + "    GROUP BY combo_id"
+                            + "  ) h2 ON h1.combo_id = h2.combo_id AND h1.fecha_asignacion = h2.max_fecha"
+                            + ") h ON c.id = h.combo_id "
+                            + "SET c.pregunta_usada_id = h.pregunta_usada_id "
+                            + "WHERE c.pregunta_usada_id IS NULL");
+        } catch (Exception e) {
+            log.warn("[DB MIGRATION] No se pudo rellenar combos.pregunta_usada_id desde historial: {}", e.getMessage());
+        }
     }
 
     private void migrarPosicionCombo(String schemaName) {

@@ -715,13 +715,13 @@
     <!-- Toastify JS -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <!-- Custom JS -->
-    <script src="js/utils.js?v=20260907-1"></script>
+    <script src="js/utils.js?v=20260915-verif-consulta"></script>
     <script src="js/api.js?v=20260821-3"></script>
-    <script src="js/auth.js"></script>
+    <script src="js/auth.js?v=20260915-verif-consulta"></script>
     <script src="js/undo-manager.js?v=20260915-modal"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
-    <script src="js/preguntas.js?v=20260915-undo"></script>
+    <script src="js/preguntas.js?v=20260915-nivel"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
     <script>
     // Variables globales para ordenamiento de preguntas
@@ -1013,7 +1013,7 @@
             tr.innerHTML = `
                 <td>${pregunta.id || ''}</td>
                 <td>${pregunta.autoria || ''}</td>
-                <td>${pregunta.nivel || ''}</td>
+                <td>${(typeof Utils !== 'undefined' && Utils.formatearNivel) ? Utils.formatearNivel(pregunta.nivel) : (pregunta.nivel || '')}</td>
                 <td>${pregunta.tematica || ''}</td>
                 <td>${pregunta.subtemas || ''}</td>
                 <td>${pregunta.pregunta || ''}</td>

@@ -4,11 +4,11 @@ let concursantesPorPrograma = {};
 let rolUsuarioActual = null;
 
 function puedeEditarCamposPrograma() {
-    return ['ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+    return ['ROLE_ADMIN', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
 }
 
 function puedeCrearPrograma() {
-    return ['ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+    return ['ROLE_ADMIN', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
 }
 
 function puedeEliminarPrograma() {
@@ -21,6 +21,11 @@ function puedeGestionarConcursantesPrograma() {
 
 function puedeEditarCamposConcursante() {
     return ['ROLE_ADMIN', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+}
+
+function esProgramaEmitido(programaId) {
+    const programa = programas.find(p => String(p.id) === String(programaId));
+    return (programa?.estado || '').toLowerCase() === 'emitido';
 }
 
 // Valoraciones permitidas (guionista/dirección) - solo front
@@ -243,13 +248,17 @@ function mostrarProgramas() {
         };
         
         const estadoColor = estadoColores[programa.estado] || '#6c757d';
+        const esEmitido = (programa.estado || '').toLowerCase() === 'emitido';
+        const editProgCampos = editProg && !esEmitido;
+        const editConcCampos = editConc && !esEmitido;
+        const gestionConcCampos = gestionConc && !esEmitido;
         
         // Render por slots fijos 1..3 para mantener huecos al borrar
-        const puedeQuitarConc = gestionConc && editConc;
+        const puedeQuitarConc = gestionConc && editConc && !esEmitido;
         const concursantePorSlot = { 1: null, 2: null, 3: null };
         const sinSlot = [];
         (concursantes || []).forEach(c => {
-            const slot = Number(c.numeroConcursante);
+            const slot = Number(c.ordenEscaleta);
             if (slot >= 1 && slot <= 3 && !concursantePorSlot[slot]) {
                 concursantePorSlot[slot] = c;
             } else {
@@ -270,7 +279,7 @@ function mostrarProgramas() {
                         <div class="programa-info-item">
                             <div class="programa-info-label">Temporada</div>
                             <div class="programa-info-value">
-                                ${editProg
+                                ${editProgCampos
                                     ? `<input type="number" class="form-control form-control-sm" min="1" value="${programa.temporada || ''}"
                                                onchange="actualizarTemporadaPrograma(${programa.id}, this.value)" style="width: 80px;">`
                                     : `<span class="programa-info-readonly">${programa.temporada || '—'}</span>`}
@@ -279,7 +288,7 @@ function mostrarProgramas() {
                         <div class="programa-info-item" style="min-width: 80px;">
                             <div class="programa-info-label">Código programa</div>
                             <div class="programa-info-value">
-                                ${editProg
+                                ${editProgCampos
                                     ? `<input type="text" class="form-control form-control-sm" maxlength="32"
                                                value="${programa.codigo || programa.id}"
                                                onchange="actualizarCodigoPrograma(${programa.id}, this.value)" style="width: 100px;">`
@@ -304,7 +313,7 @@ function mostrarProgramas() {
                         <div class="programa-info-item">
                             <div class="programa-info-label">Fecha de emisión</div>
                             <div class="programa-info-value">
-                                ${editProg
+                                ${editProgCampos
                                     ? `<input type="date" class="form-control form-control-sm" value="${normalizarFechaProgramaISO(programa.fechaEmision)}"
                                                onchange="actualizarFechaEmision(${programa.id}, this.value)" style="width: 150px;">`
                                     : `<span class="programa-info-readonly">${fechaFormateada}</span>`}
@@ -319,7 +328,7 @@ function mostrarProgramas() {
                         <div class="programa-info-item">
                             <div class="programa-info-label">Duración Objetivo</div>
                             <div class="programa-info-value">
-                                ${editProg
+                                ${editProgCampos
                                     ? `<input type="text" class="form-control form-control-sm"
                                                value="${duracionObjetivo}"
                                                onchange="actualizarDuracionObjetivoPrograma(${programa.id}, this.value)"
@@ -337,7 +346,7 @@ function mostrarProgramas() {
                         <div class="programa-recuadros">
                             <div class="programa-recuadro">
                                 <div class="programa-info-label">Créditos especiales</div>
-                                ${editProg
+                                ${editProgCampos
                                     ? `<textarea class="editable-field programa-creditos-textarea"
                                                  rows="2"
                                                  placeholder="Créditos especiales..."
@@ -346,7 +355,7 @@ function mostrarProgramas() {
                             </div>
                             <div class="programa-recuadro">
                                 <div class="programa-info-label">Notas del programa</div>
-                                ${editProg
+                                ${editProgCampos
                                     ? `<textarea class="editable-field programa-creditos-textarea"
                                                  rows="2"
                                                  placeholder="Notas internas..."
@@ -355,7 +364,7 @@ function mostrarProgramas() {
                             </div>
                         </div>
                         <div class="programa-acciones">
-                            ${elimProg ? `<button class="btn btn-danger" onclick="eliminarPrograma(${programa.id})" title="Borrar programa">
+                            ${elimProg && !esEmitido ? `<button class="btn btn-danger" onclick="eliminarPrograma(${programa.id})" title="Borrar programa">
                                 <i class="fas fa-trash"></i>
                             </button>` : ''}
                         </div>
@@ -459,7 +468,7 @@ function mostrarProgramas() {
                                             <td class="col-ocupacion">${concursante.ocupacion || ''}</td>
                                             <td class="col-rrss">${concursante.redesSociales || ''}</td>
                                             <td class="col-resultado">
-                                                ${editConc
+                                                ${editConcCampos
                                                     ? `<input type="text" class="campo-editable"
                                                                value="${concursante.resultado || ''}"
                                                                onchange="actualizarCampoConcursante(${concursante.id}, 'resultado', this.value)"
@@ -470,10 +479,10 @@ function mostrarProgramas() {
                                             <td class="col-duracion">${obtenerDuracionConcursante(concursante)}</td>
                                             <td class="col-foto">
                                                 ${concursante.foto
-                                                    ? (gestionConc
+                                                    ? (gestionConcCampos
                                                         ? `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para cambiar foto">`
                                                         : `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto">`)
-                                                    : (gestionConc
+                                                    : (gestionConcCampos
                                                         ? `<div class="campo-foto-vacio" onclick="abrirExploradorFoto(${concursante.id}, event)" title="Click para añadir foto">
                                                                <i class="fas fa-camera"></i>
                                                                <span>Añadir foto</span>
@@ -481,7 +490,7 @@ function mostrarProgramas() {
                                                         : '')}
                                             </td>
                                             <td class="col-momentos">
-                                                ${editConc
+                                                ${editConcCampos
                                                     ? `<textarea class="campo-editable campo-momentos"
                                                                  onchange="actualizarCampoConcursante(${concursante.id}, 'momentosDestacados', this.value)"
                                                                  onclick="event.stopPropagation()"
@@ -490,7 +499,7 @@ function mostrarProgramas() {
                                                     : `<span>${concursante.momentosDestacados || ''}</span>`}
                                             </td>
                                             <td class="col-xusoker">
-                                                ${editConc
+                                                ${editConcCampos
                                                     ? `<select class="campo-editable"
                                                                onchange="actualizarCampoConcursante(${concursante.id}, 'xusoker', this.value)"
                                                                onclick="event.stopPropagation()">
@@ -504,7 +513,7 @@ function mostrarProgramas() {
                                                     : `<span>${concursante.xusoker || ''}</span>`}
                                             </td>
                                             <td class="col-factor-x">
-                                                ${editConc
+                                                ${editConcCampos
                                                     ? `<input type="text" class="campo-editable"
                                                                value="${concursante.factorX || ''}"
                                                                onchange="actualizarCampoConcursante(${concursante.id}, 'factorX', this.value)"
@@ -513,7 +522,7 @@ function mostrarProgramas() {
                                                     : `<span>${concursante.factorX || ''}</span>`}
                                             </td>
                                             <td class="col-valoracion">
-                                                ${editConc
+                                                ${editConcCampos
                                                     ? `<select class="campo-editable"
                                                                onchange="actualizarCampoConcursante(${concursante.id}, 'valoracionFinal', this.value)"
                                                                onclick="event.stopPropagation()">
@@ -524,7 +533,7 @@ function mostrarProgramas() {
                                             </td>
                                             <td class="col-acciones">
                                                 ${puedeQuitarConc
-                                                    ? `<button class="btn btn-sm btn-danger" onclick="quitarConcursanteDePrograma(${concursante.id}, event)" title="Quitar del programa">
+                                                    ? `<button class="btn btn-sm btn-danger" onclick="quitarConcursanteDePrograma(${concursante.id}, ${programa.id}, event)" title="Quitar del programa">
                                                            <i class="fas fa-times"></i>
                                                        </button>`
                                                     : ''}
@@ -1482,10 +1491,23 @@ function extraerPaginaConcursantes(response) {
     };
 }
 
+function estadoFiltroConcursantesDisponibles() {
+    const valor = (document.getElementById('filtro-estado-concursante-disponible')?.value || '').trim().toLowerCase();
+    return ESTADOS_ASIGNABLES_PROGRAMA.includes(valor.toUpperCase()) ? valor : '';
+}
+
 function urlConcursantesDisponibles(pagina = 0, busqueda = '') {
     let url = `/api/concursantes/disponibles?page=${pagina}&size=${TAMANO_PAGINA_CONCURSANTES_DISPONIBLES}`;
     if (busqueda) {
         url += `&busqueda=${encodeURIComponent(busqueda)}`;
+    }
+    const estado = estadoFiltroConcursantesDisponibles();
+    if (estado) {
+        url += `&estado=${encodeURIComponent(estado)}`;
+    }
+    const programaId = document.getElementById('programa-seleccionado-id')?.value;
+    if (programaId) {
+        url += `&programaId=${encodeURIComponent(programaId)}`;
     }
     return url;
 }
@@ -1559,9 +1581,24 @@ function onCambioFiltrosConcursantesDisponibles() {
     renderizarConcursantesDisponibles();
 }
 
+async function onCambioEstadoConcursantesDisponibles() {
+    try {
+        const filtro = document.getElementById('buscar-concursante-disponible')?.value.trim() || '';
+        const response = await apiManager.get(urlConcursantesDisponibles(0, filtro));
+        aplicarPaginaConcursantesDisponibles(response, { pagina: 0 });
+        renderizarConcursantesDisponibles();
+    } catch (error) {
+        mostrarError(obtenerMensajeErrorProgramas(error, 'filtrado de concursantes'));
+    }
+}
+
 async function mostrarConcursantesDisponibles(programaId, posicionPreferida = null) {
     if (!puedeGestionarConcursantesPrograma()) {
         mostrarError('No tienes permisos para añadir concursantes a programas.');
+        return;
+    }
+    if (esProgramaEmitido(programaId)) {
+        mostrarError('No se pueden añadir concursantes a un programa emitido.');
         return;
     }
     try {
@@ -1578,7 +1615,7 @@ async function mostrarConcursantesDisponibles(programaId, posicionPreferida = nu
         const filtroDuracionMax = document.getElementById('filtro-duracion-max-concursante-disponible');
         if (filtroLugar) filtroLugar.value = '';
         if (filtroValoracion) filtroValoracion.value = '';
-        if (filtroEstado) filtroEstado.value = '';
+        if (filtroEstado) filtroEstado.value = 'editado';
         if (filtroDuracionMin) filtroDuracionMin.value = '';
         if (filtroDuracionMax) filtroDuracionMax.value = '';
         
@@ -1681,6 +1718,10 @@ async function asignarConcursanteAPrograma(concursanteId) {
     }
     try {
         const programaId = document.getElementById('programa-seleccionado-id').value;
+        if (esProgramaEmitido(programaId)) {
+            mostrarError('No se pueden añadir concursantes a un programa emitido.');
+            return;
+        }
 
         const queryPos = (posicionPreferidaPrograma != null) ? `?posicion=${encodeURIComponent(posicionPreferidaPrograma)}` : '';
         await apiManager.postUndoable(`/api/concursantes/${concursanteId}/asignar-programa/${programaId}${queryPos}`, {}, {
@@ -1704,10 +1745,14 @@ async function asignarConcursanteAPrograma(concursanteId) {
     }
 }
 
-async function quitarConcursanteDePrograma(concursanteId, event) {
+async function quitarConcursanteDePrograma(concursanteId, programaId, event) {
     event.stopPropagation();
     if (!(puedeGestionarConcursantesPrograma() && puedeEditarCamposConcursante())) {
         mostrarError('No tienes permisos para quitar concursantes de programas.');
+        return;
+    }
+    if (esProgramaEmitido(programaId)) {
+        mostrarError('No se pueden quitar concursantes de un programa emitido.');
         return;
     }
     
@@ -1722,7 +1767,7 @@ async function quitarConcursanteDePrograma(concursanteId, event) {
         try {
             const snap = await apiManager.get(`/api/concursantes/${concursanteId}`);
             programaPrevio = snap?.numeroPrograma ?? null;
-            posicionPrevia = snap?.numeroConcursante ?? null;
+            posicionPrevia = snap?.ordenEscaleta ?? null;
         } catch (e) {
             console.warn('No se pudo capturar el programa previo del concursante:', e);
         }

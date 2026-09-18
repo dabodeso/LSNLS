@@ -26,7 +26,7 @@ import java.util.Map;
     private AuthorizationService authService;
 
     @PostMapping
-    @PreAuthorize(&quot;@authorizationService.canValidate()&quot;)
+    @PreAuthorize(&quot;@authorizationService.canAdministrar()&quot;)
     public ResponseEntity&lt;?&gt; crear(@RequestBody Usuario usuario) {
         try {
             // Validaciones específicas de campos requeridos
@@ -38,8 +38,8 @@ import java.util.Map;
             }
 
             // Validación de permisos específica
-<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (!authService.canValidate()) {</span>
-<span class="fc" id="L42">                return ResponseEntity.status(403).body(&quot;No tienes permisos para crear usuarios. Solo usuarios con rol ADMIN, VERIFICACION o DIRECCION pueden crear usuarios.&quot;);</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (!authService.canAdministrar()) {</span>
+<span class="fc" id="L42">                return ResponseEntity.status(403).body(&quot;No tienes permisos para crear usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden crear usuarios.&quot;);</span>
             }
 
             // Validar que el nombre no esté duplicado

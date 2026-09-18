@@ -56,6 +56,10 @@ assert.strictEqual(Utils.formatearEstadoCuestionario('grabado'), 'Grabado');
 assert.strictEqual(Utils.formatearEstadoCuestionario('borrador'), 'Borrador');
 assert.strictEqual(Utils.formatearEstadoCombo('adjudicado'), 'Adjudicado');
 assert.strictEqual(Utils.formatearNivel('_1LS'), '1LS');
+assert.strictEqual(Utils.formatearNivel('_5NLS'), '5NLS');
+assert.strictEqual(Utils.formatearNivel('_0'), '0');
+assert.strictEqual(Utils.formatearRol('ROLE_ADMIN'), 'ADMIN');
+assert.strictEqual(Utils.formatearRol('ROLE_GUION'), 'GUION');
 assert.strictEqual(Utils.truncateText('abcdefghij', 5), 'abcde...');
 
 assert.strictEqual(true, Utils.esMensajeTecnico('could not execute statement SQLException'));

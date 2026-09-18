@@ -33,7 +33,7 @@ public class AuthService {
         try {
 <span class="fc" id="L34">            log.debug(&quot;Validando credenciales para usuario: {}&quot;, request.getNombre());</span>
 <span class="fc" id="L35">            Authentication authentication = authenticationManager.authenticate(</span>
-                new UsernamePasswordAuthenticationToken(
+<span class="fc" id="L36">                new UsernamePasswordAuthenticationToken(</span>
 <span class="fc" id="L37">                    request.getNombre(),</span>
 <span class="fc" id="L38">                    request.getPassword()</span>
                 )
@@ -109,7 +109,7 @@ public class AuthService {
         
 <span class="fc bfc" id="L110" title="All 2 branches covered.">        if (usuario.isPresent()) {</span>
 <span class="fc" id="L111">            log.debug(&quot;✅ Usuario encontrado: {}&quot;, usuario.get().getNombre());</span>
-        } else {
+<span class="fc" id="L112">        } else {</span>
 <span class="fc" id="L113">            log.warn(&quot;❌ Usuario no encontrado en base de datos: {}&quot;, auth.getName());</span>
         }
         

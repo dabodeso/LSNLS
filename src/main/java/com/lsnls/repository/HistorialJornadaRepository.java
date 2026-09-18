@@ -39,4 +39,7 @@ public interface HistorialJornadaRepository extends JpaRepository<HistorialJorna
     // Contar asignaciones por combo
     @Query("SELECT COUNT(h) FROM HistorialJornada h WHERE h.combo.id = :comboId")
     Long countByComboId(@Param("comboId") Long comboId);
+
+    @Query("SELECT h FROM HistorialJornada h WHERE h.notas = CONCAT('RECICLAJE_PARCIAL_COMBO_HIJO;PADRE:', :padreId)")
+    List<HistorialJornada> findHijosDeComboPadre(@Param("padreId") Long padreId);
 }

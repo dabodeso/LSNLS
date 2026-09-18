@@ -15,21 +15,27 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long>,
     List<Concursante> findByEstado(String estado); // Cambio de EstadoConcursante a String
     List<Concursante> findByNumeroPrograma(Integer numeroPrograma);
     @Query("SELECT c FROM Concursante c WHERE c.numeroPrograma = :numeroPrograma " +
-           "ORDER BY CASE WHEN c.numeroConcursante IS NULL THEN 1 ELSE 0 END, c.numeroConcursante ASC, c.id ASC")
+           "ORDER BY CASE WHEN c.ordenEscaleta IS NULL THEN 1 ELSE 0 END, c.ordenEscaleta ASC, c.id ASC")
     List<Concursante> findByNumeroProgramaOrderByNumeroConcursanteAsc(@Param("numeroPrograma") Integer numeroPrograma);
-    long countByNumeroProgramaAndNumeroConcursante(Integer numeroPrograma, Integer numeroConcursante);
+    long countByNumeroProgramaAndOrdenEscaletaAndIdNot(Integer numeroPrograma, Integer ordenEscaleta, Long id);
     List<Concursante> findByNumeroProgramaIsNull();
     Page<Concursante> findByNumeroProgramaIsNull(Pageable pageable);
     
-    // Sin programa: grabado, editado o emitido (el flujo real deja la mayoría en grabado)
-    @Query("SELECT c FROM Concursante c WHERE c.numeroPrograma IS NULL AND " +
-           "LOWER(c.estado) IN ('grabado', 'editado', 'emitido') AND " +
+    // Grabado, editado o emitido, sin este programa (libres o en otro)
+    @Query("SELECT c FROM Concursante c WHERE LOWER(c.estado) IN ('grabado', 'editado', 'emitido') AND " +
+           "((:programaId IS NULL AND c.numeroPrograma IS NULL) OR " +
+           " (:programaId IS NOT NULL AND (c.numeroPrograma IS NULL OR c.numeroPrograma <> :programaId))) AND " +
+           "(:estado IS NULL OR LOWER(c.estado) = LOWER(:estado)) AND " +
            "(:busqueda IS NULL OR " +
            "LOWER(c.nombre) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "LOWER(c.ocupacion) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "LOWER(c.lugar) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
+           "LOWER(c.estado) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "CAST(c.numeroConcursante AS string) LIKE CONCAT('%', :busqueda, '%'))")
-    Page<Concursante> findDisponiblesParaProgramaWithSearch(Pageable pageable, @Param("busqueda") String busqueda);
+    Page<Concursante> findDisponiblesParaProgramaWithSearch(Pageable pageable,
+            @Param("busqueda") String busqueda,
+            @Param("estado") String estado,
+            @Param("programaId") Integer programaId);
     
     @Query("SELECT MAX(c.numeroConcursante) FROM Concursante c")
     Integer findMaxNumeroConcursante();

@@ -12,7 +12,7 @@
 <!-- Toastify CSS -->
 <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
 <!-- Custom CSS -->
-<link href="css/styles.css?v=20260914-resize" rel="stylesheet">
+<link href="css/styles.css?v=20260915-usada-visible" rel="stylesheet">
     <link href="css/pagination.css" rel="stylesheet">
 <style>
 /* Ancho y diseño general de la tabla (como en preguntas) */
@@ -520,6 +520,9 @@ line-height: 1.2;
 <button type="button" class="btn btn-outline-primary" id="btn-buscar-cuestionario" onclick="abrirSelectorCuestionario()">
 <i class="fas fa-search"></i>
 </button>
+<button type="button" class="btn btn-outline-info" id="btn-ver-cuestionario" onclick="verCuestionarioDesdeFormulario()" title="Ver preguntas" style="display: none;">
+<i class="fas fa-eye"></i>
+</button>
 <button type="button" class="btn btn-outline-secondary" id="btn-otras-jornadas-cuestionario-form" onclick="abrirSelectorCuestionarioOtras()" title="Buscar cuestionarios de otras jornadas">
 Otras jornadas
 </button>
@@ -534,6 +537,9 @@ Otras jornadas
 <input type="text" class="form-control" id="combo-id" readonly placeholder="Seleccionar combo">
 <button type="button" class="btn btn-outline-primary" id="btn-buscar-combo" onclick="abrirSelectorCombo()">
 <i class="fas fa-search"></i>
+</button>
+<button type="button" class="btn btn-outline-info" id="btn-ver-combo" onclick="verComboDesdeFormulario()" title="Ver preguntas" style="display: none;">
+<i class="fas fa-eye"></i>
 </button>
 <button type="button" class="btn btn-outline-secondary" id="btn-otras-jornadas-combo-form" onclick="abrirSelectorComboOtras()" title="Buscar combos de otras jornadas">
 Otras jornadas
@@ -646,15 +652,11 @@ Otras jornadas
 <i class="fas fa-tv me-2"></i>Programación
 </h6>
 <div class="row mb-3">
-<div class="col-md-3">
+<div class="col-md-4">
 <label class="form-label">Nº Programa:</label>
 <input type="number" class="form-control" id="numero-programa" placeholder="Número del programa">
 </div>
-<div class="col-md-3">
-<label class="form-label">Orden Escaleta:</label>
-<input type="number" class="form-control" id="orden-escaleta" placeholder="Posición en la escaleta">
-</div>
-<div class="col-md-3">
+<div class="col-md-4">
 <label class="form-label">Estado:</label>
 <select class="form-control" id="estado" required>
 <option value="grabado" selected>Grabado</option>
@@ -664,7 +666,7 @@ Otras jornadas
 <option value="archivado">Archivado</option>
 </select>
 </div>
-<div class="col-md-3">
+<div class="col-md-4">
 <label class="form-label">Bonico:</label>
 <input type="text" class="form-control" id="bonico" placeholder="Campo de texto libre">
 </div>
@@ -1002,7 +1004,7 @@ Borrar
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-outline-warning" onclick="iniciarReciclajeParcialDesdePreview()">Reciclar…</button>
+                    <button type="button" class="btn btn-outline-warning" id="btn-reciclar-combo-preview" onclick="iniciarReciclajeParcialDesdePreview()">Reciclar…</button>
                     <button type="button" class="btn btn-danger" onclick="desasignarComboDesdePreview()">Desasignar</button>
                     <button type="button" class="btn btn-primary" onclick="abrirSelectorComboDesdePreview()">Reemplazar…</button>
                 </div>
@@ -1017,12 +1019,12 @@ Borrar
 <!-- Toastify JS -->
 <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 <!-- Custom JS -->
-<script src="js/auth.js"></script>
-<script src="js/utils.js?v=20260907-1"></script>
+<script src="js/auth.js?v=20260915-verif-consulta"></script>
+<script src="js/utils.js?v=20260915-reciclaje-mult"></script>
 <script src="js/api.js?v=20260821-3"></script>
     <script src="js/undo-manager.js?v=20260915-modal"></script>
 <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/concursantes.js?v=20260914-arrastre"></script>
+    <script src="js/concursantes.js?v=20260918-estado-auto"></script>
 <script>
 // Inicializar la página cuando se carga
 document.addEventListener('DOMContentLoaded', function() {

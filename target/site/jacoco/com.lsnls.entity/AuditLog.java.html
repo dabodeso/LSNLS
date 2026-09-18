@@ -154,8 +154,8 @@ public class AuditLog {
     /**
      * Constructor para crear un log básico
      */
-    public AuditLog(Usuario usuario, OperationType operationType, EntityType entityType, 
-<span class="fc" id="L158">                    Long entityId, String description, OperationResult result) {</span>
+<span class="fc" id="L157">    public AuditLog(Usuario usuario, OperationType operationType, EntityType entityType, </span>
+                    Long entityId, String description, OperationResult result) {
 <span class="fc" id="L159">        this.usuario = usuario;</span>
 <span class="fc bfc" id="L160" title="All 2 branches covered.">        this.usuarioNombre = usuario != null ? usuario.getNombre() : &quot;SISTEMA&quot;;</span>
 <span class="fc" id="L161">        this.timestamp = LocalDateTime.now();</span>

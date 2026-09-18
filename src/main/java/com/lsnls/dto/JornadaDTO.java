@@ -33,6 +33,7 @@ public class JornadaDTO {
         private String notasDireccion;
         private Integer totalPreguntas;
         private boolean reutilizado;
+        private boolean asignadoAConcursante;
     }
     
     @Data
@@ -45,5 +46,8 @@ public class JornadaDTO {
         private String notasDireccion;
         private Integer totalPreguntas;
         private boolean reutilizado;
+        private boolean asignadoAConcursante;
+        private String multiplicadorMaximo;
+        private Long preguntaUsadaId;
     }
 } 

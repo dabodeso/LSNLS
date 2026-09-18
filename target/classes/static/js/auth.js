@@ -193,8 +193,8 @@ class AuthManager {
         const userRole = user.rol.replace('ROLE_', '').toLowerCase();
         return {
             canRead: true,
-            canCreate: ['admin', 'guion', 'verificacion', 'direccion'].includes(userRole),
-            canEdit: ['admin', 'guion', 'verificacion', 'direccion'].includes(userRole),
+            canCreate: ['admin', 'guion', 'direccion'].includes(userRole),
+            canEdit: ['admin', 'guion', 'direccion'].includes(userRole),
             canDelete: ['admin', 'direccion'].includes(userRole),
             canValidate: ['admin', 'direccion'].includes(userRole),
             canVerify: ['admin', 'verificacion', 'direccion'].includes(userRole),

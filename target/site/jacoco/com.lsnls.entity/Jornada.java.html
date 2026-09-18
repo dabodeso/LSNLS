@@ -14,9 +14,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Getter
@@ -68,128 +70,168 @@ public class Jornada {
     private Set&lt;JornadaComboAsignacion&gt; comboAsignaciones = new HashSet&lt;&gt;();
 
     public Set&lt;Cuestionario&gt; getCuestionarios() {
-<span class="fc" id="L71">        LinkedHashSet&lt;Cuestionario&gt; set = new LinkedHashSet&lt;&gt;();</span>
-<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (Cuestionario c : getCuestionariosPorSlot()) {</span>
-<span class="fc bfc" id="L73" title="All 2 branches covered.">            if (c != null) {</span>
-<span class="fc" id="L74">                set.add(c);</span>
+<span class="fc" id="L73">        LinkedHashSet&lt;Cuestionario&gt; set = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        for (Cuestionario c : getCuestionariosPorSlot()) {</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            if (c != null) {</span>
+<span class="fc" id="L76">                set.add(c);</span>
             }
-<span class="fc" id="L76">        }</span>
-<span class="fc" id="L77">        return set;</span>
+        }
+<span class="fc" id="L79">        return set;</span>
     }
 
     public void setCuestionarios(Set&lt;Cuestionario&gt; cuestionarios) {
-<span class="fc" id="L81">        List&lt;Cuestionario&gt; porSlot = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
-<span class="fc" id="L82">        int i = 0;</span>
-<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (cuestionarios != null) {</span>
-<span class="fc bfc" id="L84" title="All 2 branches covered.">            for (Cuestionario c : cuestionarios) {</span>
-<span class="pc bpc" id="L85" title="1 of 2 branches missed.">                if (i &gt;= SlotsJornada.TOTAL) {</span>
-<span class="nc" id="L86">                    break;</span>
+<span class="fc" id="L83">        List&lt;Cuestionario&gt; porSlot = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
+<span class="fc" id="L84">        int i = 0;</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if (cuestionarios != null) {</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">            for (Cuestionario c : cuestionarios) {</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">                if (i &gt;= SlotsJornada.TOTAL) {</span>
+<span class="nc" id="L88">                    break;</span>
                 }
-<span class="fc" id="L88">                porSlot.set(i++, c);</span>
-<span class="fc" id="L89">            }</span>
+<span class="fc" id="L90">                porSlot.set(i++, c);</span>
+            }
         }
-<span class="fc" id="L91">        reemplazarCuestionariosPorSlot(porSlot);</span>
-<span class="fc" id="L92">    }</span>
+<span class="fc" id="L93">        reemplazarCuestionariosPorSlot(porSlot);</span>
+<span class="fc" id="L94">    }</span>
 
     public Set&lt;Combo&gt; getCombos() {
-<span class="fc" id="L95">        LinkedHashSet&lt;Combo&gt; set = new LinkedHashSet&lt;&gt;();</span>
-<span class="fc bfc" id="L96" title="All 2 branches covered.">        for (Combo c : getCombosPorSlot()) {</span>
-<span class="fc bfc" id="L97" title="All 2 branches covered.">            if (c != null) {</span>
-<span class="fc" id="L98">                set.add(c);</span>
+<span class="fc" id="L97">        LinkedHashSet&lt;Combo&gt; set = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        for (Combo c : getCombosPorSlot()) {</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            if (c != null) {</span>
+<span class="fc" id="L100">                set.add(c);</span>
             }
-<span class="fc" id="L100">        }</span>
-<span class="fc" id="L101">        return set;</span>
+        }
+<span class="fc" id="L103">        return set;</span>
     }
 
     public void setCombos(Set&lt;Combo&gt; combos) {
-<span class="fc" id="L105">        List&lt;Combo&gt; porSlot = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
-<span class="fc" id="L106">        int i = 0;</span>
-<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if (combos != null) {</span>
-<span class="fc bfc" id="L108" title="All 2 branches covered.">            for (Combo c : combos) {</span>
-<span class="pc bpc" id="L109" title="1 of 2 branches missed.">                if (i &gt;= SlotsJornada.TOTAL) {</span>
-<span class="nc" id="L110">                    break;</span>
+<span class="fc" id="L107">        List&lt;Combo&gt; porSlot = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
+<span class="fc" id="L108">        int i = 0;</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if (combos != null) {</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            for (Combo c : combos) {</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">                if (i &gt;= SlotsJornada.TOTAL) {</span>
+<span class="nc" id="L112">                    break;</span>
                 }
-<span class="fc" id="L112">                porSlot.set(i++, c);</span>
-<span class="fc" id="L113">            }</span>
+<span class="fc" id="L114">                porSlot.set(i++, c);</span>
+            }
         }
-<span class="fc" id="L115">        reemplazarCombosPorSlot(porSlot);</span>
-<span class="fc" id="L116">    }</span>
+<span class="fc" id="L117">        reemplazarCombosPorSlot(porSlot);</span>
+<span class="fc" id="L118">    }</span>
 
     public List&lt;Cuestionario&gt; getCuestionariosPorSlot() {
-<span class="fc" id="L119">        List&lt;Cuestionario&gt; slots = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
-<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (cuestionarioAsignaciones == null) {</span>
-<span class="nc" id="L121">            return slots;</span>
+<span class="fc" id="L121">        List&lt;Cuestionario&gt; slots = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        if (cuestionarioAsignaciones == null) {</span>
+<span class="nc" id="L123">            return slots;</span>
         }
-<span class="fc bfc" id="L123" title="All 2 branches covered.">        for (JornadaCuestionarioAsignacion a : cuestionarioAsignaciones) {</span>
-<span class="fc" id="L124">            Integer slot = a.getSlot();</span>
-<span class="pc bpc" id="L125" title="3 of 6 branches missed.">            if (slot != null &amp;&amp; slot &gt;= 1 &amp;&amp; slot &lt;= SlotsJornada.TOTAL) {</span>
-<span class="fc" id="L126">                slots.set(slot - 1, a.getCuestionario());</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        for (JornadaCuestionarioAsignacion a : cuestionarioAsignaciones) {</span>
+<span class="fc" id="L126">            Integer slot = a.getSlot();</span>
+<span class="pc bpc" id="L127" title="3 of 6 branches missed.">            if (slot != null &amp;&amp; slot &gt;= 1 &amp;&amp; slot &lt;= SlotsJornada.TOTAL) {</span>
+<span class="fc" id="L128">                slots.set(slot - 1, a.getCuestionario());</span>
             }
-<span class="fc" id="L128">        }</span>
-<span class="fc" id="L129">        return slots;</span>
+        }
+<span class="fc" id="L131">        return slots;</span>
     }
 
     public List&lt;Combo&gt; getCombosPorSlot() {
-<span class="fc" id="L133">        List&lt;Combo&gt; slots = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
-<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (comboAsignaciones == null) {</span>
-<span class="nc" id="L135">            return slots;</span>
+<span class="fc" id="L135">        List&lt;Combo&gt; slots = new ArrayList&lt;&gt;(Collections.nCopies(SlotsJornada.TOTAL, null));</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if (comboAsignaciones == null) {</span>
+<span class="nc" id="L137">            return slots;</span>
         }
-<span class="fc bfc" id="L137" title="All 2 branches covered.">        for (JornadaComboAsignacion a : comboAsignaciones) {</span>
-<span class="fc" id="L138">            Integer slot = a.getSlot();</span>
-<span class="pc bpc" id="L139" title="3 of 6 branches missed.">            if (slot != null &amp;&amp; slot &gt;= 1 &amp;&amp; slot &lt;= SlotsJornada.TOTAL) {</span>
-<span class="fc" id="L140">                slots.set(slot - 1, a.getCombo());</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        for (JornadaComboAsignacion a : comboAsignaciones) {</span>
+<span class="fc" id="L140">            Integer slot = a.getSlot();</span>
+<span class="pc bpc" id="L141" title="3 of 6 branches missed.">            if (slot != null &amp;&amp; slot &gt;= 1 &amp;&amp; slot &lt;= SlotsJornada.TOTAL) {</span>
+<span class="fc" id="L142">                slots.set(slot - 1, a.getCombo());</span>
             }
-<span class="fc" id="L142">        }</span>
-<span class="fc" id="L143">        return slots;</span>
+        }
+<span class="fc" id="L145">        return slots;</span>
     }
 
     public void reemplazarCuestionariosPorSlot(List&lt;Cuestionario&gt; porSlot) {
-<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (cuestionarioAsignaciones == null) {</span>
-<span class="nc" id="L148">            cuestionarioAsignaciones = new HashSet&lt;&gt;();</span>
-        } else {
-<span class="fc" id="L150">            cuestionarioAsignaciones.clear();</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (cuestionarioAsignaciones == null) {</span>
+<span class="nc" id="L150">            cuestionarioAsignaciones = new HashSet&lt;&gt;();</span>
         }
-<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (porSlot == null) {</span>
-<span class="nc" id="L153">            return;</span>
-        }
-<span class="pc bpc" id="L155" title="1 of 4 branches missed.">        for (int i = 0; i &lt; porSlot.size() &amp;&amp; i &lt; SlotsJornada.TOTAL; i++) {</span>
-<span class="fc" id="L156">            Cuestionario c = porSlot.get(i);</span>
-<span class="fc bfc" id="L157" title="All 2 branches covered.">            if (c == null) {</span>
-<span class="fc" id="L158">                continue;</span>
+
+<span class="fc" id="L153">        Map&lt;Long, JornadaCuestionarioAsignacion&gt; existentes = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        for (JornadaCuestionarioAsignacion a : cuestionarioAsignaciones) {</span>
+<span class="pc bpc" id="L155" title="2 of 4 branches missed.">            if (a.getCuestionario() != null &amp;&amp; a.getCuestionario().getId() != null) {</span>
+<span class="fc" id="L156">                existentes.put(a.getCuestionario().getId(), a);</span>
             }
-<span class="fc" id="L160">            JornadaCuestionarioAsignacion a = new JornadaCuestionarioAsignacion();</span>
-<span class="fc" id="L161">            a.vincular(this, c, i + 1);</span>
-<span class="fc" id="L162">            cuestionarioAsignaciones.add(a);</span>
         }
-<span class="fc" id="L164">    }</span>
+
+<span class="fc" id="L160">        Set&lt;Long&gt; idsDeseados = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L161">        List&lt;JornadaCuestionarioAsignacion&gt; resultado = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (porSlot != null) {</span>
+<span class="pc bpc" id="L163" title="1 of 4 branches missed.">            for (int i = 0; i &lt; porSlot.size() &amp;&amp; i &lt; SlotsJornada.TOTAL; i++) {</span>
+<span class="fc" id="L164">                Cuestionario c = porSlot.get(i);</span>
+<span class="pc bpc" id="L165" title="1 of 4 branches missed.">                if (c == null || c.getId() == null) {</span>
+<span class="nc" id="L166">                    continue;</span>
+                }
+<span class="fc" id="L168">                idsDeseados.add(c.getId());</span>
+<span class="fc" id="L169">                JornadaCuestionarioAsignacion a = existentes.get(c.getId());</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">                if (a != null) {</span>
+<span class="fc" id="L171">                    a.setSlot(i + 1);</span>
+<span class="fc" id="L172">                    resultado.add(a);</span>
+<span class="fc" id="L173">                } else {</span>
+<span class="fc" id="L174">                    JornadaCuestionarioAsignacion nueva = new JornadaCuestionarioAsignacion();</span>
+<span class="fc" id="L175">                    nueva.vincular(this, c, i + 1);</span>
+<span class="fc" id="L176">                    resultado.add(nueva);</span>
+                }
+            }
+        }
+
+<span class="fc" id="L181">        cuestionarioAsignaciones.removeIf(a -&gt;</span>
+<span class="pc bpc" id="L182" title="1 of 2 branches missed.">            a.getCuestionario() == null</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">                || a.getCuestionario().getId() == null</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">                || !idsDeseados.contains(a.getCuestionario().getId()));</span>
+<span class="fc" id="L185">        cuestionarioAsignaciones.addAll(resultado);</span>
+<span class="fc" id="L186">    }</span>
 
     public void reemplazarCombosPorSlot(List&lt;Combo&gt; porSlot) {
-<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (comboAsignaciones == null) {</span>
-<span class="nc" id="L168">            comboAsignaciones = new HashSet&lt;&gt;();</span>
-        } else {
-<span class="fc" id="L170">            comboAsignaciones.clear();</span>
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">        if (comboAsignaciones == null) {</span>
+<span class="nc" id="L190">            comboAsignaciones = new HashSet&lt;&gt;();</span>
         }
-<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (porSlot == null) {</span>
-<span class="nc" id="L173">            return;</span>
-        }
-<span class="pc bpc" id="L175" title="1 of 4 branches missed.">        for (int i = 0; i &lt; porSlot.size() &amp;&amp; i &lt; SlotsJornada.TOTAL; i++) {</span>
-<span class="fc" id="L176">            Combo c = porSlot.get(i);</span>
-<span class="fc bfc" id="L177" title="All 2 branches covered.">            if (c == null) {</span>
-<span class="fc" id="L178">                continue;</span>
-            }
-<span class="fc" id="L180">            JornadaComboAsignacion a = new JornadaComboAsignacion();</span>
-<span class="fc" id="L181">            a.vincular(this, c, i + 1);</span>
-<span class="fc" id="L182">            comboAsignaciones.add(a);</span>
-        }
-<span class="fc" id="L184">    }</span>
 
-<span class="fc" id="L186">    public enum EstadoJornada {</span>
-<span class="fc" id="L187">        preparacion, lista, en_grabacion, completada, archivada</span>
+<span class="fc" id="L193">        Map&lt;Long, JornadaComboAsignacion&gt; existentes = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        for (JornadaComboAsignacion a : comboAsignaciones) {</span>
+<span class="pc bpc" id="L195" title="2 of 4 branches missed.">            if (a.getCombo() != null &amp;&amp; a.getCombo().getId() != null) {</span>
+<span class="fc" id="L196">                existentes.put(a.getCombo().getId(), a);</span>
+            }
+        }
+
+<span class="fc" id="L200">        Set&lt;Long&gt; idsDeseados = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L201">        List&lt;JornadaComboAsignacion&gt; resultado = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">        if (porSlot != null) {</span>
+<span class="pc bpc" id="L203" title="1 of 4 branches missed.">            for (int i = 0; i &lt; porSlot.size() &amp;&amp; i &lt; SlotsJornada.TOTAL; i++) {</span>
+<span class="fc" id="L204">                Combo c = porSlot.get(i);</span>
+<span class="pc bpc" id="L205" title="1 of 4 branches missed.">                if (c == null || c.getId() == null) {</span>
+<span class="nc" id="L206">                    continue;</span>
+                }
+<span class="fc" id="L208">                idsDeseados.add(c.getId());</span>
+<span class="fc" id="L209">                JornadaComboAsignacion a = existentes.get(c.getId());</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">                if (a != null) {</span>
+<span class="fc" id="L211">                    a.setSlot(i + 1);</span>
+<span class="fc" id="L212">                    resultado.add(a);</span>
+<span class="fc" id="L213">                } else {</span>
+<span class="fc" id="L214">                    JornadaComboAsignacion nueva = new JornadaComboAsignacion();</span>
+<span class="fc" id="L215">                    nueva.vincular(this, c, i + 1);</span>
+<span class="fc" id="L216">                    resultado.add(nueva);</span>
+                }
+            }
+        }
+
+<span class="fc" id="L221">        comboAsignaciones.removeIf(a -&gt;</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">            a.getCombo() == null</span>
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">                || a.getCombo().getId() == null</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">                || !idsDeseados.contains(a.getCombo().getId()));</span>
+<span class="fc" id="L225">        comboAsignaciones.addAll(resultado);</span>
+<span class="fc" id="L226">    }</span>
+
+<span class="fc" id="L228">    public enum EstadoJornada {</span>
+<span class="fc" id="L229">        preparacion, lista, en_grabacion, completada, archivada</span>
     }
 
     @PrePersist
     protected void onCreate() {
-<span class="nc" id="L192">        fechaCreacion = LocalDateTime.now();</span>
-<span class="nc" id="L193">    }</span>
+<span class="nc" id="L234">        fechaCreacion = LocalDateTime.now();</span>
+<span class="nc" id="L235">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

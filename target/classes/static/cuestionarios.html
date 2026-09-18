@@ -12,7 +12,7 @@
     <!-- Toastify CSS -->
     <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link href="css/styles.css?v=20260914-resize" rel="stylesheet">
+    <link href="css/styles.css?v=20260918-margen2" rel="stylesheet">
     <link href="css/pagination.css" rel="stylesheet">
 
     <style>
@@ -51,27 +51,29 @@
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla > td .table {
             margin-bottom: 0;
         }
-        /* Anchos de la subtabla de preguntas */
+        /* Anchos fijos; el espacio extra de la vista ancha va a Datos extra */
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario thead th:nth-child(1),
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario tbody td:nth-child(1) {
-            width: 8%; /* Mitad de lo que suele ocupar */
+            width: 90px;
             white-space: nowrap;
         }
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario thead th:nth-child(2),
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario tbody td:nth-child(2) {
-            width: 44%;
+            width: 480px;
         }
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario thead th:nth-child(3),
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario tbody td:nth-child(3) {
-            width: 24%;
+            width: 260px;
+            font-weight: 700;
         }
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario thead th:nth-child(4),
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario tbody td:nth-child(4) {
-            width: 16%;
+            width: auto;
+            font-weight: 700;
         }
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario thead th:nth-child(5),
         #tabla-cuestionarios-tabla tr.cuestionario-subtabla table.table-preguntas-cuestionario tbody td:nth-child(5) {
-            width: 8%;
+            width: 90px;
             white-space: nowrap;
         }
         /* Evitar desbordamiento de botones en acciones de tabla principal */
@@ -135,7 +137,7 @@
 <body>
     <div id="lsnls-navbar-root"></div>
     <script src="js/navbar.js?v=20260824-1"></script>
-<div class="container mt-4">
+<div class="contenedor-listado">
         <div class="section-header d-flex align-items-center">
             <h2 class="mb-0">Gestión de Cuestionarios</h2>
             <button class="btn btn-primary ms-2" onclick="mostrarFormularioCuestionario()">
@@ -179,7 +181,13 @@
             <div id="filtros-cuestionarios" class="collapse show">
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-2">
+                            <label class="form-label">ID:</label>
+                            <input type="text" id="filtro-id-cuestionario" class="form-control form-control-sm"
+                                   inputmode="numeric" autocomplete="off"
+                                   oninput="filtrarCuestionarios()" placeholder="Nº cuestionario">
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label">Estado:</label>
                             <select id="filtro-estado-cuestionario" class="form-select form-select-sm" onchange="filtrarCuestionarios()">
                                 <option value="">Todos</option>
@@ -198,7 +206,7 @@
                                 <!-- Las opciones se cargarán dinámicamente -->
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label">Buscar:</label>
                             <input type="text" id="buscar-cuestionario" class="form-control form-control-sm" 
                                    onkeyup="filtrarCuestionarios()" placeholder="Buscar en preguntas y respuestas...">
@@ -498,14 +506,14 @@
     <!-- Toastify JS -->
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <!-- Custom JS -->
-    <script src="js/auth.js"></script>
-    <script src="js/utils.js?v=20260907-1"></script>
+    <script src="js/auth.js?v=20260915-verif-consulta"></script>
+    <script src="js/utils.js?v=20260915-verif-consulta"></script>
     <script src="js/api.js?v=20260821-3"></script>
     <script src="js/undo-manager.js?v=20260915-modal"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/cuestionarios.js?v=20260915-undo"></script>
+    <script src="js/cuestionarios.js?v=20260918-ancho"></script>
     <script>
         // Inicializar la página cuando se carga
         document.addEventListener('DOMContentLoaded', function() {

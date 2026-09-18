@@ -154,17 +154,17 @@ import java.util.Optional;
 <span class="fc bfc" id="L154" title="All 2 branches covered.">            for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {</span>
 <span class="fc" id="L155">                String nivel = pc.getPregunta().getNivel().name();</span>
 <span class="fc bfc" id="L156" title="All 2 branches covered.">                if (!nivel.matches(&quot;_[1-4](LS|NLS)&quot;)) {</span>
-<span class="fc" id="L157">                    result.addError(&quot;Pregunta con nivel inválido para cuestionario: &quot; + nivel + </span>
-                                  &quot;. Solo se permiten niveles _1LS, _2NLS, _3LS, _4NLS&quot;);
+<span class="fc" id="L157">                    result.addError(&quot;Pregunta con nivel inválido para cuestionario: &quot; + nivel.replaceFirst(&quot;^_&quot;, &quot;&quot;) + </span>
+                                  &quot;. Solo se permiten niveles 1LS, 2NLS, 3LS, 4NLS&quot;);
                 }
-<span class="fc" id="L160">            }</span>
+            }
         }
         
         // Validar consistencia de estados
 <span class="fc bfc" id="L164" title="All 2 branches covered.">        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {</span>
             // Verificar que realmente esté asignado a una jornada
 <span class="fc" id="L166">            Long jornadasCount = entityManager.createQuery(</span>
-                &quot;SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :cuestionarioId&quot;, Long.class)
+<span class="fc" id="L167">                &quot;SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :cuestionarioId&quot;, Long.class)</span>
 <span class="fc" id="L168">                .setParameter(&quot;cuestionarioId&quot;, cuestionario.getId())</span>
 <span class="fc" id="L169">                .getSingleResult();</span>
             
@@ -196,7 +196,7 @@ import java.util.Optional;
                 // Validar que la pregunta sea de nivel 5
 <span class="fc" id="L197">                String nivel = pc.getPregunta().getNivel().name();</span>
 <span class="fc bfc" id="L198" title="All 2 branches covered.">                if (!nivel.startsWith(&quot;_5&quot;)) {</span>
-<span class="fc" id="L199">                    result.addError(&quot;Combo contiene pregunta de nivel &quot; + nivel + &quot;. Solo se permiten preguntas de nivel 5&quot;);</span>
+<span class="fc" id="L199">                    result.addError(&quot;Combo contiene pregunta de nivel &quot; + nivel.replaceFirst(&quot;^_&quot;, &quot;&quot;) + &quot;. Solo se permiten preguntas de nivel 5&quot;);</span>
                 }
                 
                 // Validar factores únicos
@@ -218,7 +218,7 @@ import java.util.Optional;
                 } else {
                     // No validamos otros valores ya que ahora el factor es texto libre
                 }
-<span class="fc" id="L221">            }</span>
+            }
         }
         
 <span class="fc" id="L224">        return result;</span>
@@ -243,7 +243,7 @@ import java.util.Optional;
 <span class="pc bpc" id="L243" title="1 of 2 branches missed.">            } else if (concursante.getId() != null) {</span>
                 // Para actualizaciones, excluir el propio concursante
 <span class="fc" id="L245">                Long duplicadosExcluyendo = entityManager.createQuery(</span>
-                    &quot;SELECT COUNT(c) FROM Concursante c WHERE c.numeroConcursante = :numero AND c.id != :id&quot;, Long.class)
+<span class="fc" id="L246">                    &quot;SELECT COUNT(c) FROM Concursante c WHERE c.numeroConcursante = :numero AND c.id != :id&quot;, Long.class)</span>
 <span class="fc" id="L247">                    .setParameter(&quot;numero&quot;, concursante.getNumeroConcursante())</span>
 <span class="fc" id="L248">                    .setParameter(&quot;id&quot;, concursante.getId())</span>
 <span class="fc" id="L249">                    .getSingleResult();</span>
@@ -309,7 +309,7 @@ import java.util.Optional;
 <span class="fc bfc" id="L309" title="All 2 branches covered.">                if (cuestionario.getEstado() != Cuestionario.EstadoCuestionario.adjudicado) {</span>
 <span class="fc" id="L310">                    result.addWarning(&quot;Cuestionario &quot; + cuestionario.getId() + &quot; asignado a jornada pero no está en estado 'adjudicado'&quot;);</span>
                 }
-<span class="fc" id="L312">            }</span>
+            }
         }
         
 <span class="pc bpc" id="L315" title="1 of 2 branches missed.">        if (jornada.getCombos() != null) {</span>
@@ -317,7 +317,7 @@ import java.util.Optional;
 <span class="fc bfc" id="L317" title="All 2 branches covered.">                if (combo.getEstado() != Combo.EstadoCombo.adjudicado) {</span>
 <span class="fc" id="L318">                    result.addWarning(&quot;Combo &quot; + combo.getId() + &quot; asignado a jornada pero no está en estado 'adjudicado'&quot;);</span>
                 }
-<span class="fc" id="L320">            }</span>
+            }
         }
         
 <span class="fc" id="L323">        return result;</span>
@@ -336,7 +336,7 @@ import java.util.Optional;
 <span class="fc" id="L336">                result.addError(&quot;Ya existe un programa para la temporada &quot; + programa.getTemporada());</span>
 <span class="fc bfc" id="L337" title="All 2 branches covered.">            } else if (programa.getId() != null) {</span>
 <span class="fc" id="L338">                Long duplicadosExcluyendo = entityManager.createQuery(</span>
-                    &quot;SELECT COUNT(p) FROM Programa p WHERE p.temporada = :temporada AND p.id != :id&quot;, Long.class)
+<span class="fc" id="L339">                    &quot;SELECT COUNT(p) FROM Programa p WHERE p.temporada = :temporada AND p.id != :id&quot;, Long.class)</span>
 <span class="fc" id="L340">                    .setParameter(&quot;temporada&quot;, programa.getTemporada())</span>
 <span class="fc" id="L341">                    .setParameter(&quot;id&quot;, programa.getId())</span>
 <span class="fc" id="L342">                    .getSingleResult();</span>
@@ -389,14 +389,14 @@ import java.util.Optional;
             
             // Contar inconsistencias
 <span class="fc" id="L391">            Long preguntasOrfanas = entityManager.createQuery(</span>
-                &quot;SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta IS NULL OR pc.cuestionario IS NULL&quot;, Long.class)
+<span class="fc" id="L392">                &quot;SELECT COUNT(pc) FROM PreguntaCuestionario pc WHERE pc.pregunta IS NULL OR pc.cuestionario IS NULL&quot;, Long.class)</span>
 <span class="fc" id="L393">                .getSingleResult();</span>
 <span class="fc bfc" id="L394" title="All 2 branches covered.">            if (preguntasOrfanas &gt; 0) {</span>
 <span class="fc" id="L395">                result.addError(&quot;Existen &quot; + preguntasOrfanas + &quot; relaciones pregunta-cuestionario con referencias nulas&quot;);</span>
             }
             
 <span class="fc" id="L398">            Long combosOrfanos = entityManager.createQuery(</span>
-                &quot;SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta IS NULL OR pc.combo IS NULL&quot;, Long.class)
+<span class="fc" id="L399">                &quot;SELECT COUNT(pc) FROM PreguntaCombo pc WHERE pc.pregunta IS NULL OR pc.combo IS NULL&quot;, Long.class)</span>
 <span class="fc" id="L400">                .getSingleResult();</span>
 <span class="fc bfc" id="L401" title="All 2 branches covered.">            if (combosOrfanos &gt; 0) {</span>
 <span class="fc" id="L402">                result.addError(&quot;Existen &quot; + combosOrfanos + &quot; relaciones pregunta-combo con referencias nulas&quot;);</span>
@@ -404,8 +404,8 @@ import java.util.Optional;
             
             // Validar estados inconsistentes
 <span class="fc" id="L406">            Long cuestionariosInconsistentes = entityManager.createQuery(</span>
-                &quot;SELECT COUNT(c) FROM Cuestionario c WHERE c.estado = 'adjudicado' AND &quot; +
-                &quot;c.id NOT IN (SELECT a.cuestionario.id FROM JornadaCuestionarioAsignacion a)&quot;, Long.class)
+<span class="fc" id="L407">                &quot;SELECT COUNT(c) FROM Cuestionario c WHERE c.estado = 'adjudicado' AND &quot; +</span>
+<span class="fc" id="L408">                &quot;c.id NOT IN (SELECT a.cuestionario.id FROM JornadaCuestionarioAsignacion a)&quot;, Long.class)</span>
 <span class="fc" id="L409">                .getSingleResult();</span>
 <span class="fc bfc" id="L410" title="All 2 branches covered.">            if (cuestionariosInconsistentes &gt; 0) {</span>
 <span class="fc" id="L411">                result.addError(&quot;Existen &quot; + cuestionariosInconsistentes + &quot; cuestionarios marcados como 'adjudicado' pero no asignados a ninguna jornada&quot;);</span>
@@ -415,7 +415,7 @@ import java.util.Optional;
             
 <span class="fc" id="L416">        } catch (Exception e) {</span>
 <span class="fc" id="L417">            result.addError(&quot;Error durante la validación del sistema: &quot; + e.getMessage());</span>
-<span class="fc" id="L418">        }</span>
+        }
         
 <span class="fc" id="L420">        return result;</span>
     }

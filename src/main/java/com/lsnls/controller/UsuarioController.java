@@ -26,7 +26,7 @@ public class UsuarioController {
     private AuthorizationService authService;
 
     @PostMapping
-    @PreAuthorize("@authorizationService.canValidate()")
+    @PreAuthorize("@authorizationService.canAdministrar()")
     public ResponseEntity<?> crear(@RequestBody Usuario usuario) {
         try {
             // Validaciones específicas de campos requeridos
@@ -38,8 +38,8 @@ public class UsuarioController {
             }
 
             // Validación de permisos específica
-            if (!authService.canValidate()) {
-                return ResponseEntity.status(403).body("No tienes permisos para crear usuarios. Solo usuarios con rol ADMIN, VERIFICACION o DIRECCION pueden crear usuarios.");
+            if (!authService.canAdministrar()) {
+                return ResponseEntity.status(403).body("No tienes permisos para crear usuarios. Solo usuarios con rol ADMIN o DIRECCION pueden crear usuarios.");
             }
 
             // Validar que el nombre no esté duplicado

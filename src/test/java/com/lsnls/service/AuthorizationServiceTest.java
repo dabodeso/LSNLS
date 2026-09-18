@@ -234,7 +234,7 @@ class AuthorizationServiceTest {
 
         autenticar(RolUsuario.ROLE_VERIFICACION);
         assertFalse(authorizationService.canCreateConcursante());
-        assertTrue(authorizationService.canEditConcursante("GRABADO"));
+        assertFalse(authorizationService.canEditConcursante("GRABADO"));
         assertFalse(authorizationService.canEditConcursante("EDITADO"));
         assertFalse(authorizationService.canEditConcursante("PROGRAMADO"));
         assertFalse(authorizationService.canEditConcursante("EMITIDO"));
@@ -260,8 +260,8 @@ class AuthorizationServiceTest {
     @Test
     void canCreateYEditPrograma() {
         autenticar(RolUsuario.ROLE_VERIFICACION);
-        assertTrue(authorizationService.canCreatePrograma());
-        assertTrue(authorizationService.canEditPrograma(Programa.EstadoPrograma.borrador));
+        assertFalse(authorizationService.canCreatePrograma());
+        assertFalse(authorizationService.canEditPrograma(Programa.EstadoPrograma.borrador));
         assertFalse(authorizationService.canEditPrograma(Programa.EstadoPrograma.programado));
 
         autenticar(RolUsuario.ROLE_DIRECCION);
@@ -285,16 +285,19 @@ class AuthorizationServiceTest {
         assertTrue(authorizationService.canCreate());
         assertTrue(authorizationService.canEdit());
         assertTrue(authorizationService.canValidate());
+        assertTrue(authorizationService.canAdministrar());
 
         autenticar(RolUsuario.ROLE_DIRECCION);
         assertTrue(authorizationService.canDelete());
         assertTrue(authorizationService.canValidate());
+        assertTrue(authorizationService.canAdministrar());
 
         autenticar(RolUsuario.ROLE_VERIFICACION);
         assertFalse(authorizationService.canDelete());
-        assertTrue(authorizationService.canCreate());
-        assertTrue(authorizationService.canEdit());
+        assertFalse(authorizationService.canCreate());
+        assertFalse(authorizationService.canEdit());
         assertTrue(authorizationService.canValidate());
+        assertFalse(authorizationService.canAdministrar());
 
         autenticar(RolUsuario.ROLE_GUION);
         assertFalse(authorizationService.canDelete());
@@ -306,11 +309,13 @@ class AuthorizationServiceTest {
         assertFalse(authorizationService.canCreate());
         assertFalse(authorizationService.canEdit());
         assertFalse(authorizationService.canValidate());
+        assertFalse(authorizationService.canAdministrar());
 
         sinUsuario();
         assertFalse(authorizationService.canDelete());
         assertFalse(authorizationService.canCreate());
         assertFalse(authorizationService.canEdit());
         assertFalse(authorizationService.canValidate());
+        assertFalse(authorizationService.canAdministrar());
     }
 }

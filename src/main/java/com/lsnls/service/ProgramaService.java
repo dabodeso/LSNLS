@@ -1,10 +1,13 @@
 package com.lsnls.service;
 
 import com.lsnls.dto.ProgramaDTO;
+import com.lsnls.entity.Concursante;
 import com.lsnls.entity.Programa;
+import com.lsnls.repository.ConcursanteRepository;
 import com.lsnls.repository.ProgramaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -32,6 +35,9 @@ public class ProgramaService {
 
     @Autowired
     private UndoService undoService;
+
+    @Autowired
+    private ConcursanteRepository concursanteRepository;
 
     public List<Programa> findAll() {
         return programaRepository.findAll();
@@ -102,11 +108,18 @@ public class ProgramaService {
         return convertToDTO(saved);
     }
 
+    @Transactional
     public ProgramaDTO updateCampo(Long id, Map<String, Object> campo) {
         Optional<Programa> optionalPrograma = programaRepository.findById(id);
         if (optionalPrograma.isPresent()) {
             Programa programa = optionalPrograma.get();
+            Programa.EstadoPrograma estadoAnterior = programa.getEstado();
             boolean estadoActualizadoExplicitamente = false;
+            boolean soloCambiaEstado = campo.keySet().stream().allMatch("estado"::equals);
+            if (estadoAnterior == Programa.EstadoPrograma.emitido && !soloCambiaEstado) {
+                throw new IllegalArgumentException(
+                    "Un programa emitido no se puede editar. Cambia el estado para desbloquearlo.");
+            }
             
             for (Map.Entry<String, Object> entry : campo.entrySet()) {
                 String key = entry.getKey();
@@ -176,9 +189,39 @@ public class ProgramaService {
             }
             
             Programa saved = programaRepository.save(programa);
+            sincronizarEstadoConcursantesConPrograma(saved, estadoAnterior);
             return convertToDTO(saved);
         }
         throw new RuntimeException("Programa no encontrado con id: " + id);
+    }
+
+    private void sincronizarEstadoConcursantesConPrograma(Programa programa, Programa.EstadoPrograma estadoAnterior) {
+        if (programa == null || programa.getId() == null || programa.getEstado() == estadoAnterior) {
+            return;
+        }
+        List<Concursante> concursantes = concursanteRepository.findByNumeroPrograma(programa.getId().intValue());
+        if (concursantes.isEmpty()) {
+            return;
+        }
+        boolean cambio = false;
+        if (programa.getEstado() == Programa.EstadoPrograma.emitido) {
+            for (Concursante concursante : concursantes) {
+                if (!"emitido".equalsIgnoreCase(concursante.getEstado())) {
+                    concursante.setEstado("emitido");
+                    cambio = true;
+                }
+            }
+        } else if (estadoAnterior == Programa.EstadoPrograma.emitido) {
+            for (Concursante concursante : concursantes) {
+                if ("emitido".equalsIgnoreCase(concursante.getEstado())) {
+                    concursante.setEstado("programado");
+                    cambio = true;
+                }
+            }
+        }
+        if (cambio) {
+            concursanteRepository.saveAll(concursantes);
+        }
     }
 
     public void delete(Long id) {
@@ -234,6 +277,10 @@ public class ProgramaService {
         Optional<Programa> optionalPrograma = programaRepository.findById(id);
         if (optionalPrograma.isPresent()) {
             Programa programa = optionalPrograma.get();
+            if (programa.getEstado() == Programa.EstadoPrograma.emitido) {
+                throw new IllegalArgumentException(
+                    "Un programa emitido no se puede editar. Cambia el estado para desbloquearlo.");
+            }
             programa.setDuracionObjetivo(duracionObjetivo);
             programaRepository.save(programa);
         } else {

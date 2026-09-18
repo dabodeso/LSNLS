@@ -69,11 +69,11 @@ public class Programa {
     public void actualizarEstado() {
 <span class="fc bfc" id="L70" title="All 2 branches covered.">        if (fechaEmision != null) {</span>
 <span class="fc" id="L71">            this.estado = EstadoPrograma.programado;</span>
-<span class="fc bfc" id="L72" title="All 2 branches covered.">        } else if (duracionAcumulada != null) {</span>
-<span class="fc" id="L73">            this.estado = EstadoPrograma.editado;</span>
-<span class="fc bfc" id="L74" title="All 2 branches covered.">        } else if (resultadoAcumulado != null) {</span>
-<span class="fc" id="L75">            this.estado = EstadoPrograma.grabado;</span>
-        } else {
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        } else if (duracionAcumulada != null) {</span>
+<span class="nc" id="L73">            this.estado = EstadoPrograma.editado;</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        } else if (resultadoAcumulado != null) {</span>
+<span class="nc" id="L75">            this.estado = EstadoPrograma.grabado;</span>
+<span class="nc" id="L76">        } else {</span>
 <span class="fc" id="L77">            this.estado = EstadoPrograma.borrador;</span>
         }
 <span class="fc" id="L79">    }</span>

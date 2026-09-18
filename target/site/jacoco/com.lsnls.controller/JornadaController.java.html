@@ -32,7 +32,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping(&quot;/api/jornadas&quot;)
 @CrossOrigin(origins = &quot;*&quot;)
-<span class="nc" id="L35">public class JornadaController {</span>
+<span class="fc" id="L35">public class JornadaController {</span>
 
     @Autowired
     private JornadaService jornadaService;
@@ -56,15 +56,15 @@ import java.util.Optional;
             @RequestParam(required = false) String buscar) {
         try {
             // Crear objeto de ordenamiento
-<span class="nc" id="L59">            Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);</span>
-<span class="nc" id="L60">            Pageable pageable = PageRequest.of(page, size, sort);</span>
+<span class="fc" id="L59">            Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);</span>
+<span class="fc" id="L60">            Pageable pageable = PageRequest.of(page, size, sort);</span>
             
-<span class="nc" id="L62">            Page&lt;JornadaDTO&gt; jornadas = jornadaService.obtenerTodasPaginadasConFiltros(</span>
-                pageable, estado, fechaDesde, fechaHasta, buscar);
-<span class="nc" id="L64">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornadas obtenidas exitosamente&quot;, jornadas));</span>
-<span class="nc" id="L65">        } catch (Exception e) {</span>
-<span class="nc" id="L66">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L67">                .body(ApiResponse.error(&quot;Error al obtener jornadas: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L62">            Page&lt;JornadaDTO&gt; jornadas = jornadaService.obtenerTodasPaginadasConFiltros(</span>
+<span class="fc" id="L63">                pageable, estado, fechaDesde, fechaHasta, buscar);</span>
+<span class="fc" id="L64">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornadas obtenidas exitosamente&quot;, jornadas));</span>
+<span class="fc" id="L65">        } catch (Exception e) {</span>
+<span class="fc" id="L66">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L67">                .body(ApiResponse.error(&quot;Error al obtener jornadas: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -72,16 +72,16 @@ import java.util.Optional;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;ApiResponse&lt;JornadaDTO&gt;&gt; obtenerPorId(@PathVariable Long id) {
         try {
-<span class="nc" id="L75">            Optional&lt;JornadaDTO&gt; jornada = jornadaService.obtenerPorId(id);</span>
-<span class="nc bnc" id="L76" title="All 2 branches missed.">            if (jornada.isPresent()) {</span>
-<span class="nc" id="L77">                return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornada encontrada&quot;, jornada.get()));</span>
+<span class="fc" id="L75">            Optional&lt;JornadaDTO&gt; jornada = jornadaService.obtenerPorId(id);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            if (jornada.isPresent()) {</span>
+<span class="fc" id="L77">                return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornada encontrada&quot;, jornada.get()));</span>
             } else {
-<span class="nc" id="L79">                return ResponseEntity.status(404)</span>
-<span class="nc" id="L80">                    .body(ApiResponse.error(&quot;Jornada con ID &quot; + id + &quot; no encontrada&quot;));</span>
+<span class="fc" id="L79">                return ResponseEntity.status(404)</span>
+<span class="fc" id="L80">                    .body(ApiResponse.error(&quot;Jornada con ID &quot; + id + &quot; no encontrada&quot;));</span>
             }
-<span class="nc" id="L82">        } catch (Exception e) {</span>
-<span class="nc" id="L83">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L84">                .body(ApiResponse.error(&quot;Error interno al obtener jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L82">        } catch (Exception e) {</span>
+<span class="fc" id="L83">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L84">                .body(ApiResponse.error(&quot;Error interno al obtener jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -90,49 +90,49 @@ import java.util.Optional;
     public ResponseEntity&lt;ApiResponse&lt;JornadaDTO&gt;&gt; crear(@RequestBody JornadaDTO jornadaDTO) {
         try {
             // Validaciones específicas de campos requeridos
-<span class="nc bnc" id="L93" title="All 4 branches missed.">            if (jornadaDTO.getNombre() == null || jornadaDTO.getNombre().trim().isEmpty()) {</span>
-<span class="nc" id="L94">                return ResponseEntity.badRequest()</span>
-<span class="nc" id="L95">                    .body(ApiResponse.error(&quot;El campo 'nombre' es obligatorio para crear una jornada&quot;));</span>
+<span class="pc bpc" id="L93" title="1 of 4 branches missed.">            if (jornadaDTO.getNombre() == null || jornadaDTO.getNombre().trim().isEmpty()) {</span>
+<span class="fc" id="L94">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L95">                    .body(ApiResponse.error(&quot;El campo 'nombre' es obligatorio para crear una jornada&quot;));</span>
             }
 
             // Validar límites de cuestionarios y combos: la lista viene por huecos, los nulls no cuentan
-<span class="nc" id="L99">            int cuestionariosElegidos = SlotsJornada.idsAsignados(jornadaDTO.getCuestionarioIds()).size();</span>
-<span class="nc" id="L100">            int combosElegidos = SlotsJornada.idsAsignados(jornadaDTO.getComboIds()).size();</span>
-<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (cuestionariosElegidos &gt; SlotsJornada.TOTAL) {</span>
-<span class="nc" id="L102">                return ResponseEntity.badRequest()</span>
-<span class="nc" id="L103">                    .body(ApiResponse.error(&quot;Una jornada puede tener máximo &quot; + SlotsJornada.TOTAL + &quot; cuestionarios. Has seleccionado &quot; + cuestionariosElegidos + &quot; cuestionarios. Deselecciona &quot; + (cuestionariosElegidos - SlotsJornada.TOTAL) + &quot; cuestionarios.&quot;));</span>
+<span class="fc" id="L99">            int cuestionariosElegidos = SlotsJornada.idsAsignados(jornadaDTO.getCuestionarioIds()).size();</span>
+<span class="fc" id="L100">            int combosElegidos = SlotsJornada.idsAsignados(jornadaDTO.getComboIds()).size();</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">            if (cuestionariosElegidos &gt; SlotsJornada.TOTAL) {</span>
+<span class="fc" id="L102">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L103">                    .body(ApiResponse.error(&quot;Una jornada puede tener máximo &quot; + SlotsJornada.TOTAL + &quot; cuestionarios. Has seleccionado &quot; + cuestionariosElegidos + &quot; cuestionarios. Deselecciona &quot; + (cuestionariosElegidos - SlotsJornada.TOTAL) + &quot; cuestionarios.&quot;));</span>
             }
-<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (combosElegidos &gt; SlotsJornada.TOTAL) {</span>
-<span class="nc" id="L106">                return ResponseEntity.badRequest()</span>
-<span class="nc" id="L107">                    .body(ApiResponse.error(&quot;Una jornada puede tener máximo &quot; + SlotsJornada.TOTAL + &quot; combos. Has seleccionado &quot; + combosElegidos + &quot; combos. Deselecciona &quot; + (combosElegidos - SlotsJornada.TOTAL) + &quot; combos.&quot;));</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">            if (combosElegidos &gt; SlotsJornada.TOTAL) {</span>
+<span class="fc" id="L106">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L107">                    .body(ApiResponse.error(&quot;Una jornada puede tener máximo &quot; + SlotsJornada.TOTAL + &quot; combos. Has seleccionado &quot; + combosElegidos + &quot; combos. Deselecciona &quot; + (combosElegidos - SlotsJornada.TOTAL) + &quot; combos.&quot;));</span>
             }
 
             // Verificar autenticación
-<span class="nc" id="L111">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
-<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
-<span class="nc" id="L113">                return ResponseEntity.status(401)</span>
-<span class="nc" id="L114">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
+<span class="fc" id="L111">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="fc" id="L113">                return ResponseEntity.status(401)</span>
+<span class="fc" id="L114">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
             }
             
-<span class="nc" id="L117">            Usuario currentUser = currentUserOpt.get();</span>
-<span class="nc" id="L118">            JornadaDTO nuevaJornada = jornadaService.crear(jornadaDTO, currentUser.getId());</span>
+<span class="fc" id="L117">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="fc" id="L118">            JornadaDTO nuevaJornada = jornadaService.crear(jornadaDTO, currentUser.getId());</span>
             
-<span class="nc" id="L120">            String mensaje = &quot;Jornada '&quot; + nuevaJornada.getNombre() + &quot;' creada exitosamente&quot;;</span>
-<span class="nc bnc" id="L121" title="All 2 branches missed.">            if (cuestionariosElegidos &gt; 0) {</span>
-<span class="nc" id="L122">                mensaje += &quot; con &quot; + cuestionariosElegidos + &quot; cuestionarios&quot;;</span>
+<span class="fc" id="L120">            String mensaje = &quot;Jornada '&quot; + nuevaJornada.getNombre() + &quot;' creada exitosamente&quot;;</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">            if (cuestionariosElegidos &gt; 0) {</span>
+<span class="fc" id="L122">                mensaje += &quot; con &quot; + cuestionariosElegidos + &quot; cuestionarios&quot;;</span>
             }
-<span class="nc bnc" id="L124" title="All 2 branches missed.">            if (combosElegidos &gt; 0) {</span>
-<span class="nc" id="L125">                mensaje += &quot; y &quot; + combosElegidos + &quot; combos&quot;;</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (combosElegidos &gt; 0) {</span>
+<span class="fc" id="L125">                mensaje += &quot; y &quot; + combosElegidos + &quot; combos&quot;;</span>
             }
             
-<span class="nc" id="L128">            return ResponseEntity.ok(ApiResponse.exitoso(mensaje, nuevaJornada));</span>
+<span class="fc" id="L128">            return ResponseEntity.ok(ApiResponse.exitoso(mensaje, nuevaJornada));</span>
             
-<span class="nc" id="L130">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L131">            return ResponseEntity.badRequest()</span>
-<span class="nc" id="L132">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
-<span class="nc" id="L133">        } catch (Exception e) {</span>
-<span class="nc" id="L134">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L135">                .body(ApiResponse.error(&quot;Error interno al crear jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L130">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L131">            return ResponseEntity.badRequest()</span>
+<span class="fc" id="L132">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L133">        } catch (Exception e) {</span>
+<span class="fc" id="L134">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L135">                .body(ApiResponse.error(&quot;Error interno al crear jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -140,19 +140,19 @@ import java.util.Optional;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;ApiResponse&lt;JornadaDTO&gt;&gt; actualizar(@PathVariable Long id, @RequestBody JornadaDTO jornadaDTO) {
         try {
-<span class="nc" id="L143">            editLockService.assertCanEdit(AuditLog.EntityType.JORNADA, id);</span>
-<span class="nc" id="L144">            JornadaDTO jornadaActualizada = jornadaService.actualizar(id, jornadaDTO);</span>
-<span class="nc" id="L145">            editLockService.logEntityUpdate(AuditLog.EntityType.JORNADA, id, &quot;Actualización de jornada&quot;);</span>
-<span class="nc" id="L146">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornada actualizada exitosamente&quot;, jornadaActualizada));</span>
-<span class="nc" id="L147">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L148">            return ResponseEntity.status(409)</span>
-<span class="nc" id="L149">                .body(ApiResponse.error(&quot;La jornada ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.&quot;));</span>
-<span class="nc" id="L150">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L151">            return ResponseEntity.badRequest()</span>
-<span class="nc" id="L152">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
-<span class="nc" id="L153">        } catch (Exception e) {</span>
-<span class="nc" id="L154">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L155">                .body(ApiResponse.error(&quot;Error al actualizar jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L143">            editLockService.assertCanEdit(AuditLog.EntityType.JORNADA, id);</span>
+<span class="fc" id="L144">            JornadaDTO jornadaActualizada = jornadaService.actualizar(id, jornadaDTO);</span>
+<span class="fc" id="L145">            editLockService.logEntityUpdate(AuditLog.EntityType.JORNADA, id, &quot;Actualización de jornada&quot;);</span>
+<span class="fc" id="L146">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornada actualizada exitosamente&quot;, jornadaActualizada));</span>
+<span class="fc" id="L147">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="fc" id="L148">            return ResponseEntity.status(409)</span>
+<span class="fc" id="L149">                .body(ApiResponse.error(&quot;La jornada ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.&quot;));</span>
+<span class="fc" id="L150">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L151">            return ResponseEntity.badRequest()</span>
+<span class="fc" id="L152">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L153">        } catch (Exception e) {</span>
+<span class="fc" id="L154">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L155">                .body(ApiResponse.error(&quot;Error al actualizar jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -160,14 +160,14 @@ import java.util.Optional;
     @PreAuthorize(&quot;@authorizationService.canDelete()&quot;)
     public ResponseEntity&lt;ApiResponse&lt;Void&gt;&gt; eliminar(@PathVariable Long id) {
         try {
-<span class="nc" id="L163">            jornadaService.eliminar(id);</span>
-<span class="nc" id="L164">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornada eliminada exitosamente&quot;, null));</span>
-<span class="nc" id="L165">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L166">            return ResponseEntity.badRequest()</span>
-<span class="nc" id="L167">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
-<span class="nc" id="L168">        } catch (Exception e) {</span>
-<span class="nc" id="L169">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L170">                .body(ApiResponse.error(&quot;Error al eliminar jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L163">            jornadaService.eliminar(id);</span>
+<span class="fc" id="L164">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Jornada eliminada exitosamente&quot;, null));</span>
+<span class="fc" id="L165">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L166">            return ResponseEntity.badRequest()</span>
+<span class="fc" id="L167">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L168">        } catch (Exception e) {</span>
+<span class="fc" id="L169">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L170">                .body(ApiResponse.error(&quot;Error al eliminar jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -175,25 +175,25 @@ import java.util.Optional;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;ApiResponse&lt;JornadaDTO&gt;&gt; cambiarEstado(@PathVariable Long id, @RequestBody Map&lt;String, String&gt; request) {
         try {
-<span class="nc" id="L178">            String nuevoEstado = request.get(&quot;estado&quot;);</span>
-<span class="nc bnc" id="L179" title="All 4 branches missed.">            if (nuevoEstado == null || nuevoEstado.trim().isEmpty()) {</span>
-<span class="nc" id="L180">                return ResponseEntity.badRequest()</span>
-<span class="nc" id="L181">                    .body(ApiResponse.error(&quot;El estado es requerido&quot;));</span>
+<span class="fc" id="L178">            String nuevoEstado = request.get(&quot;estado&quot;);</span>
+<span class="pc bpc" id="L179" title="1 of 4 branches missed.">            if (nuevoEstado == null || nuevoEstado.trim().isEmpty()) {</span>
+<span class="fc" id="L180">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L181">                    .body(ApiResponse.error(&quot;El estado es requerido&quot;));</span>
             }
             
-<span class="nc" id="L184">            editLockService.assertCanEdit(AuditLog.EntityType.JORNADA, id);</span>
-<span class="nc" id="L185">            JornadaDTO jornadaActualizada = jornadaService.cambiarEstado(id, nuevoEstado);</span>
-<span class="nc" id="L186">            editLockService.logEntityUpdate(AuditLog.EntityType.JORNADA, id, &quot;Cambio de estado de jornada&quot;);</span>
-<span class="nc" id="L187">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Estado actualizado exitosamente&quot;, jornadaActualizada));</span>
-<span class="nc" id="L188">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="nc" id="L189">            return ResponseEntity.status(409)</span>
-<span class="nc" id="L190">                .body(ApiResponse.error(&quot;La jornada ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.&quot;));</span>
-<span class="nc" id="L191">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L192">            return ResponseEntity.badRequest()</span>
-<span class="nc" id="L193">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
-<span class="nc" id="L194">        } catch (Exception e) {</span>
-<span class="nc" id="L195">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L196">                .body(ApiResponse.error(&quot;Error al cambiar estado: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L184">            editLockService.assertCanEdit(AuditLog.EntityType.JORNADA, id);</span>
+<span class="fc" id="L185">            JornadaDTO jornadaActualizada = jornadaService.cambiarEstado(id, nuevoEstado);</span>
+<span class="fc" id="L186">            editLockService.logEntityUpdate(AuditLog.EntityType.JORNADA, id, &quot;Cambio de estado de jornada&quot;);</span>
+<span class="fc" id="L187">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Estado actualizado exitosamente&quot;, jornadaActualizada));</span>
+<span class="fc" id="L188">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="fc" id="L189">            return ResponseEntity.status(409)</span>
+<span class="fc" id="L190">                .body(ApiResponse.error(&quot;La jornada ha sido modificada por otro usuario. Por favor, recarga e intenta nuevamente.&quot;));</span>
+<span class="fc" id="L191">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L192">            return ResponseEntity.badRequest()</span>
+<span class="fc" id="L193">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L194">        } catch (Exception e) {</span>
+<span class="fc" id="L195">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L196">                .body(ApiResponse.error(&quot;Error al cambiar estado: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -201,32 +201,32 @@ import java.util.Optional;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;byte[]&gt; exportarExcel(@PathVariable Long id) {
         try {
-<span class="nc" id="L204">            byte[] excelData = jornadaService.exportarExcel(id);</span>
+<span class="fc" id="L204">            byte[] excelData = jornadaService.exportarExcel(id);</span>
             
             // Obtener información de la jornada para el nombre del archivo
-<span class="nc" id="L207">            Optional&lt;JornadaDTO&gt; jornada = jornadaService.obtenerPorId(id);</span>
-<span class="nc" id="L208">            String nombreArchivo = &quot;jornada_&quot; + id;</span>
-<span class="nc bnc" id="L209" title="All 2 branches missed.">            if (jornada.isPresent()) {</span>
-<span class="nc" id="L210">                nombreArchivo = &quot;jornada_&quot; + jornada.get().getNombre().replaceAll(&quot;[^a-zA-Z0-9]&quot;, &quot;_&quot;);</span>
-<span class="nc bnc" id="L211" title="All 2 branches missed.">                if (jornada.get().getFechaJornada() != null) {</span>
-<span class="nc" id="L212">                    nombreArchivo += &quot;_&quot; + jornada.get().getFechaJornada().toString();</span>
+<span class="fc" id="L207">            Optional&lt;JornadaDTO&gt; jornada = jornadaService.obtenerPorId(id);</span>
+<span class="fc" id="L208">            String nombreArchivo = &quot;jornada_&quot; + id;</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">            if (jornada.isPresent()) {</span>
+<span class="fc" id="L210">                nombreArchivo = &quot;jornada_&quot; + jornada.get().getNombre().replaceAll(&quot;[^a-zA-Z0-9]&quot;, &quot;_&quot;);</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">                if (jornada.get().getFechaJornada() != null) {</span>
+<span class="fc" id="L212">                    nombreArchivo += &quot;_&quot; + jornada.get().getFechaJornada().toString();</span>
                 }
             }
-<span class="nc" id="L215">            nombreArchivo += &quot;.xlsx&quot;;</span>
+<span class="fc" id="L215">            nombreArchivo += &quot;.xlsx&quot;;</span>
             
-<span class="nc" id="L217">            HttpHeaders headers = new HttpHeaders();</span>
-<span class="nc" id="L218">            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);</span>
-<span class="nc" id="L219">            headers.setContentDispositionFormData(&quot;attachment&quot;, nombreArchivo);</span>
-<span class="nc" id="L220">            headers.setContentLength(excelData.length);</span>
+<span class="fc" id="L217">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L218">            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);</span>
+<span class="fc" id="L219">            headers.setContentDispositionFormData(&quot;attachment&quot;, nombreArchivo);</span>
+<span class="fc" id="L220">            headers.setContentLength(excelData.length);</span>
             
-<span class="nc" id="L222">            return ResponseEntity.ok()</span>
-<span class="nc" id="L223">                .headers(headers)</span>
-<span class="nc" id="L224">                .body(excelData);</span>
+<span class="fc" id="L222">            return ResponseEntity.ok()</span>
+<span class="fc" id="L223">                .headers(headers)</span>
+<span class="fc" id="L224">                .body(excelData);</span>
                 
-<span class="nc" id="L226">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L227">            return ResponseEntity.notFound().build();</span>
-<span class="nc" id="L228">        } catch (Exception e) {</span>
-<span class="nc" id="L229">            return ResponseEntity.internalServerError().build();</span>
+<span class="fc" id="L226">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L227">            return ResponseEntity.notFound().build();</span>
+<span class="fc" id="L228">        } catch (Exception e) {</span>
+<span class="fc" id="L229">            return ResponseEntity.internalServerError().build();</span>
         }
     }
 
@@ -245,7 +245,7 @@ import java.util.Optional;
     }
 
     @PostMapping(&quot;/{id}/arrastre/{tipo}/{itemId}&quot;)
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; registrarArrastre(
             @PathVariable Long id,
             @PathVariable String tipo,
@@ -266,7 +266,7 @@ import java.util.Optional;
     }
 
     @DeleteMapping(&quot;/{id}/arrastre/{tipo}/{itemId}&quot;)
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; quitarArrastre(
             @PathVariable Long id,
             @PathVariable String tipo,
@@ -287,11 +287,11 @@ import java.util.Optional;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;ApiResponse&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt;&gt; obtenerCuestionariosDisponibles() {
         try {
-<span class="nc" id="L290">            List&lt;Map&lt;String, Object&gt;&gt; cuestionarios = jornadaService.obtenerCuestionariosDisponibles();</span>
-<span class="nc" id="L291">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Cuestionarios disponibles obtenidos&quot;, cuestionarios));</span>
-<span class="nc" id="L292">        } catch (Exception e) {</span>
-<span class="nc" id="L293">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L294">                .body(ApiResponse.error(&quot;Error al obtener cuestionarios disponibles: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L290">            List&lt;Map&lt;String, Object&gt;&gt; cuestionarios = jornadaService.obtenerCuestionariosDisponibles();</span>
+<span class="fc" id="L291">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Cuestionarios disponibles obtenidos&quot;, cuestionarios));</span>
+<span class="fc" id="L292">        } catch (Exception e) {</span>
+<span class="fc" id="L293">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L294">                .body(ApiResponse.error(&quot;Error al obtener cuestionarios disponibles: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -299,11 +299,11 @@ import java.util.Optional;
     @PreAuthorize(&quot;@authorizationService.canRead()&quot;)
     public ResponseEntity&lt;ApiResponse&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt;&gt; obtenerCombosDisponibles() {
         try {
-<span class="nc" id="L302">            List&lt;Map&lt;String, Object&gt;&gt; combos = jornadaService.obtenerCombosDisponibles();</span>
-<span class="nc" id="L303">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Combos disponibles obtenidos&quot;, combos));</span>
-<span class="nc" id="L304">        } catch (Exception e) {</span>
-<span class="nc" id="L305">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L306">                .body(ApiResponse.error(&quot;Error al obtener combos disponibles: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L302">            List&lt;Map&lt;String, Object&gt;&gt; combos = jornadaService.obtenerCombosDisponibles();</span>
+<span class="fc" id="L303">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Combos disponibles obtenidos&quot;, combos));</span>
+<span class="fc" id="L304">        } catch (Exception e) {</span>
+<span class="fc" id="L305">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L306">                .body(ApiResponse.error(&quot;Error al obtener combos disponibles: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -314,25 +314,25 @@ import java.util.Optional;
             @PathVariable Long cuestionarioId) {
         try {
             // Verificar autenticación
-<span class="nc" id="L317">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
-<span class="nc bnc" id="L318" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
-<span class="nc" id="L319">                return ResponseEntity.status(401)</span>
-<span class="nc" id="L320">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
+<span class="fc" id="L317">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="fc bfc" id="L318" title="All 2 branches covered.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="fc" id="L319">                return ResponseEntity.status(401)</span>
+<span class="fc" id="L320">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
             }
             
-<span class="nc" id="L323">            Usuario currentUser = currentUserOpt.get();</span>
-<span class="nc" id="L324">            jornadaService.reutilizarCuestionario(jornadaId, cuestionarioId, currentUser.getId());</span>
+<span class="fc" id="L323">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="fc" id="L324">            jornadaService.reutilizarCuestionario(jornadaId, cuestionarioId, currentUser.getId());</span>
             
-<span class="nc" id="L326">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
-                &quot;Cuestionario &quot; + cuestionarioId + &quot; reutilizado correctamente. Ahora está disponible para usar en otras jornadas.&quot;, 
-                &quot;Cuestionario reutilizado&quot;));
+<span class="fc" id="L326">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+<span class="fc" id="L327">                &quot;Cuestionario &quot; + cuestionarioId + &quot; reutilizado correctamente. Ahora está disponible para usar en otras jornadas.&quot;, </span>
+<span class="fc" id="L328">                &quot;Cuestionario reutilizado&quot;));</span>
                 
-<span class="nc" id="L330">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L331">            return ResponseEntity.badRequest()</span>
-<span class="nc" id="L332">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
-<span class="nc" id="L333">        } catch (Exception e) {</span>
-<span class="nc" id="L334">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L335">                .body(ApiResponse.error(&quot;Error al reutilizar cuestionario: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L330">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L331">            return ResponseEntity.badRequest()</span>
+<span class="fc" id="L332">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L333">        } catch (Exception e) {</span>
+<span class="fc" id="L334">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L335">                .body(ApiResponse.error(&quot;Error al reutilizar cuestionario: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -342,12 +342,12 @@ import java.util.Optional;
             @PathVariable Long jornadaId,
             @PathVariable Long cuestionarioId) {
         try {
-<span class="nc" id="L345">            jornadaService.quitarReutilizacionCuestionario(jornadaId, cuestionarioId);</span>
-<span class="nc" id="L346">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Reutilización de cuestionario quitada&quot;, &quot;OK&quot;));</span>
-<span class="nc" id="L347">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L348">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
-<span class="nc" id="L349">        } catch (Exception e) {</span>
-<span class="nc" id="L350">            return ResponseEntity.internalServerError().body(ApiResponse.error(&quot;Error al quitar reutilización: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L345">            jornadaService.quitarReutilizacionCuestionario(jornadaId, cuestionarioId);</span>
+<span class="fc" id="L346">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Reutilización de cuestionario quitada&quot;, &quot;OK&quot;));</span>
+<span class="fc" id="L347">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L348">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
+<span class="fc" id="L349">        } catch (Exception e) {</span>
+<span class="fc" id="L350">            return ResponseEntity.internalServerError().body(ApiResponse.error(&quot;Error al quitar reutilización: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -358,25 +358,25 @@ import java.util.Optional;
             @PathVariable Long comboId) {
         try {
             // Verificar autenticación
-<span class="nc" id="L361">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
-<span class="nc bnc" id="L362" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
-<span class="nc" id="L363">                return ResponseEntity.status(401)</span>
-<span class="nc" id="L364">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
+<span class="fc" id="L361">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="fc bfc" id="L362" title="All 2 branches covered.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="fc" id="L363">                return ResponseEntity.status(401)</span>
+<span class="fc" id="L364">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
             }
             
-<span class="nc" id="L367">            Usuario currentUser = currentUserOpt.get();</span>
-<span class="nc" id="L368">            jornadaService.reutilizarCombo(jornadaId, comboId, currentUser.getId());</span>
+<span class="fc" id="L367">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="fc" id="L368">            jornadaService.reutilizarCombo(jornadaId, comboId, currentUser.getId());</span>
             
-<span class="nc" id="L370">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
-                &quot;Combo &quot; + comboId + &quot; reutilizado correctamente. Ahora está disponible para usar en otras jornadas.&quot;, 
-                &quot;Combo reutilizado&quot;));
+<span class="fc" id="L370">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+<span class="fc" id="L371">                &quot;Combo &quot; + comboId + &quot; reutilizado correctamente. Ahora está disponible para usar en otras jornadas.&quot;, </span>
+<span class="fc" id="L372">                &quot;Combo reutilizado&quot;));</span>
                 
-<span class="nc" id="L374">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L375">            return ResponseEntity.badRequest()</span>
-<span class="nc" id="L376">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
-<span class="nc" id="L377">        } catch (Exception e) {</span>
-<span class="nc" id="L378">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L379">                .body(ApiResponse.error(&quot;Error al reutilizar combo: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L374">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L375">            return ResponseEntity.badRequest()</span>
+<span class="fc" id="L376">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L377">        } catch (Exception e) {</span>
+<span class="fc" id="L378">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L379">                .body(ApiResponse.error(&quot;Error al reutilizar combo: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -386,12 +386,12 @@ import java.util.Optional;
             @PathVariable Long jornadaId,
             @PathVariable Long comboId) {
         try {
-<span class="nc" id="L389">            jornadaService.quitarReutilizacionCombo(jornadaId, comboId);</span>
-<span class="nc" id="L390">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Reutilización de combo quitada&quot;, &quot;OK&quot;));</span>
-<span class="nc" id="L391">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L392">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
-<span class="nc" id="L393">        } catch (Exception e) {</span>
-<span class="nc" id="L394">            return ResponseEntity.internalServerError().body(ApiResponse.error(&quot;Error al quitar reutilización: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L389">            jornadaService.quitarReutilizacionCombo(jornadaId, comboId);</span>
+<span class="fc" id="L390">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Reutilización de combo quitada&quot;, &quot;OK&quot;));</span>
+<span class="fc" id="L391">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L392">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
+<span class="fc" id="L393">        } catch (Exception e) {</span>
+<span class="fc" id="L394">            return ResponseEntity.internalServerError().body(ApiResponse.error(&quot;Error al quitar reutilización: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -402,25 +402,25 @@ import java.util.Optional;
             @PathVariable Long comboId) {
         try {
             // Verificar autenticación
-<span class="nc" id="L405">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
-<span class="nc bnc" id="L406" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
-<span class="nc" id="L407">                return ResponseEntity.status(401)</span>
-<span class="nc" id="L408">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
+<span class="fc" id="L405">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="fc bfc" id="L406" title="All 2 branches covered.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="fc" id="L407">                return ResponseEntity.status(401)</span>
+<span class="fc" id="L408">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
             }
             
-<span class="nc" id="L411">            Usuario currentUser = currentUserOpt.get();</span>
-<span class="nc" id="L412">            jornadaService.reciclarComboEntero(jornadaId, comboId, currentUser.getId());</span>
+<span class="fc" id="L411">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="fc" id="L412">            jornadaService.reciclarComboEntero(jornadaId, comboId, currentUser.getId());</span>
             
-<span class="nc" id="L414">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
-                &quot;Combo &quot; + comboId + &quot; reciclado completamente. Marcado como liberado.&quot;, 
-                &quot;Combo reciclado&quot;));
+<span class="fc" id="L414">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+<span class="fc" id="L415">                &quot;Combo &quot; + comboId + &quot; reciclado completamente. Marcado como liberado.&quot;, </span>
+<span class="fc" id="L416">                &quot;Combo reciclado&quot;));</span>
                 
-<span class="nc" id="L418">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L419">            return ResponseEntity.badRequest()</span>
-<span class="nc" id="L420">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
-<span class="nc" id="L421">        } catch (Exception e) {</span>
-<span class="nc" id="L422">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L423">                .body(ApiResponse.error(&quot;Error al reciclar combo: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L418">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L419">            return ResponseEntity.badRequest()</span>
+<span class="fc" id="L420">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L421">        } catch (Exception e) {</span>
+<span class="fc" id="L422">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L423">                .body(ApiResponse.error(&quot;Error al reciclar combo: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -432,42 +432,42 @@ import java.util.Optional;
             @RequestBody Map&lt;String, Object&gt; request) {
         try {
             // Verificar autenticación
-<span class="nc" id="L435">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
-<span class="nc bnc" id="L436" title="All 2 branches missed.">            if (currentUserOpt.isEmpty()) {</span>
-<span class="nc" id="L437">                return ResponseEntity.status(401)</span>
-<span class="nc" id="L438">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
+<span class="fc" id="L435">            Optional&lt;Usuario&gt; currentUserOpt = authService.getCurrentUser();</span>
+<span class="fc bfc" id="L436" title="All 2 branches covered.">            if (currentUserOpt.isEmpty()) {</span>
+<span class="fc" id="L437">                return ResponseEntity.status(401)</span>
+<span class="fc" id="L438">                    .body(ApiResponse.error(&quot;Usuario no autenticado&quot;));</span>
             }
             
             // Obtener la pregunta usada del request
-<span class="nc" id="L442">            Long preguntaUsadaId = null;</span>
-<span class="nc bnc" id="L443" title="All 2 branches missed.">            if (request.containsKey(&quot;preguntaUsadaId&quot;)) {</span>
-<span class="nc" id="L444">                Object preguntaIdObj = request.get(&quot;preguntaUsadaId&quot;);</span>
-<span class="nc bnc" id="L445" title="All 2 branches missed.">                if (preguntaIdObj instanceof Number) {</span>
-<span class="nc" id="L446">                    preguntaUsadaId = ((Number) preguntaIdObj).longValue();</span>
-<span class="nc bnc" id="L447" title="All 2 branches missed.">                } else if (preguntaIdObj instanceof String) {</span>
-<span class="nc" id="L448">                    preguntaUsadaId = Long.valueOf((String) preguntaIdObj);</span>
+<span class="fc" id="L442">            Long preguntaUsadaId = null;</span>
+<span class="fc bfc" id="L443" title="All 2 branches covered.">            if (request.containsKey(&quot;preguntaUsadaId&quot;)) {</span>
+<span class="fc" id="L444">                Object preguntaIdObj = request.get(&quot;preguntaUsadaId&quot;);</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">                if (preguntaIdObj instanceof Number) {</span>
+<span class="fc" id="L446">                    preguntaUsadaId = ((Number) preguntaIdObj).longValue();</span>
+<span class="pc bpc" id="L447" title="1 of 2 branches missed.">                } else if (preguntaIdObj instanceof String) {</span>
+<span class="fc" id="L448">                    preguntaUsadaId = Long.valueOf((String) preguntaIdObj);</span>
                 }
             }
             
-<span class="nc bnc" id="L452" title="All 2 branches missed.">            if (preguntaUsadaId == null) {</span>
-<span class="nc" id="L453">                return ResponseEntity.badRequest()</span>
-<span class="nc" id="L454">                    .body(ApiResponse.error(&quot;Se debe especificar la pregunta usada&quot;));</span>
+<span class="fc bfc" id="L452" title="All 2 branches covered.">            if (preguntaUsadaId == null) {</span>
+<span class="fc" id="L453">                return ResponseEntity.badRequest()</span>
+<span class="fc" id="L454">                    .body(ApiResponse.error(&quot;Se debe especificar la pregunta usada&quot;));</span>
             }
             
-<span class="nc" id="L457">            Usuario currentUser = currentUserOpt.get();</span>
-<span class="nc" id="L458">            ReciclajeComboDTO reciclaje = jornadaService.reciclarComboParcial(</span>
-<span class="nc" id="L459">                jornadaId, comboId, preguntaUsadaId, currentUser.getId());</span>
+<span class="fc" id="L457">            Usuario currentUser = currentUserOpt.get();</span>
+<span class="fc" id="L458">            ReciclajeComboDTO reciclaje = jornadaService.reciclarComboParcial(</span>
+<span class="fc" id="L459">                jornadaId, comboId, preguntaUsadaId, currentUser.getId());</span>
             
-<span class="nc" id="L461">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
-                &quot;Combo reciclado parcialmente. Se creó un nuevo combo con las preguntas restantes.&quot;, 
-                reciclaje));
+<span class="fc" id="L461">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
+<span class="fc" id="L462">                &quot;Combo reciclado parcialmente. Se creó un nuevo combo con las preguntas restantes.&quot;, </span>
+<span class="fc" id="L463">                reciclaje));</span>
                 
-<span class="nc" id="L465">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L466">            return ResponseEntity.badRequest()</span>
-<span class="nc" id="L467">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
-<span class="nc" id="L468">        } catch (Exception e) {</span>
-<span class="nc" id="L469">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L470">                .body(ApiResponse.error(&quot;Error al reciclar combo parcialmente: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L465">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L466">            return ResponseEntity.badRequest()</span>
+<span class="fc" id="L467">                .body(ApiResponse.error(&quot;Error de validación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L468">        } catch (Exception e) {</span>
+<span class="fc" id="L469">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L470">                .body(ApiResponse.error(&quot;Error al reciclar combo parcialmente: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 
@@ -477,13 +477,13 @@ import java.util.Optional;
             @PathVariable Long jornadaId,
             @PathVariable Long comboHijoId) {
         try {
-<span class="nc" id="L480">            jornadaService.cancelarReciclajeCombo(jornadaId, comboHijoId);</span>
-<span class="nc" id="L481">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Reciclaje cancelado&quot;, &quot;OK&quot;));</span>
-<span class="nc" id="L482">        } catch (IllegalArgumentException | IllegalStateException e) {</span>
-<span class="nc" id="L483">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
-<span class="nc" id="L484">        } catch (Exception e) {</span>
-<span class="nc" id="L485">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L486">                .body(ApiResponse.error(&quot;Error al cancelar el reciclaje: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L480">            jornadaService.cancelarReciclajeCombo(jornadaId, comboHijoId);</span>
+<span class="fc" id="L481">            return ResponseEntity.ok(ApiResponse.exitoso(&quot;Reciclaje cancelado&quot;, &quot;OK&quot;));</span>
+<span class="fc" id="L482">        } catch (IllegalArgumentException | IllegalStateException e) {</span>
+<span class="fc" id="L483">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
+<span class="fc" id="L484">        } catch (Exception e) {</span>
+<span class="fc" id="L485">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L486">                .body(ApiResponse.error(&quot;Error al cancelar el reciclaje: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 } 

@@ -5,10 +5,12 @@ import com.lsnls.entity.Concursante;
 import com.lsnls.entity.Cuestionario;
 import com.lsnls.entity.Combo;
 import com.lsnls.entity.Jornada;
+import com.lsnls.entity.Programa;
 import com.lsnls.repository.ConcursanteRepository;
 import com.lsnls.repository.CuestionarioRepository;
 import com.lsnls.repository.ComboRepository;
 import com.lsnls.repository.JornadaRepository;
+import com.lsnls.repository.ProgramaRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +50,9 @@ public class ConcursanteService {
 
     @Autowired
     private JornadaRepository jornadaRepository;
+
+    @Autowired
+    private ProgramaRepository programaRepository;
     
     @PersistenceContext
     private EntityManager entityManager;
@@ -266,6 +271,10 @@ public class ConcursanteService {
         Integer ordenEscaletaOrig = concursante.getOrdenEscaleta();
         String estadoOrig = concursante.getEstado();
         String bonicoOrig = concursante.getBonico();
+        String duracionDireccionOrig = concursante.getDuracionDireccion();
+        String duracionFinalOrig = concursante.getDuracionFinal();
+        String momentosDestacadosOrig = concursante.getMomentosDestacados();
+        String valoracionFinalOrig = concursante.getValoracionFinal();
 
         // Obtener el cuestionario anterior para comparar
         Cuestionario cuestionarioAnterior = concursante.getCuestionario();
@@ -277,7 +286,11 @@ public class ConcursanteService {
         if (concursanteDTO.getVersion() != null) {
             concursante.setVersion(concursanteDTO.getVersion());
         }
-        restaurarProgramacionSiNoAutorizado(concursante, numeroProgramaOrig, ordenEscaletaOrig, estadoOrig, bonicoOrig);
+        restaurarProgramacionSiNoAutorizado(concursante, numeroProgramaOrig, ordenEscaletaOrig, estadoOrig, bonicoOrig,
+                duracionDireccionOrig, duracionFinalOrig, momentosDestacadosOrig, valoracionFinalOrig);
+        if (concursanteDTO.getOrdenEscaleta() == null) {
+            concursante.setOrdenEscaleta(ordenEscaletaOrig);
+        }
         concursante.setEstado(normalizarEstadoConcursante(concursante.getEstado()));
         validarDuracionesYEstado(concursante);
         
@@ -530,7 +543,16 @@ public class ConcursanteService {
     }
 
     public Page<ConcursanteDTO> findConcursantesSinProgramaPaginated(Pageable pageable, String busqueda) {
-        return concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, busqueda)
+        return findConcursantesSinProgramaPaginated(pageable, busqueda, null, null);
+    }
+
+    public Page<ConcursanteDTO> findConcursantesSinProgramaPaginated(Pageable pageable, String busqueda, String estado) {
+        return findConcursantesSinProgramaPaginated(pageable, busqueda, estado, null);
+    }
+
+    public Page<ConcursanteDTO> findConcursantesSinProgramaPaginated(Pageable pageable, String busqueda, String estado, Integer programaId) {
+        return concursanteRepository.findDisponiblesParaProgramaWithSearch(
+                pageable, busqueda, normalizarEstadoFiltroDisponibles(estado), programaId)
                 .map(this::convertToDTO);
     }
 
@@ -547,6 +569,10 @@ public class ConcursanteService {
             throw new IllegalArgumentException("Solo se pueden añadir a programas concursantes en estado grabado, editado o emitido.");
         }
 
+        Programa programa = programaRepository.findById(programaId)
+                .orElseThrow(() -> new RuntimeException("Programa no encontrado"));
+        exigirProgramaNoEmitido(programa, "añadir concursantes a");
+
         Integer numeroPrograma = programaId.intValue();
         Integer posicionAsignada = posicion;
 
@@ -554,15 +580,16 @@ public class ConcursanteService {
             if (posicionAsignada < 1 || posicionAsignada > 3) {
                 throw new RuntimeException("La posición debe estar entre 1 y 3");
             }
-            long ocupada = concursanteRepository.countByNumeroProgramaAndNumeroConcursante(numeroPrograma, posicionAsignada);
+            long ocupada = concursanteRepository.countByNumeroProgramaAndOrdenEscaletaAndIdNot(
+                numeroPrograma, posicionAsignada, concursanteId);
             if (ocupada > 0) {
                 throw new RuntimeException("La posición " + posicionAsignada + " ya está ocupada en este programa");
             }
         } else {
-            // Fallback: asignar primer hueco libre entre 1..3
             java.util.Set<Integer> usadas = concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(numeroPrograma)
                 .stream()
-                .map(Concursante::getNumeroConcursante)
+                .filter(c -> c.getId() == null || !c.getId().equals(concursanteId))
+                .map(Concursante::getOrdenEscaleta)
                 .filter(java.util.Objects::nonNull)
                 .collect(java.util.stream.Collectors.toSet());
             for (int i = 1; i <= 3; i++) {
@@ -577,7 +604,8 @@ public class ConcursanteService {
         }
 
         concursante.setNumeroPrograma(numeroPrograma);
-        concursante.setNumeroConcursante(posicionAsignada);
+        concursante.setOrdenEscaleta(posicionAsignada);
+        aplicarEstadoAlAsignarAPrograma(concursante);
         concursante = concursanteRepository.save(concursante);
         return convertToDTO(concursante);
     }
@@ -586,8 +614,15 @@ public class ConcursanteService {
     public ConcursanteDTO desasignarDePrograma(Long concursanteId) {
         Concursante concursante = concursanteRepository.findById(concursanteId)
                 .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
-        
+
+        if (concursante.getNumeroPrograma() != null) {
+            programaRepository.findById(concursante.getNumeroPrograma().longValue())
+                    .ifPresent(programa -> exigirProgramaNoEmitido(programa, "quitar concursantes de"));
+        }
+
         concursante.setNumeroPrograma(null);
+        concursante.setOrdenEscaleta(null);
+        aplicarEstadoAlDesasignarDePrograma(concursante);
         concursante = concursanteRepository.save(concursante);
         return convertToDTO(concursante);
     }
@@ -662,6 +697,10 @@ public class ConcursanteService {
                     break;
                 case "estado":
                     exigirProgramacionDireccion("el estado");
+                    if (concursante.getNumeroPrograma() != null) {
+                        throw new IllegalArgumentException(
+                            "El estado del concursante no se puede cambiar mientras esté asignado a un programa.");
+                    }
                     concursante.setEstado(normalizarEstadoConcursante(value != null ? value.toString() : null));
                     break;
                 case "numeroPrograma":
@@ -682,9 +721,11 @@ public class ConcursanteService {
                     concursante.setDuracion(value != null ? value.toString() : null);
                     break;
                 case "duracionDireccion":
+                    exigirProgramacionDireccion("la duración de dirección");
                     concursante.setDuracionDireccion(value != null ? value.toString() : null);
                     break;
                 case "duracionFinal":
+                    exigirProgramacionDireccion("la duración final");
                     concursante.setDuracionFinal(value != null ? value.toString() : null);
                     break;
                 case "premio":
@@ -694,12 +735,14 @@ public class ConcursanteService {
                     concursante.setFoto((String) value);
                     break;
                 case "momentosDestacados":
+                    exigirProgramacionDireccion("los momentos destacados");
                     concursante.setMomentosDestacados((String) value);
                     break;
                 case "factorX":
                     concursante.setFactorX((String) value);
                     break;
                 case "valoracionFinal":
+                    exigirProgramacionDireccion("la valoración final");
                     concursante.setValoracionFinal((String) value);
                     break;
                 case "creditosEspeciales":
@@ -723,10 +766,15 @@ public class ConcursanteService {
         concursante.setOrdenEscaleta(null);
         concursante.setBonico(null);
         concursante.setEstado("grabado");
+        concursante.setDuracionDireccion(null);
+        concursante.setDuracionFinal(null);
+        concursante.setMomentosDestacados(null);
+        concursante.setValoracionFinal(null);
     }
 
     private void restaurarProgramacionSiNoAutorizado(Concursante concursante,
-            Integer numeroPrograma, Integer ordenEscaleta, String estado, String bonico) {
+            Integer numeroPrograma, Integer ordenEscaleta, String estado, String bonico,
+            String duracionDireccion, String duracionFinal, String momentosDestacados, String valoracionFinal) {
         if (authorizationService.canEditProgramacionConcursante()) {
             return;
         }
@@ -734,6 +782,10 @@ public class ConcursanteService {
         concursante.setOrdenEscaleta(ordenEscaleta);
         concursante.setEstado(estado);
         concursante.setBonico(bonico);
+        concursante.setDuracionDireccion(duracionDireccion);
+        concursante.setDuracionFinal(duracionFinal);
+        concursante.setMomentosDestacados(momentosDestacados);
+        concursante.setValoracionFinal(valoracionFinal);
     }
 
     private void exigirPuedeEditarConcursante(Concursante concursante) {
@@ -770,6 +822,31 @@ public class ConcursanteService {
         return "grabado".equals(normalizado)
             || "editado".equals(normalizado)
             || "emitido".equals(normalizado);
+    }
+
+    private void exigirProgramaNoEmitido(Programa programa, String accion) {
+        if (programa != null && programa.getEstado() == Programa.EstadoPrograma.emitido) {
+            throw new IllegalArgumentException("No se pueden " + accion + " un programa emitido.");
+        }
+    }
+
+    private void aplicarEstadoAlAsignarAPrograma(Concursante concursante) {
+        if ("emitido".equalsIgnoreCase(normalizarEstadoConcursante(concursante.getEstado()))) {
+            return;
+        }
+        concursante.setEstado("programado");
+    }
+
+    private void aplicarEstadoAlDesasignarDePrograma(Concursante concursante) {
+        concursante.setEstado("editado");
+    }
+
+    private String normalizarEstadoFiltroDisponibles(String estado) {
+        if (estado == null || estado.isBlank()) {
+            return null;
+        }
+        String normalizado = estado.trim().toLowerCase();
+        return esEstadoAsignableAPrograma(normalizado) ? normalizado : null;
     }
 
     private String normalizarEstadoConcursante(String estado) {

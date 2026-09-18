@@ -180,19 +180,19 @@ class ConcursanteControllerTest {
     @Test
     void findConcursantesDisponibles_ok_devuelve200() {
         Page<ConcursanteDTO> page = new PageImpl<>(Collections.emptyList());
-        when(concursanteService.findConcursantesSinProgramaPaginated(any(Pageable.class), isNull())).thenReturn(page);
+        when(concursanteService.findConcursantesSinProgramaPaginated(any(Pageable.class), isNull(), isNull(), isNull())).thenReturn(page);
 
-        ResponseEntity<?> response = concursanteController.findConcursantesDisponibles(0, 10, null);
+        ResponseEntity<?> response = concursanteController.findConcursantesDisponibles(0, 10, null, null, null);
 
         assertEquals(200, response.getStatusCodeValue());
     }
 
     @Test
     void findConcursantesDisponibles_excepcion_devuelve500() {
-        when(concursanteService.findConcursantesSinProgramaPaginated(any(Pageable.class), isNull()))
+        when(concursanteService.findConcursantesSinProgramaPaginated(any(Pageable.class), isNull(), isNull(), isNull()))
                 .thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = concursanteController.findConcursantesDisponibles(0, 10, null);
+        ResponseEntity<?> response = concursanteController.findConcursantesDisponibles(0, 10, null, null, null);
 
         assertEquals(500, response.getStatusCodeValue());
     }

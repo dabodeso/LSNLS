@@ -45,6 +45,10 @@ public class Combo {
     @Column(name = "notas_direccion", columnDefinition = "TEXT")
     private String notasDireccion;
 
+    /** Pregunta usada al reciclar este combo parcialmente (el original conserva las 3). */
+    @Column(name = "pregunta_usada_id")
+    private Long preguntaUsadaId;
+
     @Column(name = "fecha_creacion")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCreacion;

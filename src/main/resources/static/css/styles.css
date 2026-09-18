@@ -19,6 +19,14 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Cuestionarios y combos: más anchos que .container, con margen lateral claro */
+.contenedor-listado {
+    max-width: 1480px;
+    margin: 1.5rem auto 0;
+    padding-left: 3rem;
+    padding-right: 3rem;
+}
+
 .navbar {
     background: linear-gradient(135deg, var(--primary-color) 0%, #0b5ed7 100%);
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -99,15 +107,17 @@ body {
     max-width: 300px;
 }
 
-/* Tabla de preguntas dentro de cuestionarios - tamaño fijo y compacto */
-.table-preguntas-cuestionario {
+/* Tabla de preguntas dentro de cuestionarios/combos - el sobrante va a Datos extra */
+.table-preguntas-cuestionario,
+.table-preguntas-combo {
     margin: 0;
     font-size: 0.9rem;
     width: 100%;
     table-layout: fixed;
 }
 
-.table-preguntas-cuestionario thead th {
+.table-preguntas-cuestionario thead th,
+.table-preguntas-combo thead th {
     background: linear-gradient(135deg, #495057 0%, #343a40 100%);
     color: white;
     border: none;
@@ -117,42 +127,80 @@ body {
     font-size: 0.85rem;
 }
 
-.table-preguntas-cuestionario tbody tr {
+.table-preguntas-cuestionario tbody tr,
+.table-preguntas-combo tbody tr {
     transition: background-color 0.2s ease;
 }
 
-.table-preguntas-cuestionario tbody tr:hover {
+.table-preguntas-cuestionario tbody tr:hover,
+.table-preguntas-combo tbody tr:hover {
     background-color: rgba(0,0,0,0.05);
 }
 
-.table-preguntas-cuestionario th:nth-child(1),
-.table-preguntas-cuestionario td:nth-child(1) {
-    width: 15%; /* Nivel */
-    text-align: center;
-}
-
-.table-preguntas-cuestionario th:nth-child(2),
-.table-preguntas-cuestionario td:nth-child(2) {
-    width: 40%; /* Pregunta */
-}
-
-.table-preguntas-cuestionario th:nth-child(3),
-.table-preguntas-cuestionario td:nth-child(3) {
-    width: 30%; /* Respuesta */
-}
-
-.table-preguntas-cuestionario th:nth-child(4),
-.table-preguntas-cuestionario td:nth-child(4) {
-    width: 15%; /* Acción */
-    text-align: center;
-}
-
-.table-preguntas-cuestionario td {
+.table-preguntas-cuestionario td,
+.table-preguntas-combo td {
     padding: 8px;
     vertical-align: middle;
     word-wrap: break-word;
     overflow-wrap: break-word;
     white-space: normal;
+}
+
+/* Cuestionarios: Nivel | Pregunta | Respuesta | Datos extra | Acción */
+.table-preguntas-cuestionario th:nth-child(1),
+.table-preguntas-cuestionario td:nth-child(1) {
+    width: 90px;
+    text-align: center;
+}
+.table-preguntas-cuestionario th:nth-child(2),
+.table-preguntas-cuestionario td:nth-child(2) {
+    width: 480px;
+}
+.table-preguntas-cuestionario th:nth-child(3),
+.table-preguntas-cuestionario td:nth-child(3) {
+    width: 260px;
+    font-weight: 700;
+}
+.table-preguntas-cuestionario th:nth-child(4),
+.table-preguntas-cuestionario td:nth-child(4) {
+    width: auto;
+    font-weight: 700;
+}
+.table-preguntas-cuestionario th:nth-child(5),
+.table-preguntas-cuestionario td:nth-child(5) {
+    width: 90px;
+    text-align: center;
+}
+
+/* Combos: Nivel | Factor | Pregunta | Respuesta | Datos extra | Acción */
+.table-preguntas-combo th:nth-child(1),
+.table-preguntas-combo td:nth-child(1) {
+    width: 80px;
+    text-align: center;
+}
+.table-preguntas-combo th:nth-child(2),
+.table-preguntas-combo td:nth-child(2) {
+    width: 80px;
+    text-align: center;
+}
+.table-preguntas-combo th:nth-child(3),
+.table-preguntas-combo td:nth-child(3) {
+    width: 420px;
+}
+.table-preguntas-combo th:nth-child(4),
+.table-preguntas-combo td:nth-child(4) {
+    width: 240px;
+    font-weight: 700;
+}
+.table-preguntas-combo th:nth-child(5),
+.table-preguntas-combo td:nth-child(5) {
+    width: auto;
+    font-weight: 700;
+}
+.table-preguntas-combo th:nth-child(6),
+.table-preguntas-combo td:nth-child(6) {
+    width: 90px;
+    text-align: center;
 }
 
 /* Separación entre cuestionarios */
@@ -973,6 +1021,21 @@ td:has(textarea) {
 
 .context-selected {
     background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+/* Pregunta usada en un reciclaje parcial de combo */
+.pregunta-combo-usada {
+    text-decoration: underline;
+    text-decoration-color: #e57373;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    color: #b71c1c;
+    background-color: #fdecea;
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+tr.pregunta-combo-usada-fila > td {
+    background-color: #fdecea !important;
 }
 
 /* Cuadros de texto ampliables en toda la app (alto y ancho), incluidas tablas */

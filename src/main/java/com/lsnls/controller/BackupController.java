@@ -3,7 +3,6 @@ package com.lsnls.controller;
 import com.lsnls.config.MensajesUsuario;
 
 import com.lsnls.service.BackupService;
-import com.lsnls.service.AuthorizationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -22,14 +21,11 @@ public class BackupController {
     @Autowired
     private BackupService backupService;
 
-    @Autowired
-    private AuthorizationService authService;
-
     /**
      * Lista todos los backups disponibles
      */
     @GetMapping
-    @PreAuthorize("@authorizationService.canValidate()")
+    @PreAuthorize("@authorizationService.canAdministrar()")
     public ResponseEntity<?> listBackups() {
         try {
             List<BackupService.BackupInfo> backups = backupService.listBackups();
@@ -44,7 +40,7 @@ public class BackupController {
      * Crea un backup manual
      */
     @PostMapping("/create")
-    @PreAuthorize("@authorizationService.canValidate()")
+    @PreAuthorize("@authorizationService.canAdministrar()")
     public ResponseEntity<Map<String, Object>> createBackup() {
         try {
             String backupFile = backupService.createBackup();
@@ -68,7 +64,7 @@ public class BackupController {
      * Restaura la base de datos desde un backup
      */
     @PostMapping("/restore/{fileName}")
-    @PreAuthorize("@authorizationService.canValidate()")
+    @PreAuthorize("@authorizationService.canAdministrar()")
     public ResponseEntity<Map<String, Object>> restoreBackup(@PathVariable String fileName) {
         try {
             boolean success = backupService.restoreBackup(fileName);
@@ -98,7 +94,7 @@ public class BackupController {
      * Ejecuta limpieza de backups antiguos
      */
     @PostMapping("/cleanup")
-    @PreAuthorize("@authorizationService.canValidate()")
+    @PreAuthorize("@authorizationService.canAdministrar()")
     public ResponseEntity<Map<String, Object>> cleanupBackups() {
         try {
             backupService.cleanupOldBackups();
@@ -120,7 +116,7 @@ public class BackupController {
      * Obtiene información del estado del sistema de backup
      */
     @GetMapping("/status")
-    @PreAuthorize("@authorizationService.canValidate()")
+    @PreAuthorize("@authorizationService.canAdministrar()")
     public ResponseEntity<?> getBackupStatus() {
         try {
             List<BackupService.BackupInfo> backups = backupService.listBackups();

@@ -20,75 +20,75 @@ import java.util.Map;
  * (SQL, Hibernate, getMessage de Java), se sustituye antes de enviarlo al navegador.
  */
 @ControllerAdvice
-<span class="fc" id="L23">public class ErrorResponseAdvice implements ResponseBodyAdvice&lt;Object&gt; {</span>
+<span class="nc" id="L23">public class ErrorResponseAdvice implements ResponseBodyAdvice&lt;Object&gt; {</span>
 
     @Override
     public boolean supports(MethodParameter returnType, Class&lt;? extends HttpMessageConverter&lt;?&gt;&gt; converterType) {
-<span class="fc" id="L27">        return true;</span>
+<span class="nc" id="L27">        return true;</span>
     }
 
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
                                   Class&lt;? extends HttpMessageConverter&lt;?&gt;&gt; selectedConverterType,
                                   ServerHttpRequest request, ServerHttpResponse response) {
-<span class="fc" id="L34">        int status = extraerStatus(response);</span>
-<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (status &lt; 400) {</span>
-<span class="fc" id="L36">            return body;</span>
+<span class="nc" id="L34">        int status = extraerStatus(response);</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (status &lt; 400) {</span>
+<span class="nc" id="L36">            return body;</span>
         }
-<span class="fc" id="L38">        return sanitizarCuerpo(body, status);</span>
+<span class="nc" id="L38">        return sanitizarCuerpo(body, status);</span>
     }
 
     private static int extraerStatus(ServerHttpResponse response) {
-<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        if (response instanceof ServletServerHttpResponse) {</span>
-<span class="fc" id="L43">            HttpServletResponse servletResponse = ((ServletServerHttpResponse) response).getServletResponse();</span>
-<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            if (servletResponse != null) {</span>
-<span class="fc" id="L45">                return servletResponse.getStatus();</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (response instanceof ServletServerHttpResponse) {</span>
+<span class="nc" id="L43">            HttpServletResponse servletResponse = ((ServletServerHttpResponse) response).getServletResponse();</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">            if (servletResponse != null) {</span>
+<span class="nc" id="L45">                return servletResponse.getStatus();</span>
             }
         }
 <span class="nc" id="L48">        return 500;</span>
     }
 
     static Object sanitizarCuerpo(Object body, int status) {
-<span class="fc" id="L52">        String fallback = MensajesUsuario.porHttp(status);</span>
-<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (body == null) {</span>
+<span class="nc" id="L52">        String fallback = MensajesUsuario.porHttp(status);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (body == null) {</span>
 <span class="nc" id="L54">            return Map.of(&quot;mensaje&quot;, fallback, &quot;message&quot;, fallback);</span>
         }
-<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (body instanceof String) {</span>
-<span class="fc" id="L57">            return MensajesUsuario.sanitizar((String) body, fallback);</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (body instanceof String) {</span>
+<span class="nc" id="L57">            return MensajesUsuario.sanitizar((String) body, fallback);</span>
         }
-<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (body instanceof ApiResponse) {</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (body instanceof ApiResponse) {</span>
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L61">            ApiResponse&lt;Object&gt; api = (ApiResponse&lt;Object&gt;) body;</span>
-<span class="pc bpc" id="L62" title="1 of 2 branches missed.">            if (!api.isExito()) {</span>
-<span class="fc" id="L63">                api.setMensaje(MensajesUsuario.sanitizar(api.getMensaje(), fallback));</span>
+<span class="nc" id="L61">            ApiResponse&lt;Object&gt; api = (ApiResponse&lt;Object&gt;) body;</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (!api.isExito()) {</span>
+<span class="nc" id="L63">                api.setMensaje(MensajesUsuario.sanitizar(api.getMensaje(), fallback));</span>
             }
-<span class="fc" id="L65">            return api;</span>
+<span class="nc" id="L65">            return api;</span>
         }
-<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (body instanceof ErrorResponse) {</span>
-<span class="fc" id="L68">            ErrorResponse error = (ErrorResponse) body;</span>
-<span class="fc" id="L69">            error.setMensaje(MensajesUsuario.sanitizar(error.getMensaje(), fallback));</span>
-<span class="pc bpc" id="L70" title="1 of 2 branches missed.">            if (MensajesUsuario.esTecnico(error.getError())) {</span>
-<span class="fc" id="L71">                error.setError(&quot;Error&quot;);</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (body instanceof ErrorResponse) {</span>
+<span class="nc" id="L68">            ErrorResponse error = (ErrorResponse) body;</span>
+<span class="nc" id="L69">            error.setMensaje(MensajesUsuario.sanitizar(error.getMensaje(), fallback));</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (MensajesUsuario.esTecnico(error.getError())) {</span>
+<span class="nc" id="L71">                error.setError(&quot;Error&quot;);</span>
             }
-<span class="fc" id="L73">            return error;</span>
+<span class="nc" id="L73">            return error;</span>
         }
-<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        if (body instanceof Map) {</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (body instanceof Map) {</span>
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L77">            Map&lt;Object, Object&gt; original = (Map&lt;Object, Object&gt;) body;</span>
-<span class="fc" id="L78">            Map&lt;Object, Object&gt; copia = new LinkedHashMap&lt;&gt;(original);</span>
-<span class="fc bfc" id="L79" title="All 2 branches covered.">            for (String clave : new String[] {&quot;mensaje&quot;, &quot;message&quot;, &quot;detail&quot;, &quot;error&quot;, &quot;title&quot;}) {</span>
-<span class="fc" id="L80">                Object valor = copia.get(clave);</span>
-<span class="fc bfc" id="L81" title="All 2 branches covered.">                if (valor instanceof String) {</span>
-<span class="fc" id="L82">                    String sanitizado = MensajesUsuario.sanitizar((String) valor, fallback);</span>
-<span class="pc bpc" id="L83" title="1 of 4 branches missed.">                    if (&quot;error&quot;.equals(clave) &amp;&amp; MensajesUsuario.esTecnico((String) valor)</span>
+<span class="nc" id="L77">            Map&lt;Object, Object&gt; original = (Map&lt;Object, Object&gt;) body;</span>
+<span class="nc" id="L78">            Map&lt;Object, Object&gt; copia = new LinkedHashMap&lt;&gt;(original);</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            for (String clave : new String[] {&quot;mensaje&quot;, &quot;message&quot;, &quot;detail&quot;, &quot;error&quot;, &quot;title&quot;}) {</span>
+<span class="nc" id="L80">                Object valor = copia.get(clave);</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">                if (valor instanceof String) {</span>
+<span class="nc" id="L82">                    String sanitizado = MensajesUsuario.sanitizar((String) valor, fallback);</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">                    if (&quot;error&quot;.equals(clave) &amp;&amp; MensajesUsuario.esTecnico((String) valor)</span>
 <span class="nc bnc" id="L84" title="All 2 branches missed.">                            &amp;&amp; sanitizado.equals(fallback)) {</span>
 <span class="nc" id="L85">                        copia.put(clave, &quot;Error&quot;);</span>
-                    } else {
-<span class="fc" id="L87">                        copia.put(clave, sanitizado);</span>
+<span class="nc" id="L86">                    } else {</span>
+<span class="nc" id="L87">                        copia.put(clave, sanitizado);</span>
                     }
                 }
             }
-<span class="fc" id="L91">            return copia;</span>
+<span class="nc" id="L91">            return copia;</span>
         }
 <span class="nc" id="L93">        return body;</span>
     }

@@ -736,6 +736,7 @@ public class ComboService {
         dto.put("tipo", c.getTipo());
         dto.put("tematica", c.getTematica());
         dto.put("notasDireccion", c.getNotasDireccion());
+        dto.put("preguntaUsadaId", c.getPreguntaUsadaId());
         dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
         // Jornada asignada (si existe)
         try {
@@ -793,7 +794,7 @@ public class ComboService {
             // Camino principal: usar posicion persistida — garantiza orden estable
             for (PreguntaCombo pc : preguntasValidas) {
                 String slot = "PM" + pc.getPosicion();
-                mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot));
+                mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot, c.getPreguntaUsadaId()));
             }
         } else {
             // Fallback legacy: inferir slot desde el factor convencional (PM1=X2, PM2=X3, PM3=X/0)
@@ -802,7 +803,7 @@ public class ComboService {
                 int pos = posicionDesdeFactor(pc.getFactorMultiplicacion());
                 String slot = "PM" + pos;
                 if (!mapPorSlot.containsKey(slot)) {
-                    mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot));
+                    mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot, c.getPreguntaUsadaId()));
                 }
             }
             // Si tras inferir por factor quedan colisiones sin resolver, asignar por ID
@@ -818,7 +819,7 @@ public class ComboService {
                 for (int i = 0; i < Math.min(sinSlot.size(), libres.size()); i++) {
                     PreguntaCombo pc = sinSlot.get(i);
                     String slot = libres.get(i);
-                    mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot));
+                    mapPorSlot.put(slot, dtoPreguntaCombo(pc, slot, c.getPreguntaUsadaId()));
                 }
             }
         }
@@ -856,12 +857,14 @@ public class ComboService {
             .executeUpdate();
     }
 
-    private Map<String, Object> dtoPreguntaCombo(PreguntaCombo pc, String slot) {
+    private Map<String, Object> dtoPreguntaCombo(PreguntaCombo pc, String slot, Long preguntaUsadaId) {
         Map<String, Object> pcdto = new java.util.HashMap<>();
         pcdto.put("pregunta", mapPreguntaToDTO(pc.getPregunta()));
         pcdto.put("factorMultiplicacion", pc.getFactorMultiplicacion());
         pcdto.put("posicion", pc.getPosicion());
         pcdto.put("slot", slot);
+        Long pid = pc.getPregunta() != null ? pc.getPregunta().getId() : null;
+        pcdto.put("usada", preguntaUsadaId != null && preguntaUsadaId.equals(pid));
         return pcdto;
     }
 
@@ -1163,6 +1166,8 @@ public class ComboService {
                 preguntaMap.put("factor", pc.getFactorMultiplicacion());
                 preguntaMap.put("datosExtra", pregunta.getDatosExtra());
                 preguntaMap.put("posicion", pc.getPosicion());
+                preguntaMap.put("usada", combo.getPreguntaUsadaId() != null
+                    && combo.getPreguntaUsadaId().equals(pregunta.getId()));
                 preguntas.add(preguntaMap);
             }
         }

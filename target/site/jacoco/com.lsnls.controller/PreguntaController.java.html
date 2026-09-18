@@ -150,8 +150,8 @@ import com.lsnls.service.EditLockService;
             try {
 <span class="fc" id="L151">                Pregunta.NivelPregunta.valueOf(dto.nivel);</span>
 <span class="fc" id="L152">            } catch (IllegalArgumentException e) {</span>
-<span class="fc" id="L153">                return ResponseEntity.badRequest().body(&quot;Nivel '&quot; + dto.nivel + &quot;' no válido. Niveles permitidos: _0, _1LS, _2NLS, _3LS, _4NLS, _5LS, _5NLS&quot;);</span>
-<span class="fc" id="L154">            }</span>
+<span class="fc" id="L153">                return ResponseEntity.badRequest().body(&quot;Nivel '&quot; + dto.nivel.replaceFirst(&quot;^_&quot;, &quot;&quot;) + &quot;' no válido. Niveles permitidos: 0, 1LS, 2NLS, 3LS, 4NLS, 5LS, 5NLS&quot;);</span>
+            }
 
             // Verificar permisos específicos
 <span class="fc bfc" id="L157" title="All 2 branches covered.">            if (!authService.canCreatePregunta()) {</span>
@@ -185,19 +185,19 @@ import com.lsnls.service.EditLockService;
 <span class="fc" id="L185">                    estadoInicial = Pregunta.EstadoPregunta.valueOf(dto.estado.trim());</span>
 <span class="fc" id="L186">                } catch (IllegalArgumentException e) {</span>
 <span class="fc" id="L187">                    return ResponseEntity.badRequest().body(&quot;Estado inválido: &quot; + dto.estado);</span>
-<span class="fc" id="L188">                }</span>
+                }
             }
 <span class="fc bfc" id="L190" title="All 2 branches covered.">            if (estadoInicial == Pregunta.EstadoPregunta.para_verificar) {</span>
 <span class="fc" id="L191">                preguntaService.validarRequisitosParaVerificar(</span>
-                    dto.tematica, dto.pregunta, dto.respuesta, dto.fuentes);
-<span class="fc bfc" id="L193" title="All 2 branches covered.">                if (!authService.canChangeEstadoPregunta(</span>
-                        Pregunta.EstadoPregunta.borrador, Pregunta.EstadoPregunta.para_verificar)) {
+<span class="fc" id="L192">                    dto.tematica, dto.pregunta, dto.respuesta, dto.fuentes);</span>
+<span class="fc" id="L193">                if (!authService.canChangeEstadoPregunta(</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                        Pregunta.EstadoPregunta.borrador, Pregunta.EstadoPregunta.para_verificar)) {</span>
 <span class="fc" id="L195">                    return ResponseEntity.status(403).body(</span>
-                        &quot;No tienes permisos para crear preguntas en estado 'para verificar'&quot;);
+<span class="fc" id="L196">                        &quot;No tienes permisos para crear preguntas en estado 'para verificar'&quot;);</span>
                 }
 <span class="fc bfc" id="L198" title="All 2 branches covered.">            } else if (estadoInicial != Pregunta.EstadoPregunta.borrador) {</span>
 <span class="fc" id="L199">                return ResponseEntity.badRequest().body(</span>
-                    &quot;Solo se puede crear en estado 'borrador' o 'para_verificar'&quot;);
+<span class="fc" id="L200">                    &quot;Solo se puede crear en estado 'borrador' o 'para_verificar'&quot;);</span>
             }
 <span class="fc" id="L202">            pregunta.setEstado(estadoInicial);</span>
 
@@ -267,7 +267,7 @@ import com.lsnls.service.EditLockService;
 <span class="fc" id="L267">                } catch (IllegalArgumentException e) {</span>
 <span class="fc" id="L268">                    log.error(&quot;[ACTUALIZAR] Estado inválido: {}&quot;, dto.getEstado());</span>
 <span class="fc" id="L269">                    return ResponseEntity.badRequest().body(&quot;Estado inválido: &quot; + dto.getEstado());</span>
-<span class="nc" id="L270">                }</span>
+                }
             }
             
 <span class="fc" id="L273">            editLockService.assertCanEdit(AuditLog.EntityType.PREGUNTA, id);</span>
@@ -337,7 +337,7 @@ import com.lsnls.service.EditLockService;
             // CAMBIO ATÓMICO DE ESTADO con verificación de concurrencia
 <span class="fc" id="L338">            preguntaService.cambiarEstadoAtomico(id, estadoActual, nuevoEstado, usuarioActual);</span>
 <span class="fc" id="L339">            log.info(&quot;[CAMBIO ESTADO] Estado cambiado exitosamente para pregunta ID: {} - {} → {}&quot;, </span>
-                    id, estadoActual, nuevoEstado);
+<span class="fc" id="L340">                    id, estadoActual, nuevoEstado);</span>
 <span class="fc" id="L341">            editLockService.logEntityUpdate(AuditLog.EntityType.PREGUNTA, id, &quot;Cambio de estado de pregunta&quot;);</span>
             
             // Obtener la pregunta actualizada para devolverla
@@ -590,7 +590,7 @@ import com.lsnls.service.EditLockService;
 <span class="fc bfc" id="L590" title="All 2 branches covered.">            if (validationResult.isValid()) {</span>
 <span class="fc" id="L591">                return ResponseEntity.ok().body(Map.of(</span>
 <span class="fc" id="L592">                    &quot;valid&quot;, true,</span>
-                    &quot;message&quot;, &quot;La pregunta cumple con todos los requisitos&quot;,
+<span class="fc" id="L593">                    &quot;message&quot;, &quot;La pregunta cumple con todos los requisitos&quot;,</span>
 <span class="fc" id="L594">                    &quot;transformedData&quot;, Map.of(</span>
 <span class="fc" id="L595">                        &quot;pregunta&quot;, pregunta.getPregunta(),</span>
 <span class="fc" id="L596">                        &quot;respuesta&quot;, pregunta.getRespuesta(),</span>
@@ -633,8 +633,8 @@ import com.lsnls.service.EditLockService;
             }
 
 <span class="fc" id="L635">            return ResponseEntity.ok(Map.of(</span>
-                &quot;transformados&quot;, transformados,
-                &quot;message&quot;, &quot;Textos transformados correctamente&quot;
+<span class="fc" id="L636">                &quot;transformados&quot;, transformados,</span>
+<span class="fc" id="L637">                &quot;message&quot;, &quot;Textos transformados correctamente&quot;</span>
             ));
 <span class="fc" id="L639">        } catch (Exception e) {</span>
 <span class="fc" id="L640">            return ResponseEntity.badRequest().body(&quot;Error al transformar textos: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
@@ -717,7 +717,7 @@ import com.lsnls.service.EditLockService;
 
             // Soporte de multi-estado via CSV en 'estado' (ej: 'aprobada,verificada')
 <span class="fc" id="L719">            Page&lt;PreguntaDTO&gt; preguntas = preguntaService.filtrarPreguntasCompletoPaginado(</span>
-                nivel, factor, estado, tematica, subtema, preguntaFiltro, respuestaFiltro, autoria, texto, pageable);
+<span class="fc" id="L720">                nivel, factor, estado, tematica, subtema, preguntaFiltro, respuestaFiltro, autoria, texto, pageable);</span>
             
 <span class="fc" id="L722">            log.info(&quot;[FILTRAR] Preguntas encontradas - total: {}, página: {}&quot;, </span>
 <span class="fc" id="L723">                preguntas.getTotalElements(), preguntas.getNumber());</span>

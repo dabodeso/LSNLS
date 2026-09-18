@@ -926,9 +926,10 @@ const PreguntasManager = {
     },
 
     getNivelColor(nivel) {
-        if (nivel === '_0') return 'text-secondary fw-bold';
-        if (["_2NLS", "_4NLS", "_5NLS"].includes(nivel)) return 'text-danger fw-bold';
-        if (["_1LS", "_3LS", "_5LS"].includes(nivel)) return 'text-success fw-bold';
+        const n = Utils.formatearNivel(nivel);
+        if (n === '0' || nivel === '_0') return 'text-secondary fw-bold';
+        if (['2NLS', '4NLS', '5NLS'].includes(n)) return 'text-danger fw-bold';
+        if (['1LS', '3LS', '5LS'].includes(n)) return 'text-success fw-bold';
         return '';
     },
 
@@ -1051,7 +1052,9 @@ const PreguntasManager = {
                 const option = document.createElement('option');
                 option.value = opt;
                 option.text = opt === '_0' ? 'Sin nivel (0)' : Utils.formatearNivel(opt);
-                if (valorOriginal === opt) option.selected = true;
+                if (valorOriginal === opt || valorOriginal === Utils.formatearNivel(opt) || (opt === '_0' && (valorOriginal === '0' || valorOriginal === 'Sin nivel (0)'))) {
+                    option.selected = true;
+                }
                 input.appendChild(option);
             });
         } else if (campo === 'tematica') {
@@ -1492,7 +1495,7 @@ const PreguntasManager = {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${pregunta.id}</td>
-                    <td><span class="${this.getNivelColor(pregunta.nivel)}">${pregunta.nivel || ''}</span></td>
+                    <td><span class="${this.getNivelColor(pregunta.nivel)}">${Utils.formatearNivel(pregunta.nivel)}</span></td>
                     <td>${this.resaltarTexto(pregunta.pregunta, textoRespuesta)}</td>
                     <td>${this.resaltarTexto(pregunta.respuesta, textoRespuesta)}</td>
                     <td><span class="badge ${this.getEstadoColor(pregunta.estado)}">${pregunta.estado || ''}</span></td>
@@ -1602,7 +1605,7 @@ const PreguntasManager = {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${pregunta.id}</td>
-                    <td><span class="${this.getNivelColor(pregunta.nivel)}">${pregunta.nivel || ''}</span></td>
+                    <td><span class="${this.getNivelColor(pregunta.nivel)}">${Utils.formatearNivel(pregunta.nivel)}</span></td>
                     <td>${this.resaltarTexto(pregunta.pregunta, textoRespuesta)}</td>
                     <td>${this.resaltarTexto(pregunta.respuesta, textoRespuesta)}</td>
                     <td><span class="badge ${this.getEstadoColor(pregunta.estado)}">${pregunta.estado || ''}</span></td>

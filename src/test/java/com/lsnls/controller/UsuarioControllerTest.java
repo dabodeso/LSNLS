@@ -63,7 +63,7 @@ class UsuarioControllerTest {
 
     @Test
     void crear_sinPermiso_devuelve403() {
-        when(authService.canValidate()).thenReturn(false);
+        when(authService.canAdministrar()).thenReturn(false);
 
         ResponseEntity<?> response = usuarioController.crear(usuario(null, "ana", Usuario.RolUsuario.ROLE_GUION));
 
@@ -73,7 +73,7 @@ class UsuarioControllerTest {
 
     @Test
     void crear_nombreDuplicado_devuelve400() {
-        when(authService.canValidate()).thenReturn(true);
+        when(authService.canAdministrar()).thenReturn(true);
         when(usuarioService.obtenerPorNombre("ana")).thenReturn(Optional.of(usuario(2L, "ana", Usuario.RolUsuario.ROLE_GUION)));
 
         ResponseEntity<?> response = usuarioController.crear(usuario(null, "ana", Usuario.RolUsuario.ROLE_GUION));
@@ -85,7 +85,7 @@ class UsuarioControllerTest {
     @Test
     void crear_ok_devuelve200() {
         Usuario nuevo = usuario(5L, "ana", Usuario.RolUsuario.ROLE_VERIFICACION);
-        when(authService.canValidate()).thenReturn(true);
+        when(authService.canAdministrar()).thenReturn(true);
         when(usuarioService.obtenerPorNombre("ana")).thenReturn(Optional.empty());
         when(usuarioService.crear(nuevo)).thenReturn(nuevo);
 
@@ -98,7 +98,7 @@ class UsuarioControllerTest {
     @Test
     void crear_excepcion_devuelve400() {
         Usuario nuevo = usuario(null, "ana", Usuario.RolUsuario.ROLE_GUION);
-        when(authService.canValidate()).thenReturn(true);
+        when(authService.canAdministrar()).thenReturn(true);
         when(usuarioService.obtenerPorNombre("ana")).thenReturn(Optional.empty());
         when(usuarioService.crear(nuevo)).thenThrow(new RuntimeException("fail"));
 

@@ -164,12 +164,14 @@ public class JornadaService {
         if (jornadaDTO.getCuestionarioIds() != null) {
             Set<Long> actuales = idsDe(jornada.getCuestionarios());
             Set<Long> nuevos = SlotsJornada.idsAsignados(SlotsJornada.normalizarIds(jornadaDTO.getCuestionarioIds()));
+            validarCuestionariosNoQuitables(jornada.getCuestionarios(), nuevos);
             liberarCuestionariosQuitados(jornada.getCuestionarios(), nuevos);
             jornada.reemplazarCuestionariosPorSlot(cargarCuestionariosEnSlots(jornadaDTO.getCuestionarioIds(), actuales));
         }
         if (jornadaDTO.getComboIds() != null) {
             Set<Long> actuales = idsDe(jornada.getCombos());
             Set<Long> nuevos = SlotsJornada.idsAsignados(SlotsJornada.normalizarIds(jornadaDTO.getComboIds()));
+            validarCombosNoQuitables(jornada.getCombos(), nuevos);
             liberarCombosQuitados(jornada.getCombos(), nuevos);
             jornada.reemplazarCombosPorSlot(cargarCombosEnSlots(jornadaDTO.getComboIds(), actuales));
         }
@@ -269,6 +271,20 @@ public class JornadaService {
         Jornada jornada = jornadaRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada"));
 
+        log.debug("🔄 [JORNADA ESTADO] Solicitud de cambio de estado - Jornada " + id + " -> " + nuevoEstado);
+        final Jornada.EstadoJornada estado;
+        try {
+            estado = Jornada.EstadoJornada.valueOf(nuevoEstado);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Estado no válido: " + nuevoEstado);
+        }
+
+        if (estado == Jornada.EstadoJornada.en_grabacion) {
+            validarMultiplicadoresCombosParaGrabacion(jornada);
+        } else if (estado == Jornada.EstadoJornada.completada) {
+            validarGrabadosORecicladosParaCompletar(jornada);
+        }
+
         // UNDO: capturar estados previos de la jornada y de todos sus elementos
         // ANTES de la cascada, para poder revertirla exactamente
         Jornada.EstadoJornada estadoAnterior = jornada.getEstado();
@@ -288,16 +304,13 @@ public class JornadaService {
             }
         }
 
-        try {
-            log.debug("🔄 [JORNADA ESTADO] Solicitud de cambio de estado - Jornada " + id + " -> " + nuevoEstado);
-            Jornada.EstadoJornada estado = Jornada.EstadoJornada.valueOf(nuevoEstado);
-            jornada.setEstado(estado);
-            jornada = jornadaRepository.save(jornada);
-            log.debug("✅ [JORNADA ESTADO] Jornada " + id + " guardada con estado " + estado);
+        jornada.setEstado(estado);
+        jornada = jornadaRepository.save(jornada);
+        log.debug("✅ [JORNADA ESTADO] Jornada " + id + " guardada con estado " + estado);
 
-            // Si jornada queda 'archivada' (grabada en front) → marcar elementos en 'grabado'.
-            // Si jornada NO está 'archivada' (p.ej. 'preparacion' o 'completada') → marcar elementos en 'adjudicado'.
-            if (estado == Jornada.EstadoJornada.archivada) {
+        // Archivada → grabado. Lista/preparación → adjudicado.
+        // En grabación y completada no pisan el estado de cuestionarios/combos.
+        if (estado == Jornada.EstadoJornada.archivada) {
                 int totalC = 0, totalCmb = 0;
                 if (jornada.getCuestionarios() != null) {
                     log.debug("ℹ️ [JORNADA ESTADO] (GRABADA) Cuestionarios asignados a jornada " + id + ": " + jornada.getCuestionarios().size());
@@ -337,7 +350,8 @@ public class JornadaService {
                 } catch (Exception e) {
                     log.warn("⚠️ [JORNADA ESTADO] Error batch (grabado): " + e.getMessage());
                 }
-            } else {
+            } else if (estado == Jornada.EstadoJornada.lista
+                    || estado == Jornada.EstadoJornada.preparacion) {
                 int totalC = 0, totalCmb = 0;
                 if (jornada.getCuestionarios() != null) {
                     log.debug("ℹ️ [JORNADA ESTADO] (NO GRABADA) Cuestionarios asignados a jornada " + id + ": " + jornada.getCuestionarios().size());
@@ -377,18 +391,14 @@ public class JornadaService {
                 }
             }
 
-            // UNDO: registrar la operación con los estados previos capturados
-            if (estadoAnterior == null || !estadoAnterior.name().equals(nuevoEstado)) {
-                undoService.registrar("cambiar_estado_jornada",
-                    "Estado de jornada '" + jornada.getNombre() + "' (" +
-                        (estadoAnterior != null ? estadoAnterior.name() : "?") + " → " + nuevoEstado + ")",
-                    accionesUndo);
-            }
-
-            return convertirADTO(jornada);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Estado no válido: " + nuevoEstado);
+        if (estadoAnterior == null || !estadoAnterior.name().equals(nuevoEstado)) {
+            undoService.registrar("cambiar_estado_jornada",
+                "Estado de jornada '" + jornada.getNombre() + "' (" +
+                    (estadoAnterior != null ? estadoAnterior.name() : "?") + " → " + nuevoEstado + ")",
+                accionesUndo);
         }
+
+        return convertirADTO(jornada);
     }
 
     /**
@@ -481,6 +491,7 @@ public class JornadaService {
             resumen.setNotasDireccion(c.getNotasDireccion());
             resumen.setTotalPreguntas(c.getPreguntas() != null ? c.getPreguntas().size() : 0);
             resumen.setReutilizado(esReutilizado(jornada.getId(), "cuestionario_id", c.getId()));
+            resumen.setAsignadoAConcursante(estaAsignadoAConcursante(c));
             cuestionarios.set(i, resumen);
         }
         dto.setCuestionarioIds(cuestionarioIds);
@@ -504,12 +515,123 @@ public class JornadaService {
             resumen.setNotasDireccion(c.getNotasDireccion());
             resumen.setTotalPreguntas(c.getPreguntas() != null ? c.getPreguntas().size() : 0);
             resumen.setReutilizado(esReutilizado(jornada.getId(), "combo_id", c.getId()));
+            resumen.setAsignadoAConcursante(estaAsignadoAConcursante(c));
+            resumen.setMultiplicadorMaximo(multiplicadorMasAlto(c));
+            resumen.setPreguntaUsadaId(c.getPreguntaUsadaId());
             combos.set(i, resumen);
         }
         dto.setComboIds(comboIds);
         dto.setCombos(combos);
 
         return dto;
+    }
+
+    private void validarMultiplicadoresCombosParaGrabacion(Jornada jornada) {
+        List<String> pendientes = new ArrayList<>();
+        for (Combo combo : jornada.getCombosPorSlot()) {
+            if (combo == null) {
+                continue;
+            }
+            Set<PreguntaCombo> preguntas = combo.getPreguntas();
+            if (preguntas == null || preguntas.isEmpty()) {
+                pendientes.add("combo " + combo.getId());
+                continue;
+            }
+            boolean todosConNumero = true;
+            for (PreguntaCombo pc : preguntas) {
+                if (!factorTieneNumero(pc.getFactorMultiplicacion())) {
+                    todosConNumero = false;
+                    break;
+                }
+            }
+            if (!todosConNumero) {
+                pendientes.add("combo " + combo.getId());
+            }
+        }
+        if (!pendientes.isEmpty()) {
+            throw new IllegalArgumentException(
+                "Para pasar a En Grabación todos los multiplicadores de cada combo deben tener un número. No vale solo X. Pendientes: "
+                    + String.join(", ", pendientes) + ".");
+        }
+    }
+
+    private void validarGrabadosORecicladosParaCompletar(Jornada jornada) {
+        List<String> pendientes = new ArrayList<>();
+        for (Cuestionario c : jornada.getCuestionariosPorSlot()) {
+            if (c == null) {
+                continue;
+            }
+            boolean grabado = c.getEstado() == Cuestionario.EstadoCuestionario.grabado;
+            boolean reciclado = esReutilizado(jornada.getId(), "cuestionario_id", c.getId());
+            if (!grabado && !reciclado) {
+                pendientes.add("cuestionario " + c.getId());
+            }
+        }
+        for (Combo c : jornada.getCombosPorSlot()) {
+            if (c == null) {
+                continue;
+            }
+            boolean grabado = c.getEstado() == Combo.EstadoCombo.grabado;
+            boolean reciclado = c.getEstado() == Combo.EstadoCombo.reaprovechado
+                || esReutilizado(jornada.getId(), "combo_id", c.getId());
+            if (!grabado && !reciclado) {
+                pendientes.add("combo " + c.getId());
+            }
+        }
+        if (!pendientes.isEmpty()) {
+            throw new IllegalArgumentException(
+                "Para pasar a Completada todos los cuestionarios y combos deben estar grabados o reciclados. Pendientes: "
+                    + String.join(", ", pendientes) + ".");
+        }
+    }
+
+    private String multiplicadorMasAlto(Combo combo) {
+        if (combo == null || combo.getPreguntas() == null || combo.getPreguntas().isEmpty()) {
+            return null;
+        }
+        String mejor = null;
+        int mejorRango = -1;
+        for (PreguntaCombo pc : combo.getPreguntas()) {
+            String factor = pc.getFactorMultiplicacion();
+            if (!factorRelleno(factor)) {
+                continue;
+            }
+            int rango = rangoFactor(factor);
+            if (rango > mejorRango) {
+                mejorRango = rango;
+                mejor = normalizarFactor(factor);
+            }
+        }
+        return mejor;
+    }
+
+    private static boolean factorRelleno(String factor) {
+        return factor != null && !factor.trim().isEmpty();
+    }
+
+    private static boolean factorTieneNumero(String factor) {
+        return factorRelleno(factor) && factor.replaceAll("\\D+", "").length() > 0;
+    }
+
+    private static int rangoFactor(String factor) {
+        String digitos = factor.replaceAll("\\D+", "");
+        if (digitos.isEmpty()) {
+            return 100;
+        }
+        try {
+            return Integer.parseInt(digitos);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private static String normalizarFactor(String factor) {
+        String limpio = factor.trim().toUpperCase();
+        String digitos = limpio.replaceAll("\\D+", "");
+        if (digitos.isEmpty()) {
+            return "X";
+        }
+        return "X" + digitos;
     }
 
     private boolean esReutilizado(Long jornadaId, String columna, Long elementoId) {
@@ -541,6 +663,54 @@ public class JornadaService {
             }
         }
         return ids;
+    }
+
+    private boolean estaAsignadoAConcursante(Cuestionario cuestionario) {
+        if (cuestionario == null || cuestionario.getId() == null) {
+            return false;
+        }
+        return cuestionario.getEstado() == Cuestionario.EstadoCuestionario.grabado
+            || concursanteRepository.existsByCuestionario_Id(cuestionario.getId());
+    }
+
+    private boolean estaAsignadoAConcursante(Combo combo) {
+        if (combo == null || combo.getId() == null) {
+            return false;
+        }
+        return combo.getEstado() == Combo.EstadoCombo.grabado
+            || concursanteRepository.existsByCombo_Id(combo.getId());
+    }
+
+    private void validarCuestionariosNoQuitables(Set<Cuestionario> actuales, Set<Long> nuevosIds) {
+        if (actuales == null) {
+            return;
+        }
+        for (Cuestionario cuestionario : actuales) {
+            if (cuestionario == null || cuestionario.getId() == null || nuevosIds.contains(cuestionario.getId())) {
+                continue;
+            }
+            if (estaAsignadoAConcursante(cuestionario)) {
+                throw new IllegalArgumentException(
+                    "No se puede quitar el cuestionario " + cuestionario.getId()
+                        + " de la jornada porque está asignado a un concursante.");
+            }
+        }
+    }
+
+    private void validarCombosNoQuitables(Set<Combo> actuales, Set<Long> nuevosIds) {
+        if (actuales == null) {
+            return;
+        }
+        for (Combo combo : actuales) {
+            if (combo == null || combo.getId() == null || nuevosIds.contains(combo.getId())) {
+                continue;
+            }
+            if (estaAsignadoAConcursante(combo)) {
+                throw new IllegalArgumentException(
+                    "No se puede quitar el combo " + combo.getId()
+                        + " de la jornada porque está asignado a un concursante.");
+            }
+        }
     }
 
     private void liberarCuestionariosQuitados(Set<Cuestionario> actuales, Set<Long> nuevosIds) {
@@ -645,15 +815,22 @@ public class JornadaService {
             throw new IllegalArgumentException("El cuestionario " + cuestionarioId + " no está asignado a la jornada " + jornadaId);
         }
         
-        // Ponerlo disponible para nuevas jornadas: pasar de adjudicado/grabado -> aprobado (sin quitar de esta jornada)
+        // Solo se reciclan cuestionarios adjudicados. Grabado = ya colocado en un concursante.
         log.debug("========================================");
         log.debug("[REUTILIZAR-CUEST] INICIO - Cuestionario " + cuestionarioId + " de jornada " + jornadaId);
         
         try {
             Cuestionario.EstadoCuestionario estadoActual = cuestionario.getEstado();
             log.debug("[REUTILIZAR-CUEST] Estado actual: " + estadoActual);
+
+            if (estadoActual == Cuestionario.EstadoCuestionario.grabado
+                    || concursanteRepository.existsByCuestionario_Id(cuestionarioId)) {
+                throw new IllegalArgumentException(
+                    "No se puede reciclar el cuestionario " + cuestionarioId
+                        + " porque está grabado (asignado a un concursante).");
+            }
             
-            if (estadoActual == Cuestionario.EstadoCuestionario.adjudicado || estadoActual == Cuestionario.EstadoCuestionario.grabado) {
+            if (estadoActual == Cuestionario.EstadoCuestionario.adjudicado) {
                 log.debug("[REUTILIZAR-CUEST] Cambiando estado: " + estadoActual + " -> aprobado");
                 boolean exito = cuestionarioService.cambiarEstadoAtomico(
                     cuestionarioId,
@@ -672,7 +849,7 @@ public class JornadaService {
                 log.debug("[REUTILIZAR-CUEST] Ya estaba en estado aprobado");
             } else {
                 log.debug("[REUTILIZAR-CUEST] ERROR: Estado invalido " + estadoActual);
-                throw new IllegalArgumentException("El cuestionario " + cuestionarioId + " está en estado " + estadoActual + ". Solo se pueden reutilizar cuestionarios en estado 'adjudicado' o 'grabado'.");
+                throw new IllegalArgumentException("El cuestionario " + cuestionarioId + " está en estado " + estadoActual + ". Solo se pueden reutilizar cuestionarios en estado 'adjudicado'.");
             }
         } catch (IllegalStateException e) {
             throw new IllegalArgumentException("Error de concurrencia al reutilizar cuestionario " + cuestionarioId + ": " + e.getMessage());
@@ -991,8 +1168,8 @@ public class JornadaService {
         comboNuevo.setTipo(combo.getTipo());
         comboNuevo.setTematica(combo.getTematica());
         comboNuevo.setNotasDireccion("Combo derivado del combo " + comboId + " (reciclaje parcial) - " + (combo.getNotasDireccion() != null ? combo.getNotasDireccion() : ""));
-        // El combo derivado se asigna inmediatamente al concursante, por lo que debe ser asignable.
-        comboNuevo.setEstado(Combo.EstadoCombo.aprobado);
+        // Solo tiene las preguntas no usadas: queda incompleto hasta que se complete en Combos.
+        comboNuevo.setEstado(Combo.EstadoCombo.borrador);
         comboNuevo.setFechaCreacion(java.time.LocalDateTime.now());
         comboNuevo.setCreacionUsuario(combo.getCreacionUsuario());
         comboNuevo = comboRepository.save(comboNuevo);
@@ -1022,7 +1199,9 @@ public class JornadaService {
             preguntaComboRepository.save(pcNuevo);
         }
         
-        // 4) Mantener el combo original intacto en la jornada con su estado actual
+        // 4) Guardar en el combo original qué pregunta se usó y mantenerlo en la jornada
+        Long preguntaUsadaAnterior = combo.getPreguntaUsadaId();
+        combo.setPreguntaUsadaId(preguntaUsadaId);
         log.debug("🔄🔄🔄 [RECICLAR PARCIAL] Manteniendo estado del combo original " + comboId + ": " + estadoActual);
         comboRepository.save(combo);
         
@@ -1031,11 +1210,11 @@ public class JornadaService {
         
         // 6) Registrar el combo nuevo en el historial como hijo
         registrarHistorialComboHijo(jornada, comboNuevo, comboId, usuarioId);
-        registrarUndoReciclajeParcial(comboId, comboNuevo.getId(), idsHistorialPadreAntes);
+        registrarUndoReciclajeParcial(comboId, comboNuevo.getId(), idsHistorialPadreAntes, preguntaUsadaAnterior);
 
         log.debug("✅✅✅ [RECICLAR PARCIAL] Combo " + comboId + " reciclado parcialmente:");
         log.debug("   - Combo original " + comboId + ": estado=" + combo.getEstado() + ", preguntas=" + totalPreguntas + " (usada=" + preguntaUsadaId + ")");
-        log.debug("   - Combo nuevo " + comboNuevo.getId() + ": estado=aprobado, preguntas=" + preguntasNoUsadas.size());
+        log.debug("   - Combo nuevo " + comboNuevo.getId() + ": estado=borrador, preguntas=" + preguntasNoUsadas.size());
         log.debug("♻️♻️♻️ [RECICLAR PARCIAL] Reciclaje parcial completado para combo " + comboId);
         return new ReciclajeComboDTO(jornadaId, comboId, comboNuevo.getId(), preguntaUsadaId);
     }
@@ -1142,6 +1321,15 @@ public class JornadaService {
                 .executeUpdate();
         }
         comboRepository.deleteById(comboHijoId);
+        if (comboPadreId != null) {
+            final Long padreId = comboPadreId;
+            comboRepository.findById(padreId).ifPresent(padre -> {
+                accionesUndo.add(UndoService.accionActualizarCampos("combos", padreId,
+                    Collections.singletonMap("pregunta_usada_id", padre.getPreguntaUsadaId())));
+                padre.setPreguntaUsadaId(null);
+                comboRepository.save(padre);
+            });
+        }
         undoService.registrar("cancelar_reciclaje_combo",
                 "Cancelar reciclaje combo " + comboHijoId, accionesUndo);
     }
@@ -1162,7 +1350,7 @@ public class JornadaService {
         undoService.registrar("reciclar_combo_entero", "Reciclar combo " + comboId, acciones);
     }
 
-    private void registrarUndoReciclajeParcial(Long comboPadreId, Long comboHijoId, Set<Long> idsHistorialPadreAntes) {
+    private void registrarUndoReciclajeParcial(Long comboPadreId, Long comboHijoId, Set<Long> idsHistorialPadreAntes, Long preguntaUsadaAnterior) {
         if (comboHijoId == null) {
             return;
         }
@@ -1183,6 +1371,9 @@ public class JornadaService {
             }
         }
         acciones.add(UndoService.accionEliminarFila("combos", comboHijoId));
+        Map<String, Object> camposPadre = new LinkedHashMap<>();
+        camposPadre.put("pregunta_usada_id", preguntaUsadaAnterior);
+        acciones.add(UndoService.accionActualizarCampos("combos", comboPadreId, camposPadre));
         undoService.registrar("reciclar_combo_parcial",
                 "Reciclaje parcial combo " + comboPadreId + " → " + comboHijoId, acciones);
     }

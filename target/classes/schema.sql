@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS combos (
     tipo ENUM('P', 'A', 'D', 'R'),
     tematica VARCHAR(100),
     notas_direccion TEXT,
+    pregunta_usada_id BIGINT NULL,
     version BIGINT DEFAULT 0
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -302,4 +303,17 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Actualizar enum de estados de combos para incluir 'reaprovechado' y 'liberado'
-ALTER TABLE combos MODIFY COLUMN estado ENUM('borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado', 'reaprovechado', 'liberado') NOT NULL; 
+ALTER TABLE combos MODIFY COLUMN estado ENUM('borrador', 'revisar', 'corregir', 'aprobado', 'adjudicado', 'grabado', 'reaprovechado', 'liberado') NOT NULL;
+
+-- Pregunta usada al reciclar un combo parcialmente (tablas ya existentes).
+-- MySQL 8.0 no soporta ADD COLUMN IF NOT EXISTS (sí MariaDB).
+SET @col_exists := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'combos' AND COLUMN_NAME = 'pregunta_usada_id'
+);
+SET @sql := IF(@col_exists = 0,
+    'ALTER TABLE combos ADD COLUMN pregunta_usada_id BIGINT NULL',
+    'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt; 

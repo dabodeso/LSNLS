@@ -122,11 +122,11 @@ import com.lsnls.dto.ApiResponse;
             }
 
 <span class="fc bfc" id="L124" title="All 2 branches covered.">            boolean estadoDistintoBorrador = !&quot;borrador&quot;.equalsIgnoreCase(estadoCombo);</span>
-<span class="pc bpc" id="L125" title="1 of 4 branches missed.">            boolean exigeCompleto = &quot;aprobado&quot;.equalsIgnoreCase(estadoCombo)</span>
-<span class="pc bnc" id="L126" title="All 2 branches missed.">                || (estadoDistintoBorrador &amp;&amp; !authService.isAdmin());</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">            boolean exigeCompleto = &quot;aprobado&quot;.equalsIgnoreCase(estadoCombo)</span>
+<span class="pc bpc" id="L126" title="3 of 4 branches missed.">                || (estadoDistintoBorrador &amp;&amp; !authService.isAdmin());</span>
 <span class="pc bpc" id="L127" title="1 of 4 branches missed.">            if (exigeCompleto &amp;&amp; dto.getPreguntasMultiplicadoras().size() != 3) {</span>
 <span class="fc" id="L128">                return ResponseEntity.badRequest().body(</span>
-                    &quot;Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para un estado distinto de borrador&quot;);
+<span class="fc" id="L129">                    &quot;Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para un estado distinto de borrador&quot;);</span>
             }
 
             // Validar tipo de combo
@@ -144,7 +144,7 @@ import com.lsnls.dto.ApiResponse;
 <span class="fc" id="L144">                    return ResponseEntity.badRequest().body(&quot;Todas las preguntas multiplicadoras deben tener un factor asignado (X2, X3, X)&quot;);</span>
                 }
 <span class="fc" id="L146">                idsPreguntas.add(pm.getId());</span>
-<span class="fc" id="L147">            }</span>
+            }
             // Validar que no haya IDs duplicados comparando con el tamaño real de la lista
 <span class="fc bfc" id="L149" title="All 2 branches covered.">            if (idsPreguntas.size() != dto.getPreguntasMultiplicadoras().size()) {</span>
 <span class="fc" id="L150">                return ResponseEntity.badRequest().body(&quot;No se puede usar la misma pregunta para diferentes multiplicadores (PM1, PM2, PM3)&quot;);</span>
@@ -155,7 +155,7 @@ import com.lsnls.dto.ApiResponse;
 <span class="fc" id="L155">                Combo.TipoCombo.valueOf(dto.getTipo());</span>
 <span class="fc" id="L156">            } catch (IllegalArgumentException e) {</span>
 <span class="fc" id="L157">                return ResponseEntity.badRequest().body(&quot;Tipo de combo '&quot; + dto.getTipo() + &quot;' no válido. Tipos permitidos: P (Premio), A (Asequible), D (Difícil)&quot;);</span>
-<span class="fc" id="L158">            }</span>
+            }
             
             // CREAR COMBO DE FORMA ATÓMICA con todas las preguntas
             Combo combo;
@@ -168,7 +168,7 @@ import com.lsnls.dto.ApiResponse;
 <span class="fc" id="L168">                return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
 <span class="fc" id="L169">            } catch (RuntimeException e) {</span>
 <span class="fc" id="L170">                return ResponseEntity.badRequest().body(&quot;Error al crear combo: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="fc" id="L171">            }</span>
+            }
             
 <span class="fc" id="L173">            return ResponseEntity.ok(Map.of(</span>
 <span class="fc" id="L174">                &quot;message&quot;, &quot;Combo tipo &quot; + dto.getTipo() + &quot; creado correctamente&quot;,</span>
@@ -258,7 +258,7 @@ import com.lsnls.dto.ApiResponse;
             
 <span class="fc" id="L259">            log.info(&quot;[LIMPIAR PREGUNTAS] {} preguntas inválidas eliminadas del combo {}&quot;, preguntasEliminadas, comboId);</span>
 <span class="fc" id="L260">            return ResponseEntity.ok(Map.of(</span>
-                &quot;message&quot;, &quot;Preguntas inválidas limpiadas exitosamente&quot;,
+<span class="fc" id="L261">                &quot;message&quot;, &quot;Preguntas inválidas limpiadas exitosamente&quot;,</span>
 <span class="fc" id="L262">                &quot;preguntasEliminadas&quot;, preguntasEliminadas</span>
             ));
 <span class="fc" id="L264">        } catch (Exception e) {</span>
@@ -280,7 +280,7 @@ import com.lsnls.dto.ApiResponse;
 <span class="fc" id="L280">                dto.put(&quot;fechaCreacion&quot;, c.getFechaCreacion());</span>
 <span class="fc" id="L281">                dto.put(&quot;nivel&quot;, c.getNivel());</span>
 <span class="fc" id="L282">                resultado.add(dto);</span>
-<span class="fc" id="L283">            }</span>
+            }
 <span class="fc" id="L284">            return ResponseEntity.ok(resultado);</span>
 <span class="fc" id="L285">        } catch (Exception e) {</span>
 <span class="fc" id="L286">            log.error(&quot;Error al obtener combos para asignar&quot;, e);</span>
@@ -328,7 +328,7 @@ import com.lsnls.dto.ApiResponse;
             // Si se proporciona un ID, buscar por ID
 <span class="fc bfc" id="L329" title="All 4 branches covered.">            if (id != null &amp;&amp; !id.isEmpty()) {</span>
 <span class="fc" id="L330">                response = comboService.filtrarCombosPorId(id, page, size);</span>
-            } else {
+<span class="fc" id="L331">            } else {</span>
 <span class="fc" id="L332">                response = comboService.filtrarCombos(estado, tipo, tematica, subtema, texto, page, size);</span>
             }
 <span class="fc" id="L334">            return ResponseEntity.ok(response);</span>
@@ -367,12 +367,12 @@ import com.lsnls.dto.ApiResponse;
 <span class="fc" id="L367">                comboActualizado = comboService.cambiarEstado(id, nuevoEstado, authService.isAdmin());</span>
 <span class="fc" id="L368">            } catch (IllegalArgumentException e) {</span>
 <span class="fc" id="L369">                return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="fc" id="L370">            }</span>
+            }
 <span class="fc bfc" id="L371" title="All 2 branches covered.">            if (comboActualizado != null) {</span>
 <span class="fc" id="L372">                editLockService.logEntityUpdate(AuditLog.EntityType.COMBO, id, &quot;Cambio de estado de combo&quot;);</span>
 <span class="fc" id="L373">                return ResponseEntity.ok(Map.of(</span>
-                    &quot;message&quot;, &quot;Estado del combo cambiado exitosamente&quot;,
-                    &quot;estado&quot;, nuevoEstado
+<span class="fc" id="L374">                    &quot;message&quot;, &quot;Estado del combo cambiado exitosamente&quot;,</span>
+<span class="fc" id="L375">                    &quot;estado&quot;, nuevoEstado</span>
                 ));
             } else {
 <span class="fc" id="L378">                return ResponseEntity.badRequest().body(&quot;Error al cambiar el estado del combo&quot;);</span>
@@ -409,7 +409,7 @@ import com.lsnls.dto.ApiResponse;
 <span class="fc" id="L409">                    combo.setTipo(Combo.TipoCombo.valueOf(tipoStr));</span>
 <span class="fc" id="L410">                } catch (IllegalArgumentException e) {</span>
 <span class="fc" id="L411">                    return ResponseEntity.badRequest().body(&quot;Tipo de combo inválido: &quot; + tipoStr);</span>
-<span class="fc" id="L412">                }</span>
+                }
             }
             
             // Actualizar estado si se proporciona
@@ -418,8 +418,8 @@ import com.lsnls.dto.ApiResponse;
                 try {
 <span class="fc" id="L419">                    Combo.EstadoCombo nuevoEstado = Combo.EstadoCombo.valueOf(estadoStr);</span>
 <span class="fc" id="L420">                    comboService.validarTransicionEstado(combo.getEstado(), nuevoEstado, authService.isAdmin());</span>
-<span class="pc bpc" id="L421" title="1 of 4 branches missed.">                    boolean exigeCompleto = nuevoEstado == Combo.EstadoCombo.aprobado</span>
-<span class="pc bnc" id="L422" title="All 2 branches missed.">                        || (nuevoEstado != Combo.EstadoCombo.borrador &amp;&amp; !authService.isAdmin());</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">                    boolean exigeCompleto = nuevoEstado == Combo.EstadoCombo.aprobado</span>
+<span class="pc bpc" id="L422" title="3 of 4 branches missed.">                        || (nuevoEstado != Combo.EstadoCombo.borrador &amp;&amp; !authService.isAdmin());</span>
 <span class="fc bfc" id="L423" title="All 2 branches covered.">                    if (exigeCompleto) {</span>
                         // Preferir el payload de preguntas del propio request (si viene),
                         // porque en edición se sincronizan después del PUT.
@@ -428,9 +428,9 @@ import com.lsnls.dto.ApiResponse;
 <span class="fc" id="L428">                            int totalPms = ((java.util.List&lt;?&gt;) pmsObj).size();</span>
 <span class="pc bpc" id="L429" title="1 of 2 branches missed.">                            if (totalPms != 3) {</span>
 <span class="fc" id="L430">                                throw new IllegalArgumentException(</span>
-                                    &quot;Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para un estado distinto de borrador. Actual: &quot; + totalPms);
+<span class="fc" id="L431">                                    &quot;Un combo debe tener exactamente 3 preguntas multiplicadoras (PM1, PM2, PM3) para un estado distinto de borrador. Actual: &quot; + totalPms);</span>
                             }
-<span class="nc" id="L433">                        } else {</span>
+                        } else {
 <span class="nc" id="L434">                            Combo comboConPreguntas = comboService.obtenerConPreguntas(id)</span>
 <span class="nc" id="L435">                                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Combo no encontrado&quot;));</span>
 <span class="nc" id="L436">                            comboService.validarCompletoParaAprobar(comboConPreguntas);</span>
@@ -442,7 +442,7 @@ import com.lsnls.dto.ApiResponse;
 <span class="fc" id="L442">                        return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
                     }
 <span class="fc" id="L444">                    return ResponseEntity.badRequest().body(&quot;Estado de combo inválido: &quot; + estadoStr);</span>
-<span class="fc" id="L445">                }</span>
+                }
             }
             
             // Actualizar temática si se proporciona
@@ -495,16 +495,16 @@ import com.lsnls.dto.ApiResponse;
 <span class="pc bpc" id="L495" title="1 of 2 branches missed.">            String factorMultiplicacion = factorObj != null ? factorObj.toString() : &quot;&quot;;</span>
 
 <span class="fc" id="L497">            log.info(&quot;[ACTUALIZAR FACTOR] Actualizando factor de pregunta {} en combo {} a: {}&quot;,</span>
-                    preguntaId, comboId, factorMultiplicacion);
+<span class="fc" id="L498">                    preguntaId, comboId, factorMultiplicacion);</span>
 
 <span class="fc" id="L500">            boolean exito = comboService.actualizarFactorPregunta(comboId, preguntaId, factorMultiplicacion);</span>
 
 <span class="fc bfc" id="L502" title="All 2 branches covered.">            if (exito) {</span>
 <span class="fc" id="L503">                log.info(&quot;[ACTUALIZAR FACTOR] Factor actualizado exitosamente&quot;);</span>
 <span class="fc" id="L504">                return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Factor actualizado exitosamente&quot;, </span>
-                                               &quot;comboId&quot;, comboId,
-                                               &quot;preguntaId&quot;, preguntaId,
-                                               &quot;factor&quot;, factorMultiplicacion));
+<span class="fc" id="L505">                                               &quot;comboId&quot;, comboId,</span>
+<span class="fc" id="L506">                                               &quot;preguntaId&quot;, preguntaId,</span>
+<span class="fc" id="L507">                                               &quot;factor&quot;, factorMultiplicacion));</span>
             } else {
 <span class="fc" id="L509">                log.warn(&quot;[ACTUALIZAR FACTOR] No se pudo actualizar el factor&quot;);</span>
 <span class="fc" id="L510">                return ResponseEntity.badRequest().body(&quot;Error al actualizar factor: No se pudo completar la operación&quot;);</span>

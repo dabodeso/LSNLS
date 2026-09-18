@@ -221,38 +221,18 @@ const CombosManager = {
             this.cargando = true;
             this.actualizarPaginacion();
             
-            // Verificar si hay filtros activos
-            const estado = document.getElementById('filtro-estado-combo')?.value || '';
-            const tipo = document.getElementById('filtro-tipo-combo')?.value || '';
-            const tematica = document.getElementById('filtro-tematica-combo')?.value || '';
-            const subtema = document.getElementById('filtro-subtema-combo')?.value || '';
-            const busqueda = document.getElementById('buscar-combo')?.value || '';
+            const filtros = this.obtenerFiltrosActivos();
             
-            console.log(`🔍 [CARGAR MÁS COMBOS] Filtros activos: estado=${estado}, tipo=${tipo}, tematica=${tematica}, subtema=${subtema}, busqueda=${busqueda}`);
+            console.log(`🔍 [CARGAR MÁS COMBOS] Filtros activos:`, filtros);
             
-            // Si hay filtros activos, realizar solicitud con filtros
-            if (estado || tipo || tematica || subtema || busqueda) {
+            if (filtros.hayFiltros) {
                 console.log('🔄 [CARGAR MÁS COMBOS] Realizando solicitud con filtros para página ' + this.paginaActual);
                 
-                // Construir parámetros de búsqueda
                 const params = new URLSearchParams({
                     page: this.paginaActual,
                     size: this.tamanioPagina
                 });
-                
-                // Añadir filtros si existen
-                if (estado) params.append('estado', estado);
-                if (tipo) params.append('tipo', tipo);
-                if (tematica) params.append('tematica', tematica);
-                if (subtema) params.append('subtema', subtema);
-                // Si la búsqueda es numérica, usar 'id', sino usar 'texto' para buscar en preguntas/respuestas
-                if (busqueda) {
-                    if (/^\d+$/.test(busqueda.trim())) {
-                        params.append('id', busqueda);
-                    } else {
-                        params.append('texto', busqueda);
-                    }
-                }
+                this.anexarParamsFiltro(params, filtros);
                 
                 console.log('🔄 [CARGAR MÁS COMBOS] Parámetros:', params.toString());
                 
@@ -382,14 +362,9 @@ const CombosManager = {
         }
         this.paginaActual = pagina;
 
-        const estado = document.getElementById('filtro-estado-combo')?.value || '';
-        const tipo = document.getElementById('filtro-tipo-combo')?.value || '';
-        const tematica = document.getElementById('filtro-tematica-combo')?.value || '';
-        const subtema = document.getElementById('filtro-subtema-combo')?.value || '';
-        const busqueda = document.getElementById('buscar-combo')?.value || '';
-        const hayFiltros = !!(estado || tipo || tematica || subtema || busqueda);
+        const filtros = this.obtenerFiltrosActivos();
 
-        if (hayFiltros) {
+        if (filtros.hayFiltros) {
             this.combos = [];
             await window.filtrarCombos(false);
         } else {
@@ -402,8 +377,21 @@ const CombosManager = {
         const tipo = document.getElementById('filtro-tipo-combo')?.value || '';
         const tematica = document.getElementById('filtro-tematica-combo')?.value || '';
         const subtema = document.getElementById('filtro-subtema-combo')?.value || '';
+        const filtroId = (document.getElementById('filtro-id-combo')?.value || '').trim();
         const busqueda = document.getElementById('buscar-combo')?.value || '';
-        return { estado, tipo, tematica, subtema, busqueda, hayFiltros: !!(estado || tipo || tematica || subtema || busqueda) };
+        return { estado, tipo, tematica, subtema, filtroId, busqueda, hayFiltros: !!(estado || tipo || tematica || subtema || filtroId || busqueda) };
+    },
+
+    anexarParamsFiltro(params, filtros) {
+        if (filtros.estado) params.append('estado', filtros.estado);
+        if (filtros.tipo) params.append('tipo', filtros.tipo);
+        if (filtros.tematica) params.append('tematica', filtros.tematica);
+        if (filtros.subtema) params.append('subtema', filtros.subtema);
+        const idNumerico = /^\d+$/.test(filtros.filtroId || '')
+            ? filtros.filtroId
+            : (/^\d+$/.test((filtros.busqueda || '').trim()) ? filtros.busqueda.trim() : '');
+        if (idNumerico) params.append('id', idNumerico);
+        else if (filtros.busqueda) params.append('texto', filtros.busqueda);
     },
 
     async recargarConFiltros() {
@@ -445,6 +433,9 @@ const CombosManager = {
         if (filtros.estado && this.normalizarEstado(combo.estado) !== filtros.estado) return false;
         if (filtros.tipo && (combo.tipo || '') !== filtros.tipo) return false;
         if (filtros.tematica && (combo.tematica || '') !== filtros.tematica) return false;
+        if (filtros.filtroId) {
+            if (!/^\d+$/.test(filtros.filtroId) || String(combo.id) !== filtros.filtroId) return false;
+        }
         if (filtros.busqueda && /^\d+$/.test(filtros.busqueda.trim())) {
             return String(combo.id) === filtros.busqueda.trim();
         }
@@ -543,7 +534,7 @@ const CombosManager = {
             tr.setAttribute('data-id', c.id);
             tr.classList.add('fila-combo');
             tr.innerHTML = `
-                <td class="celda-numero-combo">${c.id ?? ''}</td>
+                <td class="celda-numero-combo">${c.id ?? ''}${c.preguntaUsadaId ? `<div class="mt-1"><span class="badge" style="background:#e57373;">Pregunta usada #${c.preguntaUsadaId}</span></div>` : ''}</td>
                 <td>
                     <select class="form-select form-select-sm" onchange="actualizarCombo(${c.id}, 'tipo', this.value)">
                         <option value="">Sin tipo</option>
@@ -566,7 +557,14 @@ const CombosManager = {
                     </select>${iconoReutilizadoCombo}`}
                 </td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
-                <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); CombosManager.mostrarHistorialCombo(${c.id})" title="Ver historial de reciclajes">
+                            <i class="fas fa-history"></i>
+                        </button>
+                    </div>
+                </td>
                 <td>
                     <button class="btn btn-sm btn-primary me-1" onclick="editarCombo(${c.id})" title="Editar combo">
                         <i class="fas fa-edit"></i>
@@ -591,7 +589,7 @@ const CombosManager = {
                 
                 if (p) {
                     // Mostrar nivel real de la pregunta y el factor como campos separados
-                    const nivelReal = p.nivel ? p.nivel.replace('_', '') : slotNivel;
+                    const nivelReal = p.nivel ? Utils.formatearNivel(p.nivel) : slotNivel;
                     
                     // Obtener el factor multiplicador de la pregunta o usar un valor por defecto basado en el slot
                     let factorMostrar = '';
@@ -632,18 +630,19 @@ const CombosManager = {
                 }, 100);
             }
                     
-                    filasPreguntas += `<tr data-id="${p.id}" data-nivel="${slotNivel}" style="cursor:pointer;">
-                        <td style="width:60px; max-width:60px;"><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(p.nivel) : ''}'>${nivelReal}</span></td>
-                        <td style="width:60px; max-width:60px;">
+                    const usada = Number(c.preguntaUsadaId) === Number(p.id);
+                    filasPreguntas += `<tr data-id="${p.id}" data-nivel="${slotNivel}" class="${usada ? 'pregunta-combo-usada-fila' : ''}" style="cursor:pointer;">
+                        <td><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(p.nivel) : ''}'>${nivelReal}</span></td>
+                        <td>
                             <div class="input-group input-group-sm">
                                 <input type="text" class="form-control form-control-sm" value="${factorMostrar}" 
                                        onchange="actualizarFactorPregunta(${c.id}, ${p.id}, this.value)" 
                                        onclick="event.stopPropagation();">
                             </div>
                         </td>
-                        <td class="fw-bold">${p.pregunta ?? ''}</td>
-                        <td>${p.respuesta ?? ''}</td>
-                        <td>${p.datosExtra ?? ''}</td>
+                        <td class="fw-bold">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${p.pregunta ?? ''}</span></td>
+                        <td class="fw-bold">${p.respuesta ?? ''}</td>
+                        <td class="fw-bold">${p.datosExtra ?? ''}</td>
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCombo(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
                     </tr>`;
                 } else {
@@ -657,8 +656,8 @@ const CombosManager = {
                     const nivelMostrar = tipoSlot + multiplicador;
                     
                     filasPreguntas += `<tr data-nivel="${slotNivel}">
-                        <td style="width:60px; max-width:60px;"><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(slotNivel) : ''}'>${tipoSlot}</span></td>
-                        <td style="width:60px; max-width:60px;" class="text-center text-muted">${multiplicador}</td>
+                        <td><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(slotNivel) : ''}'>${tipoSlot}</span></td>
+                        <td class="text-center text-muted">${multiplicador}</td>
                         <td class="text-center text-muted">(Vacío)</td>
                         <td class="text-center text-muted">-</td>
                         <td class="text-center text-muted">-</td>
@@ -670,15 +669,15 @@ const CombosManager = {
             const puedeEditarNotas = authManager.hasRole('ROLE_ADMIN') || authManager.hasRole('ROLE_DIRECCION');
             subtr.innerHTML = `<td colspan="6">
                 <div>
-                    <table class="table table-preguntas-cuestionario mb-0">
+                    <table class="table table-preguntas-combo mb-0">
                         <thead>
                             <tr>
-                                <th style="width:60px; max-width:60px;">Nivel</th>
-                                <th style="width:60px; max-width:60px;">Factor</th>
-                                <th style="width:40%; min-width:200px;">Pregunta</th>
-                                <th style="width:22%; min-width:120px;">Respuesta</th>
-                                <th style="width:18%; min-width:120px;">Datos extra</th>
-                                <th style="width:60px; max-width:60px;">Acción</th>
+                                <th>Nivel</th>
+                                <th>Factor</th>
+                                <th>Pregunta</th>
+                                <th>Respuesta</th>
+                                <th>Datos extra</th>
+                                <th>Acción</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -802,8 +801,9 @@ const CombosManager = {
     },
 
     getNivelColor(nivel) {
-        if (["_5NLS"].includes(nivel)) return 'text-danger fw-bold';
-        if (["_5LS"].includes(nivel)) return 'text-success fw-bold';
+        const n = Utils.formatearNivel(nivel);
+        if (n === '5NLS') return 'text-danger fw-bold';
+        if (n === '5LS') return 'text-success fw-bold';
         return '';
     },
 
@@ -815,6 +815,111 @@ const CombosManager = {
             case 'R': return 'Rescate (R)';
             default: return '-';
         }
+    },
+
+    extraerComboPadreId(notas) {
+        const match = String(notas || '').match(/COMBO_HIJO;PADRE:(\d+)/);
+        return match ? match[1] : null;
+    },
+
+    htmlEnlaceCombo(id, etiqueta) {
+        if (!id) return '';
+        return `<a href="combos.html?id=${id}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary me-1 mb-1">
+            <i class="fas fa-external-link-alt me-1"></i>${etiqueta} #${id}
+        </a>`;
+    },
+
+    htmlEnlacesReciclaje(item, comboActualId) {
+        const padreId = item.comboPadreId || this.extraerComboPadreId(item.notas);
+        let html = '';
+        if (padreId && String(padreId) !== String(comboActualId)) {
+            html += this.htmlEnlaceCombo(padreId, 'Combo padre');
+        }
+        const hijos = Array.isArray(item.comboHijosIds) ? item.comboHijosIds : [];
+        hijos.forEach(hijoId => {
+            if (hijoId && String(hijoId) !== String(comboActualId)) {
+                html += this.htmlEnlaceCombo(hijoId, 'Combo derivado');
+            }
+        });
+        return html ? `<div class="mt-2">${html}</div>` : '';
+    },
+
+    notasVisiblesHistorial(notas) {
+        if (!notas || String(notas).includes('RECICLAJE_PARCIAL')) return '';
+        return String(notas);
+    },
+
+    getBadgeColorHistorial(estado) {
+        const colores = {
+            asignado: 'primary',
+            usado: 'success',
+            no_usado: 'warning',
+            reaprovechado: 'info'
+        };
+        return colores[estado] || 'secondary';
+    },
+
+    getEstadoClassHistorial(estado) {
+        const clases = {
+            asignado: 'asignado',
+            usado: 'usado',
+            no_usado: 'no-usado',
+            reaprovechado: 'reaprovechado'
+        };
+        return clases[estado] || '';
+    },
+
+    async mostrarHistorialCombo(comboId) {
+        try {
+            const response = await apiManager.get(`/api/historial-jornadas/combo/${comboId}`);
+            const historial = response.datos || [];
+            const titulo = document.getElementById('modalHistorialTitulo');
+            if (titulo) {
+                titulo.innerHTML = `<i class="fas fa-history"></i> Historial del combo #${comboId}`;
+            }
+            this.pintarHistorialCombo(historial, comboId);
+            const modalEl = document.getElementById('modalHistorialCombo');
+            if (!modalEl) throw new Error('No se encontró el modal de historial');
+            new bootstrap.Modal(modalEl).show();
+        } catch (error) {
+            console.error('Error al cargar historial del combo:', error);
+            Toastify({
+                text: 'Error al cargar el historial de reciclajes',
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+        }
+    },
+
+    pintarHistorialCombo(historial, comboId) {
+        const container = document.getElementById('historialComboContainer');
+        if (!container) return;
+        if (!historial.length) {
+            container.innerHTML = '<div class="text-center py-3"><p class="text-muted mb-0">No hay historial de reciclajes para este combo</p></div>';
+            return;
+        }
+        container.innerHTML = historial.map(item => {
+            const estadoClass = this.getEstadoClassHistorial(item.estadoAsignacion);
+            const fechaAsignacion = item.fechaAsignacion ? new Date(item.fechaAsignacion).toLocaleString() : '';
+            const fechaUso = item.fechaUso ? new Date(item.fechaUso).toLocaleString() : '';
+            const notas = this.notasVisiblesHistorial(item.notas);
+            const reciclaje = String(item.notas || '').includes('RECICLAJE_PARCIAL');
+            return `
+                <div class="historial-item ${estadoClass}">
+                    <h6 class="mb-2">${item.jornadaNombre || 'Jornada'} ${item.jornadaId ? `#${item.jornadaId}` : ''}</h6>
+                    <p class="mb-1"><strong>Estado:</strong> <span class="badge bg-${this.getBadgeColorHistorial(item.estadoAsignacion)}">${item.estadoAsignacion || ''}</span>
+                    ${reciclaje ? '<span class="badge bg-secondary ms-1">Reciclaje parcial</span>' : ''}</p>
+                    ${fechaAsignacion ? `<p class="mb-1"><strong>Asignado:</strong> ${fechaAsignacion}</p>` : ''}
+                    ${fechaUso ? `<p class="mb-1"><strong>Usado:</strong> ${fechaUso}</p>` : ''}
+                    ${item.preguntaUsadaId ? `<p class="mb-1"><strong>Pregunta usada:</strong> #${item.preguntaUsadaId}</p>` : ''}
+                    ${notas ? `<p class="mb-1"><strong>Notas:</strong> ${notas}</p>` : ''}
+                    ${this.htmlEnlacesReciclaje(item, comboId)}
+                </div>
+            `;
+        }).join('');
     },
 };
 
@@ -843,13 +948,9 @@ window.filtrarCombos = async function(resetear = true) {
             CombosManager.ocultarAvisoDestacado();
             CombosManager.limpiarIdUrl();
         }
-        const estado = document.getElementById('filtro-estado-combo')?.value || '';
-        const tipo = document.getElementById('filtro-tipo-combo')?.value || '';
-        const tematica = document.getElementById('filtro-tematica-combo')?.value || '';
-        const subtema = document.getElementById('filtro-subtema-combo')?.value || '';
-        const busqueda = document.getElementById('buscar-combo')?.value || '';
+        const filtros = CombosManager.obtenerFiltrosActivos();
         
-        console.log(`🔍 [FILTRAR COMBOS] Filtros: estado=${estado}, tipo=${tipo}, tematica=${tematica}, subtema=${subtema}, busqueda=${busqueda}`);
+        console.log(`🔍 [FILTRAR COMBOS] Filtros:`, filtros);
 
         // Resetear paginación si es una nueva búsqueda
         if (resetear) {
@@ -870,12 +971,7 @@ window.filtrarCombos = async function(resetear = true) {
             size: CombosManager.tamanioPagina
         });
         
-        // Añadir filtros si existen
-        if (estado) params.append('estado', estado);
-        if (tipo) params.append('tipo', tipo);
-        if (tematica) params.append('tematica', tematica);
-        if (subtema) params.append('subtema', subtema);
-        if (busqueda) params.append('texto', busqueda); // Buscar en preguntas y respuestas
+        CombosManager.anexarParamsFiltro(params, filtros);
 
         console.log('🔍 [FILTRAR COMBOS] Parámetros de búsqueda:', params.toString());
 
@@ -939,6 +1035,8 @@ window.limpiarFiltrosCombos = async function() {
     document.getElementById('filtro-estado-combo').value = '';
     document.getElementById('filtro-tipo-combo').value = '';
     document.getElementById('filtro-tematica-combo').value = '';
+    const filtroIdCombo = document.getElementById('filtro-id-combo');
+    if (filtroIdCombo) filtroIdCombo.value = '';
     document.getElementById('buscar-combo').value = '';
     await CombosManager.cargarCombos();
 }
@@ -1325,6 +1423,13 @@ async function editarCombo(id) {
                     if (sel && texto) {
                         sel.value = pc.pregunta.id;
                         texto.value = `${pc.pregunta.pregunta} → ${pc.pregunta.respuesta}`;
+                        if (Number(combo.preguntaUsadaId) === Number(pc.pregunta.id)) {
+                            texto.classList.add('pregunta-combo-usada');
+                            texto.title = 'Pregunta usada en el reciclaje parcial';
+                        } else {
+                            texto.classList.remove('pregunta-combo-usada');
+                            texto.title = '';
+                        }
                         console.log(`[DEBUG_EDIT] Pregunta ID=${pc.pregunta.id} asignada al campo ${selId}`);
                     } else {
                         console.error(`[DEBUG_EDIT] No se encontraron los elementos para el slot ${pc.slot}`);
@@ -1540,7 +1645,7 @@ function renderizarPreguntasModal(preguntas, totalPages, currentPage) {
                     <div class="pregunta-meta">
                         <small class="text-muted">
                             Temática: ${pregunta.tematica || 'N/A'} | 
-                            Nivel: <span class="${nivelColor}">${pregunta.nivel}</span> | 
+                            Nivel: <span class="${nivelColor}">${Utils.formatearNivel(pregunta.nivel)}</span> | 
                             Estado: ${pregunta.estado}
                         </small>
                     </div>
@@ -1632,7 +1737,7 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
             <td class="fw-bold">${p.pregunta}</td>
             <td>${p.respuesta}</td>
             <td>${p.tematica}</td>
-            <td><span class="${CombosManager.getNivelColor(p.nivel)}">${p.nivel}</span></td>
+            <td><span class="${CombosManager.getNivelColor(p.nivel)}">${Utils.formatearNivel(p.nivel)}</span></td>
             <td>
                 <button class="btn btn-sm btn-success" data-pregunta-id="${p.id}" data-pregunta-texto="${encodeURIComponent(p.pregunta)}" data-tematica="${encodeURIComponent(p.tematica)}" data-respuesta="${encodeURIComponent(p.respuesta)}" data-subtema="${encodeURIComponent(p.subtema || '')}">
                     Seleccionar

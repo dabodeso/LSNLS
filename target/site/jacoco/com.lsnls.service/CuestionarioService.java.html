@@ -52,7 +52,7 @@ import org.springframework.data.domain.Sort;
 
     public boolean estaAsignadoAJornada(Long cuestionarioId) {
 <span class="fc" id="L54">        Long count = entityManager.createQuery(</span>
-            &quot;SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id&quot;, Long.class)
+<span class="fc" id="L55">            &quot;SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id&quot;, Long.class)</span>
 <span class="fc" id="L56">            .setParameter(&quot;id&quot;, cuestionarioId)</span>
 <span class="fc" id="L57">            .getSingleResult();</span>
 <span class="pc bpc" id="L58" title="1 of 4 branches missed.">        return count != null &amp;&amp; count &gt; 0;</span>
@@ -88,7 +88,7 @@ import org.springframework.data.domain.Sort;
 <span class="fc bfc" id="L88" title="All 2 branches covered.">        for (Cuestionario c : cuestionariosPaginados) {</span>
 <span class="fc" id="L89">            Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
 <span class="pc bpc" id="L90" title="1 of 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
-<span class="fc" id="L91">        }</span>
+        }
         
         // Construir respuesta
 <span class="fc" id="L94">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
@@ -108,7 +108,7 @@ import org.springframework.data.domain.Sort;
         try {
             @SuppressWarnings(&quot;unchecked&quot;)
 <span class="fc" id="L110">            List&lt;Cuestionario&gt; resultados = entityManager.createQuery(</span>
-                &quot;SELECT DISTINCT c FROM Cuestionario c &quot; +
+<span class="fc" id="L111">                &quot;SELECT DISTINCT c FROM Cuestionario c &quot; +</span>
                 &quot;LEFT JOIN FETCH c.preguntas pc &quot; +
                 &quot;LEFT JOIN FETCH pc.pregunta p &quot; +
                 &quot;LEFT JOIN FETCH p.creacionUsuario &quot; +
@@ -155,7 +155,7 @@ import org.springframework.data.domain.Sort;
 <span class="pc bpc" id="L155" title="1 of 2 branches missed.">        int total = preguntas == null ? 0 : preguntas.size();</span>
 <span class="fc bfc" id="L156" title="All 2 branches covered.">        if (total != 4) {</span>
 <span class="fc" id="L157">            throw new IllegalArgumentException(</span>
-                &quot;Un cuestionario debe tener exactamente 4 preguntas (1LS, 2NLS, 3LS, 4NLS) para un estado distinto de borrador. Actual: &quot; + total);
+<span class="fc" id="L158">                &quot;Un cuestionario debe tener exactamente 4 preguntas (1LS, 2NLS, 3LS, 4NLS) para un estado distinto de borrador. Actual: &quot; + total);</span>
         }
 <span class="fc" id="L160">        Set&lt;String&gt; nivelesRequeridos = Set.of(&quot;_1LS&quot;, &quot;_2NLS&quot;, &quot;_3LS&quot;, &quot;_4NLS&quot;);</span>
 <span class="fc" id="L161">        Set&lt;String&gt; nivelesPresentes = new HashSet&lt;&gt;();</span>
@@ -164,10 +164,10 @@ import org.springframework.data.domain.Sort;
 <span class="nc" id="L164">                throw new IllegalArgumentException(&quot;El cuestionario tiene preguntas incompletas&quot;);</span>
             }
 <span class="fc" id="L166">            nivelesPresentes.add(pc.getPregunta().getNivel().name());</span>
-<span class="fc" id="L167">        }</span>
+        }
 <span class="pc bpc" id="L168" title="1 of 2 branches missed.">        if (!nivelesPresentes.containsAll(nivelesRequeridos)) {</span>
 <span class="nc" id="L169">            throw new IllegalArgumentException(</span>
-                &quot;El cuestionario debe tener una pregunta en cada nivel (1LS, 2NLS, 3LS, 4NLS) para un estado distinto de borrador&quot;);
+<span class="nc" id="L170">                &quot;El cuestionario debe tener una pregunta en cada nivel (1LS, 2NLS, 3LS, 4NLS) para un estado distinto de borrador&quot;);</span>
         }
 <span class="fc" id="L172">    }</span>
 
@@ -188,8 +188,8 @@ import org.springframework.data.domain.Sort;
 <span class="fc" id="L188">        validarTransicionEstado(cuestionario.getEstado(), nuevoEstado, usuarioEsAdmin);</span>
         // Admin: solo exigir completo al pasar a aprobado.
         // Resto de roles: exigir completo para cualquier estado distinto de borrador.
-<span class="pc bpc" id="L191" title="1 of 6 branches missed.">        boolean exigeCompleto = nuevoEstado == EstadoCuestionario.aprobado</span>
-            || (nuevoEstado != EstadoCuestionario.borrador &amp;&amp; !usuarioEsAdmin);
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        boolean exigeCompleto = nuevoEstado == EstadoCuestionario.aprobado</span>
+<span class="pc bpc" id="L192" title="1 of 4 branches missed.">            || (nuevoEstado != EstadoCuestionario.borrador &amp;&amp; !usuarioEsAdmin);</span>
 <span class="fc bfc" id="L193" title="All 2 branches covered.">        if (exigeCompleto) {</span>
 <span class="nc" id="L194">            validarCompletoParaAprobar(cuestionario);</span>
         }
@@ -271,7 +271,7 @@ import org.springframework.data.domain.Sort;
 <span class="fc" id="L271">                    .executeUpdate();</span>
                 // Refrescar entidad
 <span class="fc" id="L273">                pregunta = preguntaRepository.findById(preguntaId).orElse(pregunta);</span>
-            } else {
+<span class="fc" id="L274">            } else {</span>
 <span class="fc" id="L275">                throw new RuntimeException(&quot;La pregunta debe estar aprobada para ser agregada a un cuestionario&quot;);</span>
             }
         }
@@ -312,7 +312,7 @@ import org.springframework.data.domain.Sort;
             
             // Marcar pregunta como usada usando consulta SQL directa para evitar validaciones
 <span class="fc" id="L314">            entityManager.createNativeQuery(</span>
-                &quot;UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' WHERE id = ?&quot;)
+<span class="fc" id="L315">                &quot;UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' WHERE id = ?&quot;)</span>
 <span class="fc" id="L316">                .setParameter(1, preguntaId)</span>
 <span class="fc" id="L317">                .executeUpdate();</span>
             
@@ -345,7 +345,7 @@ import org.springframework.data.domain.Sort;
             
             // Eliminar la relación usando SQL directo para asegurar que funcione
 <span class="fc" id="L347">            int filasEliminadas = entityManager.createNativeQuery(</span>
-                &quot;DELETE FROM cuestionarios_preguntas WHERE cuestionario_id = ? AND pregunta_id = ?&quot;)
+<span class="fc" id="L348">                &quot;DELETE FROM cuestionarios_preguntas WHERE cuestionario_id = ? AND pregunta_id = ?&quot;)</span>
 <span class="fc" id="L349">                .setParameter(1, cuestionarioId)</span>
 <span class="fc" id="L350">                .setParameter(2, preguntaId)</span>
 <span class="fc" id="L351">                .executeUpdate();</span>
@@ -353,7 +353,7 @@ import org.springframework.data.domain.Sort;
             // Liberar la pregunta usando consulta SQL directa
 <span class="pc bpc" id="L354" title="1 of 2 branches missed.">            if (pregunta.getEstadoDisponibilidad() == Pregunta.EstadoDisponibilidad.usada) {</span>
 <span class="fc" id="L355">                entityManager.createNativeQuery(</span>
-                    &quot;UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?&quot;)
+<span class="fc" id="L356">                    &quot;UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?&quot;)</span>
 <span class="fc" id="L357">                    .setParameter(1, preguntaId)</span>
 <span class="fc" id="L358">                    .executeUpdate();</span>
             }
@@ -383,24 +383,24 @@ import org.springframework.data.domain.Sort;
 
         // Verificar si hay concursantes usando este cuestionario
 <span class="fc" id="L385">        Long concursantesCount = entityManager.createQuery(</span>
-            &quot;SELECT COUNT(c) FROM Concursante c WHERE c.cuestionario.id = :cuestionarioId&quot;, Long.class)
+<span class="fc" id="L386">            &quot;SELECT COUNT(c) FROM Concursante c WHERE c.cuestionario.id = :cuestionarioId&quot;, Long.class)</span>
 <span class="fc" id="L387">            .setParameter(&quot;cuestionarioId&quot;, id)</span>
 <span class="fc" id="L388">            .getSingleResult();</span>
         
 <span class="fc bfc" id="L390" title="All 2 branches covered.">        if (concursantesCount &gt; 0) {</span>
 <span class="fc" id="L391">            throw new IllegalArgumentException(&quot;No se puede eliminar el cuestionario porque está siendo usado por &quot; + </span>
-                concursantesCount + &quot; concursante(s). Desasígnalo primero.&quot;);
+<span class="fc" id="L392">                concursantesCount + &quot; concursante(s). Desasígnalo primero.&quot;);</span>
         }
 
         // Verificar si está en alguna jornada
 <span class="fc" id="L396">        Long jornadasCount = entityManager.createQuery(</span>
-            &quot;SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :cuestionarioId&quot;, Long.class)
+<span class="fc" id="L397">            &quot;SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :cuestionarioId&quot;, Long.class)</span>
 <span class="fc" id="L398">            .setParameter(&quot;cuestionarioId&quot;, id)</span>
 <span class="fc" id="L399">            .getSingleResult();</span>
             
 <span class="fc bfc" id="L401" title="All 2 branches covered.">        if (jornadasCount &gt; 0) {</span>
 <span class="fc" id="L402">            throw new IllegalArgumentException(&quot;No se puede eliminar el cuestionario porque está asignado a &quot; + </span>
-                jornadasCount + &quot; jornada(s). Desasígnalo primero.&quot;);
+<span class="fc" id="L403">                jornadasCount + &quot; jornada(s). Desasígnalo primero.&quot;);</span>
         }
 
         // UNDO: capturar todo lo que este borrado destruye o modifica, ANTES de tocarlo:
@@ -413,37 +413,37 @@ import org.springframework.data.domain.Sort;
         }
 <span class="pc bpc" id="L414" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;cuestionarios_preguntas&quot;, &quot;cuestionario_id&quot;, id)) {</span>
 <span class="nc" id="L415">            accionesUndo.add(UndoService.accionInsertarFila(&quot;cuestionarios_preguntas&quot;, fila));</span>
-<span class="nc" id="L416">        }</span>
+        }
 <span class="pc bpc" id="L417" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;cuestionario_id&quot;, id)) {</span>
 <span class="nc" id="L418">            accionesUndo.add(UndoService.accionInsertarFila(&quot;historial_jornadas&quot;, fila));</span>
-<span class="nc" id="L419">        }</span>
+        }
 <span class="pc bpc" id="L420" title="1 of 2 branches missed.">        if (cuestionario.getPreguntas() != null) {</span>
 <span class="fc bfc" id="L421" title="All 2 branches covered.">            for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {</span>
 <span class="fc" id="L422">                Map&lt;String, Object&gt; camposPrevios = new HashMap&lt;&gt;();</span>
 <span class="pc bpc" id="L423" title="1 of 2 branches missed.">                camposPrevios.put(&quot;estado&quot;, pc.getPregunta().getEstado() != null ? pc.getPregunta().getEstado().name() : null);</span>
 <span class="pc bpc" id="L424" title="1 of 2 branches missed.">                camposPrevios.put(&quot;estado_disponibilidad&quot;, pc.getPregunta().getEstadoDisponibilidad() != null ? pc.getPregunta().getEstadoDisponibilidad().name() : null);</span>
 <span class="fc" id="L425">                accionesUndo.add(UndoService.accionActualizarCampos(&quot;preguntas&quot;, pc.getPregunta().getId(), camposPrevios));</span>
-<span class="fc" id="L426">            }</span>
+            }
         }
 
         // Eliminar registros del historial que referencian este cuestionario (si la tabla existe)
         try {
             // Verificar si la tabla existe antes de intentar eliminar
 <span class="fc" id="L432">            Object result = entityManager.createNativeQuery(</span>
-                &quot;SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'historial_jornadas'&quot;)
+<span class="fc" id="L433">                &quot;SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'historial_jornadas'&quot;)</span>
 <span class="fc" id="L434">                .getSingleResult();</span>
 <span class="fc" id="L435">            Long tableExists = ((Number) result).longValue();</span>
             
 <span class="pc bpc" id="L437" title="1 of 2 branches missed.">            if (tableExists &gt; 0) {</span>
                 // Verificar si la columna cuestionario_id existe
 <span class="nc" id="L439">                Object columnExists = entityManager.createNativeQuery(</span>
-                    &quot;SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'historial_jornadas' AND column_name = 'cuestionario_id'&quot;)
+<span class="nc" id="L440">                    &quot;SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'historial_jornadas' AND column_name = 'cuestionario_id'&quot;)</span>
 <span class="nc" id="L441">                    .getSingleResult();</span>
 <span class="nc" id="L442">                Long columnExistsCount = ((Number) columnExists).longValue();</span>
                 
 <span class="nc bnc" id="L444" title="All 2 branches missed.">                if (columnExistsCount &gt; 0) {</span>
 <span class="nc" id="L445">                    entityManager.createNativeQuery(</span>
-                        &quot;DELETE FROM historial_jornadas WHERE cuestionario_id = ?&quot;)
+<span class="nc" id="L446">                        &quot;DELETE FROM historial_jornadas WHERE cuestionario_id = ?&quot;)</span>
 <span class="nc" id="L447">                        .setParameter(1, id)</span>
 <span class="nc" id="L448">                        .executeUpdate();</span>
                 }
@@ -451,17 +451,17 @@ import org.springframework.data.domain.Sort;
 <span class="nc" id="L451">        } catch (Exception e) {</span>
             // Si hay error al eliminar el historial, continuamos de todas formas
 <span class="nc" id="L453">            log.warn(&quot;Advertencia: No se pudieron eliminar algunos registros del historial para el cuestionario &quot; + id + &quot;: &quot; + e.getMessage());</span>
-<span class="fc" id="L454">        }</span>
+        }
 
         // Si llegamos aquí, es seguro eliminar - liberar las preguntas asociadas
 <span class="fc" id="L457">        Set&lt;PreguntaCuestionario&gt; preguntas = cuestionario.getPreguntas();</span>
 <span class="fc bfc" id="L458" title="All 2 branches covered.">        for (PreguntaCuestionario pc : preguntas) {</span>
             // Devolver a aprobada y marcar como liberada para poder reutilizar
 <span class="fc" id="L460">            entityManager.createNativeQuery(</span>
-                &quot;UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?&quot;)
+<span class="fc" id="L461">                &quot;UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' WHERE id = ?&quot;)</span>
 <span class="fc" id="L462">                .setParameter(1, pc.getPregunta().getId())</span>
 <span class="fc" id="L463">                .executeUpdate();</span>
-<span class="fc" id="L464">        }</span>
+        }
         
 <span class="fc" id="L466">        cuestionarioRepository.deleteById(id);</span>
 
@@ -566,14 +566,14 @@ import org.springframework.data.domain.Sort;
 <span class="pc bpc" id="L566" title="1 of 2 branches missed.">                if (cuestionarioOpt.isPresent()) {</span>
 <span class="fc" id="L567">                    cuestionarios.add(cuestionarioOpt.get());</span>
                 }
-<span class="fc" id="L569">            }</span>
+            }
             
             // Convertir a DTOs
 <span class="fc" id="L572">            List&lt;Map&lt;String, Object&gt;&gt; dtos = new ArrayList&lt;&gt;();</span>
 <span class="fc bfc" id="L573" title="All 2 branches covered.">            for (Cuestionario c : cuestionarios) {</span>
 <span class="fc" id="L574">                Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
 <span class="pc bpc" id="L575" title="1 of 2 branches missed.">                if (dto != null) dtos.add(dto);</span>
-<span class="fc" id="L576">            }</span>
+            }
             
             // Construir respuesta
 <span class="fc" id="L579">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
@@ -590,7 +590,7 @@ import org.springframework.data.domain.Sort;
             // Filtrar por estado y temática
 <span class="fc" id="L591">            EstadoCuestionario estadoEnum = EstadoCuestionario.valueOf(estado);</span>
 <span class="fc" id="L592">            paginaCuestionarios = cuestionarioRepository.findByEstadoAndTematicaContainingIgnoreCase(</span>
-                estadoEnum, tematica, pageable);
+<span class="fc" id="L593">                estadoEnum, tematica, pageable);</span>
 <span class="pc bpc" id="L594" title="1 of 4 branches missed.">        } else if (estado != null &amp;&amp; !estado.isEmpty()) {</span>
             // Filtrar solo por estado
 <span class="fc" id="L596">            EstadoCuestionario estadoEnum = EstadoCuestionario.valueOf(estado);</span>
@@ -598,7 +598,7 @@ import org.springframework.data.domain.Sort;
 <span class="pc bpc" id="L598" title="1 of 4 branches missed.">        } else if (tematica != null &amp;&amp; !tematica.isEmpty()) {</span>
             // Filtrar solo por temática
 <span class="fc" id="L600">            paginaCuestionarios = cuestionarioRepository.findByTematicaContainingIgnoreCase(tematica, pageable);</span>
-        } else {
+<span class="fc" id="L601">        } else {</span>
             // Si no hay filtros, usar la paginación existente
 <span class="fc" id="L603">            return obtenerTodosPaginados(page, size);</span>
         }
@@ -608,7 +608,7 @@ import org.springframework.data.domain.Sort;
 <span class="fc bfc" id="L608" title="All 2 branches covered.">        for (Cuestionario c : paginaCuestionarios.getContent()) {</span>
 <span class="fc" id="L609">            Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
 <span class="pc bpc" id="L610" title="1 of 2 branches missed.">            if (dto != null) dtos.add(dto);</span>
-<span class="fc" id="L611">        }</span>
+        }
         
         // Construir respuesta
 <span class="fc" id="L614">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
@@ -629,13 +629,13 @@ import org.springframework.data.domain.Sort;
         // Cuestionarios adjudicados por estar en jornadas
         // IMPORTANTE: no tocar los que ya están en 'aprobado' porque pueden estar marcados como reutilizados/liberados
 <span class="fc" id="L631">        entityManager.createNativeQuery(</span>
-            &quot;UPDATE cuestionarios SET estado='adjudicado' &quot; +
+<span class="fc" id="L632">            &quot;UPDATE cuestionarios SET estado='adjudicado' &quot; +</span>
             &quot;WHERE id IN (SELECT cuestionario_id FROM jornadas_cuestionarios) &quot; +
             &quot;AND estado NOT IN ('adjudicado','grabado','aprobado')&quot;)
 <span class="fc" id="L635">            .executeUpdate();</span>
         // Cuestionarios sin jornada → aprobado (solo si estaban adjudicados)
 <span class="fc" id="L637">        entityManager.createNativeQuery(</span>
-            &quot;UPDATE cuestionarios SET estado='aprobado' WHERE estado='adjudicado' AND id NOT IN (SELECT cuestionario_id FROM jornadas_cuestionarios)&quot;)
+<span class="fc" id="L638">            &quot;UPDATE cuestionarios SET estado='aprobado' WHERE estado='adjudicado' AND id NOT IN (SELECT cuestionario_id FROM jornadas_cuestionarios)&quot;)</span>
 <span class="fc" id="L639">            .executeUpdate();</span>
 <span class="fc" id="L640">    }</span>
     
@@ -688,7 +688,7 @@ import org.springframework.data.domain.Sort;
 <span class="fc bfc" id="L688" title="All 2 branches covered.">            for (Cuestionario c : paginaCuestionarios.getContent()) {</span>
 <span class="fc" id="L689">                Map&lt;String, Object&gt; dto = obtenerCuestionarioConSlots(c.getId());</span>
 <span class="pc bpc" id="L690" title="1 of 2 branches missed.">                if (dto != null) dtos.add(dto);</span>
-<span class="fc" id="L691">            }</span>
+            }
             
             // Construir respuesta
 <span class="fc" id="L694">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
@@ -698,7 +698,7 @@ import org.springframework.data.domain.Sort;
 <span class="fc" id="L698">            response.put(&quot;totalPages&quot;, paginaCuestionarios.getTotalPages());</span>
             
 <span class="fc" id="L700">            log.debug(&quot;Búsqueda parcial por ID - Término: &quot; + idStr + </span>
-                              &quot;, Página: &quot; + page + &quot;, Tamaño: &quot; + size + 
+<span class="fc" id="L701">                              &quot;, Página: &quot; + page + &quot;, Tamaño: &quot; + size + </span>
 <span class="fc" id="L702">                              &quot;, Total: &quot; + paginaCuestionarios.getTotalElements() + </span>
 <span class="fc" id="L703">                              &quot;, Cuestionarios en esta página: &quot; + dtos.size());</span>
             
@@ -715,7 +715,7 @@ import org.springframework.data.domain.Sort;
     @SuppressWarnings(&quot;unchecked&quot;)
     public List&lt;Object[]&gt; obtenerPreguntasPorCuestionarioSQL(Long cuestionarioId) {
 <span class="nc" id="L717">        return entityManager.createNativeQuery(</span>
-            &quot;SELECT cp.pregunta_id, cp.cuestionario_id, cp.factor_multiplicacion, p.pregunta, p.respuesta &quot; +
+<span class="nc" id="L718">            &quot;SELECT cp.pregunta_id, cp.cuestionario_id, cp.factor_multiplicacion, p.pregunta, p.respuesta &quot; +</span>
             &quot;FROM cuestionarios_preguntas cp &quot; +
             &quot;JOIN preguntas p ON cp.pregunta_id = p.id &quot; +
             &quot;WHERE cp.cuestionario_id = ?&quot;
@@ -743,7 +743,7 @@ import org.springframework.data.domain.Sort;
 <span class="pc bpc" id="L743" title="1 of 2 branches missed.">            if (vistos.add(id)) {</span>
 <span class="fc" id="L744">                idsNormalizados.add(id);</span>
             }
-<span class="fc" id="L746">        }</span>
+        }
 
 <span class="pc bpc" id="L748" title="1 of 2 branches missed.">        if (idsNormalizados.isEmpty()) {</span>
 <span class="nc" id="L749">            return true;</span>
@@ -759,13 +759,13 @@ import org.springframework.data.domain.Sort;
 <span class="nc bnc" id="L759" title="All 4 branches missed.">                if (p != null &amp;&amp; p.getId() != null) {</span>
 <span class="nc" id="L760">                    encontrados.add(p.getId());</span>
                 }
-<span class="nc" id="L762">            }</span>
+            }
 <span class="nc" id="L763">            java.util.List&lt;Long&gt; faltantes = new java.util.ArrayList&lt;&gt;();</span>
 <span class="nc bnc" id="L764" title="All 2 branches missed.">            for (Long id : idsNormalizados) {</span>
 <span class="nc bnc" id="L765" title="All 4 branches missed.">                if (id != null &amp;&amp; !encontrados.contains(id)) {</span>
 <span class="nc" id="L766">                    faltantes.add(id);</span>
                 }
-<span class="nc" id="L768">            }</span>
+            }
 <span class="nc bnc" id="L769" title="All 2 branches missed.">            String detalle = faltantes.isEmpty()</span>
 <span class="nc" id="L770">                ? &quot;&quot;</span>
 <span class="nc" id="L771">                : &quot; (IDs faltantes: &quot; + faltantes + &quot;)&quot;;</span>
@@ -781,7 +781,7 @@ import org.springframework.data.domain.Sort;
 <span class="nc" id="L781">                        .executeUpdate();</span>
                     // Actualizar objeto en memoria
 <span class="nc" id="L783">                    pregunta.setEstado(Pregunta.EstadoPregunta.aprobada);</span>
-                } else {
+<span class="nc" id="L784">                } else {</span>
 <span class="nc" id="L785">                    throw new IllegalArgumentException(&quot;La pregunta &quot; + pregunta.getId() + &quot; no está aprobada (estado: &quot; + pregunta.getEstado() + &quot;)&quot;);</span>
                 }
             }
@@ -797,7 +797,7 @@ import org.springframework.data.domain.Sort;
 <span class="pc bpc" id="L797" title="1 of 2 branches missed.">            if (pregunta.getNivel().name().startsWith(&quot;_5&quot;)) {</span>
 <span class="nc" id="L798">                throw new IllegalArgumentException(&quot;La pregunta &quot; + pregunta.getId() + &quot; es de nivel 5 y debe ir en combos, no en cuestionarios&quot;);</span>
             }
-<span class="fc" id="L800">        }</span>
+        }
         
         // PASO 2: Reservar todas las preguntas ATÓMICAMENTE con una sola query
 <span class="fc" id="L803">        String preguntaIdsStr = idsNormalizados.stream()</span>
@@ -806,8 +806,8 @@ import org.springframework.data.domain.Sort;
 <span class="fc" id="L806">            .orElse(&quot;&quot;);</span>
             
 <span class="fc" id="L808">        int preguntasReservadas = entityManager.createNativeQuery(</span>
-            &quot;UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' &quot; +
-            &quot;WHERE id IN (&quot; + preguntaIdsStr + &quot;) &quot; +
+<span class="fc" id="L809">            &quot;UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' &quot; +</span>
+<span class="fc" id="L810">            &quot;WHERE id IN (&quot; + preguntaIdsStr + &quot;) &quot; +</span>
             &quot;AND (estado_disponibilidad IN ('disponible', 'liberada') OR estado_disponibilidad IS NULL) &quot; +
             &quot;AND estado = 'aprobada'&quot;
 <span class="fc" id="L813">        ).executeUpdate();</span>
@@ -836,8 +836,8 @@ import org.springframework.data.domain.Sort;
 <span class="nc" id="L836">            .orElse(&quot;&quot;);</span>
             
 <span class="nc" id="L838">        entityManager.createNativeQuery(</span>
-            &quot;UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' &quot; +
-            &quot;WHERE id IN (&quot; + preguntaIdsStr + &quot;) AND estado_disponibilidad = 'usada'&quot;
+<span class="nc" id="L839">            &quot;UPDATE preguntas SET estado = 'aprobada', estado_disponibilidad = 'liberada' &quot; +</span>
+<span class="nc" id="L840">            &quot;WHERE id IN (&quot; + preguntaIdsStr + &quot;) AND estado_disponibilidad = 'usada'&quot;</span>
 <span class="nc" id="L841">        ).executeUpdate();</span>
 <span class="nc" id="L842">    }</span>
 
@@ -845,13 +845,13 @@ import org.springframework.data.domain.Sort;
         // PASO 1: VERIFICACIÓN Y RESERVA ATÓMICA de todas las preguntas
         try {
 <span class="fc" id="L847">            verificarYReservarPreguntasAtomico(dto.getPreguntasNormales());</span>
-<span class="nc" id="L848">        } catch (IllegalStateException e) {</span>
+<span class="pc" id="L848">        } catch (IllegalStateException e) {</span>
             // Error de concurrencia - mensaje específico
 <span class="nc" id="L850">            throw new IllegalArgumentException(&quot;Error de concurrencia al reservar preguntas: &quot; + e.getMessage());</span>
 <span class="nc" id="L851">        } catch (IllegalArgumentException e) {</span>
             // Error de validación - reenviar tal como está
 <span class="nc" id="L853">            throw e;</span>
-<span class="fc" id="L854">        }</span>
+        }
         
         // PASO 2: Crear el cuestionario (las preguntas ya están reservadas)
 <span class="fc" id="L857">        Cuestionario cuestionario = new Cuestionario();</span>
@@ -879,7 +879,7 @@ import org.springframework.data.domain.Sort;
 <span class="fc" id="L879">                pc.setFactorMultiplicacion(1);</span>
 <span class="fc" id="L880">                preguntaCuestionarioRepository.save(pc);</span>
                 // Nota: La pregunta ya fue marcada como 'usada' en verificarYReservarPreguntasAtomico()
-<span class="fc" id="L882">            }</span>
+            }
 <span class="fc" id="L883">            return cuestionarioRepository.findById(cuestionario.getId()).orElse(cuestionario);</span>
 <span class="nc" id="L884">        } catch (Exception e) {</span>
             // En caso de error, liberar las preguntas reservadas
@@ -905,27 +905,27 @@ import org.springframework.data.domain.Sort;
 <span class="fc" id="L905">        Set&lt;Long&gt; actualesIds = new HashSet&lt;&gt;();</span>
 <span class="fc bfc" id="L906" title="All 2 branches covered.">        for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {</span>
 <span class="fc" id="L907">            actualesIds.add(pc.getPregunta().getId());</span>
-<span class="fc" id="L908">        }</span>
+        }
 <span class="fc" id="L909">        Set&lt;Long&gt; nuevosIds = new HashSet&lt;&gt;(dto.getPreguntasNormales());</span>
 
         // Calcular listas: reservar solo nuevas; liberar solo eliminadas; mantener intersección
 <span class="fc" id="L912">        List&lt;Long&gt; aReservar = new ArrayList&lt;&gt;();</span>
 <span class="fc bfc" id="L913" title="All 2 branches covered.">        for (Long pid : nuevosIds) {</span>
 <span class="pc bpc" id="L914" title="1 of 2 branches missed.">            if (!actualesIds.contains(pid)) aReservar.add(pid);</span>
-<span class="fc" id="L915">        }</span>
+        }
 <span class="fc" id="L916">        List&lt;Long&gt; aLiberar = new ArrayList&lt;&gt;();</span>
 <span class="fc bfc" id="L917" title="All 2 branches covered.">        for (Long pid : actualesIds) {</span>
 <span class="pc bpc" id="L918" title="1 of 2 branches missed.">            if (!nuevosIds.contains(pid)) aLiberar.add(pid);</span>
-<span class="fc" id="L919">        }</span>
+        }
 
         // PASO 1: Verificar y reservar SOLO las nuevas preguntas
         try {
 <span class="fc" id="L923">            verificarYReservarPreguntasAtomico(aReservar);</span>
-<span class="nc" id="L924">        } catch (IllegalStateException e) {</span>
+<span class="pc" id="L924">        } catch (IllegalStateException e) {</span>
 <span class="nc" id="L925">            throw new IllegalArgumentException(&quot;Error de concurrencia al reservar preguntas: &quot; + e.getMessage());</span>
 <span class="nc" id="L926">        } catch (IllegalArgumentException e) {</span>
 <span class="nc" id="L927">            throw e;</span>
-<span class="fc" id="L928">        }</span>
+        }
 
         // PASO 2: Eliminar relaciones solo de las preguntas a liberar
 <span class="pc bpc" id="L931" title="1 of 2 branches missed.">        if (!aLiberar.isEmpty()) {</span>
@@ -935,7 +935,7 @@ import org.springframework.data.domain.Sort;
 <span class="nc" id="L935">                    preguntaCuestionarioRepository.delete(pc);</span>
 <span class="nc" id="L936">                    cuestionario.getPreguntas().remove(pc);</span>
                 }
-<span class="nc" id="L938">            }</span>
+            }
 <span class="nc" id="L939">            liberarPreguntasAtomico(aLiberar);</span>
         }
 
@@ -955,7 +955,7 @@ import org.springframework.data.domain.Sort;
 <span class="nc" id="L955">                pc.setFactorMultiplicacion(1);</span>
 <span class="nc" id="L956">                preguntaCuestionarioRepository.save(pc);</span>
 <span class="nc" id="L957">                cuestionario.getPreguntas().add(pc);</span>
-<span class="nc" id="L958">            }</span>
+            }
 
             // Actualizar campos
 <span class="fc" id="L961">            cuestionario.setTematica(dto.getTematica());</span>
@@ -988,7 +988,7 @@ import org.springframework.data.domain.Sort;
         // Jornada asignada (si existe)
         try {
 <span class="fc" id="L990">            Long jornadaId = entityManager.createQuery(</span>
-                &quot;SELECT a.jornada.id FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id&quot;, Long.class)
+<span class="fc" id="L991">                &quot;SELECT a.jornada.id FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id&quot;, Long.class)</span>
 <span class="fc" id="L992">                .setParameter(&quot;id&quot;, id)</span>
 <span class="fc" id="L993">                .setMaxResults(1)</span>
 <span class="fc" id="L994">                .getResultList()</span>
@@ -1002,7 +1002,7 @@ import org.springframework.data.domain.Sort;
         try {
             @SuppressWarnings(&quot;unchecked&quot;)
 <span class="fc" id="L1004">            java.util.List&lt;Object[]&gt; historialReutilizado = entityManager.createNativeQuery(</span>
-                &quot;SELECT h.jornada_id, j.nombre &quot; +
+<span class="fc" id="L1005">                &quot;SELECT h.jornada_id, j.nombre &quot; +</span>
                 &quot;FROM historial_jornadas h &quot; +
                 &quot;JOIN jornadas j ON h.jornada_id = j.id &quot; +
                 &quot;WHERE h.cuestionario_id = :cid AND h.estado_asignacion = 'reaprovechado' &quot; +
@@ -1019,7 +1019,7 @@ import org.springframework.data.domain.Sort;
             }
 <span class="fc" id="L1020">        } catch (Exception e) {</span>
 <span class="fc" id="L1021">            log.warn(&quot;[DTO-CUEST] ERROR al buscar historial para cuest &quot; + id);</span>
-<span class="fc" id="L1022">        }</span>
+        }
         
 <span class="fc" id="L1024">        java.util.Map&lt;String, PreguntaCuestionario&gt; mapPorSlot = mapearPreguntasPorSlot(c);</span>
 <span class="fc" id="L1025">        java.util.List&lt;PreguntaCuestionarioDTO&gt; preguntasDTO = new java.util.ArrayList&lt;&gt;();</span>
@@ -1052,7 +1052,7 @@ import org.springframework.data.domain.Sort;
 <span class="pc bpc" id="L1052" title="2 of 4 branches missed.">            if (slot != null &amp;&amp; !map.containsKey(slot)) {</span>
 <span class="fc" id="L1053">                map.put(slot, pc);</span>
             }
-<span class="fc" id="L1055">        }</span>
+        }
 <span class="fc" id="L1056">        return map;</span>
     }
 
@@ -1125,7 +1125,7 @@ import org.springframework.data.domain.Sort;
                                        Cuestionario.EstadoCuestionario nuevoEstado) {
         // Usar query nativa para cambio atómico con verificación de estado
 <span class="fc" id="L1127">        int filasActualizadas = entityManager.createNativeQuery(</span>
-            &quot;UPDATE cuestionarios SET estado = ? WHERE id = ? AND estado = ?&quot;)
+<span class="fc" id="L1128">            &quot;UPDATE cuestionarios SET estado = ? WHERE id = ? AND estado = ?&quot;)</span>
 <span class="fc" id="L1129">            .setParameter(1, nuevoEstado.name())</span>
 <span class="fc" id="L1130">            .setParameter(2, cuestionarioId)</span>
 <span class="fc" id="L1131">            .setParameter(3, estadoActualEsperado.name())</span>
@@ -1133,7 +1133,7 @@ import org.springframework.data.domain.Sort;
             
 <span class="fc bfc" id="L1134" title="All 2 branches covered.">        if (filasActualizadas == 0) {</span>
 <span class="fc" id="L1135">            throw new IllegalStateException(&quot;No se pudo cambiar el estado del cuestionario &quot; + cuestionarioId + </span>
-                &quot; porque otro usuario lo modificó simultáneamente. Estado esperado: &quot; + estadoActualEsperado);
+<span class="fc" id="L1136">                &quot; porque otro usuario lo modificó simultáneamente. Estado esperado: &quot; + estadoActualEsperado);</span>
         }
         
 <span class="fc" id="L1139">        return true;</span>

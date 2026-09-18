@@ -35,10 +35,10 @@ import java.util.regex.Pattern;
 
     /** Tablas sobre las que se permite ejecutar acciones de undo. */
 <span class="fc" id="L37">    private static final Set&lt;String&gt; TABLAS_PERMITIDAS = Set.of(</span>
-            &quot;jornadas&quot;, &quot;cuestionarios&quot;, &quot;combos&quot;, &quot;preguntas&quot;, &quot;programas&quot;, &quot;concursantes&quot;,
-            &quot;jornadas_cuestionarios&quot;, &quot;jornadas_combos&quot;, &quot;cuestionarios_preguntas&quot;,
-            &quot;combos_preguntas&quot;, &quot;historial_jornadas&quot;,
-            &quot;tematicas&quot;, &quot;tematicas_preguntas&quot;, &quot;tematicas_combos&quot;, &quot;subtemas_preguntas&quot;);
+<span class="fc" id="L38">            &quot;jornadas&quot;, &quot;cuestionarios&quot;, &quot;combos&quot;, &quot;preguntas&quot;, &quot;programas&quot;, &quot;concursantes&quot;,</span>
+<span class="fc" id="L39">            &quot;jornadas_cuestionarios&quot;, &quot;jornadas_combos&quot;, &quot;cuestionarios_preguntas&quot;,</span>
+<span class="fc" id="L40">            &quot;combos_preguntas&quot;, &quot;historial_jornadas&quot;,</span>
+<span class="fc" id="L41">            &quot;tematicas&quot;, &quot;tematicas_preguntas&quot;, &quot;tematicas_combos&quot;, &quot;subtemas_preguntas&quot;);</span>
 
 <span class="fc" id="L43">    private static final Pattern IDENTIFICADOR_VALIDO = Pattern.compile(&quot;[a-zA-Z_][a-zA-Z0-9_]*&quot;);</span>
 
@@ -66,7 +66,7 @@ import java.util.regex.Pattern;
     public Map&lt;String, Object&gt; snapshotFila(String tabla, Object id) {
 <span class="fc" id="L67">        validarTabla(tabla);</span>
 <span class="fc" id="L68">        List&lt;Map&lt;String, Object&gt;&gt; filas = jdbcTemplate.queryForList(</span>
-                &quot;SELECT * FROM &quot; + tabla + &quot; WHERE id = ?&quot;, id);
+<span class="fc" id="L69">                &quot;SELECT * FROM &quot; + tabla + &quot; WHERE id = ?&quot;, id);</span>
 <span class="fc bfc" id="L70" title="All 2 branches covered.">        return filas.isEmpty() ? null : normalizarFila(filas.get(0));</span>
     }
 
@@ -75,11 +75,11 @@ import java.util.regex.Pattern;
 <span class="fc" id="L75">        validarTabla(tabla);</span>
 <span class="fc" id="L76">        validarIdentificador(campo);</span>
 <span class="fc" id="L77">        List&lt;Map&lt;String, Object&gt;&gt; filas = jdbcTemplate.queryForList(</span>
-                &quot;SELECT * FROM &quot; + tabla + &quot; WHERE `&quot; + campo + &quot;` = ?&quot;, valor);
+<span class="fc" id="L78">                &quot;SELECT * FROM &quot; + tabla + &quot; WHERE `&quot; + campo + &quot;` = ?&quot;, valor);</span>
 <span class="fc" id="L79">        List&lt;Map&lt;String, Object&gt;&gt; resultado = new ArrayList&lt;&gt;();</span>
 <span class="fc bfc" id="L80" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; fila : filas) {</span>
 <span class="fc" id="L81">            resultado.add(normalizarFila(fila));</span>
-<span class="fc" id="L82">        }</span>
+        }
 <span class="fc" id="L83">        return resultado;</span>
     }
 
@@ -147,7 +147,7 @@ import java.util.regex.Pattern;
 <span class="pc bpc" id="L147" title="1 of 2 branches missed.">            if (id != null) {</span>
 <span class="fc" id="L148">                ids.add(id);</span>
             }
-<span class="fc" id="L150">        }</span>
+        }
 <span class="fc" id="L151">        return ids;</span>
     }
 
@@ -163,7 +163,7 @@ import java.util.regex.Pattern;
 <span class="pc bpc" id="L163" title="1 of 4 branches missed.">            if (id == null || !idsPrevios.contains(id)) {</span>
 <span class="fc" id="L164">                nuevas.add(fila);</span>
             }
-<span class="fc" id="L166">        }</span>
+        }
 <span class="fc" id="L167">        return nuevas;</span>
     }
 
@@ -186,26 +186,26 @@ import java.util.regex.Pattern;
 <span class="fc" id="L186">            Long usuarioId = usuario.get().getId();</span>
 <span class="fc" id="L187">            String json = objectMapper.writeValueAsString(Collections.singletonMap(&quot;acciones&quot;, acciones));</span>
 <span class="fc" id="L188">            jdbcTemplate.update(</span>
-                    &quot;INSERT INTO operaciones_undo (usuario_id, tipo_operacion, descripcion, datos_undo, fecha_creacion, deshecha) &quot;
+<span class="fc" id="L189">                    &quot;INSERT INTO operaciones_undo (usuario_id, tipo_operacion, descripcion, datos_undo, fecha_creacion, deshecha) &quot;</span>
                             + &quot;VALUES (?, ?, ?, ?, NOW(6), 0)&quot;,
-                    usuarioId, tipoOperacion, descripcion, json);
+<span class="fc" id="L191">                    usuarioId, tipoOperacion, descripcion, json);</span>
 <span class="fc" id="L192">            Long operacionId = jdbcTemplate.queryForObject(&quot;SELECT LAST_INSERT_ID()&quot;, Long.class);</span>
 <span class="fc" id="L193">            ULTIMA_OPERACION.set(operacionId);</span>
 <span class="fc" id="L194">            limpiarAntiguas(usuarioId);</span>
 <span class="fc" id="L195">        } catch (Exception e) {</span>
 <span class="fc" id="L196">            log.warn(&quot;[UNDO] No se pudo registrar la operación deshacible '&quot; + tipoOperacion + &quot;': &quot; + e.getMessage());</span>
-<span class="fc" id="L197">        }</span>
+        }
 <span class="fc" id="L198">    }</span>
 
     private void limpiarAntiguas(Long usuarioId) {
 <span class="fc" id="L201">        jdbcTemplate.update(</span>
-                &quot;DELETE FROM operaciones_undo WHERE usuario_id = ? AND fecha_creacion &lt; NOW(6) - INTERVAL &quot; + MAX_ANTIGUEDAD_MINUTOS + &quot; MINUTE&quot;,
-                usuarioId);
+<span class="fc" id="L202">                &quot;DELETE FROM operaciones_undo WHERE usuario_id = ? AND fecha_creacion &lt; NOW(6) - INTERVAL &quot; + MAX_ANTIGUEDAD_MINUTOS + &quot; MINUTE&quot;,</span>
+<span class="fc" id="L203">                usuarioId);</span>
 <span class="fc" id="L204">        jdbcTemplate.update(</span>
-                &quot;DELETE FROM operaciones_undo WHERE usuario_id = ? AND id NOT IN (&quot;
+<span class="fc" id="L205">                &quot;DELETE FROM operaciones_undo WHERE usuario_id = ? AND id NOT IN (&quot;</span>
                         + &quot;SELECT id FROM (SELECT id FROM operaciones_undo WHERE usuario_id = ? &quot;
                         + &quot;ORDER BY id DESC LIMIT &quot; + MAX_OPERACIONES_POR_USUARIO + &quot;) t)&quot;,
-                usuarioId, usuarioId);
+<span class="fc" id="L208">                usuarioId, usuarioId);</span>
 <span class="fc" id="L209">    }</span>
 
     // ==================== DESHACER ====================
@@ -221,7 +221,7 @@ import java.util.regex.Pattern;
 <span class="fc" id="L221">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Usuario no autenticado&quot;));</span>
 
 <span class="fc" id="L223">        List&lt;Map&lt;String, Object&gt;&gt; filas = jdbcTemplate.queryForList(</span>
-                &quot;SELECT * FROM operaciones_undo WHERE id = ?&quot;, operacionId);
+<span class="fc" id="L224">                &quot;SELECT * FROM operaciones_undo WHERE id = ?&quot;, operacionId);</span>
 <span class="fc bfc" id="L225" title="All 2 branches covered.">        if (filas.isEmpty()) {</span>
 <span class="fc" id="L226">            throw new IllegalArgumentException(&quot;La operación ya no está disponible para deshacer&quot;);</span>
         }
@@ -233,8 +233,8 @@ import java.util.regex.Pattern;
         }
 
 <span class="fc" id="L235">        Object deshechaObj = operacion.get(&quot;deshecha&quot;);</span>
-<span class="fc bfc" id="L236" title="All 6 branches covered.">        boolean deshecha = (deshechaObj instanceof Boolean &amp;&amp; (Boolean) deshechaObj)</span>
-<span class="fc bfc" id="L237" title="All 2 branches covered.">                || (deshechaObj instanceof Number &amp;&amp; ((Number) deshechaObj).intValue() != 0);</span>
+<span class="fc bfc" id="L236" title="All 4 branches covered.">        boolean deshecha = (deshechaObj instanceof Boolean &amp;&amp; (Boolean) deshechaObj)</span>
+<span class="fc bfc" id="L237" title="All 4 branches covered.">                || (deshechaObj instanceof Number &amp;&amp; ((Number) deshechaObj).intValue() != 0);</span>
 <span class="fc bfc" id="L238" title="All 2 branches covered.">        if (deshecha) {</span>
 <span class="fc" id="L239">            throw new IllegalArgumentException(&quot;Esta operación ya fue deshecha&quot;);</span>
         }
@@ -253,11 +253,11 @@ import java.util.regex.Pattern;
 <span class="fc" id="L253">            acciones = (List&lt;Map&lt;String, Object&gt;&gt;) payload.get(&quot;acciones&quot;);</span>
 <span class="fc" id="L254">        } catch (Exception e) {</span>
 <span class="fc" id="L255">            throw new IllegalStateException(&quot;No se pudo interpretar la operación de undo: &quot; + e.getMessage());</span>
-<span class="fc" id="L256">        }</span>
+        }
 
 <span class="fc bfc" id="L258" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; accion : acciones) {</span>
 <span class="fc" id="L259">            ejecutarAccion(accion);</span>
-<span class="fc" id="L260">        }</span>
+        }
 
 <span class="fc" id="L262">        jdbcTemplate.update(&quot;UPDATE operaciones_undo SET deshecha = 1 WHERE id = ?&quot;, operacionId);</span>
 <span class="fc" id="L263">        return (String) operacion.get(&quot;descripcion&quot;);</span>
@@ -277,7 +277,7 @@ import java.util.regex.Pattern;
 <span class="fc" id="L277">            eliminarFila(tabla, accion.get(&quot;id&quot;));</span>
 <span class="fc bfc" id="L278" title="All 2 branches covered.">        } else if (&quot;eliminar_filas&quot;.equals(tipo)) {</span>
 <span class="fc" id="L279">            eliminarFilas(tabla, (String) accion.get(&quot;campo&quot;), accion.get(&quot;valor&quot;));</span>
-        } else {
+<span class="fc" id="L280">        } else {</span>
 <span class="fc" id="L281">            throw new IllegalStateException(&quot;Acción de undo desconocida: &quot; + tipo);</span>
         }
 <span class="fc" id="L283">    }</span>
@@ -292,7 +292,7 @@ import java.util.regex.Pattern;
 <span class="fc" id="L292">            validarIdentificador(entrada.getKey());</span>
 <span class="fc" id="L293">            columnas.add(&quot;`&quot; + entrada.getKey() + &quot;`&quot;);</span>
 <span class="fc" id="L294">            valores.add(entrada.getValue());</span>
-<span class="fc" id="L295">        }</span>
+        }
 <span class="fc" id="L296">        StringBuilder placeholders = new StringBuilder();</span>
 <span class="fc bfc" id="L297" title="All 2 branches covered.">        for (int i = 0; i &lt; columnas.size(); i++) {</span>
 <span class="fc bfc" id="L298" title="All 2 branches covered.">            placeholders.append(i &gt; 0 ? &quot;, ?&quot; : &quot;?&quot;);</span>
@@ -311,7 +311,7 @@ import java.util.regex.Pattern;
 <span class="fc" id="L311">            validarIdentificador(entrada.getKey());</span>
 <span class="fc" id="L312">            asignaciones.add(&quot;`&quot; + entrada.getKey() + &quot;` = ?&quot;);</span>
 <span class="fc" id="L313">            valores.add(entrada.getValue());</span>
-<span class="fc" id="L314">        }</span>
+        }
 <span class="fc" id="L315">        valores.add(id);</span>
 <span class="fc" id="L316">        String sql = &quot;UPDATE &quot; + tabla + &quot; SET &quot; + String.join(&quot;, &quot;, asignaciones) + &quot; WHERE id = ?&quot;;</span>
 <span class="fc" id="L317">        jdbcTemplate.update(sql, valores.toArray());</span>
@@ -346,14 +346,14 @@ import java.util.regex.Pattern;
 <span class="fc" id="L346">        Map&lt;String, Object&gt; normalizada = new LinkedHashMap&lt;&gt;();</span>
 <span class="fc bfc" id="L347" title="All 2 branches covered.">        for (Map.Entry&lt;String, Object&gt; entrada : fila.entrySet()) {</span>
 <span class="fc" id="L348">            Object valor = entrada.getValue();</span>
-<span class="fc bfc" id="L349" title="All 8 branches covered.">            if (valor instanceof Timestamp || valor instanceof java.sql.Date || valor instanceof java.sql.Time</span>
-                    || valor instanceof java.time.temporal.Temporal) {
+<span class="fc bfc" id="L349" title="All 6 branches covered.">            if (valor instanceof Timestamp || valor instanceof java.sql.Date || valor instanceof java.sql.Time</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">                    || valor instanceof java.time.temporal.Temporal) {</span>
 <span class="fc" id="L351">                valor = valor.toString();</span>
 <span class="fc bfc" id="L352" title="All 2 branches covered.">            } else if (valor instanceof byte[]) {</span>
 <span class="fc" id="L353">                valor = Base64.getEncoder().encodeToString((byte[]) valor);</span>
             }
 <span class="fc" id="L355">            normalizada.put(entrada.getKey(), valor);</span>
-<span class="fc" id="L356">        }</span>
+        }
 <span class="fc" id="L357">        return normalizada;</span>
     }
 

@@ -30,10 +30,9 @@ const JornadasManager = {
     },
 
     nivelPreguntaCombo(nivel) {
-        const s = String(nivel || '');
-        if (s.includes('NLS')) return '5NLS';
-        if (s.includes('LS')) return '5LS';
-        return s.replace(/^_/, '') || '';
+        return (typeof Utils !== 'undefined' && Utils.formatearNivel)
+            ? Utils.formatearNivel(nivel)
+            : String(nivel || '').replace(/^_+/, '');
     },
 
     ordenarPreguntasComboOrigen(preguntas) {
@@ -151,7 +150,7 @@ const JornadasManager = {
     },
 
     async recargarConFiltros() {
-        await this.cargarDatos(false);
+        await this.refrescarManteniendoJornada();
     },
 
     esAdminODireccion() {
@@ -187,6 +186,79 @@ const JornadasManager = {
             window.scrollTo({ top: this.lastScrollY, behavior: 'auto' });
         }
     },
+
+    esModalVisible(id) {
+        const el = document.getElementById(id);
+        return !!(el && el.classList.contains('show'));
+    },
+
+    async refrescarManteniendoJornada(jornadaId) {
+        const id = jornadaId || this.jornadaReciclajeActual || this.jornadaEditando?.id || this.lastFocusJornadaId;
+        if (id) {
+            this.lastFocusJornadaId = id;
+        }
+        this.rememberScroll();
+        const editandoAbierta = this.esModalVisible('modalJornada');
+        const editandoId = this.jornadaEditando?.id || id;
+        await this.cargarDatos(false, { silencioso: true });
+        requestAnimationFrame(() => this.restoreScrollOrFocus());
+        if (editandoAbierta && editandoId) {
+            await this.refrescarModalEdicionJornada(editandoId);
+        }
+    },
+
+    async refrescarModalEdicionJornada(jid) {
+        if (!jid) return;
+        const response = await apiManager.get(`/api/jornadas/${jid}`);
+        const jornada = response?.datos;
+        if (!jornada) return;
+
+        this.jornadaEditando = jornada;
+        this.lastFocusJornadaId = jid;
+        this.cuestionariosSeleccionados = this.normalizarSlots(jornada.cuestionarioIds);
+        this.combosSeleccionados = this.normalizarSlots(jornada.comboIds);
+
+        const tituloEl = document.getElementById('modalJornadaTitulo');
+        const idEl = document.getElementById('jornadaId');
+        const nombreEl = document.getElementById('jornadaNombre');
+        const fechaEl = document.getElementById('jornadaFecha');
+        const lugarEl = document.getElementById('jornadaLugar');
+        const notasEl = document.getElementById('jornadaNotas');
+        if (tituloEl) tituloEl.textContent = 'Editar Jornada';
+        if (idEl) idEl.value = jornada.id;
+        if (nombreEl) nombreEl.value = jornada.nombre || '';
+        if (fechaEl) fechaEl.value = jornada.fechaJornada || '';
+        if (lugarEl) lugarEl.value = jornada.lugar || '';
+        if (notasEl) notasEl.value = jornada.notas || '';
+
+        await this.actualizarSlotsVisualAsync();
+
+        const modalEl = document.getElementById('modalJornada');
+        if (modalEl && !modalEl.classList.contains('show')) {
+            try {
+                await EditLockManager.tryAcquire('JORNADA', jid);
+            } catch (error) {
+                Utils.showAlert(error.message || 'Error al recargar la jornada', 'error');
+                return;
+            }
+            const inst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            inst.show();
+            EditLockManager.startSession({
+                entityType: 'JORNADA',
+                entityId: jid,
+                modalSelector: '#modalJornada',
+                onExpire: () => this.guardarJornada()
+            });
+        }
+        this.reabrirEditarTrasSeleccion = false;
+    },
+
+    encolarOperacionSlots(operacion) {
+        this._colaSlots = (this._colaSlots || Promise.resolve())
+            .catch(() => {})
+            .then(operacion);
+        return this._colaSlots;
+    },
     
     // Función para seleccionar cuestionarios directamente sin pasar por el editor
     seleccionarCuestionariosDirecto(jornadaId, slotIndex) {
@@ -211,7 +283,7 @@ const JornadasManager = {
         this.seleccionarCombos();
     },
 
-    async cargarDatos(resetear = false) {
+    async cargarDatos(resetear = false, opciones = {}) {
         console.log('📡 [JORNADAS] Cargando datos...');
         try {
             if (resetear) {
@@ -220,7 +292,9 @@ const JornadasManager = {
             }
 
             this.cargando = true;
-            this.mostrarEstadoCarga();
+            if (!opciones.silencioso) {
+                this.mostrarEstadoCarga();
+            }
 
             // Obtener filtros del formulario
             const estado = document.getElementById('filtroEstado')?.value || '';
@@ -334,7 +408,9 @@ const JornadasManager = {
             if (!el || el.dataset.reabrirTrasHide) return;
             el.dataset.reabrirTrasHide = '1';
             el.addEventListener('hidden.bs.modal', () => {
-                if (this.reabrirEditarTrasSeleccion) {
+                // Jornada nueva (sin id): reabrir el modal de edición con el estado local.
+                // Jornada existente: el PUT refresca el modal; no hacer GET prematuro aquí.
+                if (this.reabrirEditarTrasSeleccion && !this.jornadaEditando?.id) {
                     this.reabrirModalJornadaTrasSeleccion();
                 }
             });
@@ -506,6 +582,7 @@ const JornadasManager = {
             const c = cuestionarios[i];
             if (c && c.id) {
                 const esReutilizado = !!c.reutilizado;
+                const esGrabado = this.esCuestionarioGrabado(c);
                 cuestionariosHtml += `
                     <div class="cuestionario-slot p-2 border rounded ${esReutilizado ? 'bg-success bg-opacity-10' : ''}" style="${esReutilizado ? 'border-color:#28a745 !important;' : 'background-color:#ffffff; border-color:#e9ecef !important;'}">
                         <div class="d-flex justify-content-between align-items-center">
@@ -517,23 +594,11 @@ const JornadasManager = {
                                 <button class="btn btn-outline-secondary btn-sm" onclick="JornadasManager.mostrarHistorialCuestionario(${c.id})" title="Ver historial">
                                     <i class="fas fa-history"></i>
                                 </button>
-                                ${JornadasManager.puedeEditar(jornada) ? (esReutilizado ? `
-                                    <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.quitarReutilizacionCuestionario(${c.id}, ${jornada.id})" title="Quitar reutilización">
-                                        <i class="fas fa-undo"></i>
-                                    </button>
-                                ` : `
-                                    <button class="btn btn-outline-success btn-sm" onclick="JornadasManager.reutilizarCuestionario(${c.id}, ${jornada.id})" title="Reutilizar cuestionario">
-                                        <i class="fas fa-recycle"></i>
-                                    </button>
-                                `) : ''}
-                                ${JornadasManager.puedeEditar(jornada) ? `
-                                    <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarCuestionarioDeJornada(${jornada.id}, ${c.id})" title="Borrar del slot">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                ` : ``}
+                                ${this.htmlBotonReciclarCuestionario(c, jornada)}
+                                ${this.htmlBotonBorrarCuestionario(c, jornada)}
                             </div>
                         </div>
-                        <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : (c.tematica || 'Sin temática')}</small>
+                        <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : (c.tematica || 'Sin temática')}${esGrabado && !esReutilizado ? ' · Grabado' : ''}</small>
                     </div>
                 `;
             } else {
@@ -567,6 +632,8 @@ const JornadasManager = {
                 const esReutilizado = !!c.reutilizado;
                 // Obtener el nombre completo del tipo o usar el valor original
                 const tipoNombre = tipoComboNombres[c.tipo] || c.tipo || 'Sin tipo';
+                const detalleCombo = [esReutilizado ? 'Reutilizado' : tipoNombre, c.tematica, c.multiplicadorMaximo]
+                    .filter(Boolean).join(' · ');
                 
                 combosHtml += `
                     <div class="combo-slot p-2 border rounded ${esReutilizado ? 'bg-success bg-opacity-10' : ''}" style="${esReutilizado ? 'border-color:#28a745 !important;' : 'background-color:#ffffff; border-color:#e9ecef !important;'}">
@@ -588,14 +655,11 @@ const JornadasManager = {
                                         <i class="fas fa-recycle"></i>
                                     </button>
                                 `) : ''}
-                                ${JornadasManager.puedeEditar(jornada) ? `
-                                    <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarComboDeJornada(${jornada.id}, ${c.id})" title="Borrar del slot">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                ` : ``}
+                                ${this.htmlBotonBorrarCombo(c, jornada)}
                             </div>
                         </div>
-                        <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : `${tipoNombre}${c.tematica ? ' · ' + c.tematica : ''}`}</small>
+                        <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${detalleCombo}</small>
+                        ${c.preguntaUsadaId ? `<div class="pregunta-combo-usada small mt-1">Pregunta usada #${c.preguntaUsadaId}</div>` : ''}
                     </div>
                 `;
             } else {
@@ -845,6 +909,13 @@ const JornadasManager = {
             const response = await apiManager.get(`/api/jornadas/${jornadaId}`);
             const jornada = response?.datos || response;
             if (!jornada) throw new Error('No se pudo cargar la jornada');
+
+            const cuestionario = this.normalizarSlots(jornada.cuestionarios)
+                .find(c => c && this.normalizeId(c.id) === this.normalizeId(cuestionarioId));
+            if (this.cuestionarioAsignadoAConcursante(cuestionario)) {
+                Utils.showAlert('No se puede quitar el cuestionario porque está asignado a un concursante.', 'error');
+                return;
+            }
             
             // Capturar SOLO los campos editables (sin version, creacion_usuario_id, etc.)
             const prevCuestionarioIds = this.normalizarSlots(jornada.cuestionarioIds);
@@ -904,6 +975,13 @@ const JornadasManager = {
             const response = await apiManager.get(`/api/jornadas/${jornadaId}`);
             const jornada = response?.datos || response;
             if (!jornada) throw new Error('No se pudo cargar la jornada');
+
+            const combo = this.normalizarSlots(jornada.combos)
+                .find(c => c && this.normalizeId(c.id) === this.normalizeId(comboId));
+            if (this.comboAsignadoAConcursante(combo)) {
+                Utils.showAlert('No se puede quitar el combo porque está asignado a un concursante.', 'error');
+                return;
+            }
             
             // Capturar SOLO los campos editables (sin version, creacion_usuario_id, etc.)
             const prevComboIds = this.normalizarSlots(jornada.comboIds);
@@ -981,6 +1059,71 @@ const JornadasManager = {
             return false;
         }
         return jornada.estado !== 'completada' && jornada.estado !== 'archivada';
+    },
+
+    esCuestionarioGrabado(c) {
+        return String(c?.estado || '').toLowerCase() === 'grabado';
+    },
+
+    cuestionarioAsignadoAConcursante(c) {
+        if (!c) return false;
+        return this.esCuestionarioGrabado(c) || c.asignadoAConcursante === true;
+    },
+
+    htmlBotonReciclarCuestionario(c, jornada) {
+        if (!this.puedeEditar(jornada) || !c || c.id == null) {
+            return '';
+        }
+        if (c.reutilizado) {
+            return `<button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.quitarReutilizacionCuestionario(${c.id}, ${jornada.id})" title="Quitar reutilización">
+                                        <i class="fas fa-undo"></i>
+                                    </button>`;
+        }
+        if (this.esCuestionarioGrabado(c)) {
+            return `<button type="button" class="btn btn-outline-success btn-sm" disabled aria-disabled="true" title="No se puede reciclar: el cuestionario está grabado (asignado a un concursante)">
+                                        <i class="fas fa-recycle"></i>
+                                    </button>`;
+        }
+        return `<button class="btn btn-outline-success btn-sm" onclick="JornadasManager.reutilizarCuestionario(${c.id}, ${jornada.id})" title="Reutilizar cuestionario">
+                                        <i class="fas fa-recycle"></i>
+                                    </button>`;
+    },
+
+    htmlBotonBorrarCuestionario(c, jornada) {
+        if (!this.puedeEditar(jornada) || !c || c.id == null) {
+            return '';
+        }
+        if (this.cuestionarioAsignadoAConcursante(c)) {
+            return `<button type="button" class="btn btn-outline-danger btn-sm" disabled aria-disabled="true" title="No se puede borrar: el cuestionario está asignado a un concursante">
+                                        <i class="fas fa-trash"></i>
+                                    </button>`;
+        }
+        return `<button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarCuestionarioDeJornada(${jornada.id}, ${c.id})" title="Borrar del slot">
+                                        <i class="fas fa-trash"></i>
+                                    </button>`;
+    },
+
+    esComboGrabado(c) {
+        return String(c?.estado || '').toLowerCase() === 'grabado';
+    },
+
+    comboAsignadoAConcursante(c) {
+        if (!c) return false;
+        return this.esComboGrabado(c) || c.asignadoAConcursante === true;
+    },
+
+    htmlBotonBorrarCombo(c, jornada) {
+        if (!this.puedeEditar(jornada) || !c || c.id == null) {
+            return '';
+        }
+        if (this.comboAsignadoAConcursante(c)) {
+            return `<button type="button" class="btn btn-outline-danger btn-sm" disabled aria-disabled="true" title="No se puede borrar: el combo está asignado a un concursante">
+                                        <i class="fas fa-trash"></i>
+                                    </button>`;
+        }
+        return `<button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.eliminarComboDeJornada(${jornada.id}, ${c.id})" title="Borrar del slot">
+                                        <i class="fas fa-trash"></i>
+                                    </button>`;
     },
 
     puedeEliminar(jornada) {
@@ -1551,49 +1694,61 @@ const JornadasManager = {
             modalInst && modalInst.hide();
 
             const jid = this.jornadaEditando.id;
-            const prevLista = this.normalizarSlots(this.jornadaEditando.cuestionarioIds);
-            const nuevaLista = this.colocarEnHueco(prevLista, id, this.slotDestinoCuestionario);
-            if (!nuevaLista) {
-                Utils.showAlert('Máximo 6 cuestionarios por jornada', 'error');
-                return;
-            }
 
-            // Los errores del PUT se propagan: el UndoManager necesita saberlos
-            // para no dar por hechas acciones que fallaron
-            const doAction = async () => {
-                console.log('[UNDO][do][add-cuestionario] DO Añadir:', { jid, id, nuevaLista });
-                this.rememberScroll();
-                const jActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
-                await apiManager.put(`/api/jornadas/${jid}`, {
-                    nombre: jActual.nombre,
-                    fechaJornada: jActual.fechaJornada || null,
-                    lugar: jActual.lugar || '',
-                    notas: jActual.notas || '',
-                    cuestionarioIds: nuevaLista,
-                    comboIds: jActual.comboIds || []
-                });
-                await this.cargarDatos(true);
-                this.mostrarJornadas();
-                this.restoreScrollOrFocus();
-            };
-            const undoAction = async () => {
-                console.log('[UNDO][undo][add-cuestionario] UNDO Quitar recién añadido:', { jid, id, prevLista });
-                this.rememberScroll();
-                const jActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
-                await apiManager.put(`/api/jornadas/${jid}`, {
-                    nombre: jActual.nombre,
-                    fechaJornada: jActual.fechaJornada || null,
-                    lugar: jActual.lugar || '',
-                    notas: jActual.notas || '',
-                    cuestionarioIds: prevLista,
-                    comboIds: jActual.comboIds || []
-                });
-                await this.cargarDatos(true);
-                this.mostrarJornadas();
-                this.restoreScrollOrFocus();
-            };
+            this.encolarOperacionSlots(async () => {
+                let prevLista;
+                let nuevaLista;
+                try {
+                    const jActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+                    prevLista = this.normalizarSlots(jActual.cuestionarioIds);
+                    nuevaLista = this.colocarEnHueco(prevLista, id, this.slotDestinoCuestionario);
+                    if (!nuevaLista) {
+                        Utils.showAlert('Máximo 6 cuestionarios por jornada', 'error');
+                        await this.refrescarModalEdicionJornada(jid);
+                        return;
+                    }
+                    this.cuestionariosSeleccionados = nuevaLista;
+                } catch (e) {
+                    console.error('[AÑADIR] Error al leer jornada:', e);
+                    Utils.showAlert(Utils.mensajeErrorApi(e, 'añadir el cuestionario a la jornada'), 'error');
+                    return;
+                }
 
-            (async () => {
+                const doAction = async () => {
+                    console.log('[UNDO][do][add-cuestionario] DO Añadir:', { jid, id, nuevaLista });
+                    this.rememberScroll();
+                    const jAct = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+                    await apiManager.put(`/api/jornadas/${jid}`, {
+                        nombre: jAct.nombre,
+                        fechaJornada: jAct.fechaJornada || null,
+                        lugar: jAct.lugar || '',
+                        notas: jAct.notas || '',
+                        cuestionarioIds: nuevaLista,
+                        comboIds: jAct.comboIds || []
+                    });
+                    await this.cargarDatos(true);
+                    this.mostrarJornadas();
+                    this.restoreScrollOrFocus();
+                    await this.refrescarModalEdicionJornada(jid);
+                };
+                const undoAction = async () => {
+                    console.log('[UNDO][undo][add-cuestionario] UNDO Quitar recién añadido:', { jid, id, prevLista });
+                    this.rememberScroll();
+                    const jAct = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+                    await apiManager.put(`/api/jornadas/${jid}`, {
+                        nombre: jAct.nombre,
+                        fechaJornada: jAct.fechaJornada || null,
+                        lugar: jAct.lugar || '',
+                        notas: jAct.notas || '',
+                        cuestionarioIds: prevLista,
+                        comboIds: jAct.comboIds || []
+                    });
+                    await this.cargarDatos(true);
+                    this.mostrarJornadas();
+                    this.restoreScrollOrFocus();
+                    await this.refrescarModalEdicionJornada(jid);
+                };
+
                 try {
                     await doAction();
                 } catch (e) {
@@ -1601,17 +1756,18 @@ const JornadasManager = {
                     Utils.showAlert(Utils.mensajeErrorApi(e, 'añadir el cuestionario a la jornada'), 'error');
                     await this.cargarDatos(true);
                     this.mostrarJornadas();
+                    await this.refrescarModalEdicionJornada(jid);
                     return;
                 }
                 if (window.UndoManager) {
-                    window.UndoManager.record({ 
-                        do: doAction, 
-                        undo: undoAction, 
-                        label: `Añadir cuestionario ${id} a jornada ${jid}` 
+                    window.UndoManager.record({
+                        do: doAction,
+                        undo: undoAction,
+                        label: `Añadir cuestionario ${id} a jornada ${jid}`
                     });
                 }
                 Utils.showAlert(`Cuestionario ${id} añadido`, 'success');
-            })();
+            });
             return;
         }
 
@@ -1650,49 +1806,61 @@ const JornadasManager = {
             modalInst && modalInst.hide();
 
             const jid = this.jornadaEditando.id;
-            const prevLista = this.normalizarSlots(this.jornadaEditando.comboIds);
-            const nuevaLista = this.colocarEnHueco(prevLista, id, this.slotDestinoCombo);
-            if (!nuevaLista) {
-                Utils.showAlert('Máximo 6 combos por jornada', 'error');
-                return;
-            }
 
-            // Los errores del PUT se propagan: el UndoManager necesita saberlos
-            // para no dar por hechas acciones que fallaron
-            const doAction = async () => {
-                console.log('[UNDO][do][add-combo] DO Añadir:', { jid, id, nuevaLista });
-                this.rememberScroll();
-                const jActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
-                await apiManager.put(`/api/jornadas/${jid}`, {
-                    nombre: jActual.nombre,
-                    fechaJornada: jActual.fechaJornada || null,
-                    lugar: jActual.lugar || '',
-                    notas: jActual.notas || '',
-                    cuestionarioIds: jActual.cuestionarioIds || [],
-                    comboIds: nuevaLista
-                });
-                await this.cargarDatos(true);
-                this.mostrarJornadas();
-                this.restoreScrollOrFocus();
-            };
-            const undoAction = async () => {
-                console.log('[UNDO][undo][add-combo] UNDO Quitar recién añadido:', { jid, id, prevLista });
-                this.rememberScroll();
-                const jActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
-                await apiManager.put(`/api/jornadas/${jid}`, {
-                    nombre: jActual.nombre,
-                    fechaJornada: jActual.fechaJornada || null,
-                    lugar: jActual.lugar || '',
-                    notas: jActual.notas || '',
-                    cuestionarioIds: jActual.cuestionarioIds || [],
-                    comboIds: prevLista
-                });
-                await this.cargarDatos(true);
-                this.mostrarJornadas();
-                this.restoreScrollOrFocus();
-            };
+            this.encolarOperacionSlots(async () => {
+                let prevLista;
+                let nuevaLista;
+                try {
+                    const jActual = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+                    prevLista = this.normalizarSlots(jActual.comboIds);
+                    nuevaLista = this.colocarEnHueco(prevLista, id, this.slotDestinoCombo);
+                    if (!nuevaLista) {
+                        Utils.showAlert('Máximo 6 combos por jornada', 'error');
+                        await this.refrescarModalEdicionJornada(jid);
+                        return;
+                    }
+                    this.combosSeleccionados = nuevaLista;
+                } catch (e) {
+                    console.error('[AÑADIR] Error al leer jornada:', e);
+                    Utils.showAlert(Utils.mensajeErrorApi(e, 'añadir el combo a la jornada'), 'error');
+                    return;
+                }
 
-            (async () => {
+                const doAction = async () => {
+                    console.log('[UNDO][do][add-combo] DO Añadir:', { jid, id, nuevaLista });
+                    this.rememberScroll();
+                    const jAct = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+                    await apiManager.put(`/api/jornadas/${jid}`, {
+                        nombre: jAct.nombre,
+                        fechaJornada: jAct.fechaJornada || null,
+                        lugar: jAct.lugar || '',
+                        notas: jAct.notas || '',
+                        cuestionarioIds: jAct.cuestionarioIds || [],
+                        comboIds: nuevaLista
+                    });
+                    await this.cargarDatos(true);
+                    this.mostrarJornadas();
+                    this.restoreScrollOrFocus();
+                    await this.refrescarModalEdicionJornada(jid);
+                };
+                const undoAction = async () => {
+                    console.log('[UNDO][undo][add-combo] UNDO Quitar recién añadido:', { jid, id, prevLista });
+                    this.rememberScroll();
+                    const jAct = (await apiManager.get(`/api/jornadas/${jid}`))?.datos || {};
+                    await apiManager.put(`/api/jornadas/${jid}`, {
+                        nombre: jAct.nombre,
+                        fechaJornada: jAct.fechaJornada || null,
+                        lugar: jAct.lugar || '',
+                        notas: jAct.notas || '',
+                        cuestionarioIds: jAct.cuestionarioIds || [],
+                        comboIds: prevLista
+                    });
+                    await this.cargarDatos(true);
+                    this.mostrarJornadas();
+                    this.restoreScrollOrFocus();
+                    await this.refrescarModalEdicionJornada(jid);
+                };
+
                 try {
                     await doAction();
                 } catch (e) {
@@ -1700,17 +1868,18 @@ const JornadasManager = {
                     Utils.showAlert(Utils.mensajeErrorApi(e, 'añadir el combo a la jornada'), 'error');
                     await this.cargarDatos(true);
                     this.mostrarJornadas();
+                    await this.refrescarModalEdicionJornada(jid);
                     return;
                 }
                 if (window.UndoManager) {
-                    window.UndoManager.record({ 
-                        do: doAction, 
-                        undo: undoAction, 
-                        label: `Añadir combo ${id} a jornada ${jid}` 
+                    window.UndoManager.record({
+                        do: doAction,
+                        undo: undoAction,
+                        label: `Añadir combo ${id} a jornada ${jid}`
                     });
                 }
                 Utils.showAlert(`Combo ${id} añadido`, 'success');
-            })();
+            });
             return;
         }
 
@@ -1763,31 +1932,29 @@ const JornadasManager = {
 
     confirmarSeleccionCuestionarios() {
         const count = this.contarOcupados(this.cuestionariosSeleccionados);
-        this.actualizarSlotsVisual();
         bootstrap.Modal.getInstance(document.getElementById('modalSelectorCuestionarios'))?.hide();
 
         if (this.jornadaEditando?.id) {
-            this.guardarCambiosCuestionarios();
-        } else {
-            this.reabrirModalJornadaTrasSeleccion();
-            if (count > 0) {
-                Utils.showAlert(`${count} cuestionario(s) seleccionado(s)`, 'success');
-            }
+            return this.guardarCambiosCuestionarios();
+        }
+        this.reabrirModalJornadaTrasSeleccion();
+        void this.actualizarSlotsVisualAsync();
+        if (count > 0) {
+            Utils.showAlert(`${count} cuestionario(s) seleccionado(s)`, 'success');
         }
     },
 
     confirmarSeleccionCombos() {
         const count = this.contarOcupados(this.combosSeleccionados);
-        this.actualizarSlotsVisual();
         bootstrap.Modal.getInstance(document.getElementById('modalSelectorCombos'))?.hide();
 
         if (this.jornadaEditando?.id) {
-            this.guardarCambiosCombos();
-        } else {
-            this.reabrirModalJornadaTrasSeleccion();
-            if (count > 0) {
-                Utils.showAlert(`${count} combo(s) seleccionado(s)`, 'success');
-            }
+            return this.guardarCambiosCombos();
+        }
+        this.reabrirModalJornadaTrasSeleccion();
+        void this.actualizarSlotsVisualAsync();
+        if (count > 0) {
+            Utils.showAlert(`${count} combo(s) seleccionado(s)`, 'success');
         }
     },
 
@@ -1801,10 +1968,15 @@ const JornadasManager = {
         this.reabrirModalJornadaTrasSeleccion();
     },
 
+    async actualizarSlotsVisualAsync() {
+        await Promise.all([
+            this.actualizarSlotsCuestionarios(),
+            this.actualizarSlotsCombos()
+        ]);
+    },
+
     actualizarSlotsVisual() {
-        // Render avanzado con preguntas y respuestas
-        this.actualizarSlotsCuestionarios();
-        this.actualizarSlotsCombos();
+        return this.actualizarSlotsVisualAsync();
     },
 
     async actualizarSlotsCuestionarios() {
@@ -1828,7 +2000,7 @@ const JornadasManager = {
                         let tabla = '';
                         ordenadas.forEach(pq => {
                             const p = pq.pregunta || {};
-                            const nivel = (p.nivel ? String(p.nivel).replace(/^_/, '') : '') || '';
+                            const nivel = Utils.formatearNivel(p.nivel);
                             tabla += `
                                 <tr>
                                     <td style="width:60px"><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
@@ -1846,9 +2018,7 @@ const JornadasManager = {
                                         <small>${detalle.tematica || 'Sin temática'}</small>
                                     </div>
                                     <div>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="JornadasManager.quitarCuestionario(${cuestionarioId})" title="Quitar">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                                        ${this.htmlBotonQuitarCuestionarioModal(cuestionarioId, detalle)}
                                     </div>
                                 </div>
                                 <div class="table-responsive mt-2">
@@ -1934,9 +2104,7 @@ const JornadasManager = {
                                         <small>${detalle.tematica || 'Sin temática'}</small>
                                     </div>
                                     <div>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="JornadasManager.quitarCombo(${comboId})" title="Quitar">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                                        ${this.htmlBotonQuitarComboModal(comboId, detalle)}
                                     </div>
                                 </div>
                                 <div class="table-responsive mt-2">
@@ -1958,7 +2126,7 @@ const JornadasManager = {
                             <div>\n\
                                 <strong>Combo #${comboId}</strong>\n\
                                 <div class=\"text-danger small\">Error al cargar detalle</div>\n\
-                                <button class=\"btn btn-sm btn-outline-danger mt-1\" onclick=\"JornadasManager.quitarCombo(${comboId})\"><i class=\"fas fa-times\"></i></button>\n\
+                                ${this.htmlBotonQuitarComboModal(comboId, { id: comboId })}
                             </div>\n\
                         </div>
                     `;
@@ -1978,7 +2146,35 @@ const JornadasManager = {
         container.innerHTML = html;
     },
 
+    htmlBotonQuitarComboModal(comboId, detalle) {
+        const deJornada = (this.jornadaEditando?.combos || []).find(c => c && this.normalizeId(c.id) === this.normalizeId(comboId));
+        if (this.comboAsignadoAConcursante(detalle) || this.comboAsignadoAConcursante(deJornada)) {
+            return `<button type="button" class="btn btn-sm btn-outline-danger" disabled aria-disabled="true" title="No se puede quitar: el combo está asignado a un concursante">
+                <i class="fas fa-times"></i>
+            </button>`;
+        }
+        return `<button type="button" class="btn btn-sm btn-outline-danger" onclick="JornadasManager.quitarCombo(${comboId})" title="Quitar">
+            <i class="fas fa-times"></i>
+        </button>`;
+    },
+
+    htmlBotonQuitarCuestionarioModal(cuestionarioId, detalle) {
+        if (this.cuestionarioAsignadoAConcursante(detalle)) {
+            return `<button type="button" class="btn btn-sm btn-outline-danger" disabled aria-disabled="true" title="No se puede quitar: el cuestionario está asignado a un concursante">
+                <i class="fas fa-times"></i>
+            </button>`;
+        }
+        return `<button class="btn btn-sm btn-outline-danger" onclick="JornadasManager.quitarCuestionario(${cuestionarioId})" title="Quitar">
+            <i class="fas fa-times"></i>
+        </button>`;
+    },
+
     quitarCuestionario(id) {
+        const detalle = (this.jornadaEditando?.cuestionarios || []).find(c => c && this.normalizeId(c.id) === this.normalizeId(id));
+        if (this.cuestionarioAsignadoAConcursante(detalle)) {
+            Utils.showAlert('No se puede quitar el cuestionario porque está asignado a un concursante.', 'error');
+            return;
+        }
         const index = this.idEnLista(this.cuestionariosSeleccionados, id);
         if (index > -1) {
             this.cuestionariosSeleccionados = this.quitarDeSlots(this.cuestionariosSeleccionados, id);
@@ -2054,6 +2250,7 @@ const JornadasManager = {
                         await this.cargarDatos(true);
                         this.mostrarJornadas();
                         this.restoreScrollOrFocus();
+                        await this.refrescarModalEdicionJornada(snapshot.id);
                     };
                     const deshacer = async () => {
                         console.log('[UNDO][undo][cuestionarios] Ejecutando UNDO:', label, { jid: snapshot.id, prevLista, snapshot });
@@ -2070,6 +2267,7 @@ const JornadasManager = {
                         await this.cargarDatos(true);
                         this.mostrarJornadas();
                         this.restoreScrollOrFocus();
+                        await this.refrescarModalEdicionJornada(snapshot.id);
                     };
                     console.log('[UNDO][record][cuestionarios] Registrando acción:', label, { prevLista, nuevaLista, snapshot, hasUndoManager: !!window.UndoManager });
                     window.UndoManager.record({ do: hacer, undo: deshacer, label });
@@ -2080,19 +2278,24 @@ const JornadasManager = {
             await this.cargarDatos(true);
             this.mostrarJornadas();
             this.restoreScrollOrFocus();
-            if (this.reabrirEditarTrasSeleccion) {
-                this.editarJornada(jid);
-                this.reabrirEditarTrasSeleccion = false;
-            }
+            await this.refrescarModalEdicionJornada(jid);
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al guardar cambios de cuestionarios:', error);
             const mensajeError = this.extraerMensajeError(error.message);
             Utils.showAlert(mensajeError, 'error');
+            if (this.jornadaEditando?.id) {
+                await this.refrescarModalEdicionJornada(this.jornadaEditando.id);
+            }
         }
     },
 
     quitarCombo(id) {
+        const detalle = (this.jornadaEditando?.combos || []).find(c => c && this.normalizeId(c.id) === this.normalizeId(id));
+        if (this.comboAsignadoAConcursante(detalle)) {
+            Utils.showAlert('No se puede quitar el combo porque está asignado a un concursante.', 'error');
+            return;
+        }
         const index = this.idEnLista(this.combosSeleccionados, id);
         if (index > -1) {
             this.combosSeleccionados = this.quitarDeSlots(this.combosSeleccionados, id);
@@ -2165,6 +2368,7 @@ const JornadasManager = {
                         await this.cargarDatos(true);
                         this.mostrarJornadas();
                         this.restoreScrollOrFocus();
+                        await this.refrescarModalEdicionJornada(snapshot.id);
                     };
                     const deshacer = async () => {
                         console.log('[UNDO][undo][combos] Ejecutando UNDO:', label, { jid: snapshot.id, prevLista, snapshot });
@@ -2181,6 +2385,7 @@ const JornadasManager = {
                         await this.cargarDatos(true);
                         this.mostrarJornadas();
                         this.restoreScrollOrFocus();
+                        await this.refrescarModalEdicionJornada(snapshot.id);
                     };
                     console.log('[UNDO][record][combos] Registrando acción:', label, { prevLista, nuevaLista, snapshot, hasUndoManager: !!window.UndoManager });
                     window.UndoManager.record({ do: hacer, undo: deshacer, label });
@@ -2191,15 +2396,15 @@ const JornadasManager = {
             await this.cargarDatos(true);
             this.mostrarJornadas();
             this.restoreScrollOrFocus();
-            if (this.reabrirEditarTrasSeleccion) {
-                this.editarJornada(jid);
-                this.reabrirEditarTrasSeleccion = false;
-            }
+            await this.refrescarModalEdicionJornada(jid);
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al guardar cambios de combos:', error);
             const mensajeError = this.extraerMensajeError(error.message);
             Utils.showAlert(mensajeError, 'error');
+            if (this.jornadaEditando?.id) {
+                await this.refrescarModalEdicionJornada(this.jornadaEditando.id);
+            }
         }
     },
 
@@ -2238,6 +2443,8 @@ const JornadasManager = {
             const response = await apiManager.get(`/api/jornadas/${id}`);
             const jornada = response.datos;
             const estadoVista = jornada.estado || 'preparacion';
+            const cuestionarios = (jornada.cuestionarios || []).filter(c => c && c.id);
+            const combos = (jornada.combos || []).filter(c => c && c.id);
             
             let detalleHtml = `
                 <div class="modal fade" id="modalDetalle" tabindex="-1">
@@ -2267,9 +2474,9 @@ const JornadasManager = {
                                 </div>
                                 ${jornada.notas ? `<p><strong>Notas:</strong> ${jornada.notas}</p>` : ''}
                                 
-                                <h6 class="mt-4">Cuestionarios (${jornada.cuestionarios ? jornada.cuestionarios.length : 0})</h6>
+                                <h6 class="mt-4">Cuestionarios (${cuestionarios.length})</h6>
                                 <div class="list-group">
-                                    ${jornada.cuestionarios ? jornada.cuestionarios.map(c => `
+                                    ${cuestionarios.length ? cuestionarios.map(c => `
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <div>
                                                 <strong>Cuestionario #${c.id}</strong> - ${c.tematica || 'Sin temática'} - ${c.estado}
@@ -2281,9 +2488,9 @@ const JornadasManager = {
                                     `).join('') : '<p class="text-muted">No hay cuestionarios asignados</p>'}
                                 </div>
                                 
-                                <h6 class="mt-4">Combos (${jornada.combos ? jornada.combos.length : 0})</h6>
+                                <h6 class="mt-4">Combos (${combos.length})</h6>
                                 <div class="list-group">
-                                    ${jornada.combos ? jornada.combos.map(c => `
+                                    ${combos.length ? combos.map(c => `
                                         <div class="list-group-item d-flex justify-content-between align-items-center">
                                             <div>
                                                 <strong>Combo #${c.id}</strong> - ${c.tipo || ''} - ${Utils.formatearEstadoCombo(c.estado)}
@@ -2384,7 +2591,7 @@ const JornadasManager = {
                 const pregunta = preguntaCuestionario.pregunta;
                 if (!pregunta) return;
                 // Mostrar solo el nivel real de la pregunta
-                let nivel = pregunta.nivel ? String(pregunta.nivel).replace(/^_/, '') : '';
+                let nivel = Utils.formatearNivel(pregunta.nivel);
                 html += `
                     <tr>
                         <td><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
@@ -2425,8 +2632,9 @@ const JornadasManager = {
                         else factorStr = `x${factorNum}`;
                     }
                     
+                    const usada = combo.preguntaUsadaId != null && Number(combo.preguntaUsadaId) === Number(pregunta.id);
                     html += `
-                        <tr>
+                        <tr class="${usada ? 'pregunta-combo-usada-fila' : ''}">
                             <td style="width:80px;">
                                 <input class="form-control form-control-sm" 
                                        value="${factorStr}"
@@ -2434,7 +2642,7 @@ const JornadasManager = {
                                        title="Editar multiplicador (p.ej. X, X2, X3)">
                             </td>
                             <td><span class="badge bg-light text-secondary fw-bold">${this.nivelPreguntaCombo(pregunta.nivel)}</span></td>
-                            <td class="col-pregunta-jornada">${pregunta.pregunta || 'Sin texto'}</td>
+                            <td class="col-pregunta-jornada">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${pregunta.pregunta || 'Sin texto'}</span></td>
                             <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
                             <td>${this.datosExtraPregunta(pregunta)}</td>
                         </tr>
@@ -2683,10 +2891,8 @@ const JornadasManager = {
             
             Utils.showAlert('Elementos marcados como no usados correctamente', 'success');
             
-            // Cerrar modal y recargar datos
             bootstrap.Modal.getInstance(document.getElementById('modalMarcarNoUsados')).hide();
-            await this.cargarDatos(true);
-            this.mostrarJornadas();
+            await this.refrescarManteniendoJornada(parseInt(jornadaId, 10));
             
         } catch (error) {
             console.error('Error al marcar elementos como no usados:', error);
@@ -2861,8 +3067,7 @@ const JornadasManager = {
             
             // Cerrar modal y recargar datos
             bootstrap.Modal.getInstance(document.getElementById('modalReaprovecharCombo')).hide();
-            await this.cargarDatos(true);
-            this.mostrarJornadas();
+            await this.refrescarManteniendoJornada(this.lastFocusJornadaId);
             
         } catch (error) {
             console.error('Error al reaprovechar combo:', error);
@@ -2893,7 +3098,7 @@ const JornadasManager = {
             const historial = response.datos || [];
             
             document.getElementById('modalHistorialTitulo').innerHTML = '<i class="fas fa-history"></i> Historial del Combo';
-            this.mostrarHistorial(historial, 'combo');
+            this.mostrarHistorial(historial, 'combo', comboId);
             
         } catch (error) {
             console.error('Error al cargar historial del combo:', error);
@@ -2901,8 +3106,33 @@ const JornadasManager = {
         }
     },
 
+    extraerComboPadreId(notas) {
+        const match = String(notas || '').match(/COMBO_HIJO;PADRE:(\d+)/);
+        return match ? match[1] : null;
+    },
+
+    htmlEnlacesReciclajeCombo(item, comboActualId) {
+        if (!comboActualId) return '';
+        const padreId = item.comboPadreId || this.extraerComboPadreId(item.notas);
+        let html = '';
+        if (padreId && String(padreId) !== String(comboActualId)) {
+            html += `<a href="combos.html?id=${padreId}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary me-1 mb-1">
+                <i class="fas fa-external-link-alt me-1"></i>Combo padre #${padreId}
+            </a>`;
+        }
+        const hijos = Array.isArray(item.comboHijosIds) ? item.comboHijosIds : [];
+        hijos.forEach(hijoId => {
+            if (hijoId && String(hijoId) !== String(comboActualId)) {
+                html += `<a href="combos.html?id=${hijoId}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary me-1 mb-1">
+                    <i class="fas fa-external-link-alt me-1"></i>Combo derivado #${hijoId}
+                </a>`;
+            }
+        });
+        return html ? `<div class="mt-2">${html}</div>` : '';
+    },
+
     // Mostrar historial en modal
-    mostrarHistorial(historial, tipo) {
+    mostrarHistorial(historial, tipo, entidadId) {
         const container = document.getElementById('historialContainer');
         
         if (historial.length === 0) {
@@ -2913,17 +3143,21 @@ const JornadasManager = {
                 const estadoClass = this.getEstadoClass(item.estadoAsignacion);
                 const fechaAsignacion = new Date(item.fechaAsignacion).toLocaleDateString();
                 const fechaUso = item.fechaUso ? new Date(item.fechaUso).toLocaleDateString() : 'No usado';
+                const notasTecnicas = String(item.notas || '').includes('RECICLAJE_PARCIAL');
+                const notas = notasTecnicas ? '' : (item.notas || '');
                 
                 html += `
                     <div class="historial-item ${estadoClass}">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h6>Jornada: ${item.jornadaNombre}</h6>
-                                <p><strong>Estado:</strong> <span class="badge badge-estado bg-${this.getBadgeColor(item.estadoAsignacion)}">${item.estadoAsignacion}</span></p>
+                                <p><strong>Estado:</strong> <span class="badge badge-estado bg-${this.getBadgeColor(item.estadoAsignacion)}">${item.estadoAsignacion}</span>
+                                ${notasTecnicas ? '<span class="badge bg-secondary ms-1">Reciclaje parcial</span>' : ''}</p>
                                 <p><strong>Asignado:</strong> ${fechaAsignacion}</p>
                                 ${item.fechaUso ? `<p><strong>Usado:</strong> ${fechaUso}</p>` : ''}
                                 ${item.preguntaUsadaId ? `<p><strong>Pregunta usada:</strong> #${item.preguntaUsadaId}</p>` : ''}
-                                ${item.notas ? `<p><strong>Notas:</strong> ${item.notas}</p>` : ''}
+                                ${notas ? `<p><strong>Notas:</strong> ${notas}</p>` : ''}
+                                ${tipo === 'combo' ? this.htmlEnlacesReciclajeCombo(item, entidadId) : ''}
                             </div>
                         </div>
                     </div>
@@ -2961,6 +3195,14 @@ const JornadasManager = {
     async reutilizarCuestionario(cuestionarioId, jornadaId) {
         try {
             console.log(`🔄 [JORNADAS] Reutilizando cuestionario ${cuestionarioId} de jornada ${jornadaId}`);
+            this.lastFocusJornadaId = jornadaId;
+
+            const jornada = this.jornadas.find(j => this.normalizeId(j.id) === this.normalizeId(jornadaId));
+            const cuest = (jornada?.cuestionarios || []).find(c => c && this.normalizeId(c.id) === this.normalizeId(cuestionarioId));
+            if (this.esCuestionarioGrabado(cuest)) {
+                Utils.showAlert('No se puede reciclar el cuestionario porque está grabado (asignado a un concursante).', 'error');
+                return;
+            }
             
             // Confirmar la acción
             const confirmacion = confirm(`¿Estás seguro de que quieres reutilizar el cuestionario ${cuestionarioId}?\n\nEsto hará que:\n- El cuestionario vuelva a estar disponible\n- Se actualice el historial\n- Se pueda usar en otras jornadas`);
@@ -2974,14 +3216,12 @@ const JornadasManager = {
             const undoAction = async () => await apiManager.post(`/api/jornadas/${jornadaId}/quitar-reutilizacion-cuestionario/${cuestionarioId}`);
             const doWrapped = async () => {
                 const r = await doAction();
-                await this.cargarDatos();
-                this.mostrarJornadas();
+                await this.refrescarManteniendoJornada(jornadaId);
                 return r;
             };
             const undoWrapped = async () => {
                 await undoAction();
-                await this.cargarDatos();
-                this.mostrarJornadas();
+                await this.refrescarManteniendoJornada(jornadaId);
             };
             const response = await doWrapped();
             
@@ -3007,14 +3247,12 @@ const JornadasManager = {
             const undoAction = async () => await apiManager.post(`/api/jornadas/${jornadaId}/reutilizar-cuestionario/${cuestionarioId}`);
             const doWrapped = async () => {
                 const r = await doAction();
-                await this.cargarDatos(true);
-                this.mostrarJornadas();
+                await this.refrescarManteniendoJornada(jornadaId);
                 return r;
             };
             const undoWrapped = async () => {
                 await undoAction();
-                await this.cargarDatos(true);
-                this.mostrarJornadas();
+                await this.refrescarManteniendoJornada(jornadaId);
             };
             const resp = await doWrapped();
             if (resp.exito) {
@@ -3043,6 +3281,7 @@ const JornadasManager = {
             
             this.comboReciclajeActual = comboId;
             this.jornadaReciclajeActual = jornadaId;
+            this.lastFocusJornadaId = jornadaId;
             this.preguntaSeleccionada = null;
 
             const response = await apiManager.get(`/api/combos/${comboId}/preguntas`);
@@ -3090,14 +3329,12 @@ const JornadasManager = {
             const undoAction = async () => await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-entero/${comboId}`);
             const doWrapped = async () => {
                 const r = await doAction();
-                await this.cargarDatos(true);
-                this.mostrarJornadas();
+                await this.refrescarManteniendoJornada(jornadaId);
                 return r;
             };
             const undoWrapped = async () => {
                 await undoAction();
-                await this.cargarDatos(true);
-                this.mostrarJornadas();
+                await this.refrescarManteniendoJornada(jornadaId);
             };
             const resp = await doWrapped();
             if (resp.exito) {
@@ -3135,8 +3372,7 @@ const JornadasManager = {
             );
             const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalReciclajeCombo'));
             if (modalInst) modalInst.hide();
-            await this.cargarDatos();
-            this.mostrarJornadas();
+            await this.refrescarManteniendoJornada(jornadaId);
             
             if (response.exito) {
                 Utils.showAlert(`Combo ${comboId} reaprovechado correctamente.`, 'success');
@@ -3202,19 +3438,21 @@ const JornadasManager = {
             `;
         }
         
-        // Generar HTML para las preguntas
+        // Generar HTML para las preguntas (menor multiplicador a la izquierda)
         const container = document.getElementById('preguntasCombo');
         let html = '';
-        
-        preguntas.forEach((pregunta, index) => {
+        const preguntasOrdenadas = Utils.ordenarPreguntasPorMultiplicador(preguntas);
+
+        preguntasOrdenadas.forEach((pregunta, index) => {
+            const factorTxt = Utils.formatearMultiplicador(Utils.extraerFactorPreguntaCombo(pregunta));
             html += `
                 <div class="col-md-4 mb-3">
                     <div class="card pregunta-card" onclick="JornadasManager.seleccionarPregunta(${pregunta.id}, this)">
                         <div class="card-body text-center">
-                            <h6 class="card-title">Pregunta ${index + 1}</h6>
+                            <h6 class="card-title">${factorTxt ? factorTxt : `Pregunta ${index + 1}`}</h6>
                             <p class="card-text">${pregunta.pregunta}</p>
                             <div class="mt-2">
-                                <span class="badge bg-primary">${pregunta.nivel}</span>
+                                <span class="badge bg-primary">${Utils.formatearNivel(pregunta.nivel)}</span>
                                 <span class="badge bg-secondary">${pregunta.tematica}</span>
                             </div>
                         </div>
@@ -3264,8 +3502,8 @@ const JornadasManager = {
                 Utils.showAlert('Combo reciclado parcialmente. Se creó un nuevo combo con las 2 preguntas restantes.', 'success');
                 
                 bootstrap.Modal.getInstance(document.getElementById('modalReciclajeCombo')).hide();
-                await this.cargarDatos();
-                this.mostrarJornadas();
+                await this.refrescarManteniendoJornada(jornadaId);
+                await this.verPreguntasCombo(comboId);
             } else {
                 Utils.showAlert(`Error al reciclar combo parcialmente: ${response.mensaje}`, 'error');
             }

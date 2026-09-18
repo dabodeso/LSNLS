@@ -259,7 +259,7 @@ public class AuthorizationService {
 
     /**
      * Verifica si el usuario actual puede editar un concursante según su estado.
-     * Grabado: Guión, Verificación y Dirección. Resto: solo Dirección.
+     * Grabado: Guión y Dirección. Resto: solo Dirección. Verificación es solo consulta.
      */
     public boolean canEditConcursante(String estado) {
         return getCurrentUser()
@@ -275,8 +275,7 @@ public class AuthorizationService {
                 }
 
                 if ("GRABADO".equals(estadoNorm)) {
-                    return rol == Usuario.RolUsuario.ROLE_GUION ||
-                           rol == Usuario.RolUsuario.ROLE_VERIFICACION;
+                    return rol == Usuario.RolUsuario.ROLE_GUION;
                 }
 
                 return false;
@@ -289,9 +288,7 @@ public class AuthorizationService {
      */
     public boolean canCreatePrograma() {
         return getCurrentUser()
-            .map(usuario -> 
-                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
-                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
+            .map(usuario -> usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
             .orElse(false);
     }
 
@@ -303,9 +300,6 @@ public class AuthorizationService {
             .map(usuario -> {
                 switch (estado) {
                     case borrador:
-                        return usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
-                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
-                        
                     case programado:
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
@@ -335,7 +329,6 @@ public class AuthorizationService {
             .map(usuario -> 
                 usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
-                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
             .orElse(false);
     }
@@ -348,7 +341,17 @@ public class AuthorizationService {
             .map(usuario -> 
                 usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
-                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
+                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
+            .orElse(false);
+    }
+
+    /**
+     * Administración (usuarios, backups). Verificación no administra el resto de la app.
+     */
+    public boolean canAdministrar() {
+        return getCurrentUser()
+            .map(usuario ->
+                usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
             .orElse(false);
     }

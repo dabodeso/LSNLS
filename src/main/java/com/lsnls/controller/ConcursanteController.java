@@ -111,10 +111,12 @@ public class ConcursanteController {
     public ResponseEntity<?> findConcursantesDisponibles(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String busqueda) {
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) Integer programaId) {
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-            Page<ConcursanteDTO> concursantes = concursanteService.findConcursantesSinProgramaPaginated(pageable, busqueda);
+            Page<ConcursanteDTO> concursantes = concursanteService.findConcursantesSinProgramaPaginated(pageable, busqueda, estado, programaId);
             return ResponseEntity.ok(concursantes);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error interno al obtener concursantes disponibles: " + MensajesUsuario.sanitizar(e.getMessage()));
@@ -154,7 +156,7 @@ public class ConcursanteController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ConcursanteDTO concursanteDTO) {
         try {
             ConcursanteDTO concursanteActualizado = concursanteService.update(id, concursanteDTO);
@@ -169,7 +171,7 @@ public class ConcursanteController {
     }
 
     @PatchMapping("/{id}/campo")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> updateCampo(@PathVariable Long id, @RequestBody Map<String, Object> campo) {
         try {
             return ResponseEntity.ok(concursanteService.updateCampo(id, campo));
@@ -220,7 +222,7 @@ public class ConcursanteController {
     }
 
     @PostMapping("/{concursanteId}/asignar-jornada/{jornadaId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> asignarAJornada(@PathVariable Long concursanteId, @PathVariable Long jornadaId) {
         try {
             ConcursanteDTO concursante = concursanteService.asignarAJornada(concursanteId, jornadaId);
@@ -237,7 +239,7 @@ public class ConcursanteController {
     }
 
     @DeleteMapping("/{concursanteId}/desasignar-jornada")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> desasignarDeJornada(@PathVariable Long concursanteId) {
         try {
             ConcursanteDTO concursante = concursanteService.desasignarDeJornada(concursanteId);
@@ -254,7 +256,7 @@ public class ConcursanteController {
     }
 
     @PostMapping("/{id}/foto")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> subirFoto(@PathVariable Long id, @RequestParam("foto") MultipartFile foto) {
         try {
             String urlFoto = concursanteService.subirFoto(id, foto);

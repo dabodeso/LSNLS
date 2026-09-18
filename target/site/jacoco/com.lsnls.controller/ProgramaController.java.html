@@ -64,7 +64,7 @@ import org.springframework.data.domain.Sort;
     }
 
     @PostMapping
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; create(@RequestBody ProgramaDTO programaDTO) {
         try {
             // Validaciones específicas de campos requeridos
@@ -85,7 +85,7 @@ import org.springframework.data.domain.Sort;
     }
 
     @PutMapping(&quot;/{id}&quot;)
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; update(@PathVariable Long id, @RequestBody ProgramaDTO programaDTO) {
         try {
             // Verificar que el programa existe
@@ -114,7 +114,7 @@ import org.springframework.data.domain.Sort;
     }
 
     @PatchMapping(&quot;/{id}/duracion-objetivo&quot;)
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; updateDuracionObjetivo(@PathVariable Long id, @RequestBody Map&lt;String, String&gt; request) {
         try {
 <span class="fc" id="L120">            String duracionObjetivo = request.get(&quot;duracionObjetivo&quot;);</span>
@@ -130,7 +130,7 @@ import org.springframework.data.domain.Sort;
     }
 
     @PatchMapping(&quot;/{id}/campo&quot;)
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; updateCampo(@PathVariable Long id, @RequestBody Map&lt;String, Object&gt; campo) {
         try {
             // Verificar que el programa existe

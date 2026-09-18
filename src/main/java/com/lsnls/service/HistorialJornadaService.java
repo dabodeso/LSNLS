@@ -19,7 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -219,9 +221,55 @@ public class HistorialJornadaService {
      */
     public List<HistorialJornadaDTO> obtenerHistorialCombo(Long comboId) {
         List<HistorialJornada> historiales = historialRepository.findByComboId(comboId);
-        return historiales.stream()
-            .map(this::convertirADTO)
+        List<Long> hijosIds = historialRepository.findHijosDeComboPadre(comboId).stream()
+            .map(HistorialJornada::getCombo)
+            .filter(Objects::nonNull)
+            .map(Combo::getId)
+            .filter(Objects::nonNull)
+            .distinct()
             .collect(Collectors.toList());
+        return historiales.stream()
+            .map(historial -> enriquecerHistorialCombo(convertirADTO(historial), comboId, hijosIds))
+            .collect(Collectors.toList());
+    }
+
+    private HistorialJornadaDTO enriquecerHistorialCombo(HistorialJornadaDTO dto, Long comboActualId, List<Long> hijosIds) {
+        Long padre = extraerComboPadreDesdeNotas(dto.getNotas());
+        if (padre != null && !padre.equals(comboActualId)) {
+            dto.setComboPadreId(padre);
+        }
+        if (hijosIds != null && !hijosIds.isEmpty()) {
+            dto.setComboHijosIds(new ArrayList<>(hijosIds));
+        }
+        return dto;
+    }
+
+    static Long extraerComboPadreDesdeNotas(String notas) {
+        if (notas == null) {
+            return null;
+        }
+        int idx = notas.indexOf("COMBO_HIJO;PADRE:");
+        if (idx < 0) {
+            return null;
+        }
+        String resto = notas.substring(idx + "COMBO_HIJO;PADRE:".length());
+        StringBuilder numero = new StringBuilder();
+        for (int i = 0; i < resto.length(); i++) {
+            char c = resto.charAt(i);
+            if (Character.isDigit(c)) {
+                numero.append(c);
+            } else {
+                break;
+            }
+        }
+        if (numero.length() == 0) {
+            return null;
+        }
+        try {
+            return Long.parseLong(numero.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /**

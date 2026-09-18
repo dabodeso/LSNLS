@@ -1,7 +1,9 @@
 package com.lsnls.service;
 
 import com.lsnls.dto.ProgramaDTO;
+import com.lsnls.entity.Concursante;
 import com.lsnls.entity.Programa;
+import com.lsnls.repository.ConcursanteRepository;
 import com.lsnls.repository.ProgramaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +51,8 @@ class ProgramaServiceTest {
     private EntityManager entityManager;
     @Mock
     private UndoService undoService;
+    @Mock
+    private ConcursanteRepository concursanteRepository;
 
     @InjectMocks
     private ProgramaService service;
@@ -351,5 +355,55 @@ class ProgramaServiceTest {
 
         when(programaRepository.findById(8L)).thenReturn(Optional.empty());
         assertThrows(IllegalArgumentException.class, () -> service.updateDuracionObjetivo(8L, "1h"));
+    }
+
+    @Test
+    void updateCampo_programaEmitidoSoloPermiteEstado() {
+        programa.setEstado(Programa.EstadoPrograma.emitido);
+        when(programaRepository.findById(1L)).thenReturn(Optional.of(programa));
+        Map<String, Object> campos = new HashMap<>();
+        campos.put("notas", "x");
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> service.updateCampo(1L, campos));
+        assertTrue(ex.getMessage().contains("emitido"));
+    }
+
+    @Test
+    void updateCampo_pasaAEmitidoActualizaConcursantes() {
+        when(programaRepository.findById(1L)).thenReturn(Optional.of(programa));
+        stubSaveConId();
+        Concursante c = new Concursante();
+        c.setId(9L);
+        c.setEstado("programado");
+        when(concursanteRepository.findByNumeroPrograma(1)).thenReturn(Collections.singletonList(c));
+        when(concursanteRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+
+        Map<String, Object> campos = new HashMap<>();
+        campos.put("estado", "emitido");
+        ProgramaDTO dto = service.updateCampo(1L, campos);
+
+        assertEquals("emitido", dto.getEstado());
+        assertEquals("emitido", c.getEstado());
+        verify(concursanteRepository).saveAll(anyList());
+    }
+
+    @Test
+    void updateCampo_saleDeEmitidoPasaConcursantesAProgramado() {
+        programa.setEstado(Programa.EstadoPrograma.emitido);
+        when(programaRepository.findById(1L)).thenReturn(Optional.of(programa));
+        stubSaveConId();
+        Concursante c = new Concursante();
+        c.setId(9L);
+        c.setEstado("emitido");
+        when(concursanteRepository.findByNumeroPrograma(1)).thenReturn(Collections.singletonList(c));
+        when(concursanteRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+
+        Map<String, Object> campos = new HashMap<>();
+        campos.put("estado", "borrador");
+        ProgramaDTO dto = service.updateCampo(1L, campos);
+
+        assertEquals("borrador", dto.getEstado());
+        assertEquals("programado", c.getEstado());
     }
 }

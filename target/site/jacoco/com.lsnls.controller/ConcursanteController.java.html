@@ -51,7 +51,7 @@ import org.springframework.data.domain.Sort;
 <span class="fc" id="L51">            Pageable pageable = PageRequest.of(page, size, Sort.by(order));</span>
             
 <span class="fc" id="L53">            Page&lt;ConcursanteDTO&gt; concursantes = concursanteService.findAllPaginatedWithFilters(</span>
-                pageable, estado, jornada, lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico, busqueda);
+<span class="fc" id="L54">                pageable, estado, jornada, lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico, busqueda);</span>
 <span class="fc" id="L55">            return ResponseEntity.ok(concursantes);</span>
 <span class="fc" id="L56">        } catch (Exception e) {</span>
 <span class="fc" id="L57">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener concursantes: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
@@ -111,13 +111,14 @@ import org.springframework.data.domain.Sort;
     public ResponseEntity&lt;?&gt; findConcursantesDisponibles(
             @RequestParam(defaultValue = &quot;0&quot;) int page,
             @RequestParam(defaultValue = &quot;10&quot;) int size,
-            @RequestParam(required = false) String busqueda) {
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String estado) {
         try {
-<span class="fc" id="L116">            Pageable pageable = PageRequest.of(page, size, Sort.by(&quot;id&quot;).descending());</span>
-<span class="fc" id="L117">            Page&lt;ConcursanteDTO&gt; concursantes = concursanteService.findConcursantesSinProgramaPaginated(pageable, busqueda);</span>
-<span class="fc" id="L118">            return ResponseEntity.ok(concursantes);</span>
-<span class="fc" id="L119">        } catch (Exception e) {</span>
-<span class="fc" id="L120">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener concursantes disponibles: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L117">            Pageable pageable = PageRequest.of(page, size, Sort.by(&quot;id&quot;).descending());</span>
+<span class="fc" id="L118">            Page&lt;ConcursanteDTO&gt; concursantes = concursanteService.findConcursantesSinProgramaPaginated(pageable, busqueda, estado);</span>
+<span class="fc" id="L119">            return ResponseEntity.ok(concursantes);</span>
+<span class="fc" id="L120">        } catch (Exception e) {</span>
+<span class="fc" id="L121">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener concursantes disponibles: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -126,59 +127,59 @@ import org.springframework.data.domain.Sort;
     public ResponseEntity&lt;?&gt; create(@RequestBody ConcursanteDTO concursanteDTO) {
         try {
             // Validaciones específicas de campos requeridos
-<span class="pc bpc" id="L129" title="1 of 4 branches missed.">            if (concursanteDTO.getNombre() == null || concursanteDTO.getNombre().trim().isEmpty()) {</span>
-<span class="fc" id="L130">                return ResponseEntity.badRequest().body(&quot;El campo 'nombre' es obligatorio para crear un concursante&quot;);</span>
+<span class="pc bpc" id="L130" title="1 of 4 branches missed.">            if (concursanteDTO.getNombre() == null || concursanteDTO.getNombre().trim().isEmpty()) {</span>
+<span class="fc" id="L131">                return ResponseEntity.badRequest().body(&quot;El campo 'nombre' es obligatorio para crear un concursante&quot;);</span>
             }
 
             // Validar duración si se proporciona
-<span class="pc bpc" id="L134" title="1 of 4 branches missed.">            if (concursanteDTO.getDuracion() != null &amp;&amp; !concursanteDTO.getDuracion().trim().isEmpty()) {</span>
-<span class="fc bfc" id="L135" title="All 2 branches covered.">                if (!concursanteDTO.getDuracion().matches(&quot;^\\d{1,2}:\\d{2}$&quot;)) {</span>
-<span class="fc" id="L136">                    return ResponseEntity.badRequest().body(&quot;La duración debe tener formato MM:SS (ejemplo: 25:30)&quot;);</span>
+<span class="pc bpc" id="L135" title="1 of 4 branches missed.">            if (concursanteDTO.getDuracion() != null &amp;&amp; !concursanteDTO.getDuracion().trim().isEmpty()) {</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">                if (!concursanteDTO.getDuracion().matches(&quot;^\\d{1,2}:\\d{2}$&quot;)) {</span>
+<span class="fc" id="L137">                    return ResponseEntity.badRequest().body(&quot;La duración debe tener formato MM:SS (ejemplo: 25:30)&quot;);</span>
                 }
             }
 
-<span class="fc" id="L140">            ConcursanteDTO nuevoConcursante = concursanteService.create(concursanteDTO);</span>
-<span class="fc" id="L141">            return ResponseEntity.ok(nuevoConcursante);</span>
-<span class="fc" id="L142">        } catch (RuntimeException e) {</span>
-<span class="fc" id="L143">            String mensaje = e.getMessage();</span>
-<span class="pc bpc" id="L144" title="1 of 4 branches missed.">            if (mensaje.contains(&quot;cuestionario&quot;) &amp;&amp; mensaje.contains(&quot;estado&quot;)) {</span>
-<span class="fc" id="L145">                return ResponseEntity.badRequest().body(&quot;Error de asignación: &quot; + mensaje);</span>
+<span class="fc" id="L141">            ConcursanteDTO nuevoConcursante = concursanteService.create(concursanteDTO);</span>
+<span class="fc" id="L142">            return ResponseEntity.ok(nuevoConcursante);</span>
+<span class="fc" id="L143">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L144">            String mensaje = e.getMessage();</span>
+<span class="pc bpc" id="L145" title="1 of 4 branches missed.">            if (mensaje.contains(&quot;cuestionario&quot;) &amp;&amp; mensaje.contains(&quot;estado&quot;)) {</span>
+<span class="fc" id="L146">                return ResponseEntity.badRequest().body(&quot;Error de asignación: &quot; + mensaje);</span>
             }
-<span class="pc bpc" id="L147" title="1 of 4 branches missed.">            if (mensaje.contains(&quot;combo&quot;) &amp;&amp; mensaje.contains(&quot;estado&quot;)) {</span>
-<span class="fc" id="L148">                return ResponseEntity.badRequest().body(&quot;Error de asignación: &quot; + mensaje);</span>
+<span class="pc bpc" id="L148" title="1 of 4 branches missed.">            if (mensaje.contains(&quot;combo&quot;) &amp;&amp; mensaje.contains(&quot;estado&quot;)) {</span>
+<span class="fc" id="L149">                return ResponseEntity.badRequest().body(&quot;Error de asignación: &quot; + mensaje);</span>
             }
-<span class="fc" id="L150">            return ResponseEntity.badRequest().body(&quot;Error al crear concursante: &quot; + mensaje);</span>
-<span class="nc" id="L151">        } catch (Exception e) {</span>
-<span class="nc" id="L152">            return ResponseEntity.badRequest().body(&quot;Error interno al crear concursante: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L151">            return ResponseEntity.badRequest().body(&quot;Error al crear concursante: &quot; + mensaje);</span>
+<span class="nc" id="L152">        } catch (Exception e) {</span>
+<span class="nc" id="L153">            return ResponseEntity.badRequest().body(&quot;Error interno al crear concursante: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @PutMapping(&quot;/{id}&quot;)
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; update(@PathVariable Long id, @RequestBody ConcursanteDTO concursanteDTO) {
         try {
-<span class="fc" id="L160">            ConcursanteDTO concursanteActualizado = concursanteService.update(id, concursanteDTO);</span>
-<span class="fc" id="L161">            return ResponseEntity.ok(concursanteActualizado);</span>
-<span class="fc" id="L162">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="fc" id="L163">            return ResponseEntity.status(409).body(&quot;El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L164">        } catch (org.springframework.security.access.AccessDeniedException e) {</span>
-<span class="nc" id="L165">            return ResponseEntity.status(403).body(e.getMessage());</span>
-<span class="fc" id="L166">        } catch (Exception e) {</span>
-<span class="fc" id="L167">            return ResponseEntity.badRequest().body(&quot;Error al actualizar concursante: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L161">            ConcursanteDTO concursanteActualizado = concursanteService.update(id, concursanteDTO);</span>
+<span class="fc" id="L162">            return ResponseEntity.ok(concursanteActualizado);</span>
+<span class="fc" id="L163">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="fc" id="L164">            return ResponseEntity.status(409).body(&quot;El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L165">        } catch (org.springframework.security.access.AccessDeniedException e) {</span>
+<span class="nc" id="L166">            return ResponseEntity.status(403).body(e.getMessage());</span>
+<span class="fc" id="L167">        } catch (Exception e) {</span>
+<span class="fc" id="L168">            return ResponseEntity.badRequest().body(&quot;Error al actualizar concursante: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @PatchMapping(&quot;/{id}/campo&quot;)
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; updateCampo(@PathVariable Long id, @RequestBody Map&lt;String, Object&gt; campo) {
         try {
-<span class="fc" id="L175">            return ResponseEntity.ok(concursanteService.updateCampo(id, campo));</span>
-<span class="fc" id="L176">        } catch (ObjectOptimisticLockingFailureException e) {</span>
-<span class="fc" id="L177">            return ResponseEntity.status(409).body(&quot;El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
-<span class="nc" id="L178">        } catch (org.springframework.security.access.AccessDeniedException e) {</span>
-<span class="nc" id="L179">            return ResponseEntity.status(403).body(e.getMessage());</span>
-<span class="fc" id="L180">        } catch (Exception e) {</span>
-<span class="fc" id="L181">            return ResponseEntity.badRequest().body(&quot;Error al actualizar campo: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L176">            return ResponseEntity.ok(concursanteService.updateCampo(id, campo));</span>
+<span class="fc" id="L177">        } catch (ObjectOptimisticLockingFailureException e) {</span>
+<span class="fc" id="L178">            return ResponseEntity.status(409).body(&quot;El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.&quot;);</span>
+<span class="nc" id="L179">        } catch (org.springframework.security.access.AccessDeniedException e) {</span>
+<span class="nc" id="L180">            return ResponseEntity.status(403).body(e.getMessage());</span>
+<span class="fc" id="L181">        } catch (Exception e) {</span>
+<span class="fc" id="L182">            return ResponseEntity.badRequest().body(&quot;Error al actualizar campo: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -189,16 +190,16 @@ import org.springframework.data.domain.Sort;
             @PathVariable Long programaId,
             @RequestParam(required = false) Integer posicion) {
         try {
-<span class="fc" id="L192">            ConcursanteDTO concursante = concursanteService.asignarAPrograma(concursanteId, programaId, posicion);</span>
-<span class="fc" id="L193">            return ResponseEntity.ok(concursante);</span>
-<span class="fc" id="L194">        } catch (RuntimeException e) {</span>
-<span class="fc" id="L195">            String mensaje = e.getMessage();</span>
-<span class="fc bfc" id="L196" title="All 2 branches covered.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
-<span class="fc" id="L197">                return ResponseEntity.status(404).body(mensaje);</span>
+<span class="fc" id="L193">            ConcursanteDTO concursante = concursanteService.asignarAPrograma(concursanteId, programaId, posicion);</span>
+<span class="fc" id="L194">            return ResponseEntity.ok(concursante);</span>
+<span class="fc" id="L195">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L196">            String mensaje = e.getMessage();</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
+<span class="fc" id="L198">                return ResponseEntity.status(404).body(mensaje);</span>
             }
-<span class="fc" id="L199">            return ResponseEntity.badRequest().body(&quot;Error al asignar concursante a programa: &quot; + mensaje);</span>
-<span class="nc" id="L200">        } catch (Exception e) {</span>
-<span class="nc" id="L201">            return ResponseEntity.badRequest().body(&quot;Error interno al asignar concursante a programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L200">            return ResponseEntity.badRequest().body(&quot;Error al asignar concursante a programa: &quot; + mensaje);</span>
+<span class="nc" id="L201">        } catch (Exception e) {</span>
+<span class="nc" id="L202">            return ResponseEntity.badRequest().body(&quot;Error interno al asignar concursante a programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
@@ -206,67 +207,67 @@ import org.springframework.data.domain.Sort;
     @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; desasignarDePrograma(@PathVariable Long concursanteId) {
         try {
-<span class="fc" id="L209">            ConcursanteDTO concursante = concursanteService.desasignarDePrograma(concursanteId);</span>
-<span class="fc" id="L210">            return ResponseEntity.ok(concursante);</span>
-<span class="fc" id="L211">        } catch (RuntimeException e) {</span>
-<span class="fc" id="L212">            String mensaje = e.getMessage();</span>
-<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
-<span class="fc" id="L214">                return ResponseEntity.status(404).body(mensaje);</span>
+<span class="fc" id="L210">            ConcursanteDTO concursante = concursanteService.desasignarDePrograma(concursanteId);</span>
+<span class="fc" id="L211">            return ResponseEntity.ok(concursante);</span>
+<span class="fc" id="L212">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L213">            String mensaje = e.getMessage();</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
+<span class="fc" id="L215">                return ResponseEntity.status(404).body(mensaje);</span>
             }
-<span class="fc" id="L216">            return ResponseEntity.badRequest().body(&quot;Error al desasignar concursante del programa: &quot; + mensaje);</span>
-<span class="nc" id="L217">        } catch (Exception e) {</span>
-<span class="nc" id="L218">            return ResponseEntity.badRequest().body(&quot;Error interno al desasignar concursante del programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L217">            return ResponseEntity.badRequest().body(&quot;Error al desasignar concursante del programa: &quot; + mensaje);</span>
+<span class="nc" id="L218">        } catch (Exception e) {</span>
+<span class="nc" id="L219">            return ResponseEntity.badRequest().body(&quot;Error interno al desasignar concursante del programa: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @PostMapping(&quot;/{concursanteId}/asignar-jornada/{jornadaId}&quot;)
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; asignarAJornada(@PathVariable Long concursanteId, @PathVariable Long jornadaId) {
         try {
-<span class="fc" id="L226">            ConcursanteDTO concursante = concursanteService.asignarAJornada(concursanteId, jornadaId);</span>
-<span class="fc" id="L227">            return ResponseEntity.ok(concursante);</span>
-<span class="fc" id="L228">        } catch (RuntimeException e) {</span>
-<span class="fc" id="L229">            String mensaje = e.getMessage();</span>
-<span class="fc bfc" id="L230" title="All 2 branches covered.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
-<span class="fc" id="L231">                return ResponseEntity.status(404).body(mensaje);</span>
+<span class="fc" id="L227">            ConcursanteDTO concursante = concursanteService.asignarAJornada(concursanteId, jornadaId);</span>
+<span class="fc" id="L228">            return ResponseEntity.ok(concursante);</span>
+<span class="fc" id="L229">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L230">            String mensaje = e.getMessage();</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
+<span class="fc" id="L232">                return ResponseEntity.status(404).body(mensaje);</span>
             }
-<span class="fc" id="L233">            return ResponseEntity.badRequest().body(&quot;Error al asignar concursante a jornada: &quot; + mensaje);</span>
-<span class="nc" id="L234">        } catch (Exception e) {</span>
-<span class="nc" id="L235">            return ResponseEntity.badRequest().body(&quot;Error interno al asignar concursante a jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L234">            return ResponseEntity.badRequest().body(&quot;Error al asignar concursante a jornada: &quot; + mensaje);</span>
+<span class="nc" id="L235">        } catch (Exception e) {</span>
+<span class="nc" id="L236">            return ResponseEntity.badRequest().body(&quot;Error interno al asignar concursante a jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @DeleteMapping(&quot;/{concursanteId}/desasignar-jornada&quot;)
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; desasignarDeJornada(@PathVariable Long concursanteId) {
         try {
-<span class="fc" id="L243">            ConcursanteDTO concursante = concursanteService.desasignarDeJornada(concursanteId);</span>
-<span class="fc" id="L244">            return ResponseEntity.ok(concursante);</span>
-<span class="fc" id="L245">        } catch (RuntimeException e) {</span>
-<span class="fc" id="L246">            String mensaje = e.getMessage();</span>
-<span class="fc bfc" id="L247" title="All 2 branches covered.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
-<span class="fc" id="L248">                return ResponseEntity.status(404).body(mensaje);</span>
+<span class="fc" id="L244">            ConcursanteDTO concursante = concursanteService.desasignarDeJornada(concursanteId);</span>
+<span class="fc" id="L245">            return ResponseEntity.ok(concursante);</span>
+<span class="fc" id="L246">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L247">            String mensaje = e.getMessage();</span>
+<span class="fc bfc" id="L248" title="All 2 branches covered.">            if (mensaje.contains(&quot;no encontrado&quot;)) {</span>
+<span class="fc" id="L249">                return ResponseEntity.status(404).body(mensaje);</span>
             }
-<span class="fc" id="L250">            return ResponseEntity.badRequest().body(&quot;Error al desasignar concursante de la jornada: &quot; + mensaje);</span>
-<span class="nc" id="L251">        } catch (Exception e) {</span>
-<span class="nc" id="L252">            return ResponseEntity.badRequest().body(&quot;Error interno al desasignar concursante de la jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L251">            return ResponseEntity.badRequest().body(&quot;Error al desasignar concursante de la jornada: &quot; + mensaje);</span>
+<span class="nc" id="L252">        } catch (Exception e) {</span>
+<span class="nc" id="L253">            return ResponseEntity.badRequest().body(&quot;Error interno al desasignar concursante de la jornada: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 
     @PostMapping(&quot;/{id}/foto&quot;)
-    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')&quot;)
     public ResponseEntity&lt;?&gt; subirFoto(@PathVariable Long id, @RequestParam(&quot;foto&quot;) MultipartFile foto) {
         try {
-<span class="fc" id="L260">            String urlFoto = concursanteService.subirFoto(id, foto);</span>
-<span class="fc" id="L261">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L262">            response.put(&quot;url&quot;, urlFoto);</span>
-<span class="fc" id="L263">            response.put(&quot;foto&quot;, urlFoto);</span>
-<span class="fc" id="L264">            response.put(&quot;mensaje&quot;, &quot;Foto subida correctamente&quot;);</span>
-<span class="fc" id="L265">            return ResponseEntity.ok(response);</span>
-<span class="fc" id="L266">        } catch (Exception e) {</span>
-<span class="fc" id="L267">            Map&lt;String, String&gt; error = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L268">            error.put(&quot;error&quot;, &quot;Error al subir la foto: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="fc" id="L269">            return ResponseEntity.badRequest().body(error);</span>
+<span class="fc" id="L261">            String urlFoto = concursanteService.subirFoto(id, foto);</span>
+<span class="fc" id="L262">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L263">            response.put(&quot;url&quot;, urlFoto);</span>
+<span class="fc" id="L264">            response.put(&quot;foto&quot;, urlFoto);</span>
+<span class="fc" id="L265">            response.put(&quot;mensaje&quot;, &quot;Foto subida correctamente&quot;);</span>
+<span class="fc" id="L266">            return ResponseEntity.ok(response);</span>
+<span class="fc" id="L267">        } catch (Exception e) {</span>
+<span class="fc" id="L268">            Map&lt;String, String&gt; error = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L269">            error.put(&quot;error&quot;, &quot;Error al subir la foto: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L270">            return ResponseEntity.badRequest().body(error);</span>
         }
     }
 
@@ -275,20 +276,20 @@ import org.springframework.data.domain.Sort;
     public ResponseEntity&lt;?&gt; delete(@PathVariable Long id) {
         try {
             // Verificar que el concursante existe
-<span class="fc" id="L278">            ConcursanteDTO concursanteExistente = concursanteService.findById(id);</span>
-<span class="fc bfc" id="L279" title="All 2 branches covered.">            if (concursanteExistente == null) {</span>
-<span class="fc" id="L280">                return ResponseEntity.status(404).body(&quot;Concursante con ID &quot; + id + &quot; no encontrado&quot;);</span>
+<span class="fc" id="L279">            ConcursanteDTO concursanteExistente = concursanteService.findById(id);</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">            if (concursanteExistente == null) {</span>
+<span class="fc" id="L281">                return ResponseEntity.status(404).body(&quot;Concursante con ID &quot; + id + &quot; no encontrado&quot;);</span>
             }
 
-<span class="fc" id="L283">            concursanteService.delete(id);</span>
-<span class="fc" id="L284">            return ResponseEntity.ok().body(&quot;Concursante eliminado exitosamente&quot;);</span>
-<span class="fc" id="L285">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L284">            concursanteService.delete(id);</span>
+<span class="fc" id="L285">            return ResponseEntity.ok().body(&quot;Concursante eliminado exitosamente&quot;);</span>
+<span class="fc" id="L286">        } catch (IllegalArgumentException e) {</span>
             // Mensajes específicos de validación
-<span class="fc" id="L287">            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="fc" id="L288">        } catch (org.springframework.dao.DataIntegrityViolationException e) {</span>
-<span class="fc" id="L289">            return ResponseEntity.badRequest().body(&quot;No se puede eliminar el concursante porque tiene datos asociados. Revisa sus asignaciones primero.&quot;);</span>
-<span class="fc" id="L290">        } catch (Exception e) {</span>
-<span class="fc" id="L291">            return ResponseEntity.badRequest().body(&quot;Error interno al eliminar concursante: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L288">            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
+<span class="fc" id="L289">        } catch (org.springframework.dao.DataIntegrityViolationException e) {</span>
+<span class="fc" id="L290">            return ResponseEntity.badRequest().body(&quot;No se puede eliminar el concursante porque tiene datos asociados. Revisa sus asignaciones primero.&quot;);</span>
+<span class="fc" id="L291">        } catch (Exception e) {</span>
+<span class="fc" id="L292">            return ResponseEntity.badRequest().body(&quot;Error interno al eliminar concursante: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
         }
     }
 } 

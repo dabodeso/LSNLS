@@ -135,7 +135,7 @@ import java.util.List;
             
 <span class="fc" id="L136">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
 <span class="fc" id="L137">                &quot;Combo reaprovechado correctamente. Nuevo combo ID: &quot; + nuevoCombo.getId(), </span>
-                nuevoCombo));
+<span class="fc" id="L138">                nuevoCombo));</span>
 <span class="fc" id="L139">        } catch (Exception e) {</span>
 <span class="fc" id="L140">            return ResponseEntity.internalServerError()</span>
 <span class="fc" id="L141">                .body(ApiResponse.error(&quot;Error al reaprovechar combo: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
@@ -153,7 +153,7 @@ import java.util.List;
         try {
 <span class="fc" id="L154">            historialService.registrarAsignacionCuestionario(jornadaId, cuestionarioId);</span>
 <span class="fc" id="L155">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
-                &quot;Cuestionario asignado a jornada correctamente&quot;, null));
+<span class="fc" id="L156">                &quot;Cuestionario asignado a jornada correctamente&quot;, null));</span>
 <span class="fc" id="L157">        } catch (Exception e) {</span>
 <span class="fc" id="L158">            return ResponseEntity.internalServerError()</span>
 <span class="fc" id="L159">                .body(ApiResponse.error(&quot;Error al asignar cuestionario: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
@@ -171,7 +171,7 @@ import java.util.List;
         try {
 <span class="fc" id="L172">            historialService.registrarAsignacionCombo(jornadaId, comboId);</span>
 <span class="fc" id="L173">            return ResponseEntity.ok(ApiResponse.exitoso(</span>
-                &quot;Combo asignado a jornada correctamente&quot;, null));
+<span class="fc" id="L174">                &quot;Combo asignado a jornada correctamente&quot;, null));</span>
 <span class="fc" id="L175">        } catch (Exception e) {</span>
 <span class="fc" id="L176">            return ResponseEntity.internalServerError()</span>
 <span class="fc" id="L177">                .body(ApiResponse.error(&quot;Error al asignar combo: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>

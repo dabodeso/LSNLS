@@ -6,7 +6,7 @@
     <title>Gestión de Jornadas - LSNLS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="css/styles.css?v=20260914-resize" rel="stylesheet">
+    <link href="css/styles.css?v=20260915-usada-visible" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
     <style>
         .jornada-card {
@@ -133,6 +133,39 @@
         }
         .col-pregunta-jornada {
             min-width: 280px;
+        }
+
+        /* Edición de jornada: siempre vertical (cuestionario, luego combo; tablas más grandes) */
+        #modalJornada .modal-dialog {
+            max-width: min(1400px, 96vw);
+        }
+        #modalJornada .cuestionarios-grid,
+        #modalJornada .combos-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        #modalJornada .item-slot.item-filled {
+            padding: 16px;
+        }
+        #modalJornada .item-slot.text-center {
+            min-height: auto;
+            padding: 12px;
+        }
+        #modalJornada .item-slot table {
+            min-width: 0;
+            width: 100%;
+            font-size: 1rem;
+        }
+        #modalJornada .item-slot table th,
+        #modalJornada .item-slot table td {
+            padding: 0.65rem 0.8rem;
+            white-space: normal;
+            word-break: break-word;
+            vertical-align: top;
+        }
+        #modalJornada .col-pregunta-jornada {
+            min-width: 0;
+            width: 45%;
         }
 
         /* Estilos para el modal de reciclaje */
@@ -276,7 +309,6 @@
                     </div>
                 </div>
 
-                <!-- Contenedor conmutable de vista -->
                 <div id="jornadas2Wrapper">
                     <div class="pagination-info text-center mb-2">
                         <span id="info-paginacion-jornadas-top" class="text-muted">Mostrando 0 de 0 jornadas</span>
@@ -795,13 +827,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script src="js/auth.js"></script>
+    <script src="js/auth.js?v=20260915-verif-consulta"></script>
     <script src="js/api.js?v=20260821-3"></script>
-    <script src="js/utils.js?v=20260907-1"></script>
+    <script src="js/utils.js?v=20260915-reciclaje-mult"></script>
     <script src="js/undo-manager.js?v=20260915-modal"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
-    <script src="js/jornadas.js?v=20260914-excel"></script>
+    <script src="js/jornadas.js?v=20260915-edicion-vertical"></script>
     <script>
         // Verificar autenticación al cargar la página
         document.addEventListener('DOMContentLoaded', function() {

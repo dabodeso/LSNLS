@@ -150,7 +150,7 @@ public class PreguntaController {
             try {
                 Pregunta.NivelPregunta.valueOf(dto.nivel);
             } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body("Nivel '" + dto.nivel + "' no válido. Niveles permitidos: _0, _1LS, _2NLS, _3LS, _4NLS, _5LS, _5NLS");
+                return ResponseEntity.badRequest().body("Nivel '" + dto.nivel.replaceFirst("^_", "") + "' no válido. Niveles permitidos: 0, 1LS, 2NLS, 3LS, 4NLS, 5LS, 5NLS");
             }
 
             // Verificar permisos específicos

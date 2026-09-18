@@ -21,14 +21,18 @@
 --       Quedan libres 25 _5LS (626-650) y 25 _5NLS (651-675) para crear combos nuevos.
 --   - 25 concursantes en estado 'grabado' (el estado inicial; no existe borrador),
 --     con el cuestionario y combo del mismo número.
+--   - Textos de prueba en notas / datos extra / momentos: cortos, medios y
+--     dos párrafos, para ver cómo se comporta la UI con mucho texto.
+--   - 6 jornadas: 1-5 en grabación (5 huecos ocupados) y la 6 en lista
+--     (3 huecos ocupados) para probar añadir varios combos/cuestionarios.
 --
 -- Coherencia de estados garantizada:
 --   - Pregunta en cuestionario/combo -> estado 'usada' + disponibilidad 'usada'.
 --   - Pregunta libre                 -> estado 'aprobada' + disponibilidad 'disponible'.
 --   - Cuestionario/combo asignado a concursante -> 'grabado'.
---   - Cuestionarios: 1-25 grabado, 26-55 aprobado, 56-63 revisar,
---     64-68 corregir, 69-75 borrador.
---   - Combos: 1-25 grabado, 26-75 aprobado (todos con 3 preguntas).
+--   - Cuestionarios: 1-25 grabado, 26-28 adjudicado (jornada 6), 29-55 aprobado,
+--     56-63 revisar, 64-68 corregir, 69-75 borrador.
+--   - Combos: 1-25 grabado, 26-28 adjudicado (jornada 6), 29-75 aprobado.
 -- ============================================================
 
 USE lsnls;
@@ -55,6 +59,19 @@ ALTER TABLE jornadas_cuestionarios CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8
 ALTER TABLE jornadas_combos        CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE concursantes           CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE historial_jornadas     CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Hibernate mapea Combo.preguntaUsadaId a esta columna; CREATE IF NOT EXISTS no la añade en DBs antiguas.
+-- MySQL 8.0 no soporta ADD COLUMN IF NOT EXISTS (sí MariaDB).
+SET @col_exists := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'combos' AND COLUMN_NAME = 'pregunta_usada_id'
+);
+SET @sql := IF(@col_exists = 0,
+    'ALTER TABLE combos ADD COLUMN pregunta_usada_id BIGINT NULL',
+    'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- ------------------------------------------------------------
 -- Limpieza total de datos de prueba
@@ -863,7 +880,7 @@ INSERT INTO preguntas (id, respuesta, tematica, pregunta, estado, estado_disponi
 -- ------------------------------------------------------------
 -- 75 CUESTIONARIOS
 -- Cada uno lleva 4 preguntas: n, 100+n, 200+n, 300+n (niveles 1-4).
--- Estados: 1-25 grabado, 26-55 aprobado, 56-63 revisar, 64-68 corregir, 69-75 borrador.
+-- Estados: 1-25 grabado, 26-28 adjudicado, 29-55 aprobado, 56-63 revisar, 64-68 corregir, 69-75 borrador.
 -- ------------------------------------------------------------
 INSERT INTO cuestionarios (id, creacion_usuario_id, fecha_creacion, estado, nivel, tematica, notas_direccion, version)
 SELECT
@@ -872,6 +889,7 @@ SELECT
     NOW(6),
     CASE
         WHEN n <= 25 THEN 'grabado'
+        WHEN n <= 28 THEN 'adjudicado'
         WHEN n <= 55 THEN 'aprobado'
         WHEN n <= 63 THEN 'revisar'
         WHEN n <= 68 THEN 'corregir'
@@ -890,7 +908,16 @@ SELECT
         WHEN 9 THEN 'NATURALEZA'
         ELSE 'GASTRONOMÍA'
     END,
-    CONCAT('Cuestionario de prueba ', n),
+    CASE MOD(n, 4)
+        WHEN 1 THEN 'Ok plató'
+        WHEN 2 THEN 'Revisar ritmo de lectura antes de grabar.'
+        WHEN 3 THEN CONCAT(
+            'Dirección pide bajar el tono de las preguntas 2 y 3: salen demasiado técnicas para el tramo inicial y el concursante se queda sin margen.',
+            CHAR(10), CHAR(10),
+            'También hay que marcar en escaleta el posible recorte de 20 segundos si el premio se va de tiempo. Dejar una variante más corta de la 4 por si hay que reciclar en el momento.'
+        )
+        ELSE NULL
+    END,
     0
 FROM tmp_seq
 WHERE n <= 75;
@@ -907,7 +934,7 @@ WHERE s.n <= 75;
 -- 75 COMBOS LLENOS (3 preguntas cada uno)
 -- 1-37  nivel _5LS  : preguntas 401-450 y 501-561
 -- 38-75 nivel _5NLS : preguntas 451-500 y 562-625
--- Estados: 1-25 grabado, 26-75 aprobado
+-- Estados: 1-25 grabado, 26-28 adjudicado, 29-75 aprobado
 -- ------------------------------------------------------------
 INSERT INTO combos (id, creacion_usuario_id, fecha_creacion, estado, nivel, tipo, tematica, notas_direccion, version)
 SELECT
@@ -916,6 +943,7 @@ SELECT
     NOW(6),
     CASE
         WHEN n <= 25 THEN 'grabado'
+        WHEN n <= 28 THEN 'adjudicado'
         ELSE 'aprobado'
     END,
     CASE
@@ -940,7 +968,16 @@ SELECT
         WHEN 9 THEN 'NATURALEZA'
         ELSE 'GASTRONOMÍA'
     END,
-    CONCAT('Combo de prueba ', n),
+    CASE MOD(n, 4)
+        WHEN 1 THEN 'Combo limpio'
+        WHEN 2 THEN 'Cuidado con el X: suena a trampa.'
+        WHEN 3 THEN CONCAT(
+            'Este combo funciona bien si se lee despacio. La primera es asequible y la segunda sube de golpe; conviene avisar a realización para no cortar aplausos a mitad de enunciado.',
+            CHAR(10), CHAR(10),
+            'Si el concursante duda en la 2, no adelantar la 3. El X está pensado como cierre y pierde gracia si se lanza con prisa. Anotar en plató la pronunciación de los nombres propios.'
+        )
+        ELSE NULL
+    END,
     0
 FROM tmp_seq
 WHERE n <= 75;
@@ -974,15 +1011,24 @@ CROSS JOIN (SELECT 1 AS pos UNION ALL SELECT 2 UNION ALL SELECT 3) p
 WHERE n BETWEEN 38 AND 75;
 
 -- ------------------------------------------------------------
--- 5 JORNADAS (5 concursantes por jornada)
+-- 6 JORNADAS (5 concursantes por jornada en 1-5; la 6 es para edición)
 -- ------------------------------------------------------------
 INSERT INTO jornadas (id, nombre, fecha_jornada, lugar, estado, creacion_usuario_id, fecha_creacion, notas, version)
 VALUES
-(1, 'Jornada Madrid', DATE_SUB(CURDATE(), INTERVAL 8 DAY), 'Madrid', 'en_grabacion', 1, NOW(6), 'Grabación en plató de Madrid', 0),
-(2, 'Jornada Barcelona', DATE_SUB(CURDATE(), INTERVAL 6 DAY), 'Barcelona', 'en_grabacion', 1, NOW(6), 'Grabación en Barcelona', 0),
-(3, 'Jornada Valencia', DATE_SUB(CURDATE(), INTERVAL 4 DAY), 'Valencia', 'en_grabacion', 1, NOW(6), 'Grabación en Valencia', 0),
-(4, 'Jornada Sevilla', DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'Sevilla', 'en_grabacion', 1, NOW(6), 'Grabación en Sevilla', 0),
-(5, 'Jornada Bilbao', CURDATE(), 'Bilbao', 'en_grabacion', 1, NOW(6), 'Grabación en Bilbao', 0);
+(1, 'Jornada Madrid', DATE_SUB(CURDATE(), INTERVAL 8 DAY), 'Madrid', 'en_grabacion', 1, NOW(6), 'Ok Madrid', 0),
+(2, 'Jornada Barcelona', DATE_SUB(CURDATE(), INTERVAL 6 DAY), 'Barcelona', 'en_grabacion', 1, NOW(6), 'Cambio de plató a última hora.', 0),
+(3, 'Jornada Valencia', DATE_SUB(CURDATE(), INTERVAL 4 DAY), 'Valencia', 'en_grabacion', 1, NOW(6), CONCAT(
+    'La jornada de Valencia arranca con retraso de media hora porque el transporte del atrezzo llegó tarde y había que rehacer el orden de entrada de los dos primeros concursantes.',
+    CHAR(10), CHAR(10),
+    'Dirección pide dejar hueco al final por si se recicla un combo. Anotar también que el público de la tarde es más reducido y que no se cuente con aplausos largos para cubrir cortes.'
+), 0),
+(4, 'Jornada Sevilla', DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'Sevilla', 'en_grabacion', 1, NOW(6), 'Calor en plató, pausas extra.', 0),
+(5, 'Jornada Bilbao', CURDATE(), 'Bilbao', 'en_grabacion', 1, NOW(6), CONCAT(
+    'Bilbao entra justa de tiempo: hay que cerrar los cinco concursantes antes de las 20:00 por el turno de iluminación. Cualquier duda larga se resuelve en el recorte, no en plató.',
+    CHAR(10), CHAR(10),
+    'Queda pendiente confirmar si el quinto puede jugar el combo reciclado o si se deja el hueco 6 vacío. Coordinar con sonido el micro de invitado por si hay llamada.'
+), 0),
+(6, 'Jornada prueba edición', DATE_ADD(CURDATE(), INTERVAL 1 DAY), 'Madrid', 'lista', 1, NOW(6), 'Para probar el selector múltiple.', 0);
 
 -- Cuestionarios y combos 1-25 (grabados / asignados a concursante) van a las 5 jornadas
 -- 5 por jornada en huecos 1-5
@@ -991,6 +1037,13 @@ SELECT CEIL(n / 5), n, ((n - 1) % 5) + 1 FROM tmp_seq WHERE n <= 25;
 
 INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
 SELECT CEIL(n / 5), n, ((n - 1) % 5) + 1 FROM tmp_seq WHERE n <= 25;
+
+-- Jornada 6 (lista): 3 huecos ocupados, 3 libres para añadir varios de una vez
+INSERT INTO jornadas_cuestionarios (jornada_id, cuestionario_id, slot)
+VALUES (6, 26, 1), (6, 27, 2), (6, 28, 3);
+
+INSERT INTO jornadas_combos (jornada_id, combo_id, slot)
+VALUES (6, 26, 1), (6, 27, 2), (6, 28, 3);
 
 -- ------------------------------------------------------------
 -- 25 CONCURSANTES (cuestionario y combo del mismo número)
@@ -1042,11 +1095,11 @@ SELECT
     END,
     22 + n,
     CASE MOD(n, 5)
-        WHEN 1 THEN 'Profesora'
+        WHEN 1 THEN 'Profesora de historia en un instituto de las afueras, muy habladora'
         WHEN 2 THEN 'Ingeniero'
-        WHEN 3 THEN 'Periodista'
+        WHEN 3 THEN 'Periodista freelance de cultura y espectáculos, acaba de publicar un libro de entrevistas'
         WHEN 4 THEN 'Enfermera'
-        ELSE 'Arquitecto'
+        ELSE 'Arquitecto técnico en un estudio pequeño, acaba de ser padre'
     END,
     CONCAT('@concursante', n),
     n,
@@ -1059,11 +1112,29 @@ SELECT
         ELSE 'LLAMADA'
     END,
     0,
-    CONCAT('Notas de grabación del concursante ', n),
+    CASE MOD(n, 4)
+        WHEN 1 THEN 'Bien'
+        WHEN 2 THEN 'Nervios al inicio, se suelta en el combo.'
+        WHEN 3 THEN CONCAT(
+            'La grabación se alarga porque pide repetir la presentación y se corta una vez el audio del micro de solapa. En el cuestionario duda en la tercera y hay que dejarle el tiempo entero sin empujar.',
+            CHAR(10), CHAR(10),
+            'En el combo entra más suelto y conecta con el público. Guardar el plano de la reacción al X por si entra en el avance de la semana. Anotar también que habla muy bajo en las primeras respuestas.'
+        )
+        ELSE NULL
+    END,
     'admin',
     '2',
     'grabado',
-    CONCAT('Momento destacado ', n),
+    CASE MOD(n, 4)
+        WHEN 1 THEN 'Buen cierre'
+        WHEN 2 THEN 'Se emociona al acertar la última.'
+        WHEN 3 THEN CONCAT(
+            'Momento fuerte cuando reconoce que lleva meses estudiando para el programa y se le quiebra la voz al decir el nombre de su hija. El plano corto funciona y no hace falta reconstruir en edición.',
+            CHAR(10), CHAR(10),
+            'Otro recorte útil: la risa al fallar por poco el combo. No es premio, pero da carácter. Evitar el plano de la producción cruzando detrás en el segundo 12.'
+        )
+        ELSE NULL
+    END,
     CONCAT(
         LPAD(10 + FLOOR(RAND() * 11), 2, '0'),
         ':',
@@ -1098,10 +1169,86 @@ SET p.estado = 'aprobada',
 WHERE p.id BETWEEN 1 AND 675
   AND u.pregunta_id IS NULL;
 
+-- ------------------------------------------------------------
+-- Textos largos y cortos (notas, datos extra, enunciados)
+-- MOD 1: dos palabras. MOD 2: una frase. MOD 3: dos párrafos. MOD 0: vacío.
+-- ------------------------------------------------------------
+UPDATE preguntas
+SET
+    datos_extra = CASE MOD(id, 4)
+        WHEN 1 THEN 'Dato breve'
+        WHEN 2 THEN 'Aceptar también la forma abreviada si sale en plató.'
+        WHEN 3 THEN CONCAT(
+            'Se admite la respuesta canónica y también la variante con el nombre completo. Si el concursante da solo el apellido, pedir que precise sin contar tiempo extra.',
+            CHAR(10), CHAR(10),
+            'No validar apodos ni traducciones libres. Si hay duda de pronunciación, el presentador puede repetir el enunciado una vez. Evitar pistas con el tono.'
+        )
+        ELSE NULL
+    END,
+    notas = CASE MOD(id, 4)
+        WHEN 1 THEN 'Fácil'
+        WHEN 2 THEN 'Sale mucho en repaso.'
+        WHEN 3 THEN CONCAT(
+            'Pregunta de repertorio: funciona bien al principio de bloque porque el público la sigue. Cuidado si se ha usado una variante parecida en el mismo programa.',
+            CHAR(10), CHAR(10),
+            'Si se recorta, conservar al menos el dato del año o el nombre propio. La gracia está en el detalle, no en alargar el enunciado.'
+        )
+        ELSE NULL
+    END,
+    notas_verificacion = CASE MOD(id, 4)
+        WHEN 1 THEN 'OK verif'
+        WHEN 2 THEN 'Fuentes contrastadas.'
+        WHEN 3 THEN CONCAT(
+            'Verificado con dos fuentes. La fecha y el nombre coinciden. Se deja la formulación actual porque es la que mejor se oye en plató.',
+            CHAR(10), CHAR(10),
+            'No hace falta nota a pie. Si dirección pide acortar, quitar el inciso del final y mantener el núcleo de la pregunta.'
+        )
+        ELSE NULL
+    END,
+    notas_direccion = CASE MOD(id, 4)
+        WHEN 1 THEN 'Usar'
+        WHEN 2 THEN 'Mejor en tramo 2.'
+        WHEN 3 THEN CONCAT(
+            'Dirección la quiere cerca de un corte publicitario: da cierre limpio y no obliga a explicar nada después. No moverla al combo.',
+            CHAR(10), CHAR(10),
+            'Si el concursante viene muy justificado, se puede sustituir por otra de la misma temática. No mezclar con la de nivel superior del mismo bloque.'
+        )
+        ELSE NULL
+    END,
+    fuentes = CASE MOD(id, 4)
+        WHEN 1 THEN 'Manual'
+        WHEN 2 THEN 'Enciclopedia y nota de prensa.'
+        WHEN 3 THEN CONCAT(
+            'Enciclopedia de referencia, artículo de archivo y web oficial del organismo citado. Las tres coinciden en el dato principal.',
+            CHAR(10), CHAR(10),
+            'La web de divulgación tiene un error de año en la ficha breve; no usarla como fuente única. Queda copiada la cita larga en el drive de verificación.'
+        )
+        ELSE NULL
+    END,
+    autor = CASE MOD(id, 5)
+        WHEN 1 THEN 'Guión'
+        WHEN 2 THEN 'Redacción LSNLS'
+        WHEN 3 THEN 'Colaboración externa, revisión de dirección'
+        ELSE NULL
+    END
+WHERE id BETWEEN 1 AND 675;
+
+-- Algunos enunciados más largos para ver el desborde en tablas
+UPDATE preguntas
+SET pregunta = CONCAT(
+    pregunta,
+    ' Explica el contexto con claridad y da el dato concreto que se pide, sin añadir pistas de más ni repetir la respuesta en el enunciado.'
+)
+WHERE MOD(id, 7) = 0 AND id BETWEEN 1 AND 675;
+
+UPDATE preguntas
+SET respuesta = CONCAT(respuesta, ' (se admite la forma completa)')
+WHERE MOD(id, 9) = 0 AND id BETWEEN 1 AND 675;
+
 ALTER TABLE preguntas AUTO_INCREMENT = 676;
 ALTER TABLE cuestionarios AUTO_INCREMENT = 76;
 ALTER TABLE combos AUTO_INCREMENT = 76;
-ALTER TABLE jornadas AUTO_INCREMENT = 6;
+ALTER TABLE jornadas AUTO_INCREMENT = 7;
 ALTER TABLE concursantes AUTO_INCREMENT = 26;
 ALTER TABLE usuarios AUTO_INCREMENT = 2;
 

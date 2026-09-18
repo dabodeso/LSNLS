@@ -26,7 +26,7 @@ import java.util.Optional;
 
 <span class="fc" id="L27">    private static final Logger log = LoggerFactory.getLogger(EditLockService.class);</span>
 
-    public static final int LOCK_TTL_SECONDS = 120;
+<span class="fc" id="L29">    public static final int LOCK_TTL_SECONDS = 120;</span>
 
     @Autowired
     private EditLockRepository editLockRepository;
@@ -102,7 +102,7 @@ import java.util.Optional;
 
 <span class="fc" id="L103">        return Map.of(</span>
 <span class="fc" id="L104">                &quot;entityType&quot;, entityType.name(),</span>
-                &quot;entityId&quot;, entityId,
+<span class="fc" id="L105">                &quot;entityId&quot;, entityId,</span>
 <span class="fc" id="L106">                &quot;usuarioNombre&quot;, usuario.getNombre(),</span>
 <span class="fc" id="L107">                &quot;expiresAt&quot;, lock.getExpiresAt().toString(),</span>
 <span class="fc" id="L108">                &quot;ttlSeconds&quot;, LOCK_TTL_SECONDS</span>
@@ -157,7 +157,7 @@ import java.util.Optional;
 <span class="fc" id="L157">                        &quot;expiresAt&quot;, l.getExpiresAt().toString(),</span>
 <span class="fc" id="L158">                        &quot;remainingSeconds&quot;, Math.max(0,</span>
 <span class="fc" id="L159">                                java.time.Duration.between(LocalDateTime.now(), l.getExpiresAt()).getSeconds())</span>
-                ))
+<span class="fc" id="L160">                ))</span>
 <span class="fc" id="L161">                .orElse(Map.of(&quot;locked&quot;, false));</span>
     }
 
@@ -177,11 +177,11 @@ import java.util.Optional;
 
     public void logEntityUpdate(AuditLog.EntityType entityType, Long entityId, String description) {
 <span class="fc" id="L179">        auditService.logOperation(</span>
-                AuditLog.OperationType.UPDATE,
-                entityType,
-                entityId,
-                description,
-                AuditLog.OperationResult.SUCCESS
+<span class="fc" id="L180">                AuditLog.OperationType.UPDATE,</span>
+<span class="fc" id="L181">                entityType,</span>
+<span class="fc" id="L182">                entityId,</span>
+<span class="fc" id="L183">                description,</span>
+<span class="fc" id="L184">                AuditLog.OperationResult.SUCCESS</span>
         );
 <span class="fc" id="L186">    }</span>
 

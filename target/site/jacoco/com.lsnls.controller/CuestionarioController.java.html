@@ -142,7 +142,7 @@ import java.util.ArrayList;
             // Si se proporciona un ID, buscar por ID
 <span class="fc bfc" id="L143" title="All 4 branches covered.">            if (id != null &amp;&amp; !id.isEmpty()) {</span>
 <span class="fc" id="L144">                response = cuestionarioService.filtrarCuestionariosPorId(id, page, size);</span>
-            } else {
+<span class="fc" id="L145">            } else {</span>
 <span class="fc" id="L146">                response = cuestionarioService.filtrarCuestionarios(estado, tematica, subtema, texto, page, size);</span>
             }
 <span class="fc" id="L148">            return ResponseEntity.ok(response);</span>
@@ -182,7 +182,7 @@ import java.util.ArrayList;
 <span class="fc" id="L182">                String estadoDescripcion = getCuestionarioEstadoDescripcion(cuestionarioActual.getEstado());</span>
 <span class="fc" id="L183">                log.warn(&quot;[ACTUALIZAR CUESTIONARIO] Sin permisos para editar en estado: {}&quot;, estadoDescripcion);</span>
 <span class="fc" id="L184">                return ResponseEntity.status(403).body(&quot;No tienes permisos para editar cuestionarios en estado '&quot; + </span>
-                    estadoDescripcion + &quot;'. Solo se pueden editar cuestionarios en borrador o creado.&quot;);
+<span class="fc" id="L185">                    estadoDescripcion + &quot;'. Solo se pueden editar cuestionarios en borrador o creado.&quot;);</span>
             }
 
             // ELIMINADO: Validación que impedía editar cuestionarios adjudicados o grabados
@@ -255,7 +255,7 @@ import java.util.ArrayList;
 <span class="fc" id="L255">                    id, nuevoEstado, authorizationService.isAdmin());</span>
 <span class="fc" id="L256">            } catch (IllegalArgumentException e) {</span>
 <span class="fc" id="L257">                return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));</span>
-<span class="fc" id="L258">            }</span>
+            }
 <span class="fc bfc" id="L259" title="All 2 branches covered.">            if (cuestionarioActualizado == null) {</span>
 <span class="fc" id="L260">                return ResponseEntity.notFound().build();</span>
             }
@@ -264,7 +264,7 @@ import java.util.ArrayList;
 <span class="fc" id="L264">            return ResponseEntity.ok(Map.of(</span>
 <span class="fc" id="L265">                &quot;id&quot;, cuestionarioActualizado.getId(),</span>
 <span class="fc" id="L266">                &quot;estado&quot;, cuestionarioActualizado.getEstado(),</span>
-                &quot;message&quot;, &quot;Estado actualizado correctamente&quot;
+<span class="fc" id="L267">                &quot;message&quot;, &quot;Estado actualizado correctamente&quot;</span>
             ));
 <span class="nc" id="L269">        } catch (Exception e) {</span>
 <span class="nc" id="L270">            return ResponseEntity.badRequest().body(&quot;Error al cambiar estado: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
@@ -294,7 +294,7 @@ import java.util.ArrayList;
 <span class="fc" id="L294">            return ResponseEntity.ok(Map.of(</span>
 <span class="fc" id="L295">                &quot;id&quot;, cuestionarioActualizado.getId(),</span>
 <span class="fc" id="L296">                &quot;tematica&quot;, cuestionarioActualizado.getTematica(),</span>
-                &quot;message&quot;, &quot;Temática actualizada correctamente&quot;
+<span class="fc" id="L297">                &quot;message&quot;, &quot;Temática actualizada correctamente&quot;</span>
             ));
 <span class="fc" id="L299">        } catch (Exception e) {</span>
 <span class="fc" id="L300">            return ResponseEntity.badRequest().body(&quot;Error al cambiar temática: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
@@ -347,7 +347,7 @@ import java.util.ArrayList;
 <span class="fc" id="L347">                dto.put(&quot;fechaCreacion&quot;, c.getFechaCreacion());</span>
 <span class="fc" id="L348">                dto.put(&quot;nivel&quot;, c.getNivel());</span>
 <span class="fc" id="L349">                resultado.add(dto);</span>
-<span class="fc" id="L350">            }</span>
+            }
 <span class="fc" id="L351">            return ResponseEntity.ok(resultado);</span>
 <span class="fc" id="L352">        } catch (Exception e) {</span>
 <span class="fc" id="L353">            log.error(&quot;Error al obtener cuestionarios para asignar&quot;, e);</span>

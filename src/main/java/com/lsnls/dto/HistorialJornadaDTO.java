@@ -20,6 +20,8 @@ public class HistorialJornadaDTO {
     private LocalDateTime fechaUso;
     
     private Long preguntaUsadaId;
+    private Long comboPadreId;
+    private List<Long> comboHijosIds;
     private String notas;
 
     // Getters y Setters
@@ -53,6 +55,12 @@ public class HistorialJornadaDTO {
     public Long getPreguntaUsadaId() { return preguntaUsadaId; }
     public void setPreguntaUsadaId(Long preguntaUsadaId) { this.preguntaUsadaId = preguntaUsadaId; }
     
+    public Long getComboPadreId() { return comboPadreId; }
+    public void setComboPadreId(Long comboPadreId) { this.comboPadreId = comboPadreId; }
+
+    public List<Long> getComboHijosIds() { return comboHijosIds; }
+    public void setComboHijosIds(List<Long> comboHijosIds) { this.comboHijosIds = comboHijosIds; }
+
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }
 }

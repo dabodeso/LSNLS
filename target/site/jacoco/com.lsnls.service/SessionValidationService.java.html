@@ -280,7 +280,7 @@ import java.util.concurrent.ConcurrentHashMap;
 <span class="pc bpc" id="L280" title="1 of 2 branches missed.">        if (userSessions != null) {</span>
 <span class="fc" id="L281">            blacklistedTokens.addAll(userSessions);</span>
 <span class="fc" id="L282">            auditService.logSecurityEvent(&quot;Todas las sesiones invalidadas para usuario: &quot; + username,</span>
-                null, null);
+<span class="fc" id="L283">                null, null);</span>
         }
 <span class="fc" id="L285">    }</span>
 
@@ -290,7 +290,7 @@ import java.util.concurrent.ConcurrentHashMap;
     public void forceLogout(String username, String reason) {
 <span class="fc" id="L291">        invalidateAllUserSessions(username);</span>
 <span class="fc" id="L292">        auditService.logSecurityEvent(&quot;Logout forzado para usuario &quot; + username + &quot;: &quot; + reason,</span>
-            null, null);
+<span class="fc" id="L293">            null, null);</span>
 <span class="fc" id="L294">    }</span>
 
     /**

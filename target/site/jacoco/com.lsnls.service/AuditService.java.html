@@ -48,11 +48,11 @@ import java.util.Optional;
             
 <span class="fc" id="L49">            AuditLog log = new AuditLog(</span>
 <span class="fc" id="L50">                currentUser.orElse(null),</span>
-                operationType,
-                entityType,
-                entityId,
-                description,
-                result
+<span class="fc" id="L51">                operationType,</span>
+<span class="fc" id="L52">                entityType,</span>
+<span class="fc" id="L53">                entityId,</span>
+<span class="fc" id="L54">                description,</span>
+<span class="fc" id="L55">                result</span>
             );
             
 <span class="pc bpc" id="L58" title="1 of 2 branches missed.">            if (request != null) {</span>
@@ -65,7 +65,7 @@ import java.util.Optional;
 <span class="fc" id="L65">        } catch (Exception e) {</span>
             // No fallar la operación principal por errores de auditoría
 <span class="fc" id="L67">            log.warn(&quot;Error al registrar auditoría: &quot; + e.getMessage());</span>
-<span class="fc" id="L68">        }</span>
+        }
 <span class="fc" id="L69">    }</span>
 
     /**
@@ -88,22 +88,22 @@ import java.util.Optional;
             
 <span class="fc" id="L89">            AuditLog log = new AuditLog(</span>
 <span class="fc" id="L90">                currentUser.orElse(null),</span>
-                operationType,
-                entityType,
-                entityId,
-                description,
-                oldValuesJson,
-                newValuesJson,
+<span class="fc" id="L91">                operationType,</span>
+<span class="fc" id="L92">                entityType,</span>
+<span class="fc" id="L93">                entityId,</span>
+<span class="fc" id="L94">                description,</span>
+<span class="fc" id="L95">                oldValuesJson,</span>
+<span class="fc" id="L96">                newValuesJson,</span>
 <span class="pc bpc" id="L97" title="1 of 2 branches missed.">                request != null ? getClientIpAddress(request) : null,</span>
 <span class="pc bpc" id="L98" title="1 of 2 branches missed.">                request != null ? request.getHeader(&quot;User-Agent&quot;) : null,</span>
-                result
+<span class="fc" id="L99">                result</span>
             );
             
 <span class="fc" id="L102">            auditLogRepository.save(log);</span>
             
 <span class="fc" id="L104">        } catch (Exception e) {</span>
 <span class="fc" id="L105">            log.warn(&quot;Error al registrar auditoría con valores: &quot; + e.getMessage());</span>
-<span class="fc" id="L106">        }</span>
+        }
 <span class="fc" id="L107">    }</span>
 
     /**
@@ -116,11 +116,11 @@ import java.util.Optional;
             
 <span class="fc" id="L117">            AuditLog log = new AuditLog(</span>
 <span class="fc" id="L118">                currentUser.orElse(null),</span>
-                AuditLog.OperationType.SECURITY_EVENT,
-                AuditLog.EntityType.SISTEMA,
-                null,
-                description,
-                AuditLog.OperationResult.BLOCKED
+<span class="fc" id="L119">                AuditLog.OperationType.SECURITY_EVENT,</span>
+<span class="fc" id="L120">                AuditLog.EntityType.SISTEMA,</span>
+<span class="fc" id="L121">                null,</span>
+<span class="fc" id="L122">                description,</span>
+<span class="fc" id="L123">                AuditLog.OperationResult.BLOCKED</span>
             );
             
 <span class="fc" id="L126">            log.setIpAddress(ipAddress);</span>
@@ -130,7 +130,7 @@ import java.util.Optional;
             
 <span class="fc" id="L131">        } catch (Exception e) {</span>
 <span class="fc" id="L132">            log.warn(&quot;Error al registrar evento de seguridad: &quot; + e.getMessage());</span>
-<span class="fc" id="L133">        }</span>
+        }
 <span class="fc" id="L134">    }</span>
 
     /**
@@ -142,12 +142,12 @@ import java.util.Optional;
 <span class="fc" id="L142">            HttpServletRequest request = getCurrentRequest();</span>
             
 <span class="fc" id="L144">            AuditLog log = new AuditLog(</span>
-                usuario,
-                AuditLog.OperationType.LOGIN,
-                AuditLog.EntityType.USUARIO,
+<span class="fc" id="L145">                usuario,</span>
+<span class="fc" id="L146">                AuditLog.OperationType.LOGIN,</span>
+<span class="fc" id="L147">                AuditLog.EntityType.USUARIO,</span>
 <span class="fc" id="L148">                usuario.getId(),</span>
 <span class="fc" id="L149">                &quot;Inicio de sesión exitoso para usuario: &quot; + usuario.getNombre(),</span>
-                AuditLog.OperationResult.SUCCESS
+<span class="fc" id="L150">                AuditLog.OperationResult.SUCCESS</span>
             );
             
 <span class="pc bpc" id="L153" title="1 of 2 branches missed.">            if (request != null) {</span>
@@ -159,7 +159,7 @@ import java.util.Optional;
             
 <span class="fc" id="L160">        } catch (Exception e) {</span>
 <span class="fc" id="L161">            log.warn(&quot;Error al registrar login exitoso: &quot; + e.getMessage());</span>
-<span class="fc" id="L162">        }</span>
+        }
 <span class="fc" id="L163">    }</span>
 
     /**
@@ -171,12 +171,12 @@ import java.util.Optional;
 <span class="fc" id="L171">            HttpServletRequest request = getCurrentRequest();</span>
             
 <span class="fc" id="L173">            AuditLog log = new AuditLog(</span>
-                null,
-                AuditLog.OperationType.LOGIN,
-                AuditLog.EntityType.USUARIO,
-                null,
-                &quot;Intento de login fallido para usuario: &quot; + username + &quot;. Razón: &quot; + reason,
-                AuditLog.OperationResult.FAILURE
+<span class="fc" id="L174">                null,</span>
+<span class="fc" id="L175">                AuditLog.OperationType.LOGIN,</span>
+<span class="fc" id="L176">                AuditLog.EntityType.USUARIO,</span>
+<span class="fc" id="L177">                null,</span>
+<span class="fc" id="L178">                &quot;Intento de login fallido para usuario: &quot; + username + &quot;. Razón: &quot; + reason,</span>
+<span class="fc" id="L179">                AuditLog.OperationResult.FAILURE</span>
             );
             
 <span class="pc bpc" id="L182" title="1 of 2 branches missed.">            if (request != null) {</span>
@@ -190,7 +190,7 @@ import java.util.Optional;
             
 <span class="fc" id="L191">        } catch (Exception e) {</span>
 <span class="fc" id="L192">            log.warn(&quot;Error al registrar login fallido: &quot; + e.getMessage());</span>
-<span class="fc" id="L193">        }</span>
+        }
 <span class="fc" id="L194">    }</span>
 
     /**
@@ -246,7 +246,7 @@ import java.util.Optional;
 <span class="fc" id="L246">            auditLogRepository.deleteLogsOlderThan(cutoffDate);</span>
 <span class="fc" id="L247">        } catch (Exception e) {</span>
 <span class="fc" id="L248">            log.warn(&quot;Error al limpiar logs antiguos: &quot; + e.getMessage());</span>
-<span class="fc" id="L249">        }</span>
+        }
 <span class="fc" id="L250">    }</span>
 
     /**
@@ -280,25 +280,25 @@ import java.util.Optional;
      */
     public void logPreguntaCreated(Long preguntaId, String descripcion) {
 <span class="fc" id="L282">        logOperation(AuditLog.OperationType.CREATE, AuditLog.EntityType.PREGUNTA, </span>
-                    preguntaId, descripcion, AuditLog.OperationResult.SUCCESS);
+<span class="fc" id="L283">                    preguntaId, descripcion, AuditLog.OperationResult.SUCCESS);</span>
 <span class="fc" id="L284">    }</span>
 
     public void logPreguntaStateChange(Long preguntaId, String oldState, String newState) {
 <span class="fc" id="L287">        logOperation(AuditLog.OperationType.STATE_CHANGE, AuditLog.EntityType.PREGUNTA,</span>
-                    preguntaId, &quot;Cambio de estado de &quot; + oldState + &quot; a &quot; + newState, 
-                    AuditLog.OperationResult.SUCCESS);
+<span class="fc" id="L288">                    preguntaId, &quot;Cambio de estado de &quot; + oldState + &quot; a &quot; + newState, </span>
+<span class="fc" id="L289">                    AuditLog.OperationResult.SUCCESS);</span>
 <span class="fc" id="L290">    }</span>
 
     public void logCuestionarioCreated(Long cuestionarioId, int numPreguntas) {
 <span class="fc" id="L293">        logOperation(AuditLog.OperationType.CREATE, AuditLog.EntityType.CUESTIONARIO,</span>
-                    cuestionarioId, &quot;Cuestionario creado con &quot; + numPreguntas + &quot; preguntas&quot;,
-                    AuditLog.OperationResult.SUCCESS);
+<span class="fc" id="L294">                    cuestionarioId, &quot;Cuestionario creado con &quot; + numPreguntas + &quot; preguntas&quot;,</span>
+<span class="fc" id="L295">                    AuditLog.OperationResult.SUCCESS);</span>
 <span class="fc" id="L296">    }</span>
 
     public void logComboCreated(Long comboId, int numPreguntas) {
 <span class="fc" id="L299">        logOperation(AuditLog.OperationType.CREATE, AuditLog.EntityType.COMBO,</span>
-                    comboId, &quot;Combo creado con &quot; + numPreguntas + &quot; preguntas multiplicadoras&quot;,
-                    AuditLog.OperationResult.SUCCESS);
+<span class="fc" id="L300">                    comboId, &quot;Combo creado con &quot; + numPreguntas + &quot; preguntas multiplicadoras&quot;,</span>
+<span class="fc" id="L301">                    AuditLog.OperationResult.SUCCESS);</span>
 <span class="fc" id="L302">    }</span>
 
     public void logConcursanteAssigned(Long concursanteId, Long cuestionarioId, Long comboId) {
@@ -311,17 +311,17 @@ import java.util.Optional;
         }
         
 <span class="fc" id="L313">        logOperation(AuditLog.OperationType.ASSIGN, AuditLog.EntityType.CONCURSANTE,</span>
-                    concursanteId, descripcion, AuditLog.OperationResult.SUCCESS);
+<span class="fc" id="L314">                    concursanteId, descripcion, AuditLog.OperationResult.SUCCESS);</span>
 <span class="fc" id="L315">    }</span>
 
     public void logValidationError(Long entityId, AuditLog.EntityType entityType, String error) {
 <span class="fc" id="L318">        logOperation(AuditLog.OperationType.VALIDATION, entityType,</span>
-                    entityId, &quot;Error de validación: &quot; + error, AuditLog.OperationResult.FAILURE);
+<span class="fc" id="L319">                    entityId, &quot;Error de validación: &quot; + error, AuditLog.OperationResult.FAILURE);</span>
 <span class="fc" id="L320">    }</span>
 
     public void logConcurrencyConflict(AuditLog.EntityType entityType, Long entityId, String operation) {
 <span class="fc" id="L323">        logOperation(AuditLog.OperationType.UPDATE, entityType,</span>
-                    entityId, &quot;Conflicto de concurrencia en &quot; + operation, AuditLog.OperationResult.BLOCKED);
+<span class="fc" id="L324">                    entityId, &quot;Conflicto de concurrencia en &quot; + operation, AuditLog.OperationResult.BLOCKED);</span>
 <span class="fc" id="L325">    }</span>
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

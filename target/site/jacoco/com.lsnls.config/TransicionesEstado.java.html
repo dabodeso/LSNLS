@@ -9,34 +9,34 @@ import java.util.Set;
  */
 public final class TransicionesEstado {
 
-<span class="fc" id="L12">    private static final Map&lt;String, Set&lt;String&gt;&gt; GRAFO = Map.of(</span>
-<span class="fc" id="L13">            &quot;borrador&quot;, Set.of(&quot;revisar&quot;),</span>
-<span class="fc" id="L14">            &quot;revisar&quot;, Set.of(&quot;corregir&quot;, &quot;aprobado&quot;),</span>
-<span class="fc" id="L15">            &quot;corregir&quot;, Set.of(&quot;revisar&quot;, &quot;aprobado&quot;),</span>
-<span class="fc" id="L16">            &quot;aprobado&quot;, Set.of(),</span>
-<span class="fc" id="L17">            &quot;adjudicado&quot;, Set.of(),</span>
-<span class="fc" id="L18">            &quot;grabado&quot;, Set.of(),</span>
-<span class="fc" id="L19">            &quot;reaprovechado&quot;, Set.of(),</span>
-<span class="fc" id="L20">            &quot;liberado&quot;, Set.of()</span>
-    );
+<span class="nc" id="L12">    private static final Map&lt;String, Set&lt;String&gt;&gt; GRAFO = Map.of(</span>
+<span class="nc" id="L13">            &quot;borrador&quot;, Set.of(&quot;revisar&quot;),</span>
+<span class="nc" id="L14">            &quot;revisar&quot;, Set.of(&quot;corregir&quot;, &quot;aprobado&quot;),</span>
+<span class="nc" id="L15">            &quot;corregir&quot;, Set.of(&quot;revisar&quot;, &quot;aprobado&quot;),</span>
+<span class="nc" id="L16">            &quot;aprobado&quot;, Set.of(),</span>
+<span class="nc" id="L17">            &quot;adjudicado&quot;, Set.of(),</span>
+<span class="nc" id="L18">            &quot;grabado&quot;, Set.of(),</span>
+<span class="nc" id="L19">            &quot;reaprovechado&quot;, Set.of(),</span>
+<span class="nc" id="L20">            &quot;liberado&quot;, Set.of()</span>
+<span class="nc" id="L21">    );</span>
 
     private TransicionesEstado() {
     }
 
     public static void validar(Enum&lt;?&gt; estadoActual, Enum&lt;?&gt; nuevoEstado, boolean usuarioEsAdmin) {
-<span class="fc bfc" id="L27" title="All 6 branches covered.">        if (estadoActual == null || nuevoEstado == null || estadoActual == nuevoEstado) {</span>
-<span class="fc" id="L28">            return;</span>
+<span class="nc bnc" id="L27" title="All 6 branches missed.">        if (estadoActual == null || nuevoEstado == null || estadoActual == nuevoEstado) {</span>
+<span class="nc" id="L28">            return;</span>
         }
-<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (usuarioEsAdmin) {</span>
-<span class="fc" id="L31">            return;</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (usuarioEsAdmin) {</span>
+<span class="nc" id="L31">            return;</span>
         }
-<span class="fc" id="L33">        String actual = estadoActual.name();</span>
-<span class="fc" id="L34">        String nuevo = nuevoEstado.name();</span>
-<span class="fc" id="L35">        Set&lt;String&gt; permitidos = GRAFO.getOrDefault(actual, Set.of());</span>
-<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (!permitidos.contains(nuevo)) {</span>
-<span class="fc" id="L37">            throw new IllegalArgumentException(</span>
-                    &quot;Transición de estado no permitida: &quot; + actual + &quot; -&gt; &quot; + nuevo);
+<span class="nc" id="L33">        String actual = estadoActual.name();</span>
+<span class="nc" id="L34">        String nuevo = nuevoEstado.name();</span>
+<span class="nc" id="L35">        Set&lt;String&gt; permitidos = GRAFO.getOrDefault(actual, Set.of());</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (!permitidos.contains(nuevo)) {</span>
+<span class="nc" id="L37">            throw new IllegalArgumentException(</span>
+<span class="nc" id="L38">                    &quot;Transición de estado no permitida: &quot; + actual + &quot; -&gt; &quot; + nuevo);</span>
         }
-<span class="fc" id="L40">    }</span>
+<span class="nc" id="L40">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

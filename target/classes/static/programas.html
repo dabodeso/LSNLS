@@ -563,11 +563,11 @@
                                 <label class="form-label form-label-sm">Estado</label>
                                 <select class="form-select form-select-sm"
                                         id="filtro-estado-concursante-disponible"
-                                        onchange="onCambioFiltrosConcursantesDisponibles()">
-                                    <option value="">Todos</option>
-                                    <option value="GRABADO">Grabado</option>
-                                    <option value="EDITADO">Editado</option>
-                                    <option value="EMITIDO">Emitido</option>
+                                        onchange="onCambioEstadoConcursantesDisponibles()">
+                                    <option value="">Todos (grabado, editado, emitido)</option>
+                                    <option value="editado" selected>Editado</option>
+                                    <option value="grabado">Grabado</option>
+                                    <option value="emitido">Emitido</option>
                                 </select>
                             </div>
                         </div>
@@ -624,13 +624,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="js/api.js?v=20260821-3"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/utils.js?v=20260907-1"></script>
+    <script src="js/auth.js?v=20260915-verif-consulta"></script>
+    <script src="js/utils.js?v=20260915-verif-consulta"></script>
     <script src="js/undo-manager.js?v=20260915-modal"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/programas.js?v=20260915-grabado"></script>
+    <script src="js/programas.js?v=20260918-filtro-editado"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();

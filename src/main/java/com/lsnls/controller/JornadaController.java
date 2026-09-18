@@ -245,7 +245,7 @@ public class JornadaController {
     }
 
     @PostMapping("/{id}/arrastre/{tipo}/{itemId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<String>> registrarArrastre(
             @PathVariable Long id,
             @PathVariable String tipo,
@@ -266,7 +266,7 @@ public class JornadaController {
     }
 
     @DeleteMapping("/{id}/arrastre/{tipo}/{itemId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<ApiResponse<String>> quitarArrastre(
             @PathVariable Long id,
             @PathVariable String tipo,

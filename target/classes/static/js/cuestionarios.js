@@ -200,34 +200,18 @@ const CuestionariosManager = {
             this.cargando = true;
             this.actualizarPaginacion();
             
-            // Verificar si hay filtros activos
-            const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
-            const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
-            const busqueda = document.getElementById('buscar-cuestionario')?.value || '';
+            const filtros = this.obtenerFiltrosActivos();
             
-            console.log(`🔍 [CARGAR MÁS] Filtros activos: estado=${estado}, tematica=${tematica}, busqueda=${busqueda}`);
+            console.log(`🔍 [CARGAR MÁS] Filtros activos:`, filtros);
             
-            // Realizar la solicitud directamente aquí en lugar de llamar a filtrarCuestionarios
-            if (estado || tematica || busqueda) {
+            if (filtros.hayFiltros) {
                 console.log('🔄 [CARGAR MÁS] Realizando solicitud con filtros para página ' + this.paginaActual);
                 
-                // Construir parámetros de búsqueda
                 const params = new URLSearchParams({
                     page: this.paginaActual,
                     size: this.tamanioPagina
                 });
-                
-                // Añadir filtros si existen
-                if (estado) params.append('estado', estado);
-                if (tematica) params.append('tematica', tematica);
-                // Si la búsqueda es numérica, usar 'id', sino usar 'texto' para buscar en preguntas/respuestas
-                if (busqueda) {
-                    if (/^\d+$/.test(busqueda.trim())) {
-                        params.append('id', busqueda);
-                    } else {
-                        params.append('texto', busqueda);
-                    }
-                }
+                this.anexarParamsFiltro(params, filtros);
                 
                 console.log('🔄 [CARGAR MÁS] Parámetros:', params.toString());
                 
@@ -363,10 +347,8 @@ const CuestionariosManager = {
         this.paginaActual = pagina;
 
         // Detectar filtros activos
-        const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
-        const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
-        const busqueda = document.getElementById('buscar-cuestionario')?.value || '';
-        const hayFiltros = !!(estado || tematica || busqueda);
+        const filtros = this.obtenerFiltrosActivos();
+        const hayFiltros = filtros.hayFiltros;
 
         if (hayFiltros) {
             // Reemplazar contenido, manteniendo la página actual
@@ -382,8 +364,20 @@ const CuestionariosManager = {
         const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
         const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
         const subtema = document.getElementById('filtro-subtema-cuestionario')?.value || '';
+        const filtroId = (document.getElementById('filtro-id-cuestionario')?.value || '').trim();
         const busqueda = document.getElementById('buscar-cuestionario')?.value || '';
-        return { estado, tematica, subtema, busqueda, hayFiltros: !!(estado || tematica || subtema || busqueda) };
+        return { estado, tematica, subtema, filtroId, busqueda, hayFiltros: !!(estado || tematica || subtema || filtroId || busqueda) };
+    },
+
+    anexarParamsFiltro(params, filtros) {
+        if (filtros.estado) params.append('estado', filtros.estado);
+        if (filtros.tematica) params.append('tematica', filtros.tematica);
+        if (filtros.subtema) params.append('subtema', filtros.subtema);
+        const idNumerico = /^\d+$/.test(filtros.filtroId || '')
+            ? filtros.filtroId
+            : (/^\d+$/.test((filtros.busqueda || '').trim()) ? filtros.busqueda.trim() : '');
+        if (idNumerico) params.append('id', idNumerico);
+        else if (filtros.busqueda) params.append('texto', filtros.busqueda);
     },
 
     async recargarConFiltros() {
@@ -424,6 +418,9 @@ const CuestionariosManager = {
     cumpleFiltrosBasicos(cuestionario, filtros) {
         if (filtros.estado && this.normalizarEstado(cuestionario.estado) !== filtros.estado) return false;
         if (filtros.tematica && (cuestionario.tematica || '') !== filtros.tematica) return false;
+        if (filtros.filtroId) {
+            if (!/^\d+$/.test(filtros.filtroId) || String(cuestionario.id) !== filtros.filtroId) return false;
+        }
         if (filtros.busqueda && /^\d+$/.test(filtros.busqueda.trim())) {
             return String(cuestionario.id) === filtros.busqueda.trim();
         }
@@ -605,15 +602,15 @@ const CuestionariosManager = {
                 
                 if (p) {
                     filasPreguntas += `<tr data-id="${p.id}" data-nivel="${slotNivel}" style="cursor:pointer;">
-                        <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(p.nivel) : ''}'>${slotNivel}</span></td>
-                        <td>${p.pregunta ?? ''}</td>
-                        <td>${p.respuesta ?? ''}</td>
-                        <td>${p.datosExtra ?? ''}</td>
+                        <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(p.nivel) : ''}'>${Utils.formatearNivel(slotNivel)}</span></td>
+                        <td class="fw-bold">${p.pregunta ?? ''}</td>
+                        <td class="fw-bold">${p.respuesta ?? ''}</td>
+                        <td class="fw-bold">${p.datosExtra ?? ''}</td>
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCuestionario(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
                     </tr>`;
                 } else {
                     filasPreguntas += `<tr data-nivel="${slotNivel}">
-                        <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(slotNivel) : ''}'>${slotNivel}</span></td>
+                        <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(slotNivel) : ''}'>${Utils.formatearNivel(slotNivel)}</span></td>
                         <td class="text-center text-muted">(Vacío)</td>
                         <td class="text-center text-muted">-</td>
                         <td class="text-center text-muted">-</td>
@@ -758,8 +755,9 @@ const CuestionariosManager = {
     },
 
     getNivelColor(nivel) {
-        if (["_2NLS", "_4NLS", "_5NLS", "2NLS", "4NLS"].includes(nivel)) return 'text-danger fw-bold';
-        if (["_1LS", "_3LS", "_5LS", "1LS", "3LS"].includes(nivel)) return 'text-success fw-bold';
+        const n = Utils.formatearNivel(nivel);
+        if (['2NLS', '4NLS', '5NLS'].includes(n)) return 'text-danger fw-bold';
+        if (['1LS', '3LS', '5LS'].includes(n)) return 'text-success fw-bold';
         return '';
     },
 };
@@ -999,7 +997,7 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
                     <div class="pregunta-meta">
                         <small class="text-muted">
                             Temática: ${pregunta.tematica || 'N/A'} | 
-                            Nivel: <span class="${nivelColor}">${pregunta.nivel || '-'}</span> | 
+                            Nivel: <span class="${nivelColor}">${Utils.formatearNivel(pregunta.nivel) || '-'}</span> | 
                             Estado: ${pregunta.estado || '-'}
                         </small>
                     </div>
@@ -1870,12 +1868,9 @@ window.filtrarCuestionarios = async function(resetear = true) {
             CuestionariosManager.ocultarAvisoDestacado();
             CuestionariosManager.limpiarIdUrl();
         }
-        const estado = document.getElementById('filtro-estado-cuestionario')?.value || '';
-        const tematica = document.getElementById('filtro-tematica-cuestionario')?.value || '';
-        const subtema = document.getElementById('filtro-subtema-cuestionario')?.value || '';
-        const busqueda = document.getElementById('buscar-cuestionario')?.value || '';
+        const filtros = CuestionariosManager.obtenerFiltrosActivos();
         
-        console.log(`🔍 [FILTRAR] Filtros: estado=${estado}, tematica=${tematica}, subtema=${subtema}, busqueda=${busqueda}`);
+        console.log(`🔍 [FILTRAR] Filtros:`, filtros);
 
         // Resetear paginación si es una nueva búsqueda
         if (resetear) {
@@ -1896,18 +1891,7 @@ window.filtrarCuestionarios = async function(resetear = true) {
             size: CuestionariosManager.tamanioPagina
         });
         
-        // Añadir filtros si existen
-        if (estado) params.append('estado', estado);
-        if (tematica) params.append('tematica', tematica);
-        if (subtema) params.append('subtema', subtema);
-        // Si la búsqueda es numérica, usar 'id', sino usar 'texto' para buscar en preguntas/respuestas
-        if (busqueda) {
-            if (/^\d+$/.test(busqueda.trim())) {
-                params.append('id', busqueda);
-            } else {
-                params.append('texto', busqueda);
-            }
-        }
+        CuestionariosManager.anexarParamsFiltro(params, filtros);
 
         console.log('🔍 [FILTRAR] Parámetros de búsqueda:', params.toString());
 
@@ -1972,6 +1956,8 @@ window.limpiarFiltrosCuestionarios = function() {
     }
     document.getElementById('filtro-estado-cuestionario').value = '';
     document.getElementById('filtro-tematica-cuestionario').value = '';
+    const filtroIdCuestionario = document.getElementById('filtro-id-cuestionario');
+    if (filtroIdCuestionario) filtroIdCuestionario.value = '';
     document.getElementById('buscar-cuestionario').value = '';
     CuestionariosManager.paginaActual = 0;
     CuestionariosManager.cargarCuestionarios(true);

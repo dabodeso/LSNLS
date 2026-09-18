@@ -123,6 +123,7 @@ class ComboServiceCoverageTest {
     @Test
     void obtenerComboConSlots_conPosicionesYJornada() {
         Combo c = comboConSlots();
+        c.setPreguntaUsadaId(11L);
         when(typedQuery.getResultList()).thenReturn(Collections.singletonList(c), Collections.singletonList(7L));
 
         Map<String, Object> dto = comboService.obtenerComboConSlots(1L);
@@ -130,6 +131,7 @@ class ComboServiceCoverageTest {
         assertNotNull(dto);
         assertEquals(1L, dto.get("id"));
         assertEquals(7L, dto.get("jornadaAsignada"));
+        assertEquals(11L, dto.get("preguntaUsadaId"));
         assertNotNull(dto.get("preguntas"));
     }
 

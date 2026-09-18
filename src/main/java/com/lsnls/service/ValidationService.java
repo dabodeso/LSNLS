@@ -154,8 +154,8 @@ public class ValidationService {
             for (PreguntaCuestionario pc : cuestionario.getPreguntas()) {
                 String nivel = pc.getPregunta().getNivel().name();
                 if (!nivel.matches("_[1-4](LS|NLS)")) {
-                    result.addError("Pregunta con nivel inválido para cuestionario: " + nivel + 
-                                  ". Solo se permiten niveles _1LS, _2NLS, _3LS, _4NLS");
+                    result.addError("Pregunta con nivel inválido para cuestionario: " + nivel.replaceFirst("^_", "") + 
+                                  ". Solo se permiten niveles 1LS, 2NLS, 3LS, 4NLS");
                 }
             }
         }
@@ -196,7 +196,7 @@ public class ValidationService {
                 // Validar que la pregunta sea de nivel 5
                 String nivel = pc.getPregunta().getNivel().name();
                 if (!nivel.startsWith("_5")) {
-                    result.addError("Combo contiene pregunta de nivel " + nivel + ". Solo se permiten preguntas de nivel 5");
+                    result.addError("Combo contiene pregunta de nivel " + nivel.replaceFirst("^_", "") + ". Solo se permiten preguntas de nivel 5");
                 }
                 
                 // Validar factores únicos

@@ -336,7 +336,7 @@ function normalizarEstadoConcursanteUi(estado) {
 function puedeEditarConcursanteSegunEstado(estado) {
     const rol = obtenerRolUsuarioActual();
     if (rol === 'admin' || rol === 'direccion') return true;
-    return normalizarEstadoConcursanteUi(estado) === 'grabado' && (rol === 'guion' || rol === 'verificacion');
+    return normalizarEstadoConcursanteUi(estado) === 'grabado' && rol === 'guion';
 }
 
 function crearColumnasVisiblesPorDefecto(verColumnasDireccion) {
@@ -515,9 +515,9 @@ function detectarRolUsuario() {
 const rol = obtenerRolUsuarioActual();
 const verColumnasDireccion = puedeVerColumnasDireccion(rol);
 
-// Crear: ADMIN, GUION, DIRECCION. Editar (algún estado): esos + VERIFICACION en grabado.
+// Crear y editar: ADMIN, GUION, DIRECCION. Verificación es solo consulta.
 puedeCrearConcursante = (rol === 'admin' || rol === 'guion' || rol === 'direccion');
-puedeEditarConcursantes = puedeCrearConcursante || rol === 'verificacion';
+puedeEditarConcursantes = puedeCrearConcursante;
 puedeEliminarConcursante = (rol === 'admin' || rol === 'direccion');
 
 // Ocultar "Nuevo Concursante" si no puede crear
@@ -574,12 +574,14 @@ function limitarEstadosSegunRol() {
 
 function aplicarRestriccionProgramacionFormulario() {
     const puede = puedeVerColumnasDireccion();
-    ['numero-programa', 'orden-escaleta', 'bonico'].forEach(id => {
+    ['numero-programa', 'bonico', 'duracion-direccion', 'duracion-final', 'momentos-destacados'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.readOnly = !puede;
     });
-    const estado = document.getElementById('estado');
-    if (estado) estado.disabled = !puede;
+    ['estado', 'valoracion-final'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !puede;
+    });
 }
 
 // Carga de datos
@@ -997,17 +999,26 @@ celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoraci
 
 // ESTADO
 if (configuracionColumnas.columnasVisibles['estado']) {
-    const estadosPosibles = ['grabado','editado','programado','emitido','archivado'];
     let estadoActual = (concursante.estado || 'grabado').toLowerCase();
     if (estadoActual === 'borrador' || !estadoActual) estadoActual = 'grabado';
+    const asignadoAPrograma = concursante.numeroPrograma != null && concursante.numeroPrograma !== '';
+    let estadosPosibles;
+    if (asignadoAPrograma) {
+        estadosPosibles = [estadoActual];
+    } else if (estadoActual === 'grabado' || estadoActual === 'archivado') {
+        estadosPosibles = ['grabado', 'editado', 'archivado'];
+    } else {
+        estadosPosibles = ['grabado', 'editado'];
+    }
     const opcionesEstado = estadosPosibles.map(e => {
         const selected = e === estadoActual ? ' selected' : '';
         const label = e.charAt(0).toUpperCase() + e.slice(1);
         return `<option value="${e}"${selected}>${label}</option>`;
     }).join('');
+    const estadoBloqueado = asignadoAPrograma || !(puedeEditarFila && puedeVerColumnasDireccion());
     celdas.push(
         `<td>
-            <select class="form-select form-select-sm estado-select" data-id="${concursante.id}"${puedeEditarFila && puedeVerColumnasDireccion() ? '' : ' disabled'}>
+            <select class="form-select form-select-sm estado-select" data-id="${concursante.id}"${estadoBloqueado ? ' disabled' : ''}>
                 ${opcionesEstado}
             </select>
         </td>`
@@ -1152,6 +1163,8 @@ function resetFormularioConcursanteNuevo() {
         btnReciclar.style.display = 'none';
         btnReciclar.dataset.comboId = '';
     }
+    actualizarBotonVerCuestionario();
+    actualizarBotonVerCombo();
 
     limpiarFoto();
     const fotoPreview = document.getElementById('foto-preview-img');
@@ -1234,6 +1247,7 @@ document.getElementById('redes-sociales').value = concursanteActual.redesSociale
 
 // CORREGIR: usar cuestionarioId en lugar de cuestionario.id
 document.getElementById('cuestionario-id').value = concursanteActual.cuestionarioId || '';
+actualizarBotonVerCuestionario();
 
 // CORREGIR: usar comboId en lugar de combo.id
 const comboId = concursanteActual.comboId || '';
@@ -1242,11 +1256,8 @@ if (comboId) {
 } else {
     document.getElementById('combo-id').value = '';
     document.getElementById('combo-id').dataset.comboId = '';
-    const btnReciclar = document.getElementById('btn-reciclar-combo');
-    if (btnReciclar) {
-        btnReciclar.style.display = 'none';
-        btnReciclar.dataset.comboId = '';
-    }
+    actualizarBotonVerCombo();
+    actualizarBotonReciclarCombo(null);
 }
 
 document.getElementById('xusoker').value = concursanteActual.xusoker || '';
@@ -1265,7 +1276,6 @@ document.getElementById('momentos-destacados').value = concursanteActual.momento
                 document.getElementById('duracion-final').value = concursanteActual.duracionFinal || '';
 setSelectValoracion('valoracion-final', concursanteActual.valoracionFinal);
 document.getElementById('numero-programa').value = concursanteActual.numeroPrograma || '';
-document.getElementById('orden-escaleta').value = concursanteActual.ordenEscaleta || '';
 document.getElementById('bonico').value = concursanteActual.bonico || '';
 
 // AÑADIR: campos faltantes
@@ -1358,16 +1368,97 @@ function obtenerJornadaIdParaReciclaje() {
 }
 
 function actualizarComboEnFormulario(comboId) {
-    const id = String(comboId);
+    const id = String(comboId || '');
     const input = document.getElementById('combo-id');
     if (!input) return;
+    if (!id) {
+        input.value = '';
+        input.dataset.comboId = '';
+        actualizarBotonVerCombo();
+        actualizarBotonReciclarCombo(null);
+        return;
+    }
     input.value = `Combo #${id}`;
     input.dataset.comboId = id;
-    const btnReciclar = document.getElementById('btn-reciclar-combo');
-    if (btnReciclar) {
-        btnReciclar.style.display = 'inline-block';
-        btnReciclar.dataset.comboId = id;
+    actualizarBotonVerCombo();
+    actualizarBotonReciclarCombo(id);
+}
+
+function leerIdCuestionarioFormulario() {
+    const raw = document.getElementById('cuestionario-id')?.value || '';
+    const id = String(raw).replace(/[^0-9]/g, '');
+    return id || null;
+}
+
+function leerIdComboFormulario() {
+    const input = document.getElementById('combo-id');
+    return input?.dataset?.comboId
+        || String(input?.value || '').replace(/[^0-9]/g, '')
+        || null;
+}
+
+function actualizarBotonVerCuestionario() {
+    const btn = document.getElementById('btn-ver-cuestionario');
+    if (!btn) return;
+    const id = leerIdCuestionarioFormulario();
+    btn.style.display = id ? 'inline-block' : 'none';
+    btn.dataset.cuestionarioId = id || '';
+}
+
+function actualizarBotonVerCombo() {
+    const btn = document.getElementById('btn-ver-combo');
+    if (!btn) return;
+    const id = leerIdComboFormulario();
+    btn.style.display = id ? 'inline-block' : 'none';
+    btn.dataset.comboId = id || '';
+}
+
+function comboPareceReciclado(data, comboId) {
+    if (concursanteActual?.comboId && String(concursanteActual.comboId) === String(comboId) && concursanteActual.comboReciclado) {
+        return true;
     }
+    if (!data) return false;
+    if (data.preguntaUsadaId != null && data.preguntaUsadaId !== '') return true;
+    const notas = String(data.notasDireccion || '');
+    return notas.includes('Combo derivado') || notas.includes('RECICLAJE_PARCIAL');
+}
+
+async function comboEstaReciclado(comboId) {
+    if (!comboId) return false;
+    if (concursanteActual?.comboId && String(concursanteActual.comboId) === String(comboId) && concursanteActual.comboReciclado) {
+        return true;
+    }
+    try {
+        const data = await apiManager.get(`/api/combos/${comboId}`);
+        return comboPareceReciclado(data, comboId);
+    } catch (_) {
+        return false;
+    }
+}
+
+async function actualizarBotonReciclarCombo(comboId) {
+    const btn = document.getElementById('btn-reciclar-combo');
+    if (!btn) return;
+    if (!comboId) {
+        btn.style.display = 'none';
+        btn.dataset.comboId = '';
+        return;
+    }
+    btn.dataset.comboId = String(comboId);
+    const reciclado = await comboEstaReciclado(comboId);
+    btn.style.display = reciclado ? 'none' : 'inline-block';
+}
+
+function verCuestionarioDesdeFormulario() {
+    const id = leerIdCuestionarioFormulario();
+    if (!id) return;
+    verCuestionario(id, concursanteActual?.id || null);
+}
+
+function verComboDesdeFormulario() {
+    const id = leerIdComboFormulario();
+    if (!id) return;
+    verCombo(id, concursanteActual?.id || null);
 }
 
 function validarComboReciclable(preguntas) {
@@ -1457,7 +1548,6 @@ duracionDireccion: document.getElementById('duracion-direccion').value || null,
 duracionFinal: document.getElementById('duracion-final').value || null,
 valoracionFinal: valoracionFinal || null,
 numeroPrograma: document.getElementById('numero-programa').value || null,
-ordenEscaleta: document.getElementById('orden-escaleta').value || null,
 bonico: document.getElementById('bonico').value || null,
 // CORREGIR: enviar estado del formulario
 estado: estadoFormulario || null,
@@ -1469,8 +1559,11 @@ creditosEspeciales: document.getElementById('creditos-especiales') ? document.ge
 
 if (!puedeVerColumnasDireccion()) {
     delete datosConcursante.numeroPrograma;
-    delete datosConcursante.ordenEscaleta;
     delete datosConcursante.bonico;
+    delete datosConcursante.duracionDireccion;
+    delete datosConcursante.duracionFinal;
+    delete datosConcursante.momentosDestacados;
+    delete datosConcursante.valoracionFinal;
     if (esEdicion) {
         delete datosConcursante.estado;
     } else {
@@ -1646,6 +1739,11 @@ $(document).on('change', '.estado-select', async function() {
     try {
         const snapshot = await apiManager.get(`/api/concursantes/${id}`);
         const estadoPrevio = snapshot && snapshot.estado ? snapshot.estado : null;
+        if (snapshot?.numeroPrograma != null && snapshot.numeroPrograma !== '') {
+            select.value = (estadoPrevio || '').toLowerCase();
+            mostrarError('El estado del concursante no se puede cambiar mientras esté asignado a un programa.');
+            return;
+        }
         if (String(nuevoEstado).toLowerCase() === 'editado') {
             const duraciones = [snapshot?.duracion, snapshot?.duracionDireccion, snapshot?.duracionFinal];
             if (!duraciones.some(valor => /^\d{1,3}:[0-5]\d$/.test((valor || '').trim()))) {
@@ -2035,7 +2133,7 @@ async function verCuestionario(id, concursanteId) {
                 .map(item => item && (item.pregunta ? item.pregunta : (item.pregunta?.pregunta ? item.pregunta : item)))
                 .filter(q => q && typeof q.pregunta === 'string' && q.pregunta.trim().length > 0)
                 .map(q => {
-                    const nivel = (q.nivel && typeof q.nivel === 'string') ? q.nivel : (q.nivel || '');
+                    const nivel = Utils.formatearNivel((q.nivel && typeof q.nivel === 'string') ? q.nivel : (q.nivel || ''));
                     const texto = q.pregunta;
                     const resp = (q.respuesta && typeof q.respuesta === 'string') ? q.respuesta : (q.respuesta || '');
                     return `<tr><td>${nivel || ''}</td><td>${texto}</td><td>${resp || ''}</td></tr>`;
@@ -2070,11 +2168,13 @@ async function verCombo(id, concursanteId) {
             console.info('[PREVIEW] Items combo', items.slice(0, 3));
             const filas = items.map(item => {
                 const q = item.pregunta ? item.pregunta : (item.pregunta?.pregunta ? item.pregunta : item);
-                const nivel = (q.nivel && typeof q.nivel === 'string') ? q.nivel : (q.nivel || '');
+                const nivel = Utils.formatearNivel((q.nivel && typeof q.nivel === 'string') ? q.nivel : (q.nivel || ''));
                 const texto = (q.pregunta && typeof q.pregunta === 'string') ? q.pregunta : (q.pregunta || '');
                 const resp = (q.respuesta && typeof q.respuesta === 'string') ? q.respuesta : (q.respuesta || '');
                 const factor = item.factorMultiplicacion || item.factor || '';
-                return `<tr><td>${nivel || ''}</td><td>${texto || ''}</td><td>${resp || ''}</td><td>${factor || ''}</td></tr>`;
+                const qid = q.id != null ? q.id : item.preguntaId;
+                const usada = data.preguntaUsadaId != null && qid != null && Number(data.preguntaUsadaId) === Number(qid);
+                return `<tr class="${usada ? 'pregunta-combo-usada-fila' : ''}"><td>${nivel || ''}</td><td>${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${texto || ''}</span></td><td>${resp || ''}</td><td>${factor || ''}</td></tr>`;
             }).join('');
             cont.innerHTML = `
                 <table class="table table-sm table-striped">
@@ -2083,6 +2183,10 @@ async function verCombo(id, concursanteId) {
                     </thead>
                     <tbody>${filas}</tbody>
                 </table>`;
+        }
+        const btnPreviewReciclar = document.getElementById('btn-reciclar-combo-preview');
+        if (btnPreviewReciclar) {
+            btnPreviewReciclar.style.display = comboPareceReciclado(data, id) ? 'none' : '';
         }
         new bootstrap.Modal(document.getElementById('modal-preview-combo')).show();
     } catch (e) {
@@ -2098,6 +2202,12 @@ async function iniciarReciclajeParcialDesdePreview() {
         const comboId = idTxt.replace('#','').trim();
         if (!comboId) {
             mostrarError('No se pudo determinar el combo');
+            return;
+        }
+        if (await comboEstaReciclado(comboId)) {
+            mostrarError('Este combo ya ha sido reciclado');
+            const btnPreviewReciclar = document.getElementById('btn-reciclar-combo-preview');
+            if (btnPreviewReciclar) btnPreviewReciclar.style.display = 'none';
             return;
         }
         // Cargar preguntas del combo
@@ -2128,6 +2238,8 @@ async function iniciarReciclajeParcialDesdePreview() {
             return;
         }
 
+        const preguntasOrdenadas = Utils.ordenarPreguntasPorMultiplicador(preguntas);
+
         // Construir un modal ligero para seleccionar la usada
         const html = `
             <div class="modal fade" id="modal-reciclar-desde-preview" tabindex="-1">
@@ -2139,11 +2251,11 @@ async function iniciarReciclajeParcialDesdePreview() {
                   </div>
                   <div class="modal-body">
                     <p>¿Qué pregunta se usó?</p>
-                    ${preguntas.map((p,i)=>`
+                    ${preguntasOrdenadas.map((p,i)=>`
                       <div class="form-check">
                         <input class="form-check-input" type="radio" name="preguntaUsada" id="pregUsada${p.id}" value="${p.id}">
                         <label class="form-check-label" for="pregUsada${p.id}">
-                          ${i+1}. ${p.pregunta}
+                          ${Utils.formatearMultiplicador(Utils.extraerFactorPreguntaCombo(p)) || (i+1)}. ${p.pregunta}
                         </label>
                       </div>
                     `).join('')}
@@ -2182,6 +2294,10 @@ async function iniciarReciclajeParcialDesdePreview() {
                     bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-desde-preview')).hide();
                     const prev = bootstrap.Modal.getInstance(document.getElementById('modal-preview-combo'));
                     if (prev) prev.hide();
+                    if (concursanteActual && String(concursanteActual.comboId) === String(comboId)) {
+                        concursanteActual.comboReciclado = true;
+                    }
+                    await actualizarBotonReciclarCombo(comboId);
                     await cargarConcursantes(true);
                 } else {
                     mostrarError(r?.mensaje || 'No se pudo reciclar el combo');
@@ -2576,6 +2692,7 @@ concursanteParaReemplazo = null;
 } else {
 // Asignar al formulario: la nota se anota al guardar el concursante
 document.getElementById('cuestionario-id').value = id;
+actualizarBotonVerCuestionario();
 actualizarRestriccionJornadaEnFormulario();
 if (esArrastre) {
     dejarArrastrePendiente('cuestionario', id, jornadaDestino);
@@ -2629,6 +2746,7 @@ modal.hide();
 function limpiarSelectorCuestionario() {
 document.getElementById('cuestionario-id').value = '';
 olvidarArrastrePendiente('cuestionario');
+actualizarBotonVerCuestionario();
 actualizarRestriccionJornadaEnFormulario();
 }
 
@@ -2853,11 +2971,8 @@ if (comboRecicladoPendienteId) {
 document.getElementById('combo-id').value = '';
 document.getElementById('combo-id').dataset.comboId = '';
 olvidarArrastrePendiente('combo');
-const btnReciclar = document.getElementById('btn-reciclar-combo');
-if (btnReciclar) {
-    btnReciclar.style.display = 'none';
-    btnReciclar.dataset.comboId = '';
-}
+actualizarBotonVerCombo();
+actualizarBotonReciclarCombo(null);
 actualizarRestriccionJornadaEnFormulario();
 }
 
@@ -2870,6 +2985,11 @@ async function iniciarReciclajeComboDesdeFormulario(comboIdOverride) {
     
     if (!comboId) {
         mostrarError('No hay un combo seleccionado');
+        return;
+    }
+    if (await comboEstaReciclado(comboId)) {
+        mostrarError('Este combo ya ha sido reciclado');
+        actualizarBotonReciclarCombo(comboId);
         return;
     }
     
@@ -2894,7 +3014,7 @@ async function iniciarReciclajeComboDesdeFormulario(comboIdOverride) {
             return;
         }
         
-        mostrarModalReciclajeCombo(comboId, preguntas, jornadaId);
+        mostrarModalReciclajeCombo(comboId, Utils.ordenarPreguntasPorMultiplicador(preguntas), jornadaId);
         
     } catch (error) {
         console.error('Error al cargar preguntas del combo:', error);
@@ -2905,6 +3025,7 @@ async function iniciarReciclajeComboDesdeFormulario(comboIdOverride) {
 // Función para mostrar modal de reciclaje de combo
 function mostrarModalReciclajeCombo(comboId, preguntas, jornadaId) {
     const textoRestantes = 'Se creará un nuevo combo con las 2 preguntas restantes.';
+    preguntas = Utils.ordenarPreguntasPorMultiplicador(preguntas);
 
     // Eliminar modal anterior si existe
     const modalAnterior = document.getElementById('modal-reciclar-combo-formulario');
@@ -2934,12 +3055,13 @@ function mostrarModalReciclajeCombo(comboId, preguntas, jornadaId) {
                                 const preguntaId = p.id || p.pregunta?.id;
                                 const preguntaTexto = (typeof p.pregunta === 'string' ? p.pregunta : p.pregunta?.pregunta) || 'Sin texto';
                                 const respuesta = p.respuesta || p.pregunta?.respuesta || '';
+                                const factorTxt = Utils.formatearMultiplicador(Utils.extraerFactorPreguntaCombo(p));
                                 return `
                                     <div class="col-md-12 mb-3">
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="preguntaUsadaReciclar" id="pregUsada${preguntaId}" value="${preguntaId}">
                                             <label class="form-check-label" for="pregUsada${preguntaId}">
-                                                <strong>Pregunta ${i + 1}:</strong> ${preguntaTexto.substring(0, 100)}${preguntaTexto.length > 100 ? '...' : ''}
+                                                <strong>${factorTxt || `Pregunta ${i + 1}`}:</strong> ${preguntaTexto.substring(0, 100)}${preguntaTexto.length > 100 ? '...' : ''}
                                                 ${respuesta ? `<br><small class="text-muted">Respuesta: ${respuesta}</small>` : ''}
                                             </label>
                                         </div>
@@ -3015,6 +3137,10 @@ async function confirmarReciclajeComboDesdeFormulario(comboId, jornadaId) {
             if (concursanteActual?.id) {
                 await cargarConcursantes(true);
             }
+            if (concursanteActual && String(concursanteActual.comboId) === String(comboId)) {
+                concursanteActual.comboReciclado = true;
+            }
+            await actualizarBotonReciclarCombo(comboId);
             mostrarExito(`Combo reciclado. Se creó el combo #${comboHijoId}. Se mantiene el combo original.`);
         } else {
             mostrarError(response?.mensaje || 'Error al reciclar el combo');
