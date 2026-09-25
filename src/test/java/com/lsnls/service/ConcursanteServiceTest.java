@@ -495,10 +495,41 @@ class ConcursanteServiceTest {
     void updateCampo_camposDireccionSinPermiso() {
         when(authorizationService.canEditProgramacionConcursante()).thenReturn(false);
         when(concursanteRepository.findById(1L)).thenReturn(Optional.of(concursanteBase()));
-        Map<String, Object> campos = new HashMap<>();
-        campos.put("duracionDireccion", "12:00");
-        assertThrows(org.springframework.security.access.AccessDeniedException.class,
-                () -> concursanteService.updateCampo(1L, campos));
+        String[] camposDireccion = {
+            "duracionDireccion", "duracionFinal", "momentosDestacados",
+            "valoracionFinal", "numeroPrograma", "estado", "bonico"
+        };
+        for (String campo : camposDireccion) {
+            Map<String, Object> campos = new HashMap<>();
+            campos.put(campo, "12:00");
+            assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                    () -> concursanteService.updateCampo(1L, campos), campo);
+        }
+    }
+
+    @Test
+    void update_restauraCamposDireccionSiNoAutorizado() {
+        when(authorizationService.canEditProgramacionConcursante()).thenReturn(false);
+        Concursante c = concursanteBase();
+        c.setEstado("grabado");
+        c.setBonico("no");
+        c.setDuracionDireccion("10:00");
+        c.setMomentosDestacados("original");
+        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
+
+        ConcursanteDTO dto = dtoMinimo();
+        dto.setEstado("emitido");
+        dto.setBonico("si");
+        dto.setDuracionDireccion("99:00");
+        dto.setMomentosDestacados("hack");
+        dto.setValoracionFinal("3");
+
+        ConcursanteDTO result = concursanteService.update(1L, dto);
+
+        assertEquals("grabado", result.getEstado());
+        assertEquals("no", result.getBonico());
+        assertEquals("10:00", result.getDuracionDireccion());
+        assertEquals("original", result.getMomentosDestacados());
     }
 
     @Test
@@ -527,6 +558,51 @@ class ConcursanteServiceTest {
         ConcursanteDTO result = concursanteService.updateCampo(1L, campos);
 
         assertEquals("grabado", result.getEstado());
+    }
+
+    @Test
+    void asignarAPrograma_archivadoFalla() {
+        Concursante c = concursanteBase();
+        c.setEstado("archivado");
+        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> concursanteService.asignarAPrograma(1L, 8L));
+        assertTrue(ex.getMessage().contains("grabado, editado o emitido"));
+    }
+
+    @Test
+    void asignarAPrograma_eligePrimerHuecoLibre() {
+        Concursante c = concursanteBase();
+        c.setEstado("grabado");
+        Concursante ocupado = new Concursante();
+        ocupado.setId(2L);
+        ocupado.setOrdenEscaleta(1);
+        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
+        when(concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(8))
+            .thenReturn(Collections.singletonList(ocupado));
+
+        ConcursanteDTO result = concursanteService.asignarAPrograma(1L, 8L);
+
+        assertEquals(2, result.getOrdenEscaleta());
+        assertEquals("programado", result.getEstado());
+    }
+
+    @Test
+    void desasignarDePrograma_sinDuracionPasaAEditado() {
+        Concursante c = concursanteBase();
+        c.setNumeroPrograma(8);
+        c.setOrdenEscaleta(2);
+        c.setEstado("programado");
+        c.setDuracion(null);
+        c.setDuracionDireccion(null);
+        c.setDuracionFinal(null);
+        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(c));
+
+        ConcursanteDTO result = concursanteService.desasignarDePrograma(1L);
+
+        assertNull(result.getNumeroPrograma());
+        assertNull(result.getOrdenEscaleta());
+        assertEquals("editado", result.getEstado());
     }
 
     @Test
@@ -621,6 +697,23 @@ class ConcursanteServiceTest {
 
         assertEquals(1, result.getTotalElements());
         verify(concursanteRepository).findDisponiblesParaProgramaWithSearch(pageable, null, "editado", null);
+    }
+
+    @Test
+    void findConcursantesSinProgramaPaginated_pasaProgramaIdParaReasignarEmitidos() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Concursante emitidoOtroPrograma = concursanteBase();
+        emitidoOtroPrograma.setEstado("emitido");
+        emitidoOtroPrograma.setNumeroPrograma(1);
+        when(concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, "emitido", "emitido", 2))
+            .thenReturn(new PageImpl<>(Collections.singletonList(emitidoOtroPrograma)));
+
+        Page<ConcursanteDTO> result = concursanteService.findConcursantesSinProgramaPaginated(
+            pageable, "emitido", "emitido", 2);
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals("emitido", result.getContent().get(0).getEstado());
+        verify(concursanteRepository).findDisponiblesParaProgramaWithSearch(pageable, "emitido", "emitido", 2);
     }
 
     @Test

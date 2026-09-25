@@ -2,6 +2,7 @@ com\lsnls\service\AuthorizationServiceTest.class
 com\lsnls\config\AsyncConfigTest.class
 com\lsnls\service\EstadoFlujoCompartidoTest.class
 com\lsnls\service\ComboServiceTest.class
+com\lsnls\web\CambiosFlujoJsContratosTest.class
 com\lsnls\controller\HistorialJornadaControllerTest.class
 com\lsnls\controller\EditLockControllerTest.class
 com\lsnls\controller\UndoControllerTest.class

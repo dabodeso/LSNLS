@@ -264,7 +264,7 @@ async function desasignarComboConcursante(concursanteId, paginaAntes) {
     );
 }
 
-// Columnas visibles/editables solo por ADMIN y DIRECCIÓN
+// Columnas de programación: por defecto solo Dirección/Admin las ve; el resto puede marcarlas para consultar.
 const COLUMNAS_SOLO_DIRECCION = [
     'estado',
     'momentos-destacados',
@@ -366,18 +366,12 @@ function crearColumnasVisiblesPorDefecto(verColumnasDireccion) {
 }
 
 function aplicarRestriccionColumnasDireccion() {
-    const verDireccion = puedeVerColumnasDireccion();
-    configuracionColumnas.esDireccion = verDireccion;
-    if (verDireccion) return false;
+    configuracionColumnas.esDireccion = puedeVerColumnasDireccion();
+    return false;
+}
 
-    let cambio = false;
-    COLUMNAS_SOLO_DIRECCION.forEach(col => {
-        if (configuracionColumnas.columnasVisibles[col]) {
-            configuracionColumnas.columnasVisibles[col] = false;
-            cambio = true;
-        }
-    });
-    return cambio;
+function claseColumna(columna) {
+    return MAPEO_COLUMNAS_A_CHECKBOX[columna] || '';
 }
 
 function claveConfiguracionColumnasConcursantes(rol) {
@@ -865,34 +859,34 @@ const celdas = [];
 
 // ID
 if (configuracionColumnas.columnasVisibles['numero-concur']) {
-celdas.push(`<td>${concursante.id || ''}</td>`);
+celdas.push(`<td class="${claseColumna('numero-concur')}">${concursante.id || ''}</td>`);
 }
 
 // JORNADA
 if (configuracionColumnas.columnasVisibles['jornada']) {
-celdas.push(`<td ${puedeEditarFila ? `onclick="abrirSelectorJornadaParaConcursante(${concursante.id})"` : ''} style="cursor: ${puedeEditarFila ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${puedeEditarFila ? 'Click para seleccionar jornada' : ''}">
+celdas.push(`<td class="${claseColumna('jornada')}" ${puedeEditarFila ? `onclick="abrirSelectorJornadaParaConcursante(${concursante.id})"` : ''} style="cursor: ${puedeEditarFila ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${puedeEditarFila ? 'Click para seleccionar jornada' : ''}">
                ${concursante.jornadaNombre ? `<span class="badge bg-success">${concursante.jornadaNombre}</span>` : '<em class="text-muted">Sin asignar</em>'}
            </td>`);
 }
 
 // DÍA GRABACIÓN
 if (configuracionColumnas.columnasVisibles['dia-grabacion']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'diaGrabacion', this)">${formatearFecha(concursante.diaGrabacion)}</td>`);
+celdas.push(`<td class="${claseColumna('dia-grabacion')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'diaGrabacion', this)">${formatearFecha(concursante.diaGrabacion)}</td>`);
 }
 
 // LUGAR
 if (configuracionColumnas.columnasVisibles['lugar']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'lugar', this)">${concursante.lugar || ''}</td>`);
+celdas.push(`<td class="${claseColumna('lugar')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'lugar', this)">${concursante.lugar || ''}</td>`);
 }
 
 // NOMBRE
 if (configuracionColumnas.columnasVisibles['nombre']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'nombre', this)">${concursante.nombre || ''}</td>`);
+celdas.push(`<td class="${claseColumna('nombre')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'nombre', this)">${concursante.nombre || ''}</td>`);
 }
 
 // FOTO
 if (configuracionColumnas.columnasVisibles['foto']) {
-celdas.push(`<td onclick="abrirExploradorFoto(${concursante.id}, event)" style="cursor: pointer;">
+celdas.push(`<td class="${claseColumna('foto')}" onclick="abrirExploradorFoto(${concursante.id}, event)" style="cursor: pointer;">
                ${concursante.foto ? 
                    `<img src="/uploads/${concursante.foto}" class="foto-concursante" alt="Foto del concursante">` : 
                    `<div class="campo-foto-vacio" onclick="abrirExploradorFoto(${concursante.id}, event)">
@@ -905,17 +899,17 @@ celdas.push(`<td onclick="abrirExploradorFoto(${concursante.id}, event)" style="
 
 // EDAD
 if (configuracionColumnas.columnasVisibles['edad']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'edad', this)">${concursante.edad || ''}</td>`);
+celdas.push(`<td class="${claseColumna('edad')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'edad', this)">${concursante.edad || ''}</td>`);
 }
 
 // OCUPACIÓN
 if (configuracionColumnas.columnasVisibles['ocupacion']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'ocupacion', this)">${concursante.ocupacion || ''}</td>`);
+celdas.push(`<td class="${claseColumna('ocupacion')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'ocupacion', this)">${concursante.ocupacion || ''}</td>`);
 }
 
 // RR SS
 if (configuracionColumnas.columnasVisibles['rr-ss']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'redesSociales', this)">${concursante.redesSociales || ''}</td>`);
+celdas.push(`<td class="${claseColumna('rr-ss')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'redesSociales', this)">${concursante.redesSociales || ''}</td>`);
 }
 
 // CUEST
@@ -924,7 +918,7 @@ const cuéstOnclick = concursante.cuestionarioId
     ? `verCuestionario(${concursante.cuestionarioId}, ${concursante.id})`
     : (puedeEditarFila ? `abrirSelectorCuestionarioParaConcursante(${concursante.id})` : '');
 const cuéstTitle = concursante.cuestionarioId ? 'Ver cuestionario' : (puedeEditarFila ? 'Seleccionar cuestionario' : '');
-celdas.push(`<td ${cuéstOnclick ? `onclick="${cuéstOnclick}"` : ''} style="cursor: ${cuéstOnclick ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${cuéstTitle}">
+celdas.push(`<td class="${claseColumna('cuest')}" ${cuéstOnclick ? `onclick="${cuéstOnclick}"` : ''} style="cursor: ${cuéstOnclick ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${cuéstTitle}">
                ${concursante.cuestionarioId && concursante.cuestionarioId !== 0 ? `<span class=\"badge bg-primary\">${concursante.cuestionarioId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
 }
@@ -936,7 +930,7 @@ if (configuracionColumnas.columnasVisibles['combo']) {
         ? `verCombo(${concursante.comboId}, ${concursante.id})`
         : (puedeEditarFila ? `abrirSelectorComboParaConcursante(${concursante.id})` : '');
     const comboTitle = concursante.comboId ? (concursante.comboReciclado ? 'Combo reciclado' : 'Ver combo') : (puedeEditarFila ? 'Seleccionar combo' : '');
-    celdas.push(`<td ${comboOnclick ? `onclick="${comboOnclick}"` : ''} style="cursor: ${comboOnclick ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${comboTitle}">
+    celdas.push(`<td class="${claseColumna('combo')}" ${comboOnclick ? `onclick="${comboOnclick}"` : ''} style="cursor: ${comboOnclick ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${comboTitle}">
                ${concursante.comboId && concursante.comboId !== 0 ? `<span class=\"badge ${badgeClass}\">${concursante.comboId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
 }
@@ -958,7 +952,7 @@ if (configuracionColumnas.columnasVisibles['xusoker']) {
         return `<option value="${v}"${selected}>${label}</option>`;
     }).join('');
     celdas.push(
-        `<td>
+        `<td class="${claseColumna('xusoker')}">
             <select class="form-select form-select-sm xusoker-select" data-id="${concursante.id}"${puedeEditarFila ? '' : ' disabled'}>
                 ${htmlOpcionesXusoker}
             </select>
@@ -968,19 +962,19 @@ if (configuracionColumnas.columnasVisibles['xusoker']) {
 
 // X
 if (configuracionColumnas.columnasVisibles['x']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'factorX', this)">${concursante.factorX || ''}</td>`);
+celdas.push(`<td class="${claseColumna('x')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'factorX', this)">${concursante.factorX || ''}</td>`);
 }
 
 // RESULTADO
 if (configuracionColumnas.columnasVisibles['resultado']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'resultado', this)">${(concursante.resultado !== null && concursante.resultado !== undefined) ? formatEuro(concursante.resultado) : ''}</td>`);
+celdas.push(`<td class="${claseColumna('resultado')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'resultado', this)">${(concursante.resultado !== null && concursante.resultado !== undefined) ? formatEuro(concursante.resultado) : ''}</td>`);
 }
 
 // NOTAS GRABACIÓN
 if (configuracionColumnas.columnasVisibles['notas-grabacion']) {
             const notas = concursante.notasGrabacion || '';
             const soloLectura = puedeEditarFila ? '' : ' readonly';
-            celdas.push(`<td class="col-notas-grabacion">
+            celdas.push(`<td class="${claseColumna('notas-grabacion')}">
                 <textarea class="form-control form-control-sm notas-grabacion-textarea" rows="3"
                     placeholder="Notas de grabación..."
                     onblur="actualizarNotasGrabacion(${concursante.id}, this.value)"${soloLectura}>${escapeHtmlForTextarea(notas)}</textarea>
@@ -989,12 +983,12 @@ if (configuracionColumnas.columnasVisibles['notas-grabacion']) {
 
 // GUIONISTA
 if (configuracionColumnas.columnasVisibles['guionista']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'guionista', this)">${concursante.guionista || ''}</td>`);
+celdas.push(`<td class="${claseColumna('guionista')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'guionista', this)">${concursante.guionista || ''}</td>`);
 }
 
 // VALORACIÓN GUIONISTA
 if (configuracionColumnas.columnasVisibles['valoracion-guionista']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoracionGuionista', this)">${concursante.valoracionGuionista || ''}</td>`);
+celdas.push(`<td class="${claseColumna('valoracion-guionista')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'valoracionGuionista', this)">${concursante.valoracionGuionista || ''}</td>`);
 }
 
 // ESTADO
@@ -1017,7 +1011,7 @@ if (configuracionColumnas.columnasVisibles['estado']) {
     }).join('');
     const estadoBloqueado = asignadoAPrograma || !(puedeEditarFila && puedeVerColumnasDireccion());
     celdas.push(
-        `<td>
+        `<td class="${claseColumna('estado')}">
             <select class="form-select form-select-sm estado-select" data-id="${concursante.id}"${estadoBloqueado ? ' disabled' : ''}>
                 ${opcionesEstado}
             </select>
@@ -1027,46 +1021,53 @@ if (configuracionColumnas.columnasVisibles['estado']) {
 
 // MOMENTOS DESTACADOS
 if (configuracionColumnas.columnasVisibles['momentos-destacados']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'momentosDestacados', this)">${concursante.momentosDestacados || ''}</td>`);
+    const momentos = concursante.momentosDestacados || '';
+    const puedeEditarMomentos = puedeEditarFila && puedeVerColumnasDireccion();
+    const soloLecturaMomentos = puedeEditarMomentos ? '' : ' readonly';
+    celdas.push(`<td class="${claseColumna('momentos-destacados')}">
+                <textarea class="form-control form-control-sm momentos-destacados-textarea" rows="3"
+                    placeholder="Momentos destacados..."
+                    onblur="actualizarMomentosDestacados(${concursante.id}, this.value)"${soloLecturaMomentos}>${escapeHtmlForTextarea(momentos)}</textarea>
+            </td>`);
 }
 
 // DURACIÓN
 if (configuracionColumnas.columnasVisibles['duracion']) {
-            celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracion', this)">${concursante.duracion || ''}</td>`);
+            celdas.push(`<td class="${claseColumna('duracion')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'duracion', this)">${concursante.duracion || ''}</td>`);
 }
 
 // DUR. DIRECCIÓN
 if (configuracionColumnas.columnasVisibles['duracion-direccion']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracionDireccion', this)">${concursante.duracionDireccion || ''}</td>`);
+celdas.push(`<td class="${claseColumna('duracion-direccion')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'duracionDireccion', this)">${concursante.duracionDireccion || ''}</td>`);
 }
 
 // DUR. FINAL
 if (configuracionColumnas.columnasVisibles['duracion-final']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'duracionFinal', this)">${concursante.duracionFinal || ''}</td>`);
+celdas.push(`<td class="${claseColumna('duracion-final')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'duracionFinal', this)">${concursante.duracionFinal || ''}</td>`);
 }
 
 // VALORACIÓN FINAL
 if (configuracionColumnas.columnasVisibles['valoracion-final']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'valoracionFinal', this)">${concursante.valoracionFinal || ''}</td>`);
+celdas.push(`<td class="${claseColumna('valoracion-final')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'valoracionFinal', this)">${concursante.valoracionFinal || ''}</td>`);
 }
 
 // Nº PGM
 if (configuracionColumnas.columnasVisibles['numero-pgm']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroPrograma', this)">${concursante.numeroPrograma || ''}</td>`);
+celdas.push(`<td class="${claseColumna('numero-pgm')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'numeroPrograma', this)">${concursante.numeroPrograma || ''}</td>`);
 }
 
 // ORDEN ESCALETA
 if (configuracionColumnas.columnasVisibles['orden-escaleta']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'ordenEscaleta', this)">${concursante.ordenEscaleta || ''}</td>`);
+celdas.push(`<td class="${claseColumna('orden-escaleta')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'ordenEscaleta', this)">${concursante.ordenEscaleta || ''}</td>`);
 }
 
 // BONICO
 if (configuracionColumnas.columnasVisibles['bonico']) {
-celdas.push(`<td ondblclick="editarCeldaConcursante(${concursante.id}, 'bonico', this)">${concursante.bonico || ''}</td>`);
+celdas.push(`<td class="${claseColumna('bonico')}" ondblclick="editarCeldaConcursante(${concursante.id}, 'bonico', this)">${concursante.bonico || ''}</td>`);
 }
 
 // ACCIONES (siempre visible)
-celdas.push(`<td>
+celdas.push(`<td class="col-acciones">
            ${puedeEditarFila ? `
            <button class="btn btn-sm btn-primary" onclick="editarConcursante(${concursante.id})">
                <i class="fas fa-edit"></i>
@@ -2073,6 +2074,46 @@ async function actualizarNotasGrabacion(concursanteId, notas) {
         }
     } catch (error) {
         mostrarError('Error al guardar notas de grabación: ' + error.message);
+    }
+}
+
+async function actualizarMomentosDestacados(concursanteId, momentos) {
+    if (!puedeEditarConcursantes || !puedeVerColumnasDireccion()) return;
+    const fila = concursantes.find(c => c.id === concursanteId);
+    if (!puedeEditarConcursanteSegunEstado(fila?.estado)) return;
+    try {
+        const momentosPrevios = fila?.momentosDestacados ?? '';
+        const momentosNorm = momentos ?? '';
+        if (momentosNorm === (momentosPrevios ?? '')) return;
+
+        const snapshot = await apiManager.get(`/api/concursantes/${concursanteId}`);
+        const prevPayload = buildConcursantePayload(snapshot, concursanteId);
+        const nextPayload = buildConcursantePayload(
+            { ...snapshot, momentosDestacados: momentosNorm || null },
+            concursanteId
+        );
+
+        const doAction = async () => {
+            await apiManager.put(`/api/concursantes/${concursanteId}`, nextPayload);
+            const c = concursantes.find(x => x.id === concursanteId);
+            if (c) c.momentosDestacados = momentosNorm || null;
+        };
+        const undoAction = async () => {
+            await apiManager.put(`/api/concursantes/${concursanteId}`, prevPayload);
+            const c = concursantes.find(x => x.id === concursanteId);
+            if (c) c.momentosDestacados = prevPayload.momentosDestacados;
+        };
+
+        await doAction();
+        if (window.UndoManager) {
+            window.UndoManager.record({
+                do: doAction,
+                undo: undoAction,
+                label: `Momentos destacados concursante ${concursanteId}`
+            });
+        }
+    } catch (error) {
+        mostrarError('Error al guardar momentos destacados: ' + error.message);
     }
 }
 
@@ -3759,8 +3800,6 @@ modal.show();
 }
 
 function cargarConfiguracionEnModal() {
-const verDireccion = puedeVerColumnasDireccion();
-
 Object.keys(MAPEO_COLUMNAS_A_CHECKBOX).forEach(columna => {
 const checkboxId = MAPEO_COLUMNAS_A_CHECKBOX[columna];
 const checkbox = document.getElementById(checkboxId);
@@ -3768,8 +3807,7 @@ if (!checkbox) return;
 
 const wrapper = checkbox.closest('.form-check');
 if (wrapper) {
-    const esColumnaDireccion = COLUMNAS_SOLO_DIRECCION.includes(columna);
-    wrapper.style.display = !esColumnaDireccion || verDireccion ? '' : 'none';
+    wrapper.style.display = '';
 }
 
 checkbox.checked = configuracionColumnas.columnasVisibles[columna] || false;
@@ -3839,12 +3877,12 @@ Object.keys(mapeoEncabezados).forEach(columna => {
 if (configuracionColumnas.columnasVisibles[columna]) {
 const esNumero = ['numero-concur','resultado','numero-pgm','orden-escaleta','cuest','combo'].includes(columna);
 const attrTipo = esNumero ? ' data-tipo="number"' : '';
-encabezados.push(`<th class="sortable-header"${attrTipo}>${mapeoEncabezados[columna]}<span class="sort-indicator inactive"></span></th>`);
+encabezados.push(`<th class="sortable-header ${claseColumna(columna)}"${attrTipo}>${mapeoEncabezados[columna]}<span class="sort-indicator inactive"></span></th>`);
 }
 });
 
 // Añadir encabezado de acciones
-encabezados.push('<th>ACCIONES</th>');
+encabezados.push('<th class="col-acciones">ACCIONES</th>');
 
 thead.innerHTML = encabezados.join('');
 
@@ -3872,9 +3910,7 @@ try {
 }
 
 function seleccionarTodasColumnas() {
-const verDireccion = puedeVerColumnasDireccion();
 Object.keys(MAPEO_COLUMNAS_A_CHECKBOX).forEach(columna => {
-    if (!verDireccion && COLUMNAS_SOLO_DIRECCION.includes(columna)) return;
     const checkbox = document.getElementById(MAPEO_COLUMNAS_A_CHECKBOX[columna]);
     if (checkbox) checkbox.checked = true;
 });

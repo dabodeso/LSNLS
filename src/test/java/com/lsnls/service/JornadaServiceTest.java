@@ -478,6 +478,24 @@ class JornadaServiceTest {
     }
 
     @Test
+    void cambiarEstado_completadaConCuestionarioRecicladoOk() {
+        Jornada j = jornadaBase();
+        Cuestionario c = new Cuestionario();
+        c.setId(20L);
+        c.setEstado(Cuestionario.EstadoCuestionario.adjudicado);
+        c.setNivel(Cuestionario.NivelCuestionario.NORMAL);
+        j.reemplazarCuestionariosPorSlot(Arrays.asList(c, null, null, null, null, null));
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(j));
+        when(nativeQuery.getSingleResult()).thenReturn(1L);
+
+        JornadaDTO result = jornadaService.cambiarEstado(1L, "completada");
+
+        assertEquals("completada", result.getEstado());
+        assertEquals(Cuestionario.EstadoCuestionario.adjudicado, c.getEstado());
+        assertTrue(result.getCuestionarios().get(0).isReutilizado());
+    }
+
+    @Test
     void exportarExcel_ok() throws Exception {
         Jornada j = jornadaBase();
         when(jornadaRepository.findById(1L)).thenReturn(Optional.of(j));
@@ -856,6 +874,29 @@ class JornadaServiceTest {
     }
 
     @Test
+    void reutilizarCombo_grabadoAsignadoAConcursanteOk() {
+        Jornada jornada = new Jornada();
+        jornada.setId(1L);
+        Combo combo = new Combo();
+        combo.setId(4L);
+        combo.setEstado(Combo.EstadoCombo.grabado);
+        jornada.setCombos(new HashSet<>(Collections.singletonList(combo)));
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(jornada));
+        when(comboRepository.findById(4L)).thenReturn(Optional.of(combo));
+        when(concursanteRepository.existsByCombo_Id(4L)).thenReturn(true);
+        when(comboService.cambiarEstadoAtomico(eq(4L),
+            eq(Combo.EstadoCombo.grabado),
+            eq(Combo.EstadoCombo.aprobado))).thenReturn(true);
+        when(nativeQuery.getSingleResult()).thenReturn(0L);
+
+        jornadaService.reutilizarCombo(1L, 4L, 4L);
+
+        verify(comboService).cambiarEstadoAtomico(eq(4L),
+            eq(Combo.EstadoCombo.grabado),
+            eq(Combo.EstadoCombo.aprobado));
+    }
+
+    @Test
     void actualizar_camposYAsignaciones() {
         Jornada jornada = new Jornada();
         jornada.setId(1L);
@@ -1019,6 +1060,19 @@ class JornadaServiceTest {
 
         assertTrue(result.isPresent());
         assertTrue(result.get().getCombos().get(0).isAsignadoAConcursante());
+    }
+
+    @Test
+    void obtenerPorId_multiplicadorMaximoEsElMasAlto() {
+        Jornada jornada = jornadaBase();
+        Combo combo = comboConFactores(11L, "X2", "X10", "X3");
+        jornada.reemplazarCombosPorSlot(Arrays.asList(combo, null, null, null, null, null));
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(jornada));
+
+        Optional<JornadaDTO> result = jornadaService.obtenerPorId(1L);
+
+        assertTrue(result.isPresent());
+        assertEquals("X10", result.get().getCombos().get(0).getMultiplicadorMaximo());
     }
 
     @Test

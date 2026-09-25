@@ -406,4 +406,29 @@ class ProgramaServiceTest {
         assertEquals("borrador", dto.getEstado());
         assertEquals("programado", c.getEstado());
     }
+
+    @Test
+    void updateCampo_programaEmitidoPermiteCambiarSoloEstado() {
+        programa.setEstado(Programa.EstadoPrograma.emitido);
+        when(programaRepository.findById(1L)).thenReturn(Optional.of(programa));
+        stubSaveConId();
+        when(concursanteRepository.findByNumeroPrograma(1)).thenReturn(Collections.emptyList());
+
+        Map<String, Object> campos = new HashMap<>();
+        campos.put("estado", "borrador");
+        ProgramaDTO dto = service.updateCampo(1L, campos);
+
+        assertEquals("borrador", dto.getEstado());
+    }
+
+    @Test
+    void updateDuracionObjetivo_programaEmitidoFalla() {
+        programa.setEstado(Programa.EstadoPrograma.emitido);
+        when(programaRepository.findById(1L)).thenReturn(Optional.of(programa));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> service.updateDuracionObjetivo(1L, "1h"));
+        assertTrue(ex.getMessage().contains("emitido"));
+        verify(programaRepository, never()).save(programa);
+    }
 }

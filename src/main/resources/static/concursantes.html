@@ -17,27 +17,26 @@
 <style>
 /* Ancho y diseño general de la tabla (como en preguntas) */
 .table-preguntas {
-width: 100% !important;
-min-width: 3000px !important; /* más ancha por defecto */
-table-layout: fixed;
+width: max-content !important;
+min-width: 100%;
+table-layout: auto;
 }
 /* Dar más aire general para legibilidad */
 #tabla-concursantes-header {
-    min-width: 3000px !important;
+    min-width: max-content !important;
 }
 #tabla-concursantes-header th,
 #tabla-concursantes-header td {
     padding: 10px 12px !important;
 }
 #tabla-concursantes-header th {
-    min-width: 130px;
     font-size: 0.85rem;
 }
 
 .table-responsive {
 max-height: 80vh;
 overflow-y: auto;
-overflow-x: hidden; /* ocultar scroll horizontal nativo */
+overflow-x: auto;
 position: relative;
 }
 
@@ -125,21 +124,49 @@ pointer-events: none;
 .sort-indicator.desc::after { content: '▼'; color: #007bff; }
 .sort-indicator.inactive::after { content: '↕'; color: #6c757d; }
 
-/* Notas de grabación en tabla: cuadro de texto redimensionable */
-.col-notas-grabacion {
+/* Notas y momentos: caja con scroll, sin estirar la fila */
+.col-notas-grabacion,
+.col-momentos-destacados {
     min-width: 280px;
+    width: 280px;
     vertical-align: top;
     padding: 4px 6px;
     white-space: normal;
 }
 
-.notas-grabacion-textarea {
+.notas-grabacion-textarea,
+.momentos-destacados-textarea {
     width: 100%;
     min-width: 200px;
-    resize: both;
+    max-height: 6.5em;
+    resize: vertical;
     overflow: auto;
     font-size: inherit;
     line-height: 1.4;
+}
+
+.col-numero-concur, .col-edad, .col-cuest, .col-combo,
+.col-x, .col-resultado, .col-duracion, .col-duracion-direccion,
+.col-duracion-final, .col-valoracion-final, .col-numero-pgm,
+.col-orden-escaleta, .col-bonico {
+    min-width: 90px;
+    width: 90px;
+    white-space: nowrap;
+}
+.col-jornada, .col-dia-grabacion, .col-lugar, .col-nombre,
+.col-ocupacion, .col-rr-ss, .col-xusoker, .col-guionista,
+.col-valoracion-guionista, .col-estado {
+    min-width: 130px;
+}
+.col-foto {
+    min-width: 140px;
+    width: 140px;
+    vertical-align: middle;
+}
+#tabla-concursantes-header .foto-concursante,
+#tabla-concursantes-header .campo-foto-vacio {
+    max-width: 120px;
+    max-height: 72px;
 }
 
 /* Barra de scroll horizontal personalizada */
@@ -228,31 +255,20 @@ border-radius: 4px;
 font-size: 0.7em;
 line-height: 1.2;
 }
-        /* Columna notas de grabación */
         #tabla-concursantes-header th.col-notas-grabacion,
-        #tabla-concursantes-principal td.col-notas-grabacion,
-        #tabla-concursantes-header-floating th.col-notas-grabacion {
+        #tabla-concursantes-header td.col-notas-grabacion,
+        #tabla-concursantes-header-floating th.col-notas-grabacion,
+        #tabla-concursantes-header th.col-momentos-destacados,
+        #tabla-concursantes-header td.col-momentos-destacados,
+        #tabla-concursantes-header-floating th.col-momentos-destacados {
             min-width: 280px;
             white-space: normal;
         }
-        
-        /* Estilos para las columnas de duración (posiciones 20, 21, 22) */
-        #tabla-concursantes-header th:nth-of-type(20),
-        #tabla-concursantes-principal td:nth-of-type(20),
-        #tabla-concursantes-header th:nth-of-type(21),
-        #tabla-concursantes-principal td:nth-of-type(21),
-        #tabla-concursantes-header th:nth-of-type(22),
-        #tabla-concursantes-principal td:nth-of-type(22) {
-            min-width: 80px;
-            text-align: center;
-        }
-        /* Asegurar espacio suficiente para la última columna de acciones */
-        #tabla-concursantes-header th:last-child,
-        #tabla-concursantes-principal td:last-child,
-        #tabla-concursantes-header-floating th:last-child {
-            min-width: 180px !important;
-            width: 180px !important;
-            max-width: 180px !important;
+        #tabla-concursantes-header th.col-acciones,
+        #tabla-concursantes-header td.col-acciones,
+        #tabla-concursantes-header-floating th.col-acciones {
+            min-width: 120px;
+            width: 120px;
             text-align: center;
             white-space: nowrap;
         }
@@ -1024,7 +1040,7 @@ Borrar
 <script src="js/api.js?v=20260821-3"></script>
     <script src="js/undo-manager.js?v=20260915-modal"></script>
 <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/concursantes.js?v=20260918-estado-auto"></script>
+    <script src="js/concursantes.js?v=20260925-columnas-ver"></script>
 <script>
 // Inicializar la página cuando se carga
 document.addEventListener('DOMContentLoaded', function() {

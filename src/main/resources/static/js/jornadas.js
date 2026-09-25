@@ -1187,7 +1187,7 @@ const JornadasManager = {
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al cargar jornada:', error);
-            Utils.showAlert('Error al cargar los datos de la jornada', 'error');
+            Utils.showAlert(error.message || 'Error al cargar los datos de la jornada', 'error');
         }
     },
 
@@ -2003,10 +2003,10 @@ const JornadasManager = {
                             const nivel = Utils.formatearNivel(p.nivel);
                             tabla += `
                                 <tr>
-                                    <td style="width:60px"><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
+                                    <td class="col-nivel-jornada"><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
                                     <td class="col-pregunta-jornada">${p.pregunta || ''}</td>
-                                    <td><strong>${p.respuesta || ''}</strong></td>
-                                    <td>${this.datosExtraPregunta(p)}</td>
+                                    <td class="col-respuesta-jornada"><strong>${p.respuesta || ''}</strong></td>
+                                    <td class="col-datos-jornada">${this.datosExtraPregunta(p)}</td>
                                 </tr>
                             `;
                         });
@@ -2024,7 +2024,7 @@ const JornadasManager = {
                                 <div class="table-responsive mt-2">
                                     <table class="table table-sm table-bordered mb-0">
                                         <thead>
-                                            <tr><th>Nivel</th><th class="col-pregunta-jornada">Pregunta</th><th>Respuesta</th><th>Datos extra</th></tr>
+                                            <tr><th class="col-nivel-jornada">Nivel</th><th class="col-pregunta-jornada">Pregunta</th><th class="col-respuesta-jornada">Respuesta</th><th class="col-datos-jornada">Datos extra</th></tr>
                                         </thead>
                                         <tbody>
                                             ${tabla || `<tr><td colspan="4" class="text-muted text-center">Sin preguntas</td></tr>`}
@@ -2082,16 +2082,16 @@ const JornadasManager = {
                             if (!isNaN(num)) factorStr = num === 0 ? 'x' : `x${num}`;
                             tabla += `
                                 <tr>
-                                    <td style="width:80px">
+                                    <td class="col-mult-jornada">
                                         <input class="form-control form-control-sm"
                                                value="${factorStr || ''}"
                                                onblur="JornadasManager.actualizarFactorDesdeModal(${detalle.id}, ${p.id}, this.value)"
                                                title="Editar multiplicador (p.ej. X, X2, X3)">
                                     </td>
-                                    <td style="width:70px"><span class="badge bg-light text-secondary fw-bold">${this.nivelPreguntaCombo(p.nivel)}</span></td>
+                                    <td class="col-nivel-jornada"><span class="badge bg-light text-secondary fw-bold">${this.nivelPreguntaCombo(p.nivel)}</span></td>
                                     <td class="col-pregunta-jornada">${p.pregunta || ''}</td>
-                                    <td><strong>${p.respuesta || ''}</strong></td>
-                                    <td>${this.datosExtraPregunta(p)}</td>
+                                    <td class="col-respuesta-jornada"><strong>${p.respuesta || ''}</strong></td>
+                                    <td class="col-datos-jornada">${this.datosExtraPregunta(p)}</td>
                                 </tr>
                             `;
                         });
@@ -2110,7 +2110,7 @@ const JornadasManager = {
                                 <div class="table-responsive mt-2">
                                     <table class="table table-sm table-bordered mb-0">
                                         <thead>
-                                            <tr><th>MULT</th><th>Nivel</th><th class="col-pregunta-jornada">Pregunta</th><th>Respuesta</th><th>Datos extra</th></tr>
+                                            <tr><th class="col-mult-jornada">MULT</th><th class="col-nivel-jornada">Nivel</th><th class="col-pregunta-jornada">Pregunta</th><th class="col-respuesta-jornada">Respuesta</th><th class="col-datos-jornada">Datos extra</th></tr>
                                         </thead>
                                         <tbody>
                                             ${tabla || `<tr><td colspan="5" class="text-muted text-center">Sin preguntas</td></tr>`}
@@ -2594,7 +2594,7 @@ const JornadasManager = {
                 let nivel = Utils.formatearNivel(pregunta.nivel);
                 html += `
                     <tr>
-                        <td><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
+                        <td class="col-nivel-jornada"><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
                         <td class="col-pregunta-jornada">${pregunta.pregunta || 'Sin texto'}</td>
                         <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
                         <td>${this.datosExtraPregunta(pregunta)}</td>
@@ -2641,7 +2641,7 @@ const JornadasManager = {
                                        onblur="JornadasManager.actualizarFactorDesdeModal(${combo.id}, ${pregunta.id}, this.value)"
                                        title="Editar multiplicador (p.ej. X, X2, X3)">
                             </td>
-                            <td><span class="badge bg-light text-secondary fw-bold">${this.nivelPreguntaCombo(pregunta.nivel)}</span></td>
+                            <td class="col-nivel-jornada"><span class="badge bg-light text-secondary fw-bold">${this.nivelPreguntaCombo(pregunta.nivel)}</span></td>
                             <td class="col-pregunta-jornada">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${pregunta.pregunta || 'Sin texto'}</span></td>
                             <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
                             <td>${this.datosExtraPregunta(pregunta)}</td>

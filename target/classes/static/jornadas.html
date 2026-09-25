@@ -152,6 +152,7 @@
             padding: 12px;
         }
         #modalJornada .item-slot table {
+            table-layout: fixed;
             min-width: 0;
             width: 100%;
             font-size: 1rem;
@@ -160,12 +161,44 @@
         #modalJornada .item-slot table td {
             padding: 0.65rem 0.8rem;
             white-space: normal;
-            word-break: break-word;
+            overflow-wrap: break-word;
+            word-break: normal;
             vertical-align: top;
         }
-        #modalJornada .col-pregunta-jornada {
-            min-width: 0;
-            width: 45%;
+        #modalJornada .col-mult-jornada {
+            width: 70px;
+            max-width: 70px;
+            white-space: nowrap;
+            word-break: normal;
+        }
+        #modalJornada .col-nivel-jornada,
+        #modalVerPreguntasCuestionario .col-nivel-jornada,
+        #modalVerPreguntasCombo .col-nivel-jornada {
+            width: 36px;
+            max-width: 36px;
+            padding-left: 0.3rem;
+            padding-right: 0.3rem;
+            white-space: nowrap;
+            word-break: normal;
+        }
+        #modalVerPreguntasCuestionario table,
+        #modalVerPreguntasCombo table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        #modalJornada .col-pregunta-jornada,
+        #modalVerPreguntasCuestionario .col-pregunta-jornada,
+        #modalVerPreguntasCombo .col-pregunta-jornada {
+            width: 48%;
+            overflow-wrap: anywhere;
+        }
+        #modalJornada .col-respuesta-jornada {
+            width: 24%;
+            overflow-wrap: anywhere;
+        }
+        #modalJornada .col-datos-jornada {
+            width: 28%;
+            overflow-wrap: anywhere;
         }
 
         /* Estilos para el modal de reciclaje */
@@ -194,10 +227,6 @@
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
-        }
-            padding: 8px;
-            margin-bottom: 5px;
-            background: #f8f9fa;
         }
         .pregunta-usada {
             background: #d4edda;
@@ -522,7 +551,7 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th style="width: 80px;">Nivel</th>
+                                    <th class="col-nivel-jornada">Nivel</th>
                                     <th class="col-pregunta-jornada">Pregunta</th>
                                     <th>Respuesta</th>
                                     <th>Datos extra</th>
@@ -554,8 +583,8 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th style="width: 80px;">MULT</th>
-                                    <th style="width: 80px;">Nivel</th>
+                                    <th class="col-mult-jornada" style="width: 70px;">MULT</th>
+                                    <th class="col-nivel-jornada">Nivel</th>
                                     <th class="col-pregunta-jornada">Pregunta</th>
                                     <th>Respuesta</th>
                                     <th>Datos extra</th>
@@ -833,7 +862,7 @@
     <script src="js/undo-manager.js?v=20260915-modal"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
-    <script src="js/jornadas.js?v=20260915-edicion-vertical"></script>
+    <script src="js/jornadas.js?v=20260925-nivel-mitad"></script>
     <script>
         // Verificar autenticación al cargar la página
         document.addEventListener('DOMContentLoaded', function() {

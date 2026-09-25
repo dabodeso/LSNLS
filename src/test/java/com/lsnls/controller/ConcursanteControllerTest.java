@@ -188,6 +188,18 @@ class ConcursanteControllerTest {
     }
 
     @Test
+    void findConcursantesDisponibles_pasaProgramaIdYEstado() {
+        Page<ConcursanteDTO> page = new PageImpl<>(Collections.singletonList(dto(25L, "Rocío")));
+        when(concursanteService.findConcursantesSinProgramaPaginated(any(Pageable.class), eq("emitido"), eq("emitido"), eq(2)))
+                .thenReturn(page);
+
+        ResponseEntity<?> response = concursanteController.findConcursantesDisponibles(0, 10, "emitido", "emitido", 2);
+
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(page, response.getBody());
+    }
+
+    @Test
     void findConcursantesDisponibles_excepcion_devuelve500() {
         when(concursanteService.findConcursantesSinProgramaPaginated(any(Pageable.class), isNull(), isNull(), isNull()))
                 .thenThrow(new RuntimeException("fail"));

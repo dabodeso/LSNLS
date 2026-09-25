@@ -318,4 +318,20 @@ class AuthorizationServiceTest {
         assertFalse(authorizationService.canValidate());
         assertFalse(authorizationService.canAdministrar());
     }
+
+    @Test
+    void canEditProgramacionConcursante_soloAdminYDireccion() {
+        autenticar(RolUsuario.ROLE_ADMIN);
+        assertTrue(authorizationService.canEditProgramacionConcursante());
+        autenticar(RolUsuario.ROLE_DIRECCION);
+        assertTrue(authorizationService.canEditProgramacionConcursante());
+        autenticar(RolUsuario.ROLE_GUION);
+        assertFalse(authorizationService.canEditProgramacionConcursante());
+        autenticar(RolUsuario.ROLE_VERIFICACION);
+        assertFalse(authorizationService.canEditProgramacionConcursante());
+        autenticar(RolUsuario.ROLE_CONSULTA);
+        assertFalse(authorizationService.canEditProgramacionConcursante());
+        sinUsuario();
+        assertFalse(authorizationService.canEditProgramacionConcursante());
+    }
 }
