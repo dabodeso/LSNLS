@@ -1211,11 +1211,28 @@ public class JornadaService {
         if (jornadaContieneCombo(solicitada, combo.getId())) {
             return solicitada;
         }
+        Jornada jornadaConcursante = buscarJornadaDelConcursanteConCombo(combo.getId());
+        if (jornadaConcursante != null && jornadaIdSolicitada.equals(jornadaConcursante.getId())) {
+            return solicitada;
+        }
         Jornada dueña = buscarJornadaQueContieneCombo(combo.getId());
         if (dueña != null) {
             return dueña;
         }
+        if (jornadaConcursante != null) {
+            return jornadaConcursante;
+        }
+        if (concursanteRepository.existsByCombo_Id(combo.getId())) {
+            return solicitada;
+        }
         throw new IllegalArgumentException("El combo " + combo.getId() + " no está asignado a ninguna jornada");
+    }
+
+    private Jornada buscarJornadaDelConcursanteConCombo(Long comboId) {
+        return concursanteRepository.findFirstByCombo_Id(comboId)
+            .map(Concursante::getJornada)
+            .filter(jornada -> jornada != null && jornada.getId() != null)
+            .orElse(null);
     }
 
     public boolean jornadaContieneCombo(Jornada jornada, Long comboId) {

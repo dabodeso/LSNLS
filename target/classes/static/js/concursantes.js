@@ -339,6 +339,39 @@ function puedeEditarConcursanteSegunEstado(estado) {
     return normalizarEstadoConcursanteUi(estado) === 'grabado' && rol === 'guion';
 }
 
+const MENSAJE_SIN_PERMISO_EDICION = 'No tienes permiso para editar esto.';
+let ultimoAvisoPermisoEdicion = 0;
+
+function avisarSinPermisoEdicion() {
+    const ahora = Date.now();
+    if (ahora - ultimoAvisoPermisoEdicion < 800) return false;
+    ultimoAvisoPermisoEdicion = ahora;
+    mostrarError(MENSAJE_SIN_PERMISO_EDICION);
+    return false;
+}
+
+function exigirPermisoEdicionConcursante(concursante, campo) {
+    if (!puedeEditarConcursantes) {
+        return avisarSinPermisoEdicion();
+    }
+    if (!puedeEditarConcursanteSegunEstado(concursante?.estado)) {
+        return avisarSinPermisoEdicion();
+    }
+    if (campo && CAMPOS_TABLA_SOLO_DIRECCION.has(campo) && !puedeVerColumnasDireccion()) {
+        return avisarSinPermisoEdicion();
+    }
+    return true;
+}
+
+function avisarSiTextareaSoloLectura(el) {
+    if (el && el.readOnly) avisarSinPermisoEdicion();
+}
+
+function avisarSiSelectDeshabilitado(td) {
+    const sel = td && td.querySelector('select');
+    if (sel && sel.disabled) avisarSinPermisoEdicion();
+}
+
 function crearColumnasVisiblesPorDefecto(verColumnasDireccion) {
     const columnas = {
         'numero-concur': true,
@@ -864,7 +897,7 @@ celdas.push(`<td class="${claseColumna('numero-concur')}">${concursante.id || ''
 
 // JORNADA
 if (configuracionColumnas.columnasVisibles['jornada']) {
-celdas.push(`<td class="${claseColumna('jornada')}" ${puedeEditarFila ? `onclick="abrirSelectorJornadaParaConcursante(${concursante.id})"` : ''} style="cursor: ${puedeEditarFila ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${puedeEditarFila ? 'Click para seleccionar jornada' : ''}">
+celdas.push(`<td class="${claseColumna('jornada')}" onclick="abrirSelectorJornadaParaConcursante(${concursante.id})" style="cursor: pointer; background-color: #f8f9fa;" title="${puedeEditarFila ? 'Click para seleccionar jornada' : 'Sin permiso para editar'}">
                ${concursante.jornadaNombre ? `<span class="badge bg-success">${concursante.jornadaNombre}</span>` : '<em class="text-muted">Sin asignar</em>'}
            </td>`);
 }
@@ -916,9 +949,9 @@ celdas.push(`<td class="${claseColumna('rr-ss')}" ondblclick="editarCeldaConcurs
 if (configuracionColumnas.columnasVisibles['cuest']) {
 const cuéstOnclick = concursante.cuestionarioId
     ? `verCuestionario(${concursante.cuestionarioId}, ${concursante.id})`
-    : (puedeEditarFila ? `abrirSelectorCuestionarioParaConcursante(${concursante.id})` : '');
-const cuéstTitle = concursante.cuestionarioId ? 'Ver cuestionario' : (puedeEditarFila ? 'Seleccionar cuestionario' : '');
-celdas.push(`<td class="${claseColumna('cuest')}" ${cuéstOnclick ? `onclick="${cuéstOnclick}"` : ''} style="cursor: ${cuéstOnclick ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${cuéstTitle}">
+    : `abrirSelectorCuestionarioParaConcursante(${concursante.id})`;
+const cuéstTitle = concursante.cuestionarioId ? 'Ver cuestionario' : (puedeEditarFila ? 'Seleccionar cuestionario' : 'Sin permiso para editar');
+celdas.push(`<td class="${claseColumna('cuest')}" onclick="${cuéstOnclick}" style="cursor: pointer; background-color: #f8f9fa;" title="${cuéstTitle}">
                ${concursante.cuestionarioId && concursante.cuestionarioId !== 0 ? `<span class=\"badge bg-primary\">${concursante.cuestionarioId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
 }
@@ -928,9 +961,9 @@ if (configuracionColumnas.columnasVisibles['combo']) {
     const badgeClass = concursante.comboReciclado ? 'bg-success' : 'bg-warning';
     const comboOnclick = concursante.comboId
         ? `verCombo(${concursante.comboId}, ${concursante.id})`
-        : (puedeEditarFila ? `abrirSelectorComboParaConcursante(${concursante.id})` : '');
-    const comboTitle = concursante.comboId ? (concursante.comboReciclado ? 'Combo reciclado' : 'Ver combo') : (puedeEditarFila ? 'Seleccionar combo' : '');
-    celdas.push(`<td class="${claseColumna('combo')}" ${comboOnclick ? `onclick="${comboOnclick}"` : ''} style="cursor: ${comboOnclick ? 'pointer' : 'default'}; background-color: #f8f9fa;" title="${comboTitle}">
+        : `abrirSelectorComboParaConcursante(${concursante.id})`;
+    const comboTitle = concursante.comboId ? (concursante.comboReciclado ? 'Combo reciclado' : 'Ver combo') : (puedeEditarFila ? 'Seleccionar combo' : 'Sin permiso para editar');
+    celdas.push(`<td class="${claseColumna('combo')}" onclick="${comboOnclick}" style="cursor: pointer; background-color: #f8f9fa;" title="${comboTitle}">
                ${concursante.comboId && concursante.comboId !== 0 ? `<span class=\"badge ${badgeClass}\">${concursante.comboId}</span>` : '<em class=\"text-muted\">Sin asignar</em>'}
            </td>`);
 }
@@ -952,7 +985,7 @@ if (configuracionColumnas.columnasVisibles['xusoker']) {
         return `<option value="${v}"${selected}>${label}</option>`;
     }).join('');
     celdas.push(
-        `<td class="${claseColumna('xusoker')}">
+        `<td class="${claseColumna('xusoker')}" onclick="avisarSiSelectDeshabilitado(this)">
             <select class="form-select form-select-sm xusoker-select" data-id="${concursante.id}"${puedeEditarFila ? '' : ' disabled'}>
                 ${htmlOpcionesXusoker}
             </select>
@@ -977,6 +1010,7 @@ if (configuracionColumnas.columnasVisibles['notas-grabacion']) {
             celdas.push(`<td class="${claseColumna('notas-grabacion')}">
                 <textarea class="form-control form-control-sm notas-grabacion-textarea" rows="3"
                     placeholder="Notas de grabación..."
+                    onfocus="avisarSiTextareaSoloLectura(this)"
                     onblur="actualizarNotasGrabacion(${concursante.id}, this.value)"${soloLectura}>${escapeHtmlForTextarea(notas)}</textarea>
             </td>`);
 }
@@ -1011,7 +1045,7 @@ if (configuracionColumnas.columnasVisibles['estado']) {
     }).join('');
     const estadoBloqueado = asignadoAPrograma || !(puedeEditarFila && puedeVerColumnasDireccion());
     celdas.push(
-        `<td class="${claseColumna('estado')}">
+        `<td class="${claseColumna('estado')}" onclick="avisarSiSelectDeshabilitado(this)">
             <select class="form-select form-select-sm estado-select" data-id="${concursante.id}"${estadoBloqueado ? ' disabled' : ''}>
                 ${opcionesEstado}
             </select>
@@ -1027,6 +1061,7 @@ if (configuracionColumnas.columnasVisibles['momentos-destacados']) {
     celdas.push(`<td class="${claseColumna('momentos-destacados')}">
                 <textarea class="form-control form-control-sm momentos-destacados-textarea" rows="3"
                     placeholder="Momentos destacados..."
+                    onfocus="avisarSiTextareaSoloLectura(this)"
                     onblur="actualizarMomentosDestacados(${concursante.id}, this.value)"${soloLecturaMomentos}>${escapeHtmlForTextarea(momentos)}</textarea>
             </td>`);
 }
@@ -1068,10 +1103,9 @@ celdas.push(`<td class="${claseColumna('bonico')}" ondblclick="editarCeldaConcur
 
 // ACCIONES (siempre visible)
 celdas.push(`<td class="col-acciones">
-           ${puedeEditarFila ? `
-           <button class="btn btn-sm btn-primary" onclick="editarConcursante(${concursante.id})">
+           <button class="btn btn-sm btn-primary" onclick="editarConcursante(${concursante.id})" title="${puedeEditarFila ? 'Editar' : 'Sin permiso para editar'}">
                <i class="fas fa-edit"></i>
-           </button>` : ''}
+           </button>
            ${puedeEliminarConcursante ? `
            <button class="btn btn-sm btn-danger" onclick="eliminarConcursante(${concursante.id})">
                <i class="fas fa-trash"></i>
@@ -1178,7 +1212,10 @@ function resetFormularioConcursanteNuevo() {
 }
 
 function mostrarFormularioConcursante() {
-if (!puedeCrearConcursante) return;
+if (!puedeCrearConcursante) {
+    avisarSinPermisoEdicion();
+    return;
+}
 resetFormularioConcursanteNuevo();
 // Limitar estados según rol
 limitarEstadosSegunRol();
@@ -1190,11 +1227,17 @@ modal.show();
 }
 
 async function editarConcursante(id) {
-if (!puedeEditarConcursantes) return;
+if (!puedeEditarConcursantes) {
+    avisarSinPermisoEdicion();
+    return;
+}
 limpiarArrastresPendientes();
 try {
 concursanteActual = await apiManager.get(`/api/concursantes/${id}`);
-if (!puedeEditarConcursanteSegunEstado(concursanteActual?.estado)) return;
+if (!puedeEditarConcursanteSegunEstado(concursanteActual?.estado)) {
+    avisarSinPermisoEdicion();
+    return;
+}
 document.getElementById('modal-concursante-titulo').textContent = 'Editar Concursante';
 const form = document.getElementById('form-concursante');
 form.reset();
@@ -1731,7 +1774,10 @@ mostrarError(Utils.mensajeErrorApi(err, 'guardar concursantes'));
 
 // Manejar cambio de estado desde el select en la tabla
 $(document).on('change', '.estado-select', async function() {
-    if (!puedeVerColumnasDireccion()) return;
+    if (!puedeVerColumnasDireccion()) {
+        avisarSinPermisoEdicion();
+        return;
+    }
     const id = $(this).data('id');
     const nuevoEstado = $(this).val();
     const select = this;
@@ -1778,7 +1824,10 @@ $(document).on('change', '.estado-select', async function() {
 $(document).on('change', '.xusoker-select', async function() {
     const id = $(this).data('id');
     const filaX = concursantes.find(c => c.id === id);
-    if (!puedeEditarConcursanteSegunEstado(filaX?.estado)) return;
+    if (!puedeEditarConcursanteSegunEstado(filaX?.estado)) {
+        avisarSinPermisoEdicion();
+        return;
+    }
     const nuevoValor = $(this).val() || null;
     const select = this;
     try {
@@ -1812,7 +1861,10 @@ $(document).on('change', '.xusoker-select', async function() {
 });
 
 async function eliminarConcursante(id) {
-    if (!puedeEliminarConcursante) return;
+    if (!puedeEliminarConcursante) {
+        avisarSinPermisoEdicion();
+        return;
+    }
     try {
         const c = (concursantes || []).find(x => x && x.id === id);
         if (c && c.jornadaId) {
@@ -1858,10 +1910,8 @@ function crearSelectValoracion(valorActual) {
 }
 
 async function editarCeldaConcursante(id, campo, td) {
-if (!puedeEditarConcursantes) return;
 const fila = concursantes.find(c => c.id === id);
-if (!puedeEditarConcursanteSegunEstado(fila?.estado)) return;
-if (CAMPOS_TABLA_SOLO_DIRECCION.has(campo) && !puedeVerColumnasDireccion()) return;
+if (!exigirPermisoEdicionConcursante(fila, campo)) return;
 if (td.querySelector('input,select,textarea')) return;
 const valorOriginal = (td.innerText || '').trim();
 let input;
@@ -2035,9 +2085,8 @@ function escapeHtmlForTextarea(text) {
 }
 
 async function actualizarNotasGrabacion(concursanteId, notas) {
-    if (!puedeEditarConcursantes) return;
     const filaNotas = concursantes.find(c => c.id === concursanteId);
-    if (!puedeEditarConcursanteSegunEstado(filaNotas?.estado)) return;
+    if (!exigirPermisoEdicionConcursante(filaNotas)) return;
     try {
         const previo = concursantes.find(c => c.id === concursanteId);
         const notasPrevias = previo?.notasGrabacion ?? '';
@@ -2076,9 +2125,8 @@ async function actualizarNotasGrabacion(concursanteId, notas) {
 }
 
 async function actualizarMomentosDestacados(concursanteId, momentos) {
-    if (!puedeEditarConcursantes || !puedeVerColumnasDireccion()) return;
     const fila = concursantes.find(c => c.id === concursanteId);
-    if (!puedeEditarConcursanteSegunEstado(fila?.estado)) return;
+    if (!exigirPermisoEdicionConcursante(fila, 'momentosDestacados')) return;
     try {
         const momentosPrevios = fila?.momentosDestacados ?? '';
         const momentosNorm = momentos ?? '';
@@ -2680,6 +2728,7 @@ function registrarUndoReciclajeParcialConAsignacion({ jornadaId, comboPadreId, p
 
 function abrirSelectorCuestionarioParaConcursante(concursanteId, modoOtras = false) {
 const c = concursantes.find(x => x && x.id === concursanteId);
+if (!exigirPermisoEdicionConcursante(c)) return;
 const jornadaId = exigirJornadaParaBusqueda(c && c.jornadaId, 'un cuestionario');
 if (!jornadaId) return;
 concursanteParaAsignar = concursanteId;
@@ -2694,6 +2743,7 @@ modal.show();
 
 function abrirSelectorComboParaConcursante(concursanteId, modoOtras = false) {
 const c = concursantes.find(x => x && x.id === concursanteId);
+if (!exigirPermisoEdicionConcursante(c)) return;
 const jornadaId = exigirJornadaParaBusqueda(c && c.jornadaId, 'un combo');
 if (!jornadaId) return;
 concursanteParaAsignar = concursanteId;
@@ -3581,7 +3631,7 @@ async function buscarJornadaPorId() {
 
 function abrirSelectorJornadaParaConcursante(concursanteId) {
 const filaJornada = concursantes.find(c => c.id === concursanteId);
-if (!puedeEditarConcursanteSegunEstado(filaJornada?.estado)) return;
+if (!exigirPermisoEdicionConcursante(filaJornada)) return;
 concursanteParaAsignarJornada = concursanteId;
 mostrarModalSelectorJornada();
 }
@@ -3714,7 +3764,7 @@ modal.hide();
 // Funciones para manejo de fotos
 function abrirExploradorFoto(concursanteId, event) {
 const filaFoto = concursantes.find(c => c.id === concursanteId);
-if (!puedeEditarConcursanteSegunEstado(filaFoto?.estado)) return;
+if (!exigirPermisoEdicionConcursante(filaFoto)) return;
 // Detener la propagación del evento para evitar que se active el click del row
 if (event) {
 event.stopPropagation();

@@ -138,35 +138,74 @@ pointer-events: none;
 .momentos-destacados-textarea {
     width: 100%;
     min-width: 200px;
-    max-height: 6.5em;
+    max-height: 9.75em;
     resize: vertical;
     overflow: auto;
     font-size: inherit;
     line-height: 1.4;
 }
 
-.col-numero-concur, .col-edad, .col-cuest, .col-combo,
-.col-x, .col-resultado, .col-duracion, .col-duracion-direccion,
+.col-numero-concur, .col-duracion, .col-duracion-direccion,
 .col-duracion-final, .col-valoracion-final, .col-numero-pgm,
 .col-orden-escaleta, .col-bonico {
     min-width: 90px;
     width: 90px;
     white-space: nowrap;
 }
+
+#tabla-concursantes-header th.col-edad,
+#tabla-concursantes-header td.col-edad,
+#tabla-concursantes-header-floating th.col-edad,
+#tabla-concursantes-header th.col-cuest,
+#tabla-concursantes-header td.col-cuest,
+#tabla-concursantes-header-floating th.col-cuest,
+#tabla-concursantes-header th.col-combo,
+#tabla-concursantes-header td.col-combo,
+#tabla-concursantes-header-floating th.col-combo,
+#tabla-concursantes-header th.col-x,
+#tabla-concursantes-header td.col-x,
+#tabla-concursantes-header-floating th.col-x,
+#tabla-concursantes-header th.col-resultado,
+#tabla-concursantes-header td.col-resultado,
+#tabla-concursantes-header-floating th.col-resultado,
+#tabla-concursantes-header th.col-xusoker,
+#tabla-concursantes-header td.col-xusoker,
+#tabla-concursantes-header-floating th.col-xusoker,
+#tabla-concursantes-header th.col-ocupacion,
+#tabla-concursantes-header td.col-ocupacion,
+#tabla-concursantes-header-floating th.col-ocupacion,
+#tabla-concursantes-header th.col-rr-ss,
+#tabla-concursantes-header td.col-rr-ss,
+#tabla-concursantes-header-floating th.col-rr-ss {
+    min-width: 44px;
+    width: 70px;
+    white-space: nowrap;
+}
+#tabla-concursantes-header td.col-xusoker .xusoker-select {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+}
 .col-jornada, .col-dia-grabacion, .col-lugar, .col-nombre,
-.col-ocupacion, .col-rr-ss, .col-xusoker, .col-guionista,
-.col-valoracion-guionista, .col-estado {
+.col-guionista, .col-valoracion-guionista, .col-estado {
     min-width: 130px;
 }
-.col-foto {
-    min-width: 140px;
+#tabla-concursantes-header th.col-foto,
+#tabla-concursantes-header td.col-foto,
+#tabla-concursantes-header-floating th.col-foto {
+    min-width: 56px;
     width: 140px;
     vertical-align: middle;
+    white-space: normal;
+    overflow: visible;
 }
 #tabla-concursantes-header .foto-concursante,
 #tabla-concursantes-header .campo-foto-vacio {
-    max-width: 120px;
-    max-height: 72px;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    min-width: 0;
+    height: auto;
 }
 
 /* Barra de scroll horizontal personalizada */
@@ -206,7 +245,8 @@ min-width: 20px;
 .foto-concursante {
 display: block;
 width: 100%;
-max-width: 240px;
+max-width: none;
+height: auto;
 aspect-ratio: 16 / 9;
 object-fit: cover;
 border-radius: 4px;
@@ -223,9 +263,10 @@ flex-direction: column;
 align-items: center;
 justify-content: center;
 width: 100%;
-min-width: 120px;
+min-width: 0;
+max-width: none;
+height: auto;
 aspect-ratio: 16 / 9;
-max-width: 240px;
 border: 2px dashed #ccc;
 border-radius: 4px;
 cursor: pointer;
@@ -1039,8 +1080,8 @@ Borrar
 <script src="js/utils.js?v=20260915-reciclaje-mult"></script>
 <script src="js/api.js?v=20260821-3"></script>
     <script src="js/undo-manager.js?v=20260915-modal"></script>
-<script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/concursantes.js?v=20260925-cadena-reciclaje"></script>
+<script src="js/table-resizer.js?v=20260925-rrss-ocup"></script>
+    <script src="js/concursantes.js?v=20260925-aviso-permiso"></script>
 <script>
 // Inicializar la página cuando se carga
 document.addEventListener('DOMContentLoaded', function() {

@@ -235,6 +235,22 @@ class TableResizer {
                     return;
                 }
             }
+            if ((this.table.id || '') === 'tabla-concursantes-header') {
+                const anchosEstrechos = {
+                    'edad': 56,
+                    'cuest': 64,
+                    'combo': 64,
+                    'x': 44,
+                    'resultado': 72,
+                    'xusóker': 72,
+                    'ocupación': 72,
+                    'rr ss': 72
+                };
+                if (anchosEstrechos[columnName]) {
+                    this.applyColumnWidth(index, anchosEstrechos[columnName]);
+                    return;
+                }
+            }
             
             // Calcular ancho mínimo basado en el contenido del encabezado
             const headerText = th.textContent.trim();

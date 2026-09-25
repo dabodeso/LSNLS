@@ -271,8 +271,7 @@ const JornadasManager = {
     // Función para seleccionar cuestionarios directamente sin pasar por el editor
     seleccionarCuestionariosDirecto(jornadaId, slotIndex) {
         this.jornadaEditando = this.jornadas.find(j => j.id === jornadaId);
-        if (!this.puedeEditar(this.jornadaEditando)) {
-            Utils.showAlert('Esta jornada está bloqueada por estado y no se puede editar.', 'error');
+        if (!this.avisarSiNoPuedeEditar(this.jornadaEditando)) {
             return;
         }
         this.slotDestinoCuestionario = Number.isInteger(slotIndex) ? slotIndex : 0;
@@ -282,8 +281,7 @@ const JornadasManager = {
 
     seleccionarCombosDirecto(jornadaId, slotIndex) {
         this.jornadaEditando = this.jornadas.find(j => j.id === jornadaId);
-        if (!this.puedeEditar(this.jornadaEditando)) {
-            Utils.showAlert('Esta jornada está bloqueada por estado y no se puede editar.', 'error');
+        if (!this.avisarSiNoPuedeEditar(this.jornadaEditando)) {
             return;
         }
         this.slotDestinoCombo = Number.isInteger(slotIndex) ? slotIndex : 0;
@@ -1067,6 +1065,18 @@ const JornadasManager = {
             return false;
         }
         return jornada.estado !== 'completada' && jornada.estado !== 'archivada';
+    },
+
+    avisarSiNoPuedeEditar(jornada) {
+        if (!this.esAdminODireccion()) {
+            Utils.showAlert('No tienes permiso para editar esto.', 'error');
+            return false;
+        }
+        if (!this.puedeEditar(jornada)) {
+            Utils.showAlert('Esta jornada está bloqueada por estado y no se puede editar.', 'error');
+            return false;
+        }
+        return true;
     },
 
     esCuestionarioGrabado(c) {
@@ -3147,6 +3157,27 @@ const JornadasManager = {
         return `<div class="mb-3"><strong>Cadena de reciclaje:</strong> ${enlaces}</div>`;
     },
 
+    esItemReciclajeCombo(item) {
+        return String(item?.notas || '').includes('RECICLAJE_PARCIAL')
+            || (item?.comboPadreId && Array.isArray(item?.comboHijosIds) && item.comboHijosIds.length > 0);
+    },
+
+    htmlResumenReciclaje(item) {
+        const hijoId = Array.isArray(item.comboHijosIds) && item.comboHijosIds.length ? item.comboHijosIds[0] : null;
+        const jornada = item.jornadaNombre || (item.jornadaId ? `jornada #${item.jornadaId}` : 'una jornada');
+        const creado = hijoId
+            ? `<a href="combos.html?id=${hijoId}" target="_blank" rel="noopener">#${hijoId}</a>`
+            : 'un combo nuevo';
+        const fecha = item.fechaAsignacion ? new Date(item.fechaAsignacion).toLocaleDateString() : '';
+        return `
+            <div class="historial-item reaprovechado">
+                <p class="mb-1">Estaba en <strong>${jornada}</strong> y se recicló creando el combo ${creado}.</p>
+                ${fecha ? `<p class="mb-1"><strong>Fecha:</strong> ${fecha}</p>` : ''}
+                ${item.preguntaUsadaId ? `<p class="mb-0"><strong>Pregunta usada:</strong> #${item.preguntaUsadaId}</p>` : ''}
+            </div>
+        `;
+    },
+
     // Mostrar historial en modal
     mostrarHistorial(historial, tipo, entidadId) {
         const container = document.getElementById('historialContainer');
@@ -3156,6 +3187,10 @@ const JornadasManager = {
         } else {
             let html = tipo === 'combo' ? this.htmlCadenaReciclaje(historial) : '';
             historial.forEach(item => {
+                if (tipo === 'combo' && this.esItemReciclajeCombo(item)) {
+                    html += this.htmlResumenReciclaje(item);
+                    return;
+                }
                 const estadoClass = this.getEstadoClass(item.estadoAsignacion);
                 const fechaAsignacion = new Date(item.fechaAsignacion).toLocaleDateString();
                 const fechaUso = item.fechaUso ? new Date(item.fechaUso).toLocaleDateString() : 'No usado';
@@ -3167,13 +3202,11 @@ const JornadasManager = {
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h6>Jornada: ${item.jornadaNombre}</h6>
-                                <p><strong>Estado:</strong> <span class="badge badge-estado bg-${this.getBadgeColor(item.estadoAsignacion)}">${item.estadoAsignacion}</span>
-                                ${notasTecnicas ? '<span class="badge bg-secondary ms-1">Reciclaje parcial</span>' : ''}</p>
+                                <p><strong>Estado:</strong> <span class="badge badge-estado bg-${this.getBadgeColor(item.estadoAsignacion)}">${item.estadoAsignacion}</span></p>
                                 <p><strong>Asignado:</strong> ${fechaAsignacion}</p>
                                 ${item.fechaUso ? `<p><strong>Usado:</strong> ${fechaUso}</p>` : ''}
                                 ${item.preguntaUsadaId ? `<p><strong>Pregunta usada:</strong> #${item.preguntaUsadaId}</p>` : ''}
                                 ${notas ? `<p><strong>Notas:</strong> ${notas}</p>` : ''}
-                                ${tipo === 'combo' ? this.htmlEnlacesReciclajeCombo(item, entidadId) : ''}
                             </div>
                         </div>
                     </div>

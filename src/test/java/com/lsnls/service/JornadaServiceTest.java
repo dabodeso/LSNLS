@@ -3,6 +3,7 @@ package com.lsnls.service;
 import com.lsnls.dto.JornadaDTO;
 import com.lsnls.dto.ReciclajeComboDTO;
 import com.lsnls.entity.Combo;
+import com.lsnls.entity.Concursante;
 import com.lsnls.entity.Cuestionario;
 import com.lsnls.entity.Jornada;
 import com.lsnls.entity.JornadaCuestionarioAsignacion;
@@ -1428,6 +1429,69 @@ class JornadaServiceTest {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> jornadaService.reciclarComboParcial(7L, 28L, 10L, 9L));
         assertTrue(ex.getMessage().contains("no está asignado a ninguna jornada"));
+    }
+
+    @Test
+    void reciclarComboParcial_comboAsignadoAConcursanteAunqueNoEsteEnSuJornada() {
+        Jornada jornadaConcursante = new Jornada();
+        jornadaConcursante.setId(7L);
+        Combo combo = comboTresPreguntas(28L);
+        combo.setEstado(Combo.EstadoCombo.grabado);
+        Concursante concursante = new Concursante();
+        concursante.setId(3L);
+        concursante.setCombo(combo);
+        concursante.setJornada(jornadaConcursante);
+        when(jornadaRepository.findById(7L)).thenReturn(Optional.of(jornadaConcursante));
+        when(comboRepository.findById(28L)).thenReturn(Optional.of(combo));
+        when(concursanteRepository.findFirstByCombo_Id(28L)).thenReturn(Optional.of(concursante));
+        when(comboRepository.save(any(Combo.class))).thenAnswer(inv -> {
+            Combo c = inv.getArgument(0);
+            if (c.getId() == null) {
+                c.setId(76L);
+            }
+            return c;
+        });
+        when(preguntaComboRepository.save(any(PreguntaCombo.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(undoService.snapshotFilasNuevas(anyString(), anyString(), any(), any())).thenReturn(Collections.emptyList());
+
+        ReciclajeComboDTO dto = jornadaService.reciclarComboParcial(7L, 28L, 10L, 9L);
+
+        assertEquals(7L, dto.getJornadaId());
+        assertEquals(28L, dto.getComboPadreId());
+        assertEquals(76L, dto.getComboHijoId());
+        assertEquals(10L, combo.getPreguntaUsadaId());
+    }
+
+    @Test
+    void reciclarComboParcial_comboDeOtraJornadaAsignadoAlConcursanteUsaLaDelConcursante() {
+        Jornada jornadaConcursante = new Jornada();
+        jornadaConcursante.setId(7L);
+        Jornada dueña = new Jornada();
+        dueña.setId(5L);
+        Combo combo = comboTresPreguntas(28L);
+        dueña.setCombos(new HashSet<>(Collections.singletonList(combo)));
+        Concursante concursante = new Concursante();
+        concursante.setId(3L);
+        concursante.setCombo(combo);
+        concursante.setJornada(jornadaConcursante);
+        when(jornadaRepository.findById(7L)).thenReturn(Optional.of(jornadaConcursante));
+        when(jornadaRepository.findById(5L)).thenReturn(Optional.of(dueña));
+        when(comboRepository.findById(28L)).thenReturn(Optional.of(combo));
+        when(concursanteRepository.findFirstByCombo_Id(28L)).thenReturn(Optional.of(concursante));
+        when(comboRepository.save(any(Combo.class))).thenAnswer(inv -> {
+            Combo c = inv.getArgument(0);
+            if (c.getId() == null) {
+                c.setId(76L);
+            }
+            return c;
+        });
+        when(preguntaComboRepository.save(any(PreguntaCombo.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(undoService.snapshotFilasNuevas(anyString(), anyString(), any(), any())).thenReturn(Collections.emptyList());
+
+        ReciclajeComboDTO dto = jornadaService.reciclarComboParcial(7L, 28L, 10L, 9L);
+
+        assertEquals(7L, dto.getJornadaId());
+        assertEquals(76L, dto.getComboHijoId());
     }
 
     @Test

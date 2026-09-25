@@ -902,6 +902,27 @@ const CombosManager = {
         return `<div class="mb-3"><strong>Cadena de reciclaje:</strong> ${enlaces}</div>`;
     },
 
+    esItemReciclajeCombo(item) {
+        return String(item?.notas || '').includes('RECICLAJE_PARCIAL')
+            || (item?.comboPadreId && Array.isArray(item?.comboHijosIds) && item.comboHijosIds.length > 0);
+    },
+
+    htmlResumenReciclaje(item) {
+        const hijoId = Array.isArray(item.comboHijosIds) && item.comboHijosIds.length ? item.comboHijosIds[0] : null;
+        const jornada = item.jornadaNombre || (item.jornadaId ? `jornada #${item.jornadaId}` : 'una jornada');
+        const creado = hijoId
+            ? `<a href="combos.html?id=${hijoId}" target="_blank" rel="noopener">#${hijoId}</a>`
+            : 'un combo nuevo';
+        const fecha = item.fechaAsignacion ? new Date(item.fechaAsignacion).toLocaleDateString() : '';
+        return `
+            <div class="historial-item reaprovechado">
+                <p class="mb-1">Estaba en <strong>${jornada}</strong> y se recicló creando el combo ${creado}.</p>
+                ${fecha ? `<p class="mb-1"><strong>Fecha:</strong> ${fecha}</p>` : ''}
+                ${item.preguntaUsadaId ? `<p class="mb-0"><strong>Pregunta usada:</strong> #${item.preguntaUsadaId}</p>` : ''}
+            </div>
+        `;
+    },
+
     pintarHistorialCombo(historial, comboId) {
         const container = document.getElementById('historialComboContainer');
         if (!container) return;
@@ -910,21 +931,21 @@ const CombosManager = {
             return;
         }
         container.innerHTML = this.htmlCadenaReciclaje(historial) + historial.map(item => {
+            if (this.esItemReciclajeCombo(item)) {
+                return this.htmlResumenReciclaje(item);
+            }
             const estadoClass = this.getEstadoClassHistorial(item.estadoAsignacion);
             const fechaAsignacion = item.fechaAsignacion ? new Date(item.fechaAsignacion).toLocaleString() : '';
             const fechaUso = item.fechaUso ? new Date(item.fechaUso).toLocaleString() : '';
             const notas = this.notasVisiblesHistorial(item.notas);
-            const reciclaje = String(item.notas || '').includes('RECICLAJE_PARCIAL');
             return `
                 <div class="historial-item ${estadoClass}">
                     <h6 class="mb-2">${item.jornadaNombre || 'Jornada'} ${item.jornadaId ? `#${item.jornadaId}` : ''}</h6>
-                    <p class="mb-1"><strong>Estado:</strong> <span class="badge bg-${this.getBadgeColorHistorial(item.estadoAsignacion)}">${item.estadoAsignacion || ''}</span>
-                    ${reciclaje ? '<span class="badge bg-secondary ms-1">Reciclaje parcial</span>' : ''}</p>
+                    <p class="mb-1"><strong>Estado:</strong> <span class="badge bg-${this.getBadgeColorHistorial(item.estadoAsignacion)}">${item.estadoAsignacion || ''}</span></p>
                     ${fechaAsignacion ? `<p class="mb-1"><strong>Asignado:</strong> ${fechaAsignacion}</p>` : ''}
                     ${fechaUso ? `<p class="mb-1"><strong>Usado:</strong> ${fechaUso}</p>` : ''}
                     ${item.preguntaUsadaId ? `<p class="mb-1"><strong>Pregunta usada:</strong> #${item.preguntaUsadaId}</p>` : ''}
                     ${notas ? `<p class="mb-1"><strong>Notas:</strong> ${notas}</p>` : ''}
-                    ${this.htmlEnlacesReciclaje(item, comboId)}
                 </div>
             `;
         }).join('');

@@ -348,17 +348,19 @@ class HistorialJornadaServiceTest {
 
         List<HistorialJornadaDTO> dtos = historialJornadaService.obtenerHistorialCombo(76L);
 
-        assertEquals(3, dtos.size());
+        assertEquals(2, dtos.size());
         assertEquals(Arrays.asList(12L, 28L, 76L), dtos.get(0).getCadenaReciclajeIds());
         assertEquals(12L, dtos.get(0).getComboId());
-        assertEquals(28L, dtos.get(1).getComboId());
-        assertEquals(76L, dtos.get(2).getComboId());
+        assertEquals(Collections.singletonList(28L), dtos.get(0).getComboHijosIds());
+        assertEquals(28L, dtos.get(1).getComboPadreId());
+        assertEquals(Collections.singletonList(76L), dtos.get(1).getComboHijosIds());
     }
 
     @Test
     void extraerComboPadreYCadenaVacia() {
         assertEquals(12L, HistorialJornadaService.extraerComboPadreDesdeNotas("RECICLAJE_PARCIAL_COMBO_HIJO;PADRE:12"));
         assertNull(HistorialJornadaService.extraerComboPadreDesdeNotas("RECICLAJE_PARCIAL_COMBO_PADRE:12"));
+        assertEquals(12L, HistorialJornadaService.extraerComboIdDesdeNotasPadre("RECICLAJE_PARCIAL_COMBO_PADRE:12"));
         assertTrue(historialJornadaService.construirCadenaReciclaje(null).isEmpty());
     }
 

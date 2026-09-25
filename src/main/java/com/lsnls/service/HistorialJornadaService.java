@@ -229,20 +229,11 @@ public class HistorialJornadaService {
         List<Long> cadena = construirCadenaReciclaje(comboId);
         List<HistorialJornada> historiales = new ArrayList<>();
         for (Long id : cadena) {
-            historiales.addAll(historialRepository.findByComboId(id));
+            historiales.addAll(listaSegura(historialRepository.findByComboId(id)));
         }
         historiales.sort(Comparator.comparing(HistorialJornada::getFechaAsignacion,
             Comparator.nullsLast(Comparator.naturalOrder())));
-        List<Long> hijosIds = hijosDeComboPadre(comboId).stream()
-            .map(HistorialJornada::getCombo)
-            .filter(Objects::nonNull)
-            .map(Combo::getId)
-            .filter(Objects::nonNull)
-            .distinct()
-            .collect(Collectors.toList());
-        return historiales.stream()
-            .map(historial -> enriquecerHistorialCombo(convertirADTO(historial), comboId, hijosIds, cadena))
-            .collect(Collectors.toList());
+        return consolidarReciclajesCombo(historiales, cadena);
     }
 
     List<Long> construirCadenaReciclaje(Long comboId) {
@@ -290,24 +281,112 @@ public class HistorialJornadaService {
         return null;
     }
 
-    private HistorialJornadaDTO enriquecerHistorialCombo(HistorialJornadaDTO dto, Long comboActualId,
-            List<Long> hijosIds, List<Long> cadena) {
-        Long padre = extraerComboPadreDesdeNotas(dto.getNotas());
-        if (padre != null && !padre.equals(comboActualId)) {
-            dto.setComboPadreId(padre);
+    private List<HistorialJornadaDTO> consolidarReciclajesCombo(List<HistorialJornada> historiales, List<Long> cadena) {
+        List<HistorialJornada> padres = new ArrayList<>();
+        List<HistorialJornada> hijos = new ArrayList<>();
+        List<HistorialJornada> otros = new ArrayList<>();
+        for (HistorialJornada historial : historiales) {
+            String notas = historial.getNotas() == null ? "" : historial.getNotas();
+            if (notas.contains("RECICLAJE_PARCIAL_COMBO_HIJO")) {
+                hijos.add(historial);
+            } else if (notas.contains("RECICLAJE_PARCIAL_COMBO_PADRE")
+                    || historial.getEstadoAsignacion() == EstadoAsignacion.reaprovechado) {
+                padres.add(historial);
+            } else {
+                otros.add(historial);
+            }
         }
-        if (hijosIds != null && !hijosIds.isEmpty()) {
-            dto.setComboHijosIds(new ArrayList<>(hijosIds));
+        Set<HistorialJornada> hijosUsados = new HashSet<>();
+        List<HistorialJornadaDTO> resultado = new ArrayList<>();
+        for (HistorialJornada padre : padres) {
+            Long padreId = comboIdDe(padre);
+            if (padreId == null) {
+                padreId = extraerComboIdDesdeNotasPadre(padre.getNotas());
+            }
+            HistorialJornada hijo = emparejarHijoReciclaje(hijos, padre, padreId, hijosUsados);
+            if (hijo != null) {
+                hijosUsados.add(hijo);
+            }
+            resultado.add(dtoReciclajeUnico(padre, hijo, padreId, cadena));
         }
+        for (HistorialJornada hijo : hijos) {
+            if (hijosUsados.contains(hijo)) {
+                continue;
+            }
+            resultado.add(dtoReciclajeUnico(null, hijo, extraerComboPadreDesdeNotas(hijo.getNotas()), cadena));
+        }
+        for (HistorialJornada otro : otros) {
+            HistorialJornadaDTO dto = convertirADTO(otro);
+            if (cadena != null && !cadena.isEmpty()) {
+                dto.setCadenaReciclajeIds(new ArrayList<>(cadena));
+            }
+            resultado.add(dto);
+        }
+        resultado.sort(Comparator.comparing(HistorialJornadaDTO::getFechaAsignacion,
+            Comparator.nullsLast(Comparator.naturalOrder())));
+        return resultado;
+    }
+
+    private HistorialJornada emparejarHijoReciclaje(List<HistorialJornada> hijos, HistorialJornada padre,
+            Long padreId, Set<HistorialJornada> usados) {
+        HistorialJornada candidato = null;
+        for (HistorialJornada hijo : hijos) {
+            if (usados.contains(hijo)) {
+                continue;
+            }
+            Long padreDelHijo = extraerComboPadreDesdeNotas(hijo.getNotas());
+            if (padreId == null || !padreId.equals(padreDelHijo)) {
+                continue;
+            }
+            if (mismaJornadaHistorial(padre, hijo)) {
+                return hijo;
+            }
+            if (candidato == null) {
+                candidato = hijo;
+            }
+        }
+        return candidato;
+    }
+
+    private HistorialJornadaDTO dtoReciclajeUnico(HistorialJornada padre, HistorialJornada hijo,
+            Long padreId, List<Long> cadena) {
+        HistorialJornada base = padre != null ? padre : hijo;
+        HistorialJornadaDTO dto = convertirADTO(base);
+        dto.setComboPadreId(padreId);
+        if (padre != null && padre.getCombo() != null) {
+            dto.setComboId(padre.getCombo().getId());
+        }
+        if (padre != null && padre.getPreguntaUsadaId() != null) {
+            dto.setPreguntaUsadaId(padre.getPreguntaUsadaId());
+        }
+        Long hijoId = comboIdDe(hijo);
+        if (hijoId != null) {
+            dto.setComboHijosIds(Collections.singletonList(hijoId));
+        }
+        dto.setEstadoAsignacion(EstadoAsignacion.reaprovechado.name());
         if (cadena != null && !cadena.isEmpty()) {
             dto.setCadenaReciclajeIds(new ArrayList<>(cadena));
         }
         return dto;
     }
 
+    private static boolean mismaJornadaHistorial(HistorialJornada a, HistorialJornada b) {
+        if (a == null || b == null || a.getJornada() == null || b.getJornada() == null) {
+            return false;
+        }
+        return Objects.equals(a.getJornada().getId(), b.getJornada().getId());
+    }
+
+    private static Long comboIdDe(HistorialJornada historial) {
+        return historial != null && historial.getCombo() != null ? historial.getCombo().getId() : null;
+    }
+
     private List<HistorialJornada> hijosDeComboPadre(Long comboId) {
-        List<HistorialJornada> hijos = historialRepository.findHijosDeComboPadre(comboId);
-        return hijos == null ? Collections.emptyList() : hijos;
+        return listaSegura(historialRepository.findHijosDeComboPadre(comboId));
+    }
+
+    private static List<HistorialJornada> listaSegura(List<HistorialJornada> lista) {
+        return lista == null ? Collections.emptyList() : lista;
     }
 
     static Long extraerComboPadreDesdeNotas(String notas) {
@@ -328,6 +407,31 @@ public class HistorialJornadaService {
                 break;
             }
         }
+        return parsearIdFinal(numero);
+    }
+
+    static Long extraerComboIdDesdeNotasPadre(String notas) {
+        if (notas == null) {
+            return null;
+        }
+        int idx = notas.indexOf("RECICLAJE_PARCIAL_COMBO_PADRE:");
+        if (idx < 0) {
+            return null;
+        }
+        String resto = notas.substring(idx + "RECICLAJE_PARCIAL_COMBO_PADRE:".length());
+        StringBuilder numero = new StringBuilder();
+        for (int i = 0; i < resto.length(); i++) {
+            char c = resto.charAt(i);
+            if (Character.isDigit(c)) {
+                numero.append(c);
+            } else {
+                break;
+            }
+        }
+        return parsearIdFinal(numero);
+    }
+
+    private static Long parsearIdFinal(StringBuilder numero) {
         if (numero.length() == 0) {
             return null;
         }

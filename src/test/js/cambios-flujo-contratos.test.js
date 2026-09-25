@@ -95,6 +95,14 @@ assert.ok(
   'sin programa, desde grabado se puede archivar'
 );
 assert.ok(
+  concursantesJs.includes('No tienes permiso para editar esto.'),
+  'si no hay permiso al editar se avisa'
+);
+assert.ok(
+  jornadasJs.includes('No tienes permiso para editar esto.'),
+  'si no hay permiso en jornadas se avisa'
+);
+assert.ok(
   concursantesJs.includes("puedeCrearConcursante = (rol === 'admin' || rol === 'guion' || rol === 'direccion')"),
   'Verificación no crea concursantes'
 );
@@ -132,7 +140,7 @@ assert.ok(
   'editar celdas de Dirección sigue bloqueado para el resto de roles'
 );
 assert.ok(
-  /function actualizarMomentosDestacados[\s\S]*puedeVerColumnasDireccion\(\)/.test(concursantesJs),
+  /function actualizarMomentosDestacados[\s\S]*exigirPermisoEdicionConcursante\(\s*fila,\s*'momentosDestacados'\)/.test(concursantesJs),
   'momentos destacados solo los escribe Dirección'
 );
 assert.ok(
@@ -142,6 +150,26 @@ assert.ok(
 assert.ok(
   concursantesHtml.includes('.momentos-destacados-textarea'),
   'momentos destacados tienen caja con scroll como notas'
+);
+assert.ok(
+  /max-height:\s*9\.75em/.test(concursantesHtml),
+  'los textareas de concursantes se pueden estirar un 50% más'
+);
+assert.ok(
+  /#tabla-concursantes-header th\.col-edad[\s\S]*min-width:\s*44px/.test(concursantesHtml),
+  'edad, cuest, combo, x y resultado se pueden estrechar'
+);
+assert.ok(
+  /#tabla-concursantes-header th\.col-xusoker[\s\S]*min-width:\s*44px/.test(concursantesHtml),
+  'xusoker se puede estrechar'
+);
+assert.ok(
+  /#tabla-concursantes-header th\.col-ocupacion[\s\S]*min-width:\s*44px/.test(concursantesHtml),
+  'ocupación y rr ss se pueden estrechar'
+);
+assert.ok(
+  /#tabla-concursantes-header th\.col-foto[\s\S]*overflow:\s*visible/.test(concursantesHtml),
+  'la foto se ajusta al ancho de su columna'
 );
 assert.ok(
   /#tabla-concursantes-header th\.col-acciones[\s\S]*min-width:\s*120px/.test(concursantesHtml),
@@ -193,6 +221,8 @@ assert.ok(
 );
 assert.ok(jornadasJs.includes('Cadena de reciclaje:'), 'el historial de jornadas pinta la cadena');
 assert.ok(combosJs.includes('Cadena de reciclaje:'), 'el historial de combos pinta la cadena');
+assert.ok(jornadasJs.includes('y se recicló creando el combo'), 'jornadas resume un reciclaje por tarjeta');
+assert.ok(combosJs.includes('y se recicló creando el combo'), 'combos resume un reciclaje por tarjeta');
 assert.ok(
   !/#modalJornada \.item-slot table td \{[\s\S]*word-break:\s*break-word/.test(jornadasHtml),
   'las celdas del modal no parten la respuesta letra a letra'

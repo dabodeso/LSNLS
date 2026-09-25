@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ConcursanteRepository extends JpaRepository<Concursante, Long>, JpaSpecificationExecutor<Concursante> {
@@ -45,6 +46,8 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long>,
     boolean existsByCuestionario_Id(Long cuestionarioId);
 
     boolean existsByCombo_Id(Long comboId);
+
+    Optional<Concursante> findFirstByCombo_Id(Long comboId);
 
     @Query("SELECT c FROM Concursante c WHERE " +
            "(:estado IS NULL OR c.estado = :estado) AND " +
