@@ -35,6 +35,14 @@ const JornadasManager = {
             : String(nivel || '').replace(/^_+/, '');
     },
 
+    getNivelColor(nivel) {
+        const n = this.nivelPreguntaCombo(nivel);
+        if (n === '0' || nivel === '_0') return 'text-secondary fw-bold';
+        if (['2NLS', '4NLS', '5NLS'].includes(n)) return 'text-danger fw-bold';
+        if (['1LS', '3LS', '5LS'].includes(n)) return 'text-success fw-bold';
+        return '';
+    },
+
     ordenarPreguntasComboOrigen(preguntas) {
         const lista = [...(preguntas || [])];
         return lista.sort((a, b) => {
@@ -2003,7 +2011,7 @@ const JornadasManager = {
                             const nivel = Utils.formatearNivel(p.nivel);
                             tabla += `
                                 <tr>
-                                    <td class="col-nivel-jornada"><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
+                                    <td class="col-nivel-jornada"><span class="${this.getNivelColor(p.nivel)}">${nivel}</span></td>
                                     <td class="col-pregunta-jornada">${p.pregunta || ''}</td>
                                     <td class="col-respuesta-jornada"><strong>${p.respuesta || ''}</strong></td>
                                     <td class="col-datos-jornada">${this.datosExtraPregunta(p)}</td>
@@ -2088,7 +2096,7 @@ const JornadasManager = {
                                                onblur="JornadasManager.actualizarFactorDesdeModal(${detalle.id}, ${p.id}, this.value)"
                                                title="Editar multiplicador (p.ej. X, X2, X3)">
                                     </td>
-                                    <td class="col-nivel-jornada"><span class="badge bg-light text-secondary fw-bold">${this.nivelPreguntaCombo(p.nivel)}</span></td>
+                                    <td class="col-nivel-jornada"><span class="${this.getNivelColor(p.nivel)}">${this.nivelPreguntaCombo(p.nivel)}</span></td>
                                     <td class="col-pregunta-jornada">${p.pregunta || ''}</td>
                                     <td class="col-respuesta-jornada"><strong>${p.respuesta || ''}</strong></td>
                                     <td class="col-datos-jornada">${this.datosExtraPregunta(p)}</td>
@@ -2594,7 +2602,7 @@ const JornadasManager = {
                 let nivel = Utils.formatearNivel(pregunta.nivel);
                 html += `
                     <tr>
-                        <td class="col-nivel-jornada"><span class="badge bg-light text-secondary fw-bold">${nivel}</span></td>
+                        <td class="col-nivel-jornada"><span class="${this.getNivelColor(pregunta.nivel)}">${nivel}</span></td>
                         <td class="col-pregunta-jornada">${pregunta.pregunta || 'Sin texto'}</td>
                         <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
                         <td>${this.datosExtraPregunta(pregunta)}</td>
@@ -2641,7 +2649,7 @@ const JornadasManager = {
                                        onblur="JornadasManager.actualizarFactorDesdeModal(${combo.id}, ${pregunta.id}, this.value)"
                                        title="Editar multiplicador (p.ej. X, X2, X3)">
                             </td>
-                            <td class="col-nivel-jornada"><span class="badge bg-light text-secondary fw-bold">${this.nivelPreguntaCombo(pregunta.nivel)}</span></td>
+                            <td class="col-nivel-jornada"><span class="${this.getNivelColor(pregunta.nivel)}">${this.nivelPreguntaCombo(pregunta.nivel)}</span></td>
                             <td class="col-pregunta-jornada">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${pregunta.pregunta || 'Sin texto'}</span></td>
                             <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
                             <td>${this.datosExtraPregunta(pregunta)}</td>
@@ -3452,7 +3460,7 @@ const JornadasManager = {
                             <h6 class="card-title">${factorTxt ? factorTxt : `Pregunta ${index + 1}`}</h6>
                             <p class="card-text">${pregunta.pregunta}</p>
                             <div class="mt-2">
-                                <span class="badge bg-primary">${Utils.formatearNivel(pregunta.nivel)}</span>
+                                <span class="${this.getNivelColor(pregunta.nivel)}">${Utils.formatearNivel(pregunta.nivel)}</span>
                                 <span class="badge bg-secondary">${pregunta.tematica}</span>
                             </div>
                         </div>

@@ -171,15 +171,15 @@
             white-space: nowrap;
             word-break: normal;
         }
-        #modalJornada .col-nivel-jornada,
+        #modalJornada .item-slot table th.col-nivel-jornada,
+        #modalJornada .item-slot table td.col-nivel-jornada,
         #modalVerPreguntasCuestionario .col-nivel-jornada,
         #modalVerPreguntasCombo .col-nivel-jornada {
-            width: 36px;
-            max-width: 36px;
-            padding-left: 0.3rem;
-            padding-right: 0.3rem;
+            width: 80px;
+            max-width: 80px;
             white-space: nowrap;
-            word-break: normal;
+            overflow-wrap: normal;
+            word-break: keep-all;
         }
         #modalVerPreguntasCuestionario table,
         #modalVerPreguntasCombo table {
@@ -862,7 +862,7 @@
     <script src="js/undo-manager.js?v=20260915-modal"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
-    <script src="js/jornadas.js?v=20260925-nivel-mitad"></script>
+    <script src="js/jornadas.js?v=20260925-nivel-color"></script>
     <script>
         // Verificar autenticación al cargar la página
         document.addEventListener('DOMContentLoaded', function() {

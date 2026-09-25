@@ -164,8 +164,12 @@ assert.ok(
   'tablas del modal de jornada con anchos fijos'
 );
 assert.ok(
-  /#modalJornada \.col-nivel-jornada[\s\S]*width:\s*36px/.test(jornadasHtml),
-  'la columna Nivel de jornadas queda a la mitad'
+  /th\.col-nivel-jornada[\s\S]*width:\s*80px/.test(jornadasHtml),
+  'la columna Nivel cabe en una línea'
+);
+assert.ok(
+  /getNivelColor\([\s\S]*text-danger[\s\S]*text-success/.test(jornadasJs),
+  'en jornadas LS va en verde y NLS en rojo'
 );
 assert.ok(
   /#modalJornada \.col-pregunta-jornada[\s\S]*width:\s*48%/.test(jornadasHtml),
