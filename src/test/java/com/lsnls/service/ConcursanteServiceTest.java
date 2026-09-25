@@ -803,4 +803,49 @@ class ConcursanteServiceTest {
         assertEquals(8L, dto.getComboId());
         assertTrue(Boolean.TRUE.equals(dto.getComboReciclado()));
     }
+
+    @Test
+    void create_comboDerivadoEnSlotsDeLaJornada() {
+        Jornada jornada = new Jornada();
+        jornada.setId(7L);
+        Combo combo = new Combo();
+        combo.setId(28L);
+        combo.setEstado(Combo.EstadoCombo.adjudicado);
+        jornada.reemplazarCombosPorSlot(Arrays.asList(combo, null, null, null, null, null));
+        when(jornadaRepository.findById(7L)).thenReturn(Optional.of(jornada));
+        when(comboRepository.findById(28L)).thenReturn(Optional.of(combo));
+        when(jornadaService.esComboDerivado(28L)).thenReturn(true);
+        when(jornadaService.jornadaContieneCombo(jornada, 28L)).thenReturn(true);
+        when(concursanteRepository.findMaxNumeroConcursante()).thenReturn(1);
+        when(typedQuery.getResultList()).thenReturn(Collections.emptyList());
+
+        ConcursanteDTO dto = dtoMinimo();
+        dto.setJornadaId(7L);
+        dto.setComboId(28L);
+        ConcursanteDTO result = concursanteService.create(dto);
+
+        assertEquals("Ana", result.getNombre());
+        verify(comboRepository).save(combo);
+    }
+
+    @Test
+    void create_comboDerivadoSinSlotsNiHistorialFalla() {
+        Jornada jornada = new Jornada();
+        jornada.setId(7L);
+        Combo combo = new Combo();
+        combo.setId(28L);
+        combo.setEstado(Combo.EstadoCombo.adjudicado);
+        when(jornadaRepository.findById(7L)).thenReturn(Optional.of(jornada));
+        when(comboRepository.findById(28L)).thenReturn(Optional.of(combo));
+        when(jornadaService.esComboDerivado(28L)).thenReturn(true);
+        when(jornadaService.jornadaContieneCombo(jornada, 28L)).thenReturn(false);
+        when(jornadaService.esComboDerivadoDeJornada(7L, 28L)).thenReturn(false);
+
+        ConcursanteDTO dto = dtoMinimo();
+        dto.setJornadaId(7L);
+        dto.setComboId(28L);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> concursanteService.create(dto));
+        assertTrue(ex.getMessage().contains("no pertenece a la jornada"));
+    }
 }

@@ -894,6 +894,14 @@ const CombosManager = {
         }
     },
 
+    htmlCadenaReciclaje(historial) {
+        const cadena = (historial || []).find(item => Array.isArray(item.cadenaReciclajeIds) && item.cadenaReciclajeIds.length > 1)
+            ?.cadenaReciclajeIds || [];
+        if (cadena.length < 2) return '';
+        const enlaces = cadena.map(id => `<a href="combos.html?id=${id}" target="_blank" rel="noopener">#${id}</a>`).join(' → ');
+        return `<div class="mb-3"><strong>Cadena de reciclaje:</strong> ${enlaces}</div>`;
+    },
+
     pintarHistorialCombo(historial, comboId) {
         const container = document.getElementById('historialComboContainer');
         if (!container) return;
@@ -901,7 +909,7 @@ const CombosManager = {
             container.innerHTML = '<div class="text-center py-3"><p class="text-muted mb-0">No hay historial de reciclajes para este combo</p></div>';
             return;
         }
-        container.innerHTML = historial.map(item => {
+        container.innerHTML = this.htmlCadenaReciclaje(historial) + historial.map(item => {
             const estadoClass = this.getEstadoClassHistorial(item.estadoAsignacion);
             const fechaAsignacion = item.fechaAsignacion ? new Date(item.fechaAsignacion).toLocaleString() : '';
             const fechaUso = item.fechaUso ? new Date(item.fechaUso).toLocaleString() : '';

@@ -3139,6 +3139,14 @@ const JornadasManager = {
         return html ? `<div class="mt-2">${html}</div>` : '';
     },
 
+    htmlCadenaReciclaje(historial) {
+        const cadena = (historial || []).find(item => Array.isArray(item.cadenaReciclajeIds) && item.cadenaReciclajeIds.length > 1)
+            ?.cadenaReciclajeIds || [];
+        if (cadena.length < 2) return '';
+        const enlaces = cadena.map(id => `<a href="combos.html?id=${id}" target="_blank" rel="noopener">#${id}</a>`).join(' → ');
+        return `<div class="mb-3"><strong>Cadena de reciclaje:</strong> ${enlaces}</div>`;
+    },
+
     // Mostrar historial en modal
     mostrarHistorial(historial, tipo, entidadId) {
         const container = document.getElementById('historialContainer');
@@ -3146,7 +3154,7 @@ const JornadasManager = {
         if (historial.length === 0) {
             container.innerHTML = '<div class="text-center py-3"><p class="text-muted">No hay historial disponible</p></div>';
         } else {
-            let html = '';
+            let html = tipo === 'combo' ? this.htmlCadenaReciclaje(historial) : '';
             historial.forEach(item => {
                 const estadoClass = this.getEstadoClass(item.estadoAsignacion);
                 const fechaAsignacion = new Date(item.fechaAsignacion).toLocaleDateString();

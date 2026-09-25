@@ -31,6 +31,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -300,6 +301,65 @@ class HistorialJornadaServiceTest {
 
         assertNull(dtos.get(0).getCuestionarioId());
         assertNull(dtos.get(0).getComboId());
+    }
+
+    @Test
+    void obtenerHistorialCombo_incluyeCadenaDeReciclajes() {
+        Combo comboA = new Combo();
+        comboA.setId(12L);
+        Combo comboB = new Combo();
+        comboB.setId(28L);
+        Combo comboC = new Combo();
+        comboC.setId(76L);
+
+        HistorialJornada histA = new HistorialJornada();
+        histA.setId(1L);
+        histA.setJornada(jornada);
+        histA.setCombo(comboA);
+        histA.setTipoAsignacion(TipoAsignacion.COMBO);
+        histA.setEstadoAsignacion(EstadoAsignacion.reaprovechado);
+        histA.setNotas("RECICLAJE_PARCIAL_COMBO_PADRE:12");
+        histA.setFechaAsignacion(java.time.LocalDateTime.of(2026, 1, 1, 10, 0));
+
+        HistorialJornada histB = new HistorialJornada();
+        histB.setId(2L);
+        histB.setJornada(jornada);
+        histB.setCombo(comboB);
+        histB.setTipoAsignacion(TipoAsignacion.COMBO);
+        histB.setEstadoAsignacion(EstadoAsignacion.asignado);
+        histB.setNotas("RECICLAJE_PARCIAL_COMBO_HIJO;PADRE:12");
+        histB.setFechaAsignacion(java.time.LocalDateTime.of(2026, 1, 2, 10, 0));
+
+        HistorialJornada histC = new HistorialJornada();
+        histC.setId(3L);
+        histC.setJornada(jornada);
+        histC.setCombo(comboC);
+        histC.setTipoAsignacion(TipoAsignacion.COMBO);
+        histC.setEstadoAsignacion(EstadoAsignacion.asignado);
+        histC.setNotas("RECICLAJE_PARCIAL_COMBO_HIJO;PADRE:28");
+        histC.setFechaAsignacion(java.time.LocalDateTime.of(2026, 1, 3, 10, 0));
+
+        when(historialRepository.findByComboId(76L)).thenReturn(Collections.singletonList(histC));
+        when(historialRepository.findByComboId(28L)).thenReturn(Collections.singletonList(histB));
+        when(historialRepository.findByComboId(12L)).thenReturn(Collections.singletonList(histA));
+        when(historialRepository.findHijosDeComboPadre(76L)).thenReturn(Collections.emptyList());
+        when(historialRepository.findHijosDeComboPadre(28L)).thenReturn(Collections.singletonList(histC));
+        when(historialRepository.findHijosDeComboPadre(12L)).thenReturn(Collections.singletonList(histB));
+
+        List<HistorialJornadaDTO> dtos = historialJornadaService.obtenerHistorialCombo(76L);
+
+        assertEquals(3, dtos.size());
+        assertEquals(Arrays.asList(12L, 28L, 76L), dtos.get(0).getCadenaReciclajeIds());
+        assertEquals(12L, dtos.get(0).getComboId());
+        assertEquals(28L, dtos.get(1).getComboId());
+        assertEquals(76L, dtos.get(2).getComboId());
+    }
+
+    @Test
+    void extraerComboPadreYCadenaVacia() {
+        assertEquals(12L, HistorialJornadaService.extraerComboPadreDesdeNotas("RECICLAJE_PARCIAL_COMBO_HIJO;PADRE:12"));
+        assertNull(HistorialJornadaService.extraerComboPadreDesdeNotas("RECICLAJE_PARCIAL_COMBO_PADRE:12"));
+        assertTrue(historialJornadaService.construirCadenaReciclaje(null).isEmpty());
     }
 
     private HistorialJornada historialCompleto() {

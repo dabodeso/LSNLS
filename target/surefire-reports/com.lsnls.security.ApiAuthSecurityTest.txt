@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.lsnls.security.ApiAuthSecurityTest
 -------------------------------------------------------------------------------
-Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.719 s -- in com.lsnls.security.ApiAuthSecurityTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.548 s -- in com.lsnls.security.ApiAuthSecurityTest

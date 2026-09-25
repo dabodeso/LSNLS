@@ -191,6 +191,8 @@ assert.ok(
   jornadasJs.includes("Utils.showAlert(error.message || 'Error al cargar los datos de la jornada'"),
   'si la jornada está bloqueada se muestra el motivo real'
 );
+assert.ok(jornadasJs.includes('Cadena de reciclaje:'), 'el historial de jornadas pinta la cadena');
+assert.ok(combosJs.includes('Cadena de reciclaje:'), 'el historial de combos pinta la cadena');
 assert.ok(
   !/#modalJornada \.item-slot table td \{[\s\S]*word-break:\s*break-word/.test(jornadasHtml),
   'las celdas del modal no parten la respuesta letra a letra'
@@ -203,6 +205,10 @@ vm.createContext(sandboxFn);
 vm.runInContext(comboParece[0], sandboxFn);
 assert.strictEqual(sandboxFn.comboPareceReciclado({ preguntaUsadaId: 9 }, '1'), true);
 assert.strictEqual(sandboxFn.comboPareceReciclado({ preguntaUsadaId: null, notasDireccion: '' }, '1'), false);
+assert.strictEqual(
+  sandboxFn.comboPareceReciclado({ preguntaUsadaId: null, notasDireccion: 'Combo derivado del combo 3' }, '1'),
+  false
+);
 
 const localStorageData = { usuario: JSON.stringify({ rol: 'ROLE_DIRECCION' }) };
 const sandbox = {

@@ -439,9 +439,13 @@ public class ConcursanteService {
         if (!jornadaService.esComboDerivado(combo.getId())) {
             return;
         }
-        if (jornada == null || !jornadaService.esComboDerivadoDeJornada(jornada.getId(), combo.getId())) {
-            throw new IllegalStateException("El combo reciclado no pertenece a la jornada del concursante.");
+        if (jornada != null && jornadaService.jornadaContieneCombo(jornada, combo.getId())) {
+            return;
         }
+        if (jornada != null && jornadaService.esComboDerivadoDeJornada(jornada.getId(), combo.getId())) {
+            return;
+        }
+        throw new IllegalStateException("El combo reciclado no pertenece a la jornada del concursante.");
     }
 
     private void eliminarComboDerivadoAbandonado(Concursante concursante, Combo comboAnterior) {

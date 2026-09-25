@@ -19,10 +19,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -220,8 +226,14 @@ public class HistorialJornadaService {
      * Obtener historial de un combo
      */
     public List<HistorialJornadaDTO> obtenerHistorialCombo(Long comboId) {
-        List<HistorialJornada> historiales = historialRepository.findByComboId(comboId);
-        List<Long> hijosIds = historialRepository.findHijosDeComboPadre(comboId).stream()
+        List<Long> cadena = construirCadenaReciclaje(comboId);
+        List<HistorialJornada> historiales = new ArrayList<>();
+        for (Long id : cadena) {
+            historiales.addAll(historialRepository.findByComboId(id));
+        }
+        historiales.sort(Comparator.comparing(HistorialJornada::getFechaAsignacion,
+            Comparator.nullsLast(Comparator.naturalOrder())));
+        List<Long> hijosIds = hijosDeComboPadre(comboId).stream()
             .map(HistorialJornada::getCombo)
             .filter(Objects::nonNull)
             .map(Combo::getId)
@@ -229,11 +241,57 @@ public class HistorialJornadaService {
             .distinct()
             .collect(Collectors.toList());
         return historiales.stream()
-            .map(historial -> enriquecerHistorialCombo(convertirADTO(historial), comboId, hijosIds))
+            .map(historial -> enriquecerHistorialCombo(convertirADTO(historial), comboId, hijosIds, cadena))
             .collect(Collectors.toList());
     }
 
-    private HistorialJornadaDTO enriquecerHistorialCombo(HistorialJornadaDTO dto, Long comboActualId, List<Long> hijosIds) {
+    List<Long> construirCadenaReciclaje(Long comboId) {
+        if (comboId == null) {
+            return Collections.emptyList();
+        }
+        Long raiz = comboId;
+        Set<Long> antiLoop = new HashSet<>();
+        while (raiz != null && antiLoop.add(raiz)) {
+            Long padre = buscarPadreReciclaje(raiz);
+            if (padre == null) {
+                break;
+            }
+            raiz = padre;
+        }
+        List<Long> cadena = new ArrayList<>();
+        Deque<Long> cola = new ArrayDeque<>();
+        Set<Long> vistos = new HashSet<>();
+        cola.add(raiz);
+        while (!cola.isEmpty()) {
+            Long actual = cola.removeFirst();
+            if (actual == null || !vistos.add(actual)) {
+                continue;
+            }
+            cadena.add(actual);
+            for (HistorialJornada hijo : hijosDeComboPadre(actual)) {
+                if (hijo.getCombo() != null && hijo.getCombo().getId() != null) {
+                    cola.add(hijo.getCombo().getId());
+                }
+            }
+        }
+        if (!cadena.contains(comboId)) {
+            cadena.add(comboId);
+        }
+        return cadena;
+    }
+
+    private Long buscarPadreReciclaje(Long comboId) {
+        for (HistorialJornada historial : historialRepository.findByComboId(comboId)) {
+            Long padre = extraerComboPadreDesdeNotas(historial.getNotas());
+            if (padre != null) {
+                return padre;
+            }
+        }
+        return null;
+    }
+
+    private HistorialJornadaDTO enriquecerHistorialCombo(HistorialJornadaDTO dto, Long comboActualId,
+            List<Long> hijosIds, List<Long> cadena) {
         Long padre = extraerComboPadreDesdeNotas(dto.getNotas());
         if (padre != null && !padre.equals(comboActualId)) {
             dto.setComboPadreId(padre);
@@ -241,7 +299,15 @@ public class HistorialJornadaService {
         if (hijosIds != null && !hijosIds.isEmpty()) {
             dto.setComboHijosIds(new ArrayList<>(hijosIds));
         }
+        if (cadena != null && !cadena.isEmpty()) {
+            dto.setCadenaReciclajeIds(new ArrayList<>(cadena));
+        }
         return dto;
+    }
+
+    private List<HistorialJornada> hijosDeComboPadre(Long comboId) {
+        List<HistorialJornada> hijos = historialRepository.findHijosDeComboPadre(comboId);
+        return hijos == null ? Collections.emptyList() : hijos;
     }
 
     static Long extraerComboPadreDesdeNotas(String notas) {

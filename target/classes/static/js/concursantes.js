@@ -1419,9 +1419,7 @@ function comboPareceReciclado(data, comboId) {
         return true;
     }
     if (!data) return false;
-    if (data.preguntaUsadaId != null && data.preguntaUsadaId !== '') return true;
-    const notas = String(data.notasDireccion || '');
-    return notas.includes('Combo derivado') || notas.includes('RECICLAJE_PARCIAL');
+    return data.preguntaUsadaId != null && data.preguntaUsadaId !== '';
 }
 
 async function comboEstaReciclado(comboId) {

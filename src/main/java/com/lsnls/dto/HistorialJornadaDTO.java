@@ -22,6 +22,7 @@ public class HistorialJornadaDTO {
     private Long preguntaUsadaId;
     private Long comboPadreId;
     private List<Long> comboHijosIds;
+    private List<Long> cadenaReciclajeIds;
     private String notas;
 
     // Getters y Setters
@@ -60,6 +61,9 @@ public class HistorialJornadaDTO {
 
     public List<Long> getComboHijosIds() { return comboHijosIds; }
     public void setComboHijosIds(List<Long> comboHijosIds) { this.comboHijosIds = comboHijosIds; }
+
+    public List<Long> getCadenaReciclajeIds() { return cadenaReciclajeIds; }
+    public void setCadenaReciclajeIds(List<Long> cadenaReciclajeIds) { this.cadenaReciclajeIds = cadenaReciclajeIds; }
 
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }

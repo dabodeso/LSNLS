@@ -23,47 +23,47 @@ public final class SlotsJornada {
      * cada índice es un hueco. Si viene compacta (legacy), se coloca desde el 1.
      */
     public static List&lt;Long&gt; normalizarIds(List&lt;Long&gt; ids) {
-<span class="nc" id="L26">        List&lt;Long&gt; slots = new ArrayList&lt;&gt;(Collections.nCopies(TOTAL, null));</span>
-<span class="nc bnc" id="L27" title="All 4 branches missed.">        if (ids == null || ids.isEmpty()) {</span>
+<span class="fc" id="L26">        List&lt;Long&gt; slots = new ArrayList&lt;&gt;(Collections.nCopies(TOTAL, null));</span>
+<span class="pc bpc" id="L27" title="2 of 4 branches missed.">        if (ids == null || ids.isEmpty()) {</span>
 <span class="nc" id="L28">            return slots;</span>
         }
-<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (ids.size() &gt; TOTAL) {</span>
-<span class="nc" id="L31">            throw new IllegalArgumentException(&quot;Máximo &quot; + TOTAL + &quot; cuestionarios o combos por jornada&quot;);</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (ids.size() &gt; TOTAL) {</span>
+<span class="fc" id="L31">            throw new IllegalArgumentException(&quot;Máximo &quot; + TOTAL + &quot; cuestionarios o combos por jornada&quot;);</span>
         }
-<span class="nc bnc" id="L33" title="All 4 branches missed.">        boolean posicional = ids.size() == TOTAL || ids.stream().anyMatch(Objects::isNull);</span>
-<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (posicional) {</span>
-<span class="nc bnc" id="L35" title="All 2 branches missed.">            for (int i = 0; i &lt; ids.size(); i++) {</span>
-<span class="nc" id="L36">                slots.set(i, ids.get(i));</span>
+<span class="pc bpc" id="L33" title="1 of 4 branches missed.">        boolean posicional = ids.size() == TOTAL || ids.stream().anyMatch(Objects::isNull);</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (posicional) {</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">            for (int i = 0; i &lt; ids.size(); i++) {</span>
+<span class="fc" id="L36">                slots.set(i, ids.get(i));</span>
             }
-<span class="nc" id="L38">        } else {</span>
-<span class="nc" id="L39">            int i = 0;</span>
-<span class="nc bnc" id="L40" title="All 2 branches missed.">            for (Long id : ids) {</span>
-<span class="nc" id="L41">                slots.set(i++, id);</span>
+<span class="fc" id="L38">        } else {</span>
+<span class="fc" id="L39">            int i = 0;</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            for (Long id : ids) {</span>
+<span class="fc" id="L41">                slots.set(i++, id);</span>
             }
         }
-<span class="nc" id="L44">        Set&lt;Long&gt; vistos = new LinkedHashSet&lt;&gt;();</span>
-<span class="nc bnc" id="L45" title="All 2 branches missed.">        for (Long id : slots) {</span>
-<span class="nc bnc" id="L46" title="All 2 branches missed.">            if (id == null) {</span>
-<span class="nc" id="L47">                continue;</span>
+<span class="fc" id="L44">        Set&lt;Long&gt; vistos = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        for (Long id : slots) {</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">            if (id == null) {</span>
+<span class="fc" id="L47">                continue;</span>
             }
-<span class="nc bnc" id="L49" title="All 2 branches missed.">            if (!vistos.add(id)) {</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">            if (!vistos.add(id)) {</span>
 <span class="nc" id="L50">                throw new IllegalArgumentException(&quot;El mismo elemento no puede ocupar dos huecos de la jornada&quot;);</span>
             }
         }
-<span class="nc" id="L53">        return slots;</span>
+<span class="fc" id="L53">        return slots;</span>
     }
 
     public static Set&lt;Long&gt; idsAsignados(List&lt;Long&gt; slots) {
-<span class="nc" id="L57">        Set&lt;Long&gt; ids = new LinkedHashSet&lt;&gt;();</span>
-<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (slots == null) {</span>
+<span class="fc" id="L57">        Set&lt;Long&gt; ids = new LinkedHashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        if (slots == null) {</span>
 <span class="nc" id="L59">            return ids;</span>
         }
-<span class="nc bnc" id="L61" title="All 2 branches missed.">        for (Long id : slots) {</span>
-<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (id != null) {</span>
-<span class="nc" id="L63">                ids.add(id);</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        for (Long id : slots) {</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            if (id != null) {</span>
+<span class="fc" id="L63">                ids.add(id);</span>
             }
         }
-<span class="nc" id="L66">        return ids;</span>
+<span class="fc" id="L66">        return ids;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

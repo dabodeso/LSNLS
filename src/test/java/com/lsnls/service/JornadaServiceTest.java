@@ -1252,6 +1252,42 @@ class JornadaServiceTest {
         assertEquals(42L, combos.get(0).get("id"));
     }
 
+    @Test
+    void listarContenidoOtras_comboDerivadoCompletoSeLista() {
+        Jornada actual = jornadaBase();
+        Jornada otra = jornadaBase();
+        otra.setId(2L);
+        otra.setNombre("Jornada Barcelona");
+        Combo derivado = comboTresPreguntas(40L);
+        derivado.setEstado(Combo.EstadoCombo.adjudicado);
+        otra.reemplazarCombosPorSlot(Arrays.asList(derivado, null, null, null, null, null));
+        when(jornadaRepository.findAll()).thenReturn(Arrays.asList(actual, otra));
+        when(concursanteRepository.existsByCombo_Id(40L)).thenReturn(false);
+        when(nativeQuery.getResultList()).thenReturn(Collections.singletonList(40L));
+
+        List<Map<String, Object>> combos = jornadaService.listarContenidoOtras(1L, "combos");
+
+        assertEquals(1, combos.size());
+        assertEquals(40L, combos.get(0).get("id"));
+    }
+
+    @Test
+    void listarContenidoOtras_comboDerivadoBorradorSeOculta() {
+        Jornada actual = jornadaBase();
+        Jornada otra = jornadaBase();
+        otra.setId(2L);
+        Combo derivado = new Combo();
+        derivado.setId(40L);
+        derivado.setEstado(Combo.EstadoCombo.borrador);
+        otra.reemplazarCombosPorSlot(Arrays.asList(derivado, null, null, null, null, null));
+        when(jornadaRepository.findAll()).thenReturn(Arrays.asList(actual, otra));
+        when(nativeQuery.getResultList()).thenReturn(Collections.singletonList(40L));
+
+        List<Map<String, Object>> combos = jornadaService.listarContenidoOtras(1L, "combos");
+
+        assertTrue(combos.isEmpty());
+    }
+
     private Jornada jornadaDestino(String nombre) {
         Jornada destino = jornadaBase();
         destino.setId(2L);
@@ -1323,5 +1359,110 @@ class JornadaServiceTest {
         jornadaService.quitarArrastre(2L, "combos", 40L);
 
         assertNull(combo.getNotasDireccion());
+    }
+
+    @Test
+    void reciclarComboParcial_usaJornadaDueñaSiLaSolicitadaNoLoTiene() {
+        Jornada solicitada = new Jornada();
+        solicitada.setId(7L);
+        Jornada dueña = new Jornada();
+        dueña.setId(5L);
+        Combo combo = comboTresPreguntas(28L);
+        dueña.setCombos(new HashSet<>(Collections.singletonList(combo)));
+        when(jornadaRepository.findById(7L)).thenReturn(Optional.of(solicitada));
+        when(jornadaRepository.findById(5L)).thenReturn(Optional.of(dueña));
+        when(comboRepository.findById(28L)).thenReturn(Optional.of(combo));
+        when(comboRepository.save(any(Combo.class))).thenAnswer(inv -> {
+            Combo c = inv.getArgument(0);
+            if (c.getId() == null) {
+                c.setId(76L);
+            }
+            return c;
+        });
+        when(preguntaComboRepository.save(any(PreguntaCombo.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(undoService.snapshotFilasNuevas(anyString(), anyString(), any(), any())).thenReturn(Collections.emptyList());
+        when(nativeQuery.getResultList()).thenReturn(Collections.singletonList(5L));
+
+        ReciclajeComboDTO dto = jornadaService.reciclarComboParcial(7L, 28L, 10L, 9L);
+
+        assertEquals(5L, dto.getJornadaId());
+        assertEquals(28L, dto.getComboPadreId());
+        assertEquals(76L, dto.getComboHijoId());
+    }
+
+    @Test
+    void reciclarComboParcial_hijoCompletoCreaNieto() {
+        Combo hijo = comboTresPreguntas(28L);
+        hijo.setEstado(Combo.EstadoCombo.grabado);
+        Jornada jornada = new Jornada();
+        jornada.setId(2L);
+        jornada.setCombos(new HashSet<>(Collections.singletonList(hijo)));
+        when(jornadaRepository.findById(2L)).thenReturn(Optional.of(jornada));
+        when(comboRepository.findById(28L)).thenReturn(Optional.of(hijo));
+        when(comboRepository.save(any(Combo.class))).thenAnswer(inv -> {
+            Combo c = inv.getArgument(0);
+            if (c.getId() == null) {
+                c.setId(76L);
+            }
+            return c;
+        });
+        when(preguntaComboRepository.save(any(PreguntaCombo.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(undoService.snapshotFilasNuevas(anyString(), anyString(), any(), any())).thenReturn(Collections.emptyList());
+
+        ReciclajeComboDTO dto = jornadaService.reciclarComboParcial(2L, 28L, 10L, 9L);
+
+        assertEquals(76L, dto.getComboHijoId());
+        assertEquals(28L, dto.getComboPadreId());
+        assertEquals(10L, hijo.getPreguntaUsadaId());
+    }
+
+    @Test
+    void reciclarComboParcial_sinJornadaDueñaLanzaError() {
+        Jornada solicitada = new Jornada();
+        solicitada.setId(7L);
+        Combo combo = comboTresPreguntas(28L);
+        when(jornadaRepository.findById(7L)).thenReturn(Optional.of(solicitada));
+        when(comboRepository.findById(28L)).thenReturn(Optional.of(combo));
+        when(nativeQuery.getResultList()).thenReturn(Collections.emptyList());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> jornadaService.reciclarComboParcial(7L, 28L, 10L, 9L));
+        assertTrue(ex.getMessage().contains("no está asignado a ninguna jornada"));
+    }
+
+    @Test
+    void registrarArrastre_comboDerivadoCompletoSePermite() {
+        jornadaDestino("Jornada Madrid");
+        Combo combo = comboTresPreguntas(40L);
+        combo.setEstado(Combo.EstadoCombo.adjudicado);
+        when(comboRepository.findById(40L)).thenReturn(Optional.of(combo));
+        when(nativeQuery.getSingleResult()).thenReturn(1L);
+
+        jornadaService.registrarArrastre(2L, "combos", 40L);
+
+        assertTrue(combo.getNotasDireccion().contains("Arrastrado a Jornada Madrid"));
+        verify(comboRepository).save(combo);
+    }
+
+    private Combo comboTresPreguntas(Long id) {
+        Combo combo = new Combo();
+        combo.setId(id);
+        combo.setEstado(Combo.EstadoCombo.adjudicado);
+        combo.setNivel(Combo.NivelCombo.NORMAL);
+        combo.setTipo(Combo.TipoCombo.P);
+        Usuario creador = new Usuario();
+        creador.setId(1L);
+        combo.setCreacionUsuario(creador);
+        Pregunta p1 = new Pregunta();
+        p1.setId(10L);
+        Pregunta p2 = new Pregunta();
+        p2.setId(11L);
+        Pregunta p3 = new Pregunta();
+        p3.setId(12L);
+        combo.setPreguntas(new HashSet<>(Arrays.asList(
+                preguntaCombo(combo, p1, 1, "2"),
+                preguntaCombo(combo, p2, 2, "3"),
+                preguntaCombo(combo, p3, 3, "X"))));
+        return combo;
     }
 }

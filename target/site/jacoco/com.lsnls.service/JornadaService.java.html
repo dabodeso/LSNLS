@@ -563,7 +563,7 @@ import javax.persistence.EntityManager;
             }
 <span class="fc bfc" id="L564" title="All 2 branches covered.">            boolean grabado = c.getEstado() == Cuestionario.EstadoCuestionario.grabado;</span>
 <span class="fc" id="L565">            boolean reciclado = esReutilizado(jornada.getId(), &quot;cuestionario_id&quot;, c.getId());</span>
-<span class="pc bpc" id="L566" title="1 of 4 branches missed.">            if (!grabado &amp;&amp; !reciclado) {</span>
+<span class="fc bfc" id="L566" title="All 4 branches covered.">            if (!grabado &amp;&amp; !reciclado) {</span>
 <span class="fc" id="L567">                pendientes.add(&quot;cuestionario &quot; + c.getId());</span>
             }
         }
@@ -597,7 +597,7 @@ import javax.persistence.EntityManager;
 <span class="nc" id="L597">                continue;</span>
             }
 <span class="fc" id="L599">            int rango = rangoFactor(factor);</span>
-<span class="pc bpc" id="L600" title="1 of 2 branches missed.">            if (rango &gt; mejorRango) {</span>
+<span class="fc bfc" id="L600" title="All 2 branches covered.">            if (rango &gt; mejorRango) {</span>
 <span class="fc" id="L601">                mejorRango = rango;</span>
 <span class="fc" id="L602">                mejor = normalizarFactor(factor);</span>
             }
@@ -644,7 +644,7 @@ import javax.persistence.EntityManager;
 <span class="fc" id="L644">                    .setParameter(&quot;jid&quot;, jornadaId)</span>
 <span class="fc" id="L645">                    .setParameter(&quot;cid&quot;, elementoId)</span>
 <span class="fc" id="L646">                    .getSingleResult();</span>
-<span class="pc bpc" id="L647" title="2 of 4 branches missed.">            return count instanceof Number &amp;&amp; ((Number) count).longValue() &gt; 0;</span>
+<span class="pc bpc" id="L647" title="1 of 4 branches missed.">            return count instanceof Number &amp;&amp; ((Number) count).longValue() &gt; 0;</span>
 <span class="nc" id="L648">        } catch (Exception ignored) {</span>
 <span class="nc" id="L649">            return false;</span>
         }
@@ -907,7 +907,7 @@ import javax.persistence.EntityManager;
 <span class="fc" id="L907">            Combo.EstadoCombo estadoActual = combo.getEstado();</span>
 <span class="fc" id="L908">            log.debug(&quot;🔄🔄🔄 [REUTILIZAR COMBO] Combo &quot; + comboId + &quot; | Estado actual: &quot; + estadoActual + &quot; | Jornada: &quot; + jornadaId);</span>
             
-<span class="pc bpc" id="L910" title="3 of 4 branches missed.">            if (estadoActual == Combo.EstadoCombo.adjudicado || estadoActual == Combo.EstadoCombo.grabado) {</span>
+<span class="pc bpc" id="L910" title="1 of 4 branches missed.">            if (estadoActual == Combo.EstadoCombo.adjudicado || estadoActual == Combo.EstadoCombo.grabado) {</span>
 <span class="fc" id="L911">                log.debug(&quot;🔄 [REUTILIZAR COMBO] Cambiando estado: &quot; + estadoActual + &quot; -&gt; aprobado&quot;);</span>
 <span class="fc" id="L912">                boolean exito = comboService.cambiarEstadoAtomico(</span>
 <span class="fc" id="L913">                    comboId,</span>
@@ -1038,43 +1038,36 @@ import javax.persistence.EntityManager;
      */
     public void reciclarComboEntero(Long jornadaId, Long comboId, Long usuarioId) {
         // Verificar que la jornada existe
-<span class="fc" id="L1041">        Jornada jornada = jornadaRepository.findById(jornadaId)</span>
-<span class="pc" id="L1042">            .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Jornada no encontrada con ID: &quot; + jornadaId));</span>
-        
-        // Verificar que el combo existe y está asignado a esta jornada
-<span class="fc" id="L1045">        Combo combo = comboRepository.findById(comboId)</span>
-<span class="pc" id="L1046">            .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Combo no encontrado con ID: &quot; + comboId));</span>
-        
-<span class="pc bpc" id="L1048" title="1 of 4 branches missed.">        if (jornada.getCombos() == null || !jornada.getCombos().contains(combo)) {</span>
-<span class="fc" id="L1049">            throw new IllegalArgumentException(&quot;El combo &quot; + comboId + &quot; no está asignado a la jornada &quot; + jornadaId);</span>
-        }
+<span class="fc" id="L1041">        Combo combo = comboRepository.findById(comboId)</span>
+<span class="pc" id="L1042">            .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Combo no encontrado con ID: &quot; + comboId));</span>
+<span class="fc" id="L1043">        Jornada jornada = resolverJornadaDueñaDelCombo(jornadaId, combo);</span>
         
         // Verificar que el combo está en estado adjudicado o grabado
-<span class="fc" id="L1053">        Combo.EstadoCombo estadoActual = combo.getEstado();</span>
-<span class="fc bfc" id="L1054" title="All 4 branches covered.">        if (estadoActual != Combo.EstadoCombo.adjudicado &amp;&amp; estadoActual != Combo.EstadoCombo.grabado) {</span>
-<span class="fc" id="L1055">            throw new IllegalArgumentException(&quot;El combo &quot; + comboId + &quot; no está en estado adjudicado ni grabado. Estado actual: &quot; + estadoActual);</span>
+<span class="fc" id="L1046">        Combo.EstadoCombo estadoActual = combo.getEstado();</span>
+<span class="fc bfc" id="L1047" title="All 4 branches covered.">        if (estadoActual != Combo.EstadoCombo.adjudicado &amp;&amp; estadoActual != Combo.EstadoCombo.grabado) {</span>
+<span class="fc" id="L1048">            throw new IllegalArgumentException(&quot;El combo &quot; + comboId + &quot; no está en estado adjudicado ni grabado. Estado actual: &quot; + estadoActual);</span>
         }
 
         // Mantener el combo en la jornada pero marcarlo como disponible para nuevas jornadas
-<span class="pc bpc" id="L1059" title="1 of 2 branches missed.">        int totalPreguntas = combo.getPreguntas() == null ? 0 : combo.getPreguntas().size();</span>
-<span class="fc bfc" id="L1060" title="All 2 branches covered.">        if (totalPreguntas != 3) {</span>
-<span class="fc" id="L1061">            throw new IllegalArgumentException(&quot;Solo se pueden reciclar combos con exactamente 3 preguntas&quot;);</span>
+<span class="pc bpc" id="L1052" title="1 of 2 branches missed.">        int totalPreguntas = combo.getPreguntas() == null ? 0 : combo.getPreguntas().size();</span>
+<span class="fc bfc" id="L1053" title="All 2 branches covered.">        if (totalPreguntas != 3) {</span>
+<span class="fc" id="L1054">            throw new IllegalArgumentException(&quot;Solo se pueden reciclar combos con exactamente 3 preguntas&quot;);</span>
         }
 
-<span class="fc" id="L1064">        log.debug(&quot;🔄🔄🔄 [RECICLAR ENTERO] Combo &quot; + comboId + &quot; | Estado actual: &quot; + estadoActual + &quot; | Jornada: &quot; + jornadaId);</span>
-<span class="fc" id="L1065">        Combo.EstadoCombo estadoAnterior = estadoActual;</span>
-<span class="fc" id="L1066">        Set&lt;Long&gt; idsHistorialAntes = UndoService.extraerIds(</span>
-<span class="fc" id="L1067">                undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboId));</span>
-<span class="fc" id="L1068">        combo.setEstado(Combo.EstadoCombo.aprobado);</span>
-<span class="fc" id="L1069">        comboRepository.save(combo);</span>
-<span class="fc" id="L1070">        log.debug(&quot;✅✅✅ [RECICLAR ENTERO] Combo &quot; + comboId + &quot; cambiado: &quot; + estadoActual + &quot; -&gt; aprobado&quot;);</span>
+<span class="fc" id="L1057">        log.debug(&quot;🔄🔄🔄 [RECICLAR ENTERO] Combo &quot; + comboId + &quot; | Estado actual: &quot; + estadoActual + &quot; | Jornada: &quot; + jornadaId);</span>
+<span class="fc" id="L1058">        Combo.EstadoCombo estadoAnterior = estadoActual;</span>
+<span class="fc" id="L1059">        Set&lt;Long&gt; idsHistorialAntes = UndoService.extraerIds(</span>
+<span class="fc" id="L1060">                undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboId));</span>
+<span class="fc" id="L1061">        combo.setEstado(Combo.EstadoCombo.aprobado);</span>
+<span class="fc" id="L1062">        comboRepository.save(combo);</span>
+<span class="fc" id="L1063">        log.debug(&quot;✅✅✅ [RECICLAR ENTERO] Combo &quot; + comboId + &quot; cambiado: &quot; + estadoActual + &quot; -&gt; aprobado&quot;);</span>
 
         // Registrar en el historial como reaprovechado (para pintarlo en verde en la UI)
-<span class="fc" id="L1073">        registrarHistorialReutilizacion(jornada, combo, &quot;combo&quot;, usuarioId);</span>
-<span class="fc" id="L1074">        registrarUndoReciclajeEntero(comboId, estadoAnterior.name(), idsHistorialAntes);</span>
+<span class="fc" id="L1066">        registrarHistorialReutilizacion(jornada, combo, &quot;combo&quot;, usuarioId);</span>
+<span class="fc" id="L1067">        registrarUndoReciclajeEntero(comboId, estadoAnterior.name(), idsHistorialAntes);</span>
 
-<span class="fc" id="L1076">        log.debug(&quot;♻️♻️♻️ [RECICLAR ENTERO] Combo &quot; + comboId + &quot; reciclado completamente de jornada &quot; + jornadaId);</span>
-<span class="fc" id="L1077">    }</span>
+<span class="fc" id="L1069">        log.debug(&quot;♻️♻️♻️ [RECICLAR ENTERO] Combo &quot; + comboId + &quot; reciclado completamente de jornada &quot; + jornadaId);</span>
+<span class="fc" id="L1070">    }</span>
 
     /**
      * Recicla un combo parcialmente, creando un nuevo combo con las preguntas no usadas.
@@ -1085,327 +1078,370 @@ import javax.persistence.EntityManager;
      * @param usuarioId ID del usuario que realiza la acción
      */
     public ReciclajeComboDTO reciclarComboParcial(Long jornadaId, Long comboId, Long preguntaUsadaId, Long usuarioId) {
-        // Verificar que la jornada existe
-<span class="fc" id="L1089">        Jornada jornada = jornadaRepository.findById(jornadaId)</span>
-<span class="pc" id="L1090">            .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Jornada no encontrada con ID: &quot; + jornadaId));</span>
-        
-        // Verificar que el combo existe y está asignado a esta jornada
-<span class="fc" id="L1093">        Combo combo = comboRepository.findById(comboId)</span>
-<span class="pc" id="L1094">            .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Combo no encontrado con ID: &quot; + comboId));</span>
-        
-<span class="pc bpc" id="L1096" title="2 of 4 branches missed.">        if (jornada.getCombos() == null || !jornada.getCombos().contains(combo)) {</span>
-<span class="nc" id="L1097">            throw new IllegalArgumentException(&quot;El combo &quot; + comboId + &quot; no está asignado a la jornada &quot; + jornadaId);</span>
-        }
+<span class="fc" id="L1081">        Combo combo = comboRepository.findById(comboId)</span>
+<span class="pc" id="L1082">            .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Combo no encontrado con ID: &quot; + comboId));</span>
+<span class="fc" id="L1083">        Jornada jornada = resolverJornadaDueñaDelCombo(jornadaId, combo);</span>
+<span class="fc" id="L1084">        Long jornadaEfectivaId = jornada.getId();</span>
         
         // Verificar que el combo está en estado adjudicado o grabado
-<span class="fc" id="L1101">        Combo.EstadoCombo estadoActual = combo.getEstado();</span>
-<span class="pc bpc" id="L1102" title="3 of 4 branches missed.">        if (estadoActual != Combo.EstadoCombo.adjudicado &amp;&amp; estadoActual != Combo.EstadoCombo.grabado) {</span>
-<span class="nc" id="L1103">            throw new IllegalArgumentException(&quot;El combo &quot; + comboId + &quot; no está en estado adjudicado ni grabado. Estado actual: &quot; + estadoActual);</span>
+<span class="fc" id="L1087">        Combo.EstadoCombo estadoActual = combo.getEstado();</span>
+<span class="pc bpc" id="L1088" title="1 of 4 branches missed.">        if (estadoActual != Combo.EstadoCombo.adjudicado &amp;&amp; estadoActual != Combo.EstadoCombo.grabado) {</span>
+<span class="nc" id="L1089">            throw new IllegalArgumentException(&quot;El combo &quot; + comboId + &quot; no está en estado adjudicado ni grabado. Estado actual: &quot; + estadoActual);</span>
         }
         
         // Verificar que el combo no ha sido reciclado previamente para esta jornada
         try {
-<span class="fc" id="L1108">            Long count = entityManager.createNativeQuery(</span>
-<span class="fc" id="L1109">                &quot;SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND combo_id = :cid AND estado_asignacion = 'reaprovechado'&quot;)</span>
-<span class="fc" id="L1110">                .setParameter(&quot;jid&quot;, jornadaId)</span>
-<span class="fc" id="L1111">                .setParameter(&quot;cid&quot;, comboId)</span>
-<span class="pc bpc" id="L1112" title="1 of 2 branches missed.">                .getSingleResult() instanceof Number ? ((Number) entityManager.createNativeQuery(</span>
-<span class="fc" id="L1113">                    &quot;SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND combo_id = :cid AND estado_asignacion = 'reaprovechado'&quot;)</span>
-<span class="fc" id="L1114">                    .setParameter(&quot;jid&quot;, jornadaId)</span>
-<span class="fc" id="L1115">                    .setParameter(&quot;cid&quot;, comboId)</span>
-<span class="pc" id="L1116">                    .getSingleResult()).longValue() : 0L;</span>
-<span class="pc bpc" id="L1117" title="2 of 4 branches missed.">            if (count != null &amp;&amp; count &gt; 0) {</span>
-<span class="nc" id="L1118">                throw new IllegalArgumentException(&quot;Este combo ya ha sido reciclado previamente para esta jornada. No se puede reciclar el mismo combo varias veces.&quot;);</span>
+<span class="fc" id="L1094">            Long count = entityManager.createNativeQuery(</span>
+<span class="fc" id="L1095">                &quot;SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND combo_id = :cid AND estado_asignacion = 'reaprovechado'&quot;)</span>
+<span class="fc" id="L1096">                .setParameter(&quot;jid&quot;, jornadaEfectivaId)</span>
+<span class="fc" id="L1097">                .setParameter(&quot;cid&quot;, comboId)</span>
+<span class="pc bpc" id="L1098" title="1 of 2 branches missed.">                .getSingleResult() instanceof Number ? ((Number) entityManager.createNativeQuery(</span>
+<span class="fc" id="L1099">                    &quot;SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = :jid AND combo_id = :cid AND estado_asignacion = 'reaprovechado'&quot;)</span>
+<span class="fc" id="L1100">                    .setParameter(&quot;jid&quot;, jornadaEfectivaId)</span>
+<span class="fc" id="L1101">                    .setParameter(&quot;cid&quot;, comboId)</span>
+<span class="pc" id="L1102">                    .getSingleResult()).longValue() : 0L;</span>
+<span class="pc bpc" id="L1103" title="2 of 4 branches missed.">            if (count != null &amp;&amp; count &gt; 0) {</span>
+<span class="nc" id="L1104">                throw new IllegalArgumentException(&quot;Este combo ya ha sido reciclado previamente para esta jornada. No se puede reciclar el mismo combo varias veces.&quot;);</span>
             }
-<span class="nc" id="L1120">        } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L1121">            throw e; // Re-lanzar la excepción de validación</span>
-<span class="nc" id="L1122">        } catch (Exception e) {</span>
-<span class="nc" id="L1123">            log.warn(&quot;⚠️ [JORNADA] Error al verificar historial de reciclaje: &quot; + e.getMessage());</span>
+<span class="nc" id="L1106">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L1107">            throw e; // Re-lanzar la excepción de validación</span>
+<span class="nc" id="L1108">        } catch (Exception e) {</span>
+<span class="nc" id="L1109">            log.warn(&quot;⚠️ [JORNADA] Error al verificar historial de reciclaje: &quot; + e.getMessage());</span>
             // Continuar si hay error en la verificación (no bloquear la operación)
         }
         
-<span class="fc" id="L1127">        log.debug(&quot;🔍 [JORNADA] Reciclando combo &quot; + comboId + &quot; parcialmente. Estado actual: &quot; + estadoActual);</span>
+<span class="fc" id="L1113">        log.debug(&quot;🔍 [JORNADA] Reciclando combo &quot; + comboId + &quot; parcialmente. Estado actual: &quot; + estadoActual);</span>
         
-<span class="pc bpc" id="L1129" title="1 of 2 branches missed.">        int totalPreguntas = combo.getPreguntas() == null ? 0 : combo.getPreguntas().size();</span>
-<span class="pc bpc" id="L1130" title="1 of 2 branches missed.">        if (totalPreguntas != 3) {</span>
-<span class="nc" id="L1131">            throw new IllegalArgumentException(&quot;Solo se pueden reciclar combos con exactamente 3 preguntas&quot;);</span>
+<span class="pc bpc" id="L1115" title="1 of 2 branches missed.">        int totalPreguntas = combo.getPreguntas() == null ? 0 : combo.getPreguntas().size();</span>
+<span class="pc bpc" id="L1116" title="1 of 2 branches missed.">        if (totalPreguntas != 3) {</span>
+<span class="nc" id="L1117">            throw new IllegalArgumentException(&quot;Solo se pueden reciclar combos con exactamente 3 preguntas&quot;);</span>
         }
         
         // Verificar que la pregunta usada existe en el combo
-<span class="fc" id="L1135">        boolean preguntaEncontrada = false;</span>
-<span class="fc bfc" id="L1136" title="All 2 branches covered.">        for (PreguntaCombo pc : combo.getPreguntas()) {</span>
-<span class="fc bfc" id="L1137" title="All 2 branches covered.">            if (pc.getPregunta().getId().equals(preguntaUsadaId)) {</span>
-<span class="fc" id="L1138">                preguntaEncontrada = true;</span>
-<span class="fc" id="L1139">                break;</span>
+<span class="fc" id="L1121">        boolean preguntaEncontrada = false;</span>
+<span class="fc bfc" id="L1122" title="All 2 branches covered.">        for (PreguntaCombo pc : combo.getPreguntas()) {</span>
+<span class="fc bfc" id="L1123" title="All 2 branches covered.">            if (pc.getPregunta().getId().equals(preguntaUsadaId)) {</span>
+<span class="fc" id="L1124">                preguntaEncontrada = true;</span>
+<span class="fc" id="L1125">                break;</span>
             }
         }
         
-<span class="fc bfc" id="L1143" title="All 2 branches covered.">        if (!preguntaEncontrada) {</span>
-<span class="fc" id="L1144">            throw new IllegalArgumentException(&quot;La pregunta &quot; + preguntaUsadaId + &quot; no pertenece al combo &quot; + comboId);</span>
+<span class="fc bfc" id="L1129" title="All 2 branches covered.">        if (!preguntaEncontrada) {</span>
+<span class="fc" id="L1130">            throw new IllegalArgumentException(&quot;La pregunta &quot; + preguntaUsadaId + &quot; no pertenece al combo &quot; + comboId);</span>
         }
         
         // El combo original se mantiene en la jornada con todas sus preguntas.
         // Se crea un combo nuevo con las preguntas no usadas para reutilizarlas en otras jornadas.
         
         // 1) Recopilar las preguntas no usadas y sus factores
-<span class="fc" id="L1151">        java.util.List&lt;PreguntaCombo&gt; preguntasNoUsadas = new java.util.ArrayList&lt;&gt;();</span>
-<span class="fc bfc" id="L1152" title="All 2 branches covered.">        for (PreguntaCombo pc : combo.getPreguntas()) {</span>
-<span class="fc bfc" id="L1153" title="All 2 branches covered.">            if (!pc.getPregunta().getId().equals(preguntaUsadaId)) {</span>
-<span class="fc" id="L1154">                preguntasNoUsadas.add(pc);</span>
+<span class="fc" id="L1137">        java.util.List&lt;PreguntaCombo&gt; preguntasNoUsadas = new java.util.ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L1138" title="All 2 branches covered.">        for (PreguntaCombo pc : combo.getPreguntas()) {</span>
+<span class="fc bfc" id="L1139" title="All 2 branches covered.">            if (!pc.getPregunta().getId().equals(preguntaUsadaId)) {</span>
+<span class="fc" id="L1140">                preguntasNoUsadas.add(pc);</span>
             }
         }
         
-<span class="pc bpc" id="L1158" title="1 of 2 branches missed.">        if (preguntasNoUsadas.isEmpty()) {</span>
-<span class="nc" id="L1159">            throw new IllegalArgumentException(&quot;Debe quedar al menos una pregunta sin usar para crear el combo derivado&quot;);</span>
+<span class="pc bpc" id="L1144" title="1 of 2 branches missed.">        if (preguntasNoUsadas.isEmpty()) {</span>
+<span class="nc" id="L1145">            throw new IllegalArgumentException(&quot;Debe quedar al menos una pregunta sin usar para crear el combo derivado&quot;);</span>
         }
 
-<span class="fc" id="L1162">        Set&lt;Long&gt; idsHistorialPadreAntes = UndoService.extraerIds(</span>
-<span class="fc" id="L1163">                undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboId));</span>
+<span class="fc" id="L1148">        Set&lt;Long&gt; idsHistorialPadreAntes = UndoService.extraerIds(</span>
+<span class="fc" id="L1149">                undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboId));</span>
         
         // 2) Crear un combo nuevo con las preguntas no usadas
-<span class="fc" id="L1166">        Combo comboNuevo = new Combo();</span>
-<span class="fc" id="L1167">        comboNuevo.setNivel(combo.getNivel());</span>
-<span class="fc" id="L1168">        comboNuevo.setTipo(combo.getTipo());</span>
-<span class="fc" id="L1169">        comboNuevo.setTematica(combo.getTematica());</span>
-<span class="pc bpc" id="L1170" title="1 of 2 branches missed.">        comboNuevo.setNotasDireccion(&quot;Combo derivado del combo &quot; + comboId + &quot; (reciclaje parcial) - &quot; + (combo.getNotasDireccion() != null ? combo.getNotasDireccion() : &quot;&quot;));</span>
+<span class="fc" id="L1152">        Combo comboNuevo = new Combo();</span>
+<span class="fc" id="L1153">        comboNuevo.setNivel(combo.getNivel());</span>
+<span class="fc" id="L1154">        comboNuevo.setTipo(combo.getTipo());</span>
+<span class="fc" id="L1155">        comboNuevo.setTematica(combo.getTematica());</span>
+<span class="fc" id="L1156">        comboNuevo.setNotasDireccion(combo.getNotasDireccion());</span>
         // Solo tiene las preguntas no usadas: queda incompleto hasta que se complete en Combos.
-<span class="fc" id="L1172">        comboNuevo.setEstado(Combo.EstadoCombo.borrador);</span>
-<span class="fc" id="L1173">        comboNuevo.setFechaCreacion(java.time.LocalDateTime.now());</span>
-<span class="fc" id="L1174">        comboNuevo.setCreacionUsuario(combo.getCreacionUsuario());</span>
-<span class="fc" id="L1175">        comboNuevo = comboRepository.save(comboNuevo);</span>
+<span class="fc" id="L1158">        comboNuevo.setEstado(Combo.EstadoCombo.borrador);</span>
+<span class="fc" id="L1159">        comboNuevo.setFechaCreacion(java.time.LocalDateTime.now());</span>
+<span class="fc" id="L1160">        comboNuevo.setCreacionUsuario(combo.getCreacionUsuario());</span>
+<span class="fc" id="L1161">        comboNuevo = comboRepository.save(comboNuevo);</span>
         
         // 3) Agregar las preguntas no usadas al combo nuevo
-<span class="fc bfc" id="L1178" title="All 2 branches covered.">        for (PreguntaCombo pcOriginal : preguntasNoUsadas) {</span>
+<span class="fc bfc" id="L1164" title="All 2 branches covered.">        for (PreguntaCombo pcOriginal : preguntasNoUsadas) {</span>
             // Crear la clave compuesta primero
-<span class="fc" id="L1180">            PreguntaCombo.PreguntaComboId nuevoId = new PreguntaCombo.PreguntaComboId();</span>
-<span class="fc" id="L1181">            nuevoId.setComboId(comboNuevo.getId());</span>
-<span class="fc" id="L1182">            nuevoId.setPreguntaId(pcOriginal.getPregunta().getId());</span>
+<span class="fc" id="L1166">            PreguntaCombo.PreguntaComboId nuevoId = new PreguntaCombo.PreguntaComboId();</span>
+<span class="fc" id="L1167">            nuevoId.setComboId(comboNuevo.getId());</span>
+<span class="fc" id="L1168">            nuevoId.setPreguntaId(pcOriginal.getPregunta().getId());</span>
             
             // Crear la relación PreguntaCombo preservando la posicion original (PM1/PM2/PM3)
             // Si posicion es null (combo legacy), inferirla desde el factor convencional
-<span class="fc" id="L1186">            Integer posicion = pcOriginal.getPosicion();</span>
-<span class="pc bpc" id="L1187" title="1 of 2 branches missed.">            if (posicion == null) {</span>
-<span class="nc" id="L1188">                String f = pcOriginal.getFactorMultiplicacion();</span>
-<span class="nc bnc" id="L1189" title="All 2 branches missed.">                if (&quot;2&quot;.equals(f)) posicion = 1;</span>
-<span class="nc bnc" id="L1190" title="All 2 branches missed.">                else if (&quot;3&quot;.equals(f)) posicion = 2;</span>
-<span class="nc" id="L1191">                else posicion = 3; // &quot;0&quot;, &quot;1&quot;, &quot;X&quot;, etc. → PM3</span>
+<span class="fc" id="L1172">            Integer posicion = pcOriginal.getPosicion();</span>
+<span class="pc bpc" id="L1173" title="1 of 2 branches missed.">            if (posicion == null) {</span>
+<span class="nc" id="L1174">                String f = pcOriginal.getFactorMultiplicacion();</span>
+<span class="nc bnc" id="L1175" title="All 2 branches missed.">                if (&quot;2&quot;.equals(f)) posicion = 1;</span>
+<span class="nc bnc" id="L1176" title="All 2 branches missed.">                else if (&quot;3&quot;.equals(f)) posicion = 2;</span>
+<span class="nc" id="L1177">                else posicion = 3; // &quot;0&quot;, &quot;1&quot;, &quot;X&quot;, etc. → PM3</span>
             }
-<span class="fc" id="L1193">            PreguntaCombo pcNuevo = new PreguntaCombo();</span>
-<span class="fc" id="L1194">            pcNuevo.setId(nuevoId);</span>
-<span class="fc" id="L1195">            pcNuevo.setCombo(comboNuevo);</span>
-<span class="fc" id="L1196">            pcNuevo.setPregunta(pcOriginal.getPregunta());</span>
-<span class="fc" id="L1197">            pcNuevo.setFactorMultiplicacion(pcOriginal.getFactorMultiplicacion());</span>
-<span class="fc" id="L1198">            pcNuevo.setPosicion(posicion);</span>
-<span class="fc" id="L1199">            preguntaComboRepository.save(pcNuevo);</span>
+<span class="fc" id="L1179">            PreguntaCombo pcNuevo = new PreguntaCombo();</span>
+<span class="fc" id="L1180">            pcNuevo.setId(nuevoId);</span>
+<span class="fc" id="L1181">            pcNuevo.setCombo(comboNuevo);</span>
+<span class="fc" id="L1182">            pcNuevo.setPregunta(pcOriginal.getPregunta());</span>
+<span class="fc" id="L1183">            pcNuevo.setFactorMultiplicacion(pcOriginal.getFactorMultiplicacion());</span>
+<span class="fc" id="L1184">            pcNuevo.setPosicion(posicion);</span>
+<span class="fc" id="L1185">            preguntaComboRepository.save(pcNuevo);</span>
         }
         
         // 4) Guardar en el combo original qué pregunta se usó y mantenerlo en la jornada
-<span class="fc" id="L1203">        Long preguntaUsadaAnterior = combo.getPreguntaUsadaId();</span>
-<span class="fc" id="L1204">        combo.setPreguntaUsadaId(preguntaUsadaId);</span>
-<span class="fc" id="L1205">        log.debug(&quot;🔄🔄🔄 [RECICLAR PARCIAL] Manteniendo estado del combo original &quot; + comboId + &quot;: &quot; + estadoActual);</span>
-<span class="fc" id="L1206">        comboRepository.save(combo);</span>
+<span class="fc" id="L1189">        Long preguntaUsadaAnterior = combo.getPreguntaUsadaId();</span>
+<span class="fc" id="L1190">        combo.setPreguntaUsadaId(preguntaUsadaId);</span>
+<span class="fc" id="L1191">        log.debug(&quot;🔄🔄🔄 [RECICLAR PARCIAL] Manteniendo estado del combo original &quot; + comboId + &quot;: &quot; + estadoActual);</span>
+<span class="fc" id="L1192">        comboRepository.save(combo);</span>
         
         // 5) Registrar el reciclaje con la pregunta usada para poder auditarlo.
-<span class="fc" id="L1209">        registrarHistorialReciclajeParcial(jornada, combo, preguntaUsadaId);</span>
+<span class="fc" id="L1195">        registrarHistorialReciclajeParcial(jornada, combo, preguntaUsadaId);</span>
         
         // 6) Registrar el combo nuevo en el historial como hijo
-<span class="fc" id="L1212">        registrarHistorialComboHijo(jornada, comboNuevo, comboId, usuarioId);</span>
-<span class="fc" id="L1213">        registrarUndoReciclajeParcial(comboId, comboNuevo.getId(), idsHistorialPadreAntes, preguntaUsadaAnterior);</span>
+<span class="fc" id="L1198">        registrarHistorialComboHijo(jornada, comboNuevo, comboId, usuarioId);</span>
+<span class="fc" id="L1199">        registrarUndoReciclajeParcial(comboId, comboNuevo.getId(), idsHistorialPadreAntes, preguntaUsadaAnterior);</span>
 
-<span class="fc" id="L1215">        log.debug(&quot;✅✅✅ [RECICLAR PARCIAL] Combo &quot; + comboId + &quot; reciclado parcialmente:&quot;);</span>
-<span class="fc" id="L1216">        log.debug(&quot;   - Combo original &quot; + comboId + &quot;: estado=&quot; + combo.getEstado() + &quot;, preguntas=&quot; + totalPreguntas + &quot; (usada=&quot; + preguntaUsadaId + &quot;)&quot;);</span>
-<span class="fc" id="L1217">        log.debug(&quot;   - Combo nuevo &quot; + comboNuevo.getId() + &quot;: estado=borrador, preguntas=&quot; + preguntasNoUsadas.size());</span>
-<span class="fc" id="L1218">        log.debug(&quot;♻️♻️♻️ [RECICLAR PARCIAL] Reciclaje parcial completado para combo &quot; + comboId);</span>
-<span class="fc" id="L1219">        return new ReciclajeComboDTO(jornadaId, comboId, comboNuevo.getId(), preguntaUsadaId);</span>
+<span class="fc" id="L1201">        log.debug(&quot;✅✅✅ [RECICLAR PARCIAL] Combo &quot; + comboId + &quot; reciclado parcialmente:&quot;);</span>
+<span class="fc" id="L1202">        log.debug(&quot;   - Combo original &quot; + comboId + &quot;: estado=&quot; + combo.getEstado() + &quot;, preguntas=&quot; + totalPreguntas + &quot; (usada=&quot; + preguntaUsadaId + &quot;)&quot;);</span>
+<span class="fc" id="L1203">        log.debug(&quot;   - Combo nuevo &quot; + comboNuevo.getId() + &quot;: estado=borrador, preguntas=&quot; + preguntasNoUsadas.size());</span>
+<span class="fc" id="L1204">        log.debug(&quot;♻️♻️♻️ [RECICLAR PARCIAL] Reciclaje parcial completado para combo &quot; + comboId);</span>
+<span class="fc" id="L1205">        return new ReciclajeComboDTO(jornadaEfectivaId, comboId, comboNuevo.getId(), preguntaUsadaId);</span>
+    }
+
+    Jornada resolverJornadaDueñaDelCombo(Long jornadaIdSolicitada, Combo combo) {
+<span class="fc" id="L1209">        Jornada solicitada = jornadaRepository.findById(jornadaIdSolicitada)</span>
+<span class="pc" id="L1210">            .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Jornada no encontrada con ID: &quot; + jornadaIdSolicitada));</span>
+<span class="fc bfc" id="L1211" title="All 2 branches covered.">        if (jornadaContieneCombo(solicitada, combo.getId())) {</span>
+<span class="fc" id="L1212">            return solicitada;</span>
+        }
+<span class="fc" id="L1214">        Jornada dueña = buscarJornadaQueContieneCombo(combo.getId());</span>
+<span class="fc bfc" id="L1215" title="All 2 branches covered.">        if (dueña != null) {</span>
+<span class="fc" id="L1216">            return dueña;</span>
+        }
+<span class="fc" id="L1218">        throw new IllegalArgumentException(&quot;El combo &quot; + combo.getId() + &quot; no está asignado a ninguna jornada&quot;);</span>
+    }
+
+    public boolean jornadaContieneCombo(Jornada jornada, Long comboId) {
+<span class="pc bpc" id="L1222" title="2 of 4 branches missed.">        if (jornada == null || comboId == null) {</span>
+<span class="nc" id="L1223">            return false;</span>
+        }
+<span class="fc bfc" id="L1225" title="All 2 branches covered.">        for (Combo c : jornada.getCombosPorSlot()) {</span>
+<span class="fc bfc" id="L1226" title="All 4 branches covered.">            if (c != null &amp;&amp; comboId.equals(c.getId())) {</span>
+<span class="fc" id="L1227">                return true;</span>
+            }
+        }
+<span class="pc bpc" id="L1230" title="1 of 2 branches missed.">        if (jornada.getId() != null) {</span>
+<span class="fc" id="L1231">            Number count = (Number) entityManager.createNativeQuery(</span>
+<span class="fc" id="L1232">                    &quot;SELECT COUNT(*) FROM jornadas_combos WHERE jornada_id = ? AND combo_id = ?&quot;)</span>
+<span class="fc" id="L1233">                .setParameter(1, jornada.getId())</span>
+<span class="fc" id="L1234">                .setParameter(2, comboId)</span>
+<span class="fc" id="L1235">                .getSingleResult();</span>
+<span class="pc bpc" id="L1236" title="2 of 4 branches missed.">            return count != null &amp;&amp; count.longValue() &gt; 0;</span>
+        }
+<span class="nc" id="L1238">        return false;</span>
+    }
+
+    private Jornada buscarJornadaQueContieneCombo(Long comboId) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L1243">        List&lt;Object&gt; ids = entityManager.createNativeQuery(</span>
+<span class="fc" id="L1244">                &quot;SELECT jornada_id FROM jornadas_combos WHERE combo_id = ? ORDER BY jornada_id&quot;)</span>
+<span class="fc" id="L1245">            .setParameter(1, comboId)</span>
+<span class="fc" id="L1246">            .getResultList();</span>
+<span class="fc bfc" id="L1247" title="All 2 branches covered.">        for (Object raw : ids) {</span>
+<span class="pc bpc" id="L1248" title="1 of 2 branches missed.">            if (raw instanceof Number) {</span>
+<span class="fc" id="L1249">                Optional&lt;Jornada&gt; encontrada = jornadaRepository.findById(((Number) raw).longValue());</span>
+<span class="pc bpc" id="L1250" title="1 of 2 branches missed.">                if (encontrada.isPresent()) {</span>
+<span class="fc" id="L1251">                    return encontrada.get();</span>
+                }
+            }
+        }
+<span class="fc" id="L1255">        return null;</span>
     }
 
     private void registrarHistorialReciclajeParcial(Jornada jornada, Combo comboPadre, Long preguntaUsadaId) {
-<span class="fc" id="L1223">        entityManager.createNativeQuery(</span>
-<span class="fc" id="L1224">                &quot;INSERT INTO historial_jornadas (jornada_id, combo_id, tipo_asignacion, estado_asignacion, fecha_asignacion, pregunta_usada_id, notas) &quot;</span>
+<span class="fc" id="L1259">        entityManager.createNativeQuery(</span>
+<span class="fc" id="L1260">                &quot;INSERT INTO historial_jornadas (jornada_id, combo_id, tipo_asignacion, estado_asignacion, fecha_asignacion, pregunta_usada_id, notas) &quot;</span>
                     + &quot;VALUES (?, ?, 'COMBO', 'reaprovechado', NOW(), ?, ?)&quot;)
-<span class="fc" id="L1226">            .setParameter(1, jornada.getId())</span>
-<span class="fc" id="L1227">            .setParameter(2, comboPadre.getId())</span>
-<span class="fc" id="L1228">            .setParameter(3, preguntaUsadaId)</span>
-<span class="fc" id="L1229">            .setParameter(4, &quot;RECICLAJE_PARCIAL_COMBO_PADRE:&quot; + comboPadre.getId())</span>
-<span class="fc" id="L1230">            .executeUpdate();</span>
-<span class="fc" id="L1231">    }</span>
+<span class="fc" id="L1262">            .setParameter(1, jornada.getId())</span>
+<span class="fc" id="L1263">            .setParameter(2, comboPadre.getId())</span>
+<span class="fc" id="L1264">            .setParameter(3, preguntaUsadaId)</span>
+<span class="fc" id="L1265">            .setParameter(4, &quot;RECICLAJE_PARCIAL_COMBO_PADRE:&quot; + comboPadre.getId())</span>
+<span class="fc" id="L1266">            .executeUpdate();</span>
+<span class="fc" id="L1267">    }</span>
 
     /**
      * Registra un combo hijo en el historial.
      */
     private void registrarHistorialComboHijo(Jornada jornada, Combo comboHijo, Long comboPadreId, Long usuarioId) {
         try {
-<span class="fc" id="L1238">            String sql = &quot;INSERT INTO historial_jornadas (jornada_id, combo_id, tipo_asignacion, estado_asignacion, fecha_asignacion, notas) VALUES (?, ?, ?, ?, NOW(), ?)&quot;;</span>
-<span class="fc" id="L1239">            entityManager.createNativeQuery(sql)</span>
-<span class="fc" id="L1240">                .setParameter(1, jornada.getId())</span>
-<span class="fc" id="L1241">                .setParameter(2, comboHijo.getId())</span>
-<span class="fc" id="L1242">                .setParameter(3, &quot;COMBO&quot;)</span>
-<span class="fc" id="L1243">                .setParameter(4, &quot;asignado&quot;)</span>
-<span class="fc" id="L1244">                .setParameter(5, &quot;RECICLAJE_PARCIAL_COMBO_HIJO;PADRE:&quot; + comboPadreId)</span>
-<span class="fc" id="L1245">                .executeUpdate();</span>
+<span class="fc" id="L1274">            String sql = &quot;INSERT INTO historial_jornadas (jornada_id, combo_id, tipo_asignacion, estado_asignacion, fecha_asignacion, notas) VALUES (?, ?, ?, ?, NOW(), ?)&quot;;</span>
+<span class="fc" id="L1275">            entityManager.createNativeQuery(sql)</span>
+<span class="fc" id="L1276">                .setParameter(1, jornada.getId())</span>
+<span class="fc" id="L1277">                .setParameter(2, comboHijo.getId())</span>
+<span class="fc" id="L1278">                .setParameter(3, &quot;COMBO&quot;)</span>
+<span class="fc" id="L1279">                .setParameter(4, &quot;asignado&quot;)</span>
+<span class="fc" id="L1280">                .setParameter(5, &quot;RECICLAJE_PARCIAL_COMBO_HIJO;PADRE:&quot; + comboPadreId)</span>
+<span class="fc" id="L1281">                .executeUpdate();</span>
                 
-<span class="pc" id="L1247">        } catch (Exception e) {</span>
-<span class="nc" id="L1248">            log.warn(&quot;⚠️ [JORNADA] Error al registrar historial de combo hijo: &quot; + e.getMessage());</span>
+<span class="pc" id="L1283">        } catch (Exception e) {</span>
+<span class="nc" id="L1284">            log.warn(&quot;⚠️ [JORNADA] Error al registrar historial de combo hijo: &quot; + e.getMessage());</span>
             // No lanzar excepción para no afectar la operación principal
         }
-<span class="fc" id="L1251">    }</span>
+<span class="fc" id="L1287">    }</span>
 
     /**
      * Elimina un combo derivado que no llegó a estar asignado a un concursante.
      */
     public void cancelarReciclajeCombo(Long jornadaId, Long comboHijoId) {
-<span class="fc" id="L1257">        Long asignaciones = ((Number) entityManager.createQuery(</span>
-<span class="fc" id="L1258">                &quot;SELECT COUNT(c) FROM Concursante c WHERE c.combo.id = :comboId&quot;)</span>
-<span class="fc" id="L1259">            .setParameter(&quot;comboId&quot;, comboHijoId)</span>
-<span class="fc" id="L1260">            .getSingleResult()).longValue();</span>
-<span class="fc bfc" id="L1261" title="All 2 branches covered.">        if (asignaciones &gt; 0) {</span>
-<span class="fc" id="L1262">            throw new IllegalStateException(&quot;No se puede cancelar el reciclaje: el combo derivado ya está asignado.&quot;);</span>
+<span class="fc" id="L1293">        Long asignaciones = ((Number) entityManager.createQuery(</span>
+<span class="fc" id="L1294">                &quot;SELECT COUNT(c) FROM Concursante c WHERE c.combo.id = :comboId&quot;)</span>
+<span class="fc" id="L1295">            .setParameter(&quot;comboId&quot;, comboHijoId)</span>
+<span class="fc" id="L1296">            .getSingleResult()).longValue();</span>
+<span class="fc bfc" id="L1297" title="All 2 branches covered.">        if (asignaciones &gt; 0) {</span>
+<span class="fc" id="L1298">            throw new IllegalStateException(&quot;No se puede cancelar el reciclaje: el combo derivado ya está asignado.&quot;);</span>
         }
 
-<span class="fc" id="L1265">        List&lt;Map&lt;String, Object&gt;&gt; historialHijo = undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboHijoId);</span>
-<span class="fc" id="L1266">        List&lt;Map&lt;String, Object&gt;&gt; historialHijoReciclaje = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L1267">        Long comboPadreId = null;</span>
-<span class="fc bfc" id="L1268" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; fila : historialHijo) {</span>
-<span class="pc bpc" id="L1269" title="1 of 2 branches missed.">            if (!mismaJornada(fila, jornadaId)) {</span>
-<span class="nc" id="L1270">                continue;</span>
+<span class="fc" id="L1301">        List&lt;Map&lt;String, Object&gt;&gt; historialHijo = undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboHijoId);</span>
+<span class="fc" id="L1302">        List&lt;Map&lt;String, Object&gt;&gt; historialHijoReciclaje = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L1303">        Long comboPadreId = null;</span>
+<span class="fc bfc" id="L1304" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; fila : historialHijo) {</span>
+<span class="pc bpc" id="L1305" title="1 of 2 branches missed.">            if (!mismaJornada(fila, jornadaId)) {</span>
+<span class="nc" id="L1306">                continue;</span>
             }
-<span class="fc" id="L1272">            String notas = valorTexto(fila.get(&quot;notas&quot;));</span>
-<span class="pc bpc" id="L1273" title="1 of 2 branches missed.">            if (notas.contains(&quot;RECICLAJE_PARCIAL_COMBO_HIJO&quot;)) {</span>
-<span class="fc" id="L1274">                historialHijoReciclaje.add(fila);</span>
-<span class="pc bpc" id="L1275" title="1 of 2 branches missed.">                if (comboPadreId == null) {</span>
-<span class="fc" id="L1276">                    comboPadreId = extraerComboPadreDesdeNotas(notas);</span>
+<span class="fc" id="L1308">            String notas = valorTexto(fila.get(&quot;notas&quot;));</span>
+<span class="pc bpc" id="L1309" title="1 of 2 branches missed.">            if (notas.contains(&quot;RECICLAJE_PARCIAL_COMBO_HIJO&quot;)) {</span>
+<span class="fc" id="L1310">                historialHijoReciclaje.add(fila);</span>
+<span class="pc bpc" id="L1311" title="1 of 2 branches missed.">                if (comboPadreId == null) {</span>
+<span class="fc" id="L1312">                    comboPadreId = extraerComboPadreDesdeNotas(notas);</span>
                 }
             }
         }
-<span class="fc bfc" id="L1280" title="All 2 branches covered.">        if (historialHijoReciclaje.isEmpty()) {</span>
-<span class="fc" id="L1281">            throw new IllegalArgumentException(&quot;El combo no es un derivado reciclado de esta jornada.&quot;);</span>
+<span class="fc bfc" id="L1316" title="All 2 branches covered.">        if (historialHijoReciclaje.isEmpty()) {</span>
+<span class="fc" id="L1317">            throw new IllegalArgumentException(&quot;El combo no es un derivado reciclado de esta jornada.&quot;);</span>
         }
 
-<span class="fc" id="L1284">        List&lt;Map&lt;String, Object&gt;&gt; historialPadre = new ArrayList&lt;&gt;();</span>
-<span class="pc bpc" id="L1285" title="1 of 2 branches missed.">        if (comboPadreId != null) {</span>
-<span class="fc bfc" id="L1286" title="All 2 branches covered.">            for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboPadreId)) {</span>
-<span class="pc bpc" id="L1287" title="1 of 2 branches missed.">                if (mismaJornada(fila, jornadaId)</span>
-<span class="pc bpc" id="L1288" title="1 of 2 branches missed.">                        &amp;&amp; valorTexto(fila.get(&quot;notas&quot;)).contains(&quot;RECICLAJE_PARCIAL_COMBO_PADRE&quot;)) {</span>
-<span class="fc" id="L1289">                    historialPadre.add(fila);</span>
+<span class="fc" id="L1320">        List&lt;Map&lt;String, Object&gt;&gt; historialPadre = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L1321" title="1 of 2 branches missed.">        if (comboPadreId != null) {</span>
+<span class="fc bfc" id="L1322" title="All 2 branches covered.">            for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboPadreId)) {</span>
+<span class="pc bpc" id="L1323" title="1 of 2 branches missed.">                if (mismaJornada(fila, jornadaId)</span>
+<span class="pc bpc" id="L1324" title="1 of 2 branches missed.">                        &amp;&amp; valorTexto(fila.get(&quot;notas&quot;)).contains(&quot;RECICLAJE_PARCIAL_COMBO_PADRE&quot;)) {</span>
+<span class="fc" id="L1325">                    historialPadre.add(fila);</span>
                 }
             }
         }
 
-<span class="fc" id="L1294">        List&lt;Map&lt;String, Object&gt;&gt; accionesUndo = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L1295">        Map&lt;String, Object&gt; filaCombo = undoService.snapshotFila(&quot;combos&quot;, comboHijoId);</span>
-<span class="pc bpc" id="L1296" title="1 of 2 branches missed.">        if (filaCombo != null) {</span>
-<span class="fc" id="L1297">            accionesUndo.add(UndoService.accionInsertarFila(&quot;combos&quot;, filaCombo));</span>
+<span class="fc" id="L1330">        List&lt;Map&lt;String, Object&gt;&gt; accionesUndo = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L1331">        Map&lt;String, Object&gt; filaCombo = undoService.snapshotFila(&quot;combos&quot;, comboHijoId);</span>
+<span class="pc bpc" id="L1332" title="1 of 2 branches missed.">        if (filaCombo != null) {</span>
+<span class="fc" id="L1333">            accionesUndo.add(UndoService.accionInsertarFila(&quot;combos&quot;, filaCombo));</span>
         }
-<span class="pc bpc" id="L1299" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;combos_preguntas&quot;, &quot;combo_id&quot;, comboHijoId)) {</span>
-<span class="nc" id="L1300">            accionesUndo.add(UndoService.accionInsertarFila(&quot;combos_preguntas&quot;, fila));</span>
+<span class="pc bpc" id="L1335" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;combos_preguntas&quot;, &quot;combo_id&quot;, comboHijoId)) {</span>
+<span class="nc" id="L1336">            accionesUndo.add(UndoService.accionInsertarFila(&quot;combos_preguntas&quot;, fila));</span>
         }
-<span class="fc bfc" id="L1302" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; fila : historialHijoReciclaje) {</span>
-<span class="fc" id="L1303">            accionesUndo.add(UndoService.accionInsertarFila(&quot;historial_jornadas&quot;, fila));</span>
+<span class="fc bfc" id="L1338" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; fila : historialHijoReciclaje) {</span>
+<span class="fc" id="L1339">            accionesUndo.add(UndoService.accionInsertarFila(&quot;historial_jornadas&quot;, fila));</span>
         }
-<span class="fc bfc" id="L1305" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; fila : historialPadre) {</span>
-<span class="fc" id="L1306">            accionesUndo.add(UndoService.accionInsertarFila(&quot;historial_jornadas&quot;, fila));</span>
+<span class="fc bfc" id="L1341" title="All 2 branches covered.">        for (Map&lt;String, Object&gt; fila : historialPadre) {</span>
+<span class="fc" id="L1342">            accionesUndo.add(UndoService.accionInsertarFila(&quot;historial_jornadas&quot;, fila));</span>
         }
 
-<span class="fc" id="L1309">        entityManager.createNativeQuery(</span>
-<span class="fc" id="L1310">                &quot;DELETE FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? &quot;</span>
+<span class="fc" id="L1345">        entityManager.createNativeQuery(</span>
+<span class="fc" id="L1346">                &quot;DELETE FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? &quot;</span>
                     + &quot;AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'&quot;)
-<span class="fc" id="L1312">            .setParameter(1, jornadaId)</span>
-<span class="fc" id="L1313">            .setParameter(2, comboHijoId)</span>
-<span class="fc" id="L1314">            .executeUpdate();</span>
-<span class="pc bpc" id="L1315" title="1 of 2 branches missed.">        if (comboPadreId != null) {</span>
-<span class="fc" id="L1316">            entityManager.createNativeQuery(</span>
-<span class="fc" id="L1317">                    &quot;DELETE FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? &quot;</span>
+<span class="fc" id="L1348">            .setParameter(1, jornadaId)</span>
+<span class="fc" id="L1349">            .setParameter(2, comboHijoId)</span>
+<span class="fc" id="L1350">            .executeUpdate();</span>
+<span class="pc bpc" id="L1351" title="1 of 2 branches missed.">        if (comboPadreId != null) {</span>
+<span class="fc" id="L1352">            entityManager.createNativeQuery(</span>
+<span class="fc" id="L1353">                    &quot;DELETE FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? &quot;</span>
                         + &quot;AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_PADRE:%'&quot;)
-<span class="fc" id="L1319">                .setParameter(1, jornadaId)</span>
-<span class="fc" id="L1320">                .setParameter(2, comboPadreId)</span>
-<span class="fc" id="L1321">                .executeUpdate();</span>
+<span class="fc" id="L1355">                .setParameter(1, jornadaId)</span>
+<span class="fc" id="L1356">                .setParameter(2, comboPadreId)</span>
+<span class="fc" id="L1357">                .executeUpdate();</span>
         }
-<span class="fc" id="L1323">        comboRepository.deleteById(comboHijoId);</span>
-<span class="pc bpc" id="L1324" title="1 of 2 branches missed.">        if (comboPadreId != null) {</span>
-<span class="fc" id="L1325">            final Long padreId = comboPadreId;</span>
-<span class="fc" id="L1326">            comboRepository.findById(padreId).ifPresent(padre -&gt; {</span>
-<span class="nc" id="L1327">                accionesUndo.add(UndoService.accionActualizarCampos(&quot;combos&quot;, padreId,</span>
-<span class="nc" id="L1328">                    Collections.singletonMap(&quot;pregunta_usada_id&quot;, padre.getPreguntaUsadaId())));</span>
-<span class="nc" id="L1329">                padre.setPreguntaUsadaId(null);</span>
-<span class="nc" id="L1330">                comboRepository.save(padre);</span>
-<span class="nc" id="L1331">            });</span>
+<span class="fc" id="L1359">        comboRepository.deleteById(comboHijoId);</span>
+<span class="pc bpc" id="L1360" title="1 of 2 branches missed.">        if (comboPadreId != null) {</span>
+<span class="fc" id="L1361">            final Long padreId = comboPadreId;</span>
+<span class="fc" id="L1362">            comboRepository.findById(padreId).ifPresent(padre -&gt; {</span>
+<span class="nc" id="L1363">                accionesUndo.add(UndoService.accionActualizarCampos(&quot;combos&quot;, padreId,</span>
+<span class="nc" id="L1364">                    Collections.singletonMap(&quot;pregunta_usada_id&quot;, padre.getPreguntaUsadaId())));</span>
+<span class="nc" id="L1365">                padre.setPreguntaUsadaId(null);</span>
+<span class="nc" id="L1366">                comboRepository.save(padre);</span>
+<span class="nc" id="L1367">            });</span>
         }
-<span class="fc" id="L1333">        undoService.registrar(&quot;cancelar_reciclaje_combo&quot;,</span>
-<span class="fc" id="L1334">                &quot;Cancelar reciclaje combo &quot; + comboHijoId, accionesUndo);</span>
-<span class="fc" id="L1335">    }</span>
+<span class="fc" id="L1369">        undoService.registrar(&quot;cancelar_reciclaje_combo&quot;,</span>
+<span class="fc" id="L1370">                &quot;Cancelar reciclaje combo &quot; + comboHijoId, accionesUndo);</span>
+<span class="fc" id="L1371">    }</span>
 
     private void registrarUndoReciclajeEntero(Long comboId, String estadoAnterior, Set&lt;Long&gt; idsHistorialAntes) {
-<span class="fc" id="L1338">        entityManager.flush();</span>
-<span class="fc" id="L1339">        List&lt;Map&lt;String, Object&gt;&gt; acciones = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L1340">        Map&lt;String, Object&gt; campos = new LinkedHashMap&lt;&gt;();</span>
-<span class="fc" id="L1341">        campos.put(&quot;estado&quot;, estadoAnterior);</span>
-<span class="fc" id="L1342">        acciones.add(UndoService.accionActualizarCampos(&quot;combos&quot;, comboId, campos));</span>
-<span class="pc bpc" id="L1343" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilasNuevas(</span>
-<span class="fc" id="L1344">                &quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboId, idsHistorialAntes)) {</span>
-<span class="nc" id="L1345">            Long id = UndoService.extraerId(fila);</span>
-<span class="nc bnc" id="L1346" title="All 2 branches missed.">            if (id != null) {</span>
-<span class="nc" id="L1347">                acciones.add(UndoService.accionEliminarFila(&quot;historial_jornadas&quot;, id));</span>
+<span class="fc" id="L1374">        entityManager.flush();</span>
+<span class="fc" id="L1375">        List&lt;Map&lt;String, Object&gt;&gt; acciones = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L1376">        Map&lt;String, Object&gt; campos = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L1377">        campos.put(&quot;estado&quot;, estadoAnterior);</span>
+<span class="fc" id="L1378">        acciones.add(UndoService.accionActualizarCampos(&quot;combos&quot;, comboId, campos));</span>
+<span class="pc bpc" id="L1379" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilasNuevas(</span>
+<span class="fc" id="L1380">                &quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboId, idsHistorialAntes)) {</span>
+<span class="nc" id="L1381">            Long id = UndoService.extraerId(fila);</span>
+<span class="nc bnc" id="L1382" title="All 2 branches missed.">            if (id != null) {</span>
+<span class="nc" id="L1383">                acciones.add(UndoService.accionEliminarFila(&quot;historial_jornadas&quot;, id));</span>
             }
         }
-<span class="fc" id="L1350">        undoService.registrar(&quot;reciclar_combo_entero&quot;, &quot;Reciclar combo &quot; + comboId, acciones);</span>
-<span class="fc" id="L1351">    }</span>
+<span class="fc" id="L1386">        undoService.registrar(&quot;reciclar_combo_entero&quot;, &quot;Reciclar combo &quot; + comboId, acciones);</span>
+<span class="fc" id="L1387">    }</span>
 
     private void registrarUndoReciclajeParcial(Long comboPadreId, Long comboHijoId, Set&lt;Long&gt; idsHistorialPadreAntes, Long preguntaUsadaAnterior) {
-<span class="pc bpc" id="L1354" title="1 of 2 branches missed.">        if (comboHijoId == null) {</span>
-<span class="nc" id="L1355">            return;</span>
+<span class="pc bpc" id="L1390" title="1 of 2 branches missed.">        if (comboHijoId == null) {</span>
+<span class="nc" id="L1391">            return;</span>
         }
-<span class="fc" id="L1357">        entityManager.flush();</span>
-<span class="fc" id="L1358">        List&lt;Map&lt;String, Object&gt;&gt; acciones = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L1359">        acciones.add(UndoService.accionEliminarFilas(&quot;combos_preguntas&quot;, &quot;combo_id&quot;, comboHijoId));</span>
-<span class="pc bpc" id="L1360" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboHijoId)) {</span>
-<span class="nc" id="L1361">            Long id = UndoService.extraerId(fila);</span>
-<span class="nc bnc" id="L1362" title="All 2 branches missed.">            if (id != null) {</span>
-<span class="nc" id="L1363">                acciones.add(UndoService.accionEliminarFila(&quot;historial_jornadas&quot;, id));</span>
+<span class="fc" id="L1393">        entityManager.flush();</span>
+<span class="fc" id="L1394">        List&lt;Map&lt;String, Object&gt;&gt; acciones = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L1395">        acciones.add(UndoService.accionEliminarFilas(&quot;combos_preguntas&quot;, &quot;combo_id&quot;, comboHijoId));</span>
+<span class="pc bpc" id="L1396" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilas(&quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboHijoId)) {</span>
+<span class="nc" id="L1397">            Long id = UndoService.extraerId(fila);</span>
+<span class="nc bnc" id="L1398" title="All 2 branches missed.">            if (id != null) {</span>
+<span class="nc" id="L1399">                acciones.add(UndoService.accionEliminarFila(&quot;historial_jornadas&quot;, id));</span>
             }
         }
-<span class="pc bpc" id="L1366" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilasNuevas(</span>
-<span class="fc" id="L1367">                &quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboPadreId, idsHistorialPadreAntes)) {</span>
-<span class="nc" id="L1368">            Long id = UndoService.extraerId(fila);</span>
-<span class="nc bnc" id="L1369" title="All 2 branches missed.">            if (id != null) {</span>
-<span class="nc" id="L1370">                acciones.add(UndoService.accionEliminarFila(&quot;historial_jornadas&quot;, id));</span>
+<span class="pc bpc" id="L1402" title="1 of 2 branches missed.">        for (Map&lt;String, Object&gt; fila : undoService.snapshotFilasNuevas(</span>
+<span class="fc" id="L1403">                &quot;historial_jornadas&quot;, &quot;combo_id&quot;, comboPadreId, idsHistorialPadreAntes)) {</span>
+<span class="nc" id="L1404">            Long id = UndoService.extraerId(fila);</span>
+<span class="nc bnc" id="L1405" title="All 2 branches missed.">            if (id != null) {</span>
+<span class="nc" id="L1406">                acciones.add(UndoService.accionEliminarFila(&quot;historial_jornadas&quot;, id));</span>
             }
         }
-<span class="fc" id="L1373">        acciones.add(UndoService.accionEliminarFila(&quot;combos&quot;, comboHijoId));</span>
-<span class="fc" id="L1374">        Map&lt;String, Object&gt; camposPadre = new LinkedHashMap&lt;&gt;();</span>
-<span class="fc" id="L1375">        camposPadre.put(&quot;pregunta_usada_id&quot;, preguntaUsadaAnterior);</span>
-<span class="fc" id="L1376">        acciones.add(UndoService.accionActualizarCampos(&quot;combos&quot;, comboPadreId, camposPadre));</span>
-<span class="fc" id="L1377">        undoService.registrar(&quot;reciclar_combo_parcial&quot;,</span>
-<span class="fc" id="L1378">                &quot;Reciclaje parcial combo &quot; + comboPadreId + &quot; → &quot; + comboHijoId, acciones);</span>
-<span class="fc" id="L1379">    }</span>
+<span class="fc" id="L1409">        acciones.add(UndoService.accionEliminarFila(&quot;combos&quot;, comboHijoId));</span>
+<span class="fc" id="L1410">        Map&lt;String, Object&gt; camposPadre = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L1411">        camposPadre.put(&quot;pregunta_usada_id&quot;, preguntaUsadaAnterior);</span>
+<span class="fc" id="L1412">        acciones.add(UndoService.accionActualizarCampos(&quot;combos&quot;, comboPadreId, camposPadre));</span>
+<span class="fc" id="L1413">        undoService.registrar(&quot;reciclar_combo_parcial&quot;,</span>
+<span class="fc" id="L1414">                &quot;Reciclaje parcial combo &quot; + comboPadreId + &quot; → &quot; + comboHijoId, acciones);</span>
+<span class="fc" id="L1415">    }</span>
 
     private static boolean mismaJornada(Map&lt;String, Object&gt; fila, Long jornadaId) {
-<span class="fc" id="L1382">        Object valor = fila.get(&quot;jornada_id&quot;);</span>
-<span class="pc bpc" id="L1383" title="3 of 6 branches missed.">        return valor instanceof Number &amp;&amp; jornadaId != null &amp;&amp; ((Number) valor).longValue() == jornadaId;</span>
+<span class="fc" id="L1418">        Object valor = fila.get(&quot;jornada_id&quot;);</span>
+<span class="pc bpc" id="L1419" title="3 of 6 branches missed.">        return valor instanceof Number &amp;&amp; jornadaId != null &amp;&amp; ((Number) valor).longValue() == jornadaId;</span>
     }
 
     private static String valorTexto(Object valor) {
-<span class="pc bpc" id="L1387" title="1 of 2 branches missed.">        return valor == null ? &quot;&quot; : valor.toString();</span>
+<span class="pc bpc" id="L1423" title="1 of 2 branches missed.">        return valor == null ? &quot;&quot; : valor.toString();</span>
     }
 
     private static Long extraerComboPadreDesdeNotas(String notas) {
-<span class="pc bpc" id="L1391" title="1 of 2 branches missed.">        if (notas == null) {</span>
-<span class="nc" id="L1392">            return null;</span>
+<span class="pc bpc" id="L1427" title="1 of 2 branches missed.">        if (notas == null) {</span>
+<span class="nc" id="L1428">            return null;</span>
         }
-<span class="fc" id="L1394">        int idx = notas.indexOf(&quot;PADRE:&quot;);</span>
-<span class="pc bpc" id="L1395" title="1 of 2 branches missed.">        if (idx &lt; 0) {</span>
-<span class="nc" id="L1396">            return null;</span>
+<span class="fc" id="L1430">        int idx = notas.indexOf(&quot;PADRE:&quot;);</span>
+<span class="pc bpc" id="L1431" title="1 of 2 branches missed.">        if (idx &lt; 0) {</span>
+<span class="nc" id="L1432">            return null;</span>
         }
-<span class="fc" id="L1398">        String resto = notas.substring(idx + 6);</span>
-<span class="fc" id="L1399">        StringBuilder numero = new StringBuilder();</span>
-<span class="fc bfc" id="L1400" title="All 2 branches covered.">        for (int i = 0; i &lt; resto.length(); i++) {</span>
-<span class="fc" id="L1401">            char c = resto.charAt(i);</span>
-<span class="pc bpc" id="L1402" title="1 of 2 branches missed.">            if (Character.isDigit(c)) {</span>
-<span class="fc" id="L1403">                numero.append(c);</span>
+<span class="fc" id="L1434">        String resto = notas.substring(idx + 6);</span>
+<span class="fc" id="L1435">        StringBuilder numero = new StringBuilder();</span>
+<span class="fc bfc" id="L1436" title="All 2 branches covered.">        for (int i = 0; i &lt; resto.length(); i++) {</span>
+<span class="fc" id="L1437">            char c = resto.charAt(i);</span>
+<span class="pc bpc" id="L1438" title="1 of 2 branches missed.">            if (Character.isDigit(c)) {</span>
+<span class="fc" id="L1439">                numero.append(c);</span>
             } else {
                 break;
             }
         }
-<span class="pc bpc" id="L1408" title="1 of 2 branches missed.">        return numero.length() == 0 ? null : Long.valueOf(numero.toString());</span>
+<span class="pc bpc" id="L1444" title="1 of 2 branches missed.">        return numero.length() == 0 ? null : Long.valueOf(numero.toString());</span>
     }
 
     /**
@@ -1413,276 +1449,290 @@ import javax.persistence.EntityManager;
      * del más reciente al original: &quot;312/216&quot;. Los combos sin origen no aparecen.
      */
     Map&lt;Long, String&gt; ancestrosCombosDeJornada(Jornada jornada) {
-<span class="fc" id="L1416">        Map&lt;Long, String&gt; porCombo = new HashMap&lt;&gt;();</span>
-<span class="fc bfc" id="L1417" title="All 2 branches covered.">        for (Combo combo : jornada.getCombosPorSlot()) {</span>
-<span class="pc bpc" id="L1418" title="3 of 4 branches missed.">            if (combo == null || combo.getId() == null) {</span>
-<span class="nc" id="L1419">                continue;</span>
+<span class="fc" id="L1452">        Map&lt;Long, String&gt; porCombo = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L1453" title="All 2 branches covered.">        for (Combo combo : jornada.getCombosPorSlot()) {</span>
+<span class="pc bpc" id="L1454" title="3 of 4 branches missed.">            if (combo == null || combo.getId() == null) {</span>
+<span class="nc" id="L1455">                continue;</span>
             }
-<span class="nc" id="L1421">            List&lt;Long&gt; ancestros = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L1422">            Set&lt;Long&gt; visitados = new HashSet&lt;&gt;();</span>
-<span class="nc" id="L1423">            Long actual = combo.getId();</span>
-<span class="nc" id="L1424">            visitados.add(actual);</span>
+<span class="nc" id="L1457">            List&lt;Long&gt; ancestros = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L1458">            Set&lt;Long&gt; visitados = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L1459">            Long actual = combo.getId();</span>
+<span class="nc" id="L1460">            visitados.add(actual);</span>
             Long padre;
-<span class="nc bnc" id="L1426" title="All 4 branches missed.">            while ((padre = comboPadreDe(actual)) != null &amp;&amp; visitados.add(padre)) {</span>
-<span class="nc" id="L1427">                ancestros.add(padre);</span>
-<span class="nc" id="L1428">                actual = padre;</span>
+<span class="nc bnc" id="L1462" title="All 4 branches missed.">            while ((padre = comboPadreDe(actual)) != null &amp;&amp; visitados.add(padre)) {</span>
+<span class="nc" id="L1463">                ancestros.add(padre);</span>
+<span class="nc" id="L1464">                actual = padre;</span>
             }
-<span class="nc bnc" id="L1430" title="All 2 branches missed.">            if (!ancestros.isEmpty()) {</span>
-<span class="nc" id="L1431">                porCombo.put(combo.getId(), ancestros.stream()</span>
-<span class="nc" id="L1432">                    .map(String::valueOf)</span>
-<span class="nc" id="L1433">                    .collect(Collectors.joining(&quot;/&quot;)));</span>
+<span class="nc bnc" id="L1466" title="All 2 branches missed.">            if (!ancestros.isEmpty()) {</span>
+<span class="nc" id="L1467">                porCombo.put(combo.getId(), ancestros.stream()</span>
+<span class="nc" id="L1468">                    .map(String::valueOf)</span>
+<span class="nc" id="L1469">                    .collect(Collectors.joining(&quot;/&quot;)));</span>
             }
         }
-<span class="fc" id="L1436">        return porCombo;</span>
+<span class="fc" id="L1472">        return porCombo;</span>
     }
 
     private Long comboPadreDe(Long comboId) {
         @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L1441">        List&lt;Object&gt; notas = entityManager.createNativeQuery(</span>
-<span class="nc" id="L1442">                &quot;SELECT notas FROM historial_jornadas WHERE combo_id = ? &quot;</span>
+<span class="nc" id="L1477">        List&lt;Object&gt; notas = entityManager.createNativeQuery(</span>
+<span class="nc" id="L1478">                &quot;SELECT notas FROM historial_jornadas WHERE combo_id = ? &quot;</span>
                     + &quot;AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'&quot;)
-<span class="nc" id="L1444">            .setParameter(1, comboId)</span>
-<span class="nc" id="L1445">            .getResultList();</span>
-<span class="nc bnc" id="L1446" title="All 2 branches missed.">        for (Object nota : notas) {</span>
-<span class="nc" id="L1447">            Long padre = extraerComboPadreDesdeNotas(valorTexto(nota));</span>
-<span class="nc bnc" id="L1448" title="All 2 branches missed.">            if (padre != null) {</span>
-<span class="nc" id="L1449">                return padre;</span>
+<span class="nc" id="L1480">            .setParameter(1, comboId)</span>
+<span class="nc" id="L1481">            .getResultList();</span>
+<span class="nc bnc" id="L1482" title="All 2 branches missed.">        for (Object nota : notas) {</span>
+<span class="nc" id="L1483">            Long padre = extraerComboPadreDesdeNotas(valorTexto(nota));</span>
+<span class="nc bnc" id="L1484" title="All 2 branches missed.">            if (padre != null) {</span>
+<span class="nc" id="L1485">                return padre;</span>
             }
         }
-<span class="nc" id="L1452">        return null;</span>
+<span class="nc" id="L1488">        return null;</span>
     }
 
     public boolean esComboDerivadoDeJornada(Long jornadaId, Long comboId) {
-<span class="fc" id="L1456">        Number count = (Number) entityManager.createNativeQuery(</span>
-<span class="fc" id="L1457">                &quot;SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? &quot;</span>
+<span class="fc" id="L1492">        Number count = (Number) entityManager.createNativeQuery(</span>
+<span class="fc" id="L1493">                &quot;SELECT COUNT(*) FROM historial_jornadas WHERE jornada_id = ? AND combo_id = ? &quot;</span>
                     + &quot;AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'&quot;)
-<span class="fc" id="L1459">            .setParameter(1, jornadaId)</span>
-<span class="fc" id="L1460">            .setParameter(2, comboId)</span>
-<span class="fc" id="L1461">            .getSingleResult();</span>
-<span class="fc bfc" id="L1462" title="All 2 branches covered.">        return count.longValue() &gt; 0;</span>
+<span class="fc" id="L1495">            .setParameter(1, jornadaId)</span>
+<span class="fc" id="L1496">            .setParameter(2, comboId)</span>
+<span class="fc" id="L1497">            .getSingleResult();</span>
+<span class="fc bfc" id="L1498" title="All 2 branches covered.">        return count.longValue() &gt; 0;</span>
     }
 
     public boolean esComboDerivado(Long comboId) {
-<span class="fc" id="L1466">        Number count = (Number) entityManager.createNativeQuery(</span>
-<span class="fc" id="L1467">                &quot;SELECT COUNT(*) FROM historial_jornadas WHERE combo_id = ? &quot;</span>
+<span class="fc" id="L1502">        Number count = (Number) entityManager.createNativeQuery(</span>
+<span class="fc" id="L1503">                &quot;SELECT COUNT(*) FROM historial_jornadas WHERE combo_id = ? &quot;</span>
                     + &quot;AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'&quot;)
-<span class="fc" id="L1469">            .setParameter(1, comboId)</span>
-<span class="fc" id="L1470">            .getSingleResult();</span>
-<span class="fc bfc" id="L1471" title="All 2 branches covered.">        return count.longValue() &gt; 0;</span>
+<span class="fc" id="L1505">            .setParameter(1, comboId)</span>
+<span class="fc" id="L1506">            .getSingleResult();</span>
+<span class="fc bfc" id="L1507" title="All 2 branches covered.">        return count.longValue() &gt; 0;</span>
     }
 
     public List&lt;Map&lt;String, Object&gt;&gt; listarContenidoOtras(Long jornadaId, String tipo) {
-<span class="pc bpc" id="L1475" title="1 of 4 branches missed.">        boolean listarCombos = tipo != null &amp;&amp; tipo.toLowerCase().startsWith(&quot;combo&quot;);</span>
-<span class="fc" id="L1476">        List&lt;Map&lt;String, Object&gt;&gt; resultado = new ArrayList&lt;&gt;();</span>
-<span class="fc bfc" id="L1477" title="All 2 branches covered.">        Set&lt;Long&gt; combosDerivados = listarCombos ? idsCombosDerivados() : Collections.emptySet();</span>
-<span class="fc bfc" id="L1478" title="All 2 branches covered.">        for (Jornada jornada : jornadaRepository.findAll()) {</span>
-<span class="pc bpc" id="L1479" title="1 of 4 branches missed.">            if (jornada.getId() == null || jornada.getId().equals(jornadaId)) {</span>
-<span class="fc" id="L1480">                continue;</span>
+<span class="pc bpc" id="L1511" title="1 of 4 branches missed.">        boolean listarCombos = tipo != null &amp;&amp; tipo.toLowerCase().startsWith(&quot;combo&quot;);</span>
+<span class="fc" id="L1512">        List&lt;Map&lt;String, Object&gt;&gt; resultado = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L1513" title="All 2 branches covered.">        Set&lt;Long&gt; combosDerivados = listarCombos ? idsCombosDerivados() : Collections.emptySet();</span>
+<span class="fc bfc" id="L1514" title="All 2 branches covered.">        for (Jornada jornada : jornadaRepository.findAll()) {</span>
+<span class="pc bpc" id="L1515" title="1 of 4 branches missed.">            if (jornada.getId() == null || jornada.getId().equals(jornadaId)) {</span>
+<span class="fc" id="L1516">                continue;</span>
             }
-<span class="fc bfc" id="L1482" title="All 2 branches covered.">            if (listarCombos) {</span>
-<span class="fc bfc" id="L1483" title="All 2 branches covered.">                for (Combo combo : jornada.getCombosPorSlot()) {</span>
-<span class="pc bpc" id="L1484" title="2 of 6 branches missed.">                    if (combo == null || combo.getId() == null || combosDerivados.contains(combo.getId())) {</span>
-<span class="nc" id="L1485">                        continue;</span>
+<span class="fc bfc" id="L1518" title="All 2 branches covered.">            if (listarCombos) {</span>
+<span class="fc bfc" id="L1519" title="All 2 branches covered.">                for (Combo combo : jornada.getCombosPorSlot()) {</span>
+<span class="pc bpc" id="L1520" title="1 of 4 branches missed.">                    if (combo == null || combo.getId() == null) {</span>
+<span class="nc" id="L1521">                        continue;</span>
                     }
-<span class="fc bfc" id="L1487" title="All 2 branches covered.">                    if (!estadoAsignableCombo(combo)) {</span>
-<span class="fc" id="L1488">                        continue;</span>
+<span class="pc bpc" id="L1523" title="3 of 4 branches missed.">                    if (combosDerivados.contains(combo.getId()) &amp;&amp; comboDerivadoNoAsignable(combo)) {</span>
+<span class="nc" id="L1524">                        continue;</span>
                     }
-<span class="fc bfc" id="L1490" title="All 2 branches covered.">                    if (concursanteRepository.existsByCombo_Id(combo.getId())) {</span>
-<span class="fc" id="L1491">                        continue;</span>
+<span class="fc bfc" id="L1526" title="All 2 branches covered.">                    if (!estadoAsignableCombo(combo)) {</span>
+<span class="fc" id="L1527">                        continue;</span>
                     }
-<span class="fc" id="L1493">                    resultado.add(mapearItemOtraJornadaCombo(combo, jornada));</span>
+<span class="fc bfc" id="L1529" title="All 2 branches covered.">                    if (concursanteRepository.existsByCombo_Id(combo.getId())) {</span>
+<span class="fc" id="L1530">                        continue;</span>
+                    }
+<span class="fc" id="L1532">                    resultado.add(mapearItemOtraJornadaCombo(combo, jornada));</span>
                 }
-<span class="fc" id="L1495">            } else {</span>
-<span class="fc bfc" id="L1496" title="All 2 branches covered.">                for (Cuestionario cuestionario : jornada.getCuestionariosPorSlot()) {</span>
-<span class="pc bpc" id="L1497" title="1 of 4 branches missed.">                    if (cuestionario == null || cuestionario.getId() == null) {</span>
-<span class="nc" id="L1498">                        continue;</span>
+<span class="fc" id="L1534">            } else {</span>
+<span class="fc bfc" id="L1535" title="All 2 branches covered.">                for (Cuestionario cuestionario : jornada.getCuestionariosPorSlot()) {</span>
+<span class="pc bpc" id="L1536" title="1 of 4 branches missed.">                    if (cuestionario == null || cuestionario.getId() == null) {</span>
+<span class="nc" id="L1537">                        continue;</span>
                     }
-<span class="fc bfc" id="L1500" title="All 2 branches covered.">                    if (!estadoAsignableCuestionario(cuestionario)) {</span>
-<span class="fc" id="L1501">                        continue;</span>
+<span class="fc bfc" id="L1539" title="All 2 branches covered.">                    if (!estadoAsignableCuestionario(cuestionario)) {</span>
+<span class="fc" id="L1540">                        continue;</span>
                     }
-<span class="fc bfc" id="L1503" title="All 2 branches covered.">                    if (concursanteRepository.existsByCuestionario_Id(cuestionario.getId())) {</span>
-<span class="fc" id="L1504">                        continue;</span>
+<span class="fc bfc" id="L1542" title="All 2 branches covered.">                    if (concursanteRepository.existsByCuestionario_Id(cuestionario.getId())) {</span>
+<span class="fc" id="L1543">                        continue;</span>
                     }
-<span class="fc" id="L1506">                    resultado.add(mapearItemOtraJornadaCuestionario(cuestionario, jornada));</span>
+<span class="fc" id="L1545">                    resultado.add(mapearItemOtraJornadaCuestionario(cuestionario, jornada));</span>
                 }
             }
         }
-<span class="fc" id="L1510">        return resultado;</span>
+<span class="fc" id="L1549">        return resultado;</span>
     }
 
     /** Estados que ConcursanteService admite al asignar un cuestionario. */
     private boolean estadoAsignableCuestionario(Cuestionario c) {
-<span class="fc" id="L1515">        Cuestionario.EstadoCuestionario e = c.getEstado();</span>
-<span class="fc bfc" id="L1516" title="All 2 branches covered.">        return e == Cuestionario.EstadoCuestionario.aprobado</span>
-<span class="fc bfc" id="L1517" title="All 2 branches covered.">            || e == Cuestionario.EstadoCuestionario.adjudicado</span>
-<span class="fc bfc" id="L1518" title="All 2 branches covered.">            || e == Cuestionario.EstadoCuestionario.grabado;</span>
+<span class="fc" id="L1554">        Cuestionario.EstadoCuestionario e = c.getEstado();</span>
+<span class="fc bfc" id="L1555" title="All 2 branches covered.">        return e == Cuestionario.EstadoCuestionario.aprobado</span>
+<span class="fc bfc" id="L1556" title="All 2 branches covered.">            || e == Cuestionario.EstadoCuestionario.adjudicado</span>
+<span class="fc bfc" id="L1557" title="All 2 branches covered.">            || e == Cuestionario.EstadoCuestionario.grabado;</span>
+    }
+
+    private boolean comboDerivadoNoAsignable(Combo combo) {
+<span class="fc bfc" id="L1561" title="All 2 branches covered.">        if (combo.getEstado() == Combo.EstadoCombo.borrador) {</span>
+<span class="fc" id="L1562">            return true;</span>
+        }
+<span class="pc bpc" id="L1564" title="1 of 2 branches missed.">        if (!estadoAsignableCombo(combo)) {</span>
+<span class="nc" id="L1565">            return true;</span>
+        }
+<span class="pc bpc" id="L1567" title="1 of 2 branches missed.">        int preguntas = combo.getPreguntas() == null ? 0 : combo.getPreguntas().size();</span>
+<span class="pc bpc" id="L1568" title="2 of 4 branches missed.">        return preguntas &gt; 0 &amp;&amp; preguntas != 3;</span>
     }
 
     /** Estados que ConcursanteService admite al asignar un combo. */
     private boolean estadoAsignableCombo(Combo c) {
-<span class="fc" id="L1523">        Combo.EstadoCombo e = c.getEstado();</span>
-<span class="fc bfc" id="L1524" title="All 2 branches covered.">        return e == Combo.EstadoCombo.aprobado</span>
-<span class="fc bfc" id="L1525" title="All 2 branches covered.">            || e == Combo.EstadoCombo.adjudicado</span>
-<span class="fc bfc" id="L1526" title="All 2 branches covered.">            || e == Combo.EstadoCombo.grabado;</span>
+<span class="fc" id="L1573">        Combo.EstadoCombo e = c.getEstado();</span>
+<span class="fc bfc" id="L1574" title="All 2 branches covered.">        return e == Combo.EstadoCombo.aprobado</span>
+<span class="fc bfc" id="L1575" title="All 2 branches covered.">            || e == Combo.EstadoCombo.adjudicado</span>
+<span class="fc bfc" id="L1576" title="All 2 branches covered.">            || e == Combo.EstadoCombo.grabado;</span>
     }
 
     private Set&lt;Long&gt; idsCombosDerivados() {
         @SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L1531">        List&lt;Object&gt; filas = entityManager.createNativeQuery(</span>
-<span class="fc" id="L1532">                &quot;SELECT DISTINCT combo_id FROM historial_jornadas &quot;</span>
+<span class="fc" id="L1581">        List&lt;Object&gt; filas = entityManager.createNativeQuery(</span>
+<span class="fc" id="L1582">                &quot;SELECT DISTINCT combo_id FROM historial_jornadas &quot;</span>
                     + &quot;WHERE combo_id IS NOT NULL AND notas LIKE 'RECICLAJE_PARCIAL_COMBO_HIJO;%'&quot;)
-<span class="fc" id="L1534">            .getResultList();</span>
-<span class="fc" id="L1535">        Set&lt;Long&gt; ids = new HashSet&lt;&gt;();</span>
-<span class="pc bpc" id="L1536" title="1 of 2 branches missed.">        for (Object fila : filas) {</span>
-<span class="nc bnc" id="L1537" title="All 2 branches missed.">            if (fila instanceof Number) {</span>
-<span class="nc" id="L1538">                ids.add(((Number) fila).longValue());</span>
+<span class="fc" id="L1584">            .getResultList();</span>
+<span class="fc" id="L1585">        Set&lt;Long&gt; ids = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L1586" title="1 of 2 branches missed.">        for (Object fila : filas) {</span>
+<span class="nc bnc" id="L1587" title="All 2 branches missed.">            if (fila instanceof Number) {</span>
+<span class="nc" id="L1588">                ids.add(((Number) fila).longValue());</span>
             }
         }
-<span class="fc" id="L1541">        return ids;</span>
+<span class="fc" id="L1591">        return ids;</span>
     }
 
     @Transactional
     public void registrarArrastre(Long jornadaDestinoId, String tipo, Long itemId) {
-<span class="fc" id="L1546">        String marca = marcaArrastre(jornadaDestinoId);</span>
-<span class="pc bpc" id="L1547" title="1 of 4 branches missed.">        boolean esCombo = tipo != null &amp;&amp; tipo.toLowerCase().startsWith(&quot;combo&quot;);</span>
-<span class="fc bfc" id="L1548" title="All 2 branches covered.">        if (esCombo) {</span>
-<span class="fc" id="L1549">            Combo combo = comboRepository.findById(itemId)</span>
-<span class="pc" id="L1550">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Combo no encontrado&quot;));</span>
-<span class="fc bfc" id="L1551" title="All 2 branches covered.">            if (esComboDerivado(itemId)) {</span>
-<span class="fc" id="L1552">                throw new IllegalStateException(&quot;Un combo reciclado no se puede arrastrar a otra jornada.&quot;);</span>
+<span class="fc" id="L1596">        String marca = marcaArrastre(jornadaDestinoId);</span>
+<span class="pc bpc" id="L1597" title="1 of 4 branches missed.">        boolean esCombo = tipo != null &amp;&amp; tipo.toLowerCase().startsWith(&quot;combo&quot;);</span>
+<span class="fc bfc" id="L1598" title="All 2 branches covered.">        if (esCombo) {</span>
+<span class="fc" id="L1599">            Combo combo = comboRepository.findById(itemId)</span>
+<span class="pc" id="L1600">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Combo no encontrado&quot;));</span>
+<span class="fc bfc" id="L1601" title="All 4 branches covered.">            if (esComboDerivado(itemId) &amp;&amp; comboDerivadoNoAsignable(combo)) {</span>
+<span class="fc" id="L1602">                throw new IllegalStateException(&quot;Un combo reciclado incompleto no se puede arrastrar a otra jornada.&quot;);</span>
             }
-<span class="fc" id="L1554">            combo.setNotasDireccion(anexarNotaDireccion(combo.getNotasDireccion(), marca));</span>
-<span class="fc" id="L1555">            comboRepository.save(combo);</span>
-<span class="fc" id="L1556">        } else {</span>
-<span class="fc" id="L1557">            Cuestionario cuestionario = cuestionarioRepository.findById(itemId)</span>
-<span class="pc" id="L1558">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Cuestionario no encontrado&quot;));</span>
-<span class="fc" id="L1559">            cuestionario.setNotasDireccion(anexarNotaDireccion(cuestionario.getNotasDireccion(), marca));</span>
-<span class="fc" id="L1560">            cuestionarioRepository.save(cuestionario);</span>
+<span class="fc" id="L1604">            combo.setNotasDireccion(anexarNotaDireccion(combo.getNotasDireccion(), marca));</span>
+<span class="fc" id="L1605">            comboRepository.save(combo);</span>
+<span class="fc" id="L1606">        } else {</span>
+<span class="fc" id="L1607">            Cuestionario cuestionario = cuestionarioRepository.findById(itemId)</span>
+<span class="pc" id="L1608">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Cuestionario no encontrado&quot;));</span>
+<span class="fc" id="L1609">            cuestionario.setNotasDireccion(anexarNotaDireccion(cuestionario.getNotasDireccion(), marca));</span>
+<span class="fc" id="L1610">            cuestionarioRepository.save(cuestionario);</span>
         }
-<span class="fc" id="L1562">    }</span>
+<span class="fc" id="L1612">    }</span>
 
     @Transactional
     public void quitarArrastre(Long jornadaDestinoId, String tipo, Long itemId) {
-<span class="fc" id="L1566">        String marca = marcaArrastre(jornadaDestinoId);</span>
-<span class="pc bpc" id="L1567" title="1 of 4 branches missed.">        boolean esCombo = tipo != null &amp;&amp; tipo.toLowerCase().startsWith(&quot;combo&quot;);</span>
-<span class="fc bfc" id="L1568" title="All 2 branches covered.">        if (esCombo) {</span>
-<span class="fc" id="L1569">            Combo combo = comboRepository.findById(itemId)</span>
-<span class="pc" id="L1570">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Combo no encontrado&quot;));</span>
-<span class="fc" id="L1571">            combo.setNotasDireccion(quitarNotaDireccion(combo.getNotasDireccion(), marca));</span>
-<span class="fc" id="L1572">            comboRepository.save(combo);</span>
-<span class="fc" id="L1573">        } else {</span>
-<span class="fc" id="L1574">            Cuestionario cuestionario = cuestionarioRepository.findById(itemId)</span>
-<span class="pc" id="L1575">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Cuestionario no encontrado&quot;));</span>
-<span class="fc" id="L1576">            cuestionario.setNotasDireccion(quitarNotaDireccion(cuestionario.getNotasDireccion(), marca));</span>
-<span class="fc" id="L1577">            cuestionarioRepository.save(cuestionario);</span>
+<span class="fc" id="L1616">        String marca = marcaArrastre(jornadaDestinoId);</span>
+<span class="pc bpc" id="L1617" title="1 of 4 branches missed.">        boolean esCombo = tipo != null &amp;&amp; tipo.toLowerCase().startsWith(&quot;combo&quot;);</span>
+<span class="fc bfc" id="L1618" title="All 2 branches covered.">        if (esCombo) {</span>
+<span class="fc" id="L1619">            Combo combo = comboRepository.findById(itemId)</span>
+<span class="pc" id="L1620">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Combo no encontrado&quot;));</span>
+<span class="fc" id="L1621">            combo.setNotasDireccion(quitarNotaDireccion(combo.getNotasDireccion(), marca));</span>
+<span class="fc" id="L1622">            comboRepository.save(combo);</span>
+<span class="fc" id="L1623">        } else {</span>
+<span class="fc" id="L1624">            Cuestionario cuestionario = cuestionarioRepository.findById(itemId)</span>
+<span class="pc" id="L1625">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Cuestionario no encontrado&quot;));</span>
+<span class="fc" id="L1626">            cuestionario.setNotasDireccion(quitarNotaDireccion(cuestionario.getNotasDireccion(), marca));</span>
+<span class="fc" id="L1627">            cuestionarioRepository.save(cuestionario);</span>
         }
-<span class="fc" id="L1579">    }</span>
+<span class="fc" id="L1629">    }</span>
 
     /** Los nombres de jornada ya suelen empezar por &quot;Jornada&quot;, se evita duplicarlo. */
     private String marcaArrastre(Long jornadaDestinoId) {
-<span class="fc" id="L1583">        Jornada destino = jornadaRepository.findById(jornadaDestinoId)</span>
-<span class="pc" id="L1584">            .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Jornada no encontrada&quot;));</span>
-<span class="fc" id="L1585">        String nombre = destino.getNombre();</span>
-<span class="pc bpc" id="L1586" title="2 of 4 branches missed.">        String etiqueta = (nombre != null &amp;&amp; !nombre.isBlank())</span>
-<span class="fc" id="L1587">            ? nombre.trim().replaceFirst(&quot;(?i)^jornada\\s+&quot;, &quot;&quot;)</span>
-<span class="nc" id="L1588">            : String.valueOf(destino.getId());</span>
-<span class="pc bpc" id="L1589" title="1 of 2 branches missed.">        if (etiqueta.isBlank()) {</span>
-<span class="nc" id="L1590">            etiqueta = String.valueOf(destino.getId());</span>
+<span class="fc" id="L1633">        Jornada destino = jornadaRepository.findById(jornadaDestinoId)</span>
+<span class="pc" id="L1634">            .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Jornada no encontrada&quot;));</span>
+<span class="fc" id="L1635">        String nombre = destino.getNombre();</span>
+<span class="pc bpc" id="L1636" title="2 of 4 branches missed.">        String etiqueta = (nombre != null &amp;&amp; !nombre.isBlank())</span>
+<span class="fc" id="L1637">            ? nombre.trim().replaceFirst(&quot;(?i)^jornada\\s+&quot;, &quot;&quot;)</span>
+<span class="nc" id="L1638">            : String.valueOf(destino.getId());</span>
+<span class="pc bpc" id="L1639" title="1 of 2 branches missed.">        if (etiqueta.isBlank()) {</span>
+<span class="nc" id="L1640">            etiqueta = String.valueOf(destino.getId());</span>
         }
-<span class="fc" id="L1592">        return &quot;Arrastrado a Jornada &quot; + etiqueta;</span>
+<span class="fc" id="L1642">        return &quot;Arrastrado a Jornada &quot; + etiqueta;</span>
     }
 
     private String anexarNotaDireccion(String actual, String marca) {
-<span class="fc bfc" id="L1596" title="All 4 branches covered.">        if (actual != null &amp;&amp; actual.contains(marca)) {</span>
-<span class="fc" id="L1597">            return actual;</span>
+<span class="fc bfc" id="L1646" title="All 4 branches covered.">        if (actual != null &amp;&amp; actual.contains(marca)) {</span>
+<span class="fc" id="L1647">            return actual;</span>
         }
-<span class="pc bpc" id="L1599" title="1 of 4 branches missed.">        if (actual == null || actual.isBlank()) {</span>
-<span class="fc" id="L1600">            return marca;</span>
+<span class="pc bpc" id="L1649" title="1 of 4 branches missed.">        if (actual == null || actual.isBlank()) {</span>
+<span class="fc" id="L1650">            return marca;</span>
         }
-<span class="fc" id="L1602">        return actual.trim() + &quot;\n&quot; + marca;</span>
+<span class="fc" id="L1652">        return actual.trim() + &quot;\n&quot; + marca;</span>
     }
 
     private String quitarNotaDireccion(String actual, String marca) {
-<span class="pc bpc" id="L1606" title="2 of 4 branches missed.">        if (actual == null || !actual.contains(marca)) {</span>
-<span class="nc" id="L1607">            return actual;</span>
+<span class="pc bpc" id="L1656" title="2 of 4 branches missed.">        if (actual == null || !actual.contains(marca)) {</span>
+<span class="nc" id="L1657">            return actual;</span>
         }
-<span class="fc" id="L1609">        List&lt;String&gt; lineas = new ArrayList&lt;&gt;();</span>
-<span class="fc bfc" id="L1610" title="All 2 branches covered.">        for (String linea : actual.split(&quot;\\r?\\n&quot;, -1)) {</span>
-<span class="fc bfc" id="L1611" title="All 2 branches covered.">            if (!linea.trim().equals(marca)) {</span>
-<span class="fc" id="L1612">                lineas.add(linea);</span>
+<span class="fc" id="L1659">        List&lt;String&gt; lineas = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L1660" title="All 2 branches covered.">        for (String linea : actual.split(&quot;\\r?\\n&quot;, -1)) {</span>
+<span class="fc bfc" id="L1661" title="All 2 branches covered.">            if (!linea.trim().equals(marca)) {</span>
+<span class="fc" id="L1662">                lineas.add(linea);</span>
             }
         }
-<span class="fc" id="L1615">        String restante = String.join(&quot;\n&quot;, lineas).trim();</span>
-<span class="fc bfc" id="L1616" title="All 2 branches covered.">        return restante.isEmpty() ? null : restante;</span>
+<span class="fc" id="L1665">        String restante = String.join(&quot;\n&quot;, lineas).trim();</span>
+<span class="fc bfc" id="L1666" title="All 2 branches covered.">        return restante.isEmpty() ? null : restante;</span>
     }
 
     private Map&lt;String, Object&gt; mapearItemOtraJornadaCuestionario(Cuestionario c, Jornada jornada) {
-<span class="fc" id="L1620">        Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L1621">        map.put(&quot;id&quot;, c.getId());</span>
-<span class="fc" id="L1622">        map.put(&quot;tematica&quot;, c.getTematica());</span>
-<span class="pc bpc" id="L1623" title="1 of 2 branches missed.">        map.put(&quot;estado&quot;, c.getEstado() != null ? c.getEstado().name() : null);</span>
-<span class="fc" id="L1624">        map.put(&quot;fechaCreacion&quot;, c.getFechaCreacion());</span>
-<span class="fc" id="L1625">        map.put(&quot;jornadaId&quot;, jornada.getId());</span>
-<span class="fc" id="L1626">        map.put(&quot;jornadaNombre&quot;, jornada.getNombre());</span>
-<span class="fc" id="L1627">        map.put(&quot;preguntas&quot;, mapearPreguntasCuestionario(c));</span>
-<span class="fc" id="L1628">        return map;</span>
+<span class="fc" id="L1670">        Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L1671">        map.put(&quot;id&quot;, c.getId());</span>
+<span class="fc" id="L1672">        map.put(&quot;tematica&quot;, c.getTematica());</span>
+<span class="pc bpc" id="L1673" title="1 of 2 branches missed.">        map.put(&quot;estado&quot;, c.getEstado() != null ? c.getEstado().name() : null);</span>
+<span class="fc" id="L1674">        map.put(&quot;fechaCreacion&quot;, c.getFechaCreacion());</span>
+<span class="fc" id="L1675">        map.put(&quot;jornadaId&quot;, jornada.getId());</span>
+<span class="fc" id="L1676">        map.put(&quot;jornadaNombre&quot;, jornada.getNombre());</span>
+<span class="fc" id="L1677">        map.put(&quot;preguntas&quot;, mapearPreguntasCuestionario(c));</span>
+<span class="fc" id="L1678">        return map;</span>
     }
 
     private Map&lt;String, Object&gt; mapearItemOtraJornadaCombo(Combo c, Jornada jornada) {
-<span class="fc" id="L1632">        Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L1633">        map.put(&quot;id&quot;, c.getId());</span>
-<span class="fc" id="L1634">        map.put(&quot;tematica&quot;, c.getTematica());</span>
-<span class="pc bpc" id="L1635" title="1 of 2 branches missed.">        map.put(&quot;tipo&quot;, c.getTipo() != null ? c.getTipo().name() : null);</span>
-<span class="pc bpc" id="L1636" title="1 of 2 branches missed.">        map.put(&quot;estado&quot;, c.getEstado() != null ? c.getEstado().name() : null);</span>
-<span class="fc" id="L1637">        map.put(&quot;fechaCreacion&quot;, c.getFechaCreacion());</span>
-<span class="fc" id="L1638">        map.put(&quot;jornadaId&quot;, jornada.getId());</span>
-<span class="fc" id="L1639">        map.put(&quot;jornadaNombre&quot;, jornada.getNombre());</span>
-<span class="fc" id="L1640">        map.put(&quot;preguntas&quot;, mapearPreguntasCombo(c));</span>
-<span class="fc" id="L1641">        return map;</span>
+<span class="fc" id="L1682">        Map&lt;String, Object&gt; map = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L1683">        map.put(&quot;id&quot;, c.getId());</span>
+<span class="fc" id="L1684">        map.put(&quot;tematica&quot;, c.getTematica());</span>
+<span class="pc bpc" id="L1685" title="1 of 2 branches missed.">        map.put(&quot;tipo&quot;, c.getTipo() != null ? c.getTipo().name() : null);</span>
+<span class="pc bpc" id="L1686" title="1 of 2 branches missed.">        map.put(&quot;estado&quot;, c.getEstado() != null ? c.getEstado().name() : null);</span>
+<span class="fc" id="L1687">        map.put(&quot;fechaCreacion&quot;, c.getFechaCreacion());</span>
+<span class="fc" id="L1688">        map.put(&quot;jornadaId&quot;, jornada.getId());</span>
+<span class="fc" id="L1689">        map.put(&quot;jornadaNombre&quot;, jornada.getNombre());</span>
+<span class="fc" id="L1690">        map.put(&quot;preguntas&quot;, mapearPreguntasCombo(c));</span>
+<span class="fc" id="L1691">        return map;</span>
     }
 
     private List&lt;Map&lt;String, Object&gt;&gt; mapearPreguntasCuestionario(Cuestionario c) {
-<span class="fc" id="L1645">        List&lt;Map&lt;String, Object&gt;&gt; preguntas = new ArrayList&lt;&gt;();</span>
-<span class="pc bpc" id="L1646" title="1 of 2 branches missed.">        if (c.getPreguntas() == null) {</span>
-<span class="fc" id="L1647">            return preguntas;</span>
+<span class="fc" id="L1695">        List&lt;Map&lt;String, Object&gt;&gt; preguntas = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L1696" title="1 of 2 branches missed.">        if (c.getPreguntas() == null) {</span>
+<span class="fc" id="L1697">            return preguntas;</span>
         }
-<span class="nc bnc" id="L1649" title="All 2 branches missed.">        for (PreguntaCuestionario pc : c.getPreguntas()) {</span>
-<span class="nc" id="L1650">            Pregunta p = pc.getPregunta();</span>
-<span class="nc bnc" id="L1651" title="All 2 branches missed.">            if (p == null) {</span>
-<span class="nc" id="L1652">                continue;</span>
+<span class="nc bnc" id="L1699" title="All 2 branches missed.">        for (PreguntaCuestionario pc : c.getPreguntas()) {</span>
+<span class="nc" id="L1700">            Pregunta p = pc.getPregunta();</span>
+<span class="nc bnc" id="L1701" title="All 2 branches missed.">            if (p == null) {</span>
+<span class="nc" id="L1702">                continue;</span>
             }
-<span class="nc" id="L1654">            Map&lt;String, Object&gt; pm = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L1655">            pm.put(&quot;pregunta&quot;, p.getPregunta());</span>
-<span class="nc" id="L1656">            pm.put(&quot;respuesta&quot;, p.getRespuesta());</span>
-<span class="nc bnc" id="L1657" title="All 2 branches missed.">            pm.put(&quot;nivel&quot;, p.getNivel() != null ? p.getNivel().name() : null);</span>
-<span class="nc" id="L1658">            pm.put(&quot;datosExtra&quot;, p.getDatosExtra());</span>
-<span class="nc" id="L1659">            preguntas.add(pm);</span>
+<span class="nc" id="L1704">            Map&lt;String, Object&gt; pm = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L1705">            pm.put(&quot;pregunta&quot;, p.getPregunta());</span>
+<span class="nc" id="L1706">            pm.put(&quot;respuesta&quot;, p.getRespuesta());</span>
+<span class="nc bnc" id="L1707" title="All 2 branches missed.">            pm.put(&quot;nivel&quot;, p.getNivel() != null ? p.getNivel().name() : null);</span>
+<span class="nc" id="L1708">            pm.put(&quot;datosExtra&quot;, p.getDatosExtra());</span>
+<span class="nc" id="L1709">            preguntas.add(pm);</span>
         }
-<span class="nc" id="L1661">        return preguntas;</span>
+<span class="nc" id="L1711">        return preguntas;</span>
     }
 
     private List&lt;Map&lt;String, Object&gt;&gt; mapearPreguntasCombo(Combo c) {
-<span class="fc" id="L1665">        List&lt;Map&lt;String, Object&gt;&gt; preguntas = new ArrayList&lt;&gt;();</span>
-<span class="pc bpc" id="L1666" title="1 of 2 branches missed.">        if (c.getPreguntas() == null) {</span>
-<span class="fc" id="L1667">            return preguntas;</span>
+<span class="fc" id="L1715">        List&lt;Map&lt;String, Object&gt;&gt; preguntas = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L1716" title="1 of 2 branches missed.">        if (c.getPreguntas() == null) {</span>
+<span class="fc" id="L1717">            return preguntas;</span>
         }
-<span class="nc" id="L1669">        List&lt;PreguntaCombo&gt; ordenadas = new ArrayList&lt;&gt;(c.getPreguntas());</span>
-<span class="nc bnc" id="L1670" title="All 2 branches missed.">        ordenadas.sort(Comparator.comparing(pc -&gt; pc.getPosicion() != null ? pc.getPosicion() : 999));</span>
-<span class="nc bnc" id="L1671" title="All 2 branches missed.">        for (PreguntaCombo pc : ordenadas) {</span>
-<span class="nc" id="L1672">            Pregunta p = pc.getPregunta();</span>
-<span class="nc bnc" id="L1673" title="All 2 branches missed.">            if (p == null) {</span>
-<span class="nc" id="L1674">                continue;</span>
+<span class="nc" id="L1719">        List&lt;PreguntaCombo&gt; ordenadas = new ArrayList&lt;&gt;(c.getPreguntas());</span>
+<span class="nc bnc" id="L1720" title="All 2 branches missed.">        ordenadas.sort(Comparator.comparing(pc -&gt; pc.getPosicion() != null ? pc.getPosicion() : 999));</span>
+<span class="nc bnc" id="L1721" title="All 2 branches missed.">        for (PreguntaCombo pc : ordenadas) {</span>
+<span class="nc" id="L1722">            Pregunta p = pc.getPregunta();</span>
+<span class="nc bnc" id="L1723" title="All 2 branches missed.">            if (p == null) {</span>
+<span class="nc" id="L1724">                continue;</span>
             }
-<span class="nc" id="L1676">            Map&lt;String, Object&gt; pm = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L1677">            pm.put(&quot;pregunta&quot;, p.getPregunta());</span>
-<span class="nc" id="L1678">            pm.put(&quot;respuesta&quot;, p.getRespuesta());</span>
-<span class="nc bnc" id="L1679" title="All 2 branches missed.">            pm.put(&quot;nivel&quot;, p.getNivel() != null ? p.getNivel().name() : null);</span>
-<span class="nc" id="L1680">            pm.put(&quot;datosExtra&quot;, p.getDatosExtra());</span>
-<span class="nc" id="L1681">            pm.put(&quot;factorMultiplicacion&quot;, pc.getFactorMultiplicacion());</span>
-<span class="nc" id="L1682">            pm.put(&quot;posicion&quot;, pc.getPosicion());</span>
-<span class="nc" id="L1683">            preguntas.add(pm);</span>
+<span class="nc" id="L1726">            Map&lt;String, Object&gt; pm = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L1727">            pm.put(&quot;pregunta&quot;, p.getPregunta());</span>
+<span class="nc" id="L1728">            pm.put(&quot;respuesta&quot;, p.getRespuesta());</span>
+<span class="nc bnc" id="L1729" title="All 2 branches missed.">            pm.put(&quot;nivel&quot;, p.getNivel() != null ? p.getNivel().name() : null);</span>
+<span class="nc" id="L1730">            pm.put(&quot;datosExtra&quot;, p.getDatosExtra());</span>
+<span class="nc" id="L1731">            pm.put(&quot;factorMultiplicacion&quot;, pc.getFactorMultiplicacion());</span>
+<span class="nc" id="L1732">            pm.put(&quot;posicion&quot;, pc.getPosicion());</span>
+<span class="nc" id="L1733">            preguntas.add(pm);</span>
         }
-<span class="nc" id="L1685">        return preguntas;</span>
+<span class="nc" id="L1735">        return preguntas;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
