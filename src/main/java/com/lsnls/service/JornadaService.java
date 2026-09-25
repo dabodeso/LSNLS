@@ -1574,7 +1574,7 @@ public class JornadaService {
             || e == Cuestionario.EstadoCuestionario.grabado;
     }
 
-    private boolean comboDerivadoNoAsignable(Combo combo) {
+    public boolean comboDerivadoNoAsignable(Combo combo) {
         if (combo.getEstado() == Combo.EstadoCombo.borrador) {
             return true;
         }

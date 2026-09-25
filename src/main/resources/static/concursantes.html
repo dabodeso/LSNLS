@@ -313,6 +313,33 @@ line-height: 1.2;
             text-align: center;
             white-space: nowrap;
         }
+        #modal-preview-cuestionario .modal-dialog,
+        #modal-preview-combo .modal-dialog {
+            max-width: min(1600px, 96vw);
+            width: 96vw;
+        }
+        .tabla-preview-preguntas {
+            table-layout: fixed;
+            width: 100%;
+        }
+        .tabla-preview-preguntas .col-nivel-preview {
+            width: 80px;
+        }
+        .tabla-preview-preguntas .col-factor-preview {
+            width: 70px;
+        }
+        .tabla-preview-preguntas .col-pregunta-preview {
+            width: 34%;
+            overflow-wrap: anywhere;
+        }
+        .tabla-preview-preguntas .col-respuesta-preview {
+            width: 20%;
+            overflow-wrap: anywhere;
+        }
+        .tabla-preview-preguntas .col-datos-preview {
+            width: auto;
+            overflow-wrap: anywhere;
+        }
 </style>
 </head>
 <body>
@@ -431,7 +458,7 @@ line-height: 1.2;
 <table class="table table-excel table-preguntas" id="tabla-concursantes-header">
 <thead>
 <tr>
-<th class="sortable-header" data-tipo="number">ID<span class="sort-indicator inactive"></span></th>
+<th class="sortable-header" data-tipo="number">ID<span class="sort-indicator active desc"></span></th>
 <th class="sortable-header">JORNADA<span class="sort-indicator inactive"></span></th>
 <th class="sortable-header">DÍA GRABACIÓN<span class="sort-indicator inactive"></span></th>
 <th class="sortable-header">LUGAR<span class="sort-indicator inactive"></span></th>
@@ -1037,7 +1064,7 @@ Borrar
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="preview-cuestionario-contenido" class="table-responsive" style="max-height:60vh; overflow:auto;"></div>
+                    <div id="preview-cuestionario-contenido" class="table-responsive" style="max-height:70vh; overflow:auto;"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -1057,7 +1084,7 @@ Borrar
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="preview-combo-contenido" class="table-responsive" style="max-height:60vh; overflow:auto;"></div>
+                    <div id="preview-combo-contenido" class="table-responsive" style="max-height:70vh; overflow:auto;"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -1081,7 +1108,7 @@ Borrar
 <script src="js/api.js?v=20260821-3"></script>
     <script src="js/undo-manager.js?v=20260915-modal"></script>
 <script src="js/table-resizer.js?v=20260925-rrss-ocup"></script>
-    <script src="js/concursantes.js?v=20260925-aviso-permiso"></script>
+    <script src="js/concursantes.js?v=20260925-id-desc"></script>
 <script>
 // Inicializar la página cuando se carga
 document.addEventListener('DOMContentLoaded', function() {

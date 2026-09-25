@@ -829,7 +829,7 @@ class ConcursanteServiceTest {
     }
 
     @Test
-    void create_comboDerivadoSinSlotsNiHistorialFalla() {
+    void create_comboDerivadoCompletoDeOtraJornada() {
         Jornada jornada = new Jornada();
         jornada.setId(7L);
         Combo combo = new Combo();
@@ -838,6 +838,30 @@ class ConcursanteServiceTest {
         when(jornadaRepository.findById(7L)).thenReturn(Optional.of(jornada));
         when(comboRepository.findById(28L)).thenReturn(Optional.of(combo));
         when(jornadaService.esComboDerivado(28L)).thenReturn(true);
+        when(jornadaService.comboDerivadoNoAsignable(combo)).thenReturn(false);
+        when(concursanteRepository.findMaxNumeroConcursante()).thenReturn(1);
+        when(typedQuery.getResultList()).thenReturn(Collections.emptyList());
+
+        ConcursanteDTO dto = dtoMinimo();
+        dto.setJornadaId(7L);
+        dto.setComboId(28L);
+        ConcursanteDTO result = concursanteService.create(dto);
+
+        assertEquals("Ana", result.getNombre());
+        verify(comboRepository).save(combo);
+    }
+
+    @Test
+    void create_comboDerivadoBorradorDeOtraJornadaFalla() {
+        Jornada jornada = new Jornada();
+        jornada.setId(7L);
+        Combo combo = new Combo();
+        combo.setId(28L);
+        combo.setEstado(Combo.EstadoCombo.borrador);
+        when(jornadaRepository.findById(7L)).thenReturn(Optional.of(jornada));
+        when(comboRepository.findById(28L)).thenReturn(Optional.of(combo));
+        when(jornadaService.esComboDerivado(28L)).thenReturn(true);
+        when(jornadaService.comboDerivadoNoAsignable(combo)).thenReturn(true);
         when(jornadaService.jornadaContieneCombo(jornada, 28L)).thenReturn(false);
         when(jornadaService.esComboDerivadoDeJornada(7L, 28L)).thenReturn(false);
 

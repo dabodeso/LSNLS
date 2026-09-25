@@ -212,6 +212,23 @@ assert.ok(
   'datos extra del modal no se comen la respuesta'
 );
 assert.ok(
+  /#modalVerPreguntasCuestionario \.modal-dialog[\s\S]*max-width:\s*min\(1600px,\s*96vw\)/.test(jornadasHtml),
+  'visualizar cuestionario/combo abre más ancho'
+);
+assert.ok(
+  /#modalVerPreguntasCuestionario \.col-datos-jornada[\s\S]*width:\s*auto/.test(jornadasHtml),
+  'el extra de visualizar va a datos extra'
+);
+assert.ok(
+  /#modal-preview-cuestionario \.modal-dialog[\s\S]*max-width:\s*min\(1600px,\s*96vw\)/.test(concursantesHtml),
+  'preview de concursantes abre más ancho'
+);
+assert.ok(concursantesJs.includes('col-datos-preview'), 'preview de concursantes muestra datos extra');
+assert.ok(
+  /let sortByConcursantes = 'id';\s*let sortAscConcursantes = false;/.test(concursantesJs),
+  'concursantes abre por ID de mayor a menor'
+);
+assert.ok(
   jornadasJs.includes('col-respuesta-jornada') && jornadasJs.includes('col-datos-jornada'),
   'el JS del modal marca respuesta y datos extra'
 );

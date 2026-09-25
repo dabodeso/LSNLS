@@ -439,6 +439,9 @@ public class ConcursanteService {
         if (!jornadaService.esComboDerivado(combo.getId())) {
             return;
         }
+        if (!jornadaService.comboDerivadoNoAsignable(combo)) {
+            return;
+        }
         if (jornada != null && jornadaService.jornadaContieneCombo(jornada, combo.getId())) {
             return;
         }

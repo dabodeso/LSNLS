@@ -186,9 +186,12 @@
             table-layout: fixed;
             width: 100%;
         }
-        #modalJornada .col-pregunta-jornada,
-        #modalVerPreguntasCuestionario .col-pregunta-jornada,
-        #modalVerPreguntasCombo .col-pregunta-jornada {
+        #modalVerPreguntasCombo .col-mult-jornada {
+            width: 70px;
+            max-width: 70px;
+            white-space: nowrap;
+        }
+        #modalJornada .col-pregunta-jornada {
             width: 48%;
             overflow-wrap: anywhere;
         }
@@ -198,6 +201,26 @@
         }
         #modalJornada .col-datos-jornada {
             width: 28%;
+            overflow-wrap: anywhere;
+        }
+        #modalVerPreguntasCuestionario .modal-dialog,
+        #modalVerPreguntasCombo .modal-dialog {
+            max-width: min(1600px, 96vw);
+            width: 96vw;
+        }
+        #modalVerPreguntasCuestionario .col-pregunta-jornada,
+        #modalVerPreguntasCombo .col-pregunta-jornada {
+            width: 34%;
+            overflow-wrap: anywhere;
+        }
+        #modalVerPreguntasCuestionario .col-respuesta-jornada,
+        #modalVerPreguntasCombo .col-respuesta-jornada {
+            width: 20%;
+            overflow-wrap: anywhere;
+        }
+        #modalVerPreguntasCuestionario .col-datos-jornada,
+        #modalVerPreguntasCombo .col-datos-jornada {
+            width: auto;
             overflow-wrap: anywhere;
         }
 
@@ -553,8 +576,8 @@
                                 <tr>
                                     <th class="col-nivel-jornada">Nivel</th>
                                     <th class="col-pregunta-jornada">Pregunta</th>
-                                    <th>Respuesta</th>
-                                    <th>Datos extra</th>
+                                    <th class="col-respuesta-jornada">Respuesta</th>
+                                    <th class="col-datos-jornada">Datos extra</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaPreguntasCuestionario">
@@ -586,8 +609,8 @@
                                     <th class="col-mult-jornada" style="width: 70px;">MULT</th>
                                     <th class="col-nivel-jornada">Nivel</th>
                                     <th class="col-pregunta-jornada">Pregunta</th>
-                                    <th>Respuesta</th>
-                                    <th>Datos extra</th>
+                                    <th class="col-respuesta-jornada">Respuesta</th>
+                                    <th class="col-datos-jornada">Datos extra</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaPreguntasCombo">
@@ -862,7 +885,7 @@
     <script src="js/undo-manager.js?v=20260915-modal"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
-    <script src="js/jornadas.js?v=20260925-aviso-permiso"></script>
+    <script src="js/jornadas.js?v=20260925-preview-ancho"></script>
     <script>
         // Verificar autenticación al cargar la página
         document.addEventListener('DOMContentLoaded', function() {

@@ -59,9 +59,9 @@ let selectorModoOtrasJornadas = false;
 // Arrastres elegidos en el formulario, pendientes de anotar hasta guardar: { cuestionario|combo: {itemId, jornadaId} }
 let arrastresPendientes = {};
 
-// Estado de ordenación (server-side) — por defecto ID ascendente
+// Estado de ordenación (server-side) — por defecto ID de mayor a menor
 let sortByConcursantes = 'id';
-let sortAscConcursantes = true;
+let sortAscConcursantes = false;
 
 // Flag para evitar bucles durante la búsqueda de página por URL ?id=
 let buscandoConcursantePorId = false;
@@ -2205,6 +2205,11 @@ function formatFechaFlexible(f) {
 // Vista previa de Cuestionario
 let concursanteParaReemplazo = null;
 
+function datosExtraPreguntaPreview(q) {
+    if (!q) return '';
+    return q.datosExtra || q.datos_extra || '';
+}
+
 async function verCuestionario(id, concursanteId) {
     try {
         if (concursanteId) concursanteParaReemplazo = concursanteId;
@@ -2223,13 +2228,13 @@ async function verCuestionario(id, concursanteId) {
                     const nivel = Utils.formatearNivel((q.nivel && typeof q.nivel === 'string') ? q.nivel : (q.nivel || ''));
                     const texto = q.pregunta;
                     const resp = (q.respuesta && typeof q.respuesta === 'string') ? q.respuesta : (q.respuesta || '');
-                    return `<tr><td>${nivel || ''}</td><td>${texto}</td><td>${resp || ''}</td></tr>`;
+                    return `<tr><td class="col-nivel-preview">${nivel || ''}</td><td class="col-pregunta-preview">${texto}</td><td class="col-respuesta-preview">${resp || ''}</td><td class="col-datos-preview">${datosExtraPreguntaPreview(q)}</td></tr>`;
                 })
                 .join('');
             cont.innerHTML = `
-                <table class="table table-sm table-striped">
+                <table class="table table-sm table-striped tabla-preview-preguntas">
                     <thead>
-                        <tr><th>Nivel</th><th>Pregunta</th><th>Respuesta</th></tr>
+                        <tr><th class="col-nivel-preview">Nivel</th><th class="col-pregunta-preview">Pregunta</th><th class="col-respuesta-preview">Respuesta</th><th class="col-datos-preview">Datos extra</th></tr>
                     </thead>
                     <tbody>${filas}</tbody>
                 </table>`;
@@ -2261,12 +2266,12 @@ async function verCombo(id, concursanteId) {
                 const factor = item.factorMultiplicacion || item.factor || '';
                 const qid = q.id != null ? q.id : item.preguntaId;
                 const usada = data.preguntaUsadaId != null && qid != null && Number(data.preguntaUsadaId) === Number(qid);
-                return `<tr class="${usada ? 'pregunta-combo-usada-fila' : ''}"><td>${nivel || ''}</td><td>${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${texto || ''}</span></td><td>${resp || ''}</td><td>${factor || ''}</td></tr>`;
+                return `<tr class="${usada ? 'pregunta-combo-usada-fila' : ''}"><td class="col-nivel-preview">${nivel || ''}</td><td class="col-pregunta-preview">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${texto || ''}</span></td><td class="col-respuesta-preview">${resp || ''}</td><td class="col-factor-preview">${factor || ''}</td><td class="col-datos-preview">${datosExtraPreguntaPreview(q)}</td></tr>`;
             }).join('');
             cont.innerHTML = `
-                <table class="table table-sm table-striped">
+                <table class="table table-sm table-striped tabla-preview-preguntas">
                     <thead>
-                        <tr><th>Nivel</th><th>Pregunta</th><th>Respuesta</th><th>Factor</th></tr>
+                        <tr><th class="col-nivel-preview">Nivel</th><th class="col-pregunta-preview">Pregunta</th><th class="col-respuesta-preview">Respuesta</th><th class="col-factor-preview">Factor</th><th class="col-datos-preview">Datos extra</th></tr>
                     </thead>
                     <tbody>${filas}</tbody>
                 </table>`;
@@ -3315,6 +3320,10 @@ cargarConcursantes(true);
 setTimeout(() => {
 const tabla = document.getElementById('tabla-concursantes-header');
 if (tabla) {
+if (tabla.dataset.ordenCol == null || tabla.dataset.ordenCol === '') {
+    tabla.dataset.ordenCol = '0';
+    tabla.dataset.ordenAsc = String(sortAscConcursantes);
+}
 tabla.querySelectorAll('thead th').forEach((th, idx) => {
 th.style.cursor = 'pointer';
 th.onclick = (e) => {
@@ -3937,6 +3946,12 @@ thead.innerHTML = encabezados.join('');
 // Reasignar listeners de orden y re-inicializar el resizer en la tabla de cabecera
 const tablaHeader = document.getElementById('tabla-concursantes-header');
 if (tablaHeader) {
+if (tablaHeader.dataset.ordenCol == null || tablaHeader.dataset.ordenCol === '') {
+    const idIdx = Array.from(tablaHeader.querySelectorAll('thead th'))
+        .findIndex(th => th.textContent.trim() === 'ID');
+    tablaHeader.dataset.ordenCol = String(idIdx >= 0 ? idIdx : 0);
+    tablaHeader.dataset.ordenAsc = String(sortAscConcursantes);
+}
 tablaHeader.querySelectorAll('thead th').forEach((th, idx) => {
 th.style.cursor = 'pointer';
 th.onclick = () => {

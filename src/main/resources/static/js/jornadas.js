@@ -2614,8 +2614,8 @@ const JornadasManager = {
                     <tr>
                         <td class="col-nivel-jornada"><span class="${this.getNivelColor(pregunta.nivel)}">${nivel}</span></td>
                         <td class="col-pregunta-jornada">${pregunta.pregunta || 'Sin texto'}</td>
-                        <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
-                        <td>${this.datosExtraPregunta(pregunta)}</td>
+                        <td class="col-respuesta-jornada"><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
+                        <td class="col-datos-jornada">${this.datosExtraPregunta(pregunta)}</td>
                     </tr>
                 `;
             });
@@ -2653,7 +2653,7 @@ const JornadasManager = {
                     const usada = combo.preguntaUsadaId != null && Number(combo.preguntaUsadaId) === Number(pregunta.id);
                     html += `
                         <tr class="${usada ? 'pregunta-combo-usada-fila' : ''}">
-                            <td style="width:80px;">
+                            <td class="col-mult-jornada">
                                 <input class="form-control form-control-sm" 
                                        value="${factorStr}"
                                        onblur="JornadasManager.actualizarFactorDesdeModal(${combo.id}, ${pregunta.id}, this.value)"
@@ -2661,8 +2661,8 @@ const JornadasManager = {
                             </td>
                             <td class="col-nivel-jornada"><span class="${this.getNivelColor(pregunta.nivel)}">${this.nivelPreguntaCombo(pregunta.nivel)}</span></td>
                             <td class="col-pregunta-jornada">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${pregunta.pregunta || 'Sin texto'}</span></td>
-                            <td><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
-                            <td>${this.datosExtraPregunta(pregunta)}</td>
+                            <td class="col-respuesta-jornada"><strong>${pregunta.respuesta || 'Sin respuesta'}</strong></td>
+                            <td class="col-datos-jornada">${this.datosExtraPregunta(pregunta)}</td>
                         </tr>
                     `;
                 }
