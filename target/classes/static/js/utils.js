@@ -106,6 +106,13 @@ class Utils {
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
 
+    // Número de caracteres al final de la pregunta, pequeño y sin negrita
+    static sufijoCaracteresPregunta(texto) {
+        const t = texto == null ? '' : String(texto);
+        if (!t) return '';
+        return ` <span class="caracteres-pregunta">${t.length}</span>`;
+    }
+
     // Formatear niveles para UI sin el "_" interno de la BBDD
     static formatearNivel(nivel) {
         if (nivel == null) return '';

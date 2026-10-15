@@ -1023,6 +1023,15 @@ td:has(textarea) {
     background-color: rgba(0, 123, 255, 0.1) !important;
 }
 
+/* Recuento de caracteres al final del texto de la pregunta */
+.caracteres-pregunta {
+    font-size: 0.72em;
+    font-weight: 400;
+    color: #6c757d;
+    margin-left: 0.3em;
+    white-space: nowrap;
+}
+
 /* Pregunta usada en un reciclaje parcial de combo */
 .pregunta-combo-usada {
     text-decoration: underline;

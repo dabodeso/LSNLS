@@ -603,7 +603,7 @@ const CuestionariosManager = {
                 if (p) {
                     filasPreguntas += `<tr data-id="${p.id}" data-nivel="${slotNivel}" style="cursor:pointer;">
                         <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(p.nivel) : ''}'>${Utils.formatearNivel(slotNivel)}</span></td>
-                        <td class="fw-bold">${p.pregunta ?? ''}</td>
+                        <td class="fw-bold">${p.pregunta ?? ''}${Utils.sufijoCaracteresPregunta(p.pregunta)}</td>
                         <td class="fw-bold">${p.respuesta ?? ''}</td>
                         <td class="fw-bold">${p.datosExtra ?? ''}</td>
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCuestionario(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
@@ -992,7 +992,7 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
             <td>${pregunta.id}</td>
             <td colspan="4">
                 <div class="pregunta-item">
-                    <div class="pregunta-texto">${pregunta.pregunta}</div>
+                    <div class="pregunta-texto">${pregunta.pregunta}${Utils.sufijoCaracteresPregunta(pregunta.pregunta)}</div>
                     <div class="respuesta-texto"><strong>Respuesta:</strong> ${pregunta.respuesta}</div>
                     <div class="pregunta-meta">
                         <small class="text-muted">

@@ -640,7 +640,7 @@ const CombosManager = {
                                        onclick="event.stopPropagation();">
                             </div>
                         </td>
-                        <td class="fw-bold">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${p.pregunta ?? ''}</span></td>
+                        <td class="fw-bold">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${p.pregunta ?? ''}</span>${Utils.sufijoCaracteresPregunta(p.pregunta)}</td>
                         <td class="fw-bold">${p.respuesta ?? ''}</td>
                         <td class="fw-bold">${p.datosExtra ?? ''}</td>
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCombo(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
@@ -1669,7 +1669,7 @@ function renderizarPreguntasModal(preguntas, totalPages, currentPage) {
             <td>${pregunta.id}</td>
             <td colspan="4">
                 <div class="pregunta-item">
-                    <div class="pregunta-texto fw-bold">${pregunta.pregunta}</div>
+                    <div class="pregunta-texto fw-bold">${pregunta.pregunta}${Utils.sufijoCaracteresPregunta(pregunta.pregunta)}</div>
                     <div class="respuesta-texto"><strong>Respuesta:</strong> ${pregunta.respuesta}</div>
                     <div class="pregunta-meta">
                         <small class="text-muted">
@@ -1763,7 +1763,7 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
         // Crear el botón de forma más segura usando addEventListener en lugar de onclick
         tr.innerHTML = `
             <td>${p.id}</td>
-            <td class="fw-bold">${p.pregunta}</td>
+            <td class="fw-bold">${p.pregunta}${Utils.sufijoCaracteresPregunta(p.pregunta)}</td>
             <td>${p.respuesta}</td>
             <td>${p.tematica}</td>
             <td><span class="${CombosManager.getNivelColor(p.nivel)}">${Utils.formatearNivel(p.nivel)}</span></td>
