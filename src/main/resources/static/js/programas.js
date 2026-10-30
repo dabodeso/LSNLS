@@ -1529,7 +1529,6 @@ function urlConcursantesDisponibles(pagina = 0, busqueda = '') {
     if (estado) {
         url += `&estado=${encodeURIComponent(estado)}`;
     }
-    const programaId = document.getElementById('programa-seleccionado-id')?.value;
     if (programaId) {
         url += `&programaId=${encodeURIComponent(programaId)}`;
     }
