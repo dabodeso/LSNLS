@@ -1,12 +1,12 @@
 package com.lsnls.service;
 
 import com.lsnls.entity.SubtemaPregunta;
-import com.lsnls.entity.TematicaCombo;
+import com.lsnls.entity.Tematica;
 import com.lsnls.entity.TematicaPregunta;
 import com.lsnls.entity.Usuario;
 import com.lsnls.repository.SubtemaPreguntaRepository;
-import com.lsnls.repository.TematicaComboRepository;
 import com.lsnls.repository.TematicaPreguntaRepository;
+import com.lsnls.repository.TematicaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -34,7 +34,7 @@ class TemasCatalogServiceTest {
     @Mock
     private TematicaPreguntaRepository tematicaPreguntaRepository;
     @Mock
-    private TematicaComboRepository tematicaComboRepository;
+    private TematicaRepository tematicaRepository;
     @Mock
     private SubtemaPreguntaRepository subtemaPreguntaRepository;
     @Mock
@@ -54,9 +54,9 @@ class TemasCatalogServiceTest {
         tp2.setNombre("ALFA");
         when(tematicaPreguntaRepository.findAll()).thenReturn(Arrays.asList(tp, tp2));
 
-        TematicaCombo tc = new TematicaCombo();
+        Tematica tc = new Tematica();
         tc.setNombre("COMBO");
-        when(tematicaComboRepository.findAll()).thenReturn(Collections.singletonList(tc));
+        when(tematicaRepository.findAllByOrderByNombreAsc()).thenReturn(Collections.singletonList(tc));
 
         SubtemaPregunta sp = new SubtemaPregunta();
         sp.setNombre("SUB");

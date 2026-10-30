@@ -92,7 +92,6 @@ TRUNCATE TABLE tematicas_preguntas;
 TRUNCATE TABLE tematicas_combos;
 TRUNCATE TABLE subtemas_preguntas;
 TRUNCATE TABLE programas;
-TRUNCATE TABLE tematicas;
 TRUNCATE TABLE operaciones_undo;
 TRUNCATE TABLE edit_locks;
 TRUNCATE TABLE usuarios;

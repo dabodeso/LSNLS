@@ -102,10 +102,10 @@ class UndoServiceTest {
 
     @Test
     void accionEliminarFilaConstruyeMapa() {
-        Map<String, Object> accion = UndoService.accionEliminarFila("tematicas", 4L);
+        Map<String, Object> accion = UndoService.accionEliminarFila("tematicas_combos", 4L);
 
         assertEquals("eliminar_fila", accion.get("tipo"));
-        assertEquals("tematicas", accion.get("tabla"));
+        assertEquals("tematicas_combos", accion.get("tabla"));
         assertEquals(4L, accion.get("id"));
     }
 
@@ -156,7 +156,7 @@ class UndoServiceTest {
     @Test
     void deshacerEliminarFila() {
         when(authorizationService.getCurrentUser()).thenReturn(Optional.of(usuario));
-        String json = "{\"acciones\":[{\"tipo\":\"eliminar_fila\",\"tabla\":\"tematicas\",\"id\":5}]}";
+        String json = "{\"acciones\":[{\"tipo\":\"eliminar_fila\",\"tabla\":\"tematicas_combos\",\"id\":5}]}";
         Map<String, Object> op = operacionBase(7L, 0, Instant.now(), json);
         op.put("descripcion", "Añadir temática");
         when(jdbcTemplate.queryForList(anyString(), eq(21L))).thenReturn(Collections.singletonList(op));
@@ -165,7 +165,7 @@ class UndoServiceTest {
         String desc = undoService.deshacer(21L);
 
         assertEquals("Añadir temática", desc);
-        assertTrue(sqls.stream().anyMatch(s -> s.contains("DELETE FROM tematicas WHERE id = ?")));
+        assertTrue(sqls.stream().anyMatch(s -> s.contains("DELETE FROM tematicas_combos WHERE id = ?")));
         assertTrue(sqls.stream().anyMatch(s -> s.contains("deshecha = 1")));
     }
 

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProgramaRepetidoController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.controller</a> &gt; <span class="el_source">ProgramaRepetidoController.java</span></div><h1>ProgramaRepetidoController.java</h1><pre class="source lang-java linenums">package com.lsnls.controller;
+
+import com.lsnls.config.MensajesUsuario;
+import com.lsnls.dto.ConcursanteDTO;
+import com.lsnls.dto.ProgramaRepetidoDTO;
+import com.lsnls.service.ProgramaRepetidoService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/programas/repetidos&quot;)
+@PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_CONSULTA', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')&quot;)
+<span class="nc" id="L27">public class ProgramaRepetidoController {</span>
+
+    @Autowired
+    private ProgramaRepetidoService programaRepetidoService;
+
+    @GetMapping
+    public ResponseEntity&lt;List&lt;ProgramaRepetidoDTO&gt;&gt; findAll() {
+<span class="nc" id="L34">        return ResponseEntity.ok(programaRepetidoService.findAll());</span>
+    }
+
+    @GetMapping(&quot;/{id}/concursantes&quot;)
+    public ResponseEntity&lt;?&gt; findConcursantes(@PathVariable Long id) {
+        try {
+<span class="nc" id="L40">            return ResponseEntity.ok(programaRepetidoService.findConcursantes(id));</span>
+<span class="nc" id="L41">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L42">            return ResponseEntity.status(404).body(e.getMessage());</span>
+        }
+    }
+
+    @GetMapping(&quot;/{id}/disponibles&quot;)
+    public ResponseEntity&lt;?&gt; findDisponibles(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = &quot;0&quot;) int page,
+            @RequestParam(defaultValue = &quot;10&quot;) int size,
+            @RequestParam(required = false) String busqueda,
+            @RequestParam(required = false) String estado) {
+        try {
+<span class="nc" id="L54">            Pageable pageable = PageRequest.of(page, size, Sort.by(&quot;id&quot;).descending());</span>
+<span class="nc" id="L55">            Page&lt;ConcursanteDTO&gt; concursantes = programaRepetidoService.findDisponibles(id, pageable, busqueda, estado);</span>
+<span class="nc" id="L56">            return ResponseEntity.ok(concursantes);</span>
+<span class="nc" id="L57">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L58">            return ResponseEntity.status(404).body(e.getMessage());</span>
+<span class="nc" id="L59">        } catch (Exception e) {</span>
+<span class="nc" id="L60">            return ResponseEntity.internalServerError()</span>
+<span class="nc" id="L61">                    .body(&quot;Error interno al obtener concursantes: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>
+        }
+    }
+
+    @PostMapping(&quot;/{id}/concursantes/{concursanteId}&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;?&gt; asignar(
+            @PathVariable Long id,
+            @PathVariable Long concursanteId,
+            @RequestParam(required = false) Integer posicion) {
+        try {
+<span class="nc" id="L72">            return ResponseEntity.ok(programaRepetidoService.asignar(id, concursanteId, posicion));</span>
+<span class="nc" id="L73">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L74">            return ResponseEntity.badRequest().body(e.getMessage());</span>
+        }
+    }
+
+    @DeleteMapping(&quot;/{id}/concursantes/{concursanteId}&quot;)
+    @PreAuthorize(&quot;hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')&quot;)
+    public ResponseEntity&lt;?&gt; quitar(@PathVariable Long id, @PathVariable Long concursanteId) {
+        try {
+<span class="nc" id="L82">            programaRepetidoService.quitar(id, concursanteId);</span>
+<span class="nc" id="L83">            return ResponseEntity.ok().build();</span>
+<span class="nc" id="L84">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L85">            return ResponseEntity.badRequest().body(e.getMessage());</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

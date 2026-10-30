@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProgramaRepetidoService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">ProgramaRepetidoService.java</span></div><h1>ProgramaRepetidoService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
+
+import com.lsnls.dto.ConcursanteDTO;
+import com.lsnls.dto.ProgramaRepetidoDTO;
+import com.lsnls.entity.Concursante;
+import com.lsnls.entity.ProgramaRepetido;
+import com.lsnls.entity.ProgramaRepetidoConcursante;
+import com.lsnls.repository.ConcursanteRepository;
+import com.lsnls.repository.ProgramaRepetidoConcursanteRepository;
+import com.lsnls.repository.ProgramaRepetidoRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Service
+<span class="nc" id="L25">public class ProgramaRepetidoService {</span>
+
+<span class="nc" id="L27">    private static final Set&lt;String&gt; ESTADOS_ASIGNABLES = Set.of(&quot;grabado&quot;, &quot;editado&quot;, &quot;emitido&quot;);</span>
+
+    @Autowired
+    private ProgramaRepetidoRepository programaRepetidoRepository;
+
+    @Autowired
+    private ProgramaRepetidoConcursanteRepository enlaceRepository;
+
+    @Autowired
+    private ConcursanteRepository concursanteRepository;
+
+    @Autowired
+    private ConcursanteService concursanteService;
+
+    public List&lt;ProgramaRepetidoDTO&gt; findAll() {
+<span class="nc" id="L42">        return programaRepetidoRepository.findAllByOrderByFechaEmisionDescIdDesc().stream()</span>
+<span class="nc" id="L43">                .map(this::toDto)</span>
+<span class="nc" id="L44">                .collect(Collectors.toList());</span>
+    }
+
+    public List&lt;ConcursanteDTO&gt; findConcursantes(Long repetidoId) {
+<span class="nc" id="L48">        exigirRepetido(repetidoId);</span>
+<span class="nc" id="L49">        List&lt;ProgramaRepetidoConcursante&gt; enlaces = enlaceRepository</span>
+<span class="nc" id="L50">                .findByProgramaRepetidoIdOrderByOrdenEscaletaAsc(repetidoId);</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (enlaces.isEmpty()) {</span>
+<span class="nc" id="L52">            return List.of();</span>
+        }
+<span class="nc" id="L54">        Map&lt;Long, Concursante&gt; porId = concursanteRepository.findAllById(</span>
+<span class="nc" id="L55">                enlaces.stream().map(ProgramaRepetidoConcursante::getConcursanteId).collect(Collectors.toList()))</span>
+<span class="nc" id="L56">                .stream()</span>
+<span class="nc" id="L57">                .collect(Collectors.toMap(Concursante::getId, concursante -&gt; concursante));</span>
+<span class="nc" id="L58">        List&lt;ConcursanteDTO&gt; resultado = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        for (ProgramaRepetidoConcursante enlace : enlaces) {</span>
+<span class="nc" id="L60">            Concursante concursante = porId.get(enlace.getConcursanteId());</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            if (concursante == null) {</span>
+<span class="nc" id="L62">                continue;</span>
+            }
+<span class="nc" id="L64">            ConcursanteDTO dto = concursanteService.copiarDto(concursante);</span>
+<span class="nc" id="L65">            dto.setOrdenEscaleta(enlace.getOrdenEscaleta());</span>
+<span class="nc" id="L66">            resultado.add(dto);</span>
+<span class="nc" id="L67">        }</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        resultado.sort(Comparator.comparing(dto -&gt; dto.getOrdenEscaleta() == null ? Integer.MAX_VALUE : dto.getOrdenEscaleta()));</span>
+<span class="nc" id="L69">        return resultado;</span>
+    }
+
+    public Page&lt;ConcursanteDTO&gt; findDisponibles(Long repetidoId, Pageable pageable, String busqueda, String estado) {
+<span class="nc" id="L73">        exigirRepetido(repetidoId);</span>
+<span class="nc" id="L74">        return concursanteService.findDisponiblesParaRepetido(pageable, busqueda, estado, repetidoId);</span>
+    }
+
+    @Transactional
+    public ConcursanteDTO asignar(Long repetidoId, Long concursanteId, Integer posicion) {
+<span class="nc" id="L79">        exigirRepetido(repetidoId);</span>
+<span class="nc" id="L80">        Concursante concursante = concursanteRepository.findById(concursanteId)</span>
+<span class="nc" id="L81">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Concursante no encontrado&quot;));</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        String estado = concursante.getEstado() == null ? &quot;&quot; : concursante.getEstado().trim().toLowerCase();</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (!ESTADOS_ASIGNABLES.contains(estado)) {</span>
+<span class="nc" id="L84">            throw new IllegalArgumentException(&quot;Solo se pueden añadir concursantes en estado grabado, editado o emitido.&quot;);</span>
+        }
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (enlaceRepository.existsByProgramaRepetidoIdAndConcursanteId(repetidoId, concursanteId)) {</span>
+<span class="nc" id="L87">            throw new IllegalArgumentException(&quot;Ese concursante ya está en este repetido.&quot;);</span>
+        }
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        int slot = posicion != null ? posicion : primerHuecoLibre(repetidoId);</span>
+<span class="nc bnc" id="L90" title="All 4 branches missed.">        if (slot &lt; 1 || slot &gt; 3) {</span>
+<span class="nc" id="L91">            throw new IllegalArgumentException(&quot;La posición debe estar entre 1 y 3&quot;);</span>
+        }
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (enlaceRepository.existsByProgramaRepetidoIdAndOrdenEscaleta(repetidoId, slot)) {</span>
+<span class="nc" id="L94">            throw new IllegalArgumentException(&quot;La posición &quot; + slot + &quot; ya está ocupada en este repetido&quot;);</span>
+        }
+<span class="nc" id="L96">        ProgramaRepetidoConcursante enlace = new ProgramaRepetidoConcursante();</span>
+<span class="nc" id="L97">        enlace.setProgramaRepetidoId(repetidoId);</span>
+<span class="nc" id="L98">        enlace.setConcursanteId(concursanteId);</span>
+<span class="nc" id="L99">        enlace.setOrdenEscaleta(slot);</span>
+<span class="nc" id="L100">        enlaceRepository.save(enlace);</span>
+<span class="nc" id="L101">        actualizarTotal(repetidoId);</span>
+<span class="nc" id="L102">        ConcursanteDTO dto = concursanteService.copiarDto(concursante);</span>
+<span class="nc" id="L103">        dto.setOrdenEscaleta(slot);</span>
+<span class="nc" id="L104">        return dto;</span>
+    }
+
+    @Transactional
+    public void quitar(Long repetidoId, Long concursanteId) {
+<span class="nc" id="L109">        exigirRepetido(repetidoId);</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (!enlaceRepository.existsByProgramaRepetidoIdAndConcursanteId(repetidoId, concursanteId)) {</span>
+<span class="nc" id="L111">            throw new IllegalArgumentException(&quot;Ese concursante no está en este repetido.&quot;);</span>
+        }
+<span class="nc" id="L113">        enlaceRepository.deleteByProgramaRepetidoIdAndConcursanteId(repetidoId, concursanteId);</span>
+<span class="nc" id="L114">        actualizarTotal(repetidoId);</span>
+<span class="nc" id="L115">    }</span>
+
+    private int primerHuecoLibre(Long repetidoId) {
+<span class="nc" id="L118">        Set&lt;Integer&gt; usadas = enlaceRepository.findByProgramaRepetidoIdOrderByOrdenEscaletaAsc(repetidoId).stream()</span>
+<span class="nc" id="L119">                .map(ProgramaRepetidoConcursante::getOrdenEscaleta)</span>
+<span class="nc" id="L120">                .collect(Collectors.toSet());</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        for (int slot = 1; slot &lt;= 3; slot++) {</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            if (!usadas.contains(slot)) {</span>
+<span class="nc" id="L123">                return slot;</span>
+            }
+        }
+<span class="nc" id="L126">        throw new IllegalArgumentException(&quot;El repetido ya tiene ocupadas las 3 posiciones de concursante&quot;);</span>
+    }
+
+    private void actualizarTotal(Long repetidoId) {
+<span class="nc" id="L130">        ProgramaRepetido repetido = exigirRepetido(repetidoId);</span>
+<span class="nc" id="L131">        repetido.setTotalConcursantes((int) enlaceRepository.countByProgramaRepetidoId(repetidoId));</span>
+<span class="nc" id="L132">        programaRepetidoRepository.save(repetido);</span>
+<span class="nc" id="L133">    }</span>
+
+    private ProgramaRepetido exigirRepetido(Long repetidoId) {
+<span class="nc" id="L136">        return programaRepetidoRepository.findById(repetidoId)</span>
+<span class="nc" id="L137">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Programa repetido no encontrado&quot;));</span>
+    }
+
+    private ProgramaRepetidoDTO toDto(ProgramaRepetido repetido) {
+<span class="nc" id="L141">        ProgramaRepetidoDTO dto = new ProgramaRepetidoDTO();</span>
+<span class="nc" id="L142">        dto.setId(repetido.getId());</span>
+<span class="nc" id="L143">        dto.setCodigo(repetido.getCodigo());</span>
+<span class="nc" id="L144">        dto.setVersion(repetido.getVersion());</span>
+<span class="nc" id="L145">        dto.setTemporada(repetido.getTemporada());</span>
+<span class="nc" id="L146">        dto.setFechaEmision(repetido.getFechaEmision());</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        dto.setEstado(repetido.getEstado() != null ? repetido.getEstado().name() : null);</span>
+<span class="nc" id="L148">        dto.setTotalPremios(repetido.getTotalPremios());</span>
+<span class="nc" id="L149">        dto.setGap(repetido.getGap());</span>
+<span class="nc" id="L150">        dto.setTotalConcursantes(repetido.getTotalConcursantes());</span>
+<span class="nc" id="L151">        dto.setCreditosEspeciales(repetido.getCreditosEspeciales());</span>
+<span class="nc" id="L152">        dto.setNotas(repetido.getNotas());</span>
+<span class="nc" id="L153">        dto.setDuracionObjetivo(&quot;45m&quot;);</span>
+<span class="nc" id="L154">        dto.setTipo(repetido.getTipo());</span>
+<span class="nc" id="L155">        dto.setProgramaOriginalCodigo(repetido.getProgramaOriginalCodigo());</span>
+<span class="nc" id="L156">        dto.setFechaOriginal(repetido.getFechaOriginal());</span>
+<span class="nc" id="L157">        dto.setRepetido(true);</span>
+<span class="nc" id="L158">        return dto;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

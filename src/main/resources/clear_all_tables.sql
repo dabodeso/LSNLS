@@ -16,7 +16,7 @@ TRUNCATE TABLE jornadas;
 TRUNCATE TABLE combos;
 TRUNCATE TABLE cuestionarios;
 TRUNCATE TABLE preguntas;
-TRUNCATE TABLE tematicas;
+TRUNCATE TABLE tematicas_combos;
 TRUNCATE TABLE configuracion_global;
 TRUNCATE TABLE usuarios;
 

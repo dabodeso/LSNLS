@@ -1139,7 +1139,7 @@ async function cargarOpcionesTematicas() {
     
     try {
         const valorSeleccionado = selectTematica.value || '';
-        // Cargar temáticas desde la tabla tematicas
+        // Cargar temáticas de cuestionarios y combos (tematicas_combos)
         const response = await fetch('/api/tematicas', {
             headers: authManager.getAuthHeaders()
         });
@@ -1150,7 +1150,7 @@ async function cargarOpcionesTematicas() {
             // Limpiar opciones existentes (excepto "Todas")
             selectTematica.innerHTML = '<option value="">Todas</option>';
             
-            // Añadir las temáticas de la tabla tematicas
+            // Añadir las temáticas de tematicas_combos
             tematicasData.forEach(tematica => {
                 const option = document.createElement('option');
                 option.value = tematica.nombre;
@@ -1303,7 +1303,7 @@ async function cargarTematicasEnModal() {
     if (!selectTematica) return;
     
     try {
-        // Cargar temáticas desde la tabla tematicas
+        // Cargar temáticas de cuestionarios y combos (tematicas_combos)
         const response = await fetch('/api/tematicas', {
             headers: authManager.getAuthHeaders()
         });

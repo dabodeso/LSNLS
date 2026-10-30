@@ -7,11 +7,15 @@ import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
 
+/**
+ * Catálogo de temáticas de cuestionarios y de combos (columna B del Excel).
+ * Persistido en tematicas_combos.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "tematicas")
+@Table(name = "tematicas_combos")
 public class Tematica {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,7 +28,7 @@ public class Tematica {
     private String nombre;
 
     @ManyToOne
-    @JoinColumn(name = "creacion_usuario_id", nullable = false)
+    @JoinColumn(name = "creacion_usuario_id")
     @JsonIgnoreProperties({"preguntasCreadas", "preguntasVerificadas", "cuestionariosCreados", "combosCreados"})
     private Usuario creacionUsuario;
 

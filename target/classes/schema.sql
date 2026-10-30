@@ -21,16 +21,6 @@ CREATE TABLE IF NOT EXISTS usuarios (
     version BIGINT DEFAULT 0
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Crear tabla de temáticas
-CREATE TABLE IF NOT EXISTS tematicas (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    fecha_creacion datetime(6),
-    creacion_usuario_id BIGINT,
-    version BIGINT DEFAULT 0,
-    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
-) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Catálogo de temáticas para preguntas
 CREATE TABLE IF NOT EXISTS tematicas_preguntas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -41,7 +31,7 @@ CREATE TABLE IF NOT EXISTS tematicas_preguntas (
     FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Catálogo de temáticas para combos
+-- Catálogo de temáticas de cuestionarios y de combos
 CREATE TABLE IF NOT EXISTS tematicas_combos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE,
@@ -53,16 +43,6 @@ CREATE TABLE IF NOT EXISTS tematicas_combos (
 
 -- Catálogo de subtemas para preguntas
 CREATE TABLE IF NOT EXISTS subtemas_preguntas (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    fecha_creacion datetime(6),
-    creacion_usuario_id BIGINT,
-    version BIGINT DEFAULT 0,
-    FOREIGN KEY (creacion_usuario_id) REFERENCES usuarios(id)
-) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Crear tabla de temáticas
-CREATE TABLE IF NOT EXISTS tematicas (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE,
     fecha_creacion datetime(6),
@@ -233,6 +213,47 @@ CREATE TABLE IF NOT EXISTS concursantes (
     version BIGINT DEFAULT 0
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Un concursante puede salir en varios programas. La ficha conserva uno en numero_programa.
+CREATE TABLE IF NOT EXISTS programas_concursantes (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    programa_id BIGINT NOT NULL,
+    concursante_id BIGINT NOT NULL,
+    orden_escaleta INT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_programa_concursante (programa_id, concursante_id),
+    UNIQUE KEY uk_programa_orden (programa_id, orden_escaleta)
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Reposiciones (REPE, LB, VB). No ocupan numero_programa del concursante.
+CREATE TABLE IF NOT EXISTS programas_repetidos (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    tipo VARCHAR(16) NOT NULL,
+    codigo VARCHAR(32) NOT NULL,
+    temporada INT NOT NULL,
+    fecha_emision DATE NULL,
+    programa_original_codigo VARCHAR(32) NULL,
+    fecha_original DATE NULL,
+    estado ENUM('borrador', 'grabado', 'editado', 'programado', 'emitido') NOT NULL,
+    total_premios DECIMAL(10,2) NULL,
+    gap VARCHAR(255) NULL,
+    total_concursantes INT NULL,
+    creditos_especiales TEXT NULL,
+    notas TEXT NULL,
+    version BIGINT DEFAULT 0,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_repetido (tipo, codigo, temporada, fecha_emision)
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS programas_repetidos_concursantes (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    programa_repetido_id BIGINT NOT NULL,
+    concursante_id BIGINT NOT NULL,
+    orden_escaleta INT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_repe_conc (programa_repetido_id, concursante_id),
+    UNIQUE KEY uk_repe_orden (programa_repetido_id, orden_escaleta)
+) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Las claves foráneas ya están definidas en las tablas con FOREIGN KEY
 -- No es necesario añadirlas con ALTER TABLE ya que se crean automáticamente
 
@@ -316,4 +337,22 @@ SET @sql := IF(@col_exists = 0,
     'SELECT 1');
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
-DEALLOCATE PREPARE stmt; 
+DEALLOCATE PREPARE stmt;
+
+-- Cuestionarios y combos comparten tematicas_combos.
+-- Si queda la tabla antigua tematicas, se copian sus filas y se elimina.
+-- MySQL 5.7: no falla si la tabla vieja ya no existe.
+SET @existe_tematicas := (
+    SELECT COUNT(*) FROM information_schema.tables
+    WHERE table_schema = DATABASE() AND table_name = 'tematicas'
+);
+SET @sql_copia_tematicas := IF(@existe_tematicas > 0,
+    'INSERT IGNORE INTO tematicas_combos (nombre, fecha_creacion, creacion_usuario_id, version) SELECT nombre, fecha_creacion, creacion_usuario_id, IFNULL(version, 0) FROM tematicas',
+    'SELECT 1');
+PREPARE stmt_copia_tematicas FROM @sql_copia_tematicas;
+EXECUTE stmt_copia_tematicas;
+DEALLOCATE PREPARE stmt_copia_tematicas;
+SET @sql_drop_tematicas := IF(@existe_tematicas > 0, 'DROP TABLE tematicas', 'SELECT 1');
+PREPARE stmt_drop_tematicas FROM @sql_drop_tematicas;
+EXECUTE stmt_drop_tematicas;
+DEALLOCATE PREPARE stmt_drop_tematicas; 

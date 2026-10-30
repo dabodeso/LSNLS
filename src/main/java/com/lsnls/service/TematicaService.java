@@ -57,7 +57,7 @@ public class TematicaService {
         Tematica guardada = tematicaRepository.save(tematica);
         if (guardada.getId() != null) {
             undoService.registrar("añadir_tematica", "Añadir temática " + guardada.getNombre(),
-                    java.util.Collections.singletonList(UndoService.accionEliminarFila("tematicas", guardada.getId())));
+                    java.util.Collections.singletonList(UndoService.accionEliminarFila("tematicas_combos", guardada.getId())));
         }
         return guardada;
     }
@@ -99,7 +99,7 @@ public class TematicaService {
                 undoService.registrar("renombrar_tematica",
                         "Renombrar temática " + nombreAnterior + " → " + nuevoNombre,
                         java.util.Collections.singletonList(
-                                UndoService.accionActualizarCampos("tematicas", id, camposPrevios)));
+                                UndoService.accionActualizarCampos("tematicas_combos", id, camposPrevios)));
             }
             return guardada;
         }
@@ -147,10 +147,10 @@ public class TematicaService {
         if (tematica.getId() == null) {
             return;
         }
-        java.util.Map<String, Object> fila = undoService.snapshotFila("tematicas", tematica.getId());
+        java.util.Map<String, Object> fila = undoService.snapshotFila("tematicas_combos", tematica.getId());
         if (fila != null) {
             undoService.registrar("eliminar_tematica", "Eliminar temática " + tematica.getNombre(),
-                    java.util.Collections.singletonList(UndoService.accionInsertarFila("tematicas", fila)));
+                    java.util.Collections.singletonList(UndoService.accionInsertarFila("tematicas_combos", fila)));
         }
     }
 

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TemasCatalogService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">LSNLS - Sistema de Gestión de Preguntas y Concursantes</a> &gt; <a href="index.source.html" class="el_package">com.lsnls.service</a> &gt; <span class="el_source">TemasCatalogService.java</span></div><h1>TemasCatalogService.java</h1><pre class="source lang-java linenums">package com.lsnls.service;
 
 import com.lsnls.entity.SubtemaPregunta;
-import com.lsnls.entity.TematicaCombo;
+import com.lsnls.entity.Tematica;
 import com.lsnls.entity.TematicaPregunta;
 import com.lsnls.repository.SubtemaPreguntaRepository;
-import com.lsnls.repository.TematicaComboRepository;
 import com.lsnls.repository.TematicaPreguntaRepository;
+import com.lsnls.repository.TematicaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class TemasCatalogService {
 
     private final TematicaPreguntaRepository tematicaPreguntaRepository;
-    private final TematicaComboRepository tematicaComboRepository;
+    private final TematicaRepository tematicaRepository;
     private final SubtemaPreguntaRepository subtemaPreguntaRepository;
     private final AuthorizationService authorizationService;
     private final UndoService undoService;
@@ -34,71 +34,70 @@ public class TemasCatalogService {
     }
 
     public List&lt;String&gt; obtenerTematicasCombos() {
-<span class="fc" id="L37">        return tematicaComboRepository.findAll().stream()</span>
-<span class="fc" id="L38">                .map(TematicaCombo::getNombre)</span>
-<span class="fc" id="L39">                .sorted()</span>
-<span class="fc" id="L40">                .collect(Collectors.toList());</span>
+<span class="fc" id="L37">        return tematicaRepository.findAllByOrderByNombreAsc().stream()</span>
+<span class="fc" id="L38">                .map(Tematica::getNombre)</span>
+<span class="fc" id="L39">                .collect(Collectors.toList());</span>
     }
 
     public List&lt;String&gt; obtenerSubtemasPreguntas() {
-<span class="fc" id="L44">        return subtemaPreguntaRepository.findAll().stream()</span>
-<span class="fc" id="L45">                .map(SubtemaPregunta::getNombre)</span>
-<span class="fc" id="L46">                .sorted()</span>
-<span class="fc" id="L47">                .collect(Collectors.toList());</span>
+<span class="fc" id="L43">        return subtemaPreguntaRepository.findAll().stream()</span>
+<span class="fc" id="L44">                .map(SubtemaPregunta::getNombre)</span>
+<span class="fc" id="L45">                .sorted()</span>
+<span class="fc" id="L46">                .collect(Collectors.toList());</span>
     }
 
     public String añadirTematicaPregunta(String nombre) {
-<span class="fc" id="L51">        String normalizado = normalizar(nombre);</span>
-<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (tematicaPreguntaRepository.existsByNombre(normalizado)) return normalizado;</span>
-<span class="fc" id="L53">        TematicaPregunta t = new TematicaPregunta();</span>
-<span class="fc" id="L54">        t.setNombre(normalizado);</span>
-<span class="fc" id="L55">        t.setCreacionUsuario(authorizationService.getCurrentUser().orElse(null));</span>
-<span class="fc" id="L56">        TematicaPregunta guardada = tematicaPreguntaRepository.save(t);</span>
-<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (guardada.getId() != null) {</span>
-<span class="fc" id="L58">            undoService.registrar(&quot;añadir_tematica_pregunta&quot;, &quot;Añadir temática &quot; + normalizado,</span>
-<span class="fc" id="L59">                    Collections.singletonList(UndoService.accionEliminarFila(&quot;tematicas_preguntas&quot;, guardada.getId())));</span>
+<span class="fc" id="L50">        String normalizado = normalizar(nombre);</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (tematicaPreguntaRepository.existsByNombre(normalizado)) return normalizado;</span>
+<span class="fc" id="L52">        TematicaPregunta t = new TematicaPregunta();</span>
+<span class="fc" id="L53">        t.setNombre(normalizado);</span>
+<span class="fc" id="L54">        t.setCreacionUsuario(authorizationService.getCurrentUser().orElse(null));</span>
+<span class="fc" id="L55">        TematicaPregunta guardada = tematicaPreguntaRepository.save(t);</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if (guardada.getId() != null) {</span>
+<span class="fc" id="L57">            undoService.registrar(&quot;añadir_tematica_pregunta&quot;, &quot;Añadir temática &quot; + normalizado,</span>
+<span class="fc" id="L58">                    Collections.singletonList(UndoService.accionEliminarFila(&quot;tematicas_preguntas&quot;, guardada.getId())));</span>
         }
-<span class="fc" id="L61">        return normalizado;</span>
+<span class="fc" id="L60">        return normalizado;</span>
     }
 
     public String añadirSubtemaPregunta(String nombre) {
-<span class="fc" id="L65">        String normalizado = normalizar(nombre);</span>
-<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (subtemaPreguntaRepository.existsByNombre(normalizado)) return normalizado;</span>
-<span class="fc" id="L67">        SubtemaPregunta s = new SubtemaPregunta();</span>
-<span class="fc" id="L68">        s.setNombre(normalizado);</span>
-<span class="fc" id="L69">        s.setCreacionUsuario(authorizationService.getCurrentUser().orElse(null));</span>
-<span class="fc" id="L70">        SubtemaPregunta guardado = subtemaPreguntaRepository.save(s);</span>
-<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (guardado.getId() != null) {</span>
-<span class="nc" id="L72">            undoService.registrar(&quot;añadir_subtema_pregunta&quot;, &quot;Añadir subtema &quot; + normalizado,</span>
-<span class="nc" id="L73">                    Collections.singletonList(UndoService.accionEliminarFila(&quot;subtemas_preguntas&quot;, guardado.getId())));</span>
+<span class="fc" id="L64">        String normalizado = normalizar(nombre);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (subtemaPreguntaRepository.existsByNombre(normalizado)) return normalizado;</span>
+<span class="fc" id="L66">        SubtemaPregunta s = new SubtemaPregunta();</span>
+<span class="fc" id="L67">        s.setNombre(normalizado);</span>
+<span class="fc" id="L68">        s.setCreacionUsuario(authorizationService.getCurrentUser().orElse(null));</span>
+<span class="fc" id="L69">        SubtemaPregunta guardado = subtemaPreguntaRepository.save(s);</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (guardado.getId() != null) {</span>
+<span class="nc" id="L71">            undoService.registrar(&quot;añadir_subtema_pregunta&quot;, &quot;Añadir subtema &quot; + normalizado,</span>
+<span class="nc" id="L72">                    Collections.singletonList(UndoService.accionEliminarFila(&quot;subtemas_preguntas&quot;, guardado.getId())));</span>
         }
-<span class="fc" id="L75">        return normalizado;</span>
+<span class="fc" id="L74">        return normalizado;</span>
     }
 
     public void eliminarTematicaPregunta(String nombre) {
-<span class="fc" id="L79">        tematicaPreguntaRepository.findByNombre(normalizar(nombre)).ifPresent(t -&gt; {</span>
-<span class="pc bpc" id="L80" title="1 of 2 branches missed.">            Map&lt;String, Object&gt; fila = t.getId() != null ? undoService.snapshotFila(&quot;tematicas_preguntas&quot;, t.getId()) : null;</span>
-<span class="fc" id="L81">            tematicaPreguntaRepository.delete(t);</span>
-<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            if (fila != null) {</span>
-<span class="nc" id="L83">                undoService.registrar(&quot;eliminar_tematica_pregunta&quot;, &quot;Eliminar temática &quot; + t.getNombre(),</span>
-<span class="nc" id="L84">                        Collections.singletonList(UndoService.accionInsertarFila(&quot;tematicas_preguntas&quot;, fila)));</span>
+<span class="fc" id="L78">        tematicaPreguntaRepository.findByNombre(normalizar(nombre)).ifPresent(t -&gt; {</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            Map&lt;String, Object&gt; fila = t.getId() != null ? undoService.snapshotFila(&quot;tematicas_preguntas&quot;, t.getId()) : null;</span>
+<span class="fc" id="L80">            tematicaPreguntaRepository.delete(t);</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">            if (fila != null) {</span>
+<span class="nc" id="L82">                undoService.registrar(&quot;eliminar_tematica_pregunta&quot;, &quot;Eliminar temática &quot; + t.getNombre(),</span>
+<span class="nc" id="L83">                        Collections.singletonList(UndoService.accionInsertarFila(&quot;tematicas_preguntas&quot;, fila)));</span>
             }
-<span class="fc" id="L86">        });</span>
-<span class="fc" id="L87">    }</span>
+<span class="fc" id="L85">        });</span>
+<span class="fc" id="L86">    }</span>
 
     public void eliminarSubtemaPregunta(String nombre) {
-<span class="fc" id="L90">        subtemaPreguntaRepository.findByNombre(normalizar(nombre)).ifPresent(s -&gt; {</span>
-<span class="pc bpc" id="L91" title="1 of 2 branches missed.">            Map&lt;String, Object&gt; fila = s.getId() != null ? undoService.snapshotFila(&quot;subtemas_preguntas&quot;, s.getId()) : null;</span>
-<span class="fc" id="L92">            subtemaPreguntaRepository.delete(s);</span>
-<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            if (fila != null) {</span>
-<span class="nc" id="L94">                undoService.registrar(&quot;eliminar_subtema_pregunta&quot;, &quot;Eliminar subtema &quot; + s.getNombre(),</span>
-<span class="nc" id="L95">                        Collections.singletonList(UndoService.accionInsertarFila(&quot;subtemas_preguntas&quot;, fila)));</span>
+<span class="fc" id="L89">        subtemaPreguntaRepository.findByNombre(normalizar(nombre)).ifPresent(s -&gt; {</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            Map&lt;String, Object&gt; fila = s.getId() != null ? undoService.snapshotFila(&quot;subtemas_preguntas&quot;, s.getId()) : null;</span>
+<span class="fc" id="L91">            subtemaPreguntaRepository.delete(s);</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">            if (fila != null) {</span>
+<span class="nc" id="L93">                undoService.registrar(&quot;eliminar_subtema_pregunta&quot;, &quot;Eliminar subtema &quot; + s.getNombre(),</span>
+<span class="nc" id="L94">                        Collections.singletonList(UndoService.accionInsertarFila(&quot;subtemas_preguntas&quot;, fila)));</span>
             }
-<span class="fc" id="L97">        });</span>
-<span class="fc" id="L98">    }</span>
+<span class="fc" id="L96">        });</span>
+<span class="fc" id="L97">    }</span>
 
     private String normalizar(String s) {
-<span class="fc bfc" id="L101" title="All 2 branches covered.">        return s == null ? null : s.trim().toUpperCase();</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        return s == null ? null : s.trim().toUpperCase();</span>
     }
 }
 

@@ -1,6 +1,7 @@
 package com.lsnls.repository;
 
 import com.lsnls.entity.Concursante;
+import com.lsnls.entity.ProgramaRepetidoConcursante;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -37,6 +38,20 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long>,
             @Param("busqueda") String busqueda,
             @Param("estado") String estado,
             @Param("programaId") Integer programaId);
+
+    @Query("SELECT c FROM Concursante c WHERE LOWER(c.estado) IN ('grabado', 'editado', 'emitido') AND " +
+           "NOT EXISTS (SELECT 1 FROM ProgramaRepetidoConcursante r " +
+           "WHERE r.programaRepetidoId = :repetidoId AND r.concursanteId = c.id) AND " +
+           "(:estado IS NULL OR LOWER(c.estado) = LOWER(:estado)) AND " +
+           "(:busqueda IS NULL OR " +
+           "LOWER(c.nombre) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
+           "LOWER(c.ocupacion) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
+           "LOWER(c.lugar) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
+           "CAST(c.numeroConcursante AS string) LIKE CONCAT('%', :busqueda, '%'))")
+    Page<Concursante> findDisponiblesParaRepetido(Pageable pageable,
+            @Param("busqueda") String busqueda,
+            @Param("estado") String estado,
+            @Param("repetidoId") Long repetidoId);
     
     @Query("SELECT MAX(c.numeroConcursante) FROM Concursante c")
     Integer findMaxNumeroConcursante();

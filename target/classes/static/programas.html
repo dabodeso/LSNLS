@@ -372,6 +372,13 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-2">
+                            <label class="form-label">Listado</label>
+                            <select id="filtro-listado-programa" class="form-select form-select-sm" onchange="filtrarProgramas()">
+                                <option value="">Programas</option>
+                                <option value="repetidos">Repetidos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label class="form-label">Temporada</label>
                             <input type="number" id="filtro-temporada" class="form-control form-control-sm" min="1" onchange="filtrarProgramas()" onkeyup="filtrarProgramas()">
                         </div>
@@ -630,7 +637,7 @@
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/programas.js?v=20260918-filtro-editado"></script>
+    <script src="js/programas.js?v=20261030-repetidos"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();

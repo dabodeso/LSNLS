@@ -1,11 +1,11 @@
 package com.lsnls.service;
 
 import com.lsnls.entity.SubtemaPregunta;
-import com.lsnls.entity.TematicaCombo;
+import com.lsnls.entity.Tematica;
 import com.lsnls.entity.TematicaPregunta;
 import com.lsnls.repository.SubtemaPreguntaRepository;
-import com.lsnls.repository.TematicaComboRepository;
 import com.lsnls.repository.TematicaPreguntaRepository;
+import com.lsnls.repository.TematicaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class TemasCatalogService {
 
     private final TematicaPreguntaRepository tematicaPreguntaRepository;
-    private final TematicaComboRepository tematicaComboRepository;
+    private final TematicaRepository tematicaRepository;
     private final SubtemaPreguntaRepository subtemaPreguntaRepository;
     private final AuthorizationService authorizationService;
     private final UndoService undoService;
@@ -34,9 +34,8 @@ public class TemasCatalogService {
     }
 
     public List<String> obtenerTematicasCombos() {
-        return tematicaComboRepository.findAll().stream()
-                .map(TematicaCombo::getNombre)
-                .sorted()
+        return tematicaRepository.findAllByOrderByNombreAsc().stream()
+                .map(Tematica::getNombre)
                 .collect(Collectors.toList());
     }
 

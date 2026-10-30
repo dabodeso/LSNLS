@@ -51,7 +51,7 @@ import org.springframework.data.domain.Sort;
 <span class="nc" id="L51">            Pageable pageable = PageRequest.of(page, size, Sort.by(order));</span>
             
 <span class="nc" id="L53">            Page&lt;ConcursanteDTO&gt; concursantes = concursanteService.findAllPaginatedWithFilters(</span>
-<span class="nc" id="L54">                pageable, estado, jornada, lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico, busqueda);</span>
+                pageable, estado, jornada, lugar, numeroPrograma, duracionFinalMin, duracionFinalMax, valoracionFinal, bonico, busqueda);
 <span class="nc" id="L55">            return ResponseEntity.ok(concursantes);</span>
 <span class="nc" id="L56">        } catch (Exception e) {</span>
 <span class="nc" id="L57">            return ResponseEntity.internalServerError().body(&quot;Error interno al obtener concursantes: &quot; + MensajesUsuario.sanitizar(e.getMessage()));</span>

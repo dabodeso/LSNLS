@@ -1,3 +1,4 @@
+let vistaRepetidos = false;
 let programas = [];
 let concursantesPorPrograma = {};
 
@@ -150,6 +151,7 @@ async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden 
         return;
     }
     cargandoProgramas = true;
+    vistaRepetidos = false;
     mostrarEstadoCargaProgramas('Cargando programas...', 15);
     try {
         lastScrollYProgramas = window.scrollY || window.pageYOffset || 0;
@@ -183,7 +185,7 @@ async function cargarConcursantesPorPrograma() {
     concursantesPorPrograma = {};
     for (const programa of programas) {
         try {
-            const concursantes = await apiManager.get(`/api/concursantes/programa/${programa.id}`);
+            const concursantes = await apiManager.get(urlConcursantesDePrograma(programa));
             concursantesPorPrograma[programa.id] = concursantes;
         } catch (e) {
             concursantesPorPrograma[programa.id] = [];
@@ -249,12 +251,12 @@ function mostrarProgramas() {
         
         const estadoColor = estadoColores[programa.estado] || '#6c757d';
         const esEmitido = (programa.estado || '').toLowerCase() === 'emitido';
-        const editProgCampos = editProg && !esEmitido;
+        const editProgCampos = editProg && !esEmitido && !programa.repetido;
         const editConcCampos = editConc && !esEmitido;
-        const gestionConcCampos = gestionConc && !esEmitido;
+        const gestionConcCampos = gestionConc && (!esEmitido || programa.repetido);
         
         // Render por slots fijos 1..3 para mantener huecos al borrar
-        const puedeQuitarConc = gestionConc && editConc && !esEmitido;
+        const puedeQuitarConc = gestionConc && editConc && (!esEmitido || programa.repetido);
         const concursantePorSlot = { 1: null, 2: null, 3: null };
         const sinSlot = [];
         (concursantes || []).forEach(c => {
@@ -293,12 +295,13 @@ function mostrarProgramas() {
                                                value="${programa.codigo || programa.id}"
                                                onchange="actualizarCodigoPrograma(${programa.id}, this.value)" style="width: 100px;">`
                                     : `<span class="programa-info-readonly">${programa.codigo || programa.id}</span>`}
+                                ${programa.repetido ? `<span class="badge bg-secondary ms-1">${programa.tipo || 'REPE'}${programa.programaOriginalCodigo ? ' · PGM ' + programa.programaOriginalCodigo : ''}</span>` : ''}
                             </div>
                         </div>
                         <div class="programa-info-item">
                             <div class="programa-info-label">Estado</div>
                             <div class="programa-info-value">
-                                ${editProg
+                                ${(editProg && !programa.repetido)
                                     ? `<select class="form-select form-select-sm" style="min-width: 140px;"
                                                onchange="actualizarEstadoPrograma(${programa.id}, this.value)">
                                            ${renderOpcionEstado(programa.estado, 'borrador', 'Borrador')}
@@ -1037,6 +1040,13 @@ function filtrarProgramas() {
 }
 
 // Nueva función para cargar programas con filtros aplicados
+function urlConcursantesDePrograma(programa) {
+    if (programa && programa.repetido) {
+        return `/api/programas/repetidos/${programa.id}/concursantes`;
+    }
+    return `/api/concursantes/programa/${programa.id}`;
+}
+
 async function cargarProgramasFiltrados() {
     if (cargandoProgramas) {
         return;
@@ -1044,7 +1054,9 @@ async function cargarProgramasFiltrados() {
     cargandoProgramas = true;
     mostrarEstadoCargaProgramas('Obteniendo programas...', 10);
     try {
-        const response = await apiManager.get('/api/programas');
+        const listado = document.getElementById('filtro-listado-programa')?.value || '';
+        vistaRepetidos = listado === 'repetidos';
+        const response = await apiManager.get(vistaRepetidos ? '/api/programas/repetidos' : '/api/programas');
         const todosLosProgramas = response;
 
         mostrarEstadoCargaProgramas('Aplicando filtros...', 30);
@@ -1083,7 +1095,7 @@ async function cargarConcursantesParaProgramasFiltrados() {
             `Cargando concursantes (${i + 1}/${total})...`
         );
         try {
-            const concursantes = await apiManager.get(`/api/concursantes/programa/${programa.id}`);
+            const concursantes = await apiManager.get(urlConcursantesDePrograma(programa));
             concursantesPorPrograma[programa.id] = concursantes;
         } catch (e) {
             console.warn(`No se pudieron cargar concursantes para programa ${programa.id}:`, e);
@@ -1215,7 +1227,7 @@ function aplicarFiltros(lista) {
 }
 
 function limpiarFiltrosProgramas() {
-    ['filtro-estado-programa','filtro-temporada','filtro-programa-id','filtro-fecha-emision','filtro-premios-min','filtro-premios-max']
+    ['filtro-listado-programa','filtro-estado-programa','filtro-temporada','filtro-programa-id','filtro-fecha-emision','filtro-premios-min','filtro-premios-max']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     
     // Volver al modo normal (sin filtros)
@@ -1270,7 +1282,7 @@ async function guardarPrograma() {
         }
         
         bootstrap.Modal.getInstance(document.getElementById('modal-programa')).hide();
-        await recargarProgramas();
+        await refrescarVistaProgramas();
         
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'guardado del programa'));
@@ -1333,7 +1345,7 @@ async function subirFotoConcursante(concursanteId, file) {
         });
 
         // Actualizar la vista
-        await recargarProgramas();
+        await refrescarVistaProgramas();
         mostrarMensaje('Foto subida correctamente', 'success');
         
     } catch (error) {
@@ -1497,6 +1509,18 @@ function estadoFiltroConcursantesDisponibles() {
 }
 
 function urlConcursantesDisponibles(pagina = 0, busqueda = '') {
+    const programaId = document.getElementById('programa-seleccionado-id')?.value;
+    if (vistaRepetidos && programaId) {
+        let url = `/api/programas/repetidos/${encodeURIComponent(programaId)}/disponibles?page=${pagina}&size=${TAMANO_PAGINA_CONCURSANTES_DISPONIBLES}`;
+        if (busqueda) {
+            url += `&busqueda=${encodeURIComponent(busqueda)}`;
+        }
+        const estado = estadoFiltroConcursantesDisponibles();
+        if (estado) {
+            url += `&estado=${encodeURIComponent(estado)}`;
+        }
+        return url;
+    }
     let url = `/api/concursantes/disponibles?page=${pagina}&size=${TAMANO_PAGINA_CONCURSANTES_DISPONIBLES}`;
     if (busqueda) {
         url += `&busqueda=${encodeURIComponent(busqueda)}`;
@@ -1597,7 +1621,7 @@ async function mostrarConcursantesDisponibles(programaId, posicionPreferida = nu
         mostrarError('No tienes permisos para añadir concursantes a programas.');
         return;
     }
-    if (esProgramaEmitido(programaId)) {
+    if (esProgramaEmitido(programaId) && !vistaRepetidos) {
         mostrarError('No se pueden añadir concursantes a un programa emitido.');
         return;
     }
@@ -1615,7 +1639,7 @@ async function mostrarConcursantesDisponibles(programaId, posicionPreferida = nu
         const filtroDuracionMax = document.getElementById('filtro-duracion-max-concursante-disponible');
         if (filtroLugar) filtroLugar.value = '';
         if (filtroValoracion) filtroValoracion.value = '';
-        if (filtroEstado) filtroEstado.value = 'editado';
+        if (filtroEstado) filtroEstado.value = vistaRepetidos ? '' : 'editado';
         if (filtroDuracionMin) filtroDuracionMin.value = '';
         if (filtroDuracionMax) filtroDuracionMax.value = '';
         
@@ -1718,17 +1742,21 @@ async function asignarConcursanteAPrograma(concursanteId) {
     }
     try {
         const programaId = document.getElementById('programa-seleccionado-id').value;
-        if (esProgramaEmitido(programaId)) {
+        if (esProgramaEmitido(programaId) && !vistaRepetidos) {
             mostrarError('No se pueden añadir concursantes a un programa emitido.');
             return;
         }
 
         const queryPos = (posicionPreferidaPrograma != null) ? `?posicion=${encodeURIComponent(posicionPreferidaPrograma)}` : '';
-        await apiManager.postUndoable(`/api/concursantes/${concursanteId}/asignar-programa/${programaId}${queryPos}`, {}, {
-            label: `Asignar programa ${programaId} a concursante ${concursanteId}`,
-            idExtractor: () => concursanteId,
-            deleteEndpointBuilder: () => `/api/concursantes/${concursanteId}/desasignar-programa`
-        });
+        if (vistaRepetidos) {
+            await apiManager.post(`/api/programas/repetidos/${programaId}/concursantes/${concursanteId}${queryPos}`, {});
+        } else {
+            await apiManager.postUndoable(`/api/concursantes/${concursanteId}/asignar-programa/${programaId}${queryPos}`, {}, {
+                label: `Asignar programa ${programaId} a concursante ${concursanteId}`,
+                idExtractor: () => concursanteId,
+                deleteEndpointBuilder: () => `/api/concursantes/${concursanteId}/desasignar-programa`
+            });
+        }
         
         // Cerrar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('modal-añadir-concursantes'));
@@ -1736,7 +1764,7 @@ async function asignarConcursanteAPrograma(concursanteId) {
         posicionPreferidaPrograma = null;
         
         // Recargar programas
-        await recargarProgramas();
+        await refrescarVistaProgramas();
         
         mostrarMensaje('Concursante añadido al programa correctamente', 'success');
     } catch (error) {
@@ -1751,7 +1779,7 @@ async function quitarConcursanteDePrograma(concursanteId, programaId, event) {
         mostrarError('No tienes permisos para quitar concursantes de programas.');
         return;
     }
-    if (esProgramaEmitido(programaId)) {
+    if (esProgramaEmitido(programaId) && !vistaRepetidos) {
         mostrarError('No se pueden quitar concursantes de un programa emitido.');
         return;
     }
@@ -1761,6 +1789,23 @@ async function quitarConcursanteDePrograma(concursanteId, programaId, event) {
     }
     
     try {
+        if (vistaRepetidos) {
+            const orden = (concursantesPorPrograma[programaId] || [])
+                .find(c => String(c.id) === String(concursanteId))?.ordenEscaleta;
+            await apiManager.delete(`/api/programas/repetidos/${programaId}/concursantes/${concursanteId}`);
+            if (window.UndoManager) {
+                const queryPos = (orden != null) ? `?posicion=${encodeURIComponent(orden)}` : '';
+                window.UndoManager.record({
+                    do: async () => { await apiManager.delete(`/api/programas/repetidos/${programaId}/concursantes/${concursanteId}`); },
+                    undo: async () => { await apiManager.post(`/api/programas/repetidos/${programaId}/concursantes/${concursanteId}${queryPos}`, {}); },
+                    label: `Quitar concursante ${concursanteId} del repetido ${programaId}`
+                });
+            }
+            await refrescarVistaProgramas();
+            mostrarMensaje('Concursante quitado del repetido correctamente', 'success');
+            return;
+        }
+
         // Capturar programa y posición actuales para poder deshacer reasignando
         let programaPrevio = null;
         let posicionPrevia = null;
@@ -1784,7 +1829,7 @@ async function quitarConcursanteDePrograma(concursanteId, programaId, event) {
         }
         
         // Recargar programas
-        await recargarProgramas();
+        await refrescarVistaProgramas();
         
         mostrarMensaje('Concursante quitado del programa correctamente', 'success');
     } catch (error) {
@@ -1885,7 +1930,7 @@ async function eliminarPrograma(programaId) {
     try {
         await apiManager.deleteUndoable(`/api/programas/${programaId}`, { label: `Eliminar programa ${programaId}` });
         mostrarExito('Programa eliminado');
-        await recargarProgramas();
+        await refrescarVistaProgramas();
     } catch (error) {
         const msg = Utils.mensajeErrorApi(error, 'eliminar programas');
         let amigable = msg;

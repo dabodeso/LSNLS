@@ -57,7 +57,7 @@ import java.util.Map;
 <span class="fc" id="L57">        Tematica guardada = tematicaRepository.save(tematica);</span>
 <span class="pc bpc" id="L58" title="1 of 2 branches missed.">        if (guardada.getId() != null) {</span>
 <span class="nc" id="L59">            undoService.registrar(&quot;añadir_tematica&quot;, &quot;Añadir temática &quot; + guardada.getNombre(),</span>
-<span class="nc" id="L60">                    java.util.Collections.singletonList(UndoService.accionEliminarFila(&quot;tematicas&quot;, guardada.getId())));</span>
+<span class="nc" id="L60">                    java.util.Collections.singletonList(UndoService.accionEliminarFila(&quot;tematicas_combos&quot;, guardada.getId())));</span>
         }
 <span class="fc" id="L62">        return guardada;</span>
     }
@@ -97,9 +97,9 @@ import java.util.Map;
 <span class="fc" id="L97">                java.util.Map&lt;String, Object&gt; camposPrevios = new java.util.HashMap&lt;&gt;();</span>
 <span class="fc" id="L98">                camposPrevios.put(&quot;nombre&quot;, nombreAnterior);</span>
 <span class="fc" id="L99">                undoService.registrar(&quot;renombrar_tematica&quot;,</span>
-<span class="fc" id="L100">                        &quot;Renombrar temática &quot; + nombreAnterior + &quot; → &quot; + nuevoNombre,</span>
+                        &quot;Renombrar temática &quot; + nombreAnterior + &quot; → &quot; + nuevoNombre,
 <span class="fc" id="L101">                        java.util.Collections.singletonList(</span>
-<span class="fc" id="L102">                                UndoService.accionActualizarCampos(&quot;tematicas&quot;, id, camposPrevios)));</span>
+<span class="fc" id="L102">                                UndoService.accionActualizarCampos(&quot;tematicas_combos&quot;, id, camposPrevios)));</span>
             }
 <span class="fc" id="L104">            return guardada;</span>
         }
@@ -147,10 +147,10 @@ import java.util.Map;
 <span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (tematica.getId() == null) {</span>
 <span class="nc" id="L148">            return;</span>
         }
-<span class="fc" id="L150">        java.util.Map&lt;String, Object&gt; fila = undoService.snapshotFila(&quot;tematicas&quot;, tematica.getId());</span>
+<span class="fc" id="L150">        java.util.Map&lt;String, Object&gt; fila = undoService.snapshotFila(&quot;tematicas_combos&quot;, tematica.getId());</span>
 <span class="pc bpc" id="L151" title="1 of 2 branches missed.">        if (fila != null) {</span>
 <span class="fc" id="L152">            undoService.registrar(&quot;eliminar_tematica&quot;, &quot;Eliminar temática &quot; + tematica.getNombre(),</span>
-<span class="fc" id="L153">                    java.util.Collections.singletonList(UndoService.accionInsertarFila(&quot;tematicas&quot;, fila)));</span>
+<span class="fc" id="L153">                    java.util.Collections.singletonList(UndoService.accionInsertarFila(&quot;tematicas_combos&quot;, fila)));</span>
         }
 <span class="fc" id="L155">    }</span>
 

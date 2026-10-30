@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping(&quot;/api/undo&quot;)
 @CrossOrigin(origins = &quot;*&quot;)
-<span class="nc" id="L15">public class UndoController {</span>
+<span class="fc" id="L15">public class UndoController {</span>
 
     @Autowired
     private UndoService undoService;
@@ -25,16 +25,16 @@ import org.springframework.web.bind.annotation.*;
     @PreAuthorize(&quot;isAuthenticated()&quot;)
     public ResponseEntity&lt;ApiResponse&lt;String&gt;&gt; deshacer(@PathVariable Long operacionId) {
         try {
-<span class="nc" id="L28">            String descripcion = undoService.deshacer(operacionId);</span>
-<span class="nc bnc" id="L29" title="All 4 branches missed.">            String mensaje = descripcion != null &amp;&amp; !descripcion.isEmpty()</span>
-<span class="nc" id="L30">                    ? &quot;Deshecho: &quot; + descripcion</span>
-<span class="nc" id="L31">                    : &quot;Operación deshecha&quot;;</span>
-<span class="nc" id="L32">            return ResponseEntity.ok(ApiResponse.exitoso(mensaje, descripcion));</span>
-<span class="nc" id="L33">        } catch (IllegalArgumentException | IllegalStateException e) {</span>
-<span class="nc" id="L34">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
-<span class="nc" id="L35">        } catch (Exception e) {</span>
-<span class="nc" id="L36">            return ResponseEntity.internalServerError()</span>
-<span class="nc" id="L37">                    .body(ApiResponse.error(&quot;Error al deshacer la operación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
+<span class="fc" id="L28">            String descripcion = undoService.deshacer(operacionId);</span>
+<span class="pc bpc" id="L29" title="1 of 4 branches missed.">            String mensaje = descripcion != null &amp;&amp; !descripcion.isEmpty()</span>
+<span class="fc" id="L30">                    ? &quot;Deshecho: &quot; + descripcion</span>
+<span class="fc" id="L31">                    : &quot;Operación deshecha&quot;;</span>
+<span class="fc" id="L32">            return ResponseEntity.ok(ApiResponse.exitoso(mensaje, descripcion));</span>
+<span class="fc" id="L33">        } catch (IllegalArgumentException | IllegalStateException e) {</span>
+<span class="fc" id="L34">            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));</span>
+<span class="fc" id="L35">        } catch (Exception e) {</span>
+<span class="fc" id="L36">            return ResponseEntity.internalServerError()</span>
+<span class="fc" id="L37">                    .body(ApiResponse.error(&quot;Error al deshacer la operación: &quot; + MensajesUsuario.sanitizar(e.getMessage())));</span>
         }
     }
 }

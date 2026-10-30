@@ -6,7 +6,9 @@ import com.lsnls.entity.Cuestionario;
 import com.lsnls.entity.Combo;
 import com.lsnls.entity.Jornada;
 import com.lsnls.entity.Programa;
+import com.lsnls.entity.ProgramaConcursante;
 import com.lsnls.repository.ConcursanteRepository;
+import com.lsnls.repository.ProgramaConcursanteRepository;
 import com.lsnls.repository.CuestionarioRepository;
 import com.lsnls.repository.ComboRepository;
 import com.lsnls.repository.JornadaRepository;
@@ -24,8 +26,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.data.domain.Page;
@@ -53,6 +58,9 @@ public class ConcursanteService {
 
     @Autowired
     private ProgramaRepository programaRepository;
+
+    @Autowired
+    private ProgramaConcursanteRepository programaConcursanteRepository;
     
     @PersistenceContext
     private EntityManager entityManager;
@@ -532,10 +540,38 @@ public class ConcursanteService {
     }
 
     public List<ConcursanteDTO> findByProgramaId(Long programaId) {
-        Integer numeroPrograma = programaId != null ? programaId.intValue() : null;
-        return concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(numeroPrograma).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        if (programaId == null) {
+            return List.of();
+        }
+        Integer numeroPrograma = programaId.intValue();
+        Map<Long, Integer> ordenPorConcursante = new LinkedHashMap<>();
+        for (ProgramaConcursante enlace : programaConcursanteRepository
+                .findByProgramaIdOrderByOrdenEscaletaAscIdAsc(programaId)) {
+            ordenPorConcursante.put(enlace.getConcursanteId(), enlace.getOrdenEscaleta());
+        }
+        for (Concursante concursante : concursanteRepository
+                .findByNumeroProgramaOrderByNumeroConcursanteAsc(numeroPrograma)) {
+            ordenPorConcursante.putIfAbsent(concursante.getId(), concursante.getOrdenEscaleta());
+        }
+        if (ordenPorConcursante.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, Concursante> porId = concursanteRepository.findAllById(ordenPorConcursante.keySet()).stream()
+                .collect(Collectors.toMap(Concursante::getId, concursante -> concursante));
+        List<ConcursanteDTO> resultado = new ArrayList<>();
+        ordenPorConcursante.entrySet().stream()
+                .sorted(Comparator.comparing(entrada -> entrada.getValue() == null ? Integer.MAX_VALUE : entrada.getValue()))
+                .forEach(entrada -> {
+                    Concursante concursante = porId.get(entrada.getKey());
+                    if (concursante == null) {
+                        return;
+                    }
+                    ConcursanteDTO dto = convertToDTO(concursante);
+                    dto.setNumeroPrograma(numeroPrograma);
+                    dto.setOrdenEscaleta(entrada.getValue());
+                    resultado.add(dto);
+                });
+        return resultado;
     }
 
     public List<ConcursanteDTO> findConcursantesSinPrograma() {
@@ -561,6 +597,16 @@ public class ConcursanteService {
         return concursanteRepository.findDisponiblesParaProgramaWithSearch(
                 pageable, busqueda, normalizarEstadoFiltroDisponibles(estado), programaId)
                 .map(this::convertToDTO);
+    }
+
+    public Page<ConcursanteDTO> findDisponiblesParaRepetido(Pageable pageable, String busqueda, String estado, Long repetidoId) {
+        return concursanteRepository.findDisponiblesParaRepetido(
+                pageable, busqueda, normalizarEstadoFiltroDisponibles(estado), repetidoId)
+                .map(this::convertToDTO);
+    }
+
+    public ConcursanteDTO copiarDto(Concursante concursante) {
+        return convertToDTO(concursante);
     }
 
     @Transactional

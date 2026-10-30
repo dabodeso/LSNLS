@@ -75,7 +75,7 @@ public class Jornada {
 <span class="fc bfc" id="L75" title="All 2 branches covered.">            if (c != null) {</span>
 <span class="fc" id="L76">                set.add(c);</span>
             }
-        }
+<span class="fc" id="L78">        }</span>
 <span class="fc" id="L79">        return set;</span>
     }
 
@@ -88,7 +88,7 @@ public class Jornada {
 <span class="nc" id="L88">                    break;</span>
                 }
 <span class="fc" id="L90">                porSlot.set(i++, c);</span>
-            }
+<span class="fc" id="L91">            }</span>
         }
 <span class="fc" id="L93">        reemplazarCuestionariosPorSlot(porSlot);</span>
 <span class="fc" id="L94">    }</span>
@@ -99,7 +99,7 @@ public class Jornada {
 <span class="fc bfc" id="L99" title="All 2 branches covered.">            if (c != null) {</span>
 <span class="fc" id="L100">                set.add(c);</span>
             }
-        }
+<span class="fc" id="L102">        }</span>
 <span class="fc" id="L103">        return set;</span>
     }
 
@@ -112,7 +112,7 @@ public class Jornada {
 <span class="nc" id="L112">                    break;</span>
                 }
 <span class="fc" id="L114">                porSlot.set(i++, c);</span>
-            }
+<span class="fc" id="L115">            }</span>
         }
 <span class="fc" id="L117">        reemplazarCombosPorSlot(porSlot);</span>
 <span class="fc" id="L118">    }</span>
@@ -127,7 +127,7 @@ public class Jornada {
 <span class="pc bpc" id="L127" title="3 of 6 branches missed.">            if (slot != null &amp;&amp; slot &gt;= 1 &amp;&amp; slot &lt;= SlotsJornada.TOTAL) {</span>
 <span class="fc" id="L128">                slots.set(slot - 1, a.getCuestionario());</span>
             }
-        }
+<span class="fc" id="L130">        }</span>
 <span class="fc" id="L131">        return slots;</span>
     }
 
@@ -141,7 +141,7 @@ public class Jornada {
 <span class="pc bpc" id="L141" title="3 of 6 branches missed.">            if (slot != null &amp;&amp; slot &gt;= 1 &amp;&amp; slot &lt;= SlotsJornada.TOTAL) {</span>
 <span class="fc" id="L142">                slots.set(slot - 1, a.getCombo());</span>
             }
-        }
+<span class="fc" id="L144">        }</span>
 <span class="fc" id="L145">        return slots;</span>
     }
 
@@ -155,11 +155,11 @@ public class Jornada {
 <span class="pc bpc" id="L155" title="2 of 4 branches missed.">            if (a.getCuestionario() != null &amp;&amp; a.getCuestionario().getId() != null) {</span>
 <span class="fc" id="L156">                existentes.put(a.getCuestionario().getId(), a);</span>
             }
-        }
+<span class="fc" id="L158">        }</span>
 
 <span class="fc" id="L160">        Set&lt;Long&gt; idsDeseados = new HashSet&lt;&gt;();</span>
 <span class="fc" id="L161">        List&lt;JornadaCuestionarioAsignacion&gt; resultado = new ArrayList&lt;&gt;();</span>
-<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (porSlot != null) {</span>
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">        if (porSlot != null) {</span>
 <span class="pc bpc" id="L163" title="1 of 4 branches missed.">            for (int i = 0; i &lt; porSlot.size() &amp;&amp; i &lt; SlotsJornada.TOTAL; i++) {</span>
 <span class="fc" id="L164">                Cuestionario c = porSlot.get(i);</span>
 <span class="pc bpc" id="L165" title="1 of 4 branches missed.">                if (c == null || c.getId() == null) {</span>
@@ -170,7 +170,7 @@ public class Jornada {
 <span class="fc bfc" id="L170" title="All 2 branches covered.">                if (a != null) {</span>
 <span class="fc" id="L171">                    a.setSlot(i + 1);</span>
 <span class="fc" id="L172">                    resultado.add(a);</span>
-<span class="fc" id="L173">                } else {</span>
+                } else {
 <span class="fc" id="L174">                    JornadaCuestionarioAsignacion nueva = new JornadaCuestionarioAsignacion();</span>
 <span class="fc" id="L175">                    nueva.vincular(this, c, i + 1);</span>
 <span class="fc" id="L176">                    resultado.add(nueva);</span>
@@ -195,7 +195,7 @@ public class Jornada {
 <span class="pc bpc" id="L195" title="2 of 4 branches missed.">            if (a.getCombo() != null &amp;&amp; a.getCombo().getId() != null) {</span>
 <span class="fc" id="L196">                existentes.put(a.getCombo().getId(), a);</span>
             }
-        }
+<span class="fc" id="L198">        }</span>
 
 <span class="fc" id="L200">        Set&lt;Long&gt; idsDeseados = new HashSet&lt;&gt;();</span>
 <span class="fc" id="L201">        List&lt;JornadaComboAsignacion&gt; resultado = new ArrayList&lt;&gt;();</span>
@@ -210,7 +210,7 @@ public class Jornada {
 <span class="fc bfc" id="L210" title="All 2 branches covered.">                if (a != null) {</span>
 <span class="fc" id="L211">                    a.setSlot(i + 1);</span>
 <span class="fc" id="L212">                    resultado.add(a);</span>
-<span class="fc" id="L213">                } else {</span>
+                } else {
 <span class="fc" id="L214">                    JornadaComboAsignacion nueva = new JornadaComboAsignacion();</span>
 <span class="fc" id="L215">                    nueva.vincular(this, c, i + 1);</span>
 <span class="fc" id="L216">                    resultado.add(nueva);</span>

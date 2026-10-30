@@ -117,6 +117,9 @@ public class DatabaseMigrationRunner {
             // 8) Pregunta usada en reciclaje parcial, persistida en el combo original
             migrarPreguntaUsadaCombo(schemaName);
 
+            // 9) La tabla antigua tematicas pasa a tematicas_combos y se elimina
+            migrarTematicasACombos();
+
         } catch (Exception e) {
             log.error("[DB MIGRATION] Error ejecutando migraciones: {}", e.getMessage(), e);
         }
@@ -133,6 +136,30 @@ public class DatabaseMigrationRunner {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    /**
+     * Copia las filas de la tabla antigua {@code tematicas} a {@code tematicas_combos}
+     * y elimina la tabla vieja. No hace nada si {@code tematicas} ya no existe.
+     */
+    private void migrarTematicasACombos() {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.tables "
+                            + "WHERE table_schema = DATABASE() AND table_name = 'tematicas'",
+                    Integer.class);
+            if (count == null || count == 0) {
+                return;
+            }
+            log.info("[DB MIGRATION] Copiando tematicas a tematicas_combos y eliminando la tabla antigua...");
+            jdbcTemplate.execute(
+                    "INSERT IGNORE INTO tematicas_combos (nombre, fecha_creacion, creacion_usuario_id, version) "
+                            + "SELECT nombre, fecha_creacion, creacion_usuario_id, IFNULL(version, 0) FROM tematicas");
+            jdbcTemplate.execute("DROP TABLE tematicas");
+            log.info("[DB MIGRATION] Tabla tematicas eliminada. El catálogo queda en tematicas_combos.");
+        } catch (Exception e) {
+            log.warn("[DB MIGRATION] No se pudo migrar tematicas a tematicas_combos: {}", e.getMessage());
+        }
     }
 
     private void migrarPreguntaUsadaCombo(String schemaName) {

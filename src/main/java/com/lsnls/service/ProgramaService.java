@@ -234,10 +234,13 @@ public class ProgramaService {
         Programa programa = programaOpt.get();
 
         // Verificar dependencias - no se puede eliminar si hay concursantes asignados
-        Long concursantesCount = entityManager.createQuery(
-            "SELECT COUNT(c) FROM Concursante c WHERE c.numeroPrograma = :programaId", Long.class)
-            .setParameter("programaId", programa.getId() != null ? programa.getId().intValue() : null)
-            .getSingleResult();
+        Long concursantesCount = ((Number) entityManager.createNativeQuery(
+            "SELECT COUNT(DISTINCT c.id) FROM concursantes c "
+            + "LEFT JOIN programas_concursantes pc ON pc.concursante_id = c.id AND pc.programa_id = :programaId "
+            + "WHERE c.numero_programa = :numeroPrograma OR pc.id IS NOT NULL")
+            .setParameter("programaId", programa.getId())
+            .setParameter("numeroPrograma", programa.getId() != null ? programa.getId().intValue() : null)
+            .getSingleResult()).longValue();
         
         if (concursantesCount > 0) {
             throw new IllegalArgumentException("No se puede eliminar el programa " + 

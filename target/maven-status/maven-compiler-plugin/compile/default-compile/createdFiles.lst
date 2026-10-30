@@ -14,6 +14,7 @@ com\lsnls\repository\AuditLogRepository.class
 com\lsnls\repository\TematicaPreguntaRepository.class
 com\lsnls\config\EncodingConfig.class
 com\lsnls\service\CuestionarioService.class
+com\lsnls\repository\ProgramaRepetidoConcursanteRepository.class
 com\lsnls\config\TransicionesEstado.class
 com\lsnls\service\BackupService$DatabaseConfig.class
 com\lsnls\validation\NoLineBreaks.class
@@ -23,6 +24,7 @@ com\lsnls\entity\ConfiguracionGlobal.class
 com\lsnls\repository\JornadaRepository.class
 com\lsnls\repository\TematicaRepository.class
 com\lsnls\controller\ConcursanteController.class
+com\lsnls\entity\ProgramaRepetidoConcursante.class
 com\lsnls\entity\Tematica.class
 com\lsnls\entity\Combo$EstadoCombo.class
 com\lsnls\service\BackupService.class
@@ -36,6 +38,7 @@ com\lsnls\repository\PreguntaCuestionarioRepository.class
 com\lsnls\config\SecurityConfig.class
 com\lsnls\dto\HistorialJornadaDTO.class
 com\lsnls\controller\ConfiguracionGlobalController.class
+com\lsnls\entity\ProgramaRepetido.class
 com\lsnls\config\UndoHeaderAdvice.class
 com\lsnls\controller\UsuarioController.class
 com\lsnls\controller\PreguntaController$1.class
@@ -48,7 +51,7 @@ com\lsnls\config\JacksonConfig.class
 com\lsnls\dto\MarcarNoUsadoDTO.class
 com\lsnls\validation\NoSpecialCharacters.class
 com\lsnls\config\MensajesUsuario.class
-com\lsnls\repository\TematicaComboRepository.class
+com\lsnls\entity\ProgramaConcursante.class
 com\lsnls\service\UsuarioService.class
 com\lsnls\service\SessionValidationService$SessionValidationResult.class
 com\lsnls\service\SyncService.class
@@ -59,12 +62,14 @@ com\lsnls\entity\HistorialJornada.class
 com\lsnls\service\SessionValidationService.class
 com\lsnls\entity\Programa$EstadoPrograma.class
 com\lsnls\dto\PreguntaCuestionarioDTO.class
+com\lsnls\controller\ProgramaRepetidoController.class
 com\lsnls\config\DatabaseMigrationRunner.class
 com\lsnls\repository\UsuarioRepository.class
 com\lsnls\entity\Jornada$EstadoJornada.class
 com\lsnls\service\DataTransformationService$ValidationResult.class
 com\lsnls\validation\UpperCaseValidator.class
 com\lsnls\dto\ProgramaDTO.class
+com\lsnls\repository\ProgramaConcursanteRepository.class
 com\lsnls\service\AuthService.class
 com\lsnls\dto\VisibleEntityDTO.class
 com\lsnls\controller\HistorialJornadaController.class
@@ -83,6 +88,7 @@ com\lsnls\dto\CrearComboDTO.class
 com\lsnls\entity\AuditLog$OperationType.class
 com\lsnls\dto\ReciclajeComboDTO.class
 com\lsnls\config\GlobalExceptionHandler.class
+com\lsnls\repository\ProgramaRepetidoRepository.class
 com\lsnls\entity\Pregunta$FactorPregunta.class
 com\lsnls\service\UndoService.class
 com\lsnls\controller\ProgramaController.class
@@ -108,13 +114,13 @@ com\lsnls\repository\SubtemaPreguntaRepository.class
 com\lsnls\config\WebConfig.class
 com\lsnls\dto\PreguntaDTO.class
 com\lsnls\repository\EditLockRepository.class
+com\lsnls\service\ProgramaRepetidoService.class
 com\lsnls\dto\ConcursanteDTO.class
 com\lsnls\entity\Cuestionario$NivelCuestionario.class
 com\lsnls\service\AuditService.class
 com\lsnls\LsnlsApplication.class
 com\lsnls\entity\JornadaCuestionarioAsignacion$Id.class
 com\lsnls\entity\Pregunta$NivelPregunta.class
-com\lsnls\entity\TematicaCombo.class
 com\lsnls\entity\Programa.class
 com\lsnls\config\EstadoCuestionarioConverter.class
 com\lsnls\repository\CuestionarioRepository.class
@@ -145,6 +151,7 @@ com\lsnls\service\JornadaService.class
 com\lsnls\entity\AuditLog$OperationResult.class
 com\lsnls\config\DataSourceDiagnostics.class
 com\lsnls\dto\CrearComboDTO$PreguntaMultiplicadoraDTO.class
+com\lsnls\dto\ProgramaRepetidoDTO.class
 com\lsnls\service\SessionValidationService$SecurityLevel.class
 com\lsnls\entity\Pregunta$EstadoPregunta.class
 com\lsnls\controller\ValidationController.class

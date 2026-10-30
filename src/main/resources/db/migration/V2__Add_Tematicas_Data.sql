@@ -1,5 +1,5 @@
 -- Insertar temáticas básicas
-INSERT INTO tematicas (nombre, creacion_usuario_id, fecha_creacion, version) VALUES
+INSERT INTO tematicas_combos (nombre, creacion_usuario_id, fecha_creacion, version) VALUES
 ('GEOGRAFÍA', 1, NOW(), 0),
 ('HISTORIA', 1, NOW(), 0),
 ('DEPORTES', 1, NOW(), 0),

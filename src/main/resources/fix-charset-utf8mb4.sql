@@ -29,7 +29,6 @@ ALTER DATABASE lsnls CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Convertir las tablas que ya existen, con sus datos
 ALTER TABLE usuarios               CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-ALTER TABLE tematicas              CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE tematicas_preguntas    CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE tematicas_combos       CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE subtemas_preguntas     CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
