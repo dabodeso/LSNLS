@@ -197,10 +197,192 @@ async function sincronizarJornadaConcursante(concursanteId, jornadaId) {
     }
 }
 
-async function ejecutarAccionConcursanteUndoable({ doAction, undoAction, label }) {
+let anclaListaConcursantes = { y: 0, left: 0, en: 0 };
+
+function idSelectorConcursante(valor) {
+    return String(valor == null ? '' : valor).replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+function selectoresFilaConcursante(concursanteId, numero) {
+    const selectores = [];
+    const id = idSelectorConcursante(concursanteId);
+    if (id) selectores.push(`#tabla-concursantes tr[data-id="${id}"]`);
+    const numeroLimpio = idSelectorConcursante(numero);
+    if (numeroLimpio) selectores.push(`#tabla-concursantes tr[data-numero="${numeroLimpio}"]`);
+    return selectores;
+}
+
+function numeroDeConcursante(concursanteId, explicito) {
+    if (explicito != null && String(explicito).trim() !== '') return explicito;
+    const fila = (concursantes || []).find(c => c && String(c.id) === String(concursanteId));
+    if (fila && fila.numeroConcursante != null && String(fila.numeroConcursante).trim() !== '') {
+        return fila.numeroConcursante;
+    }
+    return null;
+}
+
+function accionUndoConcursante(concursanteId, accion) {
+    const base = accion && typeof accion === 'object' ? accion : {};
+    if (concursanteId == null || concursanteId === '') return base;
+    const numero = numeroDeConcursante(concursanteId, base.numeroConcursante);
+    const selectores = selectoresFilaConcursante(concursanteId, numero);
+    return {
+        ...base,
+        concursanteId,
+        numeroConcursante: numero,
+        scrollSelectors: (Array.isArray(base.scrollSelectors) && base.scrollSelectors.length)
+            ? base.scrollSelectors
+            : selectores
+    };
+}
+
+function marcarAnclaUltimaAccionUndo(concursanteId) {
+    if (concursanteId == null || concursanteId === '') return;
+    const manager = window.UndoManager;
+    const accion = manager && manager.undoStack && typeof manager.undoStack.peek === 'function'
+        ? manager.undoStack.peek()
+        : null;
+    if (!accion || accion.concursanteId != null || accion.label !== 'Crear concursante') return;
+    const decorada = accionUndoConcursante(concursanteId, accion);
+    accion.concursanteId = decorada.concursanteId;
+    accion.numeroConcursante = decorada.numeroConcursante;
+    accion.scrollSelectors = decorada.scrollSelectors;
+}
+
+async function conAnclaUndoConcursante(concursanteId, fn) {
+    const manager = window.UndoManager;
+    const numero = numeroDeConcursante(concursanteId);
+    const selectores = selectoresFilaConcursante(concursanteId, numero);
+    if (!manager || typeof manager.record !== 'function' || selectores.length === 0) {
+        return fn();
+    }
+    const original = manager.record.bind(manager);
+    manager.record = (action) => {
+        if (action && typeof action === 'object') {
+            if (action.concursanteId == null) action.concursanteId = concursanteId;
+            if (action.numeroConcursante == null && numero != null) action.numeroConcursante = numero;
+            if (!action.scrollSelector && !(Array.isArray(action.scrollSelectors) && action.scrollSelectors.length)) {
+                action.scrollSelectors = selectores.slice();
+            }
+        }
+        return original(action);
+    };
+    try {
+        return await fn();
+    } finally {
+        manager.record = original;
+    }
+}
+
+function capturarAnclaListaConcursantes(forzar = false) {
+    const wrapper = document.getElementById('tabla-concursantes-body-wrapper');
+    const y = window.scrollY || window.pageYOffset || 0;
+    const left = wrapper ? (wrapper.scrollLeft || 0) : 0;
+    const ahora = Date.now();
+    const reciente = (ahora - (anclaListaConcursantes.en || 0)) < 2500;
+    const listaColapsada = !!document.querySelector('#tabla-concursantes .fa-spinner');
+    const scrollVerticalPerdido = reciente
+        && y + 8 < (anclaListaConcursantes.y || 0)
+        && (anclaListaConcursantes.y || 0) > 8;
+    const scrollHorizontalPerdido = reciente
+        && left + 1 < (anclaListaConcursantes.left || 0)
+        && (anclaListaConcursantes.left || 0) > 0
+        && (listaColapsada || y < 8);
+    if (!forzar && (listaColapsada || scrollVerticalPerdido || scrollHorizontalPerdido)) {
+        return anclaListaConcursantes;
+    }
+    anclaListaConcursantes = { y, left, en: ahora };
+    lastScrollYConcursantes = y;
+    return anclaListaConcursantes;
+}
+
+function destinoFilaDesdeAccion(accion) {
+    if (!accion) return null;
+    const destino = {};
+    if (accion.concursanteId != null && accion.concursanteId !== '') destino.id = accion.concursanteId;
+    if (accion.numeroConcursante != null && accion.numeroConcursante !== '') destino.numero = accion.numeroConcursante;
+    const selectores = [];
+    if (Array.isArray(accion.scrollSelectors)) selectores.push(...accion.scrollSelectors);
+    if (accion.scrollSelector) selectores.push(accion.scrollSelector);
+    selectores.forEach((sel) => {
+        const texto = String(sel || '');
+        const id = texto.match(/data-id=["']([^"']+)["']/);
+        const numero = texto.match(/data-numero=["']([^"']+)["']/);
+        if (id && destino.id == null) destino.id = id[1];
+        if (numero && destino.numero == null) destino.numero = numero[1];
+    });
+    if (destino.id == null && accion.label) {
+        const enEtiqueta = String(accion.label).match(/concursante\s+(\d+)/i);
+        if (enEtiqueta) destino.id = enEtiqueta[1];
+    }
+    if (destino.id == null && destino.numero == null) return null;
+    return destino;
+}
+
+function buscarFilaConcursante(destino) {
+    if (!destino || !document.querySelector) return null;
+    const id = destino.id != null && destino.id !== '' ? idSelectorConcursante(destino.id) : '';
+    if (id) {
+        const porId = document.querySelector(`#tabla-concursantes tr[data-id="${id}"]`);
+        if (porId) return porId;
+    }
+    const numero = destino.numero != null && destino.numero !== '' ? idSelectorConcursante(destino.numero) : '';
+    if (numero) return document.querySelector(`#tabla-concursantes tr[data-numero="${numero}"]`);
+    return null;
+}
+
+function aplicarPosicionListaConcursantes(ancla, destino) {
+    const wrapper = document.getElementById('tabla-concursantes-body-wrapper');
+    const fila = buscarFilaConcursante(destino);
+    if (fila && typeof fila.scrollIntoView === 'function') {
+        fila.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+    } else if (ancla) {
+        const top = ancla.y || 0;
+        const leftVentana = window.scrollX || window.pageXOffset || 0;
+        try {
+            window.scrollTo({ top, left: leftVentana, behavior: 'auto' });
+        } catch (e) {
+            window.scrollTo(leftVentana, top);
+        }
+        const scroller = document.scrollingElement;
+        if (scroller) scroller.scrollTop = top;
+    }
+    if (wrapper && ancla) wrapper.scrollLeft = ancla.left || 0;
+}
+
+function programarPosicionListaConcursantes(ancla, destino) {
+    const aplicar = () => aplicarPosicionListaConcursantes(ancla, destino);
+    aplicar();
+    setTimeout(aplicar, 0);
+    setTimeout(aplicar, 80);
+}
+
+function instalarEnfoqueUndoConcursantes() {
+    const manager = window.UndoManager;
+    if (!manager || manager.__enfoqueConcursantes) return;
+    manager.__enfoqueConcursantes = true;
+    const envolver = (metodo) => {
+        const original = manager[metodo].bind(manager);
+        manager[metodo] = async function () {
+            const pila = metodo === 'redo' ? manager.redoStack : manager.undoStack;
+            const accion = pila && typeof pila.peek === 'function' ? pila.peek() : null;
+            const destino = destinoFilaDesdeAccion(accion);
+            const ancla = capturarAnclaListaConcursantes(true);
+            const ok = await original();
+            if (ok) programarPosicionListaConcursantes(ancla, destino);
+            return ok;
+        };
+    };
+    envolver('undo');
+    envolver('redo');
+}
+
+instalarEnfoqueUndoConcursantes();
+
+async function ejecutarAccionConcursanteUndoable({ doAction, undoAction, label, concursanteId }) {
     await doAction();
     if (window.UndoManager) {
-        window.UndoManager.record({ do: doAction, undo: undoAction, label });
+        window.UndoManager.record(accionUndoConcursante(concursanteId, { do: doAction, undo: undoAction, label }));
     }
 }
 
@@ -217,6 +399,7 @@ async function registrarUndoPutConcursante(concursanteId, buildNextPayload, labe
     };
 
     await ejecutarAccionConcursanteUndoable({
+        concursanteId,
         doAction: async () => {
             await aplicar(nextPayload);
             if (extras.alHacer) await extras.alHacer();
@@ -240,6 +423,7 @@ async function registrarUndoJornadaConcursante(concursanteId, nuevaJornadaId, la
     };
 
     await ejecutarAccionConcursanteUndoable({
+        concursanteId,
         doAction: async () => aplicarJornada(jornadaNueva),
         undoAction: async () => aplicarJornada(jornadaPrev),
         label
@@ -614,7 +798,7 @@ function aplicarRestriccionProgramacionFormulario() {
 // Carga de datos
 async function cargarConcursantes(resetear = true) {
 try {
-        lastScrollYConcursantes = window.scrollY || window.pageYOffset || 0;
+        const anclaCarga = capturarAnclaListaConcursantes();
         // Log de entrada
         console.info('📄 [CONCURSANTES] Cargando', { paginaActual, tamanioPagina, resetear });
         
@@ -707,7 +891,7 @@ try {
         paginaActual = data.number;
         
 mostrarConcursantes();
-        setTimeout(() => { window.scrollTo({ top: lastScrollYConcursantes || 0, behavior: 'auto' }); }, 0);
+        aplicarPosicionListaConcursantes(anclaCarga, null);
 } catch (error) {
 if (error && error.message && error.message.startsWith('401')) {
 // No mostrar mensaje, la redirección ya ocurre en api.js
@@ -1112,7 +1296,9 @@ celdas.push(`<td class="col-acciones">
            </button>` : ''}
        </td>`);
 
-return `<tr data-id="${concursante.id}" oncontextmenu="showContextMenu(event, ${concursante.id}, 'concursante')">
+const numeroFila = idSelectorConcursante(concursante.numeroConcursante);
+const attrNumero = numeroFila ? ` data-numero="${numeroFila}"` : '';
+return `<tr data-id="${concursante.id}"${attrNumero} oncontextmenu="showContextMenu(event, ${concursante.id}, 'concursante')">
            ${celdas.join('')}
        </tr>`;
     }).join('');
@@ -1649,7 +1835,7 @@ let response;
             await cargarConcursantes(true);
         };
         await doAction();
-        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar concursante ${datosConcursante.id}` });
+        if (window.UndoManager) window.UndoManager.record(accionUndoConcursante(datosConcursante.id, { do: doAction, undo: undoAction, label: `Actualizar concursante ${datosConcursante.id}` }));
         // Simular objeto Response OK para flujo existente
         response = new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     } else {
@@ -1660,6 +1846,8 @@ let response;
             idExtractor: (r) => (r && (r.id || r?.datos?.id || r?.data?.id)) ? (r.id || r?.datos?.id || r?.data?.id) : null,
             deleteEndpointBuilder: (id) => `/api/concursantes/${id}`
         });
+        const idCreadoUndo = creado && (creado.id || creado?.datos?.id || creado?.data?.id);
+        marcarAnclaUltimaAccionUndo(idCreadoUndo);
         // Construir Response-like para seguir flujo
         response = new Response(JSON.stringify(creado || {}), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
@@ -1809,7 +1997,7 @@ $(document).on('change', '.estado-select', async function() {
             }
         };
         await doAction();
-        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Cambiar estado concursante ${id}` });
+        if (window.UndoManager) window.UndoManager.record(accionUndoConcursante(id, { do: doAction, undo: undoAction, label: `Cambiar estado concursante ${id}` }));
     } catch (e) {
         console.error('Error al cambiar estado del concursante:', e);
         // Restaurar valor previo en el select si lo conocemos
@@ -1845,11 +2033,11 @@ $(document).on('change', '.xusoker-select', async function() {
 
         await doAction();
         if (window.UndoManager) {
-            window.UndoManager.record({
+            window.UndoManager.record(accionUndoConcursante(id, {
                 do: doAction,
                 undo: undoAction,
                 label: `Cambiar XUSÓKER concursante ${id}`
-            });
+            }));
         }
     } catch (e) {
         console.error('Error al cambiar XUSÓKER del concursante:', e);
@@ -1877,7 +2065,7 @@ async function eliminarConcursante(id) {
 
         // El backend registra la operación deshacible y restaura el concursante
         // con su mismo id (y los estados de cuestionario/combo) al deshacer
-        await apiManager.deleteUndoable(`/api/concursantes/${id}`, { label: `Eliminar concursante ${id}` });
+        await conAnclaUndoConcursante(id, () => apiManager.deleteUndoable(`/api/concursantes/${id}`, { label: `Eliminar concursante ${id}` }));
         await cargarConcursantes(true);
         mostrarExito('Concursante eliminado correctamente');
     } catch (error) {
@@ -2068,7 +2256,7 @@ concursante.programa = prog ? { id: prog.id } : null;
         const undoAction = async () => { await apiManager.put(`/api/concursantes/${id}`, prevPayload); await cargarConcursantes(true); };
 
         await doAction();
-        if (window.UndoManager) window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar concursante ${id} - ${campo}` });
+        if (window.UndoManager) window.UndoManager.record(accionUndoConcursante(id, { do: doAction, undo: undoAction, label: `Actualizar concursante ${id} - ${campo}` }));
         mostrarExito('Campo actualizado correctamente');
 } catch (error) {
 mostrarError('Error al guardar el cambio: ' + error.message);
@@ -2113,11 +2301,11 @@ async function actualizarNotasGrabacion(concursanteId, notas) {
 
         await doAction();
         if (window.UndoManager) {
-            window.UndoManager.record({
+            window.UndoManager.record(accionUndoConcursante(concursanteId, {
                 do: doAction,
                 undo: undoAction,
                 label: `Notas grabación concursante ${concursanteId}`
-            });
+            }));
         }
     } catch (error) {
         mostrarError('Error al guardar notas de grabación: ' + error.message);
@@ -2152,11 +2340,11 @@ async function actualizarMomentosDestacados(concursanteId, momentos) {
 
         await doAction();
         if (window.UndoManager) {
-            window.UndoManager.record({
+            window.UndoManager.record(accionUndoConcursante(concursanteId, {
                 do: doAction,
                 undo: undoAction,
                 label: `Momentos destacados concursante ${concursanteId}`
-            });
+            }));
         }
     } catch (error) {
         mostrarError('Error al guardar momentos destacados: ' + error.message);
@@ -2376,12 +2564,12 @@ async function iniciarReciclajeParcialDesdePreview() {
                 const r = await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-parcial/${comboId}`, { preguntaUsadaId });
                 const comboHijoId = r?.datos?.comboHijoId;
                 if (r && r.exito && comboHijoId) {
-                    apiManager.registrarUndoBackend({
+                    await conAnclaUndoConcursante(concursanteActual?.id, () => apiManager.registrarUndoBackend({
                         label: `Reciclaje parcial combo ${comboId}`,
                         redo: async () => {
                             await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-parcial/${comboId}`, { preguntaUsadaId });
                         }
-                    });
+                    }));
                     mostrarExito(`Combo reciclado. Se creó el combo #${comboHijoId}. Se mantiene el combo original.`);
                     bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-desde-preview')).hide();
                     const prev = bootstrap.Modal.getInstance(document.getElementById('modal-preview-combo'));
@@ -2709,7 +2897,7 @@ function registrarUndoReciclajeParcialConAsignacion({ jornadaId, comboPadreId, p
     let opId = apiManager.ultimaOperacionUndoId;
     if (!window.UndoManager || !opId) return false;
     let hijoActual = comboHijoId;
-    window.UndoManager.record({
+    window.UndoManager.record(accionUndoConcursante(concursanteId, {
         label: `Reciclaje parcial combo ${comboPadreId}`,
         undo: async () => {
             if (concursanteId) {
@@ -2727,7 +2915,7 @@ function registrarUndoReciclajeParcialConAsignacion({ jornadaId, comboPadreId, p
                 await apiManager.put(`/api/concursantes/${concursanteId}`, { ...actual, comboId: hijoActual });
             }
         }
-    });
+    }));
     return true;
 }
 
@@ -3220,14 +3408,14 @@ async function confirmarReciclajeComboDesdeFormulario(comboId, jornadaId) {
             const modal = bootstrap.Modal.getInstance(document.getElementById('modal-reciclar-combo-formulario'));
             if (modal) modal.hide();
 
-            apiManager.registrarUndoBackend({
+            await conAnclaUndoConcursante(concursanteActual?.id, () => apiManager.registrarUndoBackend({
                 label: `Reciclaje parcial combo ${comboId}`,
                 redo: async () => {
                     await apiManager.post(`/api/jornadas/${jornadaId}/reciclar-combo-parcial/${comboId}`, {
                         preguntaUsadaId: preguntaUsadaId
                     });
                 }
-            });
+            }));
             if (concursanteActual?.id) {
                 await cargarConcursantes(true);
             }
@@ -3808,14 +3996,14 @@ mostrarExito('Subiendo foto...');
 const formData = new FormData();
 formData.append('foto', file);
 const endpoint = `/api/concursantes/${concursanteId}/foto`;
-const resultado = await apiManager.postFormDataUndoable(endpoint, formData, {
+const resultado = await conAnclaUndoConcursante(concursanteId, () => apiManager.postFormDataUndoable(endpoint, formData, {
     label: `Cambiar foto del concursante ${concursanteId}`,
     redo: async () => {
         const rehacer = new FormData();
         rehacer.append('foto', file);
         await apiManager.postMultipart(endpoint, rehacer);
     }
-});
+}));
 
 // Actualizar la vista de la foto en el formulario si estamos editando
 if (concursanteActual && concursanteActual.id === concursanteId) {

@@ -43,6 +43,7 @@ com\lsnls\entity\ProgramaRepetido.class
 com\lsnls\service\ProgramaRepetidoService$Aparicion.class
 com\lsnls\config\UndoHeaderAdvice.class
 com\lsnls\controller\UsuarioController.class
+com\lsnls\service\EstadoEditadoPrograma.class
 com\lsnls\controller\PreguntaController$1.class
 com\lsnls\service\ProgramaRepetidoService$SlotConcursante.class
 com\lsnls\validation\NoSpecialCharactersValidator.class
@@ -55,6 +56,7 @@ com\lsnls\dto\MarcarNoUsadoDTO.class
 com\lsnls\validation\NoSpecialCharacters.class
 com\lsnls\service\ProgramaRepetidoService$IndiceEmitidos.class
 com\lsnls\config\MensajesUsuario.class
+com\lsnls\service\SalidasConcursante$Filtro.class
 com\lsnls\entity\ProgramaConcursante.class
 com\lsnls\service\UsuarioService.class
 com\lsnls\service\SessionValidationService$SessionValidationResult.class
@@ -77,6 +79,7 @@ com\lsnls\repository\ProgramaConcursanteRepository.class
 com\lsnls\service\AuthService.class
 com\lsnls\dto\VisibleEntityDTO.class
 com\lsnls\controller\HistorialJornadaController.class
+com\lsnls\service\SalidasConcursante.class
 com\lsnls\controller\TemasController.class
 com\lsnls\entity\Cuestionario.class
 com\lsnls\repository\HistorialJornadaRepository.class

@@ -131,6 +131,67 @@
       console.log(`📚 [UndoManager] Última acción:`, action.label || 'sin label');
     }
 
+    async _capturarVista(action) {
+      const tieneAncla = !!(action && (action.scrollSelector || (Array.isArray(action.scrollSelectors) && action.scrollSelectors.length)));
+      const hayVista = typeof window.capturarScrollVista === 'function';
+      if (!tieneAncla && !hayVista) return null;
+      if (hayVista) {
+        try {
+          return { vista: window.capturarScrollVista() };
+        } catch (e) {
+          console.warn('[UndoManager] No se pudo guardar el scroll:', e);
+        }
+      }
+      return {
+        y: window.scrollY || window.pageYOffset || 0,
+        x: window.scrollX || window.pageXOffset || 0
+      };
+    }
+
+    _colocarEnCambio(action, antes) {
+      if (!antes) return;
+      if (antes.vista && typeof window.restaurarScrollVista === 'function') {
+        try {
+          window.restaurarScrollVista(antes.vista, { enfocar: false, soloUnaVez: true });
+        } catch (e) {
+          console.warn('[UndoManager] No se pudo restaurar el scroll:', e);
+        }
+      } else if (typeof antes.y === 'number') {
+        try {
+          window.scrollTo({ top: antes.y, left: antes.x || 0, behavior: 'auto' });
+        } catch (e) {
+          try { window.scrollTo(antes.x || 0, antes.y); } catch (e2) {}
+        }
+      }
+      if (typeof window.cancelarRestauracionScroll === 'function') {
+        try { window.cancelarRestauracionScroll(); } catch (e) {}
+      }
+      const selectores = [];
+      if (action && Array.isArray(action.scrollSelectors)) {
+        action.scrollSelectors.forEach((sel) => { if (sel) selectores.push(sel); });
+      }
+      if (action && action.scrollSelector) selectores.push(action.scrollSelector);
+      if (!selectores.length) return;
+      const colocar = () => {
+        let el = null;
+        for (let i = 0; i < selectores.length; i++) {
+          try {
+            el = document.querySelector(selectores[i]);
+          } catch (e) {
+            el = null;
+          }
+          if (el) break;
+        }
+        if (!el || typeof el.scrollIntoView !== 'function') return;
+        el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+      };
+      colocar();
+      setTimeout(colocar, 0);
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(colocar);
+      }
+    }
+
     async undo() {
       if (!this.enabled || this._busy) return false;
       const last = this.undoStack.pop();
@@ -140,6 +201,7 @@
       }
       this._busy = true;
       console.log(`📚 [UndoManager] Deshaciendo:`, last.label || 'sin label');
+      const antes = this._capturarVista(last);
       let ok = false;
       try {
         await last.undo();
@@ -157,6 +219,7 @@
         if (ok && !last.skipPageRefresh) {
           await this._refreshAfterChange();
         }
+        if (ok) this._colocarEnCambio(last, antes);
       }
     }
 
@@ -168,6 +231,7 @@
         return false;
       }
       this._busy = true;
+      const antes = this._capturarVista(next);
       let ok = false;
       try {
         if (typeof next.do === 'function') {
@@ -193,6 +257,7 @@
         if (ok && !next.skipPageRefresh) {
           await this._refreshAfterChange();
         }
+        if (ok) this._colocarEnCambio(next, antes);
       }
     }
 

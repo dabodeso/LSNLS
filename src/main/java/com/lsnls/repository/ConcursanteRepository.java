@@ -25,11 +25,31 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long>,
     List<Concursante> findByNumeroProgramaIsNull();
     Page<Concursante> findByNumeroProgramaIsNull(Pageable pageable);
     
-    // Grabado, editado o emitido, sin este programa (libres o en otro)
+    /**
+     * Programas distintos en los que está asignado.
+     * Normales: filas de programas_concursantes más numero_programa si no está ya en esa tabla.
+     * Repetidos: cada programa de programas_repetidos_concursantes suma otra salida.
+     * :salidas = 'una' (exactamente 1) o 'mas' (más de 1). Esos códigos son SalidasConcursante.UNA y MAS.
+     * No usa la columna estado: grabado/editado siguen yendo por :estado.
+     */
+    String CUENTA_SALIDAS =
+            "((SELECT COUNT(DISTINCT pc.programaId) FROM ProgramaConcursante pc " +
+            "WHERE pc.concursanteId = c.id " +
+            "AND (c.numeroPrograma IS NULL OR CAST(pc.programaId AS string) <> CAST(c.numeroPrograma AS string))) " +
+            "+ (SELECT COUNT(ficha.id) FROM Concursante ficha WHERE ficha.id = c.id AND ficha.numeroPrograma IS NOT NULL) " +
+            "+ (SELECT COUNT(DISTINCT pr.programaRepetidoId) FROM ProgramaRepetidoConcursante pr WHERE pr.concursanteId = c.id))";
+
+    String FILTRO_ESTADO_O_SALIDAS =
+            "((:salidas IS NULL AND (:estado IS NULL OR LOWER(c.estado) = LOWER(:estado))) OR " +
+            "(:salidas = 'una' AND " + CUENTA_SALIDAS + " = 1) OR " +
+            "(:salidas = 'mas' AND " + CUENTA_SALIDAS + " > 1))";
+
+    // Grabado, editado o emitido, sin este programa (libres o en otro).
+    // emitido/repetido del filtro cuentan salidas; no comparan la columna estado.
     @Query("SELECT c FROM Concursante c WHERE LOWER(c.estado) IN ('grabado', 'editado', 'emitido') AND " +
            "((:programaId IS NULL AND c.numeroPrograma IS NULL) OR " +
            " (:programaId IS NOT NULL AND (c.numeroPrograma IS NULL OR c.numeroPrograma <> :programaId))) AND " +
-           "(:estado IS NULL OR LOWER(c.estado) = LOWER(:estado)) AND " +
+           FILTRO_ESTADO_O_SALIDAS + " AND " +
            "(:busqueda IS NULL OR " +
            "LOWER(c.nombre) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "LOWER(c.ocupacion) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
@@ -39,21 +59,24 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long>,
     Page<Concursante> findDisponiblesParaProgramaWithSearch(Pageable pageable,
             @Param("busqueda") String busqueda,
             @Param("estado") String estado,
-            @Param("programaId") Integer programaId);
+            @Param("programaId") Integer programaId,
+            @Param("salidas") String salidas);
 
     @Query("SELECT c FROM Concursante c WHERE LOWER(c.estado) IN ('grabado', 'editado', 'emitido') AND " +
            "NOT EXISTS (SELECT 1 FROM ProgramaRepetidoConcursante r " +
            "WHERE r.programaRepetidoId = :repetidoId AND r.concursanteId = c.id) AND " +
-           "(:estado IS NULL OR LOWER(c.estado) = LOWER(:estado)) AND " +
+           FILTRO_ESTADO_O_SALIDAS + " AND " +
            "(:busqueda IS NULL OR " +
            "LOWER(c.nombre) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "LOWER(c.ocupacion) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "LOWER(c.lugar) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
+           "LOWER(c.estado) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR " +
            "CAST(c.numeroConcursante AS string) LIKE CONCAT('%', :busqueda, '%'))")
     Page<Concursante> findDisponiblesParaRepetido(Pageable pageable,
             @Param("busqueda") String busqueda,
             @Param("estado") String estado,
-            @Param("repetidoId") Long repetidoId);
+            @Param("repetidoId") Long repetidoId,
+            @Param("salidas") String salidas);
     
     @Query("SELECT MAX(c.numeroConcursante) FROM Concursante c")
     Integer findMaxNumeroConcursante();

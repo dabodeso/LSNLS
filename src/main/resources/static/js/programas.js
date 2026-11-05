@@ -45,7 +45,11 @@ function alternarEdicionPrograma(programaId, repetido) {
     } else {
         programasEnEdicion.add(clave);
     }
+    // El botón Editar/Listo solo abre o cierra los campos. No reenfoca un input.
+    const ancla = capturarAnclaScroll();
+    if (ancla) ancla.foco = null;
     mostrarProgramas();
+    restaurarAnclaScroll(ancla, { enfocar: false });
 }
 
 function puedeCrearPrograma() {
@@ -123,6 +127,9 @@ function actualizarProgresoCargaProgramas(actual, total, mensaje) {
 }
 
 async function inicializarProgramas() {
+    if (inicializarProgramas.hecho) return;
+    inicializarProgramas.hecho = true;
+
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     rolUsuarioActual = usuario ? usuario.rol : null;
 
@@ -196,7 +203,7 @@ async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden 
     vistaRepetidos = false;
     mostrarEstadoCargaProgramas('Cargando programas...', 15);
     try {
-        lastScrollYProgramas = window.scrollY || window.pageYOffset || 0;
+        const anclaScroll = capturarAnclaScroll();
         const response = await apiManager.get(
             `/api/programas/pagina?page=${pagina}&size=${tamañoPagina}&sortBy=${ordenPor}&sortDir=${direccionOrden}`
         );
@@ -211,7 +218,7 @@ async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden 
         mostrarProgramas();
         configurarScrollTablas(); // Configurar scroll automático en las tablas
         renderizarPaginacion();
-        setTimeout(() => { window.scrollTo({ top: lastScrollYProgramas || 0, behavior: 'auto' }); }, 0);
+        restaurarAnclaScroll(anclaScroll, { enfocar: false });
     } catch (error) {
         if (error && error.message && error.message.startsWith('401')) {
             return;
@@ -230,16 +237,36 @@ function normalizarListaConcursantes(data) {
     return [];
 }
 
-async function cargarConcursantesPorPrograma() {
-    concursantesPorPrograma = {};
-    for (const programa of programas) {
+function programasDeLaPaginaFiltrada() {
+    const inicio = paginaActual * tamañoPagina;
+    return programasFiltrados.slice(inicio, inicio + tamañoPagina);
+}
+
+async function cargarConcursantesDeProgramas(lista) {
+    const programasPagina = Array.isArray(lista) ? lista : [];
+    const siguientes = {};
+    const total = programasPagina.length;
+    for (let i = 0; i < total; i++) {
+        const programa = programasPagina[i];
+        if (total > 1) {
+            actualizarProgresoCargaProgramas(
+                i + 1,
+                total,
+                `Cargando concursantes (${i + 1}/${total})...`
+            );
+        }
         try {
             const concursantes = await apiManager.get(urlConcursantesDePrograma(programa));
-            concursantesPorPrograma[programa.id] = normalizarListaConcursantes(concursantes);
+            siguientes[programa.id] = normalizarListaConcursantes(concursantes);
         } catch (e) {
-            concursantesPorPrograma[programa.id] = [];
+            siguientes[programa.id] = [];
         }
     }
+    concursantesPorPrograma = siguientes;
+}
+
+async function cargarConcursantesPorPrograma() {
+    await cargarConcursantesDeProgramas(programas);
 }
 
 function mostrarProgramas() {
@@ -337,6 +364,7 @@ function mostrarProgramas() {
                             <div class="programa-info-value">
                                 ${editProgCampos
                                     ? `<input type="number" class="form-control form-control-sm" min="1" value="${programa.temporada || ''}"
+                                               data-campo="temporada"
                                                onchange="actualizarTemporadaPrograma(${programa.id}, this.value, ${repetidoJs})" style="width: 80px;">`
                                     : `<span class="programa-info-readonly">${programa.temporada || '—'}</span>`}
                             </div>
@@ -346,8 +374,9 @@ function mostrarProgramas() {
                             <div class="programa-info-value">
                                 ${editProgCampos
                                     ? `<input type="text" class="form-control form-control-sm" maxlength="32"
+                                               data-campo="codigo"
                                                value="${programa.codigo || programa.id}"
-                                               onchange="actualizarCodigoPrograma(${programa.id}, this.value)" style="width: 100px;">`
+                                               onchange="actualizarCodigoPrograma(${programa.id}, this.value, ${repetidoJs})" style="width: 100px;">`
                                     : `<span class="programa-info-readonly">${programa.codigo || programa.id}</span>`}
                                 ${programa.repetido ? `<span class="badge bg-secondary ms-1">${programa.tipo || 'REPE'}${programa.programaOriginalCodigo ? ' · PGM ' + programa.programaOriginalCodigo : ''}</span>` : ''}
                             </div>
@@ -355,9 +384,10 @@ function mostrarProgramas() {
                         <div class="programa-info-item">
                             <div class="programa-info-label">Estado</div>
                             <div class="programa-info-value">
-                                ${(editProg && !programa.repetido)
+                                ${editProgCampos
                                     ? `<select class="form-select form-select-sm" style="min-width: 140px;"
-                                               onchange="actualizarEstadoPrograma(${programa.id}, this.value)">
+                                               data-campo="estado"
+                                               onchange="actualizarEstadoPrograma(${programa.id}, this.value, ${repetidoJs})">
                                            ${renderOpcionEstado(programa.estado, 'borrador', 'Borrador')}
                                            ${renderOpcionEstado(programa.estado, 'grabado', 'Grabado')}
                                            ${renderOpcionEstado(programa.estado, 'editado', 'Editado')}
@@ -372,7 +402,8 @@ function mostrarProgramas() {
                             <div class="programa-info-value">
                                 ${editProgCampos
                                     ? `<input type="date" class="form-control form-control-sm" value="${normalizarFechaProgramaISO(programa.fechaEmision)}"
-                                               onchange="actualizarFechaEmision(${programa.id}, this.value)" style="width: 150px;">`
+                                               data-campo="fechaEmision"
+                                               onchange="actualizarFechaEmision(${programa.id}, this.value, ${repetidoJs})" style="width: 150px;">`
                                     : `<span class="programa-info-readonly">${fechaFormateada}</span>`}
                             </div>
                         </div>
@@ -385,8 +416,9 @@ function mostrarProgramas() {
                         <div class="programa-info-item">
                             <div class="programa-info-label">Duración Objetivo</div>
                             <div class="programa-info-value">
-                                ${editProgCampos
+                                ${(editProgCampos && !programa.repetido)
                                     ? `<input type="text" class="form-control form-control-sm"
+                                               data-campo="duracionObjetivo"
                                                value="${duracionObjetivo}"
                                                onchange="actualizarDuracionObjetivoPrograma(${programa.id}, this.value)"
                                                placeholder="45m"
@@ -406,8 +438,9 @@ function mostrarProgramas() {
                                 ${editProgCampos
                                     ? `<textarea class="editable-field programa-creditos-textarea"
                                                  rows="2"
+                                                 data-campo="creditosEspeciales"
                                                  placeholder="Créditos especiales..."
-                                                 onblur="actualizarCreditosEspecialesPrograma(${programa.id}, this.value)">${programa.creditosEspeciales || ''}</textarea>`
+                                                 onblur="actualizarCreditosEspecialesPrograma(${programa.id}, this.value, ${repetidoJs})">${programa.creditosEspeciales || ''}</textarea>`
                                     : `<p class="editable-field programa-creditos-textarea" style="cursor:default; pointer-events:none; margin:0;">${programa.creditosEspeciales || ''}</p>`}
                             </div>
                             <div class="programa-recuadro">
@@ -415,12 +448,17 @@ function mostrarProgramas() {
                                 ${editProgCampos
                                     ? `<textarea class="editable-field programa-creditos-textarea"
                                                  rows="2"
+                                                 data-campo="notas"
                                                  placeholder="Notas internas..."
-                                                 onblur="actualizarNotasPrograma(${programa.id}, this.value)">${programa.notas || ''}</textarea>`
+                                                 onblur="actualizarNotasPrograma(${programa.id}, this.value, ${repetidoJs})">${programa.notas || ''}</textarea>`
                                     : `<p class="editable-field programa-creditos-textarea" style="cursor:default; pointer-events:none; margin:0;">${programa.notas || ''}</p>`}
                             </div>
                         </div>
                         <div class="programa-acciones">
+                            ${editProg && !esEmitido ? `<button type="button" class="btn btn-editar-programa ${editProgCampos ? 'btn-primary' : 'btn-outline-primary'}" onclick="alternarEdicionPrograma(${programa.id}, ${repetidoJs})" title="${editProgCampos ? 'Cerrar edición' : 'Editar programa'}">
+                                <i class="fas ${editProgCampos ? 'fa-check' : 'fa-edit'}"></i>
+                                <span>${editProgCampos ? 'Listo' : 'Editar'}</span>
+                            </button>` : ''}
                             ${elimProg && !esEmitido ? `<button class="btn btn-danger" onclick="eliminarPrograma(${programa.id})" title="Borrar programa">
                                 <i class="fas fa-trash"></i>
                             </button>` : ''}
@@ -517,7 +555,7 @@ function mostrarProgramas() {
                                         `;
                                     }
                                     return `
-                                        <tr class="concursante-row" onclick="irAConcursante(${concursante.id})">
+                                        <tr class="concursante-row" data-concursante-id="${concursante.id}" onclick="irAConcursante(${concursante.id})">
                                             <td class="col-numero">${slot}</td>
                                             <td class="col-lugar">${concursante.lugar || ''}</td>
                                             <td class="col-nombre"><strong>${concursante.nombre || ''}</strong></td>
@@ -527,6 +565,7 @@ function mostrarProgramas() {
                                             <td class="col-resultado">
                                                 ${editConcCampos
                                                     ? `<input type="text" class="campo-editable"
+                                                               data-campo="resultado" data-concursante-id="${concursante.id}"
                                                                value="${concursante.resultado || ''}"
                                                                onchange="actualizarCampoConcursante(${concursante.id}, 'resultado', this.value)"
                                                                onclick="event.stopPropagation()"
@@ -549,6 +588,7 @@ function mostrarProgramas() {
                                             <td class="col-momentos">
                                                 ${editConcCampos
                                                     ? `<textarea class="campo-editable campo-momentos"
+                                                                 data-campo="momentosDestacados" data-concursante-id="${concursante.id}"
                                                                  onchange="actualizarCampoConcursante(${concursante.id}, 'momentosDestacados', this.value)"
                                                                  onclick="event.stopPropagation()"
                                                                  placeholder="Momentos destacados"
@@ -558,6 +598,7 @@ function mostrarProgramas() {
                                             <td class="col-xusoker">
                                                 ${editConcCampos
                                                     ? `<select class="campo-editable"
+                                                               data-campo="xusoker" data-concursante-id="${concursante.id}"
                                                                onchange="actualizarCampoConcursante(${concursante.id}, 'xusoker', this.value)"
                                                                onclick="event.stopPropagation()">
                                                            <option value=""></option>
@@ -572,6 +613,7 @@ function mostrarProgramas() {
                                             <td class="col-factor-x">
                                                 ${editConcCampos
                                                     ? `<input type="text" class="campo-editable"
+                                                               data-campo="factorX" data-concursante-id="${concursante.id}"
                                                                value="${concursante.factorX || ''}"
                                                                onchange="actualizarCampoConcursante(${concursante.id}, 'factorX', this.value)"
                                                                onclick="event.stopPropagation()"
@@ -581,6 +623,7 @@ function mostrarProgramas() {
                                             <td class="col-valoracion">
                                                 ${editConcCampos
                                                     ? `<select class="campo-editable"
+                                                               data-campo="valoracionFinal" data-concursante-id="${concursante.id}"
                                                                onchange="actualizarCampoConcursante(${concursante.id}, 'valoracionFinal', this.value)"
                                                                onclick="event.stopPropagation()">
                                                            <option value="">—</option>
@@ -624,50 +667,403 @@ function mostrarProgramas() {
     }
 }
 
-async function actualizarCreditosEspecialesPrograma(programaId, creditos) {
+function rechazarSiProgramaEmitido(programaId, repetido) {
+    const programa = buscarProgramaListado(programaId, repetido);
+    if (programa && (programa.estado || '').toLowerCase() === 'emitido') {
+        mostrarError('Un programa emitido no se puede editar.');
+        return true;
+    }
+    return false;
+}
+
+function fusionarProgramaEnListas(programaId, repetido, campos) {
+    if (!campos || typeof campos !== 'object' || Array.isArray(campos)) return;
+    const esRepetido = esFlagRepetido(repetido);
+    const aplicar = (lista) => {
+        if (!Array.isArray(lista)) return;
+        lista.forEach(programa => {
+            if (String(programa.id) === String(programaId) && !!programa.repetido === esRepetido) {
+                Object.assign(programa, campos);
+            }
+        });
+    };
+    aplicar(programas);
+    aplicar(programasFiltrados);
+}
+
+let anclaScrollProgramas = null;
+let anclaScrollEn = 0;
+let tokenRestauracionScroll = 0;
+let anclaUndoProfundidad = 0;
+let recordUndoOriginal = null;
+
+function idSelectorProgramas(valor) {
+    return String(valor == null ? '' : valor).replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+function selectorProgramaVisible(programaId) {
+    return `.programa-container[data-programa-id="${idSelectorProgramas(programaId)}"]`;
+}
+
+function selectoresCampoPrograma(programaId, campo) {
+    const programa = selectorProgramaVisible(programaId);
+    const nombre = idSelectorProgramas(campo);
+    if (!nombre) return [programa];
+    return [`${programa} [data-campo="${nombre}"]`, programa];
+}
+
+function selectoresCampoConcursante(concursanteId, campo) {
+    const id = idSelectorProgramas(concursanteId);
+    const fila = `tr[data-concursante-id="${id}"]`;
+    const nombre = idSelectorProgramas(campo);
+    if (!nombre) return [fila];
+    return [`${fila} [data-campo="${nombre}"]`, fila];
+}
+
+function leerScrollVentana() {
+    return {
+        x: window.scrollX || window.pageXOffset || 0,
+        y: window.scrollY || window.pageYOffset || 0
+    };
+}
+
+function esDesplazable(el) {
+    if (!el || el === document.body || el === document.documentElement) return false;
+    if (typeof window.getComputedStyle !== 'function') return false;
+    let style;
     try {
-        const valor = (creditos != null && String(creditos).trim() !== '') ? String(creditos) : null;
-        await apiManager.patchUndoable(
-            `/api/programas/${programaId}/campo`,
-            { creditosEspeciales: valor },
+        style = window.getComputedStyle(el);
+    } catch (e) {
+        return false;
+    }
+    if (!style) return false;
+    const puedeY = style.overflowY === 'auto' || style.overflowY === 'scroll' || style.overflowY === 'overlay';
+    const puedeX = style.overflowX === 'auto' || style.overflowX === 'scroll' || style.overflowX === 'overlay';
+    const alto = (el.scrollHeight || 0) > (el.clientHeight || 0) + 1;
+    const ancho = (el.scrollWidth || 0) > (el.clientWidth || 0) + 1;
+    return (puedeY && alto) || (puedeX && ancho);
+}
+
+function firmaElementoScroll(el) {
+    if (!el || !el.classList) return null;
+    if (el.id) return { tipo: 'id', id: el.id };
+    const clases = ['concursantes-table-body-wrapper', 'concursantes-table-header-wrapper'];
+    const clase = clases.find(nombre => el.classList.contains(nombre));
+    if (!clase) return null;
+    const programa = el.closest ? el.closest('[data-programa-id]') : null;
+    return {
+        tipo: 'clase',
+        clase,
+        programaId: programa ? programa.getAttribute('data-programa-id') : null
+    };
+}
+
+function capturarContenedoresScroll() {
+    const vistos = new Set();
+    const lista = [];
+    const anotar = (el) => {
+        if (!el || vistos.has(el) || el === document.body || el === document.documentElement) return;
+        vistos.add(el);
+        const dentroDeLista = !!(el.closest && el.closest('#contenedor-programas'));
+        const firma = firmaElementoScroll(el);
+        if (dentroDeLista && !firma) return;
+        if (!dentroDeLista && !firma && !esDesplazable(el)) return;
+        lista.push({
+            top: el.scrollTop || 0,
+            left: el.scrollLeft || 0,
+            firma,
+            nodo: dentroDeLista ? null : el
+        });
+    };
+    if (document.querySelectorAll) {
+        document.querySelectorAll('.concursantes-table-body-wrapper, .concursantes-table-header-wrapper').forEach(anotar);
+    }
+    const recorrer = (inicio) => {
+        let nodo = inicio;
+        while (nodo && nodo !== document.body) {
+            if (esDesplazable(nodo)) anotar(nodo);
+            nodo = nodo.parentElement;
+        }
+    };
+    recorrer(document.activeElement);
+    recorrer(document.getElementById ? document.getElementById('contenedor-programas') : null);
+    return lista;
+}
+
+function describirFocoActivo() {
+    const el = document.activeElement;
+    if (!el || el === document.body || el === document.documentElement || !el.getAttribute) return null;
+    const tag = (el.tagName || '').toLowerCase();
+    if (!['input', 'textarea', 'select'].includes(tag)) return null;
+    if (el.closest && el.closest('.modal')) return null;
+    const campo = el.getAttribute('data-campo');
+    if (!campo) return null;
+    const desdeFila = el.closest ? el.closest('[data-concursante-id]') : null;
+    const concursanteId = el.getAttribute('data-concursante-id')
+        || (desdeFila ? desdeFila.getAttribute('data-concursante-id') : null);
+    const programaNodo = el.closest ? el.closest('[data-programa-id]') : null;
+    return {
+        campo,
+        concursanteId,
+        programaId: programaNodo ? programaNodo.getAttribute('data-programa-id') : null
+    };
+}
+
+function buscarCampoEditado(foco) {
+    if (!foco || !foco.campo || !document.querySelector) return null;
+    const campo = idSelectorProgramas(foco.campo);
+    if (!campo) return null;
+    if (foco.concursanteId != null && foco.concursanteId !== '') {
+        const id = idSelectorProgramas(foco.concursanteId);
+        return document.querySelector(`[data-concursante-id="${id}"][data-campo="${campo}"]`);
+    }
+    if (foco.programaId != null && foco.programaId !== '') {
+        const id = idSelectorProgramas(foco.programaId);
+        return document.querySelector(`.programa-container[data-programa-id="${id}"] [data-campo="${campo}"]`);
+    }
+    return null;
+}
+
+function resolverContenedorScroll(item) {
+    if (!item) return null;
+    if (item.nodo && (!document.contains || document.contains(item.nodo))) return item.nodo;
+    if (!item.firma) return null;
+    if (item.firma.tipo === 'id' && item.firma.id && document.getElementById) {
+        return document.getElementById(item.firma.id);
+    }
+    if (item.firma.tipo === 'clase' && item.firma.clase && document.querySelector) {
+        if (item.firma.programaId) {
+            const id = idSelectorProgramas(item.firma.programaId);
+            const scope = document.querySelector(`.programa-container[data-programa-id="${id}"]`);
+            return scope && scope.querySelector ? scope.querySelector('.' + item.firma.clase) : null;
+        }
+        return document.querySelector('.' + item.firma.clase);
+    }
+    return null;
+}
+
+function capturarAnclaScroll() {
+    const { x, y } = leerScrollVentana();
+    lastScrollYProgramas = y;
+    const ahora = Date.now();
+    const reciente = anclaScrollProgramas && (ahora - anclaScrollEn) < 400;
+    const foco = describirFocoActivo();
+    if (reciente && y + 8 < (anclaScrollProgramas.y || 0)) {
+        if (foco) anclaScrollProgramas.foco = foco;
+        return anclaScrollProgramas;
+    }
+    anclaScrollProgramas = {
+        x,
+        y,
+        contenedores: capturarContenedoresScroll(),
+        foco: foco || (reciente ? anclaScrollProgramas.foco : null)
+    };
+    if (!reciente) anclaScrollEn = ahora;
+    return anclaScrollProgramas;
+}
+
+function campoSigueSiendoElActivo(foco) {
+    const activo = document.activeElement;
+    if (!activo || !activo.getAttribute || !foco) return false;
+    if (activo.getAttribute('data-campo') !== foco.campo) return false;
+    if (foco.concursanteId != null && foco.concursanteId !== '') {
+        return activo.getAttribute('data-concursante-id') === String(foco.concursanteId);
+    }
+    return true;
+}
+
+function restaurarAnclaScroll(ancla, opciones = {}) {
+    if (!ancla) return;
+    const token = ++tokenRestauracionScroll;
+    const enfocar = !!opciones.enfocar;
+    const aplicar = () => {
+        if (token !== tokenRestauracionScroll) return;
+        const scroller = document.scrollingElement;
+        try {
+            window.scrollTo({ top: ancla.y || 0, left: ancla.x || 0, behavior: 'auto' });
+        } catch (e) {
+            try { window.scrollTo(ancla.x || 0, ancla.y || 0); } catch (e2) {}
+        }
+        if (scroller) {
+            scroller.scrollTop = ancla.y || 0;
+            scroller.scrollLeft = ancla.x || 0;
+        }
+        (ancla.contenedores || []).forEach(item => {
+            const el = resolverContenedorScroll(item);
+            if (!el) return;
+            el.scrollTop = item.top || 0;
+            el.scrollLeft = item.left || 0;
+        });
+        if (!enfocar || !ancla.foco) return;
+        const activo = document.activeElement;
+        const tagActivo = activo && activo.tagName ? activo.tagName.toLowerCase() : '';
+        const enOtroCampo = ['input', 'textarea', 'select'].includes(tagActivo) && !campoSigueSiendoElActivo(ancla.foco);
+        if (enOtroCampo || campoSigueSiendoElActivo(ancla.foco)) return;
+        const campo = buscarCampoEditado(ancla.foco);
+        if (!campo || (document.contains && !document.contains(campo)) || typeof campo.focus !== 'function') return;
+        try {
+            campo.focus({ preventScroll: true });
+        } catch (e) {
+            try { campo.focus(); } catch (e2) {}
+        }
+    };
+    aplicar();
+    if (opciones.soloUnaVez) return;
+    setTimeout(aplicar, 0);
+    if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => {
+            aplicar();
+            requestAnimationFrame(aplicar);
+        });
+    }
+}
+
+function cancelarRestauracionScroll() {
+    tokenRestauracionScroll++;
+}
+
+function instalarGuardiaScrollEdicion() {
+    if (instalarGuardiaScrollEdicion.hecho || !document.addEventListener) return;
+    instalarGuardiaScrollEdicion.hecho = true;
+    const esCampoListado = (el) => {
+        if (!el || !el.closest) return false;
+        const tag = (el.tagName || '').toLowerCase();
+        if (!['input', 'textarea', 'select'].includes(tag)) return false;
+        if (el.closest('.modal')) return false;
+        return !!el.closest('#contenedor-programas');
+    };
+    document.addEventListener('pointerdown', (evento) => {
+        const origen = evento.target && evento.target.closest
+            ? evento.target.closest('input, textarea, select')
+            : null;
+        if (!esCampoListado(origen)) return;
+        capturarAnclaScroll();
+    }, true);
+    document.addEventListener('focusin', (evento) => {
+        if (!esCampoListado(evento.target)) return;
+        const corregir = () => {
+            const y = window.scrollY || window.pageYOffset || 0;
+            if (anclaScrollProgramas && y + 8 < (anclaScrollProgramas.y || 0) && (Date.now() - anclaScrollEn) < 400) {
+                restaurarAnclaScroll(anclaScrollProgramas, { enfocar: false, soloUnaVez: true });
+            }
+        };
+        corregir();
+        setTimeout(corregir, 0);
+    }, true);
+}
+
+async function conAnclaUndo(scrollSelectors, fn) {
+    const manager = window.UndoManager;
+    const selectores = Array.isArray(scrollSelectors) ? scrollSelectors.filter(Boolean) : [scrollSelectors].filter(Boolean);
+    if (!manager || typeof manager.record !== 'function' || selectores.length === 0) {
+        return fn();
+    }
+    if (anclaUndoProfundidad === 0) {
+        recordUndoOriginal = manager.record.bind(manager);
+        manager.record = (action) => {
+            if (action && typeof action === 'object' && !action.scrollSelector && !action.scrollSelectors) {
+                action.scrollSelectors = selectores.slice();
+            }
+            return recordUndoOriginal(action);
+        };
+    }
+    anclaUndoProfundidad++;
+    try {
+        return await fn();
+    } finally {
+        anclaUndoProfundidad--;
+        if (anclaUndoProfundidad === 0 && recordUndoOriginal) {
+            manager.record = recordUndoOriginal;
+            recordUndoOriginal = null;
+        }
+    }
+}
+
+window.capturarScrollVista = capturarAnclaScroll;
+window.restaurarScrollVista = restaurarAnclaScroll;
+window.cancelarRestauracionScroll = cancelarRestauracionScroll;
+instalarGuardiaScrollEdicion();
+
+function pintarVistaProgramasLocal() {
+    const ancla = capturarAnclaScroll();
+    if (aplicandoFiltros) {
+        mostrarProgramasFiltrados();
+        renderizarPaginacionFiltrada();
+    } else {
+        mostrarProgramas();
+        renderizarPaginacion();
+    }
+    configurarScrollTablas();
+    restaurarAnclaScroll(ancla, { enfocar: true });
+}
+
+function aplicarCampoProgramaEnPantalla(programaId, repetido, campos) {
+    fusionarProgramaEnListas(programaId, repetido, campos);
+    pintarVistaProgramasLocal();
+}
+
+async function persistirCampoPrograma(programaId, repetido, cuerpo, etiqueta) {
+    if (rechazarSiProgramaEmitido(programaId, repetido)) {
+        pintarVistaProgramasLocal();
+        return false;
+    }
+    const campo = cuerpo && typeof cuerpo === 'object' ? Object.keys(cuerpo)[0] : '';
+    return conAnclaUndo(selectoresCampoPrograma(programaId, campo), async () => {
+        const base = urlBasePrograma(programaId, repetido);
+        const actualizado = await apiManager.patchUndoable(
+            `${base}/campo`,
+            cuerpo,
             {
-                label: `Créditos especiales programa ${programaId}`,
-                snapshotEndpoint: `/api/programas/${programaId}`,
-                onAfter: refrescarVistaProgramas
+                label: etiqueta,
+                snapshotEndpoint: base,
+                mapRevert: mapRevertCampoPrograma,
+                onAfter: (data, _anterior, _fase, respuesta) => aplicarCampoProgramaEnPantalla(
+                    programaId,
+                    repetido,
+                    (respuesta && typeof respuesta === 'object' && respuesta.id != null) ? respuesta : data
+                )
             }
         );
-        mostrarExito('Créditos especiales actualizados');
+        if (actualizado && typeof actualizado === 'object' && actualizado.id != null) {
+            aplicarCampoProgramaEnPantalla(programaId, repetido, actualizado);
+        }
+        return true;
+    });
+}
+
+async function actualizarCreditosEspecialesPrograma(programaId, creditos, repetido = false) {
+    try {
+        const valor = (creditos != null && String(creditos).trim() !== '') ? String(creditos) : null;
+        const guardado = await persistirCampoPrograma(
+            programaId,
+            repetido,
+            { creditosEspeciales: valor },
+            `Créditos especiales programa ${programaId}`
+        );
+        if (guardado) mostrarExito('Créditos especiales actualizados');
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de créditos especiales'));
     }
 }
 
-async function actualizarCodigoPrograma(programaId, codigo) {
+async function actualizarCodigoPrograma(programaId, codigo, repetido = false) {
     try {
         const valor = (codigo || '').trim();
         if (!valor) {
             throw new Error('El código de programa es obligatorio.');
         }
-        await apiManager.patchUndoable(
-            `/api/programas/${programaId}/campo`,
-            { codigo: valor },
-            { label: `Código programa ${valor}`, snapshotEndpoint: `/api/programas/${programaId}`, onAfter: refrescarVistaProgramas }
-        );
-        mostrarExito('Código de programa actualizado');
+        const guardado = await persistirCampoPrograma(programaId, repetido, { codigo: valor }, `Código programa ${valor}`);
+        if (guardado) mostrarExito('Código de programa actualizado');
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización del código de programa'));
     }
 }
 
-async function actualizarNotasPrograma(programaId, notas) {
+async function actualizarNotasPrograma(programaId, notas, repetido = false) {
     try {
         const valor = (notas != null && String(notas).trim() !== '') ? String(notas) : null;
-        await apiManager.patchUndoable(
-            `/api/programas/${programaId}/campo`,
-            { notas: valor },
-            { label: `Notas programa ${programaId}`, snapshotEndpoint: `/api/programas/${programaId}`, onAfter: refrescarVistaProgramas }
-        );
-        mostrarExito('Notas del programa actualizadas');
+        const guardado = await persistirCampoPrograma(programaId, repetido, { notas: valor }, `Notas programa ${programaId}`);
+        if (guardado) mostrarExito('Notas del programa actualizadas');
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de notas del programa'));
     }
@@ -743,17 +1139,6 @@ function coincideFechaPrograma(programa, fechaFiltro) {
     return fechaPrograma !== '' && fechaPrograma === fechaFiltro;
 }
 
-function obtenerTotalPremiosPrograma(programa) {
-    const concursantes = concursantesPorPrograma[programa.id];
-    if (Array.isArray(concursantes) && concursantes.length > 0) {
-        return calcularTotalPremiosNumero(concursantes);
-    }
-    if (programa.totalPremios != null && programa.totalPremios !== '') {
-        return Number(programa.totalPremios) || 0;
-    }
-    return 0;
-}
-
 function formatearFechaPrograma(fecha) {
     const fechaIso = normalizarFechaProgramaISO(fecha);
     if (!fechaIso) return 'N/A';
@@ -806,24 +1191,6 @@ function calcularTotalResultados(concursantes) {
         minimumFractionDigits: 0, 
         maximumFractionDigits: 0 
     });
-}
-
-// Versión numérica para filtros (sin formateo)
-function calcularTotalPremiosNumero(concursantes) {
-    const total = concursantes.reduce((total, c) => {
-        let valor = 0;
-        if (c.premio !== null && c.premio !== undefined && c.premio !== '') {
-            valor = parseFloat(c.premio) || 0;
-        } else if (c.resultado !== null && c.resultado !== undefined && c.resultado !== '') {
-            if (typeof c.resultado === 'number') {
-                valor = c.resultado;
-            } else if (typeof c.resultado === 'string' && c.resultado.trim() !== '') {
-                valor = extraerNumeroDeString(c.resultado);
-            }
-        }
-        return total + valor;
-    }, 0);
-    return Number(total) || 0;
 }
 
 function extraerNumeroDeString(texto) {
@@ -977,6 +1344,7 @@ function parsearDuracion(duracion) {
 
 
 async function actualizarCampoConcursante(concursanteId, campo, valor) {
+    const ancla = capturarAnclaScroll();
     try {
         const snapshot = await apiManager.get(`/api/concursantes/${concursanteId}`);
         const data = {};
@@ -1047,31 +1415,45 @@ async function actualizarCampoConcursante(concursanteId, campo, valor) {
             window.UndoManager.record({
                 do: aplicarCambioLocal,
                 undo: revertirCambio,
-                label: `Actualizar concursante ${concursanteId} - ${campo}`
+                label: `Actualizar concursante ${concursanteId} - ${campo}`,
+                scrollSelectors: selectoresCampoConcursante(concursanteId, campo)
             });
         }
 
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de campo'));
+    } finally {
+        restaurarAnclaScroll(ancla, { enfocar: true });
     }
 }
 
 async function actualizarDuracionObjetivoPrograma(programaId, nuevaDuracion) {
     try {
+        if (rechazarSiProgramaEmitido(programaId, false)) {
+            pintarVistaProgramasLocal();
+            return;
+        }
         if (!nuevaDuracion || nuevaDuracion.trim() === '') {
             nuevaDuracion = '45m';
         }
 
-        await apiManager.patchUndoable(
+        const actualizado = await conAnclaUndo(selectoresCampoPrograma(programaId, 'duracionObjetivo'), () => apiManager.patchUndoable(
             `/api/programas/${programaId}/duracion-objetivo`,
             { duracionObjetivo: nuevaDuracion },
             {
                 label: `Duración objetivo programa ${programaId}`,
                 snapshotEndpoint: `/api/programas/${programaId}`,
                 mapRevert: (_key, raw) => raw ?? '45m',
-                onAfter: refrescarVistaProgramas
+                onAfter: (data, _anterior, _fase, respuesta) => aplicarCampoProgramaEnPantalla(
+                    programaId,
+                    false,
+                    (respuesta && typeof respuesta === 'object' && respuesta.id != null) ? respuesta : data
+                )
             }
-        );
+        ));
+        if (actualizado && typeof actualizado === 'object' && actualizado.id != null) {
+            aplicarCampoProgramaEnPantalla(programaId, false, actualizado);
+        }
         mostrarExito('Duración objetivo actualizada');
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de duración objetivo'));
@@ -1086,11 +1468,30 @@ function irAConcursante(concursanteId) {
 let programasFiltrados = [];
 let aplicandoFiltros = false;
 
+function hayFiltrosProgramasActivos() {
+    const listado = document.getElementById('filtro-listado-programa')?.value || '';
+    if (listado === 'repetidos') return true;
+    return ['filtro-estado-programa', 'filtro-temporada', 'filtro-programa-id', 'filtro-fecha-emision']
+        .some(id => {
+            const valor = document.getElementById(id)?.value;
+            return valor != null && String(valor).trim() !== '';
+        });
+}
+
 function filtrarProgramas() {
     paginaActual = 0;
-    aplicandoFiltros = true;
     clearTimeout(filtrarProgramasTimeout);
-    filtrarProgramasTimeout = setTimeout(() => cargarProgramasFiltrados(), 400);
+    filtrarProgramasTimeout = setTimeout(() => {
+        if (!hayFiltrosProgramasActivos()) {
+            aplicandoFiltros = false;
+            programasFiltrados = [];
+            vistaRepetidos = false;
+            cargarProgramasPaginados(0);
+            return;
+        }
+        aplicandoFiltros = true;
+        cargarProgramasFiltrados();
+    }, 400);
 }
 
 // Nueva función para cargar programas con filtros aplicados
@@ -1107,6 +1508,7 @@ async function cargarProgramasFiltrados() {
     }
     cargandoProgramas = true;
     mostrarEstadoCargaProgramas('Obteniendo programas...', 10);
+    const anclaScroll = capturarAnclaScroll();
     try {
         const listado = document.getElementById('filtro-listado-programa')?.value || '';
         vistaRepetidos = listado === 'repetidos';
@@ -1116,11 +1518,16 @@ async function cargarProgramasFiltrados() {
         mostrarEstadoCargaProgramas('Aplicando filtros...', 30);
         programasFiltrados = aplicarFiltros(todosLosProgramas)
             .sort((a, b) => b.id - a.id);
+        const paginas = Math.ceil(programasFiltrados.length / tamañoPagina) || 0;
+        if (paginaActual >= paginas) {
+            paginaActual = Math.max(0, paginas - 1);
+        }
 
         await cargarConcursantesParaProgramasFiltrados();
 
         mostrarProgramasFiltrados();
         renderizarPaginacionFiltrada();
+        restaurarAnclaScroll(anclaScroll, { enfocar: false });
 
     } catch (error) {
         if (error && error.message && error.message.startsWith('401')) {
@@ -1133,41 +1540,27 @@ async function cargarProgramasFiltrados() {
     }
 }
 
-// Cargar concursantes solo para los programas filtrados
+// Concursantes solo de la página visible. El catálogo filtrado no trae concursantes.
 async function cargarConcursantesParaProgramasFiltrados() {
-    concursantesPorPrograma = {};
-    const total = programasFiltrados.length;
-    if (total === 0) {
+    const pagina = programasDeLaPaginaFiltrada();
+    if (pagina.length === 0) {
+        concursantesPorPrograma = {};
         actualizarProgresoCargaProgramas(1, 1, 'Sin resultados');
         return;
     }
-    for (let i = 0; i < programasFiltrados.length; i++) {
-        const programa = programasFiltrados[i];
-        actualizarProgresoCargaProgramas(
-            i + 1,
-            total,
-            `Cargando concursantes (${i + 1}/${total})...`
-        );
-        try {
-            const concursantes = await apiManager.get(urlConcursantesDePrograma(programa));
-            concursantesPorPrograma[programa.id] = normalizarListaConcursantes(concursantes);
-        } catch (e) {
-            console.warn(`No se pudieron cargar concursantes para programa ${programa.id}:`, e);
-            concursantesPorPrograma[programa.id] = [];
-        }
-    }
+    await cargarConcursantesDeProgramas(pagina);
 }
 
-// Mostrar programas filtrados con paginación de 5
+// Mostrar programas filtrados con la misma página que el listado normal
 function mostrarProgramasFiltrados() {
-    const inicio = paginaActual * 5;
-    const fin = inicio + 5;
+    const inicio = paginaActual * tamañoPagina;
+    const fin = inicio + tamañoPagina;
     const programasVisibles = programasFiltrados.slice(inicio, fin);
     
     // Actualizar variables globales para la paginación
     programas = programasVisibles;
     totalItems = programasFiltrados.length;
-    totalPaginas = Math.ceil(programasFiltrados.length / 5);
+    totalPaginas = Math.ceil(programasFiltrados.length / tamañoPagina);
     
     mostrarProgramas();
     configurarScrollTablas();
@@ -1186,8 +1579,8 @@ function renderizarPaginacionFiltrada() {
     ].filter(Boolean);
     const wrapTop = document.getElementById('info-paginacion-programas-top-wrap');
     if (infosEl.length && totalItems > 0) {
-        const inicio = paginaActual * 5 + 1;
-        const fin = Math.min((paginaActual + 1) * 5, totalItems);
+        const inicio = paginaActual * tamañoPagina + 1;
+        const fin = Math.min((paginaActual + 1) * tamañoPagina, totalItems);
         const textoInfo = `Mostrando ${inicio}-${fin} de ${totalItems} programas`;
         infosEl.forEach(el => { el.textContent = textoInfo; });
         if (seccionPag) seccionPag.style.display = '';
@@ -1232,13 +1625,24 @@ function renderizarPaginacionFiltrada() {
     paginacionEl.appendChild(ultima);
 }
 
-// Cambiar página en resultados filtrados
-function cambiarPaginaFiltrada(nuevaPagina) {
-    if (nuevaPagina < 0 || nuevaPagina >= totalPaginas) return;
-    
+// Cambiar página en resultados filtrados: solo los concursantes de esa página
+async function cambiarPaginaFiltrada(nuevaPagina) {
+    if (nuevaPagina < 0 || nuevaPagina >= totalPaginas || cargandoProgramas) return;
+
     paginaActual = nuevaPagina;
-    mostrarProgramasFiltrados();
-    renderizarPaginacionFiltrada();
+    cargandoProgramas = true;
+    mostrarEstadoCargaProgramas('Cargando concursantes...', 40);
+    try {
+        await cargarConcursantesParaProgramasFiltrados();
+        mostrarProgramasFiltrados();
+        renderizarPaginacionFiltrada();
+        configurarScrollTablas();
+    } catch (error) {
+        mostrarError(obtenerMensajeErrorProgramas(error, 'carga de programas filtrados'));
+    } finally {
+        cargandoProgramas = false;
+        ocultarEstadoCargaProgramas();
+    }
 }
 
 function aplicarFiltros(lista) {
@@ -1246,8 +1650,6 @@ function aplicarFiltros(lista) {
     const temporadaFiltro = document.getElementById('filtro-temporada')?.value;
     const programaIdFiltro = document.getElementById('filtro-programa-id')?.value;
     const fechaFiltro = document.getElementById('filtro-fecha-emision')?.value; // YYYY-MM-DD
-    const premiosMin = document.getElementById('filtro-premios-min')?.value;
-    const premiosMax = document.getElementById('filtro-premios-max')?.value;
 
     return lista.filter(programa => {
         // Estado
@@ -1268,20 +1670,12 @@ function aplicarFiltros(lista) {
         if (!coincideFechaPrograma(programa, fechaFiltro)) {
             return false;
         }
-        // Total de premios (min/máx)
-        const totalPremios = obtenerTotalPremiosPrograma(programa);
-        if (premiosMin && totalPremios < Number(premiosMin)) {
-            return false;
-        }
-        if (premiosMax && totalPremios > Number(premiosMax)) {
-            return false;
-        }
         return true;
     });
 }
 
 function limpiarFiltrosProgramas() {
-    ['filtro-listado-programa','filtro-estado-programa','filtro-temporada','filtro-programa-id','filtro-fecha-emision','filtro-premios-min','filtro-premios-max']
+    ['filtro-listado-programa','filtro-estado-programa','filtro-temporada','filtro-programa-id','filtro-fecha-emision']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     
     // Volver al modo normal (sin filtros)
@@ -1417,14 +1811,14 @@ async function subirFotoConcursante(concursanteId, file) {
         const formData = new FormData();
         formData.append('foto', file);
         const endpoint = `/api/concursantes/${concursanteId}/foto`;
-        await apiManager.postFormDataUndoable(endpoint, formData, {
+        await conAnclaUndo(selectoresCampoConcursante(concursanteId), () => apiManager.postFormDataUndoable(endpoint, formData, {
             label: `Cambiar foto del concursante ${concursanteId}`,
             redo: async () => {
                 const rehacer = new FormData();
                 rehacer.append('foto', file);
                 await apiManager.postMultipart(endpoint, rehacer);
             }
-        });
+        }));
 
         // Actualizar la vista
         await refrescarVistaProgramas();
@@ -1476,7 +1870,8 @@ async function actualizarEstadoProgramaAutomatico(programaId, opciones = {}) {
             window.UndoManager.record({
                 do: doAction,
                 undo: undoAction,
-                label: `Actualizar estado programa ${programaId}`
+                label: `Actualizar estado programa ${programaId}`,
+                scrollSelectors: selectoresCampoPrograma(programaId, 'estado')
             });
         }
 
@@ -1488,19 +1883,58 @@ async function actualizarEstadoProgramaAutomatico(programaId, opciones = {}) {
     }
 }
 
-async function actualizarEstadoPrograma(programaId, nuevoEstado) {
+function mensajeConcursantesSinEditar(programaId) {
+    const lista = concursantesPorPrograma[programaId] || concursantesPorPrograma[String(programaId)];
+    if (!Array.isArray(lista)) return '';
+    const numeros = [];
+    let sinNumero = 0;
+    lista.forEach(concursante => {
+        const estado = String(concursante?.estado || '').trim().toLowerCase();
+        if (estado === 'editado') return;
+        const numero = concursante?.numeroConcursante;
+        if (numero == null || numero === '') sinNumero += 1;
+        else numeros.push(Number(numero));
+    });
+    const unicos = [...new Set(numeros)].filter(n => Number.isFinite(n)).sort((a, b) => a - b);
+    const etiquetas = unicos.map(String);
+    if (sinNumero === 1) etiquetas.push('sin número');
+    else if (sinNumero > 1) etiquetas.push(`${sinNumero} sin número`);
+    if (!etiquetas.length) return '';
+    if (etiquetas.length === 1 && sinNumero === 0) {
+        return `No se puede pasar el programa a editado: el concursante ${etiquetas[0]} no está editado.`;
+    }
+    return `No se puede pasar el programa a editado: los concursantes ${etiquetas.join(', ')} no están editados.`;
+}
+
+function restaurarSelectEstadoPrograma(programaId, repetido) {
+    const programa = buscarProgramaListado(programaId, repetido);
+    const estado = programa?.estado || '';
+    if (!estado || typeof document.querySelectorAll !== 'function') return;
+    document.querySelectorAll(`[data-programa-id="${programaId}"]`).forEach(contenedor => {
+        const select = contenedor.querySelector('select[onchange*="actualizarEstadoPrograma"]');
+        if (select) select.value = estado;
+    });
+}
+
+async function actualizarEstadoPrograma(programaId, nuevoEstado, repetido = false) {
+    if (String(nuevoEstado || '').trim().toLowerCase() === 'editado') {
+        const mensaje = mensajeConcursantesSinEditar(programaId);
+        if (mensaje) {
+            restaurarSelectEstadoPrograma(programaId, repetido);
+            mostrarError(mensaje);
+            return;
+        }
+    }
     try {
-        await apiManager.patchUndoable(
-            `/api/programas/${programaId}/campo`,
+        const guardado = await persistirCampoPrograma(
+            programaId,
+            repetido,
             { estado: nuevoEstado },
-            {
-                label: `Estado programa ${programaId}`,
-                snapshotEndpoint: `/api/programas/${programaId}`,
-                onAfter: refrescarVistaProgramas
-            }
+            `Estado programa ${programaId}`
         );
-        mostrarExito('Estado del programa actualizado');
+        if (guardado) mostrarExito('Estado del programa actualizado');
     } catch (error) {
+        restaurarSelectEstadoPrograma(programaId, repetido);
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización del estado'));
     }
 }
@@ -1510,42 +1944,42 @@ function renderOpcionEstado(estadoActual, valor, texto) {
     return `<option value="${valor}" ${selected}>${texto}</option>`;
 }
 
-async function actualizarTemporadaPrograma(programaId, nuevaTemporada) {
+async function actualizarTemporadaPrograma(programaId, nuevaTemporada, repetido = false) {
     try {
         const numero = parseInt(nuevaTemporada);
         if (!numero || numero < 1) {
             mostrarError('La temporada debe ser un número mayor o igual a 1');
             return;
         }
-        await apiManager.patchUndoable(
-            `/api/programas/${programaId}/campo`,
+        const guardado = await persistirCampoPrograma(
+            programaId,
+            repetido,
             { temporada: numero },
-            {
-                label: `Temporada programa ${programaId}`,
-                snapshotEndpoint: `/api/programas/${programaId}`,
-                onAfter: refrescarVistaProgramas
-            }
+            `Temporada programa ${programaId}`
         );
-        mostrarExito('Temporada actualizada');
+        if (guardado) mostrarExito('Temporada actualizada');
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de temporada'));
     }
 }
 
-async function actualizarFechaEmision(programaId, fechaISO) {
+async function actualizarFechaEmision(programaId, fechaISO, repetido = false) {
     try {
         const valor = (fechaISO && fechaISO.trim() !== '') ? fechaISO : null;
-        await apiManager.patchUndoable(
-            `/api/programas/${programaId}/campo`,
-            { fechaEmision: valor },
-            {
-                label: `Fecha emisión programa ${programaId}`,
-                snapshotEndpoint: `/api/programas/${programaId}`,
-                mapRevert: mapRevertCampoPrograma,
-                onAfter: refrescarVistaProgramas
+        const cuerpo = { fechaEmision: valor };
+        if (esFlagRepetido(repetido) && valor) {
+            const programa = buscarProgramaListado(programaId, repetido);
+            if ((programa?.estado || '').toLowerCase() === 'editado') {
+                cuerpo.estado = 'programado';
             }
+        }
+        const guardado = await persistirCampoPrograma(
+            programaId,
+            repetido,
+            cuerpo,
+            `Fecha emisión programa ${programaId}`
         );
-        mostrarExito('Fecha de emisión actualizada');
+        if (guardado) mostrarExito('Fecha de emisión actualizada');
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'actualización de fecha de emisión'));
     }
@@ -1560,13 +1994,54 @@ let debounceTimer = null;
 let posicionPreferidaPrograma = null;
 
 const TAMANO_PAGINA_CONCURSANTES_DISPONIBLES = 50;
+const TAMANO_PAGINA_CONCURSANTES_REPETIDO = 25;
 const ESTADOS_ASIGNABLES_PROGRAMA = ['GRABADO', 'EDITADO', 'EMITIDO'];
+
+function tamanoPaginaConcursantesDisponibles() {
+    return vistaRepetidos ? TAMANO_PAGINA_CONCURSANTES_REPETIDO : TAMANO_PAGINA_CONCURSANTES_DISPONIBLES;
+}
 
 function duracionConcursanteEnSegundos(duracion) {
     const texto = (duracion || '').trim();
     const match = texto.match(/^(\d{1,3}):([0-5]\d)$/);
     if (!match) return null;
     return Number(match[1]) * 60 + Number(match[2]);
+}
+
+// En un repetido ya creado el margen es ±30 s. En un programa normal la duración es exacta.
+// Vacío: sin filtro. Formato inválido: { invalido: true }.
+function margenFiltroTiempoDisponibles() {
+    return vistaRepetidos ? 30 : 0;
+}
+
+function filtroTiempoDesdeTexto(texto) {
+    const limpio = (texto || '').trim();
+    if (!limpio) return null;
+    const segundos = duracionConcursanteEnSegundos(limpio);
+    if (segundos === null) return { invalido: true };
+    const margen = margenFiltroTiempoDisponibles();
+    return { min: segundos - margen, max: segundos + margen };
+}
+
+function textoAyudaFiltroTiempoDisponibles() {
+    const prioridad = 'Duración de más prioridad: final, si no dirección, si no grabación.';
+    if (vistaRepetidos) {
+        return `Margen de ±30 segundos. ${prioridad}`;
+    }
+    return `Duración exacta (MM:SS). ${prioridad}`;
+}
+
+function actualizarAyudaFiltroTiempoDisponibles() {
+    const ayuda = document.getElementById('ayuda-filtro-tiempo-concursante-disponible');
+    if (ayuda) ayuda.textContent = textoAyudaFiltroTiempoDisponibles();
+}
+
+function duracionCabeEnFiltroTiempo(duracion, filtro) {
+    if (!filtro) return true;
+    if (filtro.invalido) return false;
+    const segundos = duracionConcursanteEnSegundos(duracion);
+    if (segundos === null) return false;
+    return segundos >= filtro.min && segundos <= filtro.max;
 }
 
 function extraerPaginaConcursantes(response) {
@@ -1585,15 +2060,25 @@ function extraerPaginaConcursantes(response) {
     };
 }
 
+// emitido = exactamente 1 programa; repetido = más de 1. No es el texto del campo estado.
+function esFiltroPorSalidas(valor) {
+    const normalizado = (valor || '').trim().toLowerCase();
+    return normalizado === 'emitido' || normalizado === 'repetido';
+}
+
 function estadoFiltroConcursantesDisponibles() {
     const valor = (document.getElementById('filtro-estado-concursante-disponible')?.value || '').trim().toLowerCase();
+    if (esFiltroPorSalidas(valor)) {
+        return valor;
+    }
     return ESTADOS_ASIGNABLES_PROGRAMA.includes(valor.toUpperCase()) ? valor : '';
 }
 
 function urlConcursantesDisponibles(pagina = 0, busqueda = '') {
     const programaId = document.getElementById('programa-seleccionado-id')?.value;
+    const tamano = tamanoPaginaConcursantesDisponibles();
     if (vistaRepetidos && programaId) {
-        let url = `/api/programas/repetidos/${encodeURIComponent(programaId)}/disponibles?page=${pagina}&size=${TAMANO_PAGINA_CONCURSANTES_DISPONIBLES}`;
+        let url = `/api/programas/repetidos/${encodeURIComponent(programaId)}/disponibles?page=${pagina}&size=${tamano}`;
         if (busqueda) {
             url += `&busqueda=${encodeURIComponent(busqueda)}`;
         }
@@ -1603,7 +2088,7 @@ function urlConcursantesDisponibles(pagina = 0, busqueda = '') {
         }
         return url;
     }
-    let url = `/api/concursantes/disponibles?page=${pagina}&size=${TAMANO_PAGINA_CONCURSANTES_DISPONIBLES}`;
+    let url = `/api/concursantes/disponibles?page=${pagina}&size=${tamano}`;
     if (busqueda) {
         url += `&busqueda=${encodeURIComponent(busqueda)}`;
     }
@@ -1627,19 +2112,19 @@ function aplicarPaginaConcursantesDisponibles(response, { acumular = false, pagi
     totalPaginasConcursantesDisponibles = paginaResp.totalPages || 1;
 }
 
-// Aplica filtros de lugar, valoración final, estado y duración efectiva sobre la lista en memoria
+// Lugar, valoración y tiempo se aplican sobre la página cargada.
+// Grabado y editado también, porque el servidor ya los acotó por la columna estado.
+// Emitido y repetido los resuelve el servidor por número de programas: no se vuelven a comparar con el texto del estado.
 function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
     const lugarInput = document.getElementById('filtro-lugar-concursante-disponible');
     const valoracionSelect = document.getElementById('filtro-valoracion-final-concursante-disponible');
     const estadoSelect = document.getElementById('filtro-estado-concursante-disponible');
-    const duracionMinInput = document.getElementById('filtro-duracion-min-concursante-disponible');
-    const duracionMaxInput = document.getElementById('filtro-duracion-max-concursante-disponible');
+    const tiempoInput = document.getElementById('filtro-tiempo-concursante-disponible');
 
     const lugarFiltro = (lugarInput?.value || '').trim().toLowerCase();
     const valoracionFiltro = (valoracionSelect?.value || '').trim();
     const estadoFiltro = (estadoSelect?.value || '').trim().toUpperCase();
-    const duracionMin = duracionConcursanteEnSegundos(duracionMinInput?.value);
-    const duracionMax = duracionConcursanteEnSegundos(duracionMaxInput?.value);
+    const filtroTiempo = filtroTiempoDesdeTexto(tiempoInput?.value);
 
     return (concursantesDisponibles || []).filter(c => {
         const estado = (c.estado || '').trim().toUpperCase();
@@ -1648,8 +2133,8 @@ function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
             return false;
         }
 
-        // Filtro de estado explícito
-        if (estadoFiltro && estado !== estadoFiltro) {
+        // Grabado/editado: la columna estado. Emitido/repetido ya vienen filtrados por salidas.
+        if (estadoFiltro && !esFiltroPorSalidas(estadoFiltro) && estado !== estadoFiltro) {
             return false;
         }
 
@@ -1669,11 +2154,7 @@ function aplicarFiltrosConcursantesDisponiblesEnMemoria() {
             }
         }
 
-        const duracionEfectiva = duracionConcursanteEnSegundos(obtenerDuracionConcursante(c));
-        if (duracionMin !== null && (duracionEfectiva === null || duracionEfectiva < duracionMin)) {
-            return false;
-        }
-        if (duracionMax !== null && (duracionEfectiva === null || duracionEfectiva > duracionMax)) {
+        if (!duracionCabeEnFiltroTiempo(obtenerDuracionConcursante(c), filtroTiempo)) {
             return false;
         }
 
@@ -1716,13 +2197,12 @@ async function mostrarConcursantesDisponibles(programaId, posicionPreferida = nu
         const filtroLugar = document.getElementById('filtro-lugar-concursante-disponible');
         const filtroValoracion = document.getElementById('filtro-valoracion-final-concursante-disponible');
         const filtroEstado = document.getElementById('filtro-estado-concursante-disponible');
-        const filtroDuracionMin = document.getElementById('filtro-duracion-min-concursante-disponible');
-        const filtroDuracionMax = document.getElementById('filtro-duracion-max-concursante-disponible');
+        const filtroTiempo = document.getElementById('filtro-tiempo-concursante-disponible');
         if (filtroLugar) filtroLugar.value = '';
         if (filtroValoracion) filtroValoracion.value = '';
-        if (filtroEstado) filtroEstado.value = vistaRepetidos ? '' : 'editado';
-        if (filtroDuracionMin) filtroDuracionMin.value = '';
-        if (filtroDuracionMax) filtroDuracionMax.value = '';
+        if (filtroEstado) filtroEstado.value = 'editado';
+        if (filtroTiempo) filtroTiempo.value = '';
+        actualizarAyudaFiltroTiempoDisponibles();
         
         const response = await apiManager.get(urlConcursantesDisponibles(0));
         aplicarPaginaConcursantesDisponibles(response, { pagina: 0 });
@@ -1739,28 +2219,89 @@ async function mostrarConcursantesDisponibles(programaId, posicionPreferida = nu
 function htmlFotoSelectorConcursante(concursante) {
     const foto = concursante && concursante.foto ? String(concursante.foto).trim() : '';
     if (!foto) {
-        return '<span class="text-muted">—</span>';
+        return '';
     }
-    return `<img src="/uploads/${Utils.escapeHtml(foto)}" class="foto-selector" alt="Foto">`;
+    const ruta = /^https?:\/\//i.test(foto) || foto.startsWith('/') ? foto : `/uploads/${foto}`;
+    return `<img src="${Utils.escapeHtml(ruta)}" class="foto-selector" alt="Foto">`;
+}
+
+function textoInfoPaginacionConcursantes(cantidadVisible) {
+    if (!vistaRepetidos) {
+        return `Mostrando ${cantidadVisible} de ${totalConcursantesDisponibles} concursantes (Página ${paginaConcursantesDisponibles + 1} de ${totalPaginasConcursantesDisponibles})`;
+    }
+    const total = Number(totalConcursantesDisponibles) || 0;
+    const tamano = tamanoPaginaConcursantesDisponibles();
+    const paginas = Math.max(1, Number(totalPaginasConcursantesDisponibles) || 1);
+    const pagina = Math.min(Math.max(0, paginaConcursantesDisponibles), paginas - 1);
+    if (total <= 0) {
+        return '0 resultados.';
+    }
+    const inicio = pagina * tamano + 1;
+    const fin = Math.min((pagina + 1) * tamano, total);
+    return `${total} resultados. Mostrando ${inicio}–${fin} de ${total}. Página ${pagina + 1} de ${paginas}`;
+}
+
+function pintarInfoPaginacionConcursantes(cantidadVisible) {
+    const infoPaginacion = document.getElementById('info-paginacion-concursantes');
+    if (infoPaginacion) {
+        infoPaginacion.textContent = textoInfoPaginacionConcursantes(cantidadVisible);
+    }
+}
+
+// En un repetido la lista es una página de 25. En un programa normal se mantiene «cargar más».
+function sincronizarControlesConcursantesDisponibles() {
+    const lista = document.getElementById('lista-concursantes-disponibles');
+    if (lista) lista.classList.toggle('modo-repetido', !!vistaRepetidos);
+
+    const cargarMas = document.getElementById('btn-cargar-mas-concursantes');
+    const btnPrimera = document.getElementById('btn-primera-pagina');
+    const btnAnt = document.getElementById('btn-pagina-anterior');
+    const btnSig = document.getElementById('btn-pagina-siguiente');
+    const btnUlt = document.getElementById('btn-ultima-pagina');
+    if (!vistaRepetidos) {
+        if (cargarMas) cargarMas.style.display = '';
+        [btnPrimera, btnAnt, btnSig, btnUlt].forEach(boton => {
+            if (boton) boton.disabled = false;
+        });
+        return;
+    }
+    const enPrimera = paginaConcursantesDisponibles <= 0;
+    const enUltima = paginaConcursantesDisponibles >= totalPaginasConcursantesDisponibles - 1
+        || (Number(totalConcursantesDisponibles) || 0) <= 0;
+    if (cargarMas) cargarMas.style.display = 'none';
+    if (btnPrimera) btnPrimera.disabled = enPrimera;
+    if (btnAnt) btnAnt.disabled = enPrimera;
+    if (btnSig) btnSig.disabled = enUltima;
+    if (btnUlt) btnUlt.disabled = enUltima;
 }
 
 function renderizarConcursantesDisponibles() {
     const lista = document.getElementById('lista-concursantes-disponibles');
-    
+    sincronizarControlesConcursantesDisponibles();
+
+    const infoPaginacion = document.getElementById('info-paginacion-concursantes');
+    const filtroTiempo = filtroTiempoDesdeTexto(document.getElementById('filtro-tiempo-concursante-disponible')?.value);
+    if (filtroTiempo && filtroTiempo.invalido) {
+        if (infoPaginacion) {
+            infoPaginacion.textContent = vistaRepetidos ? textoInfoPaginacionConcursantes(0) : '';
+        }
+        lista.innerHTML = '<div class="alert alert-warning">El tiempo debe tener formato MM:SS.</div>';
+        return;
+    }
+
     if (concursantesDisponibles.length === 0) {
+        pintarInfoPaginacionConcursantes(0);
         lista.innerHTML = '<div class="alert alert-info">No hay concursantes sin asignar a un programa (grabado, editado o emitido).</div>';
         return;
     }
-    
-    // Mostrar información de paginación
-    const infoPaginacion = document.getElementById('info-paginacion-concursantes');
+
     const listaFiltrada = aplicarFiltrosConcursantesDisponiblesEnMemoria();
-    if (infoPaginacion) {
-        infoPaginacion.innerHTML = `Mostrando ${listaFiltrada.length} de ${totalConcursantesDisponibles} concursantes (Página ${paginaConcursantesDisponibles + 1} de ${totalPaginasConcursantesDisponibles})`;
-    }
+    pintarInfoPaginacionConcursantes(listaFiltrada.length);
 
     if (listaFiltrada.length === 0) {
-        lista.innerHTML = '<div class="alert alert-warning">Ningún concursante de los cargados cumple los filtros. Ajusta los filtros o carga más concursantes.</div>';
+        lista.innerHTML = vistaRepetidos
+            ? '<div class="alert alert-warning">Ningún concursante de esta página cumple los filtros. Ajusta los filtros o pasa a otra página.</div>'
+            : '<div class="alert alert-warning">Ningún concursante de los cargados cumple los filtros. Ajusta los filtros o carga más concursantes.</div>';
         return;
     }
 
@@ -1772,7 +2313,6 @@ function renderizarConcursantesDisponibles() {
                         <th>Foto</th>
                         <th>Lugar</th>
                         <th>Nombre</th>
-                        <th>Estado</th>
                         <th>Edad</th>
                         <th>Premio</th>
                         <th>Valoración final</th>
@@ -1786,7 +2326,6 @@ function renderizarConcursantesDisponibles() {
                             <td>${htmlFotoSelectorConcursante(concursante)}</td>
                             <td>${Utils.escapeHtml(concursante.lugar || '')}</td>
                             <td><strong>${Utils.escapeHtml(concursante.nombre || '')}</strong></td>
-                            <td>${Utils.escapeHtml(concursante.estado || '')}</td>
                             <td>${Utils.escapeHtml(concursante.edad || '')}</td>
                             <td>${concursante.premio != null && concursante.premio !== '' ? Utils.escapeHtml(concursante.premio) : ''}</td>
                             <td>${Utils.escapeHtml(concursante.valoracionFinal || '')}</td>
@@ -1837,15 +2376,19 @@ async function asignarConcursanteAPrograma(concursanteId) {
         }
 
         const queryPos = (posicionPreferidaPrograma != null) ? `?posicion=${encodeURIComponent(posicionPreferidaPrograma)}` : '';
-        if (vistaRepetidos) {
-            await apiManager.post(`/api/programas/repetidos/${programaId}/concursantes/${concursanteId}${queryPos}`, {});
-        } else {
-            await apiManager.postUndoable(`/api/concursantes/${concursanteId}/asignar-programa/${programaId}${queryPos}`, {}, {
-                label: `Asignar programa ${programaId} a concursante ${concursanteId}`,
-                idExtractor: () => concursanteId,
-                deleteEndpointBuilder: () => `/api/concursantes/${concursanteId}/desasignar-programa`
-            });
-        }
+        const endpointAsignar = vistaRepetidos
+            ? `/api/programas/repetidos/${programaId}/concursantes/${concursanteId}${queryPos}`
+            : `/api/concursantes/${concursanteId}/asignar-programa/${programaId}${queryPos}`;
+        const endpointQuitar = vistaRepetidos
+            ? `/api/programas/repetidos/${programaId}/concursantes/${concursanteId}`
+            : `/api/concursantes/${concursanteId}/desasignar-programa`;
+        await conAnclaUndo([selectorProgramaVisible(programaId)], () => apiManager.postUndoable(endpointAsignar, {}, {
+            label: vistaRepetidos
+                ? `Asignar concursante ${concursanteId} al repetido ${programaId}`
+                : `Asignar programa ${programaId} a concursante ${concursanteId}`,
+            idExtractor: () => concursanteId,
+            deleteEndpointBuilder: () => endpointQuitar
+        }));
         
         // Cerrar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('modal-añadir-concursantes'));
@@ -1887,7 +2430,8 @@ async function quitarConcursanteDePrograma(concursanteId, programaId, event) {
                 window.UndoManager.record({
                     do: async () => { await apiManager.delete(`/api/programas/repetidos/${programaId}/concursantes/${concursanteId}`); },
                     undo: async () => { await apiManager.post(`/api/programas/repetidos/${programaId}/concursantes/${concursanteId}${queryPos}`, {}); },
-                    label: `Quitar concursante ${concursanteId} del repetido ${programaId}`
+                    label: `Quitar concursante ${concursanteId} del repetido ${programaId}`,
+                    scrollSelectors: [selectorProgramaVisible(programaId)]
                 });
             }
             await refrescarVistaProgramas();
@@ -1913,7 +2457,8 @@ async function quitarConcursanteDePrograma(concursanteId, programaId, event) {
             window.UndoManager.record({
                 do: async () => { await apiManager.delete(`/api/concursantes/${concursanteId}/desasignar-programa`); },
                 undo: async () => { await apiManager.post(`/api/concursantes/${concursanteId}/asignar-programa/${programaPrevio}${queryPos}`, {}); },
-                label: `Quitar concursante ${concursanteId} del programa ${programaPrevio}`
+                label: `Quitar concursante ${concursanteId} del programa ${programaPrevio}`,
+                scrollSelectors: [selectorProgramaVisible(programaPrevio)]
             });
         }
         
@@ -2000,16 +2545,13 @@ function renderizarPaginacion() {
 async function cambiarPagina(nuevaPagina) {
     if (nuevaPagina < 0 || nuevaPagina >= totalPaginas) return;
     
-    paginaActual = nuevaPagina;
-    
     if (aplicandoFiltros) {
-        // Si estamos aplicando filtros, usar la paginación filtrada
-        mostrarProgramasFiltrados();
-        renderizarPaginacionFiltrada();
-    } else {
-        // Modo normal sin filtros
-        await cargarProgramasPaginados(paginaActual);
+        await cambiarPaginaFiltrada(nuevaPagina);
+        return;
     }
+
+    paginaActual = nuevaPagina;
+    await cargarProgramasPaginados(paginaActual);
 }
 
 document.addEventListener('DOMContentLoaded', inicializarProgramas); 
@@ -2113,6 +2655,10 @@ function configurarScrollEnTabla(contenedor) {
 
 // Función para cargar más concursantes disponibles
 async function cargarMasConcursantesDisponibles() {
+    if (vistaRepetidos) {
+        await cargarPaginaConcursantesDisponibles(paginaConcursantesDisponibles + 1);
+        return;
+    }
     if (paginaConcursantesDisponibles >= totalPaginasConcursantesDisponibles - 1) {
         return; // Ya estamos en la última página
     }
@@ -2131,12 +2677,17 @@ async function cargarMasConcursantesDisponibles() {
 
 // Función para cargar página específica de concursantes disponibles
 async function cargarPaginaConcursantesDisponibles(pagina) {
+    const destino = Math.max(0, Number(pagina) || 0);
+    const ultima = Math.max(0, (Number(totalPaginasConcursantesDisponibles) || 1) - 1);
+    const paginaPedida = Math.min(destino, ultima);
     try {
         const filtro = document.getElementById('buscar-concursante-disponible').value.trim();
-        const response = await apiManager.get(urlConcursantesDisponibles(pagina, filtro));
-        aplicarPaginaConcursantesDisponibles(response, { pagina });
+        const response = await apiManager.get(urlConcursantesDisponibles(paginaPedida, filtro));
+        aplicarPaginaConcursantesDisponibles(response, { pagina: paginaPedida });
 
         renderizarConcursantesDisponibles();
+        const lista = document.getElementById('lista-concursantes-disponibles');
+        if (lista) lista.scrollTop = 0;
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'carga de página de concursantes'));
     }
@@ -2597,7 +3148,7 @@ let repetidoModo = 'programa';
 let repetidoProgramaSeleccionado = null;
 let repetidoConcursantesSeleccionados = [];
 let repetidoResultadosConcursantes = [];
-let repetidoConcursantesHayMas = false;
+let repetidoConcursantesMeta = { total: 0, page: 0, size: 25 };
 let guardandoRepetido = false;
 
 function mostrarFormularioRepetido() {
@@ -2611,6 +3162,7 @@ function mostrarFormularioRepetido() {
     repetidoProgramaSeleccionado = null;
     repetidoConcursantesSeleccionados = [];
     repetidoResultadosConcursantes = [];
+    repetidoConcursantesMeta = { total: 0, page: 0, size: 25 };
     const resultadosProgramas = document.getElementById('repe-resultados-programas');
     if (resultadosProgramas) {
         resultadosProgramas.innerHTML = '<span class="text-muted">Usa los filtros y pulsa Buscar.</span>';
@@ -2675,38 +3227,88 @@ function paramsBusquedaRepetido(campos) {
     return texto ? `?${texto}` : '';
 }
 
-async function buscarProgramasParaRepetido() {
+const TAMANO_PAGINA_PROGRAMAS_REPE = 25;
+const TAMANO_PAGINA_CONCURSANTES_REPE = 25;
+let busquedaProgramasRepeSeq = 0;
+let busquedaConcursantesRepeSeq = 0;
+
+function queryProgramasParaRepetido(pagina) {
+    const base = paramsBusquedaRepetido([
+        ['fechaEmision', 'repe-filtro-fecha'],
+        ['codigo', 'repe-filtro-codigo'],
+        ['valoracionMinima', 'repe-filtro-valoracion-programa']
+    ]);
+    const params = new URLSearchParams(base.startsWith('?') ? base.slice(1) : '');
+    params.set('page', String(Math.max(0, pagina)));
+    return `?${params.toString()}`;
+}
+
+function htmlPaginacionProgramasRepetido(total, page, size) {
+    const n = Number(total) || 0;
+    const tamano = Number(size) > 0 ? Number(size) : TAMANO_PAGINA_PROGRAMAS_REPE;
+    const paginas = Math.max(1, Math.ceil(n / tamano) || 1);
+    const pagina = Math.min(Math.max(0, Number(page) || 0), paginas - 1);
+    const etiqueta = n === 1 ? '1 resultado' : `${n} resultados`;
+    if (!n) {
+        return `<div class="text-muted small mb-2">${etiqueta}</div>`;
+    }
+    const inicio = pagina * tamano + 1;
+    const fin = Math.min((pagina + 1) * tamano, n);
+    const rango = `${etiqueta}. Mostrando ${inicio}–${fin} de ${n}`;
+    if (paginas <= 1) {
+        return `<div class="text-muted small mb-2">${rango}</div>`;
+    }
+    const anterior = pagina <= 0 ? 'disabled' : '';
+    const siguiente = pagina >= paginas - 1 ? 'disabled' : '';
+    return `
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2 sticky-top bg-white">
+            <div class="text-muted small">${rango}</div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Páginas de programas">
+                <button type="button" class="btn btn-outline-secondary" ${anterior}
+                    onclick="buscarProgramasParaRepetido(${pagina - 1})">Anterior</button>
+                <span class="btn btn-outline-secondary disabled">Página ${pagina + 1} de ${paginas}</span>
+                <button type="button" class="btn btn-outline-secondary" ${siguiente}
+                    onclick="buscarProgramasParaRepetido(${pagina + 1})">Siguiente</button>
+            </div>
+        </div>`;
+}
+
+async function buscarProgramasParaRepetido(pagina) {
     const contenedor = document.getElementById('repe-resultados-programas');
     const boton = document.getElementById('btn-buscar-programas-repe');
     if (!contenedor) return;
+    const cambioDePagina = Number.isFinite(Number(pagina));
+    const paginaPedida = cambioDePagina ? Math.max(0, Math.floor(Number(pagina))) : 0;
+    if (!cambioDePagina) {
+        repetidoProgramaSeleccionado = null;
+    }
+    const seq = ++busquedaProgramasRepeSeq;
     if (boton) boton.disabled = true;
     contenedor.innerHTML = '<span class="text-muted">Buscando programas emitidos...</span>';
     try {
-        const query = paramsBusquedaRepetido([
-            ['fechaEmision', 'repe-filtro-fecha'],
-            ['codigo', 'repe-filtro-codigo'],
-            ['valoracionMinima', 'repe-filtro-valoracion-programa']
-        ]);
+        const query = queryProgramasParaRepetido(paginaPedida);
         const respuesta = await apiManager.get(`/api/programas/repetidos/origen/programas${query}`);
+        if (seq !== busquedaProgramasRepeSeq) return;
         const lista = Array.isArray(respuesta?.resultados) ? respuesta.resultados : [];
-        repetidoProgramaSeleccionado = null;
+        const total = Number.isFinite(Number(respuesta?.total)) ? Number(respuesta.total) : lista.length;
+        const page = Number.isFinite(Number(respuesta?.page)) ? Number(respuesta.page) : paginaPedida;
+        const size = Number(respuesta?.size) > 0 ? Number(respuesta.size) : TAMANO_PAGINA_PROGRAMAS_REPE;
         if (!lista.length) {
-            contenedor.innerHTML = '<span class="text-muted">No hay programas emitidos que coincidan con los filtros.</span>';
+            contenedor.innerHTML = htmlPaginacionProgramasRepetido(total, page, size)
+                + '<span class="text-muted">No hay programas emitidos que coincidan con los filtros.</span>';
             return;
         }
-        const aviso = respuesta.hayMas
-            ? '<div class="text-muted small mb-2">Hay más resultados. Afina los filtros para verlos.</div>'
-            : '';
-        contenedor.innerHTML = aviso + lista.map(programa => {
+        contenedor.innerHTML = htmlPaginacionProgramasRepetido(total, page, size) + lista.map(programa => {
             const fecha = formatearFechaPrograma(programa.fechaEmision);
             const codigo = programa.codigo || programa.id;
             const resumen = programa.resumenConcursantes
                 ? `<span class="text-muted small d-block">${escaparHtmlHoja(programa.resumenConcursantes)}</span>`
                 : '<span class="text-muted small d-block">Sin concursantes</span>';
+            const marcado = Number(repetidoProgramaSeleccionado) === Number(programa.id) ? 'checked' : '';
             return `
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="repe-programa-origen" id="repe-pgm-${programa.id}"
-                           value="${programa.id}" onchange="seleccionarProgramaParaRepetido(${programa.id})">
+                           value="${programa.id}" ${marcado} onchange="seleccionarProgramaParaRepetido(${programa.id})">
                     <label class="form-check-label" for="repe-pgm-${programa.id}">
                         PGM ${escaparHtmlHoja(codigo)} · ${escaparHtmlHoja(fecha)} · T${escaparHtmlHoja(programa.temporada ?? '')}
                         · ${escaparHtmlHoja(programa.totalConcursantes ?? 0)} concursantes
@@ -2714,11 +3316,13 @@ async function buscarProgramasParaRepetido() {
                     </label>
                 </div>`;
         }).join('');
+        contenedor.scrollTop = 0;
     } catch (error) {
+        if (seq !== busquedaProgramasRepeSeq) return;
         contenedor.innerHTML = '';
         mostrarError(obtenerMensajeErrorProgramas(error, 'búsqueda de programas emitidos'));
     } finally {
-        if (boton) boton.disabled = false;
+        if (seq === busquedaProgramasRepeSeq && boton) boton.disabled = false;
     }
 }
 
@@ -2726,30 +3330,84 @@ function seleccionarProgramaParaRepetido(programaId) {
     repetidoProgramaSeleccionado = programaId;
 }
 
-async function buscarConcursantesParaRepetido() {
+function queryConcursantesParaRepetido(pagina) {
+    // estado: emitido = exactamente 1 programa; repetido = más de 1. No es el texto del campo estado.
+    const base = paramsBusquedaRepetido([
+        ['valoracionMinima', 'repe-filtro-valoracion-conc'],
+        ['tiempo', 'repe-filtro-tiempo'],
+        ['numero', 'repe-filtro-numero'],
+        ['ciudad', 'repe-filtro-ciudad'],
+        ['estado', 'repe-filtro-estado-conc']
+    ]);
+    const params = new URLSearchParams(base.startsWith('?') ? base.slice(1) : '');
+    params.set('page', String(Math.max(0, pagina)));
+    params.set('size', String(TAMANO_PAGINA_CONCURSANTES_REPE));
+    return `?${params.toString()}`;
+}
+
+function htmlPaginacionConcursantesRepetido(total, page, size) {
+    const n = Number(total) || 0;
+    const tamano = Number(size) > 0 ? Number(size) : TAMANO_PAGINA_CONCURSANTES_REPE;
+    const paginas = Math.max(1, Math.ceil(n / tamano) || 1);
+    const pagina = Math.min(Math.max(0, Number(page) || 0), paginas - 1);
+    const etiqueta = n === 1 ? '1 resultado' : `${n} resultados`;
+    if (!n) {
+        return `<div class="text-muted small mb-2">${etiqueta}</div>`;
+    }
+    const inicio = pagina * tamano + 1;
+    const fin = Math.min((pagina + 1) * tamano, n);
+    const rango = `${etiqueta}. Mostrando ${inicio}–${fin} de ${n}. Página ${pagina + 1} de ${paginas}`;
+    if (paginas <= 1) {
+        return `<div class="text-muted small mb-2">${rango}</div>`;
+    }
+    const anterior = pagina <= 0 ? 'disabled' : '';
+    const siguiente = pagina >= paginas - 1 ? 'disabled' : '';
+    return `
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2 sticky-top bg-white">
+            <div class="text-muted small">${rango}</div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Páginas de concursantes">
+                <button type="button" class="btn btn-outline-secondary" ${anterior}
+                    onclick="buscarConcursantesParaRepetido(${pagina - 1})">Anterior</button>
+                <button type="button" class="btn btn-outline-secondary" ${siguiente}
+                    onclick="buscarConcursantesParaRepetido(${pagina + 1})">Siguiente</button>
+            </div>
+        </div>`;
+}
+
+async function buscarConcursantesParaRepetido(pagina) {
     const contenedor = document.getElementById('repe-resultados-concursantes');
     const boton = document.getElementById('btn-buscar-concursantes-repe');
     if (!contenedor) return;
+    const paginaPedida = Number.isFinite(Number(pagina)) ? Math.max(0, Math.floor(Number(pagina))) : 0;
+    const seq = ++busquedaConcursantesRepeSeq;
     if (boton) boton.disabled = true;
     contenedor.innerHTML = '<span class="text-muted">Buscando concursantes...</span>';
     try {
-        const query = paramsBusquedaRepetido([
-            ['valoracionMinima', 'repe-filtro-valoracion-conc'],
-            ['xusoker', 'repe-filtro-xusoker'],
-            ['numero', 'repe-filtro-numero'],
-            ['ciudad', 'repe-filtro-ciudad'],
-            ['nombre', 'repe-filtro-nombre']
-        ]);
+        const tiempoRepe = (document.getElementById('repe-filtro-tiempo')?.value || '').trim();
+        if (tiempoRepe && duracionConcursanteEnSegundos(tiempoRepe) === null) {
+            if (seq !== busquedaConcursantesRepeSeq) return;
+            repetidoResultadosConcursantes = [];
+            repetidoConcursantesMeta = { total: 0, page: 0, size: TAMANO_PAGINA_CONCURSANTES_REPE };
+            contenedor.innerHTML = '<span class="text-muted">El tiempo debe tener formato MM:SS.</span>';
+            return;
+        }
+        const query = queryConcursantesParaRepetido(paginaPedida);
         const respuesta = await apiManager.get(`/api/programas/repetidos/origen/concursantes${query}`);
+        if (seq !== busquedaConcursantesRepeSeq) return;
         repetidoResultadosConcursantes = Array.isArray(respuesta?.resultados) ? respuesta.resultados : [];
-        repetidoConcursantesHayMas = !!respuesta?.hayMas;
+        const total = Number.isFinite(Number(respuesta?.total)) ? Number(respuesta.total) : repetidoResultadosConcursantes.length;
+        const page = Number.isFinite(Number(respuesta?.page)) ? Number(respuesta.page) : paginaPedida;
+        const size = Number(respuesta?.size) > 0 ? Number(respuesta.size) : TAMANO_PAGINA_CONCURSANTES_REPE;
+        repetidoConcursantesMeta = { total, page, size };
         renderResultadosConcursantesRepetido();
         pintarSeleccionConcursantesRepetido();
+        contenedor.scrollTop = 0;
     } catch (error) {
+        if (seq !== busquedaConcursantesRepeSeq) return;
         contenedor.innerHTML = '';
         mostrarError(obtenerMensajeErrorProgramas(error, 'búsqueda de concursantes'));
     } finally {
-        if (boton) boton.disabled = false;
+        if (seq === busquedaConcursantesRepeSeq && boton) boton.disabled = false;
     }
 }
 
@@ -2758,19 +3416,23 @@ function htmlOpcionConcursanteRepetido(concursante) {
     const posicion = repetidoConcursantesSeleccionados.findIndex(item => item.id === concursante.id);
     const orden = posicion >= 0 ? `<span class="badge bg-secondary ms-1">${posicion + 1}</span>` : '';
     const fecha = concursante.fechaEmisionPrograma ? formatearFechaPrograma(concursante.fechaEmisionPrograma) : '';
+    const programa = `PGM ${escaparHtmlHoja(concursante.programaCodigo || '')}${fecha ? ' · ' + escaparHtmlHoja(fecha) : ''}`;
     return `
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="repe-conc-${concursante.id}"
-                   ${marcado ? 'checked' : ''} onchange="alternarConcursanteRepetido(${concursante.id}, this.checked)">
-            <label class="form-check-label" for="repe-conc-${concursante.id}">
-                ${escaparHtmlHoja(concursante.numeroConcursante ?? '')} · ${escaparHtmlHoja(concursante.nombre || 'Sin nombre')}
-                · ${escaparHtmlHoja(concursante.lugar || 'Sin ciudad')}
-                · ${escaparHtmlHoja(concursante.valoracionFinal || 'sin valoración')}
-                · ${escaparHtmlHoja(concursante.xusoker || 'sin xusóker')}
-                · PGM ${escaparHtmlHoja(concursante.programaCodigo || '')}${fecha ? ' · ' + escaparHtmlHoja(fecha) : ''}
+        <tr>
+            <td>
+                <input class="form-check-input" type="checkbox" id="repe-conc-${concursante.id}"
+                       ${marcado ? 'checked' : ''} onchange="alternarConcursanteRepetido(${concursante.id}, this.checked)">
                 ${orden}
-            </label>
-        </div>`;
+            </td>
+            <td>${htmlFotoSelectorConcursante(concursante)}</td>
+            <td>${escaparHtmlHoja(concursante.numeroConcursante ?? '')}</td>
+            <td><strong>${escaparHtmlHoja(concursante.nombre || 'Sin nombre')}</strong></td>
+            <td>${escaparHtmlHoja(concursante.lugar || '')}</td>
+            <td>${escaparHtmlHoja(concursante.valoracionFinal || '')}</td>
+            <td>${escaparHtmlHoja(duracionHoja(concursante))}</td>
+            <td class="celda-momentos">${escaparHtmlHoja(concursante.momentosDestacados || '')}</td>
+            <td>${programa}</td>
+        </tr>`;
 }
 
 function alternarConcursanteRepetido(concursanteId, marcado) {
@@ -2803,14 +3465,37 @@ function quitarConcursanteRepetido(concursanteId) {
 function renderResultadosConcursantesRepetido() {
     const contenedor = document.getElementById('repe-resultados-concursantes');
     if (!contenedor) return;
+    const cabecera = htmlPaginacionConcursantesRepetido(
+        repetidoConcursantesMeta.total,
+        repetidoConcursantesMeta.page,
+        repetidoConcursantesMeta.size
+    );
     if (!repetidoResultadosConcursantes.length) {
-        contenedor.innerHTML = '<span class="text-muted">No hay concursantes de programas emitidos que coincidan con los filtros.</span>';
+        contenedor.innerHTML = cabecera
+            + '<span class="text-muted">No hay concursantes de programas emitidos que coincidan con los filtros.</span>';
         return;
     }
-    const aviso = repetidoConcursantesHayMas
-        ? '<div class="text-muted small mb-2">Hay más resultados. Afina los filtros para verlos.</div>'
-        : '';
-    contenedor.innerHTML = aviso + repetidoResultadosConcursantes.map(htmlOpcionConcursanteRepetido).join('');
+    contenedor.innerHTML = cabecera + `
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Foto</th>
+                        <th>Nº</th>
+                        <th>Nombre</th>
+                        <th>Lugar</th>
+                        <th>Valoración</th>
+                        <th>Duración</th>
+                        <th>Mom. destacados</th>
+                        <th>Programa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${repetidoResultadosConcursantes.map(htmlOpcionConcursanteRepetido).join('')}
+                </tbody>
+            </table>
+        </div>`;
 }
 
 function pintarSeleccionConcursantesRepetido() {
@@ -2851,6 +3536,10 @@ async function guardarRepetido() {
         temporada,
         fechaEmision: document.getElementById('repe-fecha')?.value || null
     };
+    const estadoAlta = (document.getElementById('repe-estado')?.value || '').trim();
+    if (estadoAlta) {
+        cuerpo.estado = estadoAlta;
+    }
     if (modo === 'programa') {
         if (!repetidoProgramaSeleccionado) {
             mostrarError('Selecciona un programa emitido.');

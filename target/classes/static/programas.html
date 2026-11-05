@@ -49,6 +49,12 @@
             justify-content: center;
             font-size: 0.8rem;
         }
+
+        .programa-acciones .btn-editar-programa {
+            width: auto;
+            padding: 0 8px;
+            gap: 4px;
+        }
         /* Todos los bloques del header con el mismo ancho visual */
         .programa-info-item {
             flex: 0 0 auto;
@@ -140,20 +146,35 @@
             font-size: 0.8em;
             line-height: 1.2;
         }
-        #lista-concursantes-disponibles .foto-selector {
+        #lista-concursantes-disponibles .foto-selector,
+        #repe-resultados-concursantes .foto-selector {
             display: block;
             width: 112px;
             aspect-ratio: 16 / 9;
             object-fit: cover;
             border-radius: 4px;
         }
-        #lista-concursantes-disponibles .celda-momentos {
+        /* Solo al añadir concursantes a un programa repetido ya creado. */
+        #lista-concursantes-disponibles.modo-repetido .foto-selector {
+            width: 160px;
+            height: 90px;
+            min-width: 160px;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+        }
+        #lista-concursantes-disponibles.modo-repetido td:first-child {
+            width: 172px;
+            min-width: 172px;
+        }
+        #lista-concursantes-disponibles .celda-momentos,
+        #repe-resultados-concursantes .celda-momentos {
             white-space: pre-wrap;
-            min-width: 180px;
-            max-width: 320px;
+            min-width: 160px;
+            max-width: 280px;
             font-size: 0.85rem;
         }
-        #lista-concursantes-disponibles td {
+        #lista-concursantes-disponibles td,
+        #repe-resultados-concursantes td {
             vertical-align: middle;
         }
         
@@ -574,13 +595,6 @@
                                 <option value="emitido">Emitido</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Total Premios (€)</label>
-                            <div class="d-flex gap-2">
-                                <input type="number" id="filtro-premios-min" class="form-control form-control-sm" placeholder="Mín" min="0" onkeyup="filtrarProgramas()" onchange="filtrarProgramas()">
-                                <input type="number" id="filtro-premios-max" class="form-control form-control-sm" placeholder="Máx" min="0" onkeyup="filtrarProgramas()" onchange="filtrarProgramas()">
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -700,6 +714,18 @@
                                     <input type="date" class="form-control" id="repe-fecha">
                                     <small class="form-text text-muted">Puede dejarse en blanco.</small>
                                 </div>
+                                <div class="col-md-3">
+                                    <label class="form-label" for="repe-estado">Estado</label>
+                                    <select class="form-select" id="repe-estado">
+                                        <option value="">Automático (editado)</option>
+                                        <option value="borrador">Borrador</option>
+                                        <option value="grabado">Grabado</option>
+                                        <option value="editado">Editado</option>
+                                        <option value="programado">Programado</option>
+                                        <option value="emitido">Emitido</option>
+                                    </select>
+                                    <small class="form-text text-muted">Automático: el repetido se crea en editado.</small>
+                                </div>
                             </div>
 
                             <div class="mt-3 mb-2">Cómo armar el repetido</div>
@@ -763,15 +789,9 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label" for="repe-filtro-xusoker">Xusóker</label>
-                                        <select class="form-select form-select-sm" id="repe-filtro-xusoker">
-                                            <option value="">Todos</option>
-                                            <option value="NO USÓ">NO USÓ</option>
-                                            <option value="CONTINÚE">CONTINÚE</option>
-                                            <option value="AL VERRÉS">AL VERRÉS</option>
-                                            <option value="RECICLA">RECICLA</option>
-                                            <option value="LLAMADA">LLAMADA</option>
-                                        </select>
+                                        <label class="form-label" for="repe-filtro-tiempo">Tiempo</label>
+                                        <input type="text" class="form-control form-control-sm" id="repe-filtro-tiempo" placeholder="MM:SS">
+                                        <small class="form-text text-muted">±30 segundos</small>
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label" for="repe-filtro-numero">Número</label>
@@ -782,8 +802,12 @@
                                         <input type="text" class="form-control form-control-sm" id="repe-filtro-ciudad">
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="form-label" for="repe-filtro-nombre">Nombre</label>
-                                        <input type="text" class="form-control form-control-sm" id="repe-filtro-nombre">
+                                        <label class="form-label" for="repe-filtro-estado-conc">Estado</label>
+                                        <select class="form-select form-select-sm" id="repe-filtro-estado-conc">
+                                            <option value="">Todos</option>
+                                            <option value="emitido" title="Ha salido en exactamente un programa">Emitido</option>
+                                            <option value="repetido" title="Ha salido en más de un programa">Repetido</option>
+                                        </select>
                                     </div>
                                     <div class="col-md-2 d-flex align-items-end">
                                         <button type="button" class="btn btn-sm btn-primary" id="btn-buscar-concursantes-repe" onclick="buscarConcursantesParaRepetido()">Buscar</button>
@@ -885,23 +909,19 @@
                                     <option value="">Todos (grabado, editado, emitido)</option>
                                     <option value="editado" selected>Editado</option>
                                     <option value="grabado">Grabado</option>
-                                    <option value="emitido">Emitido</option>
+                                    <option value="emitido" title="Ha salido en exactamente un programa">Emitido</option>
+                                    <option value="repetido" title="Ha salido en más de un programa">Repetido</option>
                                 </select>
                             </div>
                         </div>
                         <div class="row g-2 mb-2">
                             <div class="col-md-3">
-                                <label class="form-label form-label-sm">Duración efectiva mínima</label>
-                                <input type="text" class="form-control form-control-sm" id="filtro-duracion-min-concursante-disponible"
-                                       placeholder="MM:SS" onchange="onCambioFiltrosConcursantesDisponibles()">
+                                <label class="form-label form-label-sm" for="filtro-tiempo-concursante-disponible">Tiempo</label>
+                                <input type="text" class="form-control form-control-sm" id="filtro-tiempo-concursante-disponible"
+                                       placeholder="MM:SS" oninput="onCambioFiltrosConcursantesDisponibles()">
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label form-label-sm">Duración efectiva máxima</label>
-                                <input type="text" class="form-control form-control-sm" id="filtro-duracion-max-concursante-disponible"
-                                       placeholder="MM:SS" onchange="onCambioFiltrosConcursantesDisponibles()">
-                            </div>
-                            <div class="col-md-6 form-text pt-4">
-                                Se filtra por duración final, luego dirección y finalmente grabación.
+                            <div class="col-md-9 form-text pt-4" id="ayuda-filtro-tiempo-concursante-disponible">
+                                Duración exacta (MM:SS). Duración de más prioridad: final, si no dirección, si no grabación.
                             </div>
                         </div>
                         <div id="info-paginacion-concursantes" class="mb-2 text-muted small">
@@ -978,14 +998,14 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script src="js/api.js?v=20260821-3"></script>
+    <script src="js/api.js?v=20261105-pagina1"></script>
     <script src="js/auth.js?v=20260915-verif-consulta"></script>
     <script src="js/utils.js?v=20260915-verif-consulta"></script>
-    <script src="js/undo-manager.js?v=20260915-modal"></script>
+    <script src="js/undo-manager.js?v=20261105-scroll-lugar"></script>
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/programas.js?v=20261105-pdf-semana"></script>
+    <script src="js/programas.js?v=20261105-estado-conc-repe"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();

@@ -23,8 +23,10 @@ com\lsnls\dto\ErrorResponseTest.class
 com\lsnls\controller\BackupControllerTest.class
 com\lsnls\dto\ReciclajeComboDTOTest.class
 com\lsnls\service\AuthServiceTest.class
+com\lsnls\service\ProgramaRepetidoServiceUpdateCampoTest.class
 com\lsnls\service\UserDetailsServiceImplTest.class
 com\lsnls\config\MensajesUsuarioTest.class
+com\lsnls\controller\ProgramaRepetidoControllerCampoTest.class
 com\lsnls\config\JwtAuthenticationFilterTest.class
 com\lsnls\service\TematicaServiceTest.class
 com\lsnls\entity\EditLockTest.class
@@ -47,6 +49,7 @@ com\lsnls\entity\JornadaTest.class
 com\lsnls\service\EditLockServiceTest.class
 com\lsnls\entity\PreguntaComboIdTest.class
 com\lsnls\config\CompatiblePasswordEncoderTest.class
+com\lsnls\service\SalidasConcursanteTest.class
 com\lsnls\config\GlobalExceptionHandlerTest.class
 com\lsnls\config\TransicionesEstadoTest.class
 com\lsnls\dto\AuthResponseTest.class
@@ -57,7 +60,9 @@ com\lsnls\service\BackupServiceFilesystemTest.class
 com\lsnls\entity\PreguntaCuestionarioIdTest.class
 com\lsnls\service\ProgramaServiceTest.class
 com\lsnls\controller\AuthControllerTest.class
+com\lsnls\service\ProgramaRepetidoServiceBusquedaConcursantesTest.class
 com\lsnls\service\JwtServiceTest.class
+com\lsnls\service\ProgramaRepetidoServiceCrearEstadoTest.class
 com\lsnls\entity\ConfiguracionGlobalTest.class
 com\lsnls\controller\UsuarioControllerTest.class
 com\lsnls\entity\EstadoConcursanteTest.class
@@ -66,6 +71,7 @@ com\lsnls\controller\ProgramaControllerTest.class
 com\lsnls\service\ComboServiceCoverageTest.class
 com\lsnls\config\SlotsJornadaTest.class
 com\lsnls\config\EncodingConfigTest.class
+com\lsnls\service\ProgramaRepetidoServiceBusquedaProgramasTest.class
 com\lsnls\dto\CrearCuestionarioDTOTest.class
 com\lsnls\validation\NoLineBreaksValidatorTest.class
 com\lsnls\config\UndoHeaderAdviceTest.class
@@ -77,6 +83,7 @@ com\lsnls\config\JacksonConfigTest.class
 com\lsnls\controller\TemasControllerTest.class
 com\lsnls\config\WebConfigTest.class
 com\lsnls\controller\TematicaControllerTest.class
+com\lsnls\service\ProgramaRepetidoServiceDuracionFiltroTest.class
 com\lsnls\controller\CuestionarioControllerTest.class
 com\lsnls\entity\UsuarioTest.class
 com\lsnls\service\UndoServiceTest.class

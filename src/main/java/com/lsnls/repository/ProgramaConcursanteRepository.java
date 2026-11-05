@@ -14,4 +14,6 @@ public interface ProgramaConcursanteRepository extends JpaRepository<ProgramaCon
     List<ProgramaConcursante> findByProgramaIdIn(Collection<Long> programaIds);
 
     List<ProgramaConcursante> findByConcursanteId(Long concursanteId);
+
+    List<ProgramaConcursante> findByConcursanteIdIn(Collection<Long> concursanteIds);
 }

@@ -594,14 +594,16 @@ public class ConcursanteService {
     }
 
     public Page<ConcursanteDTO> findConcursantesSinProgramaPaginated(Pageable pageable, String busqueda, String estado, Integer programaId) {
+        SalidasConcursante.Filtro filtro = SalidasConcursante.interpretar(estado);
         return concursanteRepository.findDisponiblesParaProgramaWithSearch(
-                pageable, busqueda, normalizarEstadoFiltroDisponibles(estado), programaId)
+                pageable, busqueda, filtro.estado, programaId, filtro.salidas)
                 .map(this::convertToDTO);
     }
 
     public Page<ConcursanteDTO> findDisponiblesParaRepetido(Pageable pageable, String busqueda, String estado, Long repetidoId) {
+        SalidasConcursante.Filtro filtro = SalidasConcursante.interpretar(estado);
         return concursanteRepository.findDisponiblesParaRepetido(
-                pageable, busqueda, normalizarEstadoFiltroDisponibles(estado), repetidoId)
+                pageable, busqueda, filtro.estado, repetidoId, filtro.salidas)
                 .map(this::convertToDTO);
     }
 
@@ -658,7 +660,6 @@ public class ConcursanteService {
 
         concursante.setNumeroPrograma(numeroPrograma);
         concursante.setOrdenEscaleta(posicionAsignada);
-        aplicarEstadoAlAsignarAPrograma(concursante);
         concursante = concursanteRepository.save(concursante);
         return convertToDTO(concursante);
     }
@@ -883,23 +884,8 @@ public class ConcursanteService {
         }
     }
 
-    private void aplicarEstadoAlAsignarAPrograma(Concursante concursante) {
-        if ("emitido".equalsIgnoreCase(normalizarEstadoConcursante(concursante.getEstado()))) {
-            return;
-        }
-        concursante.setEstado("programado");
-    }
-
     private void aplicarEstadoAlDesasignarDePrograma(Concursante concursante) {
         concursante.setEstado("editado");
-    }
-
-    private String normalizarEstadoFiltroDisponibles(String estado) {
-        if (estado == null || estado.isBlank()) {
-            return null;
-        }
-        String normalizado = estado.trim().toLowerCase();
-        return esEstadoAsignableAPrograma(normalizado) ? normalizado : null;
     }
 
     private String normalizarEstadoConcursante(String estado) {

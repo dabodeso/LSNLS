@@ -1,5 +1,6 @@
 package com.lsnls.service;
 
+import com.lsnls.dto.ConcursanteDTO;
 import com.lsnls.dto.ProgramaDTO;
 import com.lsnls.entity.Concursante;
 import com.lsnls.entity.Programa;
@@ -16,7 +17,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import javax.persistence.Query;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -54,6 +55,8 @@ class ProgramaServiceTest {
     private UndoService undoService;
     @Mock
     private ConcursanteRepository concursanteRepository;
+    @Mock
+    private ConcursanteService concursanteService;
 
     @InjectMocks
     private ProgramaService service;
@@ -70,10 +73,9 @@ class ProgramaServiceTest {
         programa.setDuracionObjetivo("45m");
     }
 
-    @SuppressWarnings("unchecked")
     private void mockConcursantesCount(long count) {
-        TypedQuery<Long> query = mock(TypedQuery.class);
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(query);
+        Query query = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
         when(query.setParameter(anyString(), any())).thenReturn(query);
         when(query.getSingleResult()).thenReturn(count);
     }
@@ -468,6 +470,45 @@ class ProgramaServiceTest {
         ProgramaDTO dto = service.updateCampo(1L, campos);
 
         assertEquals("borrador", dto.getEstado());
+    }
+
+    @Test
+    void updateCampo_editadoRechazaConcursantesNoEditados() {
+        when(programaRepository.findById(1L)).thenReturn(Optional.of(programa));
+        ConcursanteDTO grabado = new ConcursanteDTO();
+        grabado.setNumeroConcursante(15);
+        grabado.setEstado("grabado");
+        ConcursanteDTO emitido = new ConcursanteDTO();
+        emitido.setNumeroConcursante(22);
+        emitido.setEstado("emitido");
+        ConcursanteDTO editado = new ConcursanteDTO();
+        editado.setNumeroConcursante(8);
+        editado.setEstado("editado");
+        when(concursanteService.findByProgramaId(1L)).thenReturn(Arrays.asList(emitido, grabado, editado));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> service.updateCampo(1L, Map.of("estado", "editado")));
+
+        assertTrue(ex.getMessage().contains("15"));
+        assertTrue(ex.getMessage().contains("22"));
+        assertEquals("No se puede pasar el programa a editado: los concursantes 15, 22 no están editados.",
+            ex.getMessage());
+        assertEquals(Programa.EstadoPrograma.borrador, programa.getEstado());
+        verify(programaRepository, never()).save(any());
+    }
+
+    @Test
+    void updateCampo_editadoPermiteSiTodosEstanEditados() {
+        when(programaRepository.findById(1L)).thenReturn(Optional.of(programa));
+        stubSaveConId();
+        ConcursanteDTO editado = new ConcursanteDTO();
+        editado.setNumeroConcursante(8);
+        editado.setEstado("EDITADO");
+        when(concursanteService.findByProgramaId(1L)).thenReturn(Collections.singletonList(editado));
+
+        ProgramaDTO dto = service.updateCampo(1L, Map.of("estado", "editado"));
+
+        assertEquals("editado", dto.getEstado());
     }
 
     @Test

@@ -47,7 +47,10 @@ public class ProgramaRepetidoService {
             "codigo", "temporada", "fechaEmision", "estado", "creditosEspeciales", "notas");
     private static final Set<String> ESTADOS_ASIGNABLES = Set.of("grabado", "editado", "emitido");
     private static final int MAX_CONCURSANTES = 3;
-    private static final int LIMITE_BUSQUEDA = 120;
+    /** Página de concursantes sueltos al crear un repetido. */
+    public static final int TAMANO_PAGINA_CONCURSANTES_ORIGEN = 25;
+    public static final int TAMANO_PAGINA_PROGRAMAS_ORIGEN = 25;
+    private static final int TAMANO_PAGINA_MAXIMO = 100;
 
     @Autowired
     private ProgramaRepetidoRepository programaRepetidoRepository;
@@ -122,7 +125,7 @@ public class ProgramaRepetidoService {
     }
 
     public ResultadoBusquedaDTO<ProgramaEmitidoOpcionDTO> buscarProgramasEmitidos(
-            String fechaEmision, String codigo, String valoracionMinima) {
+            String fechaEmision, String codigo, String valoracionMinima, int page) {
         Integer minimo = indiceValoracionMinima(valoracionMinima);
         LocalDate fecha = parseFechaFiltro(fechaEmision);
         IndiceEmitidos indice = indiceEmitidos();
@@ -144,18 +147,20 @@ public class ProgramaRepetidoService {
                 .comparing(ProgramaEmitidoOpcionDTO::getFechaEmision, Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparing(dto -> codigoEntero(dto.getCodigo()) == null ? Long.MAX_VALUE : codigoEntero(dto.getCodigo()))
                 .thenComparing(dto -> dto.getCodigo() == null ? "" : dto.getCodigo()));
-        return recortar(coinciden);
+        return paginar(coinciden, page, TAMANO_PAGINA_PROGRAMAS_ORIGEN);
     }
 
     public ResultadoBusquedaDTO<ConcursanteEmitidoOpcionDTO> buscarConcursantesEmitidos(
-            String valoracionMinima, String xusoker, String numero, String ciudad, String nombre) {
+            String valoracionMinima, String tiempo, String numero, String ciudad, String estado,
+            int page, int size) {
         Integer minimo = indiceValoracionMinima(valoracionMinima);
         Integer numeroExacto = parseNumeroConcursante(numero);
-        String xusokerFiltro = blancoANull(xusoker);
+        Integer tiempoObjetivo = segundosFiltroTiempo(tiempo);
         String ciudadFiltro = blancoANull(ciudad);
-        String nombreFiltro = blancoANull(nombre);
+        // Emitido/repetido cuentan programas distintos. No comparan ni reescriben la columna estado.
+        String salidas = SalidasConcursante.interpretar(estado).salidas;
         IndiceEmitidos indice = indiceEmitidos();
-        List<ConcursanteEmitidoOpcionDTO> coinciden = new ArrayList<>();
+        List<Aparicion> candidatas = new ArrayList<>();
         for (Aparicion aparicion : indice.aparicionPrincipal.values()) {
             Concursante concursante = aparicion.concursante;
             if (!estadoAsignable(concursante.getEstado())) {
@@ -164,7 +169,7 @@ public class ProgramaRepetidoService {
             if (minimo != null && rangoValoracion(concursante.getValoracionFinal()) < minimo) {
                 continue;
             }
-            if (xusokerFiltro != null && !xusokerFiltro.equals(concursante.getXusoker() == null ? "" : concursante.getXusoker().trim())) {
+            if (tiempoObjetivo != null && !duracionDentroDeMargen(duracionPrioritaria(concursante), tiempoObjetivo)) {
                 continue;
             }
             if (numeroExacto != null && !numeroExacto.equals(concursante.getNumeroConcursante())) {
@@ -173,7 +178,12 @@ public class ProgramaRepetidoService {
             if (ciudadFiltro != null && !contiene(concursante.getLugar(), ciudadFiltro)) {
                 continue;
             }
-            if (nombreFiltro != null && !contiene(concursante.getNombre(), nombreFiltro)) {
+            candidatas.add(aparicion);
+        }
+        Map<Long, Integer> cuentas = salidas == null ? Map.of() : cuentasSalidas(candidatas);
+        List<ConcursanteEmitidoOpcionDTO> coinciden = new ArrayList<>();
+        for (Aparicion aparicion : candidatas) {
+            if (salidas != null && !coincideSalidas(cuentas.get(aparicion.concursante.getId()), salidas)) {
                 continue;
             }
             coinciden.add(opcionConcursante(aparicion));
@@ -182,7 +192,66 @@ public class ProgramaRepetidoService {
                 .comparing((ConcursanteEmitidoOpcionDTO dto) -> dto.getNumeroConcursante() == null
                         ? Integer.MAX_VALUE : dto.getNumeroConcursante())
                 .thenComparing(dto -> dto.getNombre() == null ? "" : dto.getNombre(), String.CASE_INSENSITIVE_ORDER));
-        return recortar(coinciden);
+        return paginar(coinciden, page, tamanoPedido(size));
+    }
+
+    /**
+     * Mismo recuento que al añadir un concursante: un programa normal cuenta una vez
+     * aunque esté en la ficha y en programas_concursantes; cada repetido suma otra salida.
+     */
+    private Map<Long, Integer> cuentasSalidas(List<Aparicion> candidatas) {
+        Map<Long, Concursante> porId = new LinkedHashMap<>();
+        for (Aparicion aparicion : candidatas) {
+            Concursante concursante = aparicion.concursante;
+            if (concursante != null && concursante.getId() != null) {
+                porId.putIfAbsent(concursante.getId(), concursante);
+            }
+        }
+        if (porId.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = new ArrayList<>(porId.keySet());
+        Map<Long, Set<Long>> normales = new HashMap<>();
+        Map<Long, Set<Long>> repetidos = new HashMap<>();
+        List<ProgramaConcursante> enlacesNormales = programaConcursanteRepository.findByConcursanteIdIn(ids);
+        if (enlacesNormales != null) {
+            for (ProgramaConcursante enlace : enlacesNormales) {
+                if (enlace.getConcursanteId() == null || enlace.getProgramaId() == null) {
+                    continue;
+                }
+                normales.computeIfAbsent(enlace.getConcursanteId(), id -> new HashSet<>())
+                        .add(enlace.getProgramaId());
+            }
+        }
+        List<ProgramaRepetidoConcursante> enlacesRepetidos = enlaceRepository.findByConcursanteIdIn(ids);
+        if (enlacesRepetidos != null) {
+            for (ProgramaRepetidoConcursante enlace : enlacesRepetidos) {
+                if (enlace.getConcursanteId() == null || enlace.getProgramaRepetidoId() == null) {
+                    continue;
+                }
+                repetidos.computeIfAbsent(enlace.getConcursanteId(), id -> new HashSet<>())
+                        .add(enlace.getProgramaRepetidoId());
+            }
+        }
+        Map<Long, Integer> cuentas = new HashMap<>();
+        for (Map.Entry<Long, Concursante> entrada : porId.entrySet()) {
+            cuentas.put(entrada.getKey(), SalidasConcursante.contar(
+                    entrada.getValue().getNumeroPrograma(),
+                    normales.get(entrada.getKey()),
+                    repetidos.get(entrada.getKey())));
+        }
+        return cuentas;
+    }
+
+    private static boolean coincideSalidas(Integer cuenta, String salidas) {
+        int n = cuenta == null ? 0 : cuenta;
+        if (SalidasConcursante.UNA.equals(salidas)) {
+            return n == 1;
+        }
+        if (SalidasConcursante.MAS.equals(salidas)) {
+            return n > 1;
+        }
+        return true;
     }
 
     @Transactional
@@ -245,9 +314,18 @@ public class ProgramaRepetidoService {
             repetido.setCodigo(codigoLibre(tipo, dto.getTemporada(), dto.getFechaEmision(), dto.getCodigo()));
             repetido.setProgramaOriginalCodigo(programaOriginalCodigo);
             repetido.setFechaOriginal(fechaOriginal);
-            repetido.setEstado(dto.getFechaEmision() != null
-                    ? Programa.EstadoPrograma.programado
-                    : Programa.EstadoPrograma.borrador);
+            Programa.EstadoPrograma estadoAlta = (dto.getEstado() != null && !dto.getEstado().isBlank())
+                    ? parseEstado(dto.getEstado())
+                    : Programa.EstadoPrograma.editado;
+            if (dto.getEstado() != null && !dto.getEstado().isBlank()
+                    && estadoAlta == Programa.EstadoPrograma.editado) {
+                List<Long> ids = new ArrayList<>();
+                for (SlotConcursante slot : slots) {
+                    ids.add(slot.concursanteId);
+                }
+                exigirConcursantesEditados(ids);
+            }
+            repetido.setEstado(estadoAlta);
             repetido.setTotalConcursantes(0);
             repetido = programaRepetidoRepository.saveAndFlush(repetido);
             for (SlotConcursante slot : slots) {
@@ -297,8 +375,30 @@ public class ProgramaRepetidoService {
         if (repetido.getEstado() == Programa.EstadoPrograma.emitido) {
             throw new IllegalArgumentException("Un programa emitido no se puede editar.");
         }
+        Programa.EstadoPrograma estadoAntes = repetido.getEstado();
+        boolean cambiaFecha = campo.containsKey("fechaEmision");
+        boolean cambiaEstado = campo.containsKey("estado");
+        if (cambiaEstado) {
+            Programa.EstadoPrograma pedido = parseEstado(campo.get("estado"));
+            if (pedido == Programa.EstadoPrograma.editado) {
+                List<ProgramaRepetidoConcursante> enlaces =
+                        enlaceRepository.findByProgramaRepetidoIdOrderByOrdenEscaletaAsc(id);
+                List<Long> ids = new ArrayList<>();
+                if (enlaces != null) {
+                    for (ProgramaRepetidoConcursante enlace : enlaces) {
+                        ids.add(enlace.getConcursanteId());
+                    }
+                }
+                exigirConcursantesEditados(ids);
+            }
+        }
         for (Map.Entry<String, Object> entry : campo.entrySet()) {
             aplicarCampo(repetido, entry.getKey(), entry.getValue());
+        }
+        if (cambiaFecha && !cambiaEstado
+                && estadoAntes == Programa.EstadoPrograma.editado
+                && repetido.getFechaEmision() != null) {
+            repetido.setEstado(Programa.EstadoPrograma.programado);
         }
         exigirCombinacionLibre(repetido);
         return toDto(programaRepetidoRepository.save(repetido));
@@ -343,6 +443,30 @@ public class ProgramaRepetidoService {
             throw new IllegalArgumentException(mensajeCodigoDuplicado(
                     repetido.getTipo(), repetido.getCodigo(), repetido.getTemporada(), repetido.getFechaEmision()));
         }
+    }
+
+    private void exigirConcursantesEditados(Iterable<Long> concursanteIds) {
+        if (concursanteIds == null) {
+            return;
+        }
+        List<Integer> numeros = new ArrayList<>();
+        int sinNumero = 0;
+        for (Long concursanteId : concursanteIds) {
+            if (concursanteId == null) {
+                continue;
+            }
+            Concursante concursante = concursanteRepository.findById(concursanteId)
+                    .orElseThrow(() -> new IllegalArgumentException("Concursante no encontrado"));
+            if (EstadoEditadoPrograma.esEditado(concursante.getEstado())) {
+                continue;
+            }
+            if (concursante.getNumeroConcursante() == null) {
+                sinNumero++;
+            } else {
+                numeros.add(concursante.getNumeroConcursante());
+            }
+        }
+        EstadoEditadoPrograma.exigir(numeros, sinNumero);
     }
 
     private static Integer parseTemporada(Object value) {
@@ -674,21 +798,37 @@ public class ProgramaRepetidoService {
         dto.setNumeroConcursante(concursante.getNumeroConcursante());
         dto.setNombre(concursante.getNombre());
         dto.setLugar(concursante.getLugar());
-        dto.setXusoker(concursante.getXusoker());
         dto.setValoracionFinal(concursante.getValoracionFinal());
+        dto.setDuracion(duracionPrioritaria(concursante));
+        dto.setMomentosDestacados(concursante.getMomentosDestacados());
+        dto.setFoto(concursante.getFoto());
         dto.setProgramaCodigo(aparicion.programa.getCodigo());
         dto.setFechaEmisionPrograma(aparicion.programa.getFechaEmision());
         dto.setOrdenEscaleta(aparicion.orden.orden);
         return dto;
     }
 
-    private static <T> ResultadoBusquedaDTO<T> recortar(List<T> coinciden) {
+    private static <T> ResultadoBusquedaDTO<T> paginar(List<T> coinciden, int page, int tamano) {
+        int total = coinciden.size();
+        int paginas = total == 0 ? 1 : (total + tamano - 1) / tamano;
+        int pagina = page < 0 ? 0 : Math.min(page, paginas - 1);
+        int desde = pagina * tamano;
+        int hasta = Math.min(desde + tamano, total);
+        List<T> trozo = desde >= total ? List.of() : new ArrayList<>(coinciden.subList(desde, hasta));
         ResultadoBusquedaDTO<T> resultado = new ResultadoBusquedaDTO<>();
-        resultado.setHayMas(coinciden.size() > LIMITE_BUSQUEDA);
-        resultado.setResultados(coinciden.size() > LIMITE_BUSQUEDA
-                ? new ArrayList<>(coinciden.subList(0, LIMITE_BUSQUEDA))
-                : coinciden);
+        resultado.setResultados(trozo);
+        resultado.setTotal((long) total);
+        resultado.setPage(pagina);
+        resultado.setSize(tamano);
+        resultado.setHayMas(hasta < total);
         return resultado;
+    }
+
+    private static int tamanoPedido(int size) {
+        if (size < 1) {
+            return TAMANO_PAGINA_CONCURSANTES_ORIGEN;
+        }
+        return Math.min(size, TAMANO_PAGINA_MAXIMO);
     }
 
     private static Integer indiceValoracionMinima(String valoracion) {
@@ -718,6 +858,52 @@ public class ProgramaRepetidoService {
         } catch (DateTimeParseException ex) {
             throw new IllegalArgumentException("La fecha de emisión no es válida.");
         }
+    }
+
+    static Integer segundosFiltroTiempo(String tiempo) {
+        if (tiempo == null || tiempo.isBlank()) {
+            return null;
+        }
+        Integer segundos = segundosMmSs(tiempo);
+        if (segundos == null) {
+            throw new IllegalArgumentException("El tiempo debe tener formato MM:SS.");
+        }
+        return segundos;
+    }
+
+    static Integer segundosMmSs(String texto) {
+        if (texto == null) {
+            return null;
+        }
+        String limpio = texto.trim();
+        if (!limpio.matches("\\d{1,3}:[0-5]\\d")) {
+            return null;
+        }
+        int separador = limpio.indexOf(':');
+        int minutos = Integer.parseInt(limpio.substring(0, separador));
+        int segundos = Integer.parseInt(limpio.substring(separador + 1));
+        return minutos * 60 + segundos;
+    }
+
+    static boolean duracionDentroDeMargen(String duracion, int objetivoSegundos) {
+        Integer segundos = segundosMmSs(duracion);
+        if (segundos == null) {
+            return false;
+        }
+        return segundos >= objetivoSegundos - 30 && segundos <= objetivoSegundos + 30;
+    }
+
+    static String duracionPrioritaria(Concursante concursante) {
+        if (concursante.getDuracionFinal() != null && !concursante.getDuracionFinal().isBlank()) {
+            return concursante.getDuracionFinal().trim();
+        }
+        if (concursante.getDuracionDireccion() != null && !concursante.getDuracionDireccion().isBlank()) {
+            return concursante.getDuracionDireccion().trim();
+        }
+        if (concursante.getDuracion() != null && !concursante.getDuracion().isBlank()) {
+            return concursante.getDuracion().trim();
+        }
+        return "";
     }
 
     private static Integer parseNumeroConcursante(String numero) {

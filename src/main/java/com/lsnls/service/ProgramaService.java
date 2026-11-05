@@ -1,5 +1,6 @@
 package com.lsnls.service;
 
+import com.lsnls.dto.ConcursanteDTO;
 import com.lsnls.dto.ProgramaDTO;
 import com.lsnls.entity.Concursante;
 import com.lsnls.entity.Programa;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +40,9 @@ public class ProgramaService {
 
     @Autowired
     private ConcursanteRepository concursanteRepository;
+
+    @Autowired
+    private ConcursanteService concursanteService;
 
     /** Cubre el cálculo del código y el insert para que dos altas no reciban el mismo número. */
     private final Object asignacionCodigoLock = new Object();
@@ -174,12 +179,18 @@ public class ProgramaService {
                         break;
                     case "estado":
                         if (value != null && !value.toString().isEmpty()) {
+                            Programa.EstadoPrograma nuevoEstado;
                             try {
-                                programa.setEstado(Programa.EstadoPrograma.valueOf(value.toString()));
-                                estadoActualizadoExplicitamente = true;
+                                nuevoEstado = Programa.EstadoPrograma.valueOf(value.toString());
                             } catch (Exception e) {
                                 // Si el estado no es válido, no cambiar el estado actual
+                                break;
                             }
+                            if (nuevoEstado == Programa.EstadoPrograma.editado) {
+                                exigirConcursantesEditados(id);
+                            }
+                            programa.setEstado(nuevoEstado);
+                            estadoActualizadoExplicitamente = true;
                         }
                         break;
                 }
@@ -195,6 +206,26 @@ public class ProgramaService {
             return convertToDTO(saved);
         }
         throw new RuntimeException("Programa no encontrado con id: " + id);
+    }
+
+    private void exigirConcursantesEditados(Long programaId) {
+        List<ConcursanteDTO> concursantes = concursanteService.findByProgramaId(programaId);
+        if (concursantes == null || concursantes.isEmpty()) {
+            return;
+        }
+        List<Integer> numeros = new ArrayList<>();
+        int sinNumero = 0;
+        for (ConcursanteDTO concursante : concursantes) {
+            if (EstadoEditadoPrograma.esEditado(concursante.getEstado())) {
+                continue;
+            }
+            if (concursante.getNumeroConcursante() == null) {
+                sinNumero++;
+            } else {
+                numeros.add(concursante.getNumeroConcursante());
+            }
+        }
+        EstadoEditadoPrograma.exigir(numeros, sinNumero);
     }
 
     private void sincronizarEstadoConcursantesConPrograma(Programa programa, Programa.EstadoPrograma estadoAnterior) {

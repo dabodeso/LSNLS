@@ -37,7 +37,10 @@ assert.ok(
 assert.ok(schemaSql.includes('pregunta_usada_id'), 'schema guarda la pregunta usada del combo');
 
 assert.ok(programasJs.includes("'GRABADO', 'EDITADO', 'EMITIDO'"), 'se pueden asignar emitidos');
-assert.ok(programasJs.includes("filtroEstado.value = 'editado'"), 'el filtro de disponibles empieza en editado');
+assert.ok(
+  programasJs.includes("filtroEstado.value = vistaRepetidos ? '' : 'editado'"),
+  'en un programa el filtro de disponibles empieza en editado; en repetidos, en todos'
+);
 assert.ok(programasJs.includes('&programaId='), 'disponibles envía programaId');
 assert.ok(programasJs.includes('esProgramaEmitido(programaId)'), 'programa emitido bloquea añadir/quitar');
 assert.ok(
@@ -314,5 +317,24 @@ const borrarCombo = JM.htmlBotonBorrarCombo(comboAsignado, jornada);
 assert.ok(borrarCombo.includes('disabled'), 'no se borra un combo asignado');
 const borrarComboLibre = JM.htmlBotonBorrarCombo(comboLibre, jornada);
 assert.ok(borrarComboLibre.includes('eliminarComboDeJornada'), 'combo libre sí se quita');
+
+const persistirCampo = programasJs.match(/async function persistirCampoPrograma\([\s\S]*?\n\}/);
+assert.ok(persistirCampo, 'existe persistirCampoPrograma');
+assert.ok(
+  !persistirCampo[0].includes('refrescarVistaProgramas'),
+  'guardar un campo de programa no recarga el listado'
+);
+assert.ok(
+  persistirCampo[0].includes('aplicarCampoProgramaEnPantalla'),
+  'guardar un campo actualiza el programa en pantalla'
+);
+const concursantesFiltrados = programasJs.match(/async function cargarConcursantesParaProgramasFiltrados\([\s\S]*?\n\}/);
+assert.ok(concursantesFiltrados && concursantesFiltrados[0].includes('programasDeLaPaginaFiltrada'), 'filtro: concursantes solo de la página');
+assert.ok(
+  !/for\s*\(\s*let i = 0;\s*i < programasFiltrados\.length/.test(programasJs),
+  'el filtro no pide concursantes de todo el catálogo'
+);
+assert.ok(/let tamañoPagina = 5;/.test(programasJs), 'la página de programas muestra 5');
+assert.ok(programasJs.includes('cargarProgramasPaginados(0)'), 'al abrir se pide la página 1');
 
 console.log('OK cambios flujo contratos');

@@ -4,11 +4,14 @@ import com.lsnls.entity.ProgramaRepetidoConcursante;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface ProgramaRepetidoConcursanteRepository extends JpaRepository<ProgramaRepetidoConcursante, Long> {
     List<ProgramaRepetidoConcursante> findByProgramaRepetidoIdOrderByOrdenEscaletaAsc(Long programaRepetidoId);
+
+    List<ProgramaRepetidoConcursante> findByConcursanteIdIn(Collection<Long> concursanteIds);
 
     boolean existsByProgramaRepetidoIdAndConcursanteId(Long programaRepetidoId, Long concursanteId);
 

@@ -23,6 +23,7 @@ C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\dto\R
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\validation\NoSpecialCharactersValidator.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\controller\UsuarioController.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\repository\PreguntaCuestionarioRepository.java
+C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\service\EstadoEditadoPrograma.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\config\JacksonConfig.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\validation\UpperCase.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\repository\ComboRepository.java
@@ -53,6 +54,7 @@ C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\contr
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\dto\ApiResponse.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\controller\SyncController.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\validation\NoLineBreaksValidator.java
+C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\service\SalidasConcursante.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\dto\EntityChangeDTO.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\entity\Concursante.java
 C:\Users\dabod\OneDrive\Documents\Code\LSNLS\lsnls\src\main\java\com\lsnls\entity\HistorialJornada.java

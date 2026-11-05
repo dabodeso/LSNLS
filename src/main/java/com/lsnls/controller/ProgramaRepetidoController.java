@@ -58,10 +58,11 @@ public class ProgramaRepetidoController {
     public ResponseEntity<?> buscarProgramasEmitidos(
             @RequestParam(required = false) String fechaEmision,
             @RequestParam(required = false) String codigo,
-            @RequestParam(required = false) String valoracionMinima) {
+            @RequestParam(required = false) String valoracionMinima,
+            @RequestParam(defaultValue = "0") int page) {
         try {
             ResultadoBusquedaDTO<ProgramaEmitidoOpcionDTO> resultado =
-                    programaRepetidoService.buscarProgramasEmitidos(fechaEmision, codigo, valoracionMinima);
+                    programaRepetidoService.buscarProgramasEmitidos(fechaEmision, codigo, valoracionMinima, page);
             return ResponseEntity.ok(resultado);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
@@ -71,13 +72,16 @@ public class ProgramaRepetidoController {
     @GetMapping("/origen/concursantes")
     public ResponseEntity<?> buscarConcursantesEmitidos(
             @RequestParam(required = false) String valoracionMinima,
-            @RequestParam(required = false) String xusoker,
+            @RequestParam(required = false) String tiempo,
             @RequestParam(required = false) String numero,
             @RequestParam(required = false) String ciudad,
-            @RequestParam(required = false) String nombre) {
+            @RequestParam(required = false) String estado,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size) {
         try {
             ResultadoBusquedaDTO<ConcursanteEmitidoOpcionDTO> resultado =
-                    programaRepetidoService.buscarConcursantesEmitidos(valoracionMinima, xusoker, numero, ciudad, nombre);
+                    programaRepetidoService.buscarConcursantesEmitidos(
+                            valoracionMinima, tiempo, numero, ciudad, estado, page, size);
             return ResponseEntity.ok(resultado);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));

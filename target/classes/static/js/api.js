@@ -323,7 +323,7 @@ class ApiManager {
         const result = await this.patch(endpoint, data);
 
         if (onAfter) {
-            await onAfter(data, previous, 'initial');
+            await onAfter(data, previous, 'initial', result);
         }
 
         if (window.UndoManager && previous) {
@@ -337,12 +337,12 @@ class ApiManager {
             };
 
             const hacer = async () => {
-                await this.patch(endpoint, data);
-                if (onAfter) await onAfter(data, previous, 'do');
+                const hecho = await this.patch(endpoint, data);
+                if (onAfter) await onAfter(data, previous, 'do', hecho);
             };
             const deshacer = async () => {
-                await this.patch(endpoint, buildRevert());
-                if (onAfter) await onAfter(buildRevert(), previous, 'undo');
+                const revertido = await this.patch(endpoint, buildRevert());
+                if (onAfter) await onAfter(buildRevert(), previous, 'undo', revertido);
             };
             window.UndoManager.record({ do: hacer, undo: deshacer, label: label || `PATCH ${endpoint}` });
         }

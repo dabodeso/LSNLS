@@ -10,8 +10,10 @@ public class ConcursanteEmitidoOpcionDTO {
     private Integer numeroConcursante;
     private String nombre;
     private String lugar;
-    private String xusoker;
     private String valoracionFinal;
+    private String duracion;
+    private String momentosDestacados;
+    private String foto;
     private String programaCodigo;
     private LocalDate fechaEmisionPrograma;
     private Integer ordenEscaleta;

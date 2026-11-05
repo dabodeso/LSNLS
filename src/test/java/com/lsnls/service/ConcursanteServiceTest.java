@@ -45,6 +45,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -280,7 +281,7 @@ class ConcursanteServiceTest {
         assertEquals(8, result.getNumeroPrograma());
         assertEquals(7, result.getNumeroConcursante());
         assertEquals(1, result.getOrdenEscaleta());
-        assertEquals("programado", result.getEstado());
+        assertEquals("grabado", result.getEstado());
     }
 
     @Test
@@ -316,7 +317,7 @@ class ConcursanteServiceTest {
         assertEquals(8, result.getNumeroPrograma());
         assertEquals(7, result.getNumeroConcursante());
         assertEquals(1, result.getOrdenEscaleta());
-        assertEquals("programado", result.getEstado());
+        assertEquals("editado", result.getEstado());
     }
 
     @Test
@@ -584,7 +585,7 @@ class ConcursanteServiceTest {
         ConcursanteDTO result = concursanteService.asignarAPrograma(1L, 8L);
 
         assertEquals(2, result.getOrdenEscaleta());
-        assertEquals("programado", result.getEstado());
+        assertEquals("grabado", result.getEstado());
     }
 
     @Test
@@ -678,25 +679,25 @@ class ConcursanteServiceTest {
     @Test
     void findConcursantesSinProgramaPaginated_usaLaConsultaQueFiltraPorEstado() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, null, null, null))
+        when(concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, null, null, null, null))
             .thenReturn(new PageImpl<>(Collections.singletonList(concursanteBase())));
 
         Page<ConcursanteDTO> result = concursanteService.findConcursantesSinProgramaPaginated(pageable, null);
 
         assertEquals(1, result.getTotalElements());
-        verify(concursanteRepository).findDisponiblesParaProgramaWithSearch(pageable, null, null, null);
+        verify(concursanteRepository).findDisponiblesParaProgramaWithSearch(pageable, null, null, null, null);
     }
 
     @Test
     void findConcursantesSinProgramaPaginated_filtraPorEstadoEditado() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, null, "editado", null))
+        when(concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, null, "editado", null, null))
             .thenReturn(new PageImpl<>(Collections.singletonList(concursanteBase())));
 
         Page<ConcursanteDTO> result = concursanteService.findConcursantesSinProgramaPaginated(pageable, null, "EDITADO");
 
         assertEquals(1, result.getTotalElements());
-        verify(concursanteRepository).findDisponiblesParaProgramaWithSearch(pageable, null, "editado", null);
+        verify(concursanteRepository).findDisponiblesParaProgramaWithSearch(pageable, null, "editado", null, null);
     }
 
     @Test
@@ -705,7 +706,7 @@ class ConcursanteServiceTest {
         Concursante emitidoOtroPrograma = concursanteBase();
         emitidoOtroPrograma.setEstado("emitido");
         emitidoOtroPrograma.setNumeroPrograma(1);
-        when(concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, "emitido", "emitido", 2))
+        when(concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, "emitido", null, 2, SalidasConcursante.UNA))
             .thenReturn(new PageImpl<>(Collections.singletonList(emitidoOtroPrograma)));
 
         Page<ConcursanteDTO> result = concursanteService.findConcursantesSinProgramaPaginated(
@@ -713,7 +714,36 @@ class ConcursanteServiceTest {
 
         assertEquals(1, result.getTotalElements());
         assertEquals("emitido", result.getContent().get(0).getEstado());
-        verify(concursanteRepository).findDisponiblesParaProgramaWithSearch(pageable, "emitido", "emitido", 2);
+        verify(concursanteRepository).findDisponiblesParaProgramaWithSearch(
+            pageable, "emitido", null, 2, SalidasConcursante.UNA);
+        verify(concursanteRepository, never()).save(any());
+    }
+
+    @Test
+    void filtroEmitidoYRepetidoCuentanSalidasYNoCambianElEstadoGuardado() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Concursante unaSalida = concursanteBase();
+        unaSalida.setEstado("editado");
+        Concursante variasSalidas = concursanteBase();
+        variasSalidas.setId(2L);
+        variasSalidas.setEstado("emitido");
+        when(concursanteRepository.findDisponiblesParaProgramaWithSearch(pageable, null, null, 4, SalidasConcursante.UNA))
+            .thenReturn(new PageImpl<>(Collections.singletonList(unaSalida)));
+        when(concursanteRepository.findDisponiblesParaRepetido(pageable, null, null, 9L, SalidasConcursante.MAS))
+            .thenReturn(new PageImpl<>(Collections.singletonList(variasSalidas)));
+
+        Page<ConcursanteDTO> emitidos = concursanteService.findConcursantesSinProgramaPaginated(
+            pageable, null, "emitido", 4);
+        Page<ConcursanteDTO> repetidos = concursanteService.findDisponiblesParaRepetido(
+            pageable, null, "REPETIDO", 9L);
+
+        assertEquals("editado", emitidos.getContent().get(0).getEstado());
+        assertEquals("emitido", repetidos.getContent().get(0).getEstado());
+        verify(concursanteRepository).findDisponiblesParaProgramaWithSearch(
+            pageable, null, null, 4, SalidasConcursante.UNA);
+        verify(concursanteRepository).findDisponiblesParaRepetido(
+            pageable, null, null, 9L, SalidasConcursante.MAS);
+        verify(concursanteRepository, never()).save(any());
     }
 
     @Test
