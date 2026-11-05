@@ -106,6 +106,43 @@ class Utils {
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
 
+    // Escapa texto de la base antes de meterlo en innerHTML
+    static escapeHtml(texto) {
+        return String(texto == null ? '' : texto)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // Resalta todas las apariciones del término (sin distinguir mayúsculas).
+    // Escapa cada trozo por separado para no romper entidades ni ejecutar HTML.
+    // Si la búsqueda está vacía, devuelve el texto escapado y sin marcas.
+    static resaltarCoincidencias(texto, termino) {
+        const raw = texto == null ? '' : String(texto);
+        const busqueda = termino == null ? '' : String(termino);
+        if (!busqueda.trim()) return Utils.escapeHtml(raw);
+        const patron = busqueda.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        let regex;
+        try {
+            regex = new RegExp(patron, 'gi');
+        } catch (e) {
+            return Utils.escapeHtml(raw);
+        }
+        let html = '';
+        let last = 0;
+        for (const match of raw.matchAll(regex)) {
+            const index = match.index ?? 0;
+            html += Utils.escapeHtml(raw.slice(last, index));
+            html += `<mark>${Utils.escapeHtml(match[0])}</mark>`;
+            last = index + match[0].length;
+            if (match[0].length === 0) break;
+        }
+        html += Utils.escapeHtml(raw.slice(last));
+        return html;
+    }
+
     // Número de caracteres al final de la pregunta, pequeño y sin negrita
     static sufijoCaracteresPregunta(texto) {
         const t = texto == null ? '' : String(texto);

@@ -39,6 +39,9 @@ public class ProgramaService {
     @Autowired
     private ConcursanteRepository concursanteRepository;
 
+    /** Cubre el cálculo del código y el insert para que dos altas no reciban el mismo número. */
+    private final Object asignacionCodigoLock = new Object();
+
     public List<Programa> findAll() {
         return programaRepository.findAll();
     }
@@ -76,21 +79,20 @@ public class ProgramaService {
 
     public Programa create(Programa programa) {
         aplicarDuracionObjetivoPorDefecto(programa);
-        validarCodigoNuevo(programa.getCodigo());
         programa.actualizarEstado();
-        Programa guardado = programaRepository.save(programa);
-        asignarCodigoPorDefectoSiFalta(guardado);
-        return guardado;
+        return guardarNuevoConCodigo(programa);
     }
 
     public ProgramaDTO createFromDTO(ProgramaDTO programaDTO) {
         Programa programa = convertToEntity(programaDTO);
         aplicarDuracionObjetivoPorDefecto(programa);
-        validarCodigoNuevo(programa.getCodigo());
         programa.actualizarEstado();
-        Programa saved = programaRepository.save(programa);
-        asignarCodigoPorDefectoSiFalta(saved);
-        return convertToDTO(saved);
+        return convertToDTO(guardarNuevoConCodigo(programa));
+    }
+
+    /** Sugerencia para el formulario. El número definitivo se calcula otra vez al crear. */
+    public String siguienteCodigoSugerido() {
+        return String.valueOf(siguienteCodigoNumerico());
     }
 
     public Programa update(Long id, Programa programa) {
@@ -297,10 +299,53 @@ public class ProgramaService {
         }
     }
 
+    private Programa guardarNuevoConCodigo(Programa programa) {
+        synchronized (asignacionCodigoLock) {
+            asignarCodigoPorDefectoSiFalta(programa);
+            validarCodigoNuevo(programa.getCodigo());
+            return programaRepository.save(programa);
+        }
+    }
+
     private void asignarCodigoPorDefectoSiFalta(Programa programa) {
         if (programa.getCodigo() == null || programa.getCodigo().trim().isEmpty()) {
-            programa.setCodigo(String.valueOf(programa.getId()));
-            programaRepository.save(programa);
+            programa.setCodigo(String.valueOf(siguienteCodigoNumerico()));
+        }
+    }
+
+    /**
+     * Último código de emisión que es un entero, más uno.
+     * Ignora textos (APLAZADO, etc.). No consulta programas_repetidos.
+     */
+    private long siguienteCodigoNumerico() {
+        List<String> codigos = programaRepository.findAllCodigos();
+        long maximo = 0L;
+        if (codigos != null) {
+            for (String codigo : codigos) {
+                Long valor = codigoEntero(codigo);
+                if (valor != null && valor > maximo) {
+                    maximo = valor;
+                }
+            }
+        }
+        if (maximo == Long.MAX_VALUE) {
+            throw new IllegalArgumentException("No hay un número de programa disponible.");
+        }
+        return maximo + 1L;
+    }
+
+    private static Long codigoEntero(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        String normalizado = codigo.trim();
+        if (!normalizado.matches("[0-9]+")) {
+            return null;
+        }
+        try {
+            return Long.parseLong(normalizado);
+        } catch (NumberFormatException ex) {
+            return null;
         }
     }
 

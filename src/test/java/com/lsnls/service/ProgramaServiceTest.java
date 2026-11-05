@@ -20,6 +20,7 @@ import javax.persistence.TypedQuery;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -117,14 +118,62 @@ class ProgramaServiceTest {
     void create_asignaDuracionYCodigoPorDefecto() {
         when(configuracionService.getDuracionObjetivo()).thenReturn("45m");
         stubSaveConId();
+        when(programaRepository.findAllCodigos()).thenReturn(List.of("100", "446", "APLAZADO", "447x", " 12 "));
         Programa nuevo = new Programa();
         nuevo.setTemporada(2);
         nuevo.setDuracionObjetivo(null);
 
         Programa saved = service.create(nuevo);
         assertEquals("45m", saved.getDuracionObjetivo());
-        assertEquals("1", saved.getCodigo());
+        assertEquals("447", saved.getCodigo());
+        assertEquals(1L, saved.getId());
         assertEquals(Programa.EstadoPrograma.borrador, saved.getEstado());
+    }
+
+    @Test
+    void create_sinCodigosNumericos_empiezaEnUno() {
+        when(programaRepository.save(any(Programa.class))).thenAnswer(inv -> {
+            Programa p = inv.getArgument(0);
+            p.setId(99L);
+            return p;
+        });
+        when(programaRepository.findAllCodigos()).thenReturn(Arrays.asList("APLAZADO", "REPE", " ", null));
+
+        Programa saved = service.create(new Programa());
+        assertEquals("1", saved.getCodigo());
+        assertEquals(99L, saved.getId());
+    }
+
+    @Test
+    void create_respetaCodigoManualAunqueNoSeaNumerico() {
+        stubSaveConId();
+        Programa nuevo = new Programa();
+        nuevo.setCodigo("APLAZADO");
+        nuevo.setDuracionObjetivo("1h");
+        when(programaRepository.findByCodigo("APLAZADO")).thenReturn(Optional.empty());
+
+        Programa saved = service.create(nuevo);
+        assertEquals("APLAZADO", saved.getCodigo());
+        verify(programaRepository, never()).findAllCodigos();
+    }
+
+    @Test
+    void createFromDTO_sinCodigo_asignaSiguiente() {
+        when(configuracionService.getDuracionObjetivo()).thenReturn("45m");
+        stubSaveConId();
+        when(programaRepository.findAllCodigos()).thenReturn(List.of("446"));
+        ProgramaDTO dto = new ProgramaDTO();
+        dto.setCodigo("  ");
+        dto.setTemporada(3);
+
+        ProgramaDTO saved = service.createFromDTO(dto);
+        assertEquals("447", saved.getCodigo());
+    }
+
+    @Test
+    void siguienteCodigoSugerido_ignoraTextos() {
+        when(programaRepository.findAllCodigos()).thenReturn(List.of("446", "APLAZADO"));
+        assertEquals("447", service.siguienteCodigoSugerido());
     }
 
     @Test

@@ -1023,6 +1023,14 @@ td:has(textarea) {
     background-color: rgba(0, 123, 255, 0.1) !important;
 }
 
+/* Coincidencias del buscador dentro de la pregunta o la respuesta */
+mark {
+    background-color: #ffe566;
+    color: inherit;
+    font: inherit;
+    padding: 0 0.1em;
+}
+
 /* Recuento de caracteres al final del texto de la pregunta */
 .caracteres-pregunta {
     font-size: 0.72em;

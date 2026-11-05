@@ -49,6 +49,11 @@ public class ProgramaController {
         return ResponseEntity.ok(programaService.findAllPaginated(pageable));
     }
 
+    @GetMapping("/siguiente-codigo")
+    public ResponseEntity<Map<String, String>> siguienteCodigo() {
+        return ResponseEntity.ok(Map.of("codigo", programaService.siguienteCodigoSugerido()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id) {
         try {

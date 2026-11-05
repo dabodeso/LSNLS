@@ -140,6 +140,22 @@
             font-size: 0.8em;
             line-height: 1.2;
         }
+        #lista-concursantes-disponibles .foto-selector {
+            display: block;
+            width: 112px;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        #lista-concursantes-disponibles .celda-momentos {
+            white-space: pre-wrap;
+            min-width: 180px;
+            max-width: 320px;
+            font-size: 0.85rem;
+        }
+        #lista-concursantes-disponibles td {
+            vertical-align: middle;
+        }
         
         /* Estilos específicos para campos editables en programas */
         .table-excel td input.campo-editable,
@@ -327,6 +343,128 @@
         .concursantes-table {
             position: relative;
         }
+
+        #modal-programacion-semana .modal-dialog {
+            max-width: min(1480px, calc(100vw - 1.5rem));
+        }
+        .programacion-semana-controles {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .programacion-semana-controles .form-control {
+            width: 88px;
+            text-align: center;
+            font-weight: 700;
+        }
+        .hoja-semana-scroll {
+            overflow: auto;
+            max-height: calc(100vh - 240px);
+            background: #e9eef5;
+            border: 1px solid #d5deea;
+            border-radius: 6px;
+            padding: 12px;
+        }
+        .hoja-semana {
+            background: #fff;
+            color: #111;
+            font-family: Arial, Helvetica, sans-serif;
+            width: 1480px;
+            padding: 8px 8px 16px;
+        }
+        .hoja-semana-banner {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 6px;
+        }
+        .hoja-semana-banner span {
+            background: #1d4e9e;
+            color: #fff;
+            font-weight: 800;
+            font-size: 28px;
+            letter-spacing: 0.04em;
+            padding: 8px 28px;
+            min-width: 320px;
+            text-align: center;
+        }
+        .hoja-semana table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 12px;
+        }
+        .hoja-semana td {
+            border: 1px solid #1a1a1a;
+            padding: 3px 4px;
+            vertical-align: middle;
+            overflow-wrap: anywhere;
+        }
+        .hoja-semana tr.fila-pgm td {
+            background: #1a468f;
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            border-color: #163a78;
+            padding: 5px 8px;
+        }
+        .hoja-semana tr.fila-pgm td.pgm-repe {
+            background: #fff;
+            color: #7a1c1c;
+            font-size: 15px;
+        }
+        .hoja-semana tr.fila-pgm td.pgm-nota {
+            font-weight: 600;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .hoja-semana td.dia-fecha {
+            background: #2a62c4;
+            color: #fff;
+            text-align: right;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+        .hoja-semana .mayus { text-transform: uppercase; }
+        .hoja-semana .nombre {
+            font-weight: 700;
+            white-space: pre-line;
+            text-transform: uppercase;
+        }
+        .hoja-semana .edad,
+        .hoja-semana .rrss,
+        .hoja-semana .ocupacion {
+            white-space: pre-line;
+        }
+        .hoja-semana .celda-momentos {
+            white-space: pre-wrap;
+            font-size: 11px;
+            line-height: 1.25;
+        }
+        .hoja-semana .foto-hoja {
+            width: 100%;
+            height: 72px;
+            object-fit: cover;
+            display: block;
+            background: #f3f3f3;
+        }
+        .hoja-semana .sin-dia,
+        .hoja-semana .sin-conc {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 8px;
+        }
+        .hoja-semana .num,
+        .hoja-semana .edad,
+        .hoja-semana .premio,
+        .hoja-semana .duracion,
+        .hoja-semana .factor,
+        .hoja-semana .val {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -338,6 +476,9 @@
                 <h2 class="mb-0">Gestión de Programas</h2>
                 <button class="btn btn-primary" onclick="mostrarFormularioPrograma()">
                     <i class="fas fa-plus"></i> Nuevo Programa
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="abrirProgramacionSemana()">
+                    <i class="fas fa-calendar-week"></i> Programación de la semana
                 </button>
             </div>
             <div class="d-flex align-items-center gap-1">
@@ -460,7 +601,7 @@
                                 <label class="form-label">Código de programa:</label>
                                 <input type="text" class="form-control" id="codigo-programa" maxlength="32"
                                        placeholder="Automático si se deja vacío">
-                                <small class="form-text text-muted">Identificador editable y único. El ID interno no cambia.</small>
+                                <small class="form-text text-muted" id="codigo-programa-ayuda">Si lo dejas vacío, al guardar se asigna el último número de programa + 1. El ID interno no cambia.</small>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Temporada:</label>
@@ -627,8 +768,44 @@
         </div>
     </div>
 
+        <div class="modal fade" id="modal-programacion-semana" tabindex="-1" aria-labelledby="modal-programacion-semana-titulo">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header flex-wrap gap-2">
+                        <h5 class="modal-title" id="modal-programacion-semana-titulo">Programación de la semana</h5>
+                        <div class="programacion-semana-controles ms-auto me-3">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-semana-anterior" onclick="cambiarSemanaProgramacion(-1)" title="Semana anterior">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <label class="mb-0 small text-muted" for="programacion-semana-numero">Semana</label>
+                            <input type="number" class="form-control form-control-sm" id="programacion-semana-numero" min="1" value="1" onchange="fijarSemanaProgramacion(this.value)">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-semana-siguiente" onclick="cambiarSemanaProgramacion(1)" title="Semana siguiente">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <span class="small fw-semibold" id="programacion-semana-rango"></span>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small mb-2" id="programacion-semana-ayuda"></p>
+                        <div id="programacion-semana-estado" class="mb-2"></div>
+                        <div class="hoja-semana-scroll">
+                            <div id="hoja-programacion-semana" class="hoja-semana"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="btn-descargar-programacion-semana" onclick="descargarImagenProgramacionSemana()">
+                            <i class="fas fa-image"></i> Generar imagen
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="js/api.js?v=20260821-3"></script>
     <script src="js/auth.js?v=20260915-verif-consulta"></script>
@@ -637,7 +814,7 @@
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/programas.js?v=20261030-repetidos2"></script>
+    <script src="js/programas.js?v=20261105-semana2"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();

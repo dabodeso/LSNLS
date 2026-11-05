@@ -425,6 +425,8 @@ const PreguntasManager = {
         
         tbody.innerHTML = '';
 
+        const terminoBusqueda = document.getElementById('filtro-texto')?.value || '';
+
         // Las preguntas ya vienen filtradas y ordenadas del servidor
         this.preguntas.forEach((pregunta, index) => {
             // Log para verificar la codificación en el renderizado
@@ -444,8 +446,8 @@ const PreguntasManager = {
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'nivel', this)"><span class="${this.getNivelColor(pregunta.nivel)}">${Utils.formatearNivel(pregunta.nivel)}</span></td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'tematica', this)">${pregunta.tematica ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'subtema', this)">${(pregunta.subtema ?? '').split(',').map(s => s.trim()).filter(Boolean).join(', ')}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'pregunta', this)" style="white-space:pre-line; word-break:break-word; max-width:300px;">${pregunta.pregunta ?? ''}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'respuesta', this)">${pregunta.respuesta ?? ''}</td>
+                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'pregunta', this)" style="white-space:pre-line; word-break:break-word; max-width:300px;">${Utils.resaltarCoincidencias(pregunta.pregunta ?? '', terminoBusqueda)}</td>
+                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'respuesta', this)">${Utils.resaltarCoincidencias(pregunta.respuesta ?? '', terminoBusqueda)}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'datosExtra', this)">${pregunta.datosExtra ?? ''}</td>
                 <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'fuentes', this)">${this.linkify(pregunta.fuentes ?? '')}</td>
                 <td>${pregunta.verificacion ?? ''}</td>
@@ -1036,6 +1038,15 @@ const PreguntasManager = {
         return this.ordenarEstadosPregunta(estados);
     },
 
+    restaurarTextoCelda(td, campo, valor) {
+        if (campo === 'pregunta' || campo === 'respuesta') {
+            const termino = document.getElementById('filtro-texto')?.value || '';
+            td.innerHTML = Utils.resaltarCoincidencias(valor ?? '', termino);
+            return;
+        }
+        td.innerHTML = valor ?? '';
+    },
+
     async editarCelda(id, campo, td) {
         // Evitar múltiples inputs
         if (td.querySelector('input,select,textarea')) return;
@@ -1120,7 +1131,7 @@ const PreguntasManager = {
             input.onblur = async () => await this.guardarCelda(id, campo, input, td, valorOriginal);
             input.onkeydown = async (e) => {
                 if (e.key === 'Escape') {
-                    td.innerHTML = valorOriginal;
+                    this.restaurarTextoCelda(td, campo, valorOriginal);
                 }
             };
         } else {
@@ -1129,7 +1140,7 @@ const PreguntasManager = {
                 if (e.key === 'Enter' && input.tagName !== 'TEXTAREA') {
                     input.blur();
                 } else if (e.key === 'Escape') {
-                    td.innerHTML = valorOriginal;
+                    this.restaurarTextoCelda(td, campo, valorOriginal);
                 }
             };
         }
@@ -1146,7 +1157,7 @@ const PreguntasManager = {
         }
         // Permitir guardar aunque el valor original sea vacío o null
         if ((valorOriginal ?? '') === (nuevoValor ?? '')) {
-            td.innerHTML = valorOriginal;
+            this.restaurarTextoCelda(td, campo, valorOriginal);
             return;
         }
         
@@ -1266,7 +1277,7 @@ const PreguntasManager = {
             
         } catch (e) {
             console.error('❌ [FRONTEND] Error:', e.message);
-            td.innerHTML = valorOriginal;
+            this.restaurarTextoCelda(td, campo, valorOriginal);
             Toastify({
                 text: 'Error al guardar: ' + e.message,
                 duration: 3000,

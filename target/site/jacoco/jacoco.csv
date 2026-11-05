@@ -7,7 +7,7 @@ LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.controller,Jor
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.controller,PreguntaController,1671,0,128,0,362,0,96,0,29,0
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.controller,ConcursanteController,538,0,40,0,125,0,36,0,16,0
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.controller,TematicaController,0,265,2,10,0,65,2,11,0,7
-LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.controller,ProgramaController,288,0,22,0,67,0,20,0,9,0
+LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.controller,ProgramaController,7,288,2,20,1,67,3,18,1,9
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.controller,ProgramaRepetidoController,87,0,0,0,20,0,6,0,6,0
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.controller,ComboController,55,1197,22,120,10,245,21,69,1,18
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.controller,TemasController,0,268,1,7,0,55,1,11,0,8
@@ -46,7 +46,7 @@ LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.service,Backup
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.service,AuthService,5,225,0,10,0,52,1,12,1,7
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.service,ConcursanteService,2677,0,360,0,563,0,261,0,74,0
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.service,ExcelExportService.Estilos,122,0,0,0,41,0,5,0,5,0
-LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.service,ProgramaService,842,0,106,0,211,0,79,0,22,0
+LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.service,ProgramaService,89,820,29,91,21,208,23,67,0,26
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.service,PreguntaService,906,1903,190,176,175,410,180,72,33,36
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.service,SessionValidationService.SecurityLevel,0,44,0,0,0,5,0,1,0,1
 LSNLS - Sistema de Gestión de Preguntas y Concursantes,com.lsnls.dto,ApiResponse,0,21,0,0,0,3,0,3,0,3

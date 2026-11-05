@@ -373,10 +373,7 @@ const CuestionariosManager = {
         if (filtros.estado) params.append('estado', filtros.estado);
         if (filtros.tematica) params.append('tematica', filtros.tematica);
         if (filtros.subtema) params.append('subtema', filtros.subtema);
-        const idNumerico = /^\d+$/.test(filtros.filtroId || '')
-            ? filtros.filtroId
-            : (/^\d+$/.test((filtros.busqueda || '').trim()) ? filtros.busqueda.trim() : '');
-        if (idNumerico) params.append('id', idNumerico);
+        if (/^\d+$/.test(filtros.filtroId || '')) params.append('id', filtros.filtroId);
         else if (filtros.busqueda) params.append('texto', filtros.busqueda);
     },
 
@@ -421,21 +418,19 @@ const CuestionariosManager = {
         if (filtros.filtroId) {
             if (!/^\d+$/.test(filtros.filtroId) || String(cuestionario.id) !== filtros.filtroId) return false;
         }
-        if (filtros.busqueda && /^\d+$/.test(filtros.busqueda.trim())) {
-            return String(cuestionario.id) === filtros.busqueda.trim();
-        }
         return true;
     },
 
     async sigueEnFiltro(cuestionario, filtros) {
         if (!filtros.hayFiltros) return true;
         if (!this.cumpleFiltrosBasicos(cuestionario, filtros)) return false;
-        if (!filtros.subtema && !(filtros.busqueda && !/^\d+$/.test(filtros.busqueda.trim()))) return true;
+        const busqueda = (filtros.busqueda || '').trim();
+        if (!filtros.subtema && !busqueda) return true;
         const params = new URLSearchParams({ page: 0, size: 100 });
         if (filtros.estado) params.append('estado', filtros.estado);
         if (filtros.tematica) params.append('tematica', filtros.tematica);
         if (filtros.subtema) params.append('subtema', filtros.subtema);
-        if (filtros.busqueda && !/^\d+$/.test(filtros.busqueda.trim())) params.append('texto', filtros.busqueda);
+        if (busqueda) params.append('texto', busqueda);
         const response = await fetch(`/api/cuestionarios/filtrar?${params}`, { headers: authManager.getAuthHeaders() });
         if (!response.ok) return true;
         const data = await response.json();
@@ -528,6 +523,7 @@ const CuestionariosManager = {
     },
 
     renderCuestionarioEnTbody(tbody, c) {
+        const terminoBusqueda = document.getElementById('buscar-cuestionario')?.value || '';
         const tematicasGestionadas = this.tematicasGestionadas || [];
             const niveles = ['1LS','2NLS','3LS','4NLS'];
             const preguntasPorSlot = this.mapearPreguntasPorSlot(c);
@@ -603,8 +599,8 @@ const CuestionariosManager = {
                 if (p) {
                     filasPreguntas += `<tr data-id="${p.id}" data-nivel="${slotNivel}" style="cursor:pointer;">
                         <td><span class='${CuestionariosManager.getNivelColor ? CuestionariosManager.getNivelColor(p.nivel) : ''}'>${Utils.formatearNivel(slotNivel)}</span></td>
-                        <td class="fw-bold">${p.pregunta ?? ''}${Utils.sufijoCaracteresPregunta(p.pregunta)}</td>
-                        <td class="fw-bold">${p.respuesta ?? ''}</td>
+                        <td class="fw-bold">${Utils.resaltarCoincidencias(p.pregunta ?? '', terminoBusqueda)}${Utils.sufijoCaracteresPregunta(p.pregunta)}</td>
+                        <td class="fw-bold">${Utils.resaltarCoincidencias(p.respuesta ?? '', terminoBusqueda)}</td>
                         <td class="fw-bold">${p.datosExtra ?? ''}</td>
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCuestionario(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
                     </tr>`;
@@ -966,6 +962,7 @@ async function buscarPreguntasModal(page = 0) {
 
 function renderPreguntasModal(preguntas, currentPage, totalPages) {
     const tbody = document.getElementById('tbody-selector-pregunta');
+    const terminoBusqueda = document.getElementById('buscador-texto')?.value || '';
     if (!tbody) return;
 
     tbody.innerHTML = '';
@@ -992,8 +989,8 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
             <td>${pregunta.id}</td>
             <td colspan="4">
                 <div class="pregunta-item">
-                    <div class="pregunta-texto">${pregunta.pregunta}${Utils.sufijoCaracteresPregunta(pregunta.pregunta)}</div>
-                    <div class="respuesta-texto"><strong>Respuesta:</strong> ${pregunta.respuesta}</div>
+                    <div class="pregunta-texto">${Utils.resaltarCoincidencias(pregunta.pregunta ?? '', terminoBusqueda)}${Utils.sufijoCaracteresPregunta(pregunta.pregunta)}</div>
+                    <div class="respuesta-texto"><strong>Respuesta:</strong> ${Utils.resaltarCoincidencias(pregunta.respuesta ?? '', terminoBusqueda)}</div>
                     <div class="pregunta-meta">
                         <small class="text-muted">
                             Temática: ${pregunta.tematica || 'N/A'} | 

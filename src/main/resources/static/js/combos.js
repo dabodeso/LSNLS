@@ -387,10 +387,7 @@ const CombosManager = {
         if (filtros.tipo) params.append('tipo', filtros.tipo);
         if (filtros.tematica) params.append('tematica', filtros.tematica);
         if (filtros.subtema) params.append('subtema', filtros.subtema);
-        const idNumerico = /^\d+$/.test(filtros.filtroId || '')
-            ? filtros.filtroId
-            : (/^\d+$/.test((filtros.busqueda || '').trim()) ? filtros.busqueda.trim() : '');
-        if (idNumerico) params.append('id', idNumerico);
+        if (/^\d+$/.test(filtros.filtroId || '')) params.append('id', filtros.filtroId);
         else if (filtros.busqueda) params.append('texto', filtros.busqueda);
     },
 
@@ -436,22 +433,20 @@ const CombosManager = {
         if (filtros.filtroId) {
             if (!/^\d+$/.test(filtros.filtroId) || String(combo.id) !== filtros.filtroId) return false;
         }
-        if (filtros.busqueda && /^\d+$/.test(filtros.busqueda.trim())) {
-            return String(combo.id) === filtros.busqueda.trim();
-        }
         return true;
     },
 
     async sigueEnFiltro(combo, filtros) {
         if (!filtros.hayFiltros) return true;
         if (!this.cumpleFiltrosBasicos(combo, filtros)) return false;
-        if (!filtros.subtema && !(filtros.busqueda && !/^\d+$/.test(filtros.busqueda.trim()))) return true;
+        const busqueda = (filtros.busqueda || '').trim();
+        if (!filtros.subtema && !busqueda) return true;
         const params = new URLSearchParams({ page: 0, size: 100 });
         if (filtros.estado) params.append('estado', filtros.estado);
         if (filtros.tipo) params.append('tipo', filtros.tipo);
         if (filtros.tematica) params.append('tematica', filtros.tematica);
         if (filtros.subtema) params.append('subtema', filtros.subtema);
-        if (filtros.busqueda && !/^\d+$/.test(filtros.busqueda.trim())) params.append('texto', filtros.busqueda);
+        if (busqueda) params.append('texto', busqueda);
         const response = await fetch(`/api/combos/filtrar?${params}`, { headers: authManager.getAuthHeaders() });
         if (!response.ok) return true;
         const data = await response.json();
@@ -484,6 +479,7 @@ const CombosManager = {
     },
 
     renderComboEnTbody(tbody, c) {
+            const terminoBusqueda = document.getElementById('buscar-combo')?.value || '';
             const niveles = ['PM1','PM2','PM3'];
             const preguntasPorSlot = {};
             const preguntasAsignadas = new Set(); // Para controlar qué preguntas ya se han asignado
@@ -640,8 +636,8 @@ const CombosManager = {
                                        onclick="event.stopPropagation();">
                             </div>
                         </td>
-                        <td class="fw-bold">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${p.pregunta ?? ''}</span>${Utils.sufijoCaracteresPregunta(p.pregunta)}</td>
-                        <td class="fw-bold">${p.respuesta ?? ''}</td>
+                        <td class="fw-bold">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${Utils.resaltarCoincidencias(p.pregunta ?? '', terminoBusqueda)}</span>${Utils.sufijoCaracteresPregunta(p.pregunta)}</td>
+                        <td class="fw-bold">${Utils.resaltarCoincidencias(p.respuesta ?? '', terminoBusqueda)}</td>
                         <td class="fw-bold">${p.datosExtra ?? ''}</td>
                         <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCombo(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
                     </tr>`;
@@ -1648,6 +1644,7 @@ async function buscarPreguntasModal(page = 0) {
 // Función para renderizar las preguntas en el modal
 function renderizarPreguntasModal(preguntas, totalPages, currentPage) {
     const tbody = document.getElementById('tbody-selector-pregunta');
+    const terminoBusqueda = document.getElementById('buscador-texto')?.value || '';
     if (!tbody) return;
     
     tbody.innerHTML = '';
@@ -1669,8 +1666,8 @@ function renderizarPreguntasModal(preguntas, totalPages, currentPage) {
             <td>${pregunta.id}</td>
             <td colspan="4">
                 <div class="pregunta-item">
-                    <div class="pregunta-texto fw-bold">${pregunta.pregunta}${Utils.sufijoCaracteresPregunta(pregunta.pregunta)}</div>
-                    <div class="respuesta-texto"><strong>Respuesta:</strong> ${pregunta.respuesta}</div>
+                    <div class="pregunta-texto fw-bold">${Utils.resaltarCoincidencias(pregunta.pregunta ?? '', terminoBusqueda)}${Utils.sufijoCaracteresPregunta(pregunta.pregunta)}</div>
+                    <div class="respuesta-texto"><strong>Respuesta:</strong> ${Utils.resaltarCoincidencias(pregunta.respuesta ?? '', terminoBusqueda)}</div>
                     <div class="pregunta-meta">
                         <small class="text-muted">
                             Temática: ${pregunta.tematica || 'N/A'} | 
@@ -1745,6 +1742,7 @@ function limpiarSeleccionPM(pm) {
 
 function renderPreguntasModal(preguntas, currentPage, totalPages) {
     const tbody = document.getElementById('tbody-selector-pregunta');
+    const terminoBusqueda = document.getElementById('buscador-texto')?.value || '';
     tbody.innerHTML = '';
     
     if (!preguntas || preguntas.length === 0) {
@@ -1763,8 +1761,8 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
         // Crear el botón de forma más segura usando addEventListener en lugar de onclick
         tr.innerHTML = `
             <td>${p.id}</td>
-            <td class="fw-bold">${p.pregunta}${Utils.sufijoCaracteresPregunta(p.pregunta)}</td>
-            <td>${p.respuesta}</td>
+            <td class="fw-bold">${Utils.resaltarCoincidencias(p.pregunta ?? '', terminoBusqueda)}${Utils.sufijoCaracteresPregunta(p.pregunta)}</td>
+            <td>${Utils.resaltarCoincidencias(p.respuesta ?? '', terminoBusqueda)}</td>
             <td>${p.tematica}</td>
             <td><span class="${CombosManager.getNivelColor(p.nivel)}">${Utils.formatearNivel(p.nivel)}</span></td>
             <td>
