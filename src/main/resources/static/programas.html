@@ -219,9 +219,22 @@
             width: 0;
             height: 0;
         }
+        .concursantes-table {
+            color: #212529;
+            background: #fff;
+        }
         .concursantes-table-body-wrapper {
             overflow-x: auto;
-            overflow-y: hidden;
+            overflow-y: visible;
+            height: auto;
+            max-height: none;
+        }
+        .concursantes-table-body-wrapper .table-excel,
+        .concursantes-table-body-wrapper tbody,
+        .concursantes-table-body-wrapper tr,
+        .concursantes-table-body-wrapper td {
+            color: #212529;
+            visibility: visible;
         }
         .concursantes-table-body-wrapper::-webkit-scrollbar {
             height: 10px;
@@ -370,62 +383,72 @@
             background: #fff;
             color: #111;
             font-family: Arial, Helvetica, sans-serif;
-            width: 1480px;
-            padding: 8px 8px 16px;
+            width: 1120px;
+            padding: 4px 4px 8px;
         }
         .hoja-semana-banner {
             display: flex;
-            justify-content: flex-end;
-            margin-bottom: 6px;
+            justify-content: center;
+            margin-bottom: 4px;
         }
         .hoja-semana-banner span {
             background: #1d4e9e;
             color: #fff;
             font-weight: 800;
-            font-size: 28px;
+            font-size: 18px;
             letter-spacing: 0.04em;
-            padding: 8px 28px;
-            min-width: 320px;
+            padding: 4px 12px;
+            width: 100%;
             text-align: center;
+        }
+        .hoja-semana tr.fila-concursante td {
+            background: #fff;
+            color: #111;
         }
         .hoja-semana table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            font-size: 12px;
+            font-size: 9px;
         }
         .hoja-semana td {
             border: 1px solid #1a1a1a;
-            padding: 3px 4px;
+            padding: 1px 2px;
             vertical-align: middle;
             overflow-wrap: anywhere;
+            line-height: 1.15;
         }
         .hoja-semana tr.fila-pgm td {
             background: #1a468f;
             color: #fff;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 11px;
             border-color: #163a78;
-            padding: 5px 8px;
+            padding: 2px 4px;
         }
         .hoja-semana tr.fila-pgm td.pgm-repe {
             background: #fff;
             color: #7a1c1c;
-            font-size: 15px;
+            font-size: 11px;
         }
-        .hoja-semana tr.fila-pgm td.pgm-nota {
+        .hoja-semana tr.fila-pgm td.pgm-nota,
+        .hoja-semana tr.fila-pgm td.pgm-creditos {
             font-weight: 600;
-            font-size: 12px;
+            font-size: 9px;
             white-space: pre-wrap;
         }
-        .hoja-semana td.dia-fecha {
+        .hoja-semana td.dia-fecha,
+        .hoja-semana td.pgm-total {
             background: #2a62c4;
             color: #fff;
             text-align: right;
-            font-size: 16px;
+            font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.01em;
             white-space: nowrap;
+        }
+        .hoja-semana td.pgm-total {
+            font-weight: 800;
         }
         .hoja-semana .mayus { text-transform: uppercase; }
         .hoja-semana .nombre {
@@ -440,14 +463,20 @@
         }
         .hoja-semana .celda-momentos {
             white-space: pre-wrap;
-            font-size: 11px;
-            line-height: 1.25;
+            font-size: 8px;
+            line-height: 1.15;
+        }
+        .hoja-semana td.celda-foto {
+            padding: 1px;
+            width: 168px;
         }
         .hoja-semana .foto-hoja {
-            width: 100%;
-            height: 72px;
-            object-fit: cover;
             display: block;
+            width: 160px;
+            height: 90px;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            object-position: center;
             background: #f3f3f3;
         }
         .hoja-semana .sin-dia,
@@ -476,6 +505,9 @@
                 <h2 class="mb-0">Gestión de Programas</h2>
                 <button class="btn btn-primary" onclick="mostrarFormularioPrograma()">
                     <i class="fas fa-plus"></i> Nuevo Programa
+                </button>
+                <button type="button" class="btn btn-outline-primary" id="btn-nuevo-repetido" onclick="mostrarFormularioRepetido()">
+                    <i class="fas fa-redo"></i> Nuevo repetido
                 </button>
                 <button type="button" class="btn btn-outline-primary" onclick="abrirProgramacionSemana()">
                     <i class="fas fa-calendar-week"></i> Programación de la semana
@@ -629,6 +661,144 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-primary" onclick="guardarPrograma()">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para crear un programa repetido -->
+        <div class="modal fade" id="modal-repetido" tabindex="-1">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Nuevo programa repetido</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="form-repetido" onsubmit="return false;">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label" for="repe-tipo">Tipo</label>
+                                    <select class="form-select" id="repe-tipo" onchange="sugerirCodigoRepetido()">
+                                        <option value="REPE" selected>REPE</option>
+                                        <option value="LB">LB</option>
+                                        <option value="VB">VB</option>
+                                        <option value="VERANO">VERANO</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label" for="repe-codigo">Código</label>
+                                    <input type="text" class="form-control" id="repe-codigo" maxlength="32" placeholder="Automático si se deja vacío">
+                                    <small class="form-text text-muted" id="repe-codigo-ayuda">Si lo dejas vacío, se asigna el último número de este tipo en la temporada, más uno.</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label" for="repe-temporada">Temporada</label>
+                                    <input type="number" class="form-control" id="repe-temporada" min="1" required onchange="sugerirCodigoRepetido()">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label" for="repe-fecha">Fecha de emisión</label>
+                                    <input type="date" class="form-control" id="repe-fecha">
+                                    <small class="form-text text-muted">Puede dejarse en blanco.</small>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 mb-2">Cómo armar el repetido</div>
+                            <div class="btn-group mb-3" role="group" aria-label="Origen del repetido">
+                                <input type="radio" class="btn-check" name="repe-modo" id="repe-modo-programa" autocomplete="off" checked onchange="cambiarModoRepetido('programa')">
+                                <label class="btn btn-outline-primary" for="repe-modo-programa">Desde un programa emitido</label>
+                                <input type="radio" class="btn-check" name="repe-modo" id="repe-modo-concursantes" autocomplete="off" onchange="cambiarModoRepetido('concursantes')">
+                                <label class="btn btn-outline-primary" for="repe-modo-concursantes">Desde concursantes</label>
+                            </div>
+
+                            <div id="repe-panel-programa">
+                                <p class="text-muted small mb-2">Se copian los concursantes del programa emitido, en el orden de la escaleta. Como máximo 3.</p>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-3">
+                                        <label class="form-label" for="repe-filtro-fecha">Fecha de emisión</label>
+                                        <input type="date" class="form-control form-control-sm" id="repe-filtro-fecha">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label" for="repe-filtro-codigo">Código de programa</label>
+                                        <input type="text" class="form-control form-control-sm" id="repe-filtro-codigo" maxlength="32">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label" for="repe-filtro-valoracion-programa">Valoración mínima</label>
+                                        <select class="form-select form-select-sm" id="repe-filtro-valoracion-programa">
+                                            <option value="">Cualquiera</option>
+                                            <option value="1">1</option>
+                                            <option value="1+">1+</option>
+                                            <option value="2-">2-</option>
+                                            <option value="2">2</option>
+                                            <option value="2+">2+</option>
+                                            <option value="3-">3-</option>
+                                            <option value="3">3</option>
+                                            <option value="3+">3+</option>
+                                        </select>
+                                        <small class="form-text text-muted">Todos los concursantes del programa, al menos esta valoración.</small>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <button type="button" class="btn btn-sm btn-primary" id="btn-buscar-programas-repe" onclick="buscarProgramasParaRepetido()">Buscar</button>
+                                    </div>
+                                </div>
+                                <div id="repe-resultados-programas" class="border rounded p-2" style="max-height: 280px; overflow: auto;">
+                                    <span class="text-muted">Usa los filtros y pulsa Buscar.</span>
+                                </div>
+                            </div>
+
+                            <div id="repe-panel-concursantes" class="d-none">
+                                <p class="text-muted small mb-2">Concursantes de programas ya emitidos. El orden en que los marques es la escaleta (1, 2 y 3). Como máximo 3.</p>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-2">
+                                        <label class="form-label" for="repe-filtro-valoracion-conc">Valoración mínima</label>
+                                        <select class="form-select form-select-sm" id="repe-filtro-valoracion-conc">
+                                            <option value="">Cualquiera</option>
+                                            <option value="1">1</option>
+                                            <option value="1+">1+</option>
+                                            <option value="2-">2-</option>
+                                            <option value="2">2</option>
+                                            <option value="2+">2+</option>
+                                            <option value="3-">3-</option>
+                                            <option value="3">3</option>
+                                            <option value="3+">3+</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label" for="repe-filtro-xusoker">Xusóker</label>
+                                        <select class="form-select form-select-sm" id="repe-filtro-xusoker">
+                                            <option value="">Todos</option>
+                                            <option value="NO USÓ">NO USÓ</option>
+                                            <option value="CONTINÚE">CONTINÚE</option>
+                                            <option value="AL VERRÉS">AL VERRÉS</option>
+                                            <option value="RECICLA">RECICLA</option>
+                                            <option value="LLAMADA">LLAMADA</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label" for="repe-filtro-numero">Número</label>
+                                        <input type="number" class="form-control form-control-sm" id="repe-filtro-numero" min="1">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label" for="repe-filtro-ciudad">Ciudad</label>
+                                        <input type="text" class="form-control form-control-sm" id="repe-filtro-ciudad">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label" for="repe-filtro-nombre">Nombre</label>
+                                        <input type="text" class="form-control form-control-sm" id="repe-filtro-nombre">
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="button" class="btn btn-sm btn-primary" id="btn-buscar-concursantes-repe" onclick="buscarConcursantesParaRepetido()">Buscar</button>
+                                    </div>
+                                </div>
+                                <div id="repe-seleccion-concursantes" class="small mb-2"></div>
+                                <div id="repe-resultados-concursantes" class="border rounded p-2" style="max-height: 280px; overflow: auto;">
+                                    <span class="text-muted">Usa los filtros y pulsa Buscar.</span>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="btn-guardar-repetido" onclick="guardarRepetido()">Crear repetido</button>
                     </div>
                 </div>
             </div>
@@ -794,8 +964,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" id="btn-descargar-programacion-semana" onclick="descargarImagenProgramacionSemana()">
-                            <i class="fas fa-image"></i> Generar imagen
+                        <button type="button" class="btn btn-primary" id="btn-descargar-programacion-semana" onclick="descargarPdfProgramacionSemana()">
+                            <i class="fas fa-file-pdf"></i> Generar PDF
                         </button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     </div>
@@ -806,6 +976,7 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="js/api.js?v=20260821-3"></script>
     <script src="js/auth.js?v=20260915-verif-consulta"></script>
@@ -814,7 +985,7 @@
     <script src="js/editLockManager.js"></script>
     <script src="js/syncMonitor.js"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/programas.js?v=20261105-semana2"></script>
+    <script src="js/programas.js?v=20261105-pdf-semana"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();

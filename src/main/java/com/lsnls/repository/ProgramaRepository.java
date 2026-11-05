@@ -16,4 +16,6 @@ public interface ProgramaRepository extends JpaRepository<Programa, Long> {
 
     @Query("SELECT p.codigo FROM Programa p")
     List<String> findAllCodigos();
+
+    List<Programa> findByEstado(Programa.EstadoPrograma estado);
 } 

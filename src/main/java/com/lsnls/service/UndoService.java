@@ -38,7 +38,8 @@ public class UndoService {
             "jornadas", "cuestionarios", "combos", "preguntas", "programas", "concursantes",
             "jornadas_cuestionarios", "jornadas_combos", "cuestionarios_preguntas",
             "combos_preguntas", "historial_jornadas",
-            "tematicas_preguntas", "tematicas_combos", "subtemas_preguntas");
+            "tematicas_preguntas", "tematicas_combos", "subtemas_preguntas",
+            "programas_repetidos", "programas_repetidos_concursantes");
 
     private static final Pattern IDENTIFICADOR_VALIDO = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
 

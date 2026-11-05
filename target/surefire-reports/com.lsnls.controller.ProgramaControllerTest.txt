@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.lsnls.controller.ProgramaControllerTest
--------------------------------------------------------------------------------
-Tests run: 31, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.920 s -- in com.lsnls.controller.ProgramaControllerTest

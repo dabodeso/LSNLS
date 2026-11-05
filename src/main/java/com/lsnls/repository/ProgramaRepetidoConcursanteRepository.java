@@ -17,4 +17,6 @@ public interface ProgramaRepetidoConcursanteRepository extends JpaRepository<Pro
     long countByProgramaRepetidoId(Long programaRepetidoId);
 
     void deleteByProgramaRepetidoIdAndConcursanteId(Long programaRepetidoId, Long concursanteId);
+
+    void deleteByProgramaRepetidoId(Long programaRepetidoId);
 }

@@ -16,6 +16,8 @@ import java.util.Optional;
 public interface ConcursanteRepository extends JpaRepository<Concursante, Long>, JpaSpecificationExecutor<Concursante> {
     List<Concursante> findByEstado(String estado); // Cambio de EstadoConcursante a String
     List<Concursante> findByNumeroPrograma(Integer numeroPrograma);
+
+    List<Concursante> findByNumeroProgramaIn(java.util.Collection<Integer> numerosPrograma);
     @Query("SELECT c FROM Concursante c WHERE c.numeroPrograma = :numeroPrograma " +
            "ORDER BY CASE WHEN c.ordenEscaleta IS NULL THEN 1 ELSE 0 END, c.ordenEscaleta ASC, c.id ASC")
     List<Concursante> findByNumeroProgramaOrderByNumeroConcursanteAsc(@Param("numeroPrograma") Integer numeroPrograma);

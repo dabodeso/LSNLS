@@ -29,6 +29,7 @@ com\lsnls\entity\Tematica.class
 com\lsnls\entity\Combo$EstadoCombo.class
 com\lsnls\service\BackupService.class
 com\lsnls\dto\CrearCuestionarioDTO$PreguntaMultiplicadoraDTO.class
+com\lsnls\dto\ResultadoBusquedaDTO.class
 com\lsnls\config\SlotsJornada.class
 com\lsnls\dto\JornadaDTO.class
 com\lsnls\service\SyncService$1.class
@@ -39,9 +40,11 @@ com\lsnls\config\SecurityConfig.class
 com\lsnls\dto\HistorialJornadaDTO.class
 com\lsnls\controller\ConfiguracionGlobalController.class
 com\lsnls\entity\ProgramaRepetido.class
+com\lsnls\service\ProgramaRepetidoService$Aparicion.class
 com\lsnls\config\UndoHeaderAdvice.class
 com\lsnls\controller\UsuarioController.class
 com\lsnls\controller\PreguntaController$1.class
+com\lsnls\service\ProgramaRepetidoService$SlotConcursante.class
 com\lsnls\validation\NoSpecialCharactersValidator.class
 com\lsnls\service\ValidationService$ValidationResult.class
 com\lsnls\service\ConfiguracionGlobalService.class
@@ -50,6 +53,7 @@ com\lsnls\entity\Usuario$RolUsuario.class
 com\lsnls\config\JacksonConfig.class
 com\lsnls\dto\MarcarNoUsadoDTO.class
 com\lsnls\validation\NoSpecialCharacters.class
+com\lsnls\service\ProgramaRepetidoService$IndiceEmitidos.class
 com\lsnls\config\MensajesUsuario.class
 com\lsnls\entity\ProgramaConcursante.class
 com\lsnls\service\UsuarioService.class
@@ -108,6 +112,7 @@ com\lsnls\entity\Usuario.class
 com\lsnls\config\CompatiblePasswordEncoder.class
 com\lsnls\service\EditLockService.class
 com\lsnls\repository\PreguntaComboRepository.class
+com\lsnls\dto\CrearProgramaRepetidoDTO.class
 com\lsnls\dto\AuthResponse.class
 com\lsnls\entity\Combo$TipoCombo.class
 com\lsnls\repository\SubtemaPreguntaRepository.class
@@ -131,6 +136,7 @@ com\lsnls\repository\PreguntaRepository.class
 com\lsnls\service\ComboService.class
 com\lsnls\repository\ProgramaRepository.class
 com\lsnls\entity\JornadaCuestionarioAsignacion.class
+com\lsnls\dto\ProgramaEmitidoOpcionDTO.class
 com\lsnls\repository\ConfiguracionGlobalRepository.class
 com\lsnls\controller\PreguntaController.class
 com\lsnls\entity\Pregunta$EstadoDisponibilidad.class
@@ -144,9 +150,11 @@ com\lsnls\controller\SyncController.class
 com\lsnls\service\ExcelExportService$Estilos.class
 com\lsnls\config\ErrorResponseAdvice.class
 com\lsnls\entity\EstadoConcursante.class
+com\lsnls\service\ProgramaRepetidoService$ConcursanteOrden.class
 com\lsnls\controller\CuestionarioController.class
 com\lsnls\entity\PreguntaCuestionario$PreguntaCuestionarioId.class
 com\lsnls\controller\AuthController.class
+com\lsnls\dto\ConcursanteEmitidoOpcionDTO.class
 com\lsnls\service\JornadaService.class
 com\lsnls\entity\AuditLog$OperationResult.class
 com\lsnls\config\DataSourceDiagnostics.class

@@ -1,11 +1,51 @@
 let vistaRepetidos = false;
 let programas = [];
 let concursantesPorPrograma = {};
+const programasEnEdicion = new Set();
 
 let rolUsuarioActual = null;
 
 function puedeEditarCamposPrograma() {
     return ['ROLE_ADMIN', 'ROLE_DIRECCION'].includes(rolUsuarioActual);
+}
+
+function esFlagRepetido(repetido) {
+    return repetido === true || repetido === 'true';
+}
+
+function claveEdicionPrograma(programaId, repetido) {
+    return `${esFlagRepetido(repetido) ? 'r' : 'n'}:${programaId}`;
+}
+
+function buscarProgramaListado(programaId, repetido) {
+    const esRepetido = esFlagRepetido(repetido);
+    return programas.find(p => String(p.id) === String(programaId) && !!p.repetido === esRepetido) || null;
+}
+
+function urlBasePrograma(programaId, repetido) {
+    return esFlagRepetido(repetido)
+        ? `/api/programas/repetidos/${programaId}`
+        : `/api/programas/${programaId}`;
+}
+
+function alternarEdicionPrograma(programaId, repetido) {
+    if (!puedeEditarCamposPrograma()) {
+        mostrarError('No tienes permisos para editar programas.');
+        return;
+    }
+    const programa = buscarProgramaListado(programaId, repetido);
+    if (!programa) return;
+    if ((programa.estado || '').toLowerCase() === 'emitido') {
+        mostrarError('Un programa emitido no se puede editar.');
+        return;
+    }
+    const clave = claveEdicionPrograma(programa.id, programa.repetido);
+    if (programasEnEdicion.has(clave)) {
+        programasEnEdicion.delete(clave);
+    } else {
+        programasEnEdicion.add(clave);
+    }
+    mostrarProgramas();
 }
 
 function puedeCrearPrograma() {
@@ -94,6 +134,8 @@ async function inicializarProgramas() {
     if (!puedeCrearPrograma()) {
         const btnNuevo = document.querySelector('[onclick="mostrarFormularioPrograma()"]');
         if (btnNuevo) btnNuevo.style.display = 'none';
+        const btnRepetido = document.getElementById('btn-nuevo-repetido');
+        if (btnRepetido) btnRepetido.style.display = 'none';
     }
 
     await cargarProgramas();
@@ -181,12 +223,19 @@ async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden 
     }
 }
 
+function normalizarListaConcursantes(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.content)) return data.content;
+    if (data && Array.isArray(data.concursantes)) return data.concursantes;
+    return [];
+}
+
 async function cargarConcursantesPorPrograma() {
     concursantesPorPrograma = {};
     for (const programa of programas) {
         try {
             const concursantes = await apiManager.get(urlConcursantesDePrograma(programa));
-            concursantesPorPrograma[programa.id] = concursantes;
+            concursantesPorPrograma[programa.id] = normalizarListaConcursantes(concursantes);
         } catch (e) {
             concursantesPorPrograma[programa.id] = [];
         }
@@ -251,7 +300,12 @@ function mostrarProgramas() {
         
         const estadoColor = estadoColores[programa.estado] || '#6c757d';
         const esEmitido = (programa.estado || '').toLowerCase() === 'emitido';
-        const editProgCampos = editProg && !esEmitido && !programa.repetido;
+        const claveEdicion = claveEdicionPrograma(programa.id, programa.repetido);
+        if (esEmitido) {
+            programasEnEdicion.delete(claveEdicion);
+        }
+        const editProgCampos = editProg && !esEmitido && programasEnEdicion.has(claveEdicion);
+        const repetidoJs = programa.repetido ? 'true' : 'false';
         const editConcCampos = editConc && !esEmitido;
         const gestionConcCampos = gestionConc && (!esEmitido || programa.repetido);
         
@@ -283,7 +337,7 @@ function mostrarProgramas() {
                             <div class="programa-info-value">
                                 ${editProgCampos
                                     ? `<input type="number" class="form-control form-control-sm" min="1" value="${programa.temporada || ''}"
-                                               onchange="actualizarTemporadaPrograma(${programa.id}, this.value)" style="width: 80px;">`
+                                               onchange="actualizarTemporadaPrograma(${programa.id}, this.value, ${repetidoJs})" style="width: 80px;">`
                                     : `<span class="programa-info-readonly">${programa.temporada || '—'}</span>`}
                             </div>
                         </div>
@@ -1096,7 +1150,7 @@ async function cargarConcursantesParaProgramasFiltrados() {
         );
         try {
             const concursantes = await apiManager.get(urlConcursantesDePrograma(programa));
-            concursantesPorPrograma[programa.id] = concursantes;
+            concursantesPorPrograma[programa.id] = normalizarListaConcursantes(concursantes);
         } catch (e) {
             console.warn(`No se pudieron cargar concursantes para programa ${programa.id}:`, e);
             concursantesPorPrograma[programa.id] = [];
@@ -1961,10 +2015,16 @@ async function cambiarPagina(nuevaPagina) {
 document.addEventListener('DOMContentLoaded', inicializarProgramas); 
 
 async function eliminarPrograma(programaId) {
-    if (!confirm('¿Seguro que deseas borrar este programa?\n\nPodrás deshacerlo con Ctrl+Z durante la próxima hora.')) return;
+    const programa = programas.find(p => String(p.id) === String(programaId));
+    const esRepetido = !!(programa && programa.repetido);
+    const url = esRepetido
+        ? `/api/programas/repetidos/${programaId}`
+        : `/api/programas/${programaId}`;
+    const etiqueta = esRepetido ? 'programa repetido' : 'programa';
+    if (!confirm(`¿Seguro que deseas borrar este ${etiqueta}?\n\nPodrás deshacerlo con Ctrl+Z durante la próxima hora.`)) return;
     try {
-        await apiManager.deleteUndoable(`/api/programas/${programaId}`, { label: `Eliminar programa ${programaId}` });
-        mostrarExito('Programa eliminado');
+        await apiManager.deleteUndoable(url, { label: `Eliminar ${etiqueta} ${programaId}` });
+        mostrarExito(esRepetido ? 'Programa repetido eliminado' : 'Programa eliminado');
         await refrescarVistaProgramas();
     } catch (error) {
         const msg = Utils.mensajeErrorApi(error, 'eliminar programas');
@@ -2082,14 +2142,18 @@ async function cargarPaginaConcursantesDisponibles(pagina) {
     }
 }
 
-// La semana 1 es la de lunes a domingo que incluye el 1 de enero del año en curso.
-// El contador sigue hacia adelante, también el año siguiente.
-let anioProgramacionSemana = null;
+// La semana del lunes 5 de octubre de 2026 es la 111.
+// El contador sigue hacia atrás y hacia adelante desde esa fecha.
+const ANCLA_SEMANA_PROGRAMACION = { anio: 2026, mes: 9, dia: 5, numero: 111 };
 let numeroProgramacionSemana = null;
 let tokenProgramacionSemana = 0;
 
-function anioBaseProgramacion() {
-    return new Date().getFullYear();
+function lunesAnclaProgramacion() {
+    return new Date(
+        ANCLA_SEMANA_PROGRAMACION.anio,
+        ANCLA_SEMANA_PROGRAMACION.mes,
+        ANCLA_SEMANA_PROGRAMACION.dia
+    );
 }
 
 function isoDesdeFechaLocal(fecha) {
@@ -2098,33 +2162,24 @@ function isoDesdeFechaLocal(fecha) {
     return `${fecha.getFullYear()}-${mes}-${dia}`;
 }
 
-function lunesSemana1(anio) {
-    const enero1 = new Date(anio, 0, 1);
-    const diaSemana = enero1.getDay();
-    const retroceso = diaSemana === 0 ? 6 : diaSemana - 1;
-    const lunes = new Date(anio, 0, 1);
-    lunes.setDate(enero1.getDate() - retroceso);
-    return lunes;
-}
-
 function diasEntreFechas(desde, hasta) {
     const utcDesde = Date.UTC(desde.getFullYear(), desde.getMonth(), desde.getDate());
     const utcHasta = Date.UTC(hasta.getFullYear(), hasta.getMonth(), hasta.getDate());
     return Math.round((utcHasta - utcDesde) / 86400000);
 }
 
-function numeroSemanaDeFecha(anio, fecha) {
-    const lunes1 = lunesSemana1(anio);
-    return Math.floor(diasEntreFechas(lunes1, fecha) / 7) + 1;
+function numeroSemanaDeFecha(fecha) {
+    return ANCLA_SEMANA_PROGRAMACION.numero + Math.floor(diasEntreFechas(lunesAnclaProgramacion(), fecha) / 7);
 }
 
-function maxNumeroSemana(anio) {
-    return numeroSemanaDeFecha(anio, new Date(anio + 1, 11, 31));
+function maxNumeroSemana() {
+    const horizonte = new Date().getFullYear() + 1;
+    return Math.max(ANCLA_SEMANA_PROGRAMACION.numero, numeroSemanaDeFecha(new Date(horizonte, 11, 31)));
 }
 
-function diasIsoDeSemana(anio, numero) {
-    const lunes = lunesSemana1(anio);
-    lunes.setDate(lunes.getDate() + (numero - 1) * 7);
+function diasIsoDeSemana(numero) {
+    const lunes = lunesAnclaProgramacion();
+    lunes.setDate(lunes.getDate() + (numero - ANCLA_SEMANA_PROGRAMACION.numero) * 7);
     const dias = [];
     for (let i = 0; i < 7; i++) {
         const fecha = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + i);
@@ -2148,15 +2203,40 @@ function urlFotoHoja(foto) {
     return `/uploads/${ruta}`;
 }
 
-function eurosHoja(concursante) {
-    let valor = null;
+function importePremioHoja(concursante) {
     if (concursante.premio !== null && concursante.premio !== undefined && concursante.premio !== '') {
-        valor = Number(concursante.premio);
-    } else if (concursante.resultado !== null && concursante.resultado !== undefined && concursante.resultado !== '') {
-        valor = Number(concursante.resultado);
+        const valor = Number(concursante.premio);
+        return Number.isNaN(valor) ? null : valor;
     }
-    if (valor === null || Number.isNaN(valor)) return '';
-    return `${valor.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €`;
+    if (concursante.resultado !== null && concursante.resultado !== undefined && concursante.resultado !== '') {
+        const valor = Number(concursante.resultado);
+        return Number.isNaN(valor) ? null : valor;
+    }
+    return null;
+}
+
+function eurosNumeroHoja(valor) {
+    const numero = Math.round(Number(valor));
+    const texto = String(Math.abs(numero)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${numero < 0 ? '-' : ''}${texto} €`;
+}
+
+function eurosHoja(concursante) {
+    const valor = importePremioHoja(concursante);
+    if (valor === null) return '';
+    return eurosNumeroHoja(valor);
+}
+
+function totalPremiosHoja(programa) {
+    const concursantes = programa._concursantes || [];
+    if (concursantes.length) {
+        const total = concursantes.reduce((suma, concursante) => suma + (importePremioHoja(concursante) || 0), 0);
+        return eurosNumeroHoja(total);
+    }
+    if (programa.totalPremios != null && programa.totalPremios !== '' && !Number.isNaN(Number(programa.totalPremios))) {
+        return eurosNumeroHoja(programa.totalPremios);
+    }
+    return '';
 }
 
 function duracionHoja(concursante) {
@@ -2191,9 +2271,9 @@ function compararConcursantesHoja(a, b) {
     return (Number(a.numeroConcursante) || 0) - (Number(b.numeroConcursante) || 0);
 }
 
-function actualizarControlesSemana(anio, numero) {
-    const maximo = maxNumeroSemana(anio);
-    const dias = diasIsoDeSemana(anio, numero);
+function actualizarControlesSemana(numero) {
+    const maximo = maxNumeroSemana();
+    const dias = diasIsoDeSemana(numero);
     const input = document.getElementById('programacion-semana-numero');
     const rango = document.getElementById('programacion-semana-rango');
     const ayuda = document.getElementById('programacion-semana-ayuda');
@@ -2208,45 +2288,42 @@ function actualizarControlesSemana(anio, numero) {
         rango.textContent = `Lunes ${formatearFechaPrograma(dias[0])} – domingo ${formatearFechaPrograma(dias[6])}`;
     }
     if (ayuda) {
-        const primera = diasIsoDeSemana(anio, 1);
-        ayuda.textContent = `La semana 1 es la que incluye el 1 de enero de ${anio} (lunes ${formatearFechaPrograma(primera[0])} – domingo ${formatearFechaPrograma(primera[6])}). A partir de ahí el contador sigue hacia adelante.`;
+        const ancla = diasIsoDeSemana(ANCLA_SEMANA_PROGRAMACION.numero);
+        ayuda.textContent = `La semana ${ANCLA_SEMANA_PROGRAMACION.numero} es la del lunes ${formatearFechaPrograma(ancla[0])}. Desde ahí el contador sigue hacia atrás y hacia adelante.`;
     }
     if (anterior) anterior.disabled = numero <= 1;
     if (siguiente) siguiente.disabled = numero >= maximo;
 }
 
 function abrirProgramacionSemana() {
-    anioProgramacionSemana = anioBaseProgramacion();
     const hoy = new Date();
-    let numero = numeroSemanaDeFecha(anioProgramacionSemana, hoy);
+    let numero = numeroSemanaDeFecha(hoy);
     if (numero < 1) numero = 1;
-    const maximo = maxNumeroSemana(anioProgramacionSemana);
+    const maximo = maxNumeroSemana();
     if (numero > maximo) numero = maximo;
     numeroProgramacionSemana = numero;
-    actualizarControlesSemana(anioProgramacionSemana, numero);
+    actualizarControlesSemana(numero);
     const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-programacion-semana'));
     modal.show();
     cargarHojaProgramacionSemana();
 }
 
 function cambiarSemanaProgramacion(delta) {
-    if (anioProgramacionSemana == null) anioProgramacionSemana = anioBaseProgramacion();
-    const maximo = maxNumeroSemana(anioProgramacionSemana);
+    const maximo = maxNumeroSemana();
     const siguiente = Math.min(maximo, Math.max(1, (numeroProgramacionSemana || 1) + delta));
     if (siguiente === numeroProgramacionSemana) return;
     numeroProgramacionSemana = siguiente;
-    actualizarControlesSemana(anioProgramacionSemana, siguiente);
+    actualizarControlesSemana(siguiente);
     cargarHojaProgramacionSemana();
 }
 
 function fijarSemanaProgramacion(valor) {
-    if (anioProgramacionSemana == null) anioProgramacionSemana = anioBaseProgramacion();
-    const maximo = maxNumeroSemana(anioProgramacionSemana);
+    const maximo = maxNumeroSemana();
     let numero = parseInt(valor, 10);
     if (!Number.isFinite(numero)) numero = numeroProgramacionSemana || 1;
     numero = Math.min(maximo, Math.max(1, numero));
     numeroProgramacionSemana = numero;
-    actualizarControlesSemana(anioProgramacionSemana, numero);
+    actualizarControlesSemana(numero);
     cargarHojaProgramacionSemana();
 }
 
@@ -2266,8 +2343,8 @@ async function obtenerProgramasDeSemana(dias) {
     enSemana.sort(compararProgramasHoja);
     await Promise.all(enSemana.map(async programa => {
         try {
-            const concursantes = await apiManager.get(urlConcursantesDePrograma(programa));
-            programa._concursantes = Array.isArray(concursantes) ? concursantes.slice().sort(compararConcursantesHoja) : [];
+            const concursantes = normalizarListaConcursantes(await apiManager.get(urlConcursantesDePrograma(programa)));
+            programa._concursantes = concursantes.slice().sort(compararConcursantesHoja);
         } catch (error) {
             programa._concursantes = [];
         }
@@ -2278,10 +2355,10 @@ async function obtenerProgramasDeSemana(dias) {
 function htmlFilaConcursanteHoja(concursante) {
     const foto = urlFotoHoja(concursante.foto);
     const fotoHtml = foto
-        ? `<img class="foto-hoja" src="${escaparHtmlHoja(foto)}" alt="" onerror="this.remove()">`
+        ? `<img class="foto-hoja" src="${escaparHtmlHoja(foto)}" alt="" width="160" height="90" onerror="this.remove()">`
         : '';
     return `
-        <tr>
+        <tr class="fila-concursante">
             <td class="num">${escaparHtmlHoja(concursante.numeroConcursante ?? '')}</td>
             <td class="mayus">${escaparHtmlHoja(concursante.lugar || '')}</td>
             <td class="nombre">${escaparHtmlHoja(concursante.nombre || '')}</td>
@@ -2291,7 +2368,7 @@ function htmlFilaConcursanteHoja(concursante) {
             <td>${escaparHtmlHoja(concursante.xusoker || '')}</td>
             <td class="premio">${escaparHtmlHoja(eurosHoja(concursante))}</td>
             <td class="duracion">${escaparHtmlHoja(duracionHoja(concursante))}</td>
-            <td>${fotoHtml}</td>
+            <td class="celda-foto">${fotoHtml}</td>
             <td class="celda-momentos">${escaparHtmlHoja(concursante.momentosDestacados || '')}</td>
             <td class="factor">${escaparHtmlHoja(concursante.factorX || '')}</td>
             <td class="val">${escaparHtmlHoja(concursante.valoracionFinal || '')}</td>
@@ -2303,8 +2380,8 @@ function htmlProgramaHoja(programa, fechaDia) {
     const titulo = tituloProgramaHoja(programa);
     const claseTitulo = programa.repetido ? 'pgm-repe' : '';
     const fecha = fechaDia
-        ? `<td class="dia-fecha" colspan="4">${escaparHtmlHoja(fechaDia)}</td>`
-        : `<td colspan="4"></td>`;
+        ? `<td class="dia-fecha" colspan="2">${escaparHtmlHoja(fechaDia)}</td>`
+        : `<td colspan="2"></td>`;
     const concursantes = programa._concursantes || [];
     const filas = concursantes.length
         ? concursantes.map(htmlFilaConcursanteHoja).join('')
@@ -2312,8 +2389,10 @@ function htmlProgramaHoja(programa, fechaDia) {
     return `
         <tr class="fila-pgm">
             <td class="${claseTitulo}" colspan="3">${escaparHtmlHoja(titulo)}</td>
-            <td class="pgm-nota" colspan="6">${escaparHtmlHoja(programa.notas || '')}</td>
+            <td class="pgm-nota" colspan="3">${escaparHtmlHoja(programa.notas || '')}</td>
+            <td class="pgm-creditos" colspan="4">${escaparHtmlHoja(programa.creditosEspeciales || '')}</td>
             ${fecha}
+            <td class="pgm-total">${escaparHtmlHoja(totalPremiosHoja(programa))}</td>
         </tr>
         ${filas}
     `;
@@ -2335,17 +2414,17 @@ function htmlHojaSemana(numero, dias, programas) {
             <colgroup>
                 <col style="width:4%">
                 <col style="width:8%">
-                <col style="width:9%">
-                <col style="width:4%">
-                <col style="width:11%">
+                <col style="width:8%">
+                <col style="width:3%">
                 <col style="width:9%">
                 <col style="width:7%">
                 <col style="width:6%">
+                <col style="width:6%">
                 <col style="width:5%">
-                <col style="width:12%">
                 <col style="width:16%">
-                <col style="width:5%">
-                <col style="width:4%">
+                <col style="width:12%">
+                <col style="width:8%">
+                <col style="width:8%">
             </colgroup>
             <tbody>${cuerpo}</tbody>
         </table>
@@ -2358,9 +2437,8 @@ async function cargarHojaProgramacionSemana() {
     const boton = document.getElementById('btn-descargar-programacion-semana');
     if (!hoja) return;
     const token = ++tokenProgramacionSemana;
-    const anio = anioProgramacionSemana;
     const numero = numeroProgramacionSemana;
-    const dias = diasIsoDeSemana(anio, numero);
+    const dias = diasIsoDeSemana(numero);
     if (estado) estado.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Cargando la semana...</span>';
     if (boton) boton.disabled = true;
     hoja.innerHTML = '';
@@ -2390,14 +2468,78 @@ function esperarImagenesHoja(raiz) {
     }));
 }
 
-async function descargarImagenProgramacionSemana() {
+function recortarFotoA16x9(img) {
+    const ancho = 160;
+    const alto = 90;
+    img.width = ancho;
+    img.height = alto;
+    img.style.width = ancho + 'px';
+    img.style.height = alto + 'px';
+    img.style.objectFit = 'cover';
+    const origenAncho = img.naturalWidth;
+    const origenAlto = img.naturalHeight;
+    if (!origenAncho || !origenAlto) return Promise.resolve();
+    try {
+        const lienzo = document.createElement('canvas');
+        lienzo.width = ancho * 2;
+        lienzo.height = alto * 2;
+        const ctx = lienzo.getContext('2d');
+        const escala = Math.max(lienzo.width / origenAncho, lienzo.height / origenAlto);
+        const dibujoAncho = origenAncho * escala;
+        const dibujoAlto = origenAlto * escala;
+        ctx.drawImage(
+            img,
+            (lienzo.width - dibujoAncho) / 2,
+            (lienzo.height - dibujoAlto) / 2,
+            dibujoAncho,
+            dibujoAlto
+        );
+        const datos = lienzo.toDataURL('image/jpeg', 0.9);
+        return new Promise(resolver => {
+            img.onload = () => resolver();
+            img.onerror = () => resolver();
+            img.src = datos;
+        });
+    } catch (error) {
+        return Promise.resolve();
+    }
+}
+
+async function fijarFotos16x9(raiz) {
+    await esperarImagenesHoja(raiz);
+    const fotos = [...raiz.querySelectorAll('img.foto-hoja')];
+    await Promise.all(fotos.map(recortarFotoA16x9));
+}
+
+function cortesPaginaHoja(raiz, altoPaginaPx) {
+    const alto = raiz.scrollHeight;
+    const filas = [...raiz.querySelectorAll('tr')];
+    if (!filas.length || alto <= altoPaginaPx) return [0, alto];
+    const topRaiz = raiz.getBoundingClientRect().top;
+    const cortes = [0];
+    let limite = altoPaginaPx;
+    filas.forEach(fila => {
+        const rect = fila.getBoundingClientRect();
+        const inicio = rect.top - topRaiz;
+        const fin = rect.bottom - topRaiz;
+        const ultimo = cortes[cortes.length - 1];
+        if (fin > limite + 1 && inicio > ultimo + 1) {
+            cortes.push(inicio);
+            limite = inicio + altoPaginaPx;
+        }
+    });
+    if (cortes[cortes.length - 1] < alto) cortes.push(alto);
+    return cortes;
+}
+
+async function descargarPdfProgramacionSemana() {
     const origen = document.getElementById('hoja-programacion-semana');
     if (!origen || !origen.querySelector('table')) {
-        mostrarError('Todavía no hay una programación para generar la imagen');
+        mostrarError('Todavía no hay una programación para generar el PDF');
         return;
     }
-    if (typeof html2canvas !== 'function') {
-        mostrarError('No se pudo generar la imagen');
+    if (typeof html2canvas !== 'function' || !window.jspdf || !window.jspdf.jsPDF) {
+        mostrarError('No se pudo generar el PDF');
         return;
     }
     const boton = document.getElementById('btn-descargar-programacion-semana');
@@ -2411,22 +2553,346 @@ async function descargarImagenProgramacionSemana() {
     contenedor.appendChild(clon);
     document.body.appendChild(contenedor);
     try {
-        await esperarImagenesHoja(clon);
+        await fijarFotos16x9(clon);
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const margen = 6;
+        const anchoUtil = pdf.internal.pageSize.getWidth() - margen * 2;
+        const altoUtil = pdf.internal.pageSize.getHeight() - margen * 2;
+        const altoPaginaPx = Math.floor(clon.offsetWidth * altoUtil / anchoUtil);
+        const cortes = cortesPaginaHoja(clon, altoPaginaPx);
         const canvas = await html2canvas(clon, {
             backgroundColor: '#ffffff',
             scale: 2,
             useCORS: true,
             logging: false
         });
-        const enlace = document.createElement('a');
-        enlace.href = canvas.toDataURL('image/png');
-        enlace.download = `programacion-semana-${numeroProgramacionSemana}.png`;
-        enlace.click();
-        mostrarExito('Imagen de la semana descargada');
+        const escala = canvas.width / clon.offsetWidth;
+        cortes.slice(0, -1).forEach((inicio, indice) => {
+            const y0 = Math.round(inicio * escala);
+            const y1 = Math.round(cortes[indice + 1] * escala);
+            const alto = Math.max(1, y1 - y0);
+            const recorte = document.createElement('canvas');
+            recorte.width = canvas.width;
+            recorte.height = alto;
+            const ctx = recorte.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, recorte.width, recorte.height);
+            ctx.drawImage(canvas, 0, y0, canvas.width, alto, 0, 0, canvas.width, alto);
+            const altoMm = (alto / escala) * anchoUtil / clon.offsetWidth;
+            if (indice > 0) pdf.addPage();
+            pdf.addImage(recorte.toDataURL('image/jpeg', 0.92), 'JPEG', margen, margen, anchoUtil, altoMm);
+        });
+        pdf.save(`ESCALETAS LSNLS SEMANA ${numeroProgramacionSemana}.pdf`);
+        mostrarExito('PDF de la semana descargado');
     } catch (error) {
-        mostrarError('No se pudo generar la imagen');
+        mostrarError('No se pudo generar el PDF');
     } finally {
         contenedor.remove();
+        if (boton) boton.disabled = false;
+    }
+}
+
+let repetidoModo = 'programa';
+let repetidoProgramaSeleccionado = null;
+let repetidoConcursantesSeleccionados = [];
+let repetidoResultadosConcursantes = [];
+let repetidoConcursantesHayMas = false;
+let guardandoRepetido = false;
+
+function mostrarFormularioRepetido() {
+    if (!puedeCrearPrograma()) return;
+    const form = document.getElementById('form-repetido');
+    if (form) form.reset();
+    const tipo = document.getElementById('repe-tipo');
+    if (tipo) tipo.value = 'REPE';
+    const modoPrograma = document.getElementById('repe-modo-programa');
+    if (modoPrograma) modoPrograma.checked = true;
+    repetidoProgramaSeleccionado = null;
+    repetidoConcursantesSeleccionados = [];
+    repetidoResultadosConcursantes = [];
+    const resultadosProgramas = document.getElementById('repe-resultados-programas');
+    if (resultadosProgramas) {
+        resultadosProgramas.innerHTML = '<span class="text-muted">Usa los filtros y pulsa Buscar.</span>';
+    }
+    const resultadosConcursantes = document.getElementById('repe-resultados-concursantes');
+    if (resultadosConcursantes) {
+        resultadosConcursantes.innerHTML = '<span class="text-muted">Usa los filtros y pulsa Buscar.</span>';
+    }
+    const seleccion = document.getElementById('repe-seleccion-concursantes');
+    if (seleccion) seleccion.innerHTML = '';
+    const ayuda = document.getElementById('repe-codigo-ayuda');
+    if (ayuda) {
+        ayuda.textContent = 'Si lo dejas vacío, se asigna el último número de este tipo en la temporada, más uno.';
+    }
+    cambiarModoRepetido('programa');
+    const temporadas = (programas || [])
+        .map(p => Number(p.temporada))
+        .filter(n => Number.isFinite(n) && n > 0);
+    const inputTemporada = document.getElementById('repe-temporada');
+    if (inputTemporada && temporadas.length) {
+        inputTemporada.value = String(Math.max(...temporadas));
+    }
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-repetido'));
+    modal.show();
+    sugerirCodigoRepetido();
+}
+
+function cambiarModoRepetido(modo) {
+    repetidoModo = modo === 'concursantes' ? 'concursantes' : 'programa';
+    document.getElementById('repe-panel-programa')?.classList.toggle('d-none', repetidoModo !== 'programa');
+    document.getElementById('repe-panel-concursantes')?.classList.toggle('d-none', repetidoModo !== 'concursantes');
+}
+
+async function sugerirCodigoRepetido() {
+    const temporada = parseInt(document.getElementById('repe-temporada')?.value, 10);
+    const tipo = document.getElementById('repe-tipo')?.value || 'REPE';
+    const input = document.getElementById('repe-codigo');
+    const ayuda = document.getElementById('repe-codigo-ayuda');
+    if (!input || !Number.isFinite(temporada) || temporada < 1) return;
+    try {
+        const sugerido = await apiManager.get(
+            `/api/programas/repetidos/siguiente-codigo?tipo=${encodeURIComponent(tipo)}&temporada=${temporada}`
+        );
+        const codigo = sugerido && sugerido.codigo;
+        if (!codigo || input.value) return;
+        input.placeholder = 'Sugerido: ' + codigo;
+        if (ayuda) {
+            ayuda.textContent = 'Sugerido: ' + codigo + '. Si lo dejas vacío, se asigna al guardar (último número de este tipo en la temporada, más uno).';
+        }
+    } catch (error) {
+        // La asignación real sigue haciéndose en el servidor al crear.
+    }
+}
+
+function paramsBusquedaRepetido(campos) {
+    const params = new URLSearchParams();
+    campos.forEach(([clave, id]) => {
+        const valor = (document.getElementById(id)?.value || '').trim();
+        if (valor) params.set(clave, valor);
+    });
+    const texto = params.toString();
+    return texto ? `?${texto}` : '';
+}
+
+async function buscarProgramasParaRepetido() {
+    const contenedor = document.getElementById('repe-resultados-programas');
+    const boton = document.getElementById('btn-buscar-programas-repe');
+    if (!contenedor) return;
+    if (boton) boton.disabled = true;
+    contenedor.innerHTML = '<span class="text-muted">Buscando programas emitidos...</span>';
+    try {
+        const query = paramsBusquedaRepetido([
+            ['fechaEmision', 'repe-filtro-fecha'],
+            ['codigo', 'repe-filtro-codigo'],
+            ['valoracionMinima', 'repe-filtro-valoracion-programa']
+        ]);
+        const respuesta = await apiManager.get(`/api/programas/repetidos/origen/programas${query}`);
+        const lista = Array.isArray(respuesta?.resultados) ? respuesta.resultados : [];
+        repetidoProgramaSeleccionado = null;
+        if (!lista.length) {
+            contenedor.innerHTML = '<span class="text-muted">No hay programas emitidos que coincidan con los filtros.</span>';
+            return;
+        }
+        const aviso = respuesta.hayMas
+            ? '<div class="text-muted small mb-2">Hay más resultados. Afina los filtros para verlos.</div>'
+            : '';
+        contenedor.innerHTML = aviso + lista.map(programa => {
+            const fecha = formatearFechaPrograma(programa.fechaEmision);
+            const codigo = programa.codigo || programa.id;
+            const resumen = programa.resumenConcursantes
+                ? `<span class="text-muted small d-block">${escaparHtmlHoja(programa.resumenConcursantes)}</span>`
+                : '<span class="text-muted small d-block">Sin concursantes</span>';
+            return `
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="repe-programa-origen" id="repe-pgm-${programa.id}"
+                           value="${programa.id}" onchange="seleccionarProgramaParaRepetido(${programa.id})">
+                    <label class="form-check-label" for="repe-pgm-${programa.id}">
+                        PGM ${escaparHtmlHoja(codigo)} · ${escaparHtmlHoja(fecha)} · T${escaparHtmlHoja(programa.temporada ?? '')}
+                        · ${escaparHtmlHoja(programa.totalConcursantes ?? 0)} concursantes
+                        ${resumen}
+                    </label>
+                </div>`;
+        }).join('');
+    } catch (error) {
+        contenedor.innerHTML = '';
+        mostrarError(obtenerMensajeErrorProgramas(error, 'búsqueda de programas emitidos'));
+    } finally {
+        if (boton) boton.disabled = false;
+    }
+}
+
+function seleccionarProgramaParaRepetido(programaId) {
+    repetidoProgramaSeleccionado = programaId;
+}
+
+async function buscarConcursantesParaRepetido() {
+    const contenedor = document.getElementById('repe-resultados-concursantes');
+    const boton = document.getElementById('btn-buscar-concursantes-repe');
+    if (!contenedor) return;
+    if (boton) boton.disabled = true;
+    contenedor.innerHTML = '<span class="text-muted">Buscando concursantes...</span>';
+    try {
+        const query = paramsBusquedaRepetido([
+            ['valoracionMinima', 'repe-filtro-valoracion-conc'],
+            ['xusoker', 'repe-filtro-xusoker'],
+            ['numero', 'repe-filtro-numero'],
+            ['ciudad', 'repe-filtro-ciudad'],
+            ['nombre', 'repe-filtro-nombre']
+        ]);
+        const respuesta = await apiManager.get(`/api/programas/repetidos/origen/concursantes${query}`);
+        repetidoResultadosConcursantes = Array.isArray(respuesta?.resultados) ? respuesta.resultados : [];
+        repetidoConcursantesHayMas = !!respuesta?.hayMas;
+        renderResultadosConcursantesRepetido();
+        pintarSeleccionConcursantesRepetido();
+    } catch (error) {
+        contenedor.innerHTML = '';
+        mostrarError(obtenerMensajeErrorProgramas(error, 'búsqueda de concursantes'));
+    } finally {
+        if (boton) boton.disabled = false;
+    }
+}
+
+function htmlOpcionConcursanteRepetido(concursante) {
+    const marcado = repetidoConcursantesSeleccionados.some(item => item.id === concursante.id);
+    const posicion = repetidoConcursantesSeleccionados.findIndex(item => item.id === concursante.id);
+    const orden = posicion >= 0 ? `<span class="badge bg-secondary ms-1">${posicion + 1}</span>` : '';
+    const fecha = concursante.fechaEmisionPrograma ? formatearFechaPrograma(concursante.fechaEmisionPrograma) : '';
+    return `
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="repe-conc-${concursante.id}"
+                   ${marcado ? 'checked' : ''} onchange="alternarConcursanteRepetido(${concursante.id}, this.checked)">
+            <label class="form-check-label" for="repe-conc-${concursante.id}">
+                ${escaparHtmlHoja(concursante.numeroConcursante ?? '')} · ${escaparHtmlHoja(concursante.nombre || 'Sin nombre')}
+                · ${escaparHtmlHoja(concursante.lugar || 'Sin ciudad')}
+                · ${escaparHtmlHoja(concursante.valoracionFinal || 'sin valoración')}
+                · ${escaparHtmlHoja(concursante.xusoker || 'sin xusóker')}
+                · PGM ${escaparHtmlHoja(concursante.programaCodigo || '')}${fecha ? ' · ' + escaparHtmlHoja(fecha) : ''}
+                ${orden}
+            </label>
+        </div>`;
+}
+
+function alternarConcursanteRepetido(concursanteId, marcado) {
+    const id = Number(concursanteId);
+    if (marcado) {
+        if (repetidoConcursantesSeleccionados.some(item => item.id === id)) {
+            pintarSeleccionConcursantesRepetido();
+            return;
+        }
+        if (repetidoConcursantesSeleccionados.length >= 3) {
+            const input = document.getElementById(`repe-conc-${id}`);
+            if (input) input.checked = false;
+            mostrarError('Un programa repetido admite como máximo 3 concursantes.');
+            return;
+        }
+        const encontrado = repetidoResultadosConcursantes.find(item => item.id === id);
+        repetidoConcursantesSeleccionados.push(encontrado || { id });
+    } else {
+        repetidoConcursantesSeleccionados = repetidoConcursantesSeleccionados.filter(item => item.id !== id);
+    }
+    pintarSeleccionConcursantesRepetido();
+}
+
+function quitarConcursanteRepetido(concursanteId) {
+    alternarConcursanteRepetido(concursanteId, false);
+    const input = document.getElementById(`repe-conc-${concursanteId}`);
+    if (input) input.checked = false;
+}
+
+function renderResultadosConcursantesRepetido() {
+    const contenedor = document.getElementById('repe-resultados-concursantes');
+    if (!contenedor) return;
+    if (!repetidoResultadosConcursantes.length) {
+        contenedor.innerHTML = '<span class="text-muted">No hay concursantes de programas emitidos que coincidan con los filtros.</span>';
+        return;
+    }
+    const aviso = repetidoConcursantesHayMas
+        ? '<div class="text-muted small mb-2">Hay más resultados. Afina los filtros para verlos.</div>'
+        : '';
+    contenedor.innerHTML = aviso + repetidoResultadosConcursantes.map(htmlOpcionConcursanteRepetido).join('');
+}
+
+function pintarSeleccionConcursantesRepetido() {
+    const seleccion = document.getElementById('repe-seleccion-concursantes');
+    if (seleccion) {
+        if (!repetidoConcursantesSeleccionados.length) {
+            seleccion.innerHTML = '<span class="text-muted">Ningún concursante seleccionado (máximo 3).</span>';
+        } else {
+            seleccion.innerHTML = repetidoConcursantesSeleccionados.map((item, indice) => `
+                <span class="badge bg-primary me-1">
+                    ${indice + 1}. ${escaparHtmlHoja(item.numeroConcursante ?? '')} ${escaparHtmlHoja(item.nombre || '')}
+                    <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;"
+                            aria-label="Quitar" onclick="quitarConcursanteRepetido(${item.id})"></button>
+                </span>
+            `).join('') + '<span class="text-muted ms-1">Máximo 3. El orden de esta lista es la escaleta.</span>';
+        }
+    }
+    if (repetidoResultadosConcursantes.length) {
+        renderResultadosConcursantesRepetido();
+    }
+}
+
+async function guardarRepetido() {
+    if (guardandoRepetido) return;
+    if (!puedeCrearPrograma()) {
+        mostrarError('No tienes permisos para crear un programa repetido.');
+        return;
+    }
+    const temporada = parseInt(document.getElementById('repe-temporada')?.value, 10);
+    if (!Number.isFinite(temporada) || temporada < 1) {
+        mostrarError('La temporada es obligatoria');
+        return;
+    }
+    const modo = document.getElementById('repe-modo-concursantes')?.checked ? 'concursantes' : 'programa';
+    const cuerpo = {
+        tipo: document.getElementById('repe-tipo')?.value || 'REPE',
+        codigo: (document.getElementById('repe-codigo')?.value || '').trim() || null,
+        temporada,
+        fechaEmision: document.getElementById('repe-fecha')?.value || null
+    };
+    if (modo === 'programa') {
+        if (!repetidoProgramaSeleccionado) {
+            mostrarError('Selecciona un programa emitido.');
+            return;
+        }
+        cuerpo.programaOriginalId = repetidoProgramaSeleccionado;
+    } else {
+        if (repetidoConcursantesSeleccionados.length === 0) {
+            mostrarError('Selecciona al menos un concursante.');
+            return;
+        }
+        if (repetidoConcursantesSeleccionados.length > 3) {
+            mostrarError('Un programa repetido admite como máximo 3 concursantes.');
+            return;
+        }
+        cuerpo.concursanteIds = repetidoConcursantesSeleccionados.map(item => item.id);
+    }
+
+    const boton = document.getElementById('btn-guardar-repetido');
+    guardandoRepetido = true;
+    if (boton) boton.disabled = true;
+    try {
+        const creado = await apiManager.postUndoable('/api/programas/repetidos', cuerpo, {
+            label: 'Crear programa repetido',
+            idExtractor: (respuesta) => respuesta?.id,
+            deleteEndpointBuilder: (id) => `/api/programas/repetidos/${id}`
+        });
+        const codigo = creado && (creado.codigo || creado.id);
+        mostrarExito(codigo ? `Repetido ${creado.tipo || 'REPE'} ${codigo} creado` : 'Programa repetido creado');
+        if (creado && creado.aviso) {
+            mostrarMensaje(creado.aviso, 'info');
+        }
+        bootstrap.Modal.getInstance(document.getElementById('modal-repetido'))?.hide();
+        const filtroListado = document.getElementById('filtro-listado-programa');
+        if (filtroListado) filtroListado.value = 'repetidos';
+        aplicandoFiltros = true;
+        paginaActual = 0;
+        await refrescarVistaProgramas();
+    } catch (error) {
+        mostrarError(obtenerMensajeErrorProgramas(error, 'creación del programa repetido'));
+    } finally {
+        guardandoRepetido = false;
         if (boton) boton.disabled = false;
     }
 }
