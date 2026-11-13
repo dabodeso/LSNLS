@@ -273,6 +273,7 @@
         }
         .concursantes-table-header-wrapper .tabla-header,
         .concursantes-table-body-wrapper .table-excel {
+            width: 100%;
             min-width: 1480px;
         }
         
@@ -294,6 +295,12 @@
         .programa-recuadro .programa-info-label {
             text-align: left;
             width: 100%;
+        }
+        .programa-campo-dbl {
+            cursor: text;
+        }
+        .programa-header p.programa-creditos-textarea {
+            margin: 0;
         }
         .programa-creditos-textarea {
             width: 100%;
@@ -378,8 +385,43 @@
             position: relative;
         }
 
+        #modal-programacion-semana {
+            overflow: hidden;
+        }
         #modal-programacion-semana .modal-dialog {
             max-width: min(1480px, calc(100vw - 1.5rem));
+            height: calc(100vh - 1rem);
+            max-height: calc(100vh - 1rem);
+            margin: 0.5rem auto;
+        }
+        #modal-programacion-semana .modal-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-height: 100%;
+            overflow: hidden;
+        }
+        #modal-programacion-semana .modal-header,
+        #modal-programacion-semana .modal-footer {
+            flex-shrink: 0;
+        }
+        #modal-programacion-semana .modal-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+            max-height: none;
+            overflow: hidden;
+        }
+        #modal-programacion-semana #programacion-semana-ayuda,
+        #modal-programacion-semana #programacion-semana-estado {
+            flex-shrink: 0;
+        }
+        #modal-programacion-semana .hoja-semana-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            max-height: none;
+            overflow: auto;
         }
         .programacion-semana-controles {
             display: flex;
@@ -393,8 +435,6 @@
             font-weight: 700;
         }
         .hoja-semana-scroll {
-            overflow: auto;
-            max-height: calc(100vh - 240px);
             background: #e9eef5;
             border: 1px solid #d5deea;
             border-radius: 6px;
@@ -570,6 +610,7 @@
                             <select id="filtro-listado-programa" class="form-select form-select-sm" onchange="filtrarProgramas()">
                                 <option value="">Programas</option>
                                 <option value="repetidos">Repetidos</option>
+                                <option value="conjunto">Programas y repetidos</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -643,6 +684,7 @@
                     <div class="modal-body">
                         <form id="form-programa">
                             <input type="hidden" id="programa-id">
+                            <input type="hidden" id="programa-repetido" value="false">
                             <div class="mb-3">
                                 <label class="form-label">Código de programa:</label>
                                 <input type="text" class="form-control" id="codigo-programa" maxlength="32"
@@ -668,7 +710,20 @@
                                     <option value="programado">Programado</option>
                                     <option value="emitido">Emitido</option>
                                 </select>
-                                <small class="form-text text-muted">El estado se actualiza automáticamente según los datos introducidos</small>
+                                <small class="form-text text-muted" id="estado-programa-ayuda">El estado se actualiza automáticamente según los datos introducidos</small>
+                            </div>
+                            <div class="mb-3" id="grupo-duracion-programa">
+                                <label class="form-label" for="duracion-objetivo-programa">Duración objetivo:</label>
+                                <input type="text" class="form-control" id="duracion-objetivo-programa" placeholder="45m">
+                                <small class="form-text text-muted">Si se deja vacía, el programa usa 45m.</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="creditos-programa">Créditos especiales:</label>
+                                <textarea class="form-control" id="creditos-programa" rows="3" placeholder="Créditos especiales..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="notas-programa">Notas del programa:</label>
+                                <textarea class="form-control" id="notas-programa" rows="3" placeholder="Notas internas..."></textarea>
                             </div>
                         </form>
                     </div>
@@ -921,7 +976,7 @@
                                        placeholder="MM:SS" oninput="onCambioFiltrosConcursantesDisponibles()">
                             </div>
                             <div class="col-md-9 form-text pt-4" id="ayuda-filtro-tiempo-concursante-disponible">
-                                Duración exacta (MM:SS). Duración de más prioridad: final, si no dirección, si no grabación.
+                                Margen de ±30 segundos (MM:SS). Duración de más prioridad: final, si no dirección, si no grabación.
                             </div>
                         </div>
                         <div id="info-paginacion-concursantes" class="mb-2 text-muted small">
@@ -959,7 +1014,7 @@
     </div>
 
         <div class="modal fade" id="modal-programacion-semana" tabindex="-1" aria-labelledby="modal-programacion-semana-titulo">
-            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header flex-wrap gap-2">
                         <h5 class="modal-title" id="modal-programacion-semana-titulo">Programación de la semana</h5>
@@ -1003,9 +1058,9 @@
     <script src="js/utils.js?v=20260915-verif-consulta"></script>
     <script src="js/undo-manager.js?v=20261105-scroll-lugar"></script>
     <script src="js/editLockManager.js"></script>
-    <script src="js/syncMonitor.js"></script>
-    <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/programas.js?v=20261105-estado-conc-repe"></script>
+    <script src="js/syncMonitor.js?v=20261113-aviso-389"></script>
+    <script src="js/table-resizer.js?v=20261113-ancho-ventana"></script>
+    <script src="js/programas.js?v=20261113-escape"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             inicializarProgramas();

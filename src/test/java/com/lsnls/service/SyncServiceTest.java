@@ -153,12 +153,19 @@ class SyncServiceTest {
         when(auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(
                 AuditLog.EntityType.PREGUNTA, 1L)).thenReturn(Collections.singletonList(logUpdate));
 
+        Usuario sinNombre = new Usuario();
+        sinNombre.setId(50L);
+        sinNombre.setNombre(null);
         AuditLog logLogin = new AuditLog(otro, AuditLog.OperationType.LOGIN, AuditLog.EntityType.COMBO,
                 2L, "login", AuditLog.OperationResult.SUCCESS);
-        AuditLog logPropio = new AuditLog(usuario, AuditLog.OperationType.STATE_CHANGE, AuditLog.EntityType.COMBO,
-                2L, "estado", AuditLog.OperationResult.SUCCESS);
+        AuditLog logSinNombre = new AuditLog(sinNombre, AuditLog.OperationType.UPDATE, AuditLog.EntityType.COMBO,
+                2L, "upd", AuditLog.OperationResult.SUCCESS);
         when(auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(
-                AuditLog.EntityType.COMBO, 2L)).thenReturn(Arrays.asList(logLogin, logPropio));
+                AuditLog.EntityType.COMBO, 2L)).thenReturn(Arrays.asList(logLogin, logSinNombre));
+        stubCambioAjeno(AuditLog.EntityType.CUESTIONARIO, 3L);
+        stubCambioAjeno(AuditLog.EntityType.JORNADA, 4L);
+        stubCambioAjeno(AuditLog.EntityType.PROGRAMA, 5L);
+        stubCambioAjeno(AuditLog.EntityType.CONCURSANTE, 6L);
 
         List<VisibleEntityDTO> items = new ArrayList<VisibleEntityDTO>();
         items.add(item("PREGUNTA", 1L, 1L));
@@ -195,6 +202,7 @@ class SyncServiceTest {
         programa.setVersion(2L);
         programa.setTemporada(2025);
         when(programaRepository.findById(8L)).thenReturn(Optional.of(programa));
+        stubCambioAjeno(AuditLog.EntityType.PROGRAMA, 8L);
 
         List<EntityChangeDTO> cambios = syncService.checkVisibleChanges(
                 Collections.singletonList(item("programa", 8L, 0L)));
@@ -222,6 +230,10 @@ class SyncServiceTest {
         programa.setId(5L);
         programa.setVersion(2L);
         when(programaRepository.findById(5L)).thenReturn(Optional.of(programa), Optional.empty());
+        stubCambioAjeno(AuditLog.EntityType.PREGUNTA, 1L);
+        stubCambioAjeno(AuditLog.EntityType.JORNADA, 4L);
+        stubCambioAjeno(AuditLog.EntityType.CONCURSANTE, 6L);
+        stubCambioAjeno(AuditLog.EntityType.PROGRAMA, 5L);
 
         List<VisibleEntityDTO> items = Arrays.asList(
                 item("PREGUNTA", 1L, 0L),
@@ -235,6 +247,74 @@ class SyncServiceTest {
         assertEquals("Jornada 4", cambios.get(1).getEntityLabel());
         assertEquals("Concursante 6", cambios.get(2).getEntityLabel());
         assertEquals("Programa 5", cambios.get(3).getEntityLabel());
+    }
+
+    @Test
+    void checkVisibleChangesNoAvisaOtroUsuarioPorCambioPropioNiPorRepetidoAjeno() {
+        when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
+
+        Programa programa389 = new Programa();
+        programa389.setId(389L);
+        programa389.setVersion(4L);
+        programa389.setTemporada(2026);
+        programa389.setCodigo("389");
+        when(programaRepository.findById(389L)).thenReturn(Optional.of(programa389));
+
+        Usuario otro = new Usuario();
+        otro.setId(99L);
+        otro.setNombre("bruno");
+        AuditLog cambioAjenoAntiguo = new AuditLog(otro, AuditLog.OperationType.UPDATE,
+                AuditLog.EntityType.PROGRAMA, 389L, "antes", AuditLog.OperationResult.SUCCESS);
+        AuditLog cambioPropio = new AuditLog(usuario, AuditLog.OperationType.UPDATE,
+                AuditLog.EntityType.PROGRAMA, 389L, "propio", AuditLog.OperationResult.SUCCESS);
+        when(auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(
+                AuditLog.EntityType.PROGRAMA, 389L))
+                .thenReturn(Arrays.asList(cambioPropio, cambioAjenoAntiguo));
+
+        // Id de un repetido: el repositorio de programas devuelve otra fila, con el código 389.
+        Programa filaDistinta = new Programa();
+        filaDistinta.setId(50L);
+        filaDistinta.setVersion(9L);
+        filaDistinta.setTemporada(2026);
+        filaDistinta.setCodigo("389");
+        when(programaRepository.findById(50L)).thenReturn(Optional.of(filaDistinta));
+        when(auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(
+                AuditLog.EntityType.PROGRAMA, 50L)).thenReturn(Collections.emptyList());
+
+        Programa programaNormal = new Programa();
+        programaNormal.setId(12L);
+        programaNormal.setVersion(3L);
+        programaNormal.setTemporada(2026);
+        programaNormal.setCodigo("12");
+        when(programaRepository.findById(12L)).thenReturn(Optional.of(programaNormal));
+        AuditLog cambioAjeno = new AuditLog(otro, AuditLog.OperationType.UPDATE,
+                AuditLog.EntityType.PROGRAMA, 12L, "ajeno", AuditLog.OperationResult.SUCCESS);
+        when(auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(
+                AuditLog.EntityType.PROGRAMA, 12L))
+                .thenReturn(Collections.singletonList(cambioAjeno));
+
+        List<EntityChangeDTO> cambios = syncService.checkVisibleChanges(Arrays.asList(
+                item("PROGRAMA", 389L, 1L),
+                item("PROGRAMA", 50L, 1L),
+                item("PROGRAMA", 12L, 1L)));
+
+        assertEquals(1, cambios.size());
+        assertEquals(12L, cambios.get(0).getEntityId());
+        assertEquals("bruno", cambios.get(0).getUsuarioNombre());
+        assertEquals("Programa T2026 #12", cambios.get(0).getEntityLabel());
+        assertTrue(cambios.get(0).getMensaje().contains("bruno"));
+        assertTrue(cambios.stream().noneMatch(c ->
+                c.getMensaje() != null && c.getMensaje().contains("Otro usuario")));
+    }
+
+    private void stubCambioAjeno(AuditLog.EntityType type, Long entityId) {
+        Usuario otro = new Usuario();
+        otro.setId(99L);
+        otro.setNombre("bruno");
+        AuditLog log = new AuditLog(otro, AuditLog.OperationType.UPDATE, type,
+                entityId, "upd", AuditLog.OperationResult.SUCCESS);
+        when(auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(type, entityId))
+                .thenReturn(Collections.singletonList(log));
     }
 
     private VisibleEntityDTO item(String tipo, Long id, Long version) {

@@ -145,7 +145,7 @@ this.__api = {
     actualizarCodigoPrograma,
     actualizarNotasPrograma,
     actualizarCreditosEspecialesPrograma,
-    alternarEdicionPrograma,
+    mostrarProgramas,
     cargarProgramas,
     cargarConcursantesParaProgramasFiltrados,
     get programas() { return programas; },
@@ -159,7 +159,6 @@ this.__api = {
     set aplicandoFiltros(valor) { aplicandoFiltros = valor; },
     set rolUsuarioActual(valor) { rolUsuarioActual = valor; },
     get concursantesPorPrograma() { return concursantesPorPrograma; },
-    programasEnEdicion
 };
 `, sandbox);
 
@@ -216,7 +215,6 @@ function esConcursantes(llamada) {
     api.programasFiltrados = [editado, programa(8), programa(9), programa(10), programa(11)];
     api.aplicandoFiltros = true;
     api.paginaActual = 0;
-    api.programasEnEdicion.add('n:7');
 
     const campos = [
         () => api.actualizarEstadoPrograma(7, 'grabado', false),
@@ -242,9 +240,19 @@ function esConcursantes(llamada) {
     assert.strictEqual(api.programas[0].codigo, '107');
     assert.strictEqual(api.programas[0].duracionObjetivo, '50m');
     assert.strictEqual(api.programas[0].notas, 'nota interna');
-    assert.ok(api.programasEnEdicion.has('n:7'), 'Listo sigue en edición sin recargar');
 
-    api.concursantesPorPrograma[7] = [
+    api.rolUsuarioActual = 'ROLE_DIRECCION';
+    api.aplicandoFiltros = false;
+    api.programas = [programa(7)];
+    api.mostrarProgramas();
+    const html = elements['contenedor-programas'].innerHTML;
+    assert.ok(html.includes('ondblclick="editarCampoPrograma(7, \'temporada\', false, this)"'), 'doble clic edita la temporada');
+    assert.ok(html.includes('ondblclick="editarCampoPrograma(7, \'notas\', false, this)"'), 'doble clic edita las notas');
+    assert.ok(html.includes('onclick="editarPrograma(7, false)"'), 'Editar abre el formulario');
+    assert.ok(!html.includes('alternarEdicionPrograma'), 'Editar ya no activa los campos en la tarjeta');
+    assert.ok(!html.includes('<input'), 'la tarjeta no nace en modo edición');
+
+    api.concursantesPorPrograma['n:7'] = [
         { numeroConcursante: 22, estado: 'emitido' },
         { numeroConcursante: 15, estado: 'grabado' },
         { numeroConcursante: 8, estado: 'editado' }
@@ -260,12 +268,7 @@ function esConcursantes(llamada) {
     assert.ok(String(rechazoEditado.message).includes('15'), rechazoEditado && rechazoEditado.message);
     assert.ok(String(rechazoEditado.message).includes('22'), rechazoEditado && rechazoEditado.message);
     assert.strictEqual(calls.length, 0, 'el rechazo no llama al servidor');
-    delete api.concursantesPorPrograma[7];
-
-    calls.length = 0;
-    api.rolUsuarioActual = 'ROLE_DIRECCION';
-    api.alternarEdicionPrograma(7, false);
-    assert.strictEqual(calls.length, 0, 'el botón Listo no pide nada');
+    delete api.concursantesPorPrograma['n:7'];
 
     console.log('OK programas pagina');
 })().catch(error => {

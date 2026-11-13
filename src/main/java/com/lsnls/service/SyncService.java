@@ -67,10 +67,14 @@ public class SyncService {
                 continue;
             }
 
-            String usuarioNombre = findLastModifier(type, item.getEntityId(), currentUserId);
+            // Sin auditoría de otra persona (cambio propio o ningún log ajeno) no hay aviso:
+            // no se devuelve el cambio y el cliente no vuelve a mostrar el toast en cada poll.
+            String usuarioNombre = nombreSiCambioDeOtroUsuario(type, item.getEntityId(), currentUserId);
+            if (usuarioNombre == null) {
+                continue;
+            }
             String label = entityLabel(type, item.getEntityId());
-            String mensaje = (usuarioNombre != null ? usuarioNombre : "Otro usuario")
-                    + " ha actualizado " + label + ". Refresca para ver los cambios.";
+            String mensaje = usuarioNombre + " ha actualizado " + label + ". Refresca para ver los cambios.";
 
             changes.add(new EntityChangeDTO(
                     type.name(),
@@ -84,8 +88,15 @@ public class SyncService {
         return changes;
     }
 
-    private String findLastModifier(AuditLog.EntityType type, Long entityId, Long currentUserId) {
+    /**
+     * Nombre de quien hizo el último cambio relevante, solo si no es el usuario actual.
+     * Null si el último cambio es propio o no hay auditoría de otra persona: en ese caso no se avisa.
+     */
+    private String nombreSiCambioDeOtroUsuario(AuditLog.EntityType type, Long entityId, Long currentUserId) {
         List<AuditLog> logs = auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(type, entityId);
+        if (logs == null) {
+            return null;
+        }
         for (AuditLog log : logs) {
             if (log.getOperationType() != AuditLog.OperationType.UPDATE
                     && log.getOperationType() != AuditLog.OperationType.STATE_CHANGE
@@ -93,11 +104,12 @@ public class SyncService {
                 continue;
             }
             if (log.getUsuario() != null && currentUserId != null && log.getUsuario().getId().equals(currentUserId)) {
-                continue;
+                return null;
             }
             if (log.getUsuarioNombre() != null && !log.getUsuarioNombre().isBlank()) {
                 return log.getUsuarioNombre();
             }
+            return "Otro usuario";
         }
         return null;
     }

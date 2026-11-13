@@ -5,7 +5,7 @@ const SyncMonitor = {
     items: new Map(),
     intervalId: null,
     pollMs: 30000,
-    notifiedKeys: new Set(),
+    notifiedVersions: new Map(),
 
     key(type, id) {
         return `${type}:${id}`;
@@ -32,19 +32,17 @@ const SyncMonitor = {
         if (this.items.has(k)) {
             const item = this.items.get(k);
             item.version = version != null ? Number(version) : item.version;
-            this.notifiedKeys.delete(k);
         }
     },
 
     clear() {
         this.items.clear();
-        this.notifiedKeys.clear();
+        this.notifiedVersions.clear();
         this.stop();
     },
 
     resetFromVisible(entries) {
         this.items.clear();
-        this.notifiedKeys.clear();
         this.registerMany(entries);
     },
 
@@ -84,8 +82,10 @@ const SyncMonitor = {
 
     notifyChange(change) {
         const k = this.key(change.entityType, change.entityId);
-        if (this.notifiedKeys.has(k)) return;
-        this.notifiedKeys.add(k);
+        const version = change.version != null ? Number(change.version) : null;
+        const already = this.notifiedVersions.get(k);
+        if (already != null && (version == null || version <= already)) return;
+        this.notifiedVersions.set(k, version != null ? version : Number.POSITIVE_INFINITY);
 
         const mensaje = change.mensaje || `${change.usuarioNombre || 'Otro usuario'} ha actualizado ${change.entityLabel || change.entityId}. Refresca para ver los cambios.`;
 
@@ -117,7 +117,6 @@ const SyncMonitor = {
         if (newVersion != null) {
             this.updateVersion(type, id, newVersion);
         }
-        this.notifiedKeys.delete(this.key(type, id));
     }
 };
 

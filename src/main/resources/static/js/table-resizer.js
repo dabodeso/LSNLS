@@ -74,23 +74,157 @@ class TableResizer {
     }
 
     /**
+     * Tablas de concursantes dentro de un programa: cabecera y cuerpo comparten
+     * columnas y deben ocupar todo el ancho de la tarjeta.
+     */
+    esTablaConcursantesPrograma() {
+        return !!(this.table && this.table.closest && this.table.closest('.concursantes-table'));
+    }
+
+    /**
+     * Ancho visible de la tarjeta. Si hay varias, usa la más ancha para que
+     * una tarjeta aún sin medir no encoja al resto.
+     */
+    anchoDisponiblePrograma() {
+        let disponible = 0;
+        document.querySelectorAll('.concursantes-table-header-wrapper').forEach((el) => {
+            if (el.clientWidth > disponible) disponible = el.clientWidth;
+        });
+        if (!disponible) {
+            const propio = this.table.closest('.concursantes-table-header-wrapper')
+                || this.table.closest('.concursantes-table');
+            if (propio) disponible = propio.clientWidth;
+        }
+        return disponible;
+    }
+
+    /**
+     * Escribe el ancho visual de una columna sin cambiar el ancho pedido por
+     * el usuario (this.anchos). El sobrante de la ventana no debe guardarse.
+     */
+    aplicarAnchoVisual(index, width) {
+        const px = Math.max(1, Math.round(width)) + 'px';
+        this.getLinkedTables().forEach((tabla) => {
+            const th = tabla.querySelectorAll('thead tr th')[index];
+            if (th) {
+                th.style.width = px;
+                th.style.minWidth = px;
+            }
+            const col = tabla.querySelectorAll('colgroup col')[index];
+            if (col) col.style.width = px;
+        });
+    }
+
+    /**
      * Fija el ancho total de las tablas enlazadas a la suma de sus columnas.
      * Sin esto, el min-width del CSS reparte el hueco sobrante y las columnas
      * no respetan lo que ha pedido el usuario.
+     * En los concursantes de un programa, si la ventana es más ancha que esa
+     * suma, la tabla ocupa todo el hueco y el sobrante va a Foto y Momentos
+     * destacados. El resto de columnas se queda en el ancho pedido.
      */
     syncAnchoTabla() {
         if (!this.usaColgroup) return;
         const thead = this.table.querySelector('thead tr');
         if (!thead) return;
-        const total = Array.from(thead.querySelectorAll('th')).reduce((suma, th, index) => {
+        const ths = Array.from(thead.querySelectorAll('th'));
+        const bases = ths.map((th, index) => {
             const ancho = this.anchos[index];
-            return suma + (typeof ancho === 'number' && ancho > 0 ? ancho : Math.round(th.getBoundingClientRect().width));
-        }, 0);
-        if (!total) return;
-        this.getLinkedTables().forEach((tabla) => {
-            tabla.style.width = total + 'px';
-            tabla.style.minWidth = total + 'px';
+            return (typeof ancho === 'number' && ancho > 0) ? ancho : Math.round(th.getBoundingClientRect().width);
         });
+        let total = bases.reduce((suma, ancho) => suma + ancho, 0);
+        if (!total) return;
+
+        if (this.esTablaConcursantesPrograma()) {
+            const visuales = bases.slice();
+            const disponible = this.anchoDisponiblePrograma();
+            if (disponible > total + 1) {
+                const flex = [];
+                ths.forEach((th, index) => {
+                    const nombre = th.textContent.trim().toLowerCase();
+                    if (nombre === 'foto' || nombre.includes('destacado')) flex.push(index);
+                });
+                if (flex.length) {
+                    const extra = disponible - total;
+                    const peso = flex.reduce((suma, index) => suma + bases[index], 0) || flex.length;
+                    let restante = extra;
+                    flex.forEach((indice, n) => {
+                        const parte = n === flex.length - 1
+                            ? restante
+                            : Math.floor(extra * bases[indice] / peso);
+                        restante -= parte;
+                        visuales[indice] = bases[indice] + parte;
+                    });
+                    total = disponible;
+                }
+            }
+            visuales.forEach((ancho, index) => this.aplicarAnchoVisual(index, ancho));
+        }
+
+        const px = total + 'px';
+        this.getLinkedTables().forEach((tabla) => {
+            tabla.style.width = px;
+            tabla.style.minWidth = px;
+        });
+        // El borde de la tabla a veces suma 1px y deja una barra horizontal
+        // en una ventana que sí cabe. Solo se corrige ese desborde mínimo.
+        this.corregirDesbordeBorde();
+    }
+
+    corregirDesbordeBorde() {
+        if (!this.esTablaConcursantesPrograma()) return;
+        const envoltorio = this.table.closest('.concursantes-table-header-wrapper');
+        if (!envoltorio) return;
+        const ajuste = envoltorio.scrollWidth - envoltorio.clientWidth;
+        if (ajuste <= 0 || ajuste > 4) return;
+        const actual = parseFloat(this.table.style.width);
+        if (!actual) return;
+        const corregido = Math.round(actual - ajuste);
+        const px = corregido + 'px';
+        this.getLinkedTables().forEach((tabla) => {
+            tabla.style.width = px;
+            tabla.style.minWidth = px;
+        });
+        const ths = this.table.querySelectorAll('thead tr th');
+        let indiceFlexible = -1;
+        ths.forEach((th, index) => {
+            const nombre = th.textContent.trim().toLowerCase();
+            if (nombre === 'foto' || nombre.includes('destacado')) indiceFlexible = index;
+        });
+        if (indiceFlexible < 0) return;
+        const col = this.table.querySelectorAll('colgroup col')[indiceFlexible];
+        const anchoCol = col ? parseFloat(col.style.width) : 0;
+        if (anchoCol > ajuste) this.aplicarAnchoVisual(indiceFlexible, anchoCol - ajuste);
+    }
+
+    /**
+     * Vuelve a repartir el hueco cuando cambia el tamaño de la ventana o de
+     * la lista de programas. Una sola escucha para todas las tarjetas.
+     */
+    registrarAjusteVentana() {
+        if (!this.esTablaConcursantesPrograma() || !this.table.querySelector('thead')) return;
+        this.table._tableResizer = this;
+        if (window.__ajusteAnchoConcursantesPrograma) return;
+        window.__ajusteAnchoConcursantesPrograma = true;
+        let timer = null;
+        const programar = () => {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => {
+                const tablas = document.querySelectorAll('.concursantes-table-header-wrapper table');
+                for (const tabla of tablas) {
+                    if (tabla._tableResizer) {
+                        tabla._tableResizer.syncAnchoTabla();
+                        break;
+                    }
+                }
+            }, 40);
+        };
+        window.addEventListener('resize', programar);
+        const raiz = document.getElementById('contenedor-programas');
+        if (raiz && typeof ResizeObserver !== 'undefined') {
+            const observador = new ResizeObserver(programar);
+            observador.observe(raiz);
+        }
     }
     
     init() {
@@ -103,6 +237,10 @@ class TableResizer {
         }
         // Guardado robusto: si el ancho cambia por CSS/JS/resize nativo, persistirlo igual
         this.setupAutoSaveOnResize();
+        this.registrarAjusteVentana();
+        if (this.esTablaConcursantesPrograma() && this.table.querySelector('thead')) {
+            requestAnimationFrame(() => this.syncAnchoTabla());
+        }
     }
 
     /**
@@ -353,7 +491,10 @@ class TableResizer {
                 startX = e.clientX;
                 currentColumn = handle.parentElement;
                 columnIndex = Array.prototype.indexOf.call(currentColumn.parentElement.children, currentColumn);
-                startWidth = currentColumn.offsetWidth;
+                // El ancho pedido, no el visual: en programas el sobrante de la
+                // ventana se suma a Foto y Momentos y no debe acumularse al arrastrar.
+                const pedido = this.anchos[columnIndex];
+                startWidth = (typeof pedido === 'number' && pedido > 0) ? pedido : currentColumn.offsetWidth;
                 
                 // Prevenir selección de texto
                 document.body.style.userSelect = 'none';

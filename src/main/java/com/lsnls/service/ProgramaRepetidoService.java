@@ -933,7 +933,11 @@ public class ProgramaRepetidoService {
         if (sinPrefijo.equalsIgnoreCase(pedido)) {
             return true;
         }
-        return programa.getId() != null && pedido.equals(String.valueOf(programa.getId()));
+        // Sin código visible, el número que se muestra es el id. Si hay código, el id interno no cuenta.
+        if (codigo.isEmpty()) {
+            return programa.getId() != null && pedido.equals(String.valueOf(programa.getId()));
+        }
+        return false;
     }
 
     private static boolean contiene(String valor, String filtro) {

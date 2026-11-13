@@ -113,4 +113,27 @@ class ProgramaRepetidoServiceBusquedaProgramasTest {
         assertFalse(pagina.isHayMas());
         assertEquals("12", pagina.getResultados().get(0).getCodigo());
     }
+
+    @Test
+    void buscar112NoDevuelveElProgramaCuyoIdEs112() {
+        Programa codigo112 = programaEmitido(200L, "112");
+        Programa id112 = programaEmitido(112L, "111");
+        when(programaRepository.findByEstado(Programa.EstadoPrograma.emitido))
+                .thenReturn(List.of(codigo112, id112));
+
+        ResultadoBusquedaDTO<ProgramaEmitidoOpcionDTO> pagina =
+                service.buscarProgramasEmitidos(null, "112", null, 0);
+
+        assertEquals(1L, pagina.getTotal());
+        assertEquals("112", pagina.getResultados().get(0).getCodigo());
+    }
+
+    private static Programa programaEmitido(Long id, String codigo) {
+        Programa programa = new Programa();
+        programa.setId(id);
+        programa.setCodigo(codigo);
+        programa.setTemporada(1);
+        programa.setEstado(Programa.EstadoPrograma.emitido);
+        return programa;
+    }
 }
