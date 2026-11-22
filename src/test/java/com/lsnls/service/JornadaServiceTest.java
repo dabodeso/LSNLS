@@ -54,7 +54,9 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -147,6 +149,58 @@ class JornadaServiceTest {
         assertEquals("Jornada 1", result.get(0).getNombre());
         assertEquals("preparacion", result.get(0).getEstado());
         assertEquals(10L, result.get(0).getCreacionUsuarioId());
+    }
+
+    @Test
+    void listarNoReescribeEstadosLegacy() {
+        when(jornadaRepository.findAllOrderByFechaCreacionDesc()).thenReturn(Collections.singletonList(jornadaBase()));
+
+        jornadaService.obtenerTodas();
+
+        verify(entityManager, never()).createNativeQuery(contains("UPDATE jornadas SET estado"));
+    }
+
+    @Test
+    void alArrancarNormalizaEstadosLegacy() {
+        jornadaService.normalizarEstadosLegacyAlArrancar();
+
+        verify(entityManager).createNativeQuery("UPDATE jornadas SET estado='preparacion' WHERE estado='borrador'");
+        verify(entityManager).createNativeQuery("UPDATE jornadas SET estado='completada' WHERE estado='completa'");
+        verify(entityManager).createNativeQuery("UPDATE jornadas SET estado='archivada' WHERE estado='grabada'");
+        verify(nativeQuery, times(3)).executeUpdate();
+    }
+
+    @Test
+    void listadoAgrupaReutilizadoYAsignadoSinMirarLasPreguntas() {
+        Jornada jornada = jornadaBase();
+        Cuestionario cuestionario = new Cuestionario();
+        cuestionario.setId(5L);
+        cuestionario.setEstado(Cuestionario.EstadoCuestionario.aprobado);
+        cuestionario.setTematica("Historia");
+        Combo combo = comboConFactores(11L, "X2", "X10", "X3");
+        jornada.reemplazarCuestionariosPorSlot(Arrays.asList(cuestionario, null, null, null, null, null));
+        jornada.reemplazarCombosPorSlot(Arrays.asList(combo, null, null, null, null, null));
+        when(jornadaRepository.findAllOrderByFechaCreacionDesc()).thenReturn(Collections.singletonList(jornada));
+        when(nativeQuery.getResultList()).thenReturn(
+            Collections.singletonList(new Object[]{1L, 5L}),
+            Collections.emptyList(),
+            Collections.singletonList(5L),
+            Collections.emptyList());
+
+        List<JornadaDTO> result = jornadaService.obtenerTodas();
+
+        JornadaDTO.CuestionarioResumenDTO resumenCuestionario = result.get(0).getCuestionarios().get(0);
+        JornadaDTO.ComboResumenDTO resumenCombo = result.get(0).getCombos().get(0);
+        assertEquals("Historia", resumenCuestionario.getTematica());
+        assertTrue(resumenCuestionario.isReutilizado());
+        assertTrue(resumenCuestionario.isAsignadoAConcursante());
+        assertNull(resumenCuestionario.getTotalPreguntas());
+        assertEquals(11L, resumenCombo.getId());
+        assertNull(resumenCombo.getMultiplicadorMaximo());
+        assertNull(resumenCombo.getTotalPreguntas());
+        verify(concursanteRepository, never()).existsByCuestionario_Id(any());
+        verify(concursanteRepository, never()).existsByCombo_Id(any());
+        verify(entityManager, never()).createNativeQuery(contains("SELECT COUNT(*) FROM historial_jornadas"));
     }
 
     @Test

@@ -321,11 +321,7 @@ const JornadasManager = {
             if (fechaHasta) params.append('fechaHasta', fechaHasta);
             if (buscar) params.append('buscar', buscar);
 
-            const [jornadasRes, cuestionariosRes, combosRes] = await Promise.all([
-                apiManager.get(`/api/jornadas?${params}`),
-                apiManager.get('/api/jornadas/cuestionarios-disponibles'),
-                apiManager.get('/api/jornadas/combos-disponibles')
-            ]);
+            const jornadasRes = await apiManager.get(`/api/jornadas?${params}`);
 
             // Siempre reemplazar las jornadas con las de la página actual
             this.jornadas = jornadasRes.datos?.content || [];
@@ -334,10 +330,7 @@ const JornadasManager = {
             this.totalPaginas = jornadasRes.datos?.totalPages || 0;
             this.paginaActual = jornadasRes.datos?.number || 0;
 
-            this.cuestionariosDisponibles = cuestionariosRes.datos || [];
-            this.combosDisponibles = combosRes.datos || [];
-
-            console.log(`✅ [JORNADAS] Datos cargados: ${this.jornadas.length} jornadas, ${this.cuestionariosDisponibles.length} cuestionarios, ${this.combosDisponibles.length} combos`);
+            console.log(`✅ [JORNADAS] Datos cargados: ${this.jornadas.length} jornadas`);
             
             // Mostrar las jornadas después de cargar los datos
             this.mostrarJornadas();
@@ -349,6 +342,16 @@ const JornadasManager = {
             this.ocultarEstadoCarga();
             this.actualizarPaginacion();
         }
+    },
+
+    async cargarCuestionariosDisponibles() {
+        const res = await apiManager.get('/api/jornadas/cuestionarios-disponibles');
+        this.cuestionariosDisponibles = res.datos || [];
+    },
+
+    async cargarCombosDisponibles() {
+        const res = await apiManager.get('/api/jornadas/combos-disponibles');
+        this.combosDisponibles = res.datos || [];
     },
 
     configurarEventos() {
@@ -1422,6 +1425,13 @@ const JornadasManager = {
             this.reabrirEditarTrasSeleccion = true;
             modalEditInst?.hide();
         }
+        try {
+            await this.cargarCuestionariosDisponibles();
+        } catch (e) {
+            console.warn('[JORNADAS] No se pudieron cargar cuestionarios disponibles', e);
+            Utils.showAlert('No se pudieron cargar los cuestionarios disponibles', 'error');
+            return;
+        }
         // Cargar temáticas al abrir
         try {
             const selTem = document.getElementById('filtroCuestTematica');
@@ -1449,6 +1459,13 @@ const JornadasManager = {
         if (modalEditEl && modalEditEl.classList.contains('show')) {
             this.reabrirEditarTrasSeleccion = true;
             modalEditInst?.hide();
+        }
+        try {
+            await this.cargarCombosDisponibles();
+        } catch (e) {
+            console.warn('[JORNADAS] No se pudieron cargar combos disponibles', e);
+            Utils.showAlert('No se pudieron cargar los combos disponibles', 'error');
+            return;
         }
         // Cargar temáticas para el select (de combos disponibles)
         try {

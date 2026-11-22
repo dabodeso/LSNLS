@@ -7,7 +7,10 @@ import com.lsnls.entity.*;
 import com.lsnls.repository.*;
 import com.lsnls.entity.PreguntaCombo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,21 +61,15 @@ public class JornadaService {
     private ConcursanteRepository concursanteRepository;
 
     public List<JornadaDTO> obtenerTodas() {
-        // Normalizar estados legacy en BD antes de leer
-        try { normalizarEstadosLegacy(); } catch (Exception ignored) {}
-        List<Jornada> jornadas = jornadaRepository.findAllOrderByFechaCreacionDesc();
-        return jornadas.stream().map(this::convertirADTO).collect(Collectors.toList());
+        return mapearListado(jornadaRepository.findAllOrderByFechaCreacionDesc());
     }
 
     public Page<JornadaDTO> obtenerTodasPaginadas(Pageable pageable) {
-        try { normalizarEstadosLegacy(); } catch (Exception ignored) {}
-        Page<Jornada> jornadas = jornadaRepository.findAllOrderByIdDesc(pageable);
-        return jornadas.map(this::convertirADTO);
+        return mapearPagina(jornadaRepository.findAllOrderByIdDesc(pageable));
     }
 
     public Page<JornadaDTO> obtenerTodasPaginadasConFiltros(Pageable pageable, 
             String estado, String fechaDesde, String fechaHasta, String buscar) {
-        try { normalizarEstadosLegacy(); } catch (Exception ignored) {}
         // Convertir fechas de String a LocalDate
         LocalDate fechaDesdeLocal = null;
         LocalDate fechaHastaLocal = null;
@@ -98,7 +95,20 @@ public class JornadaService {
         
         Page<Jornada> jornadas = jornadaRepository.findAllWithFilters(pageable, estado, estadoEnum,
                 fechaDesdeLocal, fechaHastaLocal, buscar);
-        return jornadas.map(this::convertirADTO);
+        return mapearPagina(jornadas);
+    }
+
+    /**
+     * La traducción de estados viejos se hace al arrancar, no en cada listado.
+     * Un UPDATE en cada lectura bloquea la tabla cuando varias personas abren Jornadas.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void normalizarEstadosLegacyAlArrancar() {
+        try {
+            normalizarEstadosLegacy();
+        } catch (Exception e) {
+            log.warn("No se pudieron normalizar estados legacy de jornadas: {}", e.getMessage());
+        }
     }
 
     /**
@@ -461,7 +471,118 @@ public class JornadaService {
         }).collect(Collectors.toList());
     }
 
+    private List<JornadaDTO> mapearListado(List<Jornada> jornadas) {
+        if (jornadas == null || jornadas.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Set<Long> jornadaIds = new LinkedHashSet<>();
+        Set<Long> cuestionarioIds = new LinkedHashSet<>();
+        Set<Long> comboIds = new LinkedHashSet<>();
+        for (Jornada jornada : jornadas) {
+            if (jornada.getId() != null) {
+                jornadaIds.add(jornada.getId());
+            }
+            for (Cuestionario cuestionario : jornada.getCuestionariosPorSlot()) {
+                if (cuestionario != null && cuestionario.getId() != null) {
+                    cuestionarioIds.add(cuestionario.getId());
+                }
+            }
+            for (Combo combo : jornada.getCombosPorSlot()) {
+                if (combo != null && combo.getId() != null) {
+                    comboIds.add(combo.getId());
+                }
+            }
+        }
+        DatosListado datos = new DatosListado();
+        datos.cuestionariosReutilizados = clavesReutilizadas(jornadaIds, "cuestionario_id");
+        datos.combosReutilizados = clavesReutilizadas(jornadaIds, "combo_id");
+        datos.cuestionariosAsignados = idsEnConcursantes("cuestionario_id", cuestionarioIds);
+        datos.combosAsignados = idsEnConcursantes("combo_id", comboIds);
+        List<JornadaDTO> dtos = new ArrayList<>();
+        for (Jornada jornada : jornadas) {
+            dtos.add(convertirADTO(jornada, false, datos));
+        }
+        return dtos;
+    }
+
+    private Page<JornadaDTO> mapearPagina(Page<Jornada> page) {
+        return new PageImpl<>(mapearListado(page.getContent()), page.getPageable(), page.getTotalElements());
+    }
+
+    /**
+     * Una consulta para todos los huecos de la página, no una por hueco.
+     * La columna solo puede ser cuestionario_id o combo_id.
+     */
+    private Set<String> clavesReutilizadas(Set<Long> jornadaIds, String columna) {
+        Set<String> claves = new HashSet<>();
+        if (jornadaIds == null || jornadaIds.isEmpty()) {
+            return claves;
+        }
+        if (!"cuestionario_id".equals(columna) && !"combo_id".equals(columna)) {
+            throw new IllegalArgumentException("Columna de historial no permitida");
+        }
+        @SuppressWarnings("unchecked")
+        List<Object[]> filas = entityManager.createNativeQuery(
+                "SELECT jornada_id, " + columna
+                    + " FROM historial_jornadas WHERE estado_asignacion = 'reaprovechado' AND jornada_id IN (:ids)"
+                    + " AND " + columna + " IS NOT NULL")
+                .setParameter("ids", jornadaIds)
+                .getResultList();
+        for (Object fila : filas) {
+            Object[] cols = fila instanceof Object[] ? (Object[]) fila : new Object[] { fila };
+            if (cols.length < 2) {
+                continue;
+            }
+            Long jornadaId = aLong(cols[0]);
+            Long elementoId = aLong(cols[1]);
+            if (jornadaId != null && elementoId != null) {
+                claves.add(jornadaId + ":" + elementoId);
+            }
+        }
+        return claves;
+    }
+
+    private Set<Long> idsEnConcursantes(String columna, Set<Long> ids) {
+        Set<Long> encontrados = new HashSet<>();
+        if (ids == null || ids.isEmpty()) {
+            return encontrados;
+        }
+        if (!"cuestionario_id".equals(columna) && !"combo_id".equals(columna)) {
+            throw new IllegalArgumentException("Columna de concursante no permitida");
+        }
+        @SuppressWarnings("unchecked")
+        List<Object> filas = entityManager.createNativeQuery(
+                "SELECT DISTINCT " + columna + " FROM concursantes WHERE " + columna + " IN (:ids)")
+                .setParameter("ids", ids)
+                .getResultList();
+        for (Object fila : filas) {
+            Long id = aLong(fila instanceof Object[] ? ((Object[]) fila)[0] : fila);
+            if (id != null) {
+                encontrados.add(id);
+            }
+        }
+        return encontrados;
+    }
+
+    private static Long aLong(Object valor) {
+        if (valor instanceof Number) {
+            return ((Number) valor).longValue();
+        }
+        return null;
+    }
+
+    private static final class DatosListado {
+        private Set<String> cuestionariosReutilizados = Collections.emptySet();
+        private Set<String> combosReutilizados = Collections.emptySet();
+        private Set<Long> cuestionariosAsignados = Collections.emptySet();
+        private Set<Long> combosAsignados = Collections.emptySet();
+    }
+
     private JornadaDTO convertirADTO(Jornada jornada) {
+        return convertirADTO(jornada, true, null);
+    }
+
+    private JornadaDTO convertirADTO(Jornada jornada, boolean detallado, DatosListado datos) {
         JornadaDTO dto = new JornadaDTO();
         dto.setId(jornada.getId());
         dto.setVersion(jornada.getVersion());
@@ -489,9 +610,16 @@ public class JornadaService {
             resumen.setEstado(c.getEstado() != null ? c.getEstado().name() : null);
             resumen.setTematica(c.getTematica());
             resumen.setNotasDireccion(c.getNotasDireccion());
-            resumen.setTotalPreguntas(c.getPreguntas() != null ? c.getPreguntas().size() : 0);
-            resumen.setReutilizado(esReutilizado(jornada.getId(), "cuestionario_id", c.getId()));
-            resumen.setAsignadoAConcursante(estaAsignadoAConcursante(c));
+            if (detallado) {
+                resumen.setTotalPreguntas(c.getPreguntas() != null ? c.getPreguntas().size() : 0);
+                resumen.setReutilizado(esReutilizado(jornada.getId(), "cuestionario_id", c.getId()));
+                resumen.setAsignadoAConcursante(estaAsignadoAConcursante(c));
+            } else {
+                resumen.setReutilizado(datos.cuestionariosReutilizados.contains(jornada.getId() + ":" + c.getId()));
+                resumen.setAsignadoAConcursante(
+                    c.getEstado() == Cuestionario.EstadoCuestionario.grabado
+                        || datos.cuestionariosAsignados.contains(c.getId()));
+            }
             cuestionarios.set(i, resumen);
         }
         dto.setCuestionarioIds(cuestionarioIds);
@@ -513,11 +641,18 @@ public class JornadaService {
             resumen.setTipo(c.getTipo() != null ? c.getTipo().name() : null);
             resumen.setTematica(c.getTematica());
             resumen.setNotasDireccion(c.getNotasDireccion());
-            resumen.setTotalPreguntas(c.getPreguntas() != null ? c.getPreguntas().size() : 0);
-            resumen.setReutilizado(esReutilizado(jornada.getId(), "combo_id", c.getId()));
-            resumen.setAsignadoAConcursante(estaAsignadoAConcursante(c));
-            resumen.setMultiplicadorMaximo(multiplicadorMasAlto(c));
             resumen.setPreguntaUsadaId(c.getPreguntaUsadaId());
+            if (detallado) {
+                resumen.setTotalPreguntas(c.getPreguntas() != null ? c.getPreguntas().size() : 0);
+                resumen.setReutilizado(esReutilizado(jornada.getId(), "combo_id", c.getId()));
+                resumen.setAsignadoAConcursante(estaAsignadoAConcursante(c));
+                resumen.setMultiplicadorMaximo(multiplicadorMasAlto(c));
+            } else {
+                resumen.setReutilizado(datos.combosReutilizados.contains(jornada.getId() + ":" + c.getId()));
+                resumen.setAsignadoAConcursante(
+                    c.getEstado() == Combo.EstadoCombo.grabado
+                        || datos.combosAsignados.contains(c.getId()));
+            }
             combos.set(i, resumen);
         }
         dto.setComboIds(comboIds);

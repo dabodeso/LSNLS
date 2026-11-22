@@ -337,4 +337,33 @@ assert.ok(
 assert.ok(/let tamañoPagina = 5;/.test(programasJs), 'la página de programas muestra 5');
 assert.ok(programasJs.includes('cargarProgramasPaginados(0)'), 'al abrir se pide la página 1');
 
+const cargarDatos = jornadasJs.slice(
+  jornadasJs.indexOf('async cargarDatos'),
+  jornadasJs.indexOf('async cargarCuestionariosDisponibles')
+);
+assert.ok(cargarDatos.includes('/api/jornadas?'), 'la lista sigue pidiendo las jornadas');
+assert.ok(!cargarDatos.includes('cuestionarios-disponibles'), 'la lista no baja el catálogo de cuestionarios');
+assert.ok(!cargarDatos.includes('combos-disponibles'), 'la lista no baja el catálogo de combos');
+assert.ok(jornadasJs.includes('async cargarCuestionariosDisponibles'), 'el catálogo de cuestionarios se pide aparte');
+assert.ok(jornadasJs.includes('async cargarCombosDisponibles'), 'el catálogo de combos se pide aparte');
+const abrirCuestionarios = jornadasJs.slice(
+  jornadasJs.indexOf('async seleccionarCuestionarios'),
+  jornadasJs.indexOf('async seleccionarCombos')
+);
+const abrirCombos = jornadasJs.slice(
+  jornadasJs.indexOf('async seleccionarCombos'),
+  jornadasJs.indexOf('listaCuestionariosFiltrada')
+);
+assert.ok(
+  abrirCuestionarios.indexOf('cargarCuestionariosDisponibles') >= 0
+    && abrirCuestionarios.indexOf('cargarCuestionariosDisponibles')
+      < abrirCuestionarios.indexOf('mostrarCuestionariosDisponibles'),
+  'el selector de cuestionarios carga el catálogo antes de pintarlo'
+);
+assert.ok(
+  abrirCombos.indexOf('cargarCombosDisponibles') >= 0
+    && abrirCombos.indexOf('cargarCombosDisponibles') < abrirCombos.indexOf('mostrarCombosDisponibles'),
+  'el selector de combos carga el catálogo antes de pintarlo'
+);
+
 console.log('OK cambios flujo contratos');
