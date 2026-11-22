@@ -84,7 +84,9 @@ public class EditLockService {
         }
 
         try {
-            return persistLock(new EditLock(), entityType, entityId, usuario);
+            Map<String, Object> resultado = persistLock(new EditLock(), entityType, entityId, usuario);
+            editLockRepository.flush();
+            return resultado;
         } catch (DataIntegrityViolationException ex) {
             log.warn("[EDIT LOCK] Dos reservas a la vez en {} {}", entityType, entityId);
             throw new ResponseStatusException(HttpStatus.LOCKED,

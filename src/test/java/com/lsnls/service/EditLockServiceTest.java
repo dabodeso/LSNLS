@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -73,8 +74,9 @@ class EditLockServiceTest {
         when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
         when(editLockRepository.findForUpdate(AuditLog.EntityType.PREGUNTA, 10L))
                 .thenReturn(Optional.empty());
-        when(editLockRepository.save(any(EditLock.class)))
-                .thenThrow(new DataIntegrityViolationException("clave duplicada"));
+        when(editLockRepository.save(any(EditLock.class))).thenAnswer(inv -> inv.getArgument(0));
+        doThrow(new DataIntegrityViolationException("clave duplicada"))
+                .when(editLockRepository).flush();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> editLockService.acquire(AuditLog.EntityType.PREGUNTA, 10L));
