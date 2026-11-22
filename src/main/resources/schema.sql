@@ -210,6 +210,7 @@ CREATE TABLE IF NOT EXISTS concursantes (
     premio DECIMAL(10,2),
     foto VARCHAR(255),
     creditos_especiales TEXT,
+    temporada INT NULL,
     version BIGINT DEFAULT 0
 ) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
