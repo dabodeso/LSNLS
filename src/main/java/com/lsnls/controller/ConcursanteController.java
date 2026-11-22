@@ -3,13 +3,16 @@ package com.lsnls.controller;
 import com.lsnls.config.MensajesUsuario;
 
 import com.lsnls.dto.ConcursanteDTO;
+import com.lsnls.entity.AuditLog;
 import com.lsnls.service.ConcursanteService;
+import com.lsnls.service.EditLockService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -26,6 +29,9 @@ public class ConcursanteController {
 
     @Autowired
     private ConcursanteService concursanteService;
+
+    @Autowired
+    private EditLockService editLockService;
 
     @GetMapping
     public ResponseEntity<?> findAll(
@@ -174,7 +180,10 @@ public class ConcursanteController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> updateCampo(@PathVariable Long id, @RequestBody Map<String, Object> campo) {
         try {
+            editLockService.assertCanEdit(AuditLog.EntityType.CONCURSANTE, id);
             return ResponseEntity.ok(concursanteService.updateCampo(id, campo));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatus()).body(e.getReason());
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El concursante ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (org.springframework.security.access.AccessDeniedException e) {

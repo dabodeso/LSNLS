@@ -4,6 +4,7 @@ import com.lsnls.dto.ConcursanteEmitidoOpcionDTO;
 import com.lsnls.dto.ProgramaEmitidoOpcionDTO;
 import com.lsnls.dto.ProgramaRepetidoDTO;
 import com.lsnls.dto.ResultadoBusquedaDTO;
+import com.lsnls.service.EditLockService;
 import com.lsnls.service.ProgramaRepetidoService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +27,9 @@ class ProgramaRepetidoControllerCampoTest {
 
     @Mock
     private ProgramaRepetidoService programaRepetidoService;
+
+    @Mock
+    private EditLockService editLockService;
 
     @InjectMocks
     private ProgramaRepetidoController controller;

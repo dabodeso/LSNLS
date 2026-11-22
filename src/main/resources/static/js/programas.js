@@ -124,7 +124,7 @@ function crearControlCampoPrograma(campo, valor) {
     return control;
 }
 
-function editarCampoPrograma(programaId, campo, repetido, elemento) {
+async function editarCampoPrograma(programaId, campo, repetido, elemento) {
     if (!elemento || elemento.dataset.editando === '1') return;
     const programa = buscarProgramaListado(programaId, repetido);
     if (!programa || !campoProgramaEditable(programa, campo)) {
@@ -133,6 +133,13 @@ function editarCampoPrograma(programaId, campo, repetido, elemento) {
         } else if (!puedeEditarCamposPrograma()) {
             mostrarError('No tienes permisos para editar programas.');
         }
+        return;
+    }
+    const tipoCandado = esFlagRepetido(repetido) ? 'PROGRAMA_REPETIDO' : 'PROGRAMA';
+    try {
+        await EditLockManager.tryAcquire(tipoCandado, programaId);
+    } catch (error) {
+        mostrarError(error.message || 'No se puede editar este programa ahora');
         return;
     }
     elemento.dataset.editando = '1';
@@ -148,15 +155,20 @@ function editarCampoPrograma(programaId, campo, repetido, elemento) {
     const cerrar = async (guardar) => {
         if (cerrado) return;
         cerrado = true;
-        if (!guardar || String(control.value ?? '') === String(valor ?? '')) {
-            pintarVistaProgramasLocal();
-            return;
+        try {
+            if (!guardar || String(control.value ?? '') === String(valor ?? '')) {
+                pintarVistaProgramasLocal();
+                return;
+            }
+            await guardarCampoProgramaEditado(programaId, campo, repetido, control.value);
+        } finally {
+            await EditLockManager.release(tipoCandado, programaId);
         }
-        await guardarCampoProgramaEditado(programaId, campo, repetido, control.value);
     };
     control.addEventListener('keydown', (evento) => {
         if (evento.key === 'Escape') {
             evento.preventDefault();
+            cerrar(false);
             return;
         }
         if (evento.key === 'Enter' && control.tagName !== 'TEXTAREA') {

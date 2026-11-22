@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -41,6 +42,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -351,5 +353,19 @@ class PreguntaServiceTest {
             "1LS", "NOPE", "borrador,aprobada,invalido", "tema", "sub", "preg", "resp", "autor", "texto");
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void actualizarRechazaLaVersionVieja() {
+        Pregunta pregunta = new Pregunta();
+        pregunta.setId(1L);
+        pregunta.setVersion(4L);
+        when(preguntaRepository.findById(1L)).thenReturn(Optional.of(pregunta));
+        PreguntaDTO dto = new PreguntaDTO();
+        dto.setVersion(2L);
+
+        assertThrows(ObjectOptimisticLockingFailureException.class,
+                () -> preguntaService.actualizarDesdeDTO(1L, dto));
+        verify(preguntaRepository, never()).save(any());
     }
 }

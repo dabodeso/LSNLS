@@ -1216,6 +1216,10 @@ const PreguntasManager = {
         // CORRECCIÓN: Solo enviar el campo que se está editando
         const update = {};
         update[campo] = nuevoValor;
+        const previa = this.preguntas.find(p => p.id === id);
+        if (previa && previa.version != null) {
+            update.version = previa.version;
+        }
         
         console.log('📤 [FRONTEND] Actualizando campo:', campo, '→', nuevoValor);
         

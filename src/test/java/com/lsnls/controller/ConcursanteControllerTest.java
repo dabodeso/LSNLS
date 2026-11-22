@@ -2,6 +2,7 @@ package com.lsnls.controller;
 
 import com.lsnls.dto.ConcursanteDTO;
 import com.lsnls.service.ConcursanteService;
+import com.lsnls.service.EditLockService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,6 +36,9 @@ class ConcursanteControllerTest {
 
     @Mock
     private ConcursanteService concursanteService;
+
+    @Mock
+    private EditLockService editLockService;
 
     @InjectMocks
     private ConcursanteController concursanteController;

@@ -7,6 +7,8 @@ import com.lsnls.dto.CrearProgramaRepetidoDTO;
 import com.lsnls.dto.ProgramaEmitidoOpcionDTO;
 import com.lsnls.dto.ProgramaRepetidoDTO;
 import com.lsnls.dto.ResultadoBusquedaDTO;
+import com.lsnls.entity.AuditLog;
+import com.lsnls.service.EditLockService;
 import com.lsnls.service.ProgramaRepetidoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -37,6 +40,9 @@ public class ProgramaRepetidoController {
 
     @Autowired
     private ProgramaRepetidoService programaRepetidoService;
+
+    @Autowired
+    private EditLockService editLockService;
 
     @GetMapping
     public ResponseEntity<List<ProgramaRepetidoDTO>> findAll() {
@@ -128,7 +134,10 @@ public class ProgramaRepetidoController {
             if (campo == null || campo.isEmpty()) {
                 return ResponseEntity.badRequest().body("Debe proporcionar al menos un campo para actualizar.");
             }
+            editLockService.assertCanEdit(AuditLog.EntityType.PROGRAMA_REPETIDO, id);
             return ResponseEntity.ok(programaRepetidoService.updateCampo(id, campo));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatus()).body(e.getReason());
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body(
                     "El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");

@@ -33,6 +33,9 @@ public class EditLockService {
     private EditLockRepository editLockRepository;
 
     @Autowired
+    private EditLockInsercion editLockInsercion;
+
+    @Autowired
     private AuthService authService;
 
     @Autowired
@@ -61,6 +64,10 @@ public class EditLockService {
     @Transactional
     public Map<String, Object> acquire(AuditLog.EntityType entityType, Long entityId) {
         Usuario usuario = requireCurrentUser();
+        if (!puedeReservar(usuario, entityType)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "No puedes reservar " + label(entityType) + " para editarlo.");
+        }
         Optional<EditLock> existing = editLockRepository.findForUpdate(entityType, entityId);
 
         if (existing.isPresent()) {
@@ -84,8 +91,8 @@ public class EditLockService {
         }
 
         try {
-            Map<String, Object> resultado = persistLock(new EditLock(), entityType, entityId, usuario);
-            editLockRepository.flush();
+            Map<String, Object> resultado = editLockInsercion.insertar(prepararLock(new EditLock(), entityType, entityId, usuario));
+            log.info("[EDIT LOCK] Adquirido por {} en {} {}", usuario.getNombre(), entityType, entityId);
             return resultado;
         } catch (DataIntegrityViolationException ex) {
             log.warn("[EDIT LOCK] Dos reservas a la vez en {} {}", entityType, entityId);
@@ -94,8 +101,32 @@ public class EditLockService {
         }
     }
 
-    private Map<String, Object> persistLock(EditLock lock, AuditLog.EntityType entityType,
-                                            Long entityId, Usuario usuario) {
+    private boolean puedeReservar(Usuario usuario, AuditLog.EntityType entityType) {
+        if (usuario == null || usuario.getRol() == null) {
+            return false;
+        }
+        switch (usuario.getRol()) {
+            case ROLE_ADMIN:
+            case ROLE_DIRECCION:
+                return true;
+            case ROLE_CONSULTA:
+                return false;
+            case ROLE_VERIFICACION:
+                return entityType == AuditLog.EntityType.PREGUNTA
+                        || entityType == AuditLog.EntityType.CUESTIONARIO
+                        || entityType == AuditLog.EntityType.COMBO;
+            case ROLE_GUION:
+                return entityType == AuditLog.EntityType.PREGUNTA
+                        || entityType == AuditLog.EntityType.CONCURSANTE
+                        || entityType == AuditLog.EntityType.CUESTIONARIO
+                        || entityType == AuditLog.EntityType.COMBO;
+            default:
+                return false;
+        }
+    }
+
+    private EditLock prepararLock(EditLock lock, AuditLog.EntityType entityType,
+                                  Long entityId, Usuario usuario) {
         LocalDateTime now = LocalDateTime.now();
         lock.setEntityType(entityType);
         lock.setEntityId(entityId);
@@ -106,6 +137,12 @@ public class EditLockService {
         }
         lock.setUpdatedAt(now);
         lock.setExpiresAt(now.plusSeconds(LOCK_TTL_SECONDS));
+        return lock;
+    }
+
+    private Map<String, Object> persistLock(EditLock lock, AuditLog.EntityType entityType,
+                                            Long entityId, Usuario usuario) {
+        prepararLock(lock, entityType, entityId, usuario);
         editLockRepository.save(lock);
         log.info("[EDIT LOCK] Adquirido por {} en {} {}", usuario.getNombre(), entityType, entityId);
 
@@ -220,6 +257,7 @@ public class EditLockService {
             case CUESTIONARIO: return "el cuestionario";
             case JORNADA: return "la jornada";
             case PROGRAMA: return "el programa";
+            case PROGRAMA_REPETIDO: return "el programa repetido";
             case CONCURSANTE: return "el concursante";
             default: return "el elemento";
         }

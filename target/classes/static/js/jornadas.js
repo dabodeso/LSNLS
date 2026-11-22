@@ -217,14 +217,21 @@ const JornadasManager = {
 
     async refrescarModalEdicionJornada(jid) {
         if (!jid) return;
+        const previo = this.jornadaEditando;
         const response = await apiManager.get(`/api/jornadas/${jid}`);
         const jornada = response?.datos;
         if (!jornada) return;
 
+        const slotsSinTocar = (seleccion, idsPrevios) => !previo
+            || JSON.stringify(this.normalizarSlots(seleccion)) === JSON.stringify(this.normalizarSlots(idsPrevios));
+        if (slotsSinTocar(this.cuestionariosSeleccionados, previo && previo.cuestionarioIds)) {
+            this.cuestionariosSeleccionados = this.normalizarSlots(jornada.cuestionarioIds);
+        }
+        if (slotsSinTocar(this.combosSeleccionados, previo && previo.comboIds)) {
+            this.combosSeleccionados = this.normalizarSlots(jornada.comboIds);
+        }
         this.jornadaEditando = jornada;
         this.lastFocusJornadaId = jid;
-        this.cuestionariosSeleccionados = this.normalizarSlots(jornada.cuestionarioIds);
-        this.combosSeleccionados = this.normalizarSlots(jornada.comboIds);
 
         const tituloEl = document.getElementById('modalJornadaTitulo');
         const idEl = document.getElementById('jornadaId');
@@ -232,12 +239,18 @@ const JornadasManager = {
         const fechaEl = document.getElementById('jornadaFecha');
         const lugarEl = document.getElementById('jornadaLugar');
         const notasEl = document.getElementById('jornadaNotas');
+        const conservar = (el, valorPrevio, valorNuevo) => {
+            if (!el) return;
+            const base = valorPrevio == null ? '' : String(valorPrevio);
+            if (el.value !== base) return;
+            el.value = valorNuevo == null ? '' : String(valorNuevo);
+        };
         if (tituloEl) tituloEl.textContent = 'Editar Jornada';
         if (idEl) idEl.value = jornada.id;
-        if (nombreEl) nombreEl.value = jornada.nombre || '';
-        if (fechaEl) fechaEl.value = jornada.fechaJornada || '';
-        if (lugarEl) lugarEl.value = jornada.lugar || '';
-        if (notasEl) notasEl.value = jornada.notas || '';
+        conservar(nombreEl, previo && previo.nombre, jornada.nombre || '');
+        conservar(fechaEl, previo && previo.fechaJornada, jornada.fechaJornada || '');
+        conservar(lugarEl, previo && previo.lugar, jornada.lugar || '');
+        conservar(notasEl, previo && previo.notas, jornada.notas || '');
 
         await this.actualizarSlotsVisualAsync();
 

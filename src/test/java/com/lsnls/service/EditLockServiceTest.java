@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,6 +33,9 @@ class EditLockServiceTest {
 
     @Mock
     private EditLockRepository editLockRepository;
+
+    @Mock
+    private EditLockInsercion editLockInsercion;
 
     @Mock
     private AuthService authService;
@@ -51,6 +53,7 @@ class EditLockServiceTest {
         usuario = new Usuario();
         usuario.setId(3L);
         usuario.setNombre("ana");
+        usuario.setRol(Usuario.RolUsuario.ROLE_ADMIN);
     }
 
     @Test
@@ -58,7 +61,16 @@ class EditLockServiceTest {
         when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
         when(editLockRepository.findForUpdate(AuditLog.EntityType.PREGUNTA, 10L))
                 .thenReturn(Optional.empty());
-        when(editLockRepository.save(any(EditLock.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(editLockInsercion.insertar(any(EditLock.class))).thenAnswer(inv -> {
+            EditLock lock = inv.getArgument(0);
+            return Map.of(
+                    "entityType", lock.getEntityType().name(),
+                    "entityId", lock.getEntityId(),
+                    "usuarioNombre", lock.getUsuarioNombre(),
+                    "expiresAt", lock.getExpiresAt().toString(),
+                    "ttlSeconds", EditLockService.LOCK_TTL_SECONDS
+            );
+        });
 
         Map<String, Object> resultado = editLockService.acquire(AuditLog.EntityType.PREGUNTA, 10L);
 
@@ -66,7 +78,7 @@ class EditLockServiceTest {
         assertEquals(10L, resultado.get("entityId"));
         assertEquals("ana", resultado.get("usuarioNombre"));
         assertEquals(EditLockService.LOCK_TTL_SECONDS, resultado.get("ttlSeconds"));
-        verify(editLockRepository).save(any(EditLock.class));
+        verify(editLockInsercion).insertar(any(EditLock.class));
     }
 
     @Test
@@ -74,15 +86,26 @@ class EditLockServiceTest {
         when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
         when(editLockRepository.findForUpdate(AuditLog.EntityType.PREGUNTA, 10L))
                 .thenReturn(Optional.empty());
-        when(editLockRepository.save(any(EditLock.class))).thenAnswer(inv -> inv.getArgument(0));
-        doThrow(new DataIntegrityViolationException("clave duplicada"))
-                .when(editLockRepository).flush();
+        when(editLockInsercion.insertar(any(EditLock.class)))
+                .thenThrow(new DataIntegrityViolationException("clave duplicada"));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> editLockService.acquire(AuditLog.EntityType.PREGUNTA, 10L));
 
         assertEquals(HttpStatus.LOCKED, ex.getStatus());
         assertTrue(ex.getReason().contains("acaba de abrir"));
+    }
+
+    @Test
+    void consultaNoPuedeReservar() {
+        usuario.setRol(Usuario.RolUsuario.ROLE_CONSULTA);
+        when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> editLockService.acquire(AuditLog.EntityType.PREGUNTA, 10L));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        verify(editLockRepository, never()).findForUpdate(any(), any());
     }
 
     @Test

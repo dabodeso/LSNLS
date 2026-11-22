@@ -109,10 +109,8 @@ const EditLockManager = {
         this.renewId = setInterval(async () => {
             if (!this.active) return;
             const data = await this.renew(this.active.entityType, this.active.entityId);
-            if (data && data.ttlSeconds) {
-                this.active.remaining = data.ttlSeconds;
-                this.active.ttlSeconds = data.ttlSeconds;
-                this.renderTimer();
+            if (!data && this.active) {
+                this.active.remaining = 0;
             }
         }, 45000);
 

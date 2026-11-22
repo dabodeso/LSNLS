@@ -2101,6 +2101,18 @@ async function editarCeldaConcursante(id, campo, td) {
 const fila = concursantes.find(c => c.id === id);
 if (!exigirPermisoEdicionConcursante(fila, campo)) return;
 if (td.querySelector('input,select,textarea')) return;
+try {
+    await EditLockManager.tryAcquire('CONCURSANTE', id);
+} catch (error) {
+    mostrarError(error.message || 'No se puede editar este concursante ahora');
+    return;
+}
+let candadoSuelto = false;
+const soltarCandado = async () => {
+    if (candadoSuelto) return;
+    candadoSuelto = true;
+    await EditLockManager.release('CONCURSANTE', id);
+};
 const valorOriginal = (td.innerText || '').trim();
 let input;
 
@@ -2139,20 +2151,30 @@ td.appendChild(input);
 input.focus();
 
 input.addEventListener('blur', async function() {
-await guardarCeldaConcursante(id, campo, input, td, valorOriginal);
+try {
+    await guardarCeldaConcursante(id, campo, input, td, valorOriginal);
+} finally {
+    await soltarCandado();
+}
 });
 
 input.addEventListener('keydown', async function(e) {
 if (e.key === 'Enter' && input.tagName !== 'TEXTAREA') {
-await guardarCeldaConcursante(id, campo, input, td, valorOriginal);
+e.preventDefault();
+input.blur();
 } else if (e.key === 'Escape') {
 td.innerHTML = valorOriginal;
+await soltarCandado();
 }
 });
 
 if (input.tagName === 'SELECT') {
     input.addEventListener('change', async function() {
-        await guardarCeldaConcursante(id, campo, input, td, valorOriginal);
+        try {
+            await guardarCeldaConcursante(id, campo, input, td, valorOriginal);
+        } finally {
+            await soltarCandado();
+        }
     });
 }
 }

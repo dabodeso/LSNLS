@@ -691,8 +691,8 @@ public class PreguntaService {
     public Pregunta actualizarDesdeDTO(Long id, PreguntaDTO dto) {
         Pregunta pregunta = preguntaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Pregunta no encontrada"));
 
-        if (dto.getVersion() != null) {
-            pregunta.setVersion(dto.getVersion());
+        if (dto.getVersion() != null && !dto.getVersion().equals(pregunta.getVersion())) {
+            throw new org.springframework.orm.ObjectOptimisticLockingFailureException(Pregunta.class, id);
         }
         
         log.debug("✅ [ACTUALIZAR] Iniciando actualización de pregunta ID: " + id);

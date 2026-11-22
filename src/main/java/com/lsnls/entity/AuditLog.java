@@ -136,6 +136,7 @@ public class AuditLog {
         CONCURSANTE,
         JORNADA,
         PROGRAMA,
+        PROGRAMA_REPETIDO,
         USUARIO,
         CONFIGURACION_GLOBAL,
         SISTEMA
