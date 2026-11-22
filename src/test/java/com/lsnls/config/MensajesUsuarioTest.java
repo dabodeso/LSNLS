@@ -27,6 +27,12 @@ class MensajesUsuarioTest {
     }
 
     @Test
+    void sanitizar_datoObligatorioNoHablaDeDuplicados() {
+        assertEquals(MensajesUsuario.OBLIGATORIO,
+                MensajesUsuario.sanitizar("could not execute statement; Column 'nivel' cannot be null"));
+    }
+
+    @Test
     void sanitizar_ocultaFailedToFetch() {
         assertEquals(MensajesUsuario.RED, MensajesUsuario.sanitizar("Failed to fetch"));
     }

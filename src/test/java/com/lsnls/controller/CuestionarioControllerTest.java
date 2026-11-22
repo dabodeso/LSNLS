@@ -131,8 +131,20 @@ class CuestionarioControllerTest {
     }
 
     @Test
+    void crear_sinNivel_devuelve400() {
+        Cuestionario payload = new Cuestionario();
+        when(authorizationService.getCurrentUser()).thenReturn(Optional.of(usuario(Usuario.RolUsuario.ROLE_DIRECCION)));
+
+        ResponseEntity<?> response = cuestionarioController.crear(payload);
+
+        assertEquals(400, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("nivel"));
+    }
+
+    @Test
     void crear_ok_devuelve200() {
         Cuestionario payload = new Cuestionario();
+        payload.setNivel(Cuestionario.NivelCuestionario.NORMAL);
         Cuestionario creado = cuestionario(5L, Cuestionario.EstadoCuestionario.borrador);
         when(authorizationService.getCurrentUser()).thenReturn(Optional.of(usuario(Usuario.RolUsuario.ROLE_GUION)));
         when(cuestionarioService.crear(payload)).thenReturn(creado);
@@ -146,6 +158,7 @@ class CuestionarioControllerTest {
     @Test
     void crear_errorServicio_devuelve400() {
         Cuestionario payload = new Cuestionario();
+        payload.setNivel(Cuestionario.NivelCuestionario.NORMAL);
         when(authorizationService.getCurrentUser()).thenReturn(Optional.of(usuario(Usuario.RolUsuario.ROLE_GUION)));
         when(cuestionarioService.crear(payload)).thenThrow(new RuntimeException("fail"));
 

@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -433,6 +434,7 @@ class PreguntaControllerTest {
         ResponseEntity<?> response = preguntaController.actualizar(1L, dto);
 
         assertEquals(403, response.getStatusCodeValue());
+        assertFalse(response.getBody().toString().contains("devolver"));
     }
 
     @Test
@@ -527,6 +529,36 @@ class PreguntaControllerTest {
 
         assertEquals(403, response.getStatusCodeValue());
         assertTrue(response.getBody().toString().contains("verificada"));
+        assertFalse(response.getBody().toString().contains("devolver"));
+    }
+
+    @Test
+    void cambiarEstado_desdeBorradorAParaVerificarSinPermiso_noDiceDevolver() {
+        Pregunta p = pregunta(1L, Pregunta.EstadoPregunta.borrador);
+        when(preguntaService.obtenerPorId(1L)).thenReturn(Optional.of(p));
+        when(authService.canChangeEstadoPregunta(Pregunta.EstadoPregunta.borrador, Pregunta.EstadoPregunta.para_verificar))
+                .thenReturn(false);
+        when(authService.getCurrentUser()).thenReturn(Optional.of(usuario(Usuario.RolUsuario.ROLE_CONSULTA)));
+
+        ResponseEntity<?> response = preguntaController.cambiarEstado(1L, Pregunta.EstadoPregunta.para_verificar);
+
+        assertEquals(403, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("para verificar"));
+        assertFalse(response.getBody().toString().contains("devolver"));
+    }
+
+    @Test
+    void cambiarEstado_devolverDesdeVerificadaSinPermiso_loDice() {
+        Pregunta p = pregunta(1L, Pregunta.EstadoPregunta.verificada);
+        when(preguntaService.obtenerPorId(1L)).thenReturn(Optional.of(p));
+        when(authService.canChangeEstadoPregunta(Pregunta.EstadoPregunta.verificada, Pregunta.EstadoPregunta.para_verificar))
+                .thenReturn(false);
+        when(authService.getCurrentUser()).thenReturn(Optional.of(usuario(Usuario.RolUsuario.ROLE_CONSULTA)));
+
+        ResponseEntity<?> response = preguntaController.cambiarEstado(1L, Pregunta.EstadoPregunta.para_verificar);
+
+        assertEquals(403, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("devolver"));
     }
 
     @Test

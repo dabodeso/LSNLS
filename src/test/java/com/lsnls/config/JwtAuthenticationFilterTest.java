@@ -16,11 +16,17 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -141,7 +147,7 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void excepcionEnApi_responde500() throws Exception {
+    void excepcionAlLeerElToken_responde401() throws Exception {
         MockHttpServletRequest req = request("GET", "/api/preguntas");
         req.addHeader("Authorization", "Bearer tok");
         when(jwtService.extractUsername("tok")).thenThrow(new RuntimeException("boom"));
@@ -149,7 +155,31 @@ class JwtAuthenticationFilterTest {
         MockHttpServletResponse res = new MockHttpServletResponse();
         filter.doFilter(req, res, new MockFilterChain());
 
-        assertEquals(500, res.getStatus());
+        assertEquals(401, res.getStatus());
+        assertFalse(res.getContentAsString().contains("Error interno del servidor"));
+    }
+
+    @Test
+    void excepcionDeLaPeticion_sigueSuCurso() throws Exception {
+        MockHttpServletRequest req = request("GET", "/api/preguntas");
+        req.addHeader("Authorization", "Bearer tok");
+        when(jwtService.extractUsername("tok")).thenReturn("admin");
+        SecurityContextHolder.getContext().setAuthentication(
+            new UsernamePasswordAuthenticationToken("admin", "x", Collections.emptyList()));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        FilterChain chain = new FilterChain() {
+            @Override
+            public void doFilter(ServletRequest request, ServletResponse response) throws ServletException {
+                ((MockHttpServletResponse) response).setStatus(403);
+                throw new ServletException("fallo de negocio");
+            }
+        };
+
+        ServletException error = assertThrows(ServletException.class, () -> filter.doFilter(req, res, chain));
+
+        assertEquals("fallo de negocio", error.getMessage());
+        assertEquals(403, res.getStatus());
+        assertFalse(res.getContentAsString().contains("Error interno del servidor"));
     }
 
     private MockHttpServletRequest request(String method, String path) {

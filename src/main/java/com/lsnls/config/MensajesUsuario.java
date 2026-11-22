@@ -19,6 +19,7 @@ public final class MensajesUsuario {
     public static final String NO_ENCONTRADO = "No se ha encontrado lo que buscas.";
     public static final String ARCHIVO_GRANDE = "El archivo es demasiado grande. El tamaño máximo permitido es 10 MB.";
     public static final String RELACIONADOS = "No se puede completar porque hay datos relacionados o duplicados.";
+    public static final String OBLIGATORIO = "Falta un dato obligatorio. Revisa los campos e inténtalo de nuevo.";
 
     private static final Pattern EMOJIS = Pattern.compile(
             "[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{FE0F}\\x{200D}]");
@@ -65,6 +66,9 @@ public final class MensajesUsuario {
         }
         if (esConcurrencia(lower)) {
             return CONCURRENCIA;
+        }
+        if (esDatoObligatorio(lower)) {
+            return OBLIGATORIO;
         }
         if (esRelacionados(lower)) {
             return RELACIONADOS;
@@ -141,6 +145,14 @@ public final class MensajesUsuario {
                 || lower.contains("concurrencia")
                 || lower.contains("row was updated")
                 || lower.contains("was concurrently updated");
+    }
+
+    private static boolean esDatoObligatorio(String lower) {
+        return lower.contains("cannot be null")
+                || lower.contains("can't be null")
+                || lower.contains("does not have a default value")
+                || lower.contains("doesn't have a default value")
+                || lower.contains("not-null property");
     }
 
     private static boolean esRelacionados(String lower) {

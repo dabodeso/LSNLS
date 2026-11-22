@@ -605,6 +605,8 @@ class JornadaControllerTest {
         ResponseEntity<ApiResponse<String>> response = jornadaController.reciclarComboEntero(1L, 3L);
 
         assertEquals(200, response.getStatusCodeValue());
+        assertTrue(response.getBody().getMensaje().contains("aprobado"));
+        assertTrue(response.getBody().getMensaje().contains("reutilizado"));
     }
 
     @Test

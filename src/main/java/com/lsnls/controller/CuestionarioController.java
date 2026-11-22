@@ -93,6 +93,9 @@ public class CuestionarioController {
         try {
             return authorizationService.getCurrentUser()
                 .map(currentUser -> {
+                    if (cuestionario.getNivel() == null) {
+                        return ResponseEntity.badRequest().body("Indica el nivel del cuestionario.");
+                    }
                     cuestionario.setCreacionUsuario(currentUser);
                     cuestionario.setEstado(Cuestionario.EstadoCuestionario.borrador);
 

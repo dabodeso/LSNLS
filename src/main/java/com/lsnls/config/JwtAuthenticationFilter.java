@@ -43,41 +43,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        
-        try {
-            // Si es una ruta pública, permitir sin token
-            if ((path.startsWith("/api/auth/") && !path.equals("/api/auth/me") && !path.equals("/api/auth/register")) ||
-                isPublicResource(path)) {
-                log.debug("✅ Ruta pública, permitiendo acceso: {}", path);
-                filterChain.doFilter(request, response);
+
+        // Si es una ruta pública, permitir sin token
+        if ((path.startsWith("/api/auth/") && !path.equals("/api/auth/me") && !path.equals("/api/auth/register")) ||
+            isPublicResource(path)) {
+            log.debug("✅ Ruta pública, permitiendo acceso: {}", path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Para páginas HTML protegidas y API endpoints
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.warn("❌ [JWT FILTER] Token no proporcionado o inválido para ruta: {}. Header Authorization: {}", path, authHeader);
+
+            // Si es una llamada API (no HTML), responder con 401
+            if (!path.endsWith(".html")) {
+                log.debug("🚫 Respondiendo 401 para llamada API: {}", path);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"Token no proporcionado\"}");
                 return;
             }
+            // Si es una página HTML, permitir que el auth-guard.js del frontend maneje la redirección
+            log.debug("📄 Página HTML sin token, permitiendo acceso para que auth-guard.js maneje la redirección: {}", path);
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-            // Para páginas HTML protegidas y API endpoints
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                log.warn("❌ [JWT FILTER] Token no proporcionado o inválido para ruta: {}. Header Authorization: {}", path, authHeader);
-                
-                // Si es una llamada API (no HTML), responder con 401
-                if (!path.endsWith(".html")) {
-                    log.debug("🚫 Respondiendo 401 para llamada API: {}", path);
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"error\":\"Token no proporcionado\"}");
-                    return;
-                }
-                // Si es una página HTML, permitir que el auth-guard.js del frontend maneje la redirección
-                else {
-                    log.debug("📄 Página HTML sin token, permitiendo acceso para que auth-guard.js maneje la redirección: {}", path);
-                    filterChain.doFilter(request, response);
-                    return;
-                }
-            }
-
+        try {
             final String jwt = authHeader.substring(7);
             log.info("🔑 [JWT FILTER] Token extraído: {}", jwt);
             final String username = jwtService.extractUsername(jwt);
             log.info("👤 [JWT FILTER] Username extraído del token: {}", username);
-            
+
             if (username == null) {
                 log.error("❌ [JWT FILTER] No se pudo extraer el username del token. Token: {}", jwt);
                 handleAuthError(response, "Token inválido");
@@ -89,43 +87,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
                 log.info("🔐 [JWT FILTER] UserDetails cargado: {}", userDetails.getUsername());
-                if (jwtService.isTokenValid(jwt, userDetails)) {
-                    log.info("✅ [JWT FILTER] Token validado correctamente para usuario: {}", username);
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                    
-                    log.info("✅ [JWT FILTER] Permitiendo acceso a ruta protegida: {}", path);
-                    filterChain.doFilter(request, response);
-                } else {
+                if (!jwtService.isTokenValid(jwt, userDetails)) {
                     log.warn("❌ [JWT FILTER] Token expirado o inválido para usuario: {}. Token: {}", username, jwt);
                     handleAuthError(response, "Token expirado");
+                    return;
                 }
+                log.info("✅ [JWT FILTER] Token validado correctamente para usuario: {}", username);
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             } else {
                 log.info("🔄 [JWT FILTER] Ya existe autenticación en el contexto para usuario: {}", SecurityContextHolder.getContext().getAuthentication().getName());
-                filterChain.doFilter(request, response);
             }
-            
         } catch (Exception e) {
-            log.error("❌ [JWT FILTER] Error procesando la petición: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
-            // No marcar como 401 cualquier error de aplicación. Si no es un problema de autenticación,
-            // devolver 500 para que el frontend no redirija al login por error ajeno a auth.
-            try {
-                if (!path.startsWith("/api/")) {
-                    handleAuthError(response, e.getMessage());
-                } else {
-                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"error\":\"Error interno del servidor\"}");
-                }
-            } catch (IOException ioEx) {
-                throw new ServletException(ioEx);
+            log.error("❌ [JWT FILTER] Error al leer el token: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
+            if (!response.isCommitted()) {
+                handleAuthError(response, "Token inválido");
             }
+            return;
         }
+
+        log.info("✅ [JWT FILTER] Permitiendo acceso a ruta protegida: {}", path);
+        filterChain.doFilter(request, response);
         log.info("⬅️ [JWT FILTER] Saliendo del filtro para ruta: {} {}", request.getMethod(), request.getServletPath());
     }
 

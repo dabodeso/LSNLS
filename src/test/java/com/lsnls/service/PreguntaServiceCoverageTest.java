@@ -138,6 +138,7 @@ class PreguntaServiceCoverageTest {
     @Test
     void actualizarDesdeDTO_camposYVerificada() {
         Pregunta p = preguntaBase();
+        p.setVersion(2L);
         when(preguntaRepository.findById(1L)).thenReturn(Optional.of(p));
         when(preguntaComboRepository.existsByPreguntaId(1L)).thenReturn(false);
 
@@ -181,7 +182,11 @@ class PreguntaServiceCoverageTest {
         u.setNombre("dir");
         when(nativeQuery.getSingleResult()).thenReturn("otro");
         when(nativeQuery.executeUpdate()).thenReturn(1);
+        Pregunta gestionada = preguntaBase();
+        when(entityManager.find(Pregunta.class, 1L)).thenReturn(gestionada);
         assertTrue(preguntaService.cambiarEstadoAtomico(1L, EstadoPregunta.borrador, EstadoPregunta.verificada, u));
+        verify(entityManager).createNativeQuery(org.mockito.ArgumentMatchers.contains("version = COALESCE(version, 0) + 1"));
+        verify(entityManager).refresh(gestionada);
 
         when(nativeQuery.executeUpdate()).thenReturn(0);
         assertThrows(IllegalStateException.class,

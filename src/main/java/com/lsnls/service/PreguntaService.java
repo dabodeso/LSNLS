@@ -441,8 +441,9 @@ public class PreguntaService {
                 pregunta.getTematica(), pregunta.getPregunta(), pregunta.getRespuesta(), pregunta.getFuentes());
         }
         
-        // Construir query base
-        StringBuilder query = new StringBuilder("UPDATE preguntas SET estado = ?");
+        // Construir query base. version sube para que un guardado posterior vea este cambio.
+        StringBuilder query = new StringBuilder(
+                "UPDATE preguntas SET estado = ?, version = COALESCE(version, 0) + 1");
         List<Object> parametros = new ArrayList<>();
         parametros.add(nuevoEstado.name());
         
@@ -521,7 +522,8 @@ public class PreguntaService {
         if (nuevoEstado == EstadoPregunta.aprobada) {
             log.debug("✅ Pregunta ID " + id + " aprobada atómicamente y marcada como DISPONIBLE");
         }
-        
+
+        refrescarPregunta(id);
         return true;
     }
 
@@ -558,7 +560,7 @@ public class PreguntaService {
     @Transactional
     public boolean rechazarAtomico(Long id, EstadoPregunta estadoActualEsperado, String motivo) {
         // Construir query con estado y notas
-        String query = "UPDATE preguntas SET estado = ?, notas = ? WHERE id = ? AND estado = ?";
+        String query = "UPDATE preguntas SET estado = ?, notas = ?, version = COALESCE(version, 0) + 1 WHERE id = ? AND estado = ?";
         
         String notasRechazo = "RECHAZADA: " + (motivo != null && !motivo.trim().isEmpty() ? motivo : "Sin motivo especificado");
         
@@ -574,8 +576,23 @@ public class PreguntaService {
             throw new IllegalStateException("No se pudo rechazar la pregunta " + id + 
                 " porque otro usuario la modificó simultáneamente. Estado esperado: " + estadoActualEsperado);
         }
-        
+
+        refrescarPregunta(id);
         return true;
+    }
+
+    /**
+     * El UPDATE nativo no actualiza la pregunta que ya está en memoria.
+     * Sin esta recarga, la respuesta del cambio de estado trae el estado anterior.
+     */
+    private void refrescarPregunta(Long id) {
+        if (id == null) {
+            return;
+        }
+        Pregunta gestionada = entityManager.find(Pregunta.class, id);
+        if (gestionada != null) {
+            entityManager.refresh(gestionada);
+        }
     }
 
     public Pregunta marcarParaRevisar(Long id, String notas, Usuario usuario) {

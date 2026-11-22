@@ -1165,8 +1165,8 @@ public class JornadaService {
     }
 
     /**
-     * Recicla un combo completamente, marcándolo como liberado.
-     * 
+     * Recicla un combo completo: lo deja en aprobado y lo marca como reutilizado en la jornada.
+     *
      * @param jornadaId ID de la jornada
      * @param comboId ID del combo a reciclar
      * @param usuarioId ID del usuario que realiza la acción

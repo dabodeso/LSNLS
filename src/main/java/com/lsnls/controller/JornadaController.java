@@ -412,7 +412,7 @@ public class JornadaController {
             jornadaService.reciclarComboEntero(jornadaId, comboId, currentUser.getId());
             
             return ResponseEntity.ok(ApiResponse.exitoso(
-                "Combo " + comboId + " reciclado completamente. Marcado como liberado.", 
+                "Combo " + comboId + " reciclado completamente. Queda aprobado y marcado como reutilizado.",
                 "Combo reciclado"));
                 
         } catch (IllegalArgumentException e) {

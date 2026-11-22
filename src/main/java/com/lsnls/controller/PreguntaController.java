@@ -258,11 +258,7 @@ public class PreguntaController {
                     Pregunta.EstadoPregunta nuevoEstado = Pregunta.EstadoPregunta.valueOf(dto.getEstado());
                     if (!authService.canChangeEstadoPregunta(pregunta.getEstado(), nuevoEstado)) {
                         log.warn("[ACTUALIZAR] Permiso denegado para cambiar estado a: {}", nuevoEstado);
-                        String estadoDescripcion = getEstadoDescripcion(nuevoEstado);
-                        String mensaje = nuevoEstado == Pregunta.EstadoPregunta.para_verificar
-                            ? "No puedes devolver esta pregunta a Para verificar con tu rol"
-                            : "No tienes permisos para cambiar el estado a '" + estadoDescripcion + "'. Tu rol actual no permite esta transición de estado.";
-                        return ResponseEntity.status(403).body(mensaje);
+                        return ResponseEntity.status(403).body(mensajeTransicionDenegada(pregunta.getEstado(), nuevoEstado));
                     }
                 } catch (IllegalArgumentException e) {
                     log.error("[ACTUALIZAR] Estado inválido: {}", dto.getEstado());
@@ -288,6 +284,18 @@ public class PreguntaController {
             log.error("[ACTUALIZAR] Error general: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body("Error al actualizar pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
+    }
+
+    private String mensajeTransicionDenegada(Pregunta.EstadoPregunta estadoActual, Pregunta.EstadoPregunta nuevoEstado) {
+        boolean devolucionAParaVerificar = nuevoEstado == Pregunta.EstadoPregunta.para_verificar
+                && (estadoActual == Pregunta.EstadoPregunta.verificada
+                    || estadoActual == Pregunta.EstadoPregunta.revisar
+                    || estadoActual == Pregunta.EstadoPregunta.corregir);
+        if (devolucionAParaVerificar) {
+            return "No puedes devolver esta pregunta a Para verificar con tu rol";
+        }
+        return "No tienes permisos para cambiar el estado a '" + getEstadoDescripcion(nuevoEstado)
+                + "'. Tu rol actual no permite esta transición de estado.";
     }
 
     private String getEstadoDescripcion(Pregunta.EstadoPregunta estado) {
@@ -320,13 +328,9 @@ public class PreguntaController {
 
             // Verificar permisos para cambiar estado
             if (!authService.canChangeEstadoPregunta(estadoActual, nuevoEstado)) {
-                String estadoDescripcion = getEstadoDescripcion(nuevoEstado);
-                log.warn("[CAMBIO ESTADO] Permiso denegado para cambiar estado a: {} - Usuario: {}", 
-                        estadoDescripcion, authService.getCurrentUser().map(u -> u.getNombre()).orElse("desconocido"));
-                String mensaje = nuevoEstado == Pregunta.EstadoPregunta.para_verificar
-                    ? "No puedes devolver esta pregunta a Para verificar con tu rol"
-                    : "No tienes permisos para cambiar el estado a '" + estadoDescripcion + "'. Tu rol actual no permite esta transición de estado.";
-                return ResponseEntity.status(403).body(mensaje);
+                log.warn("[CAMBIO ESTADO] Permiso denegado para cambiar estado a: {} - Usuario: {}",
+                        getEstadoDescripcion(nuevoEstado), authService.getCurrentUser().map(u -> u.getNombre()).orElse("desconocido"));
+                return ResponseEntity.status(403).body(mensajeTransicionDenegada(estadoActual, nuevoEstado));
             }
 
             editLockService.assertCanEdit(AuditLog.EntityType.PREGUNTA, id);

@@ -54,8 +54,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, String>> handleDataIntegrity(DataIntegrityViolationException ex) {
-        log.warn("Violación de integridad: {}", ex.getMostSpecificCause().getMessage());
-        return cuerpo(HttpStatus.CONFLICT, MensajesUsuario.RELACIONADOS);
+        Throwable causa = ex.getMostSpecificCause();
+        String detalle = causa != null ? causa.getMessage() : ex.getMessage();
+        log.warn("Violación de integridad: {}", detalle);
+        String mensaje = MensajesUsuario.sanitizar(detalle, MensajesUsuario.RELACIONADOS);
+        HttpStatus status = MensajesUsuario.OBLIGATORIO.equals(mensaje)
+                ? HttpStatus.BAD_REQUEST
+                : HttpStatus.CONFLICT;
+        return cuerpo(status, mensaje);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
