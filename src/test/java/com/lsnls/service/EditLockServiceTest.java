@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -65,6 +66,21 @@ class EditLockServiceTest {
         assertEquals("ana", resultado.get("usuarioNombre"));
         assertEquals(EditLockService.LOCK_TTL_SECONDS, resultado.get("ttlSeconds"));
         verify(editLockRepository).save(any(EditLock.class));
+    }
+
+    @Test
+    void acquireDosReservasALaVezRespondeBloqueado() {
+        when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
+        when(editLockRepository.findForUpdate(AuditLog.EntityType.PREGUNTA, 10L))
+                .thenReturn(Optional.empty());
+        when(editLockRepository.save(any(EditLock.class)))
+                .thenThrow(new DataIntegrityViolationException("clave duplicada"));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> editLockService.acquire(AuditLog.EntityType.PREGUNTA, 10L));
+
+        assertEquals(HttpStatus.LOCKED, ex.getStatus());
+        assertTrue(ex.getReason().contains("acaba de abrir"));
     }
 
     @Test

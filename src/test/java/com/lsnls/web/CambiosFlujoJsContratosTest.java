@@ -88,6 +88,31 @@ class CambiosFlujoJsContratosTest {
         assertTrue(output.contains("OK programas pagina"));
     }
 
+    @Test
+    void celdaDePreguntaNoSeAbreSiHayCandado() throws Exception {
+        assumeTrue(nodeDisponible(), "Node no está en el PATH; se omite el contrato de la celda");
+        Path script = Paths.get("src", "test", "js", "preguntas-celda-candado.test.js");
+        if (!Files.exists(script)) {
+            script = Paths.get("LSNLS", "src", "test", "js", "preguntas-celda-candado.test.js");
+        }
+        script = script.toAbsolutePath();
+        assertTrue(Files.exists(script), "Falta " + script);
+
+        ProcessBuilder pb = new ProcessBuilder("node", script.toString());
+        pb.directory(script.getParent().getParent().getParent().getParent().toFile());
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+        String output;
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            output = reader.lines().collect(Collectors.joining("\n"));
+        }
+        boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+        assertTrue(finished, "Node no terminó a tiempo. Salida:\n" + output);
+        assertEquals(0, process.exitValue(), "Falló el candado de la celda:\n" + output);
+        assertTrue(output.contains("OK pregunta celda candado"));
+    }
+
     private static Path resolverScript() {
         Path desdeModulo = Paths.get("src", "test", "js", "cambios-flujo-contratos.test.js");
         if (Files.exists(desdeModulo)) {

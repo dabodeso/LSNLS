@@ -7,6 +7,7 @@ import com.lsnls.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.context.event.EventListener;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -82,7 +83,13 @@ public class EditLockService {
             return persistLock(active, entityType, entityId, usuario);
         }
 
-        return persistLock(new EditLock(), entityType, entityId, usuario);
+        try {
+            return persistLock(new EditLock(), entityType, entityId, usuario);
+        } catch (DataIntegrityViolationException ex) {
+            log.warn("[EDIT LOCK] Dos reservas a la vez en {} {}", entityType, entityId);
+            throw new ResponseStatusException(HttpStatus.LOCKED,
+                    "Alguien acaba de abrir " + label(entityType) + " " + entityId + ". Espera un momento.");
+        }
     }
 
     private Map<String, Object> persistLock(EditLock lock, AuditLog.EntityType entityType,

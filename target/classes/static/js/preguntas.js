@@ -1047,12 +1047,52 @@ const PreguntasManager = {
         td.innerHTML = valor ?? '';
     },
 
+    async avisoSiPreguntaBloqueada(id) {
+        const response = await fetch(`/api/edit-locks/status?entityType=PREGUNTA&entityId=${id}`, {
+            headers: authManager.getAuthHeaders()
+        });
+        if (!response.ok) {
+            throw new Error('No se ha podido comprobar si la pregunta está en uso');
+        }
+        const estado = await response.json();
+        if (!estado || !estado.locked) {
+            return null;
+        }
+        const yo = authManager.currentUser && authManager.currentUser.nombre;
+        if (yo && estado.usuarioNombre === yo) {
+            return `Ya tienes la pregunta ${id} abierta en otra ventana. Ciérrala antes de editar la celda.`;
+        }
+        const quien = estado.usuarioNombre || 'Otra persona';
+        return `${quien} está editando la pregunta ${id}. Espera un momento.`;
+    },
+
+    avisarCeldaBloqueada(mensaje) {
+        Toastify({
+            text: mensaje,
+            duration: 5000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff9966, #ff5e62)' }
+        }).showToast();
+    },
+
     async editarCelda(id, campo, td) {
         // Evitar múltiples inputs
         if (td.querySelector('input,select,textarea')) return;
         
         // No permitir editar campos de autoría
         if (campo === 'creacionUsuario' || campo === 'creacionUsuarioNombre') {
+            return;
+        }
+        try {
+            const aviso = await this.avisoSiPreguntaBloqueada(id);
+            if (aviso) {
+                this.avisarCeldaBloqueada(aviso);
+                return;
+            }
+        } catch (error) {
+            this.avisarCeldaBloqueada(error.message || 'No se ha podido comprobar si la pregunta está en uso');
             return;
         }
         const valorOriginal = td.innerText;
@@ -1158,6 +1198,18 @@ const PreguntasManager = {
         // Permitir guardar aunque el valor original sea vacío o null
         if ((valorOriginal ?? '') === (nuevoValor ?? '')) {
             this.restaurarTextoCelda(td, campo, valorOriginal);
+            return;
+        }
+        try {
+            const aviso = await this.avisoSiPreguntaBloqueada(id);
+            if (aviso) {
+                this.restaurarTextoCelda(td, campo, valorOriginal);
+                this.avisarCeldaBloqueada(aviso);
+                return;
+            }
+        } catch (error) {
+            this.restaurarTextoCelda(td, campo, valorOriginal);
+            this.avisarCeldaBloqueada(error.message || 'No se ha podido comprobar si la pregunta está en uso');
             return;
         }
         

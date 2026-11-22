@@ -11,8 +11,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -327,6 +330,32 @@ class ProgramaControllerTest {
         ResponseEntity<?> response = programaController.updateCampo(1L, campo);
 
         assertEquals(400, response.getStatusCodeValue());
+    }
+
+    @Test
+    void updateCampo_conCandadoDeOtro_devuelve423YNoGuarda() {
+        when(programaService.findByIdDTO(1L)).thenReturn(Optional.of(programa(1L, 1)));
+        doThrow(new ResponseStatusException(HttpStatus.LOCKED, "Alexia está editando el programa 1. Espera un momento."))
+                .when(editLockService).assertCanEdit(AuditLog.EntityType.PROGRAMA, 1L);
+
+        ResponseEntity<?> response = programaController.updateCampo(1L, Collections.singletonMap("notas", "x"));
+
+        assertEquals(423, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("Alexia"));
+        verify(programaService, never()).updateCampo(any(), any());
+    }
+
+    @Test
+    void updateDuracionObjetivo_conCandadoDeOtro_devuelve423YNoGuarda() {
+        doThrow(new ResponseStatusException(HttpStatus.LOCKED, "Alexia está editando el programa 1. Espera un momento."))
+                .when(editLockService).assertCanEdit(AuditLog.EntityType.PROGRAMA, 1L);
+        Map<String, String> request = new HashMap<>();
+        request.put("duracionObjetivo", "45:00");
+
+        ResponseEntity<?> response = programaController.updateDuracionObjetivo(1L, request);
+
+        assertEquals(423, response.getStatusCodeValue());
+        verify(programaService, never()).updateDuracionObjetivo(any(), any());
     }
 
     @Test

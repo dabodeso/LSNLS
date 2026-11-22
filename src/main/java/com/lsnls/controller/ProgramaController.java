@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -126,9 +127,12 @@ public class ProgramaController {
             if (duracionObjetivo == null || duracionObjetivo.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("La duración objetivo es obligatoria");
             }
-            
+
+            editLockService.assertCanEdit(AuditLog.EntityType.PROGRAMA, id);
             programaService.updateDuracionObjetivo(id, duracionObjetivo);
             return ResponseEntity.ok().build();
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatus()).body(e.getReason());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al actualizar duración objetivo: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
@@ -149,8 +153,11 @@ public class ProgramaController {
                 return ResponseEntity.badRequest().body("Debe proporcionar al menos un campo para actualizar");
             }
 
+            editLockService.assertCanEdit(AuditLog.EntityType.PROGRAMA, id);
             Object resultado = programaService.updateCampo(id, campo);
             return ResponseEntity.ok(resultado);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatus()).body(e.getReason());
         } catch (ObjectOptimisticLockingFailureException e) {
             return ResponseEntity.status(409).body("El programa ha sido modificado por otro usuario. Por favor, recarga e intenta nuevamente.");
         } catch (IllegalArgumentException e) {
