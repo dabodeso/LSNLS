@@ -68,6 +68,9 @@ public class ProgramaRepetidoService {
     private ProgramaRepository programaRepository;
 
     @Autowired
+    private AuthorizationService authorizationService;
+
+    @Autowired
     private ProgramaConcursanteRepository programaConcursanteRepository;
 
     @Autowired
@@ -372,7 +375,8 @@ public class ProgramaRepetidoService {
             }
         }
         ProgramaRepetido repetido = exigirRepetido(id);
-        if (repetido.getEstado() == Programa.EstadoPrograma.emitido) {
+        if (repetido.getEstado() == Programa.EstadoPrograma.emitido
+                && (authorizationService == null || !authorizationService.isAdmin())) {
             throw new IllegalArgumentException("Un programa emitido no se puede editar.");
         }
         Programa.EstadoPrograma estadoAntes = repetido.getEstado();

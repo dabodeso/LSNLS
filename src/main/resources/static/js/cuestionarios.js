@@ -960,6 +960,12 @@ async function buscarPreguntasModal(page = 0) {
     }
 }
 
+function textoNotasVerificacion(notas) {
+    const texto = (notas || '').trim();
+    if (!texto) return '<span class="text-muted">Sin notas</span>';
+    return Utils.escapeHtml(texto);
+}
+
 function renderPreguntasModal(preguntas, currentPage, totalPages) {
     const tbody = document.getElementById('tbody-selector-pregunta');
     const terminoBusqueda = document.getElementById('buscador-texto')?.value || '';
@@ -997,6 +1003,9 @@ function renderPreguntasModal(preguntas, currentPage, totalPages) {
                             Nivel: <span class="${nivelColor}">${Utils.formatearNivel(pregunta.nivel) || '-'}</span> | 
                             Estado: ${pregunta.estado || '-'}
                         </small>
+                    </div>
+                    <div class="notas-verificacion mt-1" style="white-space:pre-wrap;">
+                        <small><strong>Notas de verificación:</strong> ${textoNotasVerificacion(pregunta.notasVerificacion)}</small>
                     </div>
                 </div>
             </td>

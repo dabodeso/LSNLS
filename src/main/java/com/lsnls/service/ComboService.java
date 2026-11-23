@@ -391,9 +391,6 @@ public class ComboService {
             if (pc.getPregunta() == null || pc.getPregunta().getNivel() == null) {
                 throw new IllegalArgumentException("El combo tiene preguntas incompletas");
             }
-            if (!pc.getPregunta().getNivel().name().startsWith("_5")) {
-                throw new IllegalArgumentException("Todas las preguntas del combo deben ser de nivel 5");
-            }
             if (pc.getPosicion() != null) {
                 posiciones.add(pc.getPosicion());
             }
@@ -470,11 +467,6 @@ public class ComboService {
                 } else {
                     throw new RuntimeException("La pregunta debe estar aprobada para ser agregada a un combo");
                 }
-            }
-            
-            // Verificar que sea pregunta de nivel 5
-            if (!pregunta.getNivel().name().startsWith("_5")) {
-                throw new RuntimeException("Solo se pueden agregar preguntas de nivel 5 (5LS/5NLS) a los combos");
             }
             
             // Verificar que la pregunta está disponible o liberada
@@ -923,7 +915,7 @@ public class ComboService {
     }
 
     /**
-     * Verifica y reserva m?ltiples preguntas nivel 5 at?micamente para combos
+     * Verifica y reserva las preguntas de un combo de forma atómica
      * @param preguntaIdsConFactores Map de ID de pregunta -> factor multiplicaci?n
      * @return true si todas las preguntas fueron reservadas exitosamente
      * @throws IllegalArgumentException si alguna pregunta no est? disponible
@@ -985,10 +977,6 @@ public class ComboService {
                 throw new IllegalArgumentException(mensajePreguntaNoAsignable(pregunta));
             }
             
-            // Verificar que sea pregunta de nivel 5 para combos
-            if (!pregunta.getNivel().name().startsWith("_5")) {
-                throw new IllegalArgumentException("La pregunta " + pregunta.getId() + " no es de nivel 5. Solo se pueden usar preguntas de nivel 5 (5LS/5NLS) en combos");
-            }
         }
         
         // PASO 2: Reservar todas las preguntas AT?MICAMENTE con una sola query
@@ -1001,8 +989,7 @@ public class ComboService {
             "UPDATE preguntas SET estado = 'usada', estado_disponibilidad = 'usada' " +
             "WHERE id IN (" + preguntaIdsStr + ") " +
             "AND estado_disponibilidad IN ('disponible', 'liberada') " +
-            "AND estado = 'aprobada' " +
-            "AND nivel LIKE '_5%'"
+            "AND estado = 'aprobada'"
         ).executeUpdate();
         
         // PASO 3: Verificar que se reservaron TODAS las preguntas

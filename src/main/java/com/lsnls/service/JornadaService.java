@@ -60,6 +60,9 @@ public class JornadaService {
     @Autowired
     private ConcursanteRepository concursanteRepository;
 
+    @Autowired
+    private AuthorizationService authorizationService;
+
     public List<JornadaDTO> obtenerTodas() {
         return mapearListado(jornadaRepository.findAllOrderByFechaCreacionDesc());
     }
@@ -159,9 +162,7 @@ public class JornadaService {
         Jornada jornada = jornadaRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Jornada no encontrada"));
 
-        // Verificar si se puede editar
-        if (jornada.getEstado() == Jornada.EstadoJornada.completada ||
-            jornada.getEstado() == Jornada.EstadoJornada.archivada) {
+        if (!sePuedeEditar(jornada)) {
             throw new IllegalArgumentException("No se puede editar una jornada completada o archivada");
         }
 
@@ -188,6 +189,17 @@ public class JornadaService {
 
         jornada = jornadaRepository.save(jornada);
         return convertirADTO(jornada);
+    }
+
+    /** Admin puede corregir una jornada completada. Archivada sigue cerrada para todos. */
+    private boolean sePuedeEditar(Jornada jornada) {
+        if (jornada.getEstado() == Jornada.EstadoJornada.archivada) {
+            return false;
+        }
+        if (jornada.getEstado() == Jornada.EstadoJornada.completada) {
+            return authorizationService != null && authorizationService.isAdmin();
+        }
+        return true;
     }
 
     public void eliminar(Long id) {

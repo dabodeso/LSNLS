@@ -38,9 +38,13 @@ function unirListadoConjunto(normales, repetidos) {
     return listaNormales.concat(listaRepetidos);
 }
 
+function programaEmitidoCerrado(programa) {
+    return (programa?.estado || '').toLowerCase() === 'emitido' && rolUsuarioActual !== 'ROLE_ADMIN';
+}
+
 function campoProgramaEditable(programa, campo) {
     if (!programa || !puedeEditarCamposPrograma()) return false;
-    if ((programa.estado || '').toLowerCase() === 'emitido') return false;
+    if (programaEmitidoCerrado(programa)) return false;
     if (campo === 'duracionObjetivo' && programa.repetido) return false;
     return true;
 }
@@ -128,7 +132,7 @@ async function editarCampoPrograma(programaId, campo, repetido, elemento) {
     if (!elemento || elemento.dataset.editando === '1') return;
     const programa = buscarProgramaListado(programaId, repetido);
     if (!programa || !campoProgramaEditable(programa, campo)) {
-        if (programa && (programa.estado || '').toLowerCase() === 'emitido') {
+        if (programa && programaEmitidoCerrado(programa)) {
             mostrarError('Un programa emitido no se puede editar.');
         } else if (!puedeEditarCamposPrograma()) {
             mostrarError('No tienes permisos para editar programas.');
@@ -771,7 +775,7 @@ function mostrarProgramas() {
 
 function rechazarSiProgramaEmitido(programaId, repetido) {
     const programa = buscarProgramaListado(programaId, repetido);
-    if (programa && (programa.estado || '').toLowerCase() === 'emitido') {
+    if (programa && programaEmitidoCerrado(programa)) {
         mostrarError('Un programa emitido no se puede editar.');
         return true;
     }
@@ -2476,7 +2480,7 @@ async function mostrarConcursantesDisponibles(programaId, posicionPreferida = nu
         mostrarError('No tienes permisos para añadir concursantes a programas.');
         return;
     }
-    if (esProgramaEmitido(programaId, repetido) && !operacionSobreRepetido()) {
+    if (esProgramaEmitido(programaId, repetido) && !operacionSobreRepetido() && rolUsuarioActual !== 'ROLE_ADMIN') {
         mostrarError('No se pueden añadir concursantes a un programa emitido.');
         return;
     }
@@ -2664,7 +2668,7 @@ async function asignarConcursanteAPrograma(concursanteId) {
     try {
         const programaId = document.getElementById('programa-seleccionado-id').value;
         const sobreRepetido = operacionSobreRepetido();
-        if (esProgramaEmitido(programaId, sobreRepetido) && !sobreRepetido) {
+        if (esProgramaEmitido(programaId, sobreRepetido) && !sobreRepetido && rolUsuarioActual !== 'ROLE_ADMIN') {
             mostrarError('No se pueden añadir concursantes a un programa emitido.');
             return;
         }
@@ -2707,7 +2711,7 @@ async function quitarConcursanteDePrograma(concursanteId, programaId, event, rep
         mostrarError('No tienes permisos para quitar concursantes de programas.');
         return;
     }
-    if (esProgramaEmitido(programaId, repetido) && !sobreRepetido) {
+    if (esProgramaEmitido(programaId, repetido) && !sobreRepetido && rolUsuarioActual !== 'ROLE_ADMIN') {
         mostrarError('No se pueden quitar concursantes de un programa emitido.');
         return;
     }

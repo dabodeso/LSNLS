@@ -57,6 +57,8 @@ class ProgramaServiceTest {
     private ConcursanteRepository concursanteRepository;
     @Mock
     private ConcursanteService concursanteService;
+    @Mock
+    private AuthorizationService authorizationService;
 
     @InjectMocks
     private ProgramaService service;
@@ -418,6 +420,18 @@ class ProgramaServiceTest {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
             () -> service.updateCampo(1L, campos));
         assertTrue(ex.getMessage().contains("emitido"));
+    }
+
+    @Test
+    void updateCampo_emitidoLoCorrigeAdmin() {
+        programa.setEstado(Programa.EstadoPrograma.emitido);
+        when(programaRepository.findById(1L)).thenReturn(Optional.of(programa));
+        when(authorizationService.isAdmin()).thenReturn(true);
+        stubSaveConId();
+
+        ProgramaDTO dto = service.updateCampo(1L, Map.of("notas", "corregido"));
+
+        assertEquals("corregido", dto.getNotas());
     }
 
     @Test

@@ -220,14 +220,15 @@ class ComboServiceTest {
     }
 
     @Test
-    void agregarPregunta_nivelIncorrecto() {
+    void agregarPregunta_aceptaNivelDistintoDe5() {
         Pregunta p = preguntaNivel5(5L);
         p.setNivel(Pregunta.NivelPregunta._1LS);
         when(comboRepository.findById(1L)).thenReturn(Optional.of(comboBase()));
         when(preguntaRepository.findById(5L)).thenReturn(Optional.of(p));
-        RuntimeException ex = assertThrows(RuntimeException.class,
-            () -> comboService.agregarPregunta(1L, 5L, 2, 1));
-        assertTrue(ex.getMessage().contains("nivel 5"));
+        when(preguntaComboRepository.existsById(any())).thenReturn(false);
+
+        assertTrue(comboService.agregarPregunta(1L, 5L, 2, 1));
+        verify(preguntaComboRepository).save(any(PreguntaCombo.class));
     }
 
     @Test

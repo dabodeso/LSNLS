@@ -214,7 +214,7 @@ class ValidationServiceTest {
 
         ValidationService.ValidationResult result = validationService.validarIntegridadCombo(combo2);
         assertFalse(result.isValid());
-        assertTrue(result.getErrorsAsString().contains("nivel"));
+        assertFalse(result.getErrorsAsString().contains("nivel"));
         assertTrue(result.getErrorsAsString().contains("X2 duplicado"));
         assertTrue(result.getErrorsAsString().contains("X3 duplicado"));
         assertTrue(result.getErrorsAsString().contains("X duplicado"));

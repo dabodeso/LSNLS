@@ -584,7 +584,8 @@ const PreguntasManager = {
         const texto = document.getElementById('filtro-texto')?.value.toLowerCase() || '';
         
         const preguntasFiltradas = this.preguntas.filter(p => {
-            const coincideEstado = !estado || p.estado === estado;
+            const estados = estado ? estado.split(',') : [];
+            const coincideEstado = !estado || estados.includes(p.estado);
             const coincideNivel = !nivel || p.nivel === nivel;
             const coincideTematica = !tematica || (p.tematica && p.tematica.toLowerCase().includes(tematica));
             const coincideSubtema = !subtema || (p.subtema && p.subtema.toLowerCase().includes(subtema));

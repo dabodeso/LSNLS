@@ -75,6 +75,7 @@ class JornadaServiceTest {
     @Mock private EntityManager entityManager;
     @Mock private UndoService undoService;
     @Mock private ConcursanteRepository concursanteRepository;
+    @Mock private AuthorizationService authorizationService;
     @Mock private TypedQuery<Object> typedQuery;
     @Mock private Query nativeQuery;
 
@@ -272,6 +273,21 @@ class JornadaServiceTest {
         j.setEstado(Jornada.EstadoJornada.completada);
         when(jornadaRepository.findById(1L)).thenReturn(Optional.of(j));
         assertThrows(IllegalArgumentException.class, () -> jornadaService.actualizar(1L, dtoMinimo()));
+    }
+
+    @Test
+    void actualizar_completadaLaCorrigeAdmin() {
+        Jornada j = jornadaBase();
+        j.setEstado(Jornada.EstadoJornada.completada);
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(j));
+        when(authorizationService.isAdmin()).thenReturn(true);
+        JornadaDTO dto = dtoMinimo();
+        dto.setNombre("Corregida");
+
+        JornadaDTO result = jornadaService.actualizar(1L, dto);
+
+        assertEquals("Corregida", result.getNombre());
+        verify(jornadaRepository).save(any(Jornada.class));
     }
 
     @Test

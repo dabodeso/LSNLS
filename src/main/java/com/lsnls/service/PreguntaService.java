@@ -6,7 +6,6 @@ import com.lsnls.entity.Pregunta.EstadoDisponibilidad;
 import com.lsnls.entity.Pregunta.NivelPregunta;
 import com.lsnls.entity.Usuario;
 import com.lsnls.repository.PreguntaRepository;
-import com.lsnls.repository.PreguntaComboRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -45,9 +44,6 @@ public class PreguntaService {
     
     @Autowired
     private DataTransformationService dataTransformationService;
-    
-    @Autowired
-    private PreguntaComboRepository preguntaComboRepository;
 
     @Autowired
     private UndoService undoService;
@@ -718,20 +714,6 @@ public class PreguntaService {
         // Proteger el campo de autoría - no permitir modificaciones
         if (dto.getCreacionUsuarioId() != null && !dto.getCreacionUsuarioId().equals(pregunta.getCreacionUsuario().getId())) {
             throw new IllegalArgumentException("No se puede modificar el campo de autoría de una pregunta");
-        }
-
-        // Validar cambio de nivel si la pregunta está asignada a un combo
-        if (dto.getNivel() != null && !dto.getNivel().equals(pregunta.getNivel())) {
-            boolean estaAsignadaACombo = preguntaComboRepository.existsByPreguntaId(id);
-            
-            if (estaAsignadaACombo) {
-                // Verificar si el nuevo nivel es de nivel 5
-                boolean esNivel5 = dto.getNivel().name().startsWith("_5");
-                
-                if (!esNivel5) {
-                    throw new IllegalArgumentException("La pregunta está asignada a un combo, solo puede tener nivel 5");
-                }
-            }
         }
 
         // Guardar el valor anterior del estado para comparar

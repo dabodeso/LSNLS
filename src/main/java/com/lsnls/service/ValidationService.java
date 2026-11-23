@@ -193,12 +193,6 @@ public class ValidationService {
             for (PreguntaCombo pc : combo.getPreguntas()) {
                 String factor = pc.getFactorMultiplicacion();
                 
-                // Validar que la pregunta sea de nivel 5
-                String nivel = pc.getPregunta().getNivel().name();
-                if (!nivel.startsWith("_5")) {
-                    result.addError("Combo contiene pregunta de nivel " + nivel.replaceFirst("^_", "") + ". Solo se permiten preguntas de nivel 5");
-                }
-                
                 // Validar factores únicos
                 if ("X2".equals(factor) || "2".equals(factor)) {
                     if (factoresPresentes[0]) {

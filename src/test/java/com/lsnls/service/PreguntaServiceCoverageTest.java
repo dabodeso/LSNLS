@@ -140,7 +140,6 @@ class PreguntaServiceCoverageTest {
         Pregunta p = preguntaBase();
         p.setVersion(2L);
         when(preguntaRepository.findById(1L)).thenReturn(Optional.of(p));
-        when(preguntaComboRepository.existsByPreguntaId(1L)).thenReturn(false);
 
         PreguntaDTO dto = new PreguntaDTO();
         dto.setVersion(2L);

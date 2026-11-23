@@ -1556,12 +1556,8 @@ function abrirSelectorPregunta(nivel, factor = null) {
     const temaSelect = document.getElementById('buscador-tematica-select');
     if (temaSelect) temaSelect.value = '';
     const nivelSelect = document.getElementById('buscador-nivel-combo');
-    // Combos: solo nivel 5 (5LS / 5NLS). Sin "todos" ni niveles 1-4.
-    if (nivelSelect) {
-        const actual = nivelSelect.value;
-        if (actual !== '_5LS' && actual !== '_5NLS') {
-            nivelSelect.value = '_5LS';
-        }
+    if (nivelSelect && !Array.from(nivelSelect.options).some(o => o.value === nivelSelect.value)) {
+        nivelSelect.value = '';
     }
     const estadoSelect = document.getElementById('buscador-estado');
     if (estadoSelect) estadoSelect.value = 'aprobada';
@@ -1579,21 +1575,13 @@ async function buscarPreguntasModal(page = 0) {
     let filtroNivel = document.getElementById('buscador-nivel-combo')?.value || '';
     const estadoSel = (document.getElementById('buscador-estado')?.value || 'todos').trim().toLowerCase();
 
-    // Combos solo admiten nivel 5: forzar siempre 5LS o 5NLS
-    if (filtroNivel !== '_5LS' && filtroNivel !== '_5NLS') {
-        filtroNivel = '_5LS';
-        const nivelSelect = document.getElementById('buscador-nivel-combo');
-        if (nivelSelect) nivelSelect.value = '_5LS';
-    }
-
     try {
-        // Para combos, buscar solo preguntas de nivel 5
         let preguntas = [];
         let totalPages = 1;
         const params = new URLSearchParams();
         params.set('page', page);
         params.set('size', 20);
-        params.set('nivel', filtroNivel);
+        if (filtroNivel) params.set('nivel', filtroNivel);
         let url = '';
         if (id) {
             // id exacto -> usar /buscar
@@ -1617,11 +1605,6 @@ async function buscarPreguntasModal(page = 0) {
         if (!resp.ok) throw new Error('Error al buscar preguntas');
         const data = await resp.json();
         let lista = data.content || [];
-        // Seguridad: nunca mostrar preguntas que no sean nivel 5
-        lista = lista.filter(p => {
-            const n = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.name || '');
-            return String(n).startsWith('_5');
-        });
         // Filtro por estado en cliente si el usuario pide 'todos'
         if (estadoSel === 'todos') {
             lista = lista.filter(p => p.estado === 'aprobada' || p.estado === 'verificada');
@@ -1631,7 +1614,7 @@ async function buscarPreguntasModal(page = 0) {
         preguntas = lista;
         totalPages = data.totalPages || 1;
         
-        console.log('[COMBO] Total preguntas nivel 5 filtradas:', preguntas.length);
+        console.log('[COMBO] Preguntas encontradas:', preguntas.length);
         
         renderizarPreguntasModal(preguntas, totalPages, page);
     } catch (error) {
@@ -1642,6 +1625,12 @@ async function buscarPreguntasModal(page = 0) {
 }
 
 // Función para renderizar las preguntas en el modal
+function textoNotasVerificacion(notas) {
+    const texto = (notas || '').trim();
+    if (!texto) return '<span class="text-muted">Sin notas</span>';
+    return Utils.escapeHtml(texto);
+}
+
 function renderizarPreguntasModal(preguntas, totalPages, currentPage) {
     const tbody = document.getElementById('tbody-selector-pregunta');
     const terminoBusqueda = document.getElementById('buscador-texto')?.value || '';
@@ -1654,12 +1643,13 @@ function renderizarPreguntasModal(preguntas, totalPages, currentPage) {
         
         // Determinar el color del nivel
         let nivelColor = '';
-        if (pregunta.nivel === '_5NLS') {
-            nivelColor = 'text-danger fw-bold'; // Rojo para 5NLS
-        } else if (pregunta.nivel === '_5LS') {
-            nivelColor = 'text-success fw-bold'; // Verde para 5LS
+        const nivelTexto = typeof pregunta.nivel === 'string' ? pregunta.nivel : (pregunta.nivel?.name || '');
+        if (nivelTexto.includes('NLS')) {
+            nivelColor = 'text-danger fw-bold';
+        } else if (nivelTexto.includes('LS')) {
+            nivelColor = 'text-success fw-bold';
         } else {
-            nivelColor = 'text-muted'; // Gris para otros niveles
+            nivelColor = 'text-muted';
         }
         
         row.innerHTML = `
@@ -1674,6 +1664,9 @@ function renderizarPreguntasModal(preguntas, totalPages, currentPage) {
                             Nivel: <span class="${nivelColor}">${Utils.formatearNivel(pregunta.nivel)}</span> | 
                             Estado: ${pregunta.estado}
                         </small>
+                    </div>
+                    <div class="notas-verificacion mt-1" style="white-space:pre-wrap;">
+                        <small><strong>Notas de verificación:</strong> ${textoNotasVerificacion(pregunta.notasVerificacion)}</small>
                     </div>
                 </div>
             </td>
@@ -2087,45 +2080,6 @@ async function guardarCombo() {
             if (!continuarVerificadas) {
                 return;
             }
-        }
-
-        // Combos: solo preguntas de nivel 5 (bloquear niveles 1-4)
-        const detallesPorId = {};
-        (detallesPreguntas || []).forEach(p => {
-            if (p && p.id != null) detallesPorId[p.id] = p;
-        });
-
-        const desajustesNivel = [];
-        preguntasMultiplicadoras.forEach(pm => {
-            const detalle = detallesPorId[pm.id];
-            if (!detalle || !detalle.nivel) return;
-
-            const actualNivel = typeof detalle.nivel === 'string'
-                ? detalle.nivel
-                : (detalle.nivel.name || detalle.nivel);
-
-            if (!actualNivel || !String(actualNivel).startsWith('_5')) {
-                desajustesNivel.push({
-                    id: pm.id,
-                    actualNivel,
-                    pregunta: detalle.pregunta || ''
-                });
-            }
-        });
-
-        if (desajustesNivel.length > 0) {
-            const listaNiveles = desajustesNivel
-                .map(m => `Pregunta ${m.id} (${Utils.formatearNivel(m.actualNivel || 'null')})`)
-                .join(', ');
-            Toastify({
-                text: `Solo se pueden usar preguntas de nivel 5 (5LS/5NLS) en combos. Quita: ${listaNiveles}`,
-                duration: 6000,
-                close: true,
-                gravity: 'top',
-                position: 'right',
-                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
-            }).showToast();
-            return;
         }
     } catch (e) {
         console.warn('No se pudo comprobar estado/nivel de las preguntas antes de guardar el combo:', e);

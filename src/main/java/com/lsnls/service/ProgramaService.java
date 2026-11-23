@@ -44,6 +44,9 @@ public class ProgramaService {
     @Autowired
     private ConcursanteService concursanteService;
 
+    @Autowired
+    private AuthorizationService authorizationService;
+
     /** Cubre el cálculo del código y el insert para que dos altas no reciban el mismo número. */
     private final Object asignacionCodigoLock = new Object();
 
@@ -123,7 +126,7 @@ public class ProgramaService {
             Programa.EstadoPrograma estadoAnterior = programa.getEstado();
             boolean estadoActualizadoExplicitamente = false;
             boolean soloCambiaEstado = campo.keySet().stream().allMatch("estado"::equals);
-            if (estadoAnterior == Programa.EstadoPrograma.emitido && !soloCambiaEstado) {
+            if (estadoAnterior == Programa.EstadoPrograma.emitido && !soloCambiaEstado && !esAdmin()) {
                 throw new IllegalArgumentException(
                     "Un programa emitido no se puede editar. Cambia el estado para desbloquearlo.");
             }
@@ -313,7 +316,7 @@ public class ProgramaService {
         Optional<Programa> optionalPrograma = programaRepository.findById(id);
         if (optionalPrograma.isPresent()) {
             Programa programa = optionalPrograma.get();
-            if (programa.getEstado() == Programa.EstadoPrograma.emitido) {
+            if (programa.getEstado() == Programa.EstadoPrograma.emitido && !esAdmin()) {
                 throw new IllegalArgumentException(
                     "Un programa emitido no se puede editar. Cambia el estado para desbloquearlo.");
             }
@@ -322,6 +325,10 @@ public class ProgramaService {
         } else {
             throw new IllegalArgumentException("Programa con ID " + id + " no encontrado");
         }
+    }
+
+    private boolean esAdmin() {
+        return authorizationService != null && authorizationService.isAdmin();
     }
 
     private void aplicarDuracionObjetivoPorDefecto(Programa programa) {

@@ -879,7 +879,8 @@ public class ConcursanteService {
     }
 
     private void exigirProgramaNoEmitido(Programa programa, String accion) {
-        if (programa != null && programa.getEstado() == Programa.EstadoPrograma.emitido) {
+        if (programa != null && programa.getEstado() == Programa.EstadoPrograma.emitido
+                && (authorizationService == null || !authorizationService.isAdmin())) {
             throw new IllegalArgumentException("No se pueden " + accion + " un programa emitido.");
         }
     }

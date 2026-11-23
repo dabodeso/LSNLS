@@ -161,6 +161,11 @@ const JornadasManager = {
         await this.refrescarManteniendoJornada();
     },
 
+    esAdmin() {
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        return usuario.rol === 'ROLE_ADMIN';
+    },
+
     esAdminODireccion() {
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
         return usuario.rol === 'ROLE_ADMIN' || usuario.rol === 'ROLE_DIRECCION';
@@ -1076,11 +1081,14 @@ const JornadasManager = {
     },
 
     puedeEditar(jornada) {
-        // Solo ADMIN / DIRECCION; bloqueado en completada / archivada (alineado con PUT /api/jornadas)
+        // Admin y Dirección. Archivada sigue cerrada. Completada solo la corrige Admin.
         if (!this.esAdminODireccion()) {
             return false;
         }
-        return jornada.estado !== 'completada' && jornada.estado !== 'archivada';
+        const estado = (jornada?.estado || '').toLowerCase();
+        if (estado === 'archivada') return false;
+        if (estado === 'completada') return this.esAdmin();
+        return true;
     },
 
     avisarSiNoPuedeEditar(jornada) {
