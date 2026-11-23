@@ -72,8 +72,6 @@ public class CuestionarioService {
     }
     
     public Map<String, Object> obtenerTodosPaginados(int page, int size) {
-        // Sincronizar estados con asignaciones de jornadas
-        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
         // Crear objeto Pageable para paginación
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
@@ -484,7 +482,6 @@ public class CuestionarioService {
     }
 
     public Map<String, Object> filtrarCuestionarios(String estado, String tematica, String subtema, String texto, int page, int size) {
-        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
         // Crear objeto Pageable para paginación
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
@@ -624,21 +621,6 @@ public class CuestionarioService {
         return response;
     }
 
-    /** Sincroniza estados adjudicado/aprobado con asignaciones de jornada (lote) */
-    private void sincronizarEstadosAsignaciones() {
-        // Cuestionarios adjudicados por estar en jornadas
-        // IMPORTANTE: no tocar los que ya están en 'aprobado' porque pueden estar marcados como reutilizados/liberados
-        entityManager.createNativeQuery(
-            "UPDATE cuestionarios SET estado='adjudicado' " +
-            "WHERE id IN (SELECT cuestionario_id FROM jornadas_cuestionarios) " +
-            "AND estado NOT IN ('adjudicado','grabado','aprobado')")
-            .executeUpdate();
-        // Cuestionarios sin jornada → aprobado (solo si estaban adjudicados)
-        entityManager.createNativeQuery(
-            "UPDATE cuestionarios SET estado='aprobado' WHERE estado='adjudicado' AND id NOT IN (SELECT cuestionario_id FROM jornadas_cuestionarios)")
-            .executeUpdate();
-    }
-    
     public Map<String, Object> filtrarCuestionariosPorId(String idStr, int page, int size) {
         // Crear objeto Pageable para paginación
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));

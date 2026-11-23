@@ -63,9 +63,7 @@ public class ComboService {
     }
     
     public Map<String, Object> obtenerTodosPaginados(int page, int size) {
-        // Sincronizar estados con asignaciones de jornadas
-        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
-        // Crear objeto Pageable para paginaci?n
+        // Crear objeto Pageable para paginación
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         
         // Obtener el total de combos
@@ -128,8 +126,7 @@ public class ComboService {
     
     
     public Map<String, Object> filtrarCombos(String estado, String tipo, String tematica, String subtema, String texto, int page, int size) {
-        try { sincronizarEstadosAsignaciones(); } catch (Exception ignored) {}
-        // Crear objeto Pageable para paginaci?n
+        // Crear objeto Pageable para paginación
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
         Page<Combo> paginaCombos;
@@ -832,21 +829,6 @@ public class ComboService {
         }
         dto.put("preguntas", preguntasDTO);
         return dto;
-    }
-
-    /** Sincroniza estados adjudicado/aprobado con asignaciones de jornada (lote) */
-    private void sincronizarEstadosAsignaciones() {
-        // Combos adjudicados por estar en jornadas
-        // IMPORTANTE: no tocar los que ya est?n en 'aprobado' porque pueden estar marcados como reutilizados/liberados
-        entityManager.createNativeQuery(
-            "UPDATE combos SET estado='adjudicado' " +
-            "WHERE id IN (SELECT combo_id FROM jornadas_combos) " +
-            "AND estado NOT IN ('adjudicado','grabado','aprobado')")
-            .executeUpdate();
-        // Combos sin jornada ? aprobado (solo si estaban adjudicados)
-        entityManager.createNativeQuery(
-            "UPDATE combos SET estado='aprobado' WHERE estado='adjudicado' AND id NOT IN (SELECT combo_id FROM jornadas_combos)")
-            .executeUpdate();
     }
 
     private Map<String, Object> dtoPreguntaCombo(PreguntaCombo pc, String slot, Long preguntaUsadaId) {

@@ -12,7 +12,6 @@ import com.lsnls.repository.PreguntaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,7 +39,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -147,6 +147,7 @@ class CuestionarioServiceCoverageTest {
         assertNotNull(cuestionarioService.filtrarCuestionarios("borrador", null, null, null, 0, 5));
         assertNotNull(cuestionarioService.filtrarCuestionarios(null, "Cine", null, null, 0, 5));
         assertNotNull(cuestionarioService.filtrarCuestionarios(null, null, null, null, 0, 5));
+        verify(entityManager, never()).createNativeQuery(contains("SET estado="));
     }
 
     @Test
@@ -182,12 +183,7 @@ class CuestionarioServiceCoverageTest {
         when(cuestionarioRepository.findAllPaginados(any(Pageable.class))).thenReturn(Collections.singletonList(c));
         when(typedQuery.getResultList()).thenReturn(Collections.singletonList(c));
         assertEquals(1L, cuestionarioService.obtenerTodosPaginados(0, 10).get("totalItems"));
-        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
-        verify(entityManager, atLeastOnce()).createNativeQuery(sql.capture());
-        assertTrue(sql.getAllValues().stream().anyMatch(s ->
-                s.contains("SET estado='adjudicado'") && s.contains("jornadas_cuestionarios")));
-        assertTrue(sql.getAllValues().stream().anyMatch(s ->
-                s.contains("SET estado='aprobado'") && s.contains("NOT IN (SELECT cuestionario_id FROM jornadas_cuestionarios)")));
+        verify(entityManager, never()).createNativeQuery(contains("SET estado="));
     }
 
     @Test

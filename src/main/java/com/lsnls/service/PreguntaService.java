@@ -1064,33 +1064,6 @@ public class PreguntaService {
             return preguntasPage.map(this::mapPreguntaToDTO);
         } catch (Exception e) {
             log.error("[PAGINADAS] Error al obtener preguntas paginadas: {}", e.getMessage(), e);
-            
-            // Log adicional para identificar el problema específico
-            if (e.getCause() != null && e.getCause().getMessage().contains("No enum constant")) {
-                log.error("[PAGINADAS] Error de enum detectado: {}", e.getCause().getMessage());
-                
-                // Intentar identificar qué valores problemáticos hay
-                try {
-                    List<Pregunta> todas = preguntaRepository.findAll();
-                    log.info("[PAGINADAS] Total preguntas en BD: {}", todas.size());
-                    
-                    // Verificar niveles únicos
-                    Set<String> niveles = todas.stream()
-                        .map(p -> p.getNivel() != null ? p.getNivel().name() : "NULL")
-                        .collect(Collectors.toSet());
-                    log.info("[PAGINADAS] Niveles únicos encontrados: {}", niveles);
-                    
-                    // Verificar estados únicos
-                    Set<String> estados = todas.stream()
-                        .map(p -> p.getEstado() != null ? p.getEstado().name() : "NULL")
-                        .collect(Collectors.toSet());
-                    log.info("[PAGINADAS] Estados únicos encontrados: {}", estados);
-                    
-                } catch (Exception ex) {
-                    log.error("[PAGINADAS] Error al verificar datos: {}", ex.getMessage());
-                }
-            }
-            
             throw e;
         }
     }

@@ -13,7 +13,6 @@ import com.lsnls.repository.TematicaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -43,7 +42,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -167,6 +167,7 @@ class ComboServiceCoverageTest {
 
         assertEquals(1L, res.get("totalItems"));
         assertEquals(0, res.get("currentPage"));
+        verify(entityManager, never()).createNativeQuery(contains("SET estado="));
     }
 
     @Test
@@ -202,6 +203,7 @@ class ComboServiceCoverageTest {
         assertNotNull(comboService.filtrarCombos(null, "P", null, null, null, 0, 5));
         assertNotNull(comboService.filtrarCombos(null, null, "Cine", null, null, 0, 5));
         assertNotNull(comboService.filtrarCombos(null, null, null, null, null, 0, 5));
+        verify(entityManager, never()).createNativeQuery(contains("SET estado="));
     }
 
     @Test
@@ -229,12 +231,7 @@ class ComboServiceCoverageTest {
         when(comboRepository.findByEstado(EstadoCombo.grabado)).thenReturn(Collections.emptyList());
 
         assertEquals(1L, comboService.obtenerTodosPaginados(0, 10).get("totalItems"));
-        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
-        verify(entityManager, atLeastOnce()).createNativeQuery(sql.capture());
-        assertTrue(sql.getAllValues().stream().anyMatch(s ->
-                s.contains("SET estado='adjudicado'") && s.contains("jornadas_combos")));
-        assertTrue(sql.getAllValues().stream().anyMatch(s ->
-                s.contains("SET estado='aprobado'") && s.contains("NOT IN (SELECT combo_id FROM jornadas_combos)")));
+        verify(entityManager, never()).createNativeQuery(contains("SET estado="));
         assertEquals(1, comboService.obtenerDisponiblesParaConcursantes().size());
     }
 
