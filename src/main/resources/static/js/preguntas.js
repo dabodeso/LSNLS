@@ -102,6 +102,67 @@ const PreguntasManager = {
         return !!(f.estado || f.autoria || f.nivel || f.tematica || f.subtema || f.texto);
     },
 
+    preguntaVisibleConFiltros(pregunta) {
+        const f = this.leerFiltrosDesdeDom();
+        if (!this.tieneFiltrosActivos(f)) return true;
+        const estado = pregunta?.estado == null ? '' : String(pregunta.estado);
+        if (f.estado && !f.estado.split(',').includes(estado)) return false;
+        if (f.nivel && String(pregunta?.nivel || '') !== f.nivel) return false;
+        if (f.tematica && !(pregunta?.tematica || '').toLowerCase().includes(f.tematica.toLowerCase())) return false;
+        if (f.subtema && !(pregunta?.subtema || '').toLowerCase().includes(f.subtema.toLowerCase())) return false;
+        if (f.autoria) {
+            const autor = (pregunta?.autor || pregunta?.creacionUsuarioNombre || '').toLowerCase();
+            if (!autor.includes(f.autoria.toLowerCase())) return false;
+        }
+        if (f.texto) {
+            const texto = f.texto.toLowerCase();
+            const enPregunta = (pregunta?.pregunta || '').toLowerCase().includes(texto);
+            const enRespuesta = (pregunta?.respuesta || '').toLowerCase().includes(texto);
+            if (!enPregunta && !enRespuesta) return false;
+        }
+        return true;
+    },
+
+    pintarPreguntaGuardada(pregunta, esNueva) {
+        if (!pregunta || pregunta.id == null) return;
+        const id = Number(pregunta.id);
+        const fila = { ...pregunta, id };
+        const idx = this.preguntas.findIndex(p => Number(p.id) === id);
+        if (!this.preguntaVisibleConFiltros(fila)) {
+            if (idx !== -1) {
+                this.preguntas.splice(idx, 1);
+                if (this.totalPreguntas > 0) this.totalPreguntas--;
+                this.totalPaginas = Math.max(1, Math.ceil(this.totalPreguntas / this.tamanioPagina));
+            }
+            this.mostrarPreguntas();
+            this.actualizarPaginacion();
+            return;
+        }
+        if (idx !== -1) {
+            this.preguntas[idx] = { ...this.preguntas[idx], ...fila };
+        } else if (esNueva) {
+            this.preguntas.unshift(fila);
+            if (this.preguntas.length > this.tamanioPagina) this.preguntas.pop();
+            this.totalPreguntas = (this.totalPreguntas || 0) + 1;
+            this.totalPaginas = Math.max(1, Math.ceil(this.totalPreguntas / this.tamanioPagina));
+        } else {
+            return;
+        }
+        this.mostrarPreguntas();
+        this.actualizarPaginacion();
+    },
+
+    quitarPreguntaDeListado(id) {
+        const antes = this.preguntas.length;
+        this.preguntas = this.preguntas.filter(p => Number(p.id) !== Number(id));
+        if (this.preguntas.length < antes && this.totalPreguntas > 0) {
+            this.totalPreguntas--;
+            this.totalPaginas = Math.max(1, Math.ceil(this.totalPreguntas / this.tamanioPagina));
+        }
+        this.mostrarPreguntas();
+        this.actualizarPaginacion();
+    },
+
     construirParamsFiltrar(filtros, page = this.paginaActual) {
         const params = new URLSearchParams({
             page: String(page),
@@ -793,17 +854,14 @@ const PreguntasManager = {
             }
             
             let response;
+            let guardada = null;
             if (esEdicion) {
                 console.log('📤 [GUARDAR] Enviando PUT a /api/preguntas/' + editId);
-                const preguntaActualizada = await apiManager.putUndoable(
+                guardada = await apiManager.putUndoable(
                     `/api/preguntas/${editId}`,
                     preguntaData,
                     { label: `Editar pregunta ${editId}` }
                 );
-                const preguntaIndex = this.preguntas.findIndex(p => p.id === parseInt(editId));
-                if (preguntaIndex !== -1 && preguntaActualizada) {
-                    this.preguntas[preguntaIndex] = preguntaActualizada;
-                }
                 response = { ok: true, status: 200, statusText: 'OK' };
             } else {
                 // Crear nueva pregunta
@@ -826,6 +884,7 @@ const PreguntasManager = {
                 // Registrar undo/redo para creación
                 try {
                     const creada = await response.json();
+                    guardada = creada;
                     const createdId = creada?.id;
                     if (window.UndoManager && createdId) {
                         // Id mutable: al rehacer se crea una pregunta con id nuevo
@@ -837,7 +896,7 @@ const PreguntasManager = {
                                 headers: authManager.getAuthHeaders()
                             });
                             if (!del.ok) throw new Error('No se pudo deshacer la creación');
-                            await this.recargarConFiltros();
+                            this.quitarPreguntaDeListado(estadoUndo.id);
                         };
                         const redoAction = async () => {
                             const r = await fetch('/api/preguntas', {
@@ -849,13 +908,16 @@ const PreguntasManager = {
                                 body: JSON.stringify(preguntaData)
                             });
                             if (!r.ok) throw new Error('No se pudo rehacer la creación');
-                            try {
-                                const recreada = await r.json();
-                                if (recreada?.id) estadoUndo.id = recreada.id;
-                            } catch {}
-                            await this.recargarConFiltros();
+                            const recreada = await r.json();
+                            if (recreada?.id) estadoUndo.id = recreada.id;
+                            this.pintarPreguntaGuardada(recreada, true);
                         };
-                        window.UndoManager.record({ do: redoAction, undo: undoAction, label: `Crear pregunta ${createdId}` });
+                        window.UndoManager.record({
+                            do: redoAction,
+                            undo: undoAction,
+                            label: `Crear pregunta ${createdId}`,
+                            skipPageRefresh: true
+                        });
                     }
                 } catch (e) {
                     console.warn('⚠️ [UNDO] No se pudo registrar undo para creación:', e);
@@ -863,9 +925,8 @@ const PreguntasManager = {
             }
             
             console.log('📥 [GUARDAR] Respuesta del servidor:', response.status, response.statusText);
-            
-            // Recargar las preguntas manteniendo filtros activos
-            await this.recargarConFiltros();
+
+            this.pintarPreguntaGuardada(guardada, !esEdicion);
             PreguntasManager.ocultarModalPregunta();
             
             Utils.mostrarToastExito(esEdicion ? 'Pregunta editada exitosamente' : 'Pregunta creada exitosamente');
@@ -1264,30 +1325,20 @@ const PreguntasManager = {
                     if (preguntaIndex !== -1) {
                         this.preguntas[preguntaIndex].estado = estadoActual;
                     }
-                    
-                    // Registrar acción de deshacer/rehacer
                     if (window.UndoManager) {
                         const hacer = async () => {
                             const r = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${nuevoValor}`, { method: 'PUT', headers: authManager.getAuthHeaders() });
-                            if (r.ok) {
-                                await this.recargarConFiltros();
-                            } else {
-                                throw new Error('No se pudo rehacer el cambio de estado');
-                            }
+                            if (!r.ok) throw new Error('No se pudo rehacer el cambio de estado');
+                            this.pintarPreguntaGuardada(await r.json(), false);
                         };
                         const deshacer = async () => {
                             const r = await fetch(`/api/preguntas/${id}/estado?nuevoEstado=${estadoAnterior}`, { method: 'PUT', headers: authManager.getAuthHeaders() });
-                            if (r.ok) {
-                                await this.recargarConFiltros();
-                            } else {
-                                throw new Error(await Utils.mensajeDesdeResponse(r, 'deshacer el cambio de estado'));
-                            }
+                            if (!r.ok) throw new Error(await Utils.mensajeDesdeResponse(r, 'deshacer el cambio de estado'));
+                            this.pintarPreguntaGuardada(await r.json(), false);
                         };
-                        window.UndoManager.record({ do: hacer, undo: deshacer, label: `Estado ${estadoAnterior}→${nuevoValor}` });
+                        window.UndoManager.record({ do: hacer, undo: deshacer, label: `Estado ${estadoAnterior}→${nuevoValor}`, skipPageRefresh: true });
                     }
-                    
-                    // Recargar la tabla manteniendo filtros activos
-                    await this.recargarConFiltros();
+                    this.pintarPreguntaGuardada(preguntaActualizada, false);
                     return;
                 }
             } else {
@@ -1311,7 +1362,7 @@ const PreguntasManager = {
                         body: JSON.stringify({ [campo]: nuevoValor })
                     });
                     if (!r.ok) throw new Error('No se pudo rehacer el cambio');
-                    await this.recargarConFiltros();
+                    this.pintarPreguntaGuardada(await r.json(), false);
                 };
                 const undoAction = async () => {
                     const r = await fetch(`/api/preguntas/${id}`, {
@@ -1320,14 +1371,13 @@ const PreguntasManager = {
                         body: JSON.stringify({ [campo]: valorOriginal })
                     });
                     if (!r.ok) throw new Error('No se pudo deshacer el cambio');
-                    await this.recargarConFiltros();
+                    this.pintarPreguntaGuardada(await r.json(), false);
                 };
-                window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar pregunta ${id} - ${campo}` });
+                window.UndoManager.record({ do: doAction, undo: undoAction, label: `Actualizar pregunta ${id} - ${campo}`, skipPageRefresh: true });
             }
-            
-            console.log('✅ [FRONTEND] Campo actualizado, recargando tabla...');
-            // CAMBIO: Usar recargarConFiltros() en lugar de cargarPreguntas() para mantener filtros
-            await this.recargarConFiltros();
+
+            const actualizada = await response.json();
+            this.pintarPreguntaGuardada(actualizada && actualizada.id != null ? actualizada : { ...update, id }, false);
             
         } catch (e) {
             console.error('❌ [FRONTEND] Error:', e.message);
@@ -1482,8 +1532,7 @@ const PreguntasManager = {
             // El backend registra la operación deshacible y restaura la pregunta
             // con su mismo id al deshacer
             await apiManager.deleteUndoable(`/api/preguntas/${id}`, { label: `Eliminar pregunta ${id}` });
-
-            await this.recargarConFiltros();
+            this.quitarPreguntaDeListado(id);
             Utils.mostrarToastExito('Pregunta eliminada');
         } catch (error) {
             Toastify({

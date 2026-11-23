@@ -1233,6 +1233,52 @@ const JornadasManager = {
         }
     },
 
+    jornadaCabeEnFiltro(jornada) {
+        const estado = document.getElementById('filtroEstado')?.value || '';
+        const desde = document.getElementById('filtroFechaDesde')?.value || '';
+        const hasta = document.getElementById('filtroFechaHasta')?.value || '';
+        const buscar = (document.getElementById('filtroBuscar')?.value || '').trim().toLowerCase();
+        if (estado && jornada.estado !== estado) return false;
+        const fecha = jornada.fechaJornada || '';
+        if (desde && fecha && fecha < desde) return false;
+        if (hasta && fecha && fecha > hasta) return false;
+        if (buscar) {
+            const nombre = (jornada.nombre || '').toLowerCase();
+            const lugar = (jornada.lugar || '').toLowerCase();
+            if (!nombre.includes(buscar) && !lugar.includes(buscar) && !String(jornada.id).includes(buscar)) return false;
+        }
+        return true;
+    },
+
+    pintarJornadaGuardada(jornada, esNueva) {
+        if (!jornada || jornada.id == null) return;
+        const id = Number(jornada.id);
+        const fila = { ...jornada, id };
+        const idx = this.jornadas.findIndex(j => Number(j.id) === id);
+        if (!this.jornadaCabeEnFiltro(fila)) {
+            if (idx !== -1) {
+                this.jornadas.splice(idx, 1);
+                if (this.totalJornadas > 0) this.totalJornadas--;
+                this.totalPaginas = Math.max(1, Math.ceil(this.totalJornadas / this.tamanioPagina));
+            }
+            this.mostrarJornadas();
+            this.actualizarPaginacion();
+            return;
+        }
+        if (idx !== -1) {
+            this.jornadas[idx] = fila;
+        } else if (esNueva) {
+            this.jornadas.unshift(fila);
+            if (this.jornadas.length > this.tamanioPagina) this.jornadas.pop();
+            this.totalJornadas = (this.totalJornadas || 0) + 1;
+            this.totalPaginas = Math.max(1, Math.ceil(this.totalJornadas / this.tamanioPagina));
+        } else {
+            return;
+        }
+        this.mostrarJornadas();
+        this.actualizarPaginacion();
+    },
+
     async guardarJornada() {
         try {
             this.rememberScroll();
@@ -1261,6 +1307,7 @@ const JornadasManager = {
             }
 
             let response;
+            const esNueva = !this.jornadaEditando;
             if (this.jornadaEditando) {
                 response = await apiManager.putUndoable(`/api/jornadas/${this.jornadaEditando.id}`, datos, { label: `Actualizar jornada ${this.jornadaEditando.id}` });
             } else {
@@ -1269,9 +1316,9 @@ const JornadasManager = {
 
             Utils.showAlert('Jornada guardada exitosamente', 'success');
             bootstrap.Modal.getInstance(document.getElementById('modalJornada')).hide();
-            
-            await this.cargarDatos(true);
-            this.mostrarJornadas();
+
+            const guardada = response && response.datos ? response.datos : response;
+            this.pintarJornadaGuardada(guardada, esNueva);
             this.restoreScrollOrFocus();
             
         } catch (error) {

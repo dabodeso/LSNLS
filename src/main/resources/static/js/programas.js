@@ -1949,6 +1949,26 @@ async function sugerirCodigoPrograma() {
     }
 }
 
+function insertarProgramaGuardado(programa) {
+    if (!programa || programa.id == null) return;
+    const fila = { ...programa, repetido: !!programa.repetido };
+    if (typeof aplicarFiltros === 'function' && aplicarFiltros([fila]).length === 0) return;
+    const lista = aplicandoFiltros ? programasFiltrados : programas;
+    if (!Array.isArray(lista)) return;
+    const idx = lista.findIndex(p => String(p.id) === String(fila.id) && !!p.repetido === !!fila.repetido);
+    if (idx !== -1) {
+        lista[idx] = { ...lista[idx], ...fila };
+    } else {
+        lista.unshift(fila);
+        if (!aplicandoFiltros && lista.length > tamañoPagina) lista.pop();
+        totalItems = (totalItems || 0) + 1;
+        totalPaginas = Math.max(1, Math.ceil(totalItems / tamañoPagina));
+    }
+    const clave = claveConcursantesPrograma(fila);
+    if (!concursantesPorPrograma[clave]) concursantesPorPrograma[clave] = [];
+    pintarVistaProgramasLocal();
+}
+
 async function guardarPrograma() {
     const programaId = document.getElementById('programa-id').value;
     const repetido = document.getElementById('programa-repetido')?.value === 'true';
@@ -1966,18 +1986,20 @@ async function guardarPrograma() {
     }
     
     try {
+        let creado = null;
+        let idCreado = null;
         if (!programaId) {
             const programaData = {
                 temporada: parseInt(temporada),
                 fechaEmision,
                 codigo: codigo || null
             };
-            const creado = await apiManager.postUndoable('/api/programas', programaData, {
+            creado = await apiManager.postUndoable('/api/programas', programaData, {
                 label: 'Crear programa',
                 idExtractor: (r) => r?.id || r?.datos?.id,
                 deleteEndpointBuilder: (id) => `/api/programas/${id}`
             });
-            const idCreado = creado && (creado.id || creado.datos?.id);
+            idCreado = creado && (creado.id || creado.datos?.id);
             if (idCreado) {
                 if (creditos.trim()) {
                     await apiManager.patch(`/api/programas/${idCreado}/campo`, { creditosEspeciales: creditos });
@@ -2007,7 +2029,14 @@ async function guardarPrograma() {
         }
         
         bootstrap.Modal.getInstance(document.getElementById('modal-programa')).hide();
-        if (!programaId) await refrescarVistaProgramas();
+        if (!programaId && idCreado) {
+            try {
+                const fresco = await apiManager.get(`/api/programas/${idCreado}`);
+                insertarProgramaGuardado(fresco || creado);
+            } catch (e) {
+                insertarProgramaGuardado(creado);
+            }
+        }
         
     } catch (error) {
         mostrarError(obtenerMensajeErrorProgramas(error, 'guardado del programa'));

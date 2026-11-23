@@ -1716,6 +1716,31 @@ function leerFotoParaGuardar(esEdicion) {
 }
 
 // Guardar concursante con gestión de errores mejorada
+async function pintarConcursanteGuardado(id, esNuevo) {
+    if (!id) return;
+    const fresco = await apiManager.get(`/api/concursantes/${id}`);
+    if (!fresco || fresco.id == null) return;
+    const idx = concursantes.findIndex(c => c && Number(c.id) === Number(fresco.id));
+    if (idx !== -1) {
+        concursantes[idx] = fresco;
+    } else if (esNuevo) {
+        concursantes.unshift(fresco);
+        if (concursantes.length > tamanioPagina) concursantes.pop();
+        totalConcursantes = (totalConcursantes || 0) + 1;
+        totalPaginas = Math.max(1, Math.ceil(totalConcursantes / tamanioPagina));
+    } else {
+        return;
+    }
+    mostrarConcursantes();
+    actualizarPaginacion();
+    const fila = document.querySelector(`#tabla-concursantes tr[data-id='${id}']`);
+    if (fila) {
+        fila.classList.add('table-warning');
+        fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => fila.classList.remove('table-warning'), 2000);
+    }
+}
+
 async function guardarConcursante() {
 const form = document.getElementById('form-concursante');
 
@@ -1827,12 +1852,10 @@ let response;
             if (String(nuevaJornada || '') !== String(prevJornada || '')) {
                 await sincronizarJornadaConcursante(datosConcursante.id, nuevaJornada);
             }
-            await cargarConcursantes(true);
         };
         const undoAction = async () => {
             await apiManager.put(`/api/concursantes/${datosConcursante.id}`, snapshotPrevio);
             await sincronizarJornadaConcursante(datosConcursante.id, prevJornada);
-            await cargarConcursantes(true);
         };
         await doAction();
         if (window.UndoManager) window.UndoManager.record(accionUndoConcursante(datosConcursante.id, { do: doAction, undo: undoAction, label: `Actualizar concursante ${datosConcursante.id}` }));
@@ -1910,43 +1933,7 @@ if (response.ok) {
         mostrarExito(esEdicion ? 'Concursante editado correctamente' : 'Concursante guardado correctamente');
         $('#modal-concursante').modal('hide');
         const idEditado = datosConcursante.id || (concursanteActual && concursanteActual.id) || idParaFoto;
-        const paginaAntes = esEdicion ? paginaActual : 0;
-        console.info('🔄 [GUARDAR] Recargando lista', { idEditado, paginaAntes, sortByConcursantes, sortAscConcursantes });
-        // Recargar y posicionar
-        await cargarConcursantes(true);
-        paginaActual = paginaAntes;
-        setTimeout(() => {
-            try {
-                const fila = document.querySelector(`#tabla-concursantes tr[data-id='${idEditado}']`);
-                if (fila) {
-                    fila.classList.add('table-warning');
-                    fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setTimeout(() => fila.classList.remove('table-warning'), 2000);
-                } else {
-                    console.warn('🔍 [GUARDAR] Fila no encontrada tras recarga', { idEditado });
-                    // Fallback: obtener por ID e inyectar al inicio para que sea visible
-                    (async () => {
-                        try {
-                            if (!idEditado) return;
-                            const creado = await apiManager.get(`/api/concursantes/${idEditado}`);
-                            if (creado && creado.id) {
-                                // Prepend y re-render
-                                concursantes = [creado, ...concursantes.filter(c => c && c.id !== creado.id)];
-                                mostrarConcursantes();
-                                const fila2 = document.querySelector(`#tabla-concursantes tr[data-id='${idEditado}']`);
-                                if (fila2) {
-                                    fila2.classList.add('table-warning');
-                                    fila2.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                    setTimeout(() => fila2.classList.remove('table-warning'), 2000);
-                                }
-                            }
-                        } catch (e) {
-                            console.warn('⚠️ [GUARDAR] Fallback por ID falló', e);
-                        }
-                    })();
-                }
-            } catch {}
-        }, 100);
+        await pintarConcursanteGuardado(idEditado, !esEdicion);
 } else {
         await cancelarReciclajePendiente();
         const mensaje = await Utils.mensajeDesdeResponse(response, 'guardar concursantes');
