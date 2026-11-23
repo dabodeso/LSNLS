@@ -1,5 +1,8 @@
 package com.lsnls.config;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -14,6 +17,7 @@ public final class MensajesUsuario {
     public static final String RED = "No hay conexión con el servidor. Comprueba tu red e inténtalo de nuevo.";
     public static final String SESION = "Tu sesión ha caducado. Vuelve a iniciar sesión.";
     public static final String PERMISOS = "No tienes permisos para realizar esta acción.";
+    public static final String SOLO_VER = "Solo tienes permiso para ver, no puedes cambiar nada";
     public static final String CONCURRENCIA = "Otro usuario ha modificado estos datos. Recarga la página e inténtalo de nuevo.";
     public static final String VALIDACION = "Los datos no son válidos. Revisa los campos e inténtalo de nuevo.";
     public static final String NO_ENCONTRADO = "No se ha encontrado lo que buscas.";
@@ -87,6 +91,18 @@ public final class MensajesUsuario {
             return fallback;
         }
         return sanitizar(error.getMessage(), fallback);
+    }
+
+    public static String permisoDenegado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getAuthorities() != null) {
+            boolean consulta = auth.getAuthorities().stream()
+                    .anyMatch(autoridad -> autoridad != null && "ROLE_CONSULTA".equals(autoridad.getAuthority()));
+            if (consulta) {
+                return SOLO_VER;
+            }
+        }
+        return PERMISOS;
     }
 
     public static String porHttp(int status) {

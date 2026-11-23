@@ -69,7 +69,7 @@ public class SecurityConfig {
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                             response.setContentType("text/plain;charset=UTF-8");
-                            response.getWriter().write("No tienes permisos para realizar esta acción.");
+                            response.getWriter().write(MensajesUsuario.permisoDenegado());
                         }))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

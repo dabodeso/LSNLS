@@ -1516,7 +1516,7 @@ const PreguntasManager = {
         } catch (error) {
             console.error('❌ [EDITAR] Error:', error);
             Toastify({
-                text: 'Error al cargar pregunta: ' + error.message,
+                text: Utils.textoVisible('Error al cargar pregunta: ', error.message),
                 duration: 3000,
                 close: true,
                 gravity: 'top',

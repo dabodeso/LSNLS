@@ -135,7 +135,7 @@ async function editarCampoPrograma(programaId, campo, repetido, elemento) {
         if (programa && programaEmitidoCerrado(programa)) {
             mostrarError('Un programa emitido no se puede editar.');
         } else if (!puedeEditarCamposPrograma()) {
-            mostrarError('No tienes permisos para editar programas.');
+            mostrarError(Utils.avisoPermiso('No tienes permisos para editar programas.'));
         }
         return;
     }
@@ -143,7 +143,7 @@ async function editarCampoPrograma(programaId, campo, repetido, elemento) {
     try {
         await EditLockManager.tryAcquire(tipoCandado, programaId);
     } catch (error) {
-        mostrarError(error.message || 'No se puede editar este programa ahora');
+        mostrarError(Utils.textoVisible('', error.message || 'No se puede editar este programa ahora'));
         return;
     }
     elemento.dataset.editando = '1';
@@ -2506,7 +2506,7 @@ async function onCambioEstadoConcursantesDisponibles() {
 async function mostrarConcursantesDisponibles(programaId, posicionPreferida = null, repetido = null) {
     if (repetido != null) destinoRepetido = esFlagRepetido(repetido);
     if (!puedeGestionarConcursantesPrograma()) {
-        mostrarError('No tienes permisos para añadir concursantes a programas.');
+        mostrarError(Utils.avisoPermiso('No tienes permisos para añadir concursantes a programas.'));
         return;
     }
     if (esProgramaEmitido(programaId, repetido) && !operacionSobreRepetido() && rolUsuarioActual !== 'ROLE_ADMIN') {
@@ -2691,7 +2691,7 @@ async function filtrarConcursantesDisponibles() {
 
 async function asignarConcursanteAPrograma(concursanteId) {
     if (!puedeGestionarConcursantesPrograma()) {
-        mostrarError('No tienes permisos para añadir concursantes a programas.');
+        mostrarError(Utils.avisoPermiso('No tienes permisos para añadir concursantes a programas.'));
         return;
     }
     try {
@@ -2737,7 +2737,7 @@ async function quitarConcursanteDePrograma(concursanteId, programaId, event, rep
     if (repetido != null) destinoRepetido = esFlagRepetido(repetido);
     const sobreRepetido = operacionSobreRepetido();
     if (!(puedeGestionarConcursantesPrograma() && puedeEditarCamposConcursante())) {
-        mostrarError('No tienes permisos para quitar concursantes de programas.');
+        mostrarError(Utils.avisoPermiso('No tienes permisos para quitar concursantes de programas.'));
         return;
     }
     if (esProgramaEmitido(programaId, repetido) && !sobreRepetido && rolUsuarioActual !== 'ROLE_ADMIN') {
@@ -3873,7 +3873,7 @@ function pintarSeleccionConcursantesRepetido() {
 async function guardarRepetido() {
     if (guardandoRepetido) return;
     if (!puedeCrearPrograma()) {
-        mostrarError('No tienes permisos para crear un programa repetido.');
+        mostrarError(Utils.avisoPermiso('No tienes permisos para crear un programa repetido.'));
         return;
     }
     const temporada = parseInt(document.getElementById('repe-temporada')?.value, 10);

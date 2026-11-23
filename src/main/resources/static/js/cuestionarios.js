@@ -1752,7 +1752,7 @@ window.editarCuestionario = async function(id) {
     } catch (e) {
         console.error('Error en editarCuestionario:', e);
         Toastify({ 
-            text: 'Error al cargar cuestionario: ' + e.message, 
+            text: Utils.textoVisible('Error al cargar cuestionario: ', e.message), 
             duration: 3000, 
             close: true, 
             gravity: 'top', 

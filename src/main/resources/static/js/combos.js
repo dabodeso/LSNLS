@@ -1220,7 +1220,7 @@ window.mostrarGestionTematicas = function() {
                     if (!resp.ok) {
                         let txt = await resp.text();
                         if (resp.status === 403) {
-                            throw new Error('No tienes permisos para añadir temáticas en combos. Esta acción está permitida solo para los roles autorizados.');
+                            throw new Error(Utils.avisoPermiso('No tienes permisos para añadir temáticas en combos. Esta acción está permitida solo para los roles autorizados.'));
                         }
                         try {
                             const parsed = JSON.parse(txt);
@@ -1488,7 +1488,7 @@ async function editarCombo(id) {
         
     } catch (error) {
         Toastify({
-            text: 'Error al cargar combo: ' + error.message,
+            text: Utils.textoVisible('Error al cargar combo: ', error.message),
             duration: 3000,
             close: true,
             gravity: 'top',

@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException ex) {
-        return cuerpo(HttpStatus.FORBIDDEN, MensajesUsuario.PERMISOS);
+        return cuerpo(HttpStatus.FORBIDDEN, MensajesUsuario.permisoDenegado());
     }
 
     @ExceptionHandler(AuthenticationException.class)

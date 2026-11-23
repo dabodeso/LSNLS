@@ -1,5 +1,6 @@
 package com.lsnls.service;
 
+import com.lsnls.config.MensajesUsuario;
 import com.lsnls.dto.EntityChangeDTO;
 import com.lsnls.dto.VisibleEntityDTO;
 import com.lsnls.entity.*;
@@ -75,8 +76,10 @@ public class EditLockService {
     private Map<String, Object> adquirir(AuditLog.EntityType entityType, Long entityId) {
         Usuario usuario = requireCurrentUser();
         if (!puedeReservar(usuario, entityType)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "No puedes reservar " + label(entityType) + " para editarlo.");
+            String aviso = usuario.getRol() == Usuario.RolUsuario.ROLE_CONSULTA
+                    ? MensajesUsuario.SOLO_VER
+                    : "No puedes reservar " + label(entityType) + " para editarlo.";
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, aviso);
         }
 
         Optional<EditLock> vista = editLockRepository.findByEntityTypeAndEntityId(entityType, entityId);

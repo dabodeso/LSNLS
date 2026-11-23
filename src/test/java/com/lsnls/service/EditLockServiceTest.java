@@ -1,5 +1,6 @@
 package com.lsnls.service;
 
+import com.lsnls.config.MensajesUsuario;
 import com.lsnls.entity.AuditLog;
 import com.lsnls.entity.EditLock;
 import com.lsnls.entity.Usuario;
@@ -105,6 +106,7 @@ class EditLockServiceTest {
                 () -> editLockService.acquire(AuditLog.EntityType.PREGUNTA, 10L));
 
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        assertEquals(MensajesUsuario.SOLO_VER, ex.getReason());
         verify(editLockRepository, never()).findByEntityTypeAndEntityId(any(), any());
     }
 

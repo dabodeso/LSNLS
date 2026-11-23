@@ -530,7 +530,7 @@ function avisarSinPermisoEdicion() {
     const ahora = Date.now();
     if (ahora - ultimoAvisoPermisoEdicion < 800) return false;
     ultimoAvisoPermisoEdicion = ahora;
-    mostrarError(MENSAJE_SIN_PERMISO_EDICION);
+    mostrarError(Utils.avisoPermiso(MENSAJE_SIN_PERMISO_EDICION));
     return false;
 }
 

@@ -238,12 +238,36 @@ class Utils {
         };
     }
 
+    static mensajeSoloVer() {
+        return 'Solo tienes permiso para ver, no puedes cambiar nada';
+    }
+
+    static esRolConsulta() {
+        try {
+            const actual = (typeof authManager !== 'undefined' && authManager && authManager.currentUser)
+                ? authManager.currentUser
+                : JSON.parse(localStorage.getItem('usuario') || 'null');
+            return !!(actual && actual.rol === 'ROLE_CONSULTA');
+        } catch (e) {
+            return false;
+        }
+    }
+
+    static avisoPermiso(defecto) {
+        return Utils.esRolConsulta() ? Utils.mensajeSoloVer() : defecto;
+    }
+
+    static textoVisible(prefijo, detalle) {
+        const texto = detalle == null ? '' : String(detalle);
+        if (texto === Utils.mensajeSoloVer()) return Utils.mensajeSoloVer();
+        return prefijo + texto;
+    }
+
     // Verificar permisos y mostrar mensaje si no tiene acceso
     static async checkPermissionAndAlert(permission, action) {
         const permissions = await authManager.checkPermissions();
         if (!permissions || !permissions[permission]) {
-            const roleRequired = Utils.getRoleRequiredForPermission(permission);
-            Utils.showAlert('No tienes permisos para esta acción.', 'warning');
+            Utils.showAlert(Utils.avisoPermiso('No tienes permisos para esta acción.'), 'warning');
             return false;
         }
         return true;
@@ -513,6 +537,9 @@ class Utils {
 
     /** Mensajes HTTP estándar; prioriza el detalle del backend si es claro. */
     static mensajeErrorHttp(status, detalle, accion = 'realizar esta acción') {
+        if (Number(status) === 403 && Utils.esRolConsulta()) {
+            return Utils.mensajeSoloVer();
+        }
         const texto = Utils.extraerDetalleErrorCuerpo(detalle) || (typeof detalle === 'string' ? detalle.trim() : '');
         if (texto && !Utils.esMensajeHttpGenerico(texto) && !Utils.esMensajeTecnico(texto)) {
             return Utils.prepararTextoUsuario(texto, accion);

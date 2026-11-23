@@ -1093,7 +1093,7 @@ const JornadasManager = {
 
     avisarSiNoPuedeEditar(jornada) {
         if (!this.esAdminODireccion()) {
-            Utils.showAlert('No tienes permiso para editar esto.', 'error');
+            Utils.showAlert(Utils.avisoPermiso('No tienes permiso para editar esto.'), 'error');
             return false;
         }
         if (!this.puedeEditar(jornada)) {
@@ -1229,7 +1229,7 @@ const JornadasManager = {
             
         } catch (error) {
             console.error('❌ [JORNADAS] Error al cargar jornada:', error);
-            Utils.showAlert(error.message || 'Error al cargar los datos de la jornada', 'error');
+            Utils.showAlert(Utils.textoVisible('', error.message || 'Error al cargar los datos de la jornada'), 'error');
         }
     },
 
@@ -1415,7 +1415,7 @@ const JornadasManager = {
 
             const msg = (error.message || '').toLowerCase();
             if (msg.includes('403') || msg.includes('permiso') || msg.includes('forbidden')) {
-                Utils.showAlert('No tienes permiso para cambiar el estado', 'error');
+                Utils.showAlert(Utils.avisoPermiso('No tienes permiso para cambiar el estado'), 'error');
                 await this.cargarDatos(true);
                 this.mostrarJornadas();
                 return;
