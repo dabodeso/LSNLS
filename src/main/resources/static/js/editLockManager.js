@@ -7,6 +7,7 @@ const EditLockManager = {
     renewId: null,
     timerEl: null,
     _expiring: false,
+    _guardandoFuera: false,
 
     async parseErrorResponse(response) {
         const text = await response.text();
@@ -99,26 +100,62 @@ const EditLockManager = {
         })[abiertos.length - 1];
     },
 
+    accionDeGuardado(modal) {
+        const id = modal && modal.id;
+        if (id === 'modal-pregunta' && typeof PreguntasManager !== 'undefined') {
+            return () => {
+                const form = document.getElementById('formCrearPregunta');
+                if (!form || !form.reportValidity()) return;
+                return PreguntasManager.crearPregunta({ preventDefault() {}, target: form });
+            };
+        }
+        if (id === 'modal-cuestionario' && typeof guardarCuestionario === 'function') return () => guardarCuestionario();
+        if (id === 'modal-combo' && typeof guardarCombo === 'function') return () => guardarCombo();
+        if (id === 'modalJornada' && typeof JornadasManager !== 'undefined') return () => JornadasManager.guardarJornada();
+        if (id === 'modal-concursante' && typeof guardarConcursante === 'function') return () => guardarConcursante();
+        if (id === 'modal-programa' && typeof guardarPrograma === 'function') return () => guardarPrograma();
+        if (id === 'modal-repetido' && typeof guardarRepetido === 'function') return () => guardarRepetido();
+        if (id === 'modal-usuario' && typeof procesarCreacionUsuario === 'function') {
+            return () => {
+                const form = document.getElementById('formCrearUsuario');
+                if (!form || !form.reportValidity()) return;
+                return procesarCreacionUsuario();
+            };
+        }
+        return null;
+    },
+
     asegurarCierrePorFuera() {
         if (this._fueraBound) return;
         this._fueraBound = true;
         document.addEventListener('click', (evento) => {
             const objetivo = evento.target;
             if (!objetivo || !objetivo.classList) return;
-            if (objetivo.classList.contains('modal-backdrop')) {
-                const abierto = this.modalVisibleSuperior();
-                if (!abierto) {
-                    this.limpiarCapasModal();
-                    return;
-                }
-                const inst = bootstrap.Modal.getInstance(abierto) || bootstrap.Modal.getOrCreateInstance(abierto);
-                inst.hide();
+            const esFondo = objetivo.classList.contains('modal-backdrop');
+            const esModal = objetivo.classList.contains('modal') && objetivo.classList.contains('show');
+            if (!esFondo && !esModal) return;
+
+            const abierto = esModal ? objetivo : this.modalVisibleSuperior();
+            if (!abierto) {
+                this.limpiarCapasModal();
                 return;
             }
-            if (objetivo.classList.contains('modal') && objetivo.classList.contains('show')) {
-                const inst = bootstrap.Modal.getInstance(objetivo) || bootstrap.Modal.getOrCreateInstance(objetivo);
-                inst.hide();
+
+            const guardar = this.accionDeGuardado(abierto);
+            if (guardar) {
+                evento.preventDefault();
+                evento.stopPropagation();
+                if (this._guardandoFuera) return;
+                this._guardandoFuera = true;
+                Promise.resolve()
+                    .then(() => guardar())
+                    .catch((e) => console.error('[EditLock] Error guardando al clicar fuera:', e))
+                    .finally(() => { this._guardandoFuera = false; });
+                return;
             }
+
+            const inst = bootstrap.Modal.getInstance(abierto) || bootstrap.Modal.getOrCreateInstance(abierto);
+            inst.hide();
         }, true);
         document.addEventListener('hidden.bs.modal', () => {
             window.setTimeout(() => {
@@ -259,3 +296,9 @@ const EditLockManager = {
         this.startSession({ entityType, entityId, modalSelector, onExpire });
     }
 };
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => EditLockManager.asegurarCierrePorFuera());
+} else {
+    EditLockManager.asegurarCierrePorFuera();
+}
