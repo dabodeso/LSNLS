@@ -253,8 +253,8 @@ class Utils {
     static getRoleRequiredForPermission(permission) {
         const roleMap = {
             canDelete: 'DIRECCION',
-            canValidate: 'DIRECCION',
-            canVerify: 'VERIFICACION o DIRECCION',
+            canValidate: 'GUION, VERIFICACION o DIRECCION',
+            canVerify: 'GUION, VERIFICACION o DIRECCION',
             canCreate: 'GUION o DIRECCION',
             canEdit: 'GUION o DIRECCION'
         };

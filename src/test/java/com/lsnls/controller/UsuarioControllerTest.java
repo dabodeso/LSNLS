@@ -410,15 +410,15 @@ class UsuarioControllerTest {
     }
 
     @Test
-    void cambiarPassword_formatoInvalido_devuelve400() {
+    void cambiarPassword_vacia_devuelve400() {
         Map<String, String> body = new HashMap<>();
         body.put("actual", "old");
-        body.put("nueva", "corta");
+        body.put("nueva", "   ");
 
         ResponseEntity<?> response = usuarioController.cambiarPassword(1L, body);
 
         assertEquals(400, response.getStatusCodeValue());
-        assertTrue(response.getBody().toString().contains("requisitos de seguridad"));
+        assertTrue(response.getBody().toString().contains("nueva contraseña"));
     }
 
     @Test

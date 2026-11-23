@@ -125,9 +125,6 @@
                             <label class="form-label">Repetir nueva contraseña</label>
                             <input type="password" class="form-control" id="password-nueva2" required>
                         </div>
-                        <div id="password-help" class="form-text mb-2">
-                            Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
-                        </div>
                         <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
                     </form>
                 </div>
@@ -156,14 +153,8 @@
                 const actual = document.getElementById('password-actual').value;
                 const nueva = document.getElementById('password-nueva').value;
                 const nueva2 = document.getElementById('password-nueva2').value;
-                const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-                
                 if (nueva !== nueva2) {
                     mostrarError('Las contraseñas nuevas no coinciden.');
-                    return;
-                }
-                if (!regex.test(nueva)) {
-                    mostrarError('La nueva contraseña no cumple los requisitos.');
                     return;
                 }
                 

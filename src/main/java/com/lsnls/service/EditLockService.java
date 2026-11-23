@@ -74,11 +74,9 @@ public class EditLockService {
             EditLock active = existing.get();
             if (!active.isExpired()) {
                 if (active.getUsuarioId().equals(usuario.getId())) {
-                    log.warn("[EDIT LOCK] Bloqueo activo del mismo usuario {} en {} {}",
+                    log.info("[EDIT LOCK] El mismo usuario {} retoma {} {}",
                             usuario.getNombre(), entityType, entityId);
-                    throw new ResponseStatusException(HttpStatus.LOCKED,
-                            "Ya tienes " + label(entityType) + " " + entityId
-                                    + " abierta en otra ventana. Ciérrala o espera a que expire el temporizador.");
+                    return persistLock(active, entityType, entityId, usuario);
                 }
                 log.warn("[EDIT LOCK] Bloqueo denegado para {}: {} editando {} {}",
                         usuario.getNombre(), active.getUsuarioNombre(), entityType, entityId);

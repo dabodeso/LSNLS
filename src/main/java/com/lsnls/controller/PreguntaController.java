@@ -428,9 +428,10 @@ public class PreguntaController {
         try {
             return authService.getCurrentUser()
                 .map(currentUser -> {
-                    if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION && 
+                    if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION &&
+                        currentUser.getRol() != Usuario.RolUsuario.ROLE_GUION &&
                         currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION) {
-                        return ResponseEntity.status(403).body("No tienes permisos para verificar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden verificar preguntas.");
+                        return ResponseEntity.status(403).body("No tienes permisos para verificar preguntas. Solo usuarios con rol GUION, VERIFICACION o DIRECCION pueden verificar preguntas.");
                     }
 
                     Pregunta.EstadoPregunta nuevoEstado = aprobada ? 
@@ -463,7 +464,7 @@ public class PreguntaController {
 
             // Verificar permisos específicos
             if (!authService.canValidate()) {
-                return ResponseEntity.status(403).body("No tienes permisos para aprobar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden aprobar preguntas.");
+                return ResponseEntity.status(403).body("No tienes permisos para aprobar preguntas. Solo usuarios con rol GUION, VERIFICACION o DIRECCION pueden aprobar preguntas.");
             }
 
             // Verificar estado actual
@@ -503,7 +504,7 @@ public class PreguntaController {
 
             // Verificar permisos específicos
             if (!authService.canValidate()) {
-                return ResponseEntity.status(403).body("No tienes permisos para rechazar preguntas. Solo usuarios con rol VERIFICACION o DIRECCION pueden rechazar preguntas.");
+                return ResponseEntity.status(403).body("No tienes permisos para rechazar preguntas. Solo usuarios con rol GUION, VERIFICACION o DIRECCION pueden rechazar preguntas.");
             }
 
             // Verificar estado actual
@@ -533,7 +534,7 @@ public class PreguntaController {
     }
 
     @PostMapping("/{id}/revisar")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_VERIFICACION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> marcarParaRevisar(@PathVariable Long id, @RequestParam(required = false) String notas) {
         try {
             Optional<Usuario> currentUserOpt = authService.getCurrentUser();
@@ -543,10 +544,11 @@ public class PreguntaController {
             Usuario currentUser = currentUserOpt.get();
             
             // Solo niveles 3 y 4 (VERIFICACION y DIRECCION) pueden marcar para revisar
-            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION && 
+            if (currentUser.getRol() != Usuario.RolUsuario.ROLE_VERIFICACION &&
+                currentUser.getRol() != Usuario.RolUsuario.ROLE_GUION &&
                 currentUser.getRol() != Usuario.RolUsuario.ROLE_DIRECCION &&
                 currentUser.getRol() != Usuario.RolUsuario.ROLE_ADMIN) {
-                return ResponseEntity.status(403).body("No tienes permisos para marcar preguntas para revisar. Solo usuarios con rol VERIFICACION, DIRECCION o ADMIN pueden marcar preguntas para revisar.");
+                return ResponseEntity.status(403).body("No tienes permisos para marcar preguntas para revisar. Solo usuarios con rol GUION, VERIFICACION, DIRECCION o ADMIN pueden marcar preguntas para revisar.");
             }
             
             Pregunta pregunta = preguntaService.marcarParaRevisar(id, notas, currentUser);

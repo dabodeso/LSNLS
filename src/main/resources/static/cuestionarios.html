@@ -490,9 +490,6 @@
                                 <label class="form-label">Repetir nueva contraseña</label>
                                 <input type="password" class="form-control" id="password-nueva2" required>
                             </div>
-                            <div id="password-help" class="form-text mb-2">
-                                Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
-                            </div>
                             <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
                         </form>
                     </div>
@@ -510,7 +507,7 @@
     <script src="js/utils.js?v=20261030-resalte"></script>
     <script src="js/api.js?v=20260821-3"></script>
     <script src="js/undo-manager.js?v=20261105-scroll-lugar"></script>
-    <script src="js/editLockManager.js"></script>
+    <script src="js/editLockManager.js?v=20261123-cerrar-fuera"></script>
     <script src="js/syncMonitor.js?v=20261113-aviso-389"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
     <script src="js/cuestionarios.js?v=20261030-resalte"></script>
@@ -537,13 +534,8 @@
                 const actual = document.getElementById('password-actual').value;
                 const nueva = document.getElementById('password-nueva').value;
                 const nueva2 = document.getElementById('password-nueva2').value;
-                const regex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
                 if (nueva !== nueva2) {
                     mostrarError('Las contraseñas nuevas no coinciden.');
-                    return;
-                }
-                if (!regex.test(nueva)) {
-                    mostrarError('La nueva contraseña no cumple los requisitos.');
                     return;
                 }
                 try {

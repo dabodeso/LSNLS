@@ -770,7 +770,7 @@ class PreguntaControllerTest {
 
     @Test
     void verificarPregunta_sinPermiso_devuelve403() {
-        when(authService.getCurrentUser()).thenReturn(Optional.of(usuario(Usuario.RolUsuario.ROLE_GUION)));
+        when(authService.getCurrentUser()).thenReturn(Optional.of(usuario(Usuario.RolUsuario.ROLE_CONSULTA)));
 
         ResponseEntity<?> response = preguntaController.verificarPregunta(1L, true, "ok");
 
@@ -990,7 +990,7 @@ class PreguntaControllerTest {
 
     @Test
     void marcarParaRevisar_sinPermiso_devuelve403() {
-        when(authService.getCurrentUser()).thenReturn(Optional.of(usuario(Usuario.RolUsuario.ROLE_GUION)));
+        when(authService.getCurrentUser()).thenReturn(Optional.of(usuario(Usuario.RolUsuario.ROLE_CONSULTA)));
 
         ResponseEntity<?> response = preguntaController.marcarParaRevisar(1L, "notas");
 

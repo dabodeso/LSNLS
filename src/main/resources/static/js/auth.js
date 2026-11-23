@@ -196,8 +196,8 @@ class AuthManager {
             canCreate: ['admin', 'guion', 'direccion'].includes(userRole),
             canEdit: ['admin', 'guion', 'direccion'].includes(userRole),
             canDelete: ['admin', 'direccion'].includes(userRole),
-            canValidate: ['admin', 'direccion'].includes(userRole),
-            canVerify: ['admin', 'verificacion', 'direccion'].includes(userRole),
+            canValidate: ['admin', 'guion', 'verificacion', 'direccion'].includes(userRole),
+            canVerify: ['admin', 'guion', 'verificacion', 'direccion'].includes(userRole),
             rol: user.rol
         };
     }

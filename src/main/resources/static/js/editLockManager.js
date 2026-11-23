@@ -82,8 +82,73 @@ const EditLockManager = {
         return el;
     },
 
+    limpiarCapasModal() {
+        document.querySelectorAll('.modal-backdrop').forEach((nodo) => nodo.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
+        document.body.style.removeProperty('overflow');
+    },
+
+    modalVisibleSuperior() {
+        const abiertos = Array.from(document.querySelectorAll('.modal.show'));
+        if (!abiertos.length) return null;
+        return abiertos.sort((a, b) => {
+            const za = parseInt(window.getComputedStyle(a).zIndex, 10) || 0;
+            const zb = parseInt(window.getComputedStyle(b).zIndex, 10) || 0;
+            return za - zb;
+        })[abiertos.length - 1];
+    },
+
+    asegurarCierrePorFuera() {
+        if (this._fueraBound) return;
+        this._fueraBound = true;
+        document.addEventListener('click', (evento) => {
+            const objetivo = evento.target;
+            if (!objetivo || !objetivo.classList) return;
+            if (objetivo.classList.contains('modal-backdrop')) {
+                const abierto = this.modalVisibleSuperior();
+                if (!abierto) {
+                    this.limpiarCapasModal();
+                    return;
+                }
+                const inst = bootstrap.Modal.getInstance(abierto) || bootstrap.Modal.getOrCreateInstance(abierto);
+                inst.hide();
+                return;
+            }
+            if (objetivo.classList.contains('modal') && objetivo.classList.contains('show')) {
+                const inst = bootstrap.Modal.getInstance(objetivo) || bootstrap.Modal.getOrCreateInstance(objetivo);
+                inst.hide();
+            }
+        }, true);
+        document.addEventListener('hidden.bs.modal', () => {
+            window.setTimeout(() => {
+                if (!document.querySelector('.modal.show')) this.limpiarCapasModal();
+            }, 50);
+        });
+    },
+
+    pararTemporizadores() {
+        if (this.countdownId) {
+            clearInterval(this.countdownId);
+            this.countdownId = null;
+        }
+        if (this.renewId) {
+            clearInterval(this.renewId);
+            this.renewId = null;
+        }
+        if (this.timerEl) {
+            this.timerEl.remove();
+            this.timerEl = null;
+        }
+    },
+
     startSession({ entityType, entityId, modalSelector, onExpire, ttlSeconds = 120 }) {
-        this.stopSession(false);
+        this.asegurarCierrePorFuera();
+        const previo = this.active;
+        this.pararTemporizadores();
+        if (previo && (previo.entityType !== entityType || Number(previo.entityId) !== Number(entityId))) {
+            this.release(previo.entityType, previo.entityId);
+        }
         this.active = {
             entityType,
             entityId: Number(entityId),
@@ -116,9 +181,9 @@ const EditLockManager = {
 
         if (modalEl && !modalEl._editLockBound) {
             modalEl._editLockBound = true;
-            modalEl.addEventListener('hidden.bs.modal', () => {
+            modalEl.addEventListener('hide.bs.modal', () => {
                 if (this._expiring) return;
-                if (this.active && this.active.modalSelector === modalSelector) {
+                if (this.active && document.querySelector(this.active.modalSelector) === modalEl) {
                     this.stopSession(true);
                 }
             });
@@ -179,18 +244,7 @@ const EditLockManager = {
     },
 
     async stopSession(releaseLock = true) {
-        if (this.countdownId) {
-            clearInterval(this.countdownId);
-            this.countdownId = null;
-        }
-        if (this.renewId) {
-            clearInterval(this.renewId);
-            this.renewId = null;
-        }
-        if (this.timerEl) {
-            this.timerEl.remove();
-            this.timerEl = null;
-        }
+        this.pararTemporizadores();
         if (releaseLock && this.active) {
             await this.release(this.active.entityType, this.active.entityId);
         }

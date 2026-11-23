@@ -905,9 +905,6 @@
                                 <label class="form-label">Repetir nueva contraseña</label>
                                 <input type="password" class="form-control" id="password-nueva2" required>
                             </div>
-                            <div id="password-help" class="form-text mb-2">
-                                Mínimo 8 caracteres, 1 mayúscula y 1 carácter especial.
-                            </div>
                         </form>
                     </div>
                     <div class="modal-footer">
@@ -1057,7 +1054,7 @@
     <script src="js/auth.js?v=20260915-verif-consulta"></script>
     <script src="js/utils.js?v=20260915-verif-consulta"></script>
     <script src="js/undo-manager.js?v=20261105-scroll-lugar"></script>
-    <script src="js/editLockManager.js"></script>
+    <script src="js/editLockManager.js?v=20261123-cerrar-fuera"></script>
     <script src="js/syncMonitor.js?v=20261113-aviso-389"></script>
     <script src="js/table-resizer.js?v=20261113-ancho-ventana"></script>
     <script src="js/programas.js?v=20261113-escape"></script>
@@ -1066,6 +1063,37 @@
             inicializarProgramas();
             mostrarBotonAdminNavbar();
         });
+
+        async function procesarCambioPassword() {
+            const actual = document.getElementById('password-actual').value;
+            const nueva = document.getElementById('password-nueva').value;
+            const nueva2 = document.getElementById('password-nueva2').value;
+            if (nueva !== nueva2) {
+                mostrarError('Las contraseñas nuevas no coinciden.');
+                return;
+            }
+            try {
+                const usuario = JSON.parse(localStorage.getItem('usuario'));
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/usuarios/${usuario.id}/cambiar-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? (token.startsWith('Bearer ') ? token : 'Bearer ' + token) : ''
+                    },
+                    body: JSON.stringify({ actual, nueva })
+                });
+                if (response.ok) {
+                    mostrarExito('Contraseña cambiada correctamente.');
+                    bootstrap.Modal.getInstance(document.getElementById('modal-cambiar-password')).hide();
+                } else {
+                    const errorText = await response.text();
+                    mostrarError('Error al cambiar contraseña: ' + errorText);
+                }
+            } catch (error) {
+                mostrarError('Error al cambiar contraseña: ' + error.message);
+            }
+        }
     </script>
 </body>
 </html> 

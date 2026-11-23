@@ -54,6 +54,7 @@ public class AuthorizationService {
             .map(usuario -> 
                 usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
+                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
             .orElse(false);
     }
@@ -109,8 +110,8 @@ public class AuthorizationService {
             .map(usuario -> {
                 // El admin siempre puede cambiar estados, pero debe seguir el flujo correcto
                 boolean isAdmin = usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN;
-                boolean isGuion = usuario.getRol() == Usuario.RolUsuario.ROLE_GUION;
-                boolean isVerificacion = usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION;
+                boolean flujoPregunta = usuario.getRol() == Usuario.RolUsuario.ROLE_GUION
+                        || usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION;
                 boolean isDireccion = usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                 
                 // Verificar la transición válida según el autómata
@@ -123,33 +124,32 @@ public class AuthorizationService {
                 
                 switch (estadoActual) {
                     case borrador:
-                        // Borrador -> Para Verificar (por Guion)
-                        transicionValida = nuevoEstado == Pregunta.EstadoPregunta.para_verificar && isGuion;
+                        // Borrador -> Para Verificar (Guion o Verificación)
+                        transicionValida = nuevoEstado == Pregunta.EstadoPregunta.para_verificar && flujoPregunta;
                         break;
                         
                     case para_verificar:
                         // Para Verificar -> Verificada o Revisar (por Guion, Verificación o Dirección)
                         transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.verificada &&
-                                           (isGuion || isVerificacion || isDireccion)) ||
+                                           (flujoPregunta || isDireccion)) ||
                                           (nuevoEstado == Pregunta.EstadoPregunta.revisar &&
-                                           (isVerificacion || isGuion));
+                                           flujoPregunta);
                         break;
                         
                     case revisar:
-                    // Revisar -> Para Verificar (Guion o Verificación, para deshacer su paso)
-                    // Revisar -> Para Aprobar o Rechazada (por Guion)
+                    // Revisar -> Para Verificar, Para Aprobar o Rechazada (Guion o Verificación)
                     transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_verificar &&
-                                           (isGuion || isVerificacion)) ||
+                                           flujoPregunta) ||
                                           ((nuevoEstado == Pregunta.EstadoPregunta.para_aprobar ||
                                             nuevoEstado == Pregunta.EstadoPregunta.rechazada) &&
-                                           isGuion);
+                                           flujoPregunta);
                         break;
                         
                     case verificada:
                         // Verificada -> Para Verificar (Guion o Verificación, para deshacer su paso)
                         // Verificada -> Corregir, Rechazada o Aprobada (por Dirección)
                         transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_verificar &&
-                                           (isGuion || isVerificacion)) ||
+                                           flujoPregunta) ||
                                           ((nuevoEstado == Pregunta.EstadoPregunta.corregir ||
                                             nuevoEstado == Pregunta.EstadoPregunta.rechazada ||
                                             nuevoEstado == Pregunta.EstadoPregunta.aprobada) &&
@@ -157,10 +157,10 @@ public class AuthorizationService {
                         break;
                         
                     case corregir:
-                        // Corregir -> Para Aprobar o Para Verificar (por Guion)
+                        // Corregir -> Para Aprobar o Para Verificar (Guion o Verificación)
                         transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.para_aprobar || 
                                            nuevoEstado == Pregunta.EstadoPregunta.para_verificar) && 
-                                          isGuion;
+                                          flujoPregunta;
                         break;
                         
                     case para_aprobar:
@@ -363,6 +363,7 @@ public class AuthorizationService {
         return getCurrentUser()
             .map(usuario -> 
                 usuario.getRol() == Usuario.RolUsuario.ROLE_ADMIN ||
+                usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                 usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION)
             .orElse(false);

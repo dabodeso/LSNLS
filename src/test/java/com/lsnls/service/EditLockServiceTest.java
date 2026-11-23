@@ -109,17 +109,18 @@ class EditLockServiceTest {
     }
 
     @Test
-    void acquireMismoUsuarioLanzaLocked() {
+    void acquireMismoUsuarioRetomaElCandado() {
         when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
         EditLock lock = lockActivo(3L, "ana");
         when(editLockRepository.findForUpdate(AuditLog.EntityType.COMBO, 2L))
                 .thenReturn(Optional.of(lock));
+        when(editLockRepository.save(any(EditLock.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> editLockService.acquire(AuditLog.EntityType.COMBO, 2L));
-        assertEquals(HttpStatus.LOCKED, ex.getStatus());
-        assertTrue(ex.getReason().contains("otra ventana"));
-        verify(editLockRepository, never()).save(any());
+        Map<String, Object> resultado = editLockService.acquire(AuditLog.EntityType.COMBO, 2L);
+
+        assertEquals("ana", resultado.get("usuarioNombre"));
+        assertEquals(2L, resultado.get("entityId"));
+        verify(editLockRepository).save(lock);
     }
 
     @Test

@@ -1884,8 +1884,6 @@ function limpiarFiltrosProgramas() {
 
 function abrirModalPrograma(opciones) {
     const el = document.getElementById('modal-programa');
-    const previo = bootstrap.Modal.getInstance(el);
-    if (previo) previo.dispose();
     bootstrap.Modal.getOrCreateInstance(el, opciones || {}).show();
 }
 

@@ -207,9 +207,8 @@ public class UsuarioController {
             if (actual == null || nueva == null) {
                 return ResponseEntity.badRequest().body("Faltan campos obligatorios");
             }
-            // Validación de la nueva contraseña
-            if (!nueva.matches("^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\\-=\\[\\]\\{\\};':\"\\\\|,.<>/?]).{8,}$")) {
-                return ResponseEntity.badRequest().body("La nueva contraseña no cumple los requisitos de seguridad");
+            if (nueva.isBlank()) {
+                return ResponseEntity.badRequest().body("Indica la nueva contraseña");
             }
             return authService.getCurrentUser().map(currentUser -> {
                 if (!currentUser.getId().equals(id)) {

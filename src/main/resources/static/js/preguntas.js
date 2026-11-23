@@ -968,7 +968,7 @@ const PreguntasManager = {
                 break;
                 
             case 'verificada':
-                estados.push('corregir', 'rechazada', 'aprobada');
+                estados.push('para_verificar', 'corregir', 'rechazada', 'aprobada');
                 break;
                 
             case 'corregir':
@@ -1004,16 +1004,13 @@ const PreguntasManager = {
             const puedeTransicionar = (from, to, rol) => {
                 switch (rol) {
                     case 'ROLE_GUION':
+                    case 'ROLE_VERIFICACION':
                         switch (from) {
                             case 'borrador': return to === 'para_verificar';
                             case 'para_verificar': return to === 'verificada' || to === 'revisar';
                             case 'revisar': return to === 'para_verificar' || to === 'para_aprobar' || to === 'rechazada';
                             case 'corregir': return to === 'para_aprobar' || to === 'para_verificar';
-                            default: return false;
-                        }
-                    case 'ROLE_VERIFICACION':
-                        switch (from) {
-                            case 'para_verificar': return to === 'verificada' || to === 'revisar';
+                            case 'verificada': return to === 'para_verificar';
                             default: return false;
                         }
                     case 'ROLE_DIRECCION':
