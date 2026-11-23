@@ -72,12 +72,7 @@ public class ComboService {
         // Obtener combos paginados
         List<Combo> combosPaginados = comboRepository.findAllPaginados(pageable);
         
-        // Convertir a DTOs
-        List<Map<String, Object>> dtos = new java.util.ArrayList<>();
-        for (Combo c : combosPaginados) {
-            Map<String, Object> dto = mapearComboListado(c.getId());
-            if (dto != null) dtos.add(dto);
-        }
+        List<Map<String, Object>> dtos = mapearCombosListado(combosPaginados);
         
         // Construir respuesta
         Map<String, Object> response = new java.util.HashMap<>();
@@ -212,21 +207,11 @@ public class ComboService {
             
             long total = ((Number) countQuery.getSingleResult()).longValue();
             
-            // Convertir resultados a combos
-            List<Combo> combos = new ArrayList<>();
+            List<Long> ids = new ArrayList<>();
             for (Number id : resultadoIds) {
-                Optional<Combo> comboOpt = comboRepository.findById(id.longValue());
-                if (comboOpt.isPresent()) {
-                    combos.add(comboOpt.get());
-                }
+                if (id != null) ids.add(id.longValue());
             }
-            
-            // Convertir a DTOs
-            List<Map<String, Object>> dtos = new ArrayList<>();
-            for (Combo c : combos) {
-                Map<String, Object> dto = mapearComboListado(c.getId());
-                if (dto != null) dtos.add(dto);
-            }
+            List<Map<String, Object>> dtos = mapearCombosPorIds(ids);
             
             // Construir respuesta
             Map<String, Object> response = new HashMap<>();
@@ -273,12 +258,7 @@ public class ComboService {
             return obtenerTodosPaginados(page, size);
         }
 
-        // Convertir a DTOs
-        List<Map<String, Object>> dtos = new ArrayList<>();
-        for (Combo c : paginaCombos.getContent()) {
-            Map<String, Object> dto = mapearComboListado(c.getId());
-            if (dto != null) dtos.add(dto);
-        }
+        List<Map<String, Object>> dtos = mapearCombosListado(paginaCombos.getContent());
 
         // Construir respuesta
         Map<String, Object> response = new HashMap<>();
@@ -321,12 +301,7 @@ public class ComboService {
         // Buscar por coincidencia parcial en el ID
         Page<Combo> paginaCombos = comboRepository.findByIdContaining(idStr, pageable);
         
-        // Convertir a DTOs
-        List<Map<String, Object>> dtos = new ArrayList<>();
-        for (Combo c : paginaCombos.getContent()) {
-            Map<String, Object> dto = mapearComboListado(c.getId());
-            if (dto != null) dtos.add(dto);
-        }
+        List<Map<String, Object>> dtos = mapearCombosListado(paginaCombos.getContent());
 
         // Construir respuesta
         Map<String, Object> response = new HashMap<>();
@@ -711,6 +686,142 @@ public class ComboService {
         }
     }
 
+    private List<Map<String, Object>> mapearCombosListado(List<Combo> pagina) {
+        if (pagina == null || pagina.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Long> ids = new ArrayList<>();
+        Map<Long, Combo> respaldo = new HashMap<>();
+        for (Combo c : pagina) {
+            if (c != null && c.getId() != null) {
+                ids.add(c.getId());
+                respaldo.putIfAbsent(c.getId(), c);
+            }
+        }
+        return mapearCombosPorIds(ids, respaldo);
+    }
+
+    private List<Map<String, Object>> mapearCombosPorIds(List<Long> ids) {
+        return mapearCombosPorIds(ids, new HashMap<>());
+    }
+
+    private List<Map<String, Object>> mapearCombosPorIds(List<Long> ids, Map<Long, Combo> respaldo) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Map<Long, Combo> cargados = cargarCombosConPreguntas(ids);
+        if (respaldo != null) {
+            for (Map.Entry<Long, Combo> entrada : respaldo.entrySet()) {
+                cargados.putIfAbsent(entrada.getKey(), entrada.getValue());
+            }
+        }
+        Map<Long, Long> jornadas = jornadasDeCombos(ids);
+        Map<Long, Object[]> historial = historialDeCombos(ids);
+        List<Map<String, Object>> dtos = new ArrayList<>();
+        for (Long id : ids) {
+            Combo c = cargados.get(id);
+            if (c == null) continue;
+            try {
+                Object[] fila = historial.get(id);
+                Long reutilizadoId = null;
+                String reutilizadoNombre = null;
+                if (fila != null && fila.length >= 3 && fila[1] instanceof Number) {
+                    reutilizadoId = ((Number) fila[1]).longValue();
+                    reutilizadoNombre = fila[2] != null ? fila[2].toString() : null;
+                }
+                dtos.add(armarCabeceraCombo(c, jornadas.get(id), reutilizadoId, reutilizadoNombre));
+            } catch (Exception e) {
+                log.error("Error al mapear combo {} para el listado: {}", id, e.getMessage(), e);
+            }
+        }
+        return dtos;
+    }
+
+    private Map<Long, Combo> cargarCombosConPreguntas(List<Long> ids) {
+        Map<Long, Combo> map = new HashMap<>();
+        try {
+            List<?> filas = entityManager.createQuery(
+                "SELECT DISTINCT c FROM Combo c " +
+                "LEFT JOIN FETCH c.preguntas pc " +
+                "LEFT JOIN FETCH pc.pregunta p " +
+                "LEFT JOIN FETCH p.creacionUsuario " +
+                "WHERE c.id IN :ids")
+                .setParameter("ids", ids)
+                .getResultList();
+            for (Object fila : filas) {
+                if (fila instanceof Combo) {
+                    Combo c = (Combo) fila;
+                    if (c.getId() != null) map.putIfAbsent(c.getId(), c);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo cargar la página de combos de una vez: " + e.getMessage());
+        }
+        return map;
+    }
+
+    private Map<Long, Long> jornadasDeCombos(List<Long> ids) {
+        Map<Long, Long> map = new HashMap<>();
+        try {
+            List<?> filas = entityManager.createQuery(
+                "SELECT a.combo.id, a.jornada.id FROM JornadaComboAsignacion a WHERE a.combo.id IN :ids")
+                .setParameter("ids", ids)
+                .getResultList();
+            for (Object fila : filas) {
+                if (!(fila instanceof Object[])) continue;
+                Object[] cols = (Object[]) fila;
+                if (cols.length < 2 || !(cols[0] instanceof Number) || !(cols[1] instanceof Number)) continue;
+                map.putIfAbsent(((Number) cols[0]).longValue(), ((Number) cols[1]).longValue());
+            }
+        } catch (Exception ignored) {}
+        return map;
+    }
+
+    private Map<Long, Object[]> historialDeCombos(List<Long> ids) {
+        Map<Long, Object[]> map = new HashMap<>();
+        try {
+            List<?> filas = entityManager.createNativeQuery(
+                "SELECT h.combo_id, h.jornada_id, j.nombre " +
+                "FROM historial_jornadas h " +
+                "JOIN jornadas j ON h.jornada_id = j.id " +
+                "WHERE h.combo_id IN (:ids) AND h.estado_asignacion = 'reaprovechado' " +
+                "ORDER BY h.fecha_asignacion DESC")
+                .setParameter("ids", ids)
+                .getResultList();
+            for (Object fila : filas) {
+                if (!(fila instanceof Object[])) continue;
+                Object[] cols = (Object[]) fila;
+                if (cols.length < 3 || !(cols[0] instanceof Number)) continue;
+                map.putIfAbsent(((Number) cols[0]).longValue(), cols);
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo cargar el historial de la página de combos: " + e.getMessage());
+        }
+        return map;
+    }
+
+    private Map<String, Object> armarCabeceraCombo(Combo c, Long jornadaId, Long reutilizadoId, String reutilizadoNombre) {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("id", c.getId());
+        dto.put("version", c.getVersion());
+        dto.put("estado", c.getEstado());
+        dto.put("tipo", c.getTipo());
+        dto.put("tematica", c.getTematica());
+        dto.put("notasDireccion", c.getNotasDireccion());
+        dto.put("preguntaUsadaId", c.getPreguntaUsadaId());
+        dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
+        if (jornadaId != null) {
+            dto.put("jornadaAsignada", jornadaId);
+        }
+        if (reutilizadoId != null) {
+            dto.put("reutilizadoDeJornadaId", reutilizadoId);
+            dto.put("reutilizadoDeJornadaNombre", reutilizadoNombre);
+            log.debug("[DTO-COMBO] Combo " + c.getId() + " | estado=" + c.getEstado() + " | jornada=" + jornadaId + " | reutilizadoDe=" + reutilizadoId);
+        }
+        ponerPreguntasEnDtoCombo(c, dto);
+        return dto;
+    }
+
     /**
      * Devuelve un combo con las preguntas mapeadas a DTOs con slot/hueco.
      */
@@ -763,6 +874,11 @@ public class ComboService {
             log.warn("[DTO-COMBO] ERROR al buscar historial para combo " + id);
         }
         
+        ponerPreguntasEnDtoCombo(c, dto);
+        return dto;
+    }
+
+    private void ponerPreguntasEnDtoCombo(Combo c, Map<String, Object> dto) {
         Set<PreguntaCombo> preguntasCombo = c.getPreguntas() == null ? Collections.emptySet() : c.getPreguntas();
         java.util.List<PreguntaCombo> preguntasValidas = new java.util.ArrayList<>();
         for (PreguntaCombo pc : preguntasCombo) {
@@ -828,7 +944,6 @@ public class ComboService {
             }
         }
         dto.put("preguntas", preguntasDTO);
-        return dto;
     }
 
     private Map<String, Object> dtoPreguntaCombo(PreguntaCombo pc, String slot, Long preguntaUsadaId) {

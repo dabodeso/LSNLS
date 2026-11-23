@@ -81,12 +81,7 @@ public class CuestionarioService {
         // Obtener cuestionarios paginados
         List<Cuestionario> cuestionariosPaginados = cuestionarioRepository.findAllPaginados(pageable);
         
-        // Convertir a DTOs
-        List<Map<String, Object>> dtos = new ArrayList<>();
-        for (Cuestionario c : cuestionariosPaginados) {
-            Map<String, Object> dto = obtenerCuestionarioConSlots(c.getId());
-            if (dto != null) dtos.add(dto);
-        }
+        List<Map<String, Object>> dtos = mapearCuestionariosListado(cuestionariosPaginados);
         
         // Construir respuesta
         Map<String, Object> response = new HashMap<>();
@@ -556,21 +551,11 @@ public class CuestionarioService {
             
             long total = ((Number) countQuery.getSingleResult()).longValue();
             
-            // Convertir resultados a cuestionarios
-            List<Cuestionario> cuestionarios = new ArrayList<>();
+            List<Long> ids = new ArrayList<>();
             for (Number id : resultadoIds) {
-                Optional<Cuestionario> cuestionarioOpt = cuestionarioRepository.findById(id.longValue());
-                if (cuestionarioOpt.isPresent()) {
-                    cuestionarios.add(cuestionarioOpt.get());
-                }
+                if (id != null) ids.add(id.longValue());
             }
-            
-            // Convertir a DTOs
-            List<Map<String, Object>> dtos = new ArrayList<>();
-            for (Cuestionario c : cuestionarios) {
-                Map<String, Object> dto = obtenerCuestionarioConSlots(c.getId());
-                if (dto != null) dtos.add(dto);
-            }
+            List<Map<String, Object>> dtos = mapearCuestionariosPorIds(ids);
             
             // Construir respuesta
             Map<String, Object> response = new HashMap<>();
@@ -600,12 +585,7 @@ public class CuestionarioService {
             return obtenerTodosPaginados(page, size);
         }
         
-        // Convertir a DTOs
-        List<Map<String, Object>> dtos = new ArrayList<>();
-        for (Cuestionario c : paginaCuestionarios.getContent()) {
-            Map<String, Object> dto = obtenerCuestionarioConSlots(c.getId());
-            if (dto != null) dtos.add(dto);
-        }
+        List<Map<String, Object>> dtos = mapearCuestionariosListado(paginaCuestionarios.getContent());
         
         // Construir respuesta
         Map<String, Object> response = new HashMap<>();
@@ -664,13 +644,7 @@ public class CuestionarioService {
             // Si no es un número, buscar por coincidencia parcial usando paginación nativa
             // Implementar método en el repositorio para buscar por ID con paginación
             Page<Cuestionario> paginaCuestionarios = cuestionarioRepository.findByIdContaining(idStr, pageable);
-            
-            // Convertir a DTOs
-            List<Map<String, Object>> dtos = new ArrayList<>();
-            for (Cuestionario c : paginaCuestionarios.getContent()) {
-                Map<String, Object> dto = obtenerCuestionarioConSlots(c.getId());
-                if (dto != null) dtos.add(dto);
-            }
+            List<Map<String, Object>> dtos = mapearCuestionariosListado(paginaCuestionarios.getContent());
             
             // Construir respuesta
             Map<String, Object> response = new HashMap<>();
@@ -953,58 +927,138 @@ public class CuestionarioService {
     }
 
     /**
-     * Devuelve un cuestionario con las preguntas mapeadas a DTOs con slot/hueco.
+     * Arma la página de una vez: preguntas, jornada e historial, en tres consultas.
      */
-    public Map<String, Object> obtenerCuestionarioConSlots(Long id) {
-        Optional<Cuestionario> opt = obtenerConPreguntas(id);
-        if (opt.isEmpty()) return null;
-        Cuestionario c = opt.get();
-        Map<String, Object> dto = new java.util.HashMap<>();
+    private List<Map<String, Object>> mapearCuestionariosListado(List<Cuestionario> pagina) {
+        if (pagina == null || pagina.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Long> ids = new ArrayList<>();
+        Map<Long, Cuestionario> respaldo = new HashMap<>();
+        for (Cuestionario c : pagina) {
+            if (c != null && c.getId() != null) {
+                ids.add(c.getId());
+                respaldo.putIfAbsent(c.getId(), c);
+            }
+        }
+        return mapearCuestionariosPorIds(ids, respaldo);
+    }
+
+    private List<Map<String, Object>> mapearCuestionariosPorIds(List<Long> ids) {
+        return mapearCuestionariosPorIds(ids, new HashMap<>());
+    }
+
+    private List<Map<String, Object>> mapearCuestionariosPorIds(List<Long> ids, Map<Long, Cuestionario> respaldo) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Map<Long, Cuestionario> cargados = cargarCuestionariosConPreguntas(ids);
+        if (respaldo != null) {
+            for (Map.Entry<Long, Cuestionario> entrada : respaldo.entrySet()) {
+                cargados.putIfAbsent(entrada.getKey(), entrada.getValue());
+            }
+        }
+        Map<Long, Long> jornadas = jornadasDeCuestionarios(ids);
+        Map<Long, Object[]> historial = historialDeCuestionarios(ids);
+        List<Map<String, Object>> dtos = new ArrayList<>();
+        for (Long id : ids) {
+            Cuestionario c = cargados.get(id);
+            if (c == null) continue;
+            Object[] fila = historial.get(id);
+            Long reutilizadoId = null;
+            String reutilizadoNombre = null;
+            if (fila != null && fila.length >= 3 && fila[1] instanceof Number) {
+                reutilizadoId = ((Number) fila[1]).longValue();
+                reutilizadoNombre = fila[2] != null ? fila[2].toString() : null;
+            }
+            dtos.add(armarDtoCuestionario(c, jornadas.get(id), reutilizadoId, reutilizadoNombre));
+        }
+        return dtos;
+    }
+
+    private Map<Long, Cuestionario> cargarCuestionariosConPreguntas(List<Long> ids) {
+        Map<Long, Cuestionario> map = new HashMap<>();
+        try {
+            @SuppressWarnings("unchecked")
+            List<Cuestionario> filas = entityManager.createQuery(
+                "SELECT DISTINCT c FROM Cuestionario c " +
+                "LEFT JOIN FETCH c.preguntas pc " +
+                "LEFT JOIN FETCH pc.pregunta p " +
+                "LEFT JOIN FETCH p.creacionUsuario " +
+                "WHERE c.id IN :ids")
+                .setParameter("ids", ids)
+                .getResultList();
+            for (Object fila : filas) {
+                if (fila instanceof Cuestionario) {
+                    Cuestionario c = (Cuestionario) fila;
+                    if (c.getId() != null) map.putIfAbsent(c.getId(), c);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo cargar la página de cuestionarios de una vez: " + e.getMessage());
+        }
+        return map;
+    }
+
+    private Map<Long, Long> jornadasDeCuestionarios(List<Long> ids) {
+        Map<Long, Long> map = new HashMap<>();
+        try {
+            List<?> filas = entityManager.createQuery(
+                "SELECT a.cuestionario.id, a.jornada.id FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id IN :ids")
+                .setParameter("ids", ids)
+                .getResultList();
+            for (Object fila : filas) {
+                if (!(fila instanceof Object[])) continue;
+                Object[] cols = (Object[]) fila;
+                if (cols.length < 2 || !(cols[0] instanceof Number) || !(cols[1] instanceof Number)) continue;
+                map.putIfAbsent(((Number) cols[0]).longValue(), ((Number) cols[1]).longValue());
+            }
+        } catch (Exception ignored) {}
+        return map;
+    }
+
+    private Map<Long, Object[]> historialDeCuestionarios(List<Long> ids) {
+        Map<Long, Object[]> map = new HashMap<>();
+        try {
+            @SuppressWarnings("unchecked")
+            List<Object[]> filas = entityManager.createNativeQuery(
+                "SELECT h.cuestionario_id, h.jornada_id, j.nombre " +
+                "FROM historial_jornadas h " +
+                "JOIN jornadas j ON h.jornada_id = j.id " +
+                "WHERE h.cuestionario_id IN (:ids) AND h.estado_asignacion = 'reaprovechado' " +
+                "ORDER BY h.fecha_asignacion DESC")
+                .setParameter("ids", ids)
+                .getResultList();
+            for (Object fila : filas) {
+                if (!(fila instanceof Object[])) continue;
+                Object[] cols = (Object[]) fila;
+                if (cols.length < 3 || !(cols[0] instanceof Number)) continue;
+                map.putIfAbsent(((Number) cols[0]).longValue(), cols);
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo cargar el historial de la página de cuestionarios: " + e.getMessage());
+        }
+        return map;
+    }
+
+    private Map<String, Object> armarDtoCuestionario(Cuestionario c, Long jornadaId, Long reutilizadoId, String reutilizadoNombre) {
+        Map<String, Object> dto = new HashMap<>();
         dto.put("id", c.getId());
         dto.put("version", c.getVersion());
         dto.put("estado", c.getEstado());
         dto.put("fechaCreacion", c.getFechaCreacion() != null ? c.getFechaCreacion().toString() : null);
-        // Campos visibles en la tabla
         dto.put("tematica", c.getTematica());
         dto.put("notasDireccion", c.getNotasDireccion());
-        // Jornada asignada (si existe)
-        try {
-            Long jornadaId = entityManager.createQuery(
-                "SELECT a.jornada.id FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id", Long.class)
-                .setParameter("id", id)
-                .setMaxResults(1)
-                .getResultList()
-                .stream().findFirst().orElse(null);
-            if (jornadaId != null) {
-                dto.put("jornadaAsignada", jornadaId);
-            }
-        } catch (Exception ignored) {}
-        
-        // Verificar si fue reutilizado de alguna jornada
-        try {
-            @SuppressWarnings("unchecked")
-            java.util.List<Object[]> historialReutilizado = entityManager.createNativeQuery(
-                "SELECT h.jornada_id, j.nombre " +
-                "FROM historial_jornadas h " +
-                "JOIN jornadas j ON h.jornada_id = j.id " +
-                "WHERE h.cuestionario_id = :cid AND h.estado_asignacion = 'reaprovechado' " +
-                "ORDER BY h.fecha_asignacion DESC " +
-                "LIMIT 1")
-                .setParameter("cid", id)
-                .getResultList();
-            
-            if (!historialReutilizado.isEmpty()) {
-                Object[] registro = historialReutilizado.get(0);
-                dto.put("reutilizadoDeJornadaId", ((Number) registro[0]).longValue());
-                dto.put("reutilizadoDeJornadaNombre", (String) registro[1]);
-                log.debug("[DTO-CUEST] Cuest " + id + " | estado=" + c.getEstado() + " | jornada=" + dto.get("jornadaAsignada") + " | reutilizadoDe=" + dto.get("reutilizadoDeJornadaId"));
-            }
-        } catch (Exception e) {
-            log.warn("[DTO-CUEST] ERROR al buscar historial para cuest " + id);
+        if (jornadaId != null) {
+            dto.put("jornadaAsignada", jornadaId);
         }
-        
+        if (reutilizadoId != null) {
+            dto.put("reutilizadoDeJornadaId", reutilizadoId);
+            dto.put("reutilizadoDeJornadaNombre", reutilizadoNombre);
+            log.debug("[DTO-CUEST] Cuest " + c.getId() + " | estado=" + c.getEstado() + " | jornada=" + jornadaId + " | reutilizadoDe=" + reutilizadoId);
+        }
         java.util.Map<String, PreguntaCuestionario> mapPorSlot = mapearPreguntasPorSlot(c);
-        java.util.List<PreguntaCuestionarioDTO> preguntasDTO = new java.util.ArrayList<>();
+        java.util.List<PreguntaCuestionarioDTO> preguntasDTO = new ArrayList<>();
         for (String slot : new String[]{"1LS", "2NLS", "3LS", "4NLS"}) {
             PreguntaCuestionario pc = mapPorSlot.get(slot);
             if (pc != null) {
@@ -1025,8 +1079,50 @@ public class CuestionarioService {
         return dto;
     }
 
+    /**
+     * Devuelve un cuestionario con las preguntas mapeadas a DTOs con slot/hueco.
+     */
+    public Map<String, Object> obtenerCuestionarioConSlots(Long id) {
+        Optional<Cuestionario> opt = obtenerConPreguntas(id);
+        if (opt.isEmpty()) return null;
+        Cuestionario c = opt.get();
+        Long jornadaId = null;
+        try {
+            jornadaId = entityManager.createQuery(
+                "SELECT a.jornada.id FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id", Long.class)
+                .setParameter("id", id)
+                .setMaxResults(1)
+                .getResultList()
+                .stream().findFirst().orElse(null);
+        } catch (Exception ignored) {}
+
+        Long reutilizadoId = null;
+        String reutilizadoNombre = null;
+        try {
+            @SuppressWarnings("unchecked")
+            java.util.List<Object[]> historialReutilizado = entityManager.createNativeQuery(
+                "SELECT h.jornada_id, j.nombre " +
+                "FROM historial_jornadas h " +
+                "JOIN jornadas j ON h.jornada_id = j.id " +
+                "WHERE h.cuestionario_id = :cid AND h.estado_asignacion = 'reaprovechado' " +
+                "ORDER BY h.fecha_asignacion DESC " +
+                "LIMIT 1")
+                .setParameter("cid", id)
+                .getResultList();
+            if (!historialReutilizado.isEmpty() && historialReutilizado.get(0) instanceof Object[]) {
+                Object[] registro = historialReutilizado.get(0);
+                reutilizadoId = ((Number) registro[0]).longValue();
+                reutilizadoNombre = registro[1] != null ? registro[1].toString() : null;
+            }
+        } catch (Exception e) {
+            log.warn("[DTO-CUEST] ERROR al buscar historial para cuest " + id);
+        }
+        return armarDtoCuestionario(c, jornadaId, reutilizadoId, reutilizadoNombre);
+    }
+
     private java.util.Map<String, PreguntaCuestionario> mapearPreguntasPorSlot(Cuestionario c) {
         java.util.Map<String, PreguntaCuestionario> map = new java.util.HashMap<>();
+        if (c.getPreguntas() == null) return map;
         for (PreguntaCuestionario pc : c.getPreguntas()) {
             Pregunta p = pc.getPregunta();
             if (p == null || p.getNivel() == null) continue;
