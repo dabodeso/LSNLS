@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.context.event.EventListener;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -63,40 +64,67 @@ public class EditLockService {
 
     @Transactional
     public Map<String, Object> acquire(AuditLog.EntityType entityType, Long entityId) {
+        try {
+            return adquirir(entityType, entityId);
+        } catch (PessimisticLockingFailureException ex) {
+            log.warn("[EDIT LOCK] Espera de bloqueo en {} {}: {}", entityType, entityId, ex.getMessage());
+            throw ocupado(entityType, entityId, null);
+        }
+    }
+
+    private Map<String, Object> adquirir(AuditLog.EntityType entityType, Long entityId) {
         Usuario usuario = requireCurrentUser();
         if (!puedeReservar(usuario, entityType)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "No puedes reservar " + label(entityType) + " para editarlo.");
         }
-        Optional<EditLock> existing = editLockRepository.findForUpdate(entityType, entityId);
 
-        if (existing.isPresent()) {
-            EditLock active = existing.get();
-            if (!active.isExpired()) {
-                if (active.getUsuarioId().equals(usuario.getId())) {
-                    log.info("[EDIT LOCK] El mismo usuario {} retoma {} {}",
-                            usuario.getNombre(), entityType, entityId);
-                    return persistLock(active, entityType, entityId, usuario);
-                }
-                log.warn("[EDIT LOCK] Bloqueo denegado para {}: {} editando {} {}",
-                        usuario.getNombre(), active.getUsuarioNombre(), entityType, entityId);
-                throw new ResponseStatusException(HttpStatus.LOCKED,
-                        active.getUsuarioNombre() + " está editando " + label(entityType) + " " + entityId
-                                + ". Espera un momento.");
+        Optional<EditLock> vista = editLockRepository.findByEntityTypeAndEntityId(entityType, entityId);
+        if (vista.isEmpty()) {
+            try {
+                Map<String, Object> resultado = editLockInsercion.insertar(
+                        prepararLock(new EditLock(), entityType, entityId, usuario));
+                log.info("[EDIT LOCK] Adquirido por {} en {} {}", usuario.getNombre(), entityType, entityId);
+                return resultado;
+            } catch (DataIntegrityViolationException ex) {
+                log.warn("[EDIT LOCK] Dos reservas a la vez en {} {}", entityType, entityId);
+                EditLock ganador = editLockRepository.findByEntityTypeAndEntityId(entityType, entityId).orElse(null);
+                throw ocupado(entityType, entityId, ganador);
             }
-            log.info("[EDIT LOCK] Reutilizando bloqueo expirado en {} {}", entityType, entityId);
-            return persistLock(active, entityType, entityId, usuario);
         }
 
-        try {
-            Map<String, Object> resultado = editLockInsercion.insertar(prepararLock(new EditLock(), entityType, entityId, usuario));
-            log.info("[EDIT LOCK] Adquirido por {} en {} {}", usuario.getNombre(), entityType, entityId);
-            return resultado;
-        } catch (DataIntegrityViolationException ex) {
-            log.warn("[EDIT LOCK] Dos reservas a la vez en {} {}", entityType, entityId);
-            throw new ResponseStatusException(HttpStatus.LOCKED,
-                    "Alguien acaba de abrir " + label(entityType) + " " + entityId + ". Espera un momento.");
+        if (!vista.get().isExpired() && !vista.get().getUsuarioId().equals(usuario.getId())) {
+            log.warn("[EDIT LOCK] Bloqueo denegado para {}: {} editando {} {}",
+                    usuario.getNombre(), vista.get().getUsuarioNombre(), entityType, entityId);
+            throw ocupado(entityType, entityId, vista.get());
         }
+
+        EditLock bloqueado = editLockRepository.findForUpdate(entityType, entityId).orElse(null);
+        if (bloqueado == null) {
+            throw ocupado(entityType, entityId, null);
+        }
+        if (!bloqueado.isExpired() && !bloqueado.getUsuarioId().equals(usuario.getId())) {
+            log.warn("[EDIT LOCK] Bloqueo denegado para {}: {} editando {} {}",
+                    usuario.getNombre(), bloqueado.getUsuarioNombre(), entityType, entityId);
+            throw ocupado(entityType, entityId, bloqueado);
+        }
+        if (!bloqueado.isExpired()) {
+            log.info("[EDIT LOCK] El mismo usuario {} retoma {} {}",
+                    usuario.getNombre(), entityType, entityId);
+        } else {
+            log.info("[EDIT LOCK] Reutilizando bloqueo expirado en {} {}", entityType, entityId);
+        }
+        return persistLock(bloqueado, entityType, entityId, usuario);
+    }
+
+    private ResponseStatusException ocupado(AuditLog.EntityType entityType, Long entityId, EditLock ganador) {
+        if (ganador != null && !ganador.isExpired() && ganador.getUsuarioNombre() != null) {
+            return new ResponseStatusException(HttpStatus.LOCKED,
+                    ganador.getUsuarioNombre() + " está editando " + label(entityType) + " " + entityId
+                            + ". Espera un momento.");
+        }
+        return new ResponseStatusException(HttpStatus.LOCKED,
+                "Alguien acaba de abrir " + label(entityType) + " " + entityId + ". Espera un momento.");
     }
 
     private boolean puedeReservar(Usuario usuario, AuditLog.EntityType entityType) {

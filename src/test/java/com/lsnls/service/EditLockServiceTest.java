@@ -59,7 +59,7 @@ class EditLockServiceTest {
     @Test
     void acquireCreaLockNuevo() {
         when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
-        when(editLockRepository.findForUpdate(AuditLog.EntityType.PREGUNTA, 10L))
+        when(editLockRepository.findByEntityTypeAndEntityId(AuditLog.EntityType.PREGUNTA, 10L))
                 .thenReturn(Optional.empty());
         when(editLockInsercion.insertar(any(EditLock.class))).thenAnswer(inv -> {
             EditLock lock = inv.getArgument(0);
@@ -84,7 +84,7 @@ class EditLockServiceTest {
     @Test
     void acquireDosReservasALaVezRespondeBloqueado() {
         when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
-        when(editLockRepository.findForUpdate(AuditLog.EntityType.PREGUNTA, 10L))
+        when(editLockRepository.findByEntityTypeAndEntityId(AuditLog.EntityType.PREGUNTA, 10L))
                 .thenReturn(Optional.empty());
         when(editLockInsercion.insertar(any(EditLock.class)))
                 .thenThrow(new DataIntegrityViolationException("clave duplicada"));
@@ -105,13 +105,15 @@ class EditLockServiceTest {
                 () -> editLockService.acquire(AuditLog.EntityType.PREGUNTA, 10L));
 
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
-        verify(editLockRepository, never()).findForUpdate(any(), any());
+        verify(editLockRepository, never()).findByEntityTypeAndEntityId(any(), any());
     }
 
     @Test
     void acquireMismoUsuarioRetomaElCandado() {
         when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
         EditLock lock = lockActivo(3L, "ana");
+        when(editLockRepository.findByEntityTypeAndEntityId(AuditLog.EntityType.COMBO, 2L))
+                .thenReturn(Optional.of(lock));
         when(editLockRepository.findForUpdate(AuditLog.EntityType.COMBO, 2L))
                 .thenReturn(Optional.of(lock));
         when(editLockRepository.save(any(EditLock.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -127,7 +129,7 @@ class EditLockServiceTest {
     void acquireOtroUsuarioLanzaLocked() {
         when(authService.getCurrentUser()).thenReturn(Optional.of(usuario));
         EditLock lock = lockActivo(99L, "bruno");
-        when(editLockRepository.findForUpdate(AuditLog.EntityType.CUESTIONARIO, 4L))
+        when(editLockRepository.findByEntityTypeAndEntityId(AuditLog.EntityType.CUESTIONARIO, 4L))
                 .thenReturn(Optional.of(lock));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -144,6 +146,8 @@ class EditLockServiceTest {
         lock.setUsuarioNombre("bruno");
         lock.setExpiresAt(LocalDateTime.now().minusMinutes(1));
         lock.setCreatedAt(LocalDateTime.now().minusMinutes(5));
+        when(editLockRepository.findByEntityTypeAndEntityId(AuditLog.EntityType.JORNADA, 8L))
+                .thenReturn(Optional.of(lock));
         when(editLockRepository.findForUpdate(AuditLog.EntityType.JORNADA, 8L))
                 .thenReturn(Optional.of(lock));
         when(editLockRepository.save(any(EditLock.class))).thenAnswer(inv -> inv.getArgument(0));
