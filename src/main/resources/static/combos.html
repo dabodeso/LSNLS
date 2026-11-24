@@ -264,14 +264,28 @@
                             <div class="col-md-2"><input id="buscador-id" class="form-control form-control-sm" placeholder="ID"></div>
                             <div class="col-md-3"><input id="buscador-texto" class="form-control form-control-sm" placeholder="Buscar en pregunta o respuesta..."></div>
                             <div class="col-md-2">
-                                <select id="buscador-tematica-select" class="form-select form-select-sm">
-                                    <option value="">Todas las temáticas</option>
-                                </select>
+                                <input type="hidden" id="buscador-tematica-select" value="">
+                                <div class="dropdown w-100">
+                                    <button type="button" class="form-select form-select-sm text-start" id="buscador-tematica-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Todas las temáticas
+                                    </button>
+                                    <div class="dropdown-menu p-2 w-100" style="max-height: 280px; overflow-y: auto;">
+                                        <input type="text" id="buscador-tematica-search" class="form-control form-control-sm mb-2" placeholder="Escribir para buscar...">
+                                        <div id="buscador-tematica-options"></div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-md-3">
-                                <select id="buscador-subtema-select" class="form-select form-select-sm">
-                                    <option value="">Todos los subtemas</option>
-                                </select>
+                                <input type="hidden" id="buscador-subtema-select" value="">
+                                <div class="dropdown w-100">
+                                    <button type="button" class="form-select form-select-sm text-start" id="buscador-subtema-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Todos los subtemas
+                                    </button>
+                                    <div class="dropdown-menu p-2 w-100" style="max-height: 280px; overflow-y: auto;">
+                                        <input type="text" id="buscador-subtema-search" class="form-control form-control-sm mb-2" placeholder="Escribir para buscar...">
+                                        <div id="buscador-subtema-options"></div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-md-2"><button class="btn btn-primary btn-sm w-100" onclick="buscarPreguntasModal(0)">Buscar</button></div>
                         </div>
@@ -408,13 +422,13 @@
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <!-- Custom JS -->
     <script src="js/auth.js?v=20260915-verif-consulta"></script>
-    <script src="js/utils.js?v=20261123-solo-ver"></script>
+    <script src="js/utils.js?v=20261124-filtro-buscable"></script>
     <script src="js/api.js?v=20260821-3"></script>
     <script src="js/undo-manager.js?v=20261105-scroll-lugar"></script>
     <script src="js/editLockManager.js?v=20261123-guardar-fuera"></script>
     <script src="js/syncMonitor.js?v=20261113-aviso-389"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/combos.js?v=20261123-selector-cols"></script>
+    <script src="js/combos.js?v=20261124-filtro-buscable"></script>
     <style>
         /* Ocultar columna "Preguntas" (5ª) solo en la tabla principal */
         #tabla-combos-tabla > thead > tr > th:nth-child(5),

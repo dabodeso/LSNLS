@@ -832,47 +832,47 @@ async function mostrarFormularioCuestionario() {
 
 // Añadir eventos reactivos a los inputs del modal de búsqueda de preguntas
 function inicializarBuscadorPreguntasModal() {
+    const alCambiarFiltro = () => buscarPreguntasModal(0);
+    const nombresDe = (lista) => (Array.isArray(lista) ? lista : [])
+        .map(x => typeof x === 'string' ? x : x?.nombre)
+        .filter(Boolean);
+
     const cargarTematicas = async () => {
         try {
-            const sel = document.getElementById('buscador-tematica-select');
-            if (!sel) return;
-            // cargar temáticas de preguntas (distintas)
             const resp = await fetch('/api/preguntas/tematicas', { headers: authManager.getAuthHeaders() });
             if (!resp.ok) return;
-            const tematicas = await resp.json();
-            sel.innerHTML = '<option value="">Todas las temáticas</option>';
-            (Array.isArray(tematicas) ? tematicas : []).forEach(t => {
-                const nombre = typeof t === 'string' ? t : t?.nombre;
-                if (!nombre) return;
-                const opt = document.createElement('option');
-                opt.value = nombre;
-                opt.textContent = nombre;
-                sel.appendChild(opt);
+            if (typeof FiltroBuscable === 'undefined') return;
+            FiltroBuscable.init({
+                hiddenId: 'buscador-tematica-select',
+                toggleId: 'buscador-tematica-toggle',
+                searchId: 'buscador-tematica-search',
+                optionsId: 'buscador-tematica-options',
+                items: nombresDe(await resp.json()),
+                emptyLabel: 'Todas las temáticas',
+                onChange: alCambiarFiltro
             });
         } catch {}
     };
     const cargarSubtemas = async () => {
         try {
-            const sel = document.getElementById('buscador-subtema-select');
-            if (!sel) return;
             const resp = await fetch('/api/temas/subtemas', { headers: authManager.getAuthHeaders() });
             if (!resp.ok) return;
-            const subtemas = await resp.json();
-            sel.innerHTML = '<option value="">Todos los subtemas</option>';
-            (Array.isArray(subtemas) ? subtemas : []).forEach(s => {
-                const nombre = typeof s === 'string' ? s : s?.nombre;
-                if (!nombre) return;
-                const opt = document.createElement('option');
-                opt.value = nombre;
-                opt.textContent = nombre;
-                sel.appendChild(opt);
+            if (typeof FiltroBuscable === 'undefined') return;
+            FiltroBuscable.init({
+                hiddenId: 'buscador-subtema-select',
+                toggleId: 'buscador-subtema-toggle',
+                searchId: 'buscador-subtema-search',
+                optionsId: 'buscador-subtema-options',
+                items: nombresDe(await resp.json()),
+                emptyLabel: 'Todos los subtemas',
+                onChange: alCambiarFiltro
             });
         } catch {}
     };
     cargarTematicas();
     cargarSubtemas();
 
-    ['buscador-id', 'buscador-texto', 'buscador-tematica-select', 'buscador-subtema-select', 'buscador-nivel-cuestionario', 'buscador-estado'].forEach(id => {
+    ['buscador-id', 'buscador-texto', 'buscador-nivel-cuestionario', 'buscador-estado'].forEach(id => {
         const input = document.getElementById(id);
         if (input) {
             input.removeEventListener('keyup', input._buscadorHandler || (()=>{}));
@@ -902,10 +902,15 @@ function abrirSelectorPregunta(nivel, factor = null) {
     if (idInput) idInput.value = '';
     const textoInput = document.getElementById('buscador-texto');
     if (textoInput) textoInput.value = '';
-    const temaSelect = document.getElementById('buscador-tematica-select');
-    if (temaSelect) temaSelect.value = '';
-    const subtemaSelect = document.getElementById('buscador-subtema-select');
-    if (subtemaSelect) subtemaSelect.value = '';
+    if (typeof FiltroBuscable !== 'undefined') {
+        FiltroBuscable.setEmpty('buscador-tematica-select', 'buscador-tematica-toggle', 'Todas las temáticas');
+        FiltroBuscable.setEmpty('buscador-subtema-select', 'buscador-subtema-toggle', 'Todos los subtemas');
+    } else {
+        const temaSelect = document.getElementById('buscador-tematica-select');
+        if (temaSelect) temaSelect.value = '';
+        const subtemaSelect = document.getElementById('buscador-subtema-select');
+        if (subtemaSelect) subtemaSelect.value = '';
+    }
     const nivelSelect = document.getElementById('buscador-nivel-cuestionario');
     // Por defecto filtrar por el nivel del slot al que se va a asignar (1LS, 2NLS, ...)
     if (nivelSelect) {

@@ -742,3 +742,83 @@ window.refrescarPaginaActual = async function refrescarPaginaActual() {
         console.error('[refrescarPaginaActual] Error:', e);
     }
 };
+
+/**
+ * Desplegable con caja de búsqueda (temática / subtema).
+ * Espera: hidden + botón toggle + input search + contenedor de opciones.
+ */
+window.FiltroBuscable = {
+    init({ hiddenId, toggleId, searchId, optionsId, items, emptyLabel = 'Todos', emptyValue = '', onChange }) {
+        const hidden = document.getElementById(hiddenId);
+        const toggle = document.getElementById(toggleId);
+        const search = document.getElementById(searchId);
+        const cont = document.getElementById(optionsId);
+        if (!hidden || !toggle || !search || !cont) return;
+
+        const lista = Array.isArray(items) ? items.filter(Boolean) : [];
+        const etiquetaVacia = emptyLabel || 'Todos';
+
+        const render = (filtro = '') => {
+            const q = (filtro || '').trim().toLowerCase();
+            cont.innerHTML = '';
+            const visibles = [etiquetaVacia, ...lista].filter(t =>
+                String(t).toLowerCase().includes(q)
+            );
+            if (visibles.length === 0) {
+                cont.innerHTML = '<div class="px-2 py-1 text-muted small">Sin resultados</div>';
+                return;
+            }
+            visibles.forEach(t => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'dropdown-item';
+                btn.textContent = t;
+                btn.onclick = () => {
+                    const valor = t === etiquetaVacia ? emptyValue : t;
+                    hidden.value = valor;
+                    toggle.textContent = valor || etiquetaVacia;
+                    search.value = '';
+                    document.body.click();
+                    if (typeof onChange === 'function') onChange(valor);
+                };
+                cont.appendChild(btn);
+            });
+        };
+
+        render('');
+        search.oninput = () => render(search.value || '');
+        search.onkeydown = (e) => e.stopPropagation();
+
+        const menu = toggle.closest('.dropdown')?.querySelector('.dropdown-menu');
+        if (menu && !menu._filtroBuscableBound) {
+            menu._filtroBuscableBound = true;
+            menu.addEventListener('click', (e) => e.stopPropagation());
+        }
+        if (!toggle._filtroBuscableFocus) {
+            toggle._filtroBuscableFocus = true;
+            toggle.addEventListener('shown.bs.dropdown', () => {
+                search.value = '';
+                render('');
+                setTimeout(() => search.focus(), 0);
+            });
+        }
+
+        // Si el valor actual ya no está en la lista, resetear etiqueta
+        const actual = hidden.value || '';
+        if (!actual) {
+            toggle.textContent = etiquetaVacia;
+        } else if (!lista.includes(actual)) {
+            hidden.value = emptyValue;
+            toggle.textContent = etiquetaVacia;
+        } else {
+            toggle.textContent = actual;
+        }
+    },
+
+    setEmpty(hiddenId, toggleId, emptyLabel = 'Todos') {
+        const hidden = document.getElementById(hiddenId);
+        const toggle = document.getElementById(toggleId);
+        if (hidden) hidden.value = '';
+        if (toggle) toggle.textContent = emptyLabel;
+    }
+};

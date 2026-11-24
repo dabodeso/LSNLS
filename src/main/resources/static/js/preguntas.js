@@ -2370,33 +2370,16 @@ const TemasManager = {
             tbody.appendChild(tr);
         });
 
-        // Rellenar dropdown de filtros de temática con estética Bootstrap
-        const cont = document.getElementById('filtro-tematica-options');
-        const search = document.getElementById('filtro-tematica-search');
-        const hidden = document.getElementById('filtro-tematica');
-        const toggle = document.getElementById('filtro-tematica-toggle');
-        if (cont && search && hidden && toggle) {
-            const render = (filtro = '') => {
-                cont.innerHTML = '';
-                const items = ['(Todos)', ...this.temas].filter(t => t.toLowerCase().includes(filtro.toLowerCase()));
-                items.forEach(t => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'dropdown-item';
-                    btn.textContent = t;
-                    btn.onclick = () => {
-                        const valor = t === '(Todos)' ? '' : t;
-                        hidden.value = valor;
-                        toggle.textContent = valor || 'Todos';
-                        // Cerrar dropdown
-                        document.body.click();
-                        if (typeof filtrarPreguntas === 'function') filtrarPreguntas();
-                    };
-                    cont.appendChild(btn);
-                });
-            };
-            render('');
-            search.oninput = () => render(search.value || '');
+        if (typeof FiltroBuscable !== 'undefined') {
+            FiltroBuscable.init({
+                hiddenId: 'filtro-tematica',
+                toggleId: 'filtro-tematica-toggle',
+                searchId: 'filtro-tematica-search',
+                optionsId: 'filtro-tematica-options',
+                items: this.temas,
+                emptyLabel: 'Todos',
+                onChange: () => { if (typeof filtrarPreguntas === 'function') filtrarPreguntas(); }
+            });
         }
     },
 
@@ -2419,33 +2402,16 @@ const TemasManager = {
             tbody.appendChild(tr);
         });
 
-        // Rellenar dropdown de filtros de subtema con estética Bootstrap
-        const cont = document.getElementById('filtro-subtema-options');
-        const search = document.getElementById('filtro-subtema-search');
-        const hidden = document.getElementById('filtro-subtema');
-        const toggle = document.getElementById('filtro-subtema-toggle');
-        if (cont && search && hidden && toggle) {
-            const render = (filtro = '') => {
-                cont.innerHTML = '';
-                const items = ['(Todos)', ...this.subtemas].filter(s => s.toLowerCase().includes(filtro.toLowerCase()));
-                items.forEach(s => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'dropdown-item';
-                    btn.textContent = s;
-                    btn.onclick = () => {
-                        const valor = s === '(Todos)' ? '' : s;
-                        hidden.value = valor;
-                        toggle.textContent = valor || 'Todos';
-                        // Cerrar dropdown
-                        document.body.click();
-                        if (typeof filtrarPreguntas === 'function') filtrarPreguntas();
-                    };
-                    cont.appendChild(btn);
-                });
-            };
-            render('');
-            search.oninput = () => render(search.value || '');
+        if (typeof FiltroBuscable !== 'undefined') {
+            FiltroBuscable.init({
+                hiddenId: 'filtro-subtema',
+                toggleId: 'filtro-subtema-toggle',
+                searchId: 'filtro-subtema-search',
+                optionsId: 'filtro-subtema-options',
+                items: this.subtemas,
+                emptyLabel: 'Todos',
+                onChange: () => { if (typeof filtrarPreguntas === 'function') filtrarPreguntas(); }
+            });
         }
     },
 
