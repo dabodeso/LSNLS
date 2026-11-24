@@ -26,52 +26,42 @@ class NoSpecialCharactersValidatorTest {
     @BeforeEach
     void setUp() {
         validator = new NoSpecialCharactersValidator();
-    }
-
-    private void inicializar(String allowedChars) {
-        when(annotation.allowedChars()).thenReturn(allowedChars);
+        when(annotation.allowedChars()).thenReturn("");
         validator.initialize(annotation);
     }
 
     @Test
     void isValid_null_devuelveTrue() {
-        inicializar("");
         assertTrue(validator.isValid(null, context));
     }
 
     @Test
-    void isValid_textoBasico_conAllowedVacio_devuelveTrue() {
-        inicializar("");
+    void isValid_textoBasico_devuelveTrue() {
         assertTrue(validator.isValid("Hola Mundo 123.,;:!?¡¿()[]\"'-", context));
     }
 
     @Test
     void isValid_acentosYEnie_devuelveTrue() {
-        inicializar("");
         assertTrue(validator.isValid("NIÑO CANCIÓN", context));
     }
 
     @Test
-    void isValid_arrobaSinPermitir_devuelveFalse() {
-        inicializar("");
-        assertFalse(validator.isValid("correo@dominio", context));
+    void isValid_simbolosHabituales_devuelveTrue() {
+        assertTrue(validator.isValid("C++ / C# @ 50% #1 + 2*3", context));
     }
 
     @Test
-    void isValid_arrobaPermitida_devuelveTrue() {
-        inicializar("@");
-        assertTrue(validator.isValid("correo@dominio", context));
+    void isValid_saltoDeLinea_devuelveFalse() {
+        assertFalse(validator.isValid("linea1\nlinea2", context));
     }
 
     @Test
-    void isValid_hashSinPermitir_devuelveFalse() {
-        inicializar("");
-        assertFalse(validator.isValid("tema #1", context));
+    void isValid_caracterControl_devuelveFalse() {
+        assertFalse(validator.isValid("hola\u0000mundo", context));
     }
 
     @Test
     void isValid_vacio_devuelveTrue() {
-        inicializar("");
         assertTrue(validator.isValid("", context));
     }
 
@@ -80,11 +70,5 @@ class NoSpecialCharactersValidatorTest {
         when(annotation.allowedChars()).thenReturn(null);
         validator.initialize(annotation);
         assertTrue(validator.isValid("ABC", context));
-    }
-
-    @Test
-    void isValid_caracterRegexEscapadoEnAllowed() {
-        inicializar(".*");
-        assertTrue(validator.isValid("abc.def*", context));
     }
 }

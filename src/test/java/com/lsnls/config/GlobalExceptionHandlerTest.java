@@ -5,10 +5,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -87,5 +91,22 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("El nombre es obligatorio", response.getBody().get("mensaje"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void handleTransaction_desenvuelveConstraintViolation() {
+        ConstraintViolation<Object> violation = org.mockito.Mockito.mock(ConstraintViolation.class);
+        org.mockito.Mockito.when(violation.getMessage())
+                .thenReturn("La respuesta contiene caracteres no permitidos");
+        ConstraintViolationException cve = new ConstraintViolationException(
+                "Validation failed",
+                Set.of(violation));
+        TransactionSystemException tx = new TransactionSystemException("rollback", cve);
+
+        ResponseEntity<Map<String, String>> response = handler.handleTransaction(tx);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("La respuesta contiene caracteres no permitidos", response.getBody().get("mensaje"));
     }
 }

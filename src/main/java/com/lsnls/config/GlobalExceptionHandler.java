@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.persistence.RollbackException;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import java.util.Map;
@@ -83,8 +85,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleConstraint(ConstraintViolationException ex) {
         String detalle = ex.getConstraintViolations().stream()
                 .map(ConstraintViolation::getMessage)
+                .filter(msg -> msg != null && !msg.isBlank())
                 .collect(Collectors.joining(". "));
         return cuerpo(HttpStatus.BAD_REQUEST, MensajesUsuario.sanitizar(detalle, MensajesUsuario.VALIDACION));
+    }
+
+    /**
+     * Hibernate valida en el flush/commit: ConstraintViolationException llega
+     * envuelta en RollbackException / TransactionSystemException y, sin esto,
+     * el usuario solo ve un error genérico 500.
+     */
+    @ExceptionHandler({TransactionSystemException.class, RollbackException.class})
+    public ResponseEntity<Map<String, String>> handleTransaction(RuntimeException ex) {
+        ConstraintViolationException cve = causaDeTipo(ex, ConstraintViolationException.class);
+        if (cve != null) {
+            return handleConstraint(cve);
+        }
+        log.error("Error de transacción: {}", ex.getMessage(), ex);
+        return cuerpo(HttpStatus.INTERNAL_SERVER_ERROR, MensajesUsuario.GENERICO);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -108,5 +126,16 @@ public class GlobalExceptionHandler {
                 "mensaje", mensaje,
                 "message", mensaje
         ));
+    }
+
+    private static <T extends Throwable> T causaDeTipo(Throwable ex, Class<T> tipo) {
+        Throwable actual = ex;
+        while (actual != null) {
+            if (tipo.isInstance(actual)) {
+                return tipo.cast(actual);
+            }
+            actual = actual.getCause();
+        }
+        return null;
     }
 }
