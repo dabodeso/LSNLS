@@ -6,7 +6,8 @@ import org.springframework.stereotype.Service;
 public class DataTransformationService {
 
     /**
-     * Transforma texto y limpia caracteres no permitidos PERO PRESERVA MAYÚSCULAS/MINÚSCULAS
+     * Transforma texto y limpia espacios/saltos PERO PRESERVA MAYÚSCULAS/MINÚSCULAS
+     * y el resto de caracteres (p. ej. +, /, %, #), que ya vienen de la BBDD.
      */
     public String normalizarTexto(String texto) {
         if (texto == null || texto.trim().isEmpty()) {
@@ -26,6 +27,26 @@ public class DataTransformationService {
     }
 
     /**
+     * Texto usable en pregunta/respuesta/temática: no vacío, sin saltos ni controles.
+     * Se permiten símbolos (+, /, %, #, @, etc.); la importación ya los trae.
+     */
+    public boolean tieneCaracteresUsables(String texto) {
+        if (texto == null || texto.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < texto.length(); i++) {
+            char c = texto.charAt(i);
+            if (c == '\n' || c == '\r') {
+                return false;
+            }
+            if (Character.isISOControl(c) && !Character.isWhitespace(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Valida que el texto cumple con los requisitos de LSNOLS (SIN EXIGIR MAYÚSCULAS)
      */
     public boolean esTextoValido(String texto, int maxLength) {
@@ -38,16 +59,7 @@ public class DataTransformationService {
             return false;
         }
         
-        // YA NO verificar que esté en mayúsculas - permitir mayúsculas y minúsculas
-        
-        // Verificar que no tenga saltos de línea
-        if (texto.contains("\n") || texto.contains("\r")) {
-            return false;
-        }
-        
-        // Verificar caracteres permitidos (letras, números, espacios, signos básicos)
-        String patronPermitido = "^[A-Za-zÀ-ÿÑñ0-9\\s.,;:!?¡¿()\\[\\]\"'\\-]+$";
-        return texto.matches(patronPermitido);
+        return tieneCaracteresUsables(texto);
     }
 
     /**
@@ -87,28 +99,16 @@ public class DataTransformationService {
     public ValidationResult validarPreguntaCompleta(String pregunta, String respuesta, String tematica) {
         ValidationResult result = new ValidationResult();
         
-        // Validar pregunta - sin límite de caracteres
-        if (pregunta == null || pregunta.trim().isEmpty() || pregunta.contains("\n") || pregunta.contains("\r")) {
+        // Validar pregunta - sin límite de caracteres; se permiten símbolos (+, /, %, etc.)
+        if (pregunta == null || pregunta.trim().isEmpty() || !tieneCaracteresUsables(pregunta)) {
             result.addError("pregunta", "La pregunta no puede estar vacía ni contener saltos de línea");
-        } else {
-            // Verificar caracteres permitidos (letras, números, espacios, signos básicos)
-            String patronPermitido = "^[A-Za-zÀ-ÿÑñ0-9\\s.,;:!?¡¿()\\[\\]\"'\\-]+$";
-            if (!pregunta.matches(patronPermitido)) {
-                result.addError("pregunta", "La pregunta contiene caracteres no permitidos");
-            }
         }
         
         // Validar respuesta - aumentado a 500 caracteres
-        if (respuesta == null || respuesta.trim().isEmpty() || respuesta.contains("\n") || respuesta.contains("\r")) {
+        if (respuesta == null || respuesta.trim().isEmpty() || !tieneCaracteresUsables(respuesta)) {
             result.addError("respuesta", "La respuesta no puede estar vacía ni contener saltos de línea");
         } else if (respuesta.length() > 500) {
             result.addError("respuesta", "La respuesta no puede exceder los 500 caracteres");
-        } else {
-            // Verificar caracteres permitidos (letras, números, espacios, signos básicos)
-            String patronPermitido = "^[A-Za-zÀ-ÿÑñ0-9\\s.,;:!?¡¿()\\[\\]\"'\\-]+$";
-            if (!respuesta.matches(patronPermitido)) {
-                result.addError("respuesta", "La respuesta contiene caracteres no permitidos");
-            }
         }
         
         // Validar temática

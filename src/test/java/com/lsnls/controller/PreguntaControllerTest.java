@@ -422,6 +422,37 @@ class PreguntaControllerTest {
     }
 
     @Test
+    void actualizar_usadaEnJornadaCerrada_devuelve403() {
+        Pregunta p = pregunta(1L, Pregunta.EstadoPregunta.usada);
+        when(preguntaService.obtenerPorId(1L)).thenReturn(Optional.of(p));
+        when(authService.isAdmin()).thenReturn(false);
+        when(preguntaService.estaEnJornadaCerrada(1L)).thenReturn(true);
+
+        ResponseEntity<?> response = preguntaController.actualizar(1L, dto(1L));
+
+        assertEquals(403, response.getStatusCodeValue());
+        assertTrue(response.getBody().toString().contains("jornada completada"));
+    }
+
+    @Test
+    void actualizar_usadaSinJornadaCerrada_permiteEditar() {
+        Pregunta p = pregunta(1L, Pregunta.EstadoPregunta.usada);
+        PreguntaDTO body = dto(1L);
+        body.setEstado("usada");
+        body.setPregunta("Texto corregido");
+        when(preguntaService.obtenerPorId(1L)).thenReturn(Optional.of(p));
+        when(authService.isAdmin()).thenReturn(false);
+        when(preguntaService.estaEnJornadaCerrada(1L)).thenReturn(false);
+        when(authService.canEditPregunta(Pregunta.EstadoPregunta.usada)).thenReturn(true);
+        doNothing().when(editLockService).assertCanEdit(any(), eq(1L));
+        when(preguntaService.actualizarDesdeDTO(eq(1L), any())).thenReturn(p);
+
+        ResponseEntity<?> response = preguntaController.actualizar(1L, body);
+
+        assertEquals(200, response.getStatusCodeValue());
+    }
+
+    @Test
     void actualizar_cambioEstadoSinPermiso_devuelve403() {
         Pregunta p = pregunta(1L, Pregunta.EstadoPregunta.borrador);
         PreguntaDTO dto = dto(1L);

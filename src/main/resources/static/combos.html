@@ -12,7 +12,7 @@
     <!-- Toastify CSS -->
     <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link href="css/styles.css?v=20261030-resalte" rel="stylesheet">
+    <link href="css/styles.css?v=20261123-selector-cols" rel="stylesheet">
     <link href="css/pagination.css" rel="stylesheet">
 </head>
 <body>
@@ -253,7 +253,7 @@
 
         <!-- Modal para seleccionar pregunta -->
         <div class="modal fade" id="modal-selector-pregunta" tabindex="-1">
-            <div class="modal-dialog modal-xl">
+            <div class="modal-dialog modal-selector-ancho">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">Seleccionar Pregunta</h5>
@@ -263,9 +263,14 @@
                         <div class="row mb-2">
                             <div class="col-md-2"><input id="buscador-id" class="form-control form-control-sm" placeholder="ID"></div>
                             <div class="col-md-3"><input id="buscador-texto" class="form-control form-control-sm" placeholder="Buscar en pregunta o respuesta..."></div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <select id="buscador-tematica-select" class="form-select form-select-sm">
                                     <option value="">Todas las temáticas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="buscador-subtema-select" class="form-select form-select-sm">
+                                    <option value="">Todos los subtemas</option>
                                 </select>
                             </div>
                             <div class="col-md-2"><button class="btn btn-primary btn-sm w-100" onclick="buscarPreguntasModal(0)">Buscar</button></div>
@@ -291,11 +296,13 @@
                             </div>
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-bordered table-hover align-middle">
+                            <table class="table table-bordered table-hover align-top selector-preguntas">
                                 <thead>
                                     <tr>
-                                        <th style="width:80px;">ID</th>
-                                        <th colspan="4">Pregunta</th>
+                                        <th style="width:72px;">ID</th>
+                                        <th>Pregunta</th>
+                                        <th style="width:24%;">Respuesta</th>
+                                        <th style="width:34%;">Notas de verificación</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbody-selector-pregunta">
@@ -407,7 +414,7 @@
     <script src="js/editLockManager.js?v=20261123-guardar-fuera"></script>
     <script src="js/syncMonitor.js?v=20261113-aviso-389"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
-    <script src="js/combos.js?v=20261123-solo-ver"></script>
+    <script src="js/combos.js?v=20261123-selector-cols"></script>
     <style>
         /* Ocultar columna "Preguntas" (5ª) solo en la tabla principal */
         #tabla-combos-tabla > thead > tr > th:nth-child(5),

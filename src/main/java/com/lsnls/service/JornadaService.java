@@ -447,10 +447,33 @@ public class JornadaService {
 
             Map<String, Object> opcionesExport = opciones == null ? new HashMap<>() : new HashMap<>(opciones);
             opcionesExport.put(ExcelExportService.OPCION_ANCESTROS_COMBO, ancestrosCombosDeJornada(jornada));
+            if (jornada.getEstado() == Jornada.EstadoJornada.completada) {
+                Map<Long, ExcelExportService.DatosPieBloque> pieCuest = new HashMap<>();
+                String nombreJornada = jornada.getNombre() != null ? jornada.getNombre() : "";
+                for (Concursante c : concursanteRepository.findByJornada_Id(id)) {
+                    if (c.getCuestionario() == null || c.getCuestionario().getId() == null) {
+                        continue;
+                    }
+                    pieCuest.putIfAbsent(c.getCuestionario().getId(), pieDesdeConcursante(c, nombreJornada));
+                }
+                opcionesExport.put(ExcelExportService.OPCION_PIE_CUESTIONARIO, pieCuest);
+            }
             return excelExportService.exportarJornada(jornada, opcionesExport);
         } catch (Exception e) {
             throw new RuntimeException("Error al generar Excel: " + e.getMessage(), e);
         }
+    }
+
+    private static ExcelExportService.DatosPieBloque pieDesdeConcursante(Concursante c, String nombreJornada) {
+        return new ExcelExportService.DatosPieBloque(
+                ExcelExportService.textoConcursantePie(c),
+                c.getResultado() != null ? String.valueOf(c.getResultado()) : "",
+                nombreJornada,
+                c.getNotasGrabacion() != null ? c.getNotasGrabacion() : "",
+                c.getValoracionGuionista() != null ? c.getValoracionGuionista() : "",
+                c.getNombre(),
+                ExcelExportService.preguntaUsadaDelCombo(c.getCombo())
+        );
     }
 
     public List<Map<String, Object>> obtenerCuestionariosDisponibles() {
@@ -1674,9 +1697,20 @@ public class JornadaService {
     public List<Map<String, Object>> listarContenidoOtras(Long jornadaId, String tipo) {
         boolean listarCombos = tipo != null && tipo.toLowerCase().startsWith("combo");
         List<Map<String, Object>> resultado = new ArrayList<>();
+        List<Long> alrededor = idsJornadasAlrededor(jornadaId, 3, 3);
+        if (alrededor.isEmpty()) {
+            return resultado;
+        }
+        Map<Long, Jornada> porId = new HashMap<>();
+        for (Jornada jornada : jornadaRepository.findAllById(alrededor)) {
+            if (jornada.getId() != null) {
+                porId.put(jornada.getId(), jornada);
+            }
+        }
         Set<Long> combosDerivados = listarCombos ? idsCombosDerivados() : Collections.emptySet();
-        for (Jornada jornada : jornadaRepository.findAll()) {
-            if (jornada.getId() == null || jornada.getId().equals(jornadaId)) {
+        for (Long idAlrededor : alrededor) {
+            Jornada jornada = porId.get(idAlrededor);
+            if (jornada == null || jornada.getId() == null || jornada.getId().equals(jornadaId)) {
                 continue;
             }
             if (listarCombos) {
@@ -1711,6 +1745,45 @@ public class JornadaService {
             }
         }
         return resultado;
+    }
+
+    /** Tres jornadas por detrás y tres por delante, por fecha de uso. Sin fecha no cuentan. */
+    private List<Long> idsJornadasAlrededor(Long jornadaId, int porDetras, int porDelante) {
+        List<JornadaRepository.JornadaFechaVista> vistas = new ArrayList<>();
+        for (JornadaRepository.JornadaFechaVista vista : jornadaRepository.findIdYFecha()) {
+            if (vista.getId() != null && vista.getFechaJornada() != null) {
+                vistas.add(vista);
+            }
+        }
+        vistas.sort(Comparator
+            .comparing(JornadaRepository.JornadaFechaVista::getFechaJornada)
+            .thenComparing(JornadaRepository.JornadaFechaVista::getId));
+        List<Long> orden = new ArrayList<>();
+        for (JornadaRepository.JornadaFechaVista vista : vistas) {
+            orden.add(vista.getId());
+        }
+        return elegirAlrededor(orden, jornadaId, porDetras, porDelante);
+    }
+
+    static List<Long> elegirAlrededor(List<Long> ordenAscendente, Long actualId, int porDetras, int porDelante) {
+        int indice = -1;
+        for (int i = 0; i < ordenAscendente.size(); i++) {
+            if (actualId != null && actualId.equals(ordenAscendente.get(i))) {
+                indice = i;
+                break;
+            }
+        }
+        if (indice < 0) {
+            return Collections.emptyList();
+        }
+        List<Long> elegidas = new ArrayList<>();
+        for (int distancia = 1; distancia <= porDetras && indice - distancia >= 0; distancia++) {
+            elegidas.add(ordenAscendente.get(indice - distancia));
+        }
+        for (int distancia = 1; distancia <= porDelante && indice + distancia < ordenAscendente.size(); distancia++) {
+            elegidas.add(ordenAscendente.get(indice + distancia));
+        }
+        return elegidas;
     }
 
     /** Estados que ConcursanteService admite al asignar un cuestionario. */

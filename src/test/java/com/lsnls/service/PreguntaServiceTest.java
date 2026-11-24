@@ -243,6 +243,18 @@ class PreguntaServiceTest {
     }
 
     @Test
+    void estaEnJornadaCerrada_sinAsignacionAbierta() {
+        assertFalse(preguntaService.estaEnJornadaCerrada(1L));
+        assertFalse(preguntaService.estaEnJornadaCerrada(null));
+    }
+
+    @Test
+    void estaEnJornadaCerrada_conCuestionarioEnJornadaCerrada() {
+        when(typedQuery.getSingleResult()).thenReturn(1L);
+        assertTrue(preguntaService.estaEnJornadaCerrada(1L));
+    }
+
+    @Test
     void liberarPregunta_desdeUsada() {
         Pregunta p = preguntaBase();
         p.setEstado(EstadoPregunta.usada);

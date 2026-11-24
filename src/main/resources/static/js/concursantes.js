@@ -56,6 +56,8 @@ let lastScrollYConcursantes = 0;
 // Jornada activa para filtrar cuestionarios/combos en los selectores (si procede)
 let jornadaFiltroSeleccion = null;
 let selectorModoOtrasJornadas = false;
+let busquedaCuestionariosSeq = 0;
+let busquedaCombosSeq = 0;
 // Arrastres elegidos en el formulario, pendientes de anotar hasta guardar: { cuestionario|combo: {itemId, jornadaId} }
 let arrastresPendientes = {};
 
@@ -2646,8 +2648,24 @@ function resumenTextosPreguntas(items, limite = 4) {
             return (typeof q?.pregunta === 'string') ? q.pregunta.trim() : '';
         })
         .filter(Boolean)
-        .slice(0, limite)
-        .map(texto => texto.length > 50 ? texto.substring(0, 50) + '…' : texto);
+        .slice(0, limite);
+}
+
+function mostrarSelectorEncima(el) {
+    if (!el) return null;
+    if (el.parentElement !== document.body) {
+        document.body.appendChild(el);
+    }
+    if (!el._encimaBound) {
+        el._encimaBound = true;
+        el.addEventListener('shown.bs.modal', () => {
+            el.style.zIndex = '1080';
+            const fondos = document.querySelectorAll('.modal-backdrop');
+            const fondo = fondos[fondos.length - 1];
+            if (fondo) fondo.style.zIndex = '1070';
+        });
+    }
+    return bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
 }
 
 function actualizarUiSelectorOtras(tipo) {
@@ -2664,8 +2682,8 @@ function actualizarUiSelectorOtras(tipo) {
     if (titulo) {
         if (selectorModoOtrasJornadas) {
             titulo.textContent = esCombo
-                ? 'Seleccionar Combo de otras jornadas'
-                : 'Seleccionar Cuestionario de otras jornadas';
+                ? 'Seleccionar Combo de las jornadas de alrededor'
+                : 'Seleccionar Cuestionario de las jornadas de alrededor';
         } else {
             titulo.textContent = esCombo
                 ? 'Seleccionar Combo (Preguntas Multiplicadoras)'
@@ -2747,8 +2765,7 @@ selectorModoOtrasJornadas = !!modoOtras;
 modalCuestPagina = 1;
 actualizarUiSelectorOtras('cuestionario');
 buscarCuestionariosModal();
-const modal = new bootstrap.Modal(document.getElementById('modal-selector-cuestionario'));
-modal.show();
+mostrarSelectorEncima(document.getElementById('modal-selector-cuestionario')).show();
 }
 
 function abrirSelectorCuestionarioOtras() {
@@ -2756,11 +2773,17 @@ function abrirSelectorCuestionarioOtras() {
 }
 
 async function buscarCuestionariosModal() {
+const seq = ++busquedaCuestionariosSeq;
+const modoOtras = !!selectorModoOtrasJornadas;
 const filtro = (document.getElementById('buscador-cuestionario')?.value || '').trim().toLowerCase();
+const tbodyInicio = document.getElementById('tabla-selector-cuestionario');
+if (tbodyInicio) {
+    tbodyInicio.innerHTML = `<tr><td colspan="${modoOtras ? 7 : 6}" class="text-center">${modoOtras ? 'Buscando en las 3 jornadas de detrás y las 3 de delante…' : 'Buscando…'}</td></tr>`;
+}
 
 try {
 let cuestionarios = [];
-if (jornadaFiltroSeleccion && selectorModoOtrasJornadas) {
+if (jornadaFiltroSeleccion && modoOtras) {
     const resp = await apiManager.get(`/api/jornadas/${jornadaFiltroSeleccion}/contenido-otras?tipo=cuestionarios`);
     cuestionarios = unwrapListaApi(resp);
 } else if (jornadaFiltroSeleccion) {
@@ -2771,6 +2794,7 @@ if (jornadaFiltroSeleccion && selectorModoOtrasJornadas) {
             .filter(id => id != null);
         const detalles = [];
         for (const id of ids) {
+            if (seq !== busquedaCuestionariosSeq) return;
             try { detalles.push(await apiManager.get(`/api/cuestionarios/${id}`)); } catch {}
         }
         cuestionarios = detalles;
@@ -2793,6 +2817,8 @@ if (!jornadaFiltroSeleccion) {
     cuestionarios = cuestionarios.filter(c => c.estado && c.estado.toLowerCase() === 'aprobado');
 }
 
+if (seq !== busquedaCuestionariosSeq) return;
+
 if (filtro) {
     cuestionarios = cuestionarios.filter(c => coincideBusquedaIdOTexto(c, filtro));
 }
@@ -2805,15 +2831,15 @@ const pageItems = cuestionarios.slice(start, start + modalCuestPorPagina);
 
 const tbody = document.getElementById('tabla-selector-cuestionario');
 tbody.innerHTML = '';
-const colspan = selectorModoOtrasJornadas ? 7 : 6;
+const colspan = modoOtras ? 7 : 6;
 
 if (!pageItems.length) {
-tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">No hay cuestionarios disponibles</td></tr>`;
+tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">${modoOtras ? 'No hay cuestionarios en las 3 jornadas de detrás ni en las 3 de delante' : 'No hay cuestionarios disponibles'}</td></tr>`;
 } else {
 pageItems.forEach(c => {
 const tr = document.createElement('tr');
 const resumenId = `resumen-cuestionario-${c.id}`;
-const jornadaCelda = selectorModoOtrasJornadas
+const jornadaCelda = modoOtras
     ? `<td>${c.jornadaNombre || c.jornadaId || ''}</td>`
     : '';
 tr.innerHTML = `
@@ -2821,9 +2847,9 @@ tr.innerHTML = `
                <td>${c.tematica || 'Sin temática'}</td>
                <td><span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'cuestionario')}">${Utils.formatearEstadoCuestionario(c.estado)}</span></td>
                <td>${c.fechaCreacion ? formatFechaFlexible(c.fechaCreacion) : ''}</td>
-               <td style="max-width: 300px; font-size: 0.85em;"><em id="${resumenId}">Cargando…</em></td>
+               <td><em id="${resumenId}">Cargando…</em></td>
                ${jornadaCelda}
-               <td><button class="btn btn-sm btn-success" onclick="seleccionarCuestionarioModal(${c.id})">Seleccionar</button></td>
+               <td class="selector-accion"><button type="button" class="btn btn-sm btn-success" onclick="seleccionarCuestionarioModal(${c.id})">Seleccionar</button></td>
            `;
 tbody.appendChild(tr);
 
@@ -2878,6 +2904,7 @@ if (totalPag > 1) {
     pagEl.appendChild(ul);
 }
 } catch (e) {
+if (seq !== busquedaCuestionariosSeq) return;
 mostrarError('Error al buscar cuestionarios: ' + e.message);
 }
 }
@@ -2939,8 +2966,7 @@ jornadaFiltroSeleccion = jornadaId;
 selectorModoOtrasJornadas = !!modoOtras;
 actualizarUiSelectorOtras('cuestionario');
 buscarCuestionariosModal();
-const modal = new bootstrap.Modal(document.getElementById('modal-selector-cuestionario'));
-modal.show();
+mostrarSelectorEncima(document.getElementById('modal-selector-cuestionario')).show();
 }
 
 function abrirSelectorComboParaConcursante(concursanteId, modoOtras = false) {
@@ -2954,8 +2980,7 @@ jornadaFiltroSeleccion = jornadaId;
 selectorModoOtrasJornadas = !!modoOtras;
 actualizarUiSelectorOtras('combo');
 buscarCombosModal();
-const modal = new bootstrap.Modal(document.getElementById('modal-selector-combo'));
-modal.show();
+mostrarSelectorEncima(document.getElementById('modal-selector-combo')).show();
 }
 
 async function seleccionarCuestionarioModal(id) {
@@ -3109,8 +3134,7 @@ selectorModoOtrasJornadas = !!modoOtras;
 modalComboPagina = 1;
 actualizarUiSelectorOtras('combo');
 buscarCombosModal();
-const modal = new bootstrap.Modal(document.getElementById('modal-selector-combo'));
-modal.show();
+mostrarSelectorEncima(document.getElementById('modal-selector-combo')).show();
 }
 
 function abrirSelectorComboOtras() {
@@ -3118,11 +3142,17 @@ function abrirSelectorComboOtras() {
 }
 
 async function buscarCombosModal() {
+const seq = ++busquedaCombosSeq;
+const modoOtras = !!selectorModoOtrasJornadas;
 const filtro = (document.getElementById('buscador-combo')?.value || '').trim().toLowerCase();
+const tbodyInicio = document.getElementById('tabla-selector-combo');
+if (tbodyInicio) {
+    tbodyInicio.innerHTML = `<tr><td colspan="${modoOtras ? 7 : 6}" class="text-center">${modoOtras ? 'Buscando en las 3 jornadas de detrás y las 3 de delante…' : 'Buscando…'}</td></tr>`;
+}
 
 try {
 let combos = [];
-if (jornadaFiltroSeleccion && selectorModoOtrasJornadas) {
+if (jornadaFiltroSeleccion && modoOtras) {
     const resp = await apiManager.get(`/api/jornadas/${jornadaFiltroSeleccion}/contenido-otras?tipo=combos`);
     combos = unwrapListaApi(resp);
 } else if (jornadaFiltroSeleccion) {
@@ -3133,6 +3163,7 @@ if (jornadaFiltroSeleccion && selectorModoOtrasJornadas) {
             .filter(id => id != null);
         const detalles = [];
         for (const id of ids) {
+            if (seq !== busquedaCombosSeq) return;
             try { detalles.push(await apiManager.get(`/api/combos/${id}`)); } catch {}
         }
         combos = detalles;
@@ -3151,6 +3182,8 @@ if (jornadaFiltroSeleccion && selectorModoOtrasJornadas) {
     }
 }
 
+if (seq !== busquedaCombosSeq) return;
+
 if (!jornadaFiltroSeleccion) {
     combos = combos.filter(c => c.estado && c.estado.toLowerCase() === 'aprobado');
 }
@@ -3167,7 +3200,7 @@ const pageItems = combos.slice(start, start + modalComboPorPagina);
 
 const tbody = document.getElementById('tabla-selector-combo');
 tbody.innerHTML = '';
-const colspan = selectorModoOtrasJornadas ? 7 : 6;
+const colspan = modoOtras ? 7 : 6;
 
 if (!pageItems.length) {
 tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">No hay combos disponibles</td></tr>`;
@@ -3177,7 +3210,7 @@ const comboId = c.id ?? c.datos?.id;
 if (!comboId) return;
 const tr = document.createElement('tr');
 const resumenId = `resumen-combo-${comboId}`;
-const jornadaCelda = selectorModoOtrasJornadas
+const jornadaCelda = modoOtras
     ? `<td>${c.jornadaNombre || c.jornadaId || ''}</td>`
     : '';
 tr.innerHTML = `
@@ -3185,9 +3218,9 @@ tr.innerHTML = `
                <td>${c.tematica || 'Sin temática'}</td>
                <td><span class="badge ${Utils.getEstadoBadgeClass(c.estado, 'combo')}">${Utils.formatearEstadoCombo(c.estado)}</span></td>
                <td>${c.fechaCreacion ? formatFechaFlexible(c.fechaCreacion) : ''}</td>
-               <td style="max-width: 350px; font-size: 0.85em;"><em id="${resumenId}">Cargando…</em></td>
+               <td><em id="${resumenId}">Cargando…</em></td>
                ${jornadaCelda}
-               <td class="text-nowrap">
+               <td class="selector-accion">
                    <button type="button" class="btn btn-sm btn-success" onclick="seleccionarComboModal(${comboId})">Seleccionar</button>
                </td>
            `;
@@ -3197,10 +3230,9 @@ const pintarResumen = (items) => {
     const textos = (items || []).filter(it => it && it.pregunta).slice(0, 3).map(it => {
         const q = (typeof it.pregunta === 'object' && it.pregunta) ? it.pregunta : it;
         const texto = q?.pregunta || '';
-        const corta = texto.length > 40 ? texto.substring(0, 40) + '…' : texto;
         const factor = it.factorMultiplicacion || it.factor || '';
         const fx = factor ? `<span class="badge bg-warning">${factor}</span> ` : '';
-        return `${fx}${corta}`.trim();
+        return `${fx}${texto}`.trim();
     }).filter(Boolean);
     const el = document.getElementById(resumenId);
     if (el) el.innerHTML = textos.length ? textos.join('<br>') : '<em>Sin preguntas</em>';
@@ -3251,6 +3283,7 @@ if (totalPag > 1) {
     pagEl.appendChild(ul);
 }
 } catch (error) {
+if (seq !== busquedaCombosSeq) return;
 mostrarError('Error al cargar combos: ' + error.message);
 }
 }

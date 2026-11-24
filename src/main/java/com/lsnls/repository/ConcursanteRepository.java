@@ -89,6 +89,8 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long>,
 
     Optional<Concursante> findFirstByCombo_Id(Long comboId);
 
+    List<Concursante> findByJornada_Id(Long jornadaId);
+
     @Query("SELECT c FROM Concursante c WHERE " +
            "(:estado IS NULL OR c.estado = :estado) AND " +
            // Jornada: por nombre o por id cuando el filtro es numérico

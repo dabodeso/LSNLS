@@ -502,20 +502,20 @@ const PreguntasManager = {
             tr.setAttribute('data-id', pregunta.id);
             tr.setAttribute('oncontextmenu', `showContextMenu(event, ${pregunta.id}, 'pregunta')`);
             tr.innerHTML = `
-                <td>${pregunta.id ?? ''}</td>
-                <td style="background-color: #f8f9fa; font-style: italic;">${pregunta.autor ?? pregunta.creacionUsuarioNombre ?? ''}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'nivel', this)"><span class="${this.getNivelColor(pregunta.nivel)}">${Utils.formatearNivel(pregunta.nivel)}</span></td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'tematica', this)">${pregunta.tematica ?? ''}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'subtema', this)">${(pregunta.subtema ?? '').split(',').map(s => s.trim()).filter(Boolean).join(', ')}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'pregunta', this)" style="white-space:pre-line; word-break:break-word; max-width:300px;">${Utils.resaltarCoincidencias(pregunta.pregunta ?? '', terminoBusqueda)}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'respuesta', this)">${Utils.resaltarCoincidencias(pregunta.respuesta ?? '', terminoBusqueda)}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'datosExtra', this)">${pregunta.datosExtra ?? ''}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'fuentes', this)">${this.linkify(pregunta.fuentes ?? '')}</td>
-                <td>${pregunta.verificacion ?? ''}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'notasVerificacion', this)">${pregunta.notasVerificacion ?? ''}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'notasDireccion', this)">${pregunta.notasDireccion ?? ''}</td>
-                <td ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'estado', this)"><span class="badge ${this.getEstadoColor(pregunta.estado)}">${pregunta.estado ?? ''}</span></td>
-                <td>
+                <td data-column="id">${pregunta.id ?? ''}</td>
+                <td data-column="creacionUsuario" style="background-color: #f8f9fa; font-style: italic;">${pregunta.autor ?? pregunta.creacionUsuarioNombre ?? ''}</td>
+                <td data-column="nivel" ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'nivel', this)"><span class="${this.getNivelColor(pregunta.nivel)}">${Utils.formatearNivel(pregunta.nivel)}</span></td>
+                <td data-column="tematica" ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'tematica', this)">${pregunta.tematica ?? ''}</td>
+                <td data-column="subtema" ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'subtema', this)">${(pregunta.subtema ?? '').split(',').map(s => s.trim()).filter(Boolean).join(', ')}</td>
+                <td data-column="pregunta" ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'pregunta', this)" style="white-space:pre-line; word-break:break-word; max-width:300px;">${Utils.resaltarCoincidencias(pregunta.pregunta ?? '', terminoBusqueda)}</td>
+                <td data-column="respuesta" ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'respuesta', this)">${Utils.resaltarCoincidencias(pregunta.respuesta ?? '', terminoBusqueda)}</td>
+                <td data-column="datosExtra" ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'datosExtra', this)">${pregunta.datosExtra ?? ''}</td>
+                <td data-column="fuentes" ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'fuentes', this)">${this.linkify(pregunta.fuentes ?? '')}</td>
+                <td data-column="verificacionUsuario">${pregunta.verificacion ?? ''}</td>
+                <td data-column="notasVerificacion" ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'notasVerificacion', this)">${pregunta.notasVerificacion ?? ''}</td>
+                <td data-column="notasDireccion" ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'notasDireccion', this)">${pregunta.notasDireccion ?? ''}</td>
+                <td data-column="estado" ondblclick="PreguntasManager.editarCelda(${pregunta.id}, 'estado', this)"><span class="badge ${this.getEstadoColor(pregunta.estado)}">${pregunta.estado ?? ''}</span></td>
+                <td data-column="acciones">
                     <button class="btn btn-sm btn-primary me-1" onclick="PreguntasManager.editarPregunta(${pregunta.id})" title="Editar pregunta">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -534,6 +534,8 @@ const PreguntasManager = {
         setTimeout(() => {
             window.scrollTo({ top: this.lastScrollY || scrollPosition || 0, behavior: 'auto' });
         }, 0);
+
+        aplicarColumnasPreguntas();
 
         if (typeof SyncMonitor !== 'undefined') {
             SyncMonitor.resetFromVisible(this.preguntas.map(p => ({
@@ -1022,7 +1024,7 @@ const PreguntasManager = {
                 break;
                 
             case 'para_verificar':
-                estados.push('verificada', 'revisar');
+                estados.push('verificada', 'revisar', 'para_aprobar');
                 break;
                 
             case 'revisar':
@@ -1069,7 +1071,7 @@ const PreguntasManager = {
                     case 'ROLE_VERIFICACION':
                         switch (from) {
                             case 'borrador': return to === 'para_verificar';
-                            case 'para_verificar': return to === 'verificada' || to === 'revisar';
+                            case 'para_verificar': return to === 'verificada' || to === 'revisar' || to === 'para_aprobar';
                             case 'revisar': return to === 'para_verificar' || to === 'para_aprobar' || to === 'rechazada';
                             case 'corregir': return to === 'para_aprobar' || to === 'para_verificar';
                             case 'verificada': return to === 'para_verificar';
@@ -1077,7 +1079,7 @@ const PreguntasManager = {
                         }
                     case 'ROLE_DIRECCION':
                         switch (from) {
-                            case 'para_verificar': return to === 'verificada';
+                            case 'para_verificar': return to === 'verificada' || to === 'para_aprobar';
                             case 'verificada': return to === 'corregir' || to === 'rechazada' || to === 'aprobada';
                             case 'para_aprobar': return to === 'aprobada' || to === 'corregir' || to === 'rechazada' || to === 'para_verificar';
                             case 'aprobada': return to === 'usada';
@@ -1738,7 +1740,113 @@ const PreguntasManager = {
 };
 
 // Inicialización cuando el documento está listo
+const COLUMNAS_PREGUNTAS = [
+    { id: 'id', etiqueta: 'ID' },
+    { id: 'creacionUsuario', etiqueta: 'Autoría' },
+    { id: 'nivel', etiqueta: 'Nivel' },
+    { id: 'tematica', etiqueta: 'Temática' },
+    { id: 'subtema', etiqueta: 'Subtemas' },
+    { id: 'pregunta', etiqueta: 'Pregunta' },
+    { id: 'respuesta', etiqueta: 'Respuesta' },
+    { id: 'datosExtra', etiqueta: 'Datos extra' },
+    { id: 'fuentes', etiqueta: 'Fuentes' },
+    { id: 'verificacionUsuario', etiqueta: 'Verificación' },
+    { id: 'notasVerificacion', etiqueta: 'Notas de verificación' },
+    { id: 'notasDireccion', etiqueta: 'Notas de dirección' },
+    { id: 'estado', etiqueta: 'Estado' }
+];
+
+let columnasPreguntasVisibles = null;
+
+function claveColumnasPreguntas() {
+    try {
+        const actual = (typeof authManager !== 'undefined' && authManager && authManager.currentUser)
+            ? authManager.currentUser
+            : JSON.parse(localStorage.getItem('usuario') || 'null');
+        const quien = actual && (actual.id || actual.nombre);
+        return `configuracionColumnasPreguntas_${quien || 'anon'}`;
+    } catch (e) {
+        return 'configuracionColumnasPreguntas_anon';
+    }
+}
+
+function cargarColumnasPreguntas() {
+    columnasPreguntasVisibles = {};
+    COLUMNAS_PREGUNTAS.forEach(columna => {
+        columnasPreguntasVisibles[columna.id] = true;
+    });
+    try {
+        const guardado = JSON.parse(localStorage.getItem(claveColumnasPreguntas()) || 'null');
+        if (!guardado) return;
+        COLUMNAS_PREGUNTAS.forEach(columna => {
+            if (typeof guardado[columna.id] === 'boolean') {
+                columnasPreguntasVisibles[columna.id] = guardado[columna.id];
+            }
+        });
+    } catch (e) {
+        // Si el guardado está roto, se quedan todas visibles.
+    }
+}
+
+function columnaPreguntaVisible(id) {
+    if (id === 'acciones') return true;
+    if (!columnasPreguntasVisibles) cargarColumnasPreguntas();
+    return columnasPreguntasVisibles[id] !== false;
+}
+
+function aplicarColumnasPreguntas() {
+    if (!columnasPreguntasVisibles) cargarColumnasPreguntas();
+    document.querySelectorAll('#tabla-preguntas-header [data-column], #tabla-preguntas-header-floating [data-column], #tabla-preguntas [data-column]').forEach(el => {
+        const id = el.getAttribute('data-column');
+        el.style.display = columnaPreguntaVisible(id) ? '' : 'none';
+    });
+}
+
+function pintarListaColumnasPreguntas() {
+    const lista = document.getElementById('lista-columnas-preguntas');
+    if (!lista) return;
+    if (!columnasPreguntasVisibles) cargarColumnasPreguntas();
+    lista.innerHTML = COLUMNAS_PREGUNTAS.map(columna => `
+        <div class="col-md-6">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="col-pregunta-${columna.id}" ${columnasPreguntasVisibles[columna.id] ? 'checked' : ''}>
+                <label class="form-check-label" for="col-pregunta-${columna.id}">${columna.etiqueta}</label>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.mostrarColumnasPreguntas = function() {
+    pintarListaColumnasPreguntas();
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-columnas-preguntas'))
+        || new bootstrap.Modal(document.getElementById('modal-columnas-preguntas'));
+    modal.show();
+};
+
+window.marcarTodasColumnasPreguntas = function(visibles) {
+    document.querySelectorAll('#lista-columnas-preguntas input[type="checkbox"]').forEach(input => {
+        input.checked = !!visibles;
+    });
+};
+
+window.aplicarColumnasPreguntasDesdeModal = function() {
+    if (!columnasPreguntasVisibles) cargarColumnasPreguntas();
+    COLUMNAS_PREGUNTAS.forEach(columna => {
+        const input = document.getElementById(`col-pregunta-${columna.id}`);
+        if (input) columnasPreguntasVisibles[columna.id] = input.checked;
+    });
+    localStorage.setItem(claveColumnasPreguntas(), JSON.stringify(columnasPreguntasVisibles));
+    aplicarColumnasPreguntas();
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-columnas-preguntas'));
+    if (modal) modal.hide();
+    if (typeof Utils !== 'undefined') {
+        Utils.mostrarToastExito('Columnas guardadas');
+    }
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
+    cargarColumnasPreguntas();
+    aplicarColumnasPreguntas();
     const paramsUrl = new URLSearchParams(window.location.search);
     const idDestacadoUrl = paramsUrl.get('id');
 
@@ -1880,12 +1988,15 @@ window.filtrarPreguntas = function() {
 
 // ─── Selector de subtemas con búsqueda y multi-selección ───────────────────
 const SubtemasPicker = {
+    TAMANO_PAGINA: 10,
     _subtemas: [],
     _seleccionados: [],
+    _visibles: 10,
 
     init(subtemas) {
         this._subtemas = subtemas || [];
         this._seleccionados = [];
+        this._visibles = this.TAMANO_PAGINA;
         this._bindEvents();
         this._renderTags();
         this._renderOpciones('');
@@ -1925,6 +2036,13 @@ const SubtemasPicker = {
         input.onfocus = () => this._abrir();
 
         opciones.onmousedown = (e) => {
+            const cargarMas = e.target.closest('[data-cargar-mas-subtemas]');
+            if (cargarMas) {
+                e.preventDefault();
+                e.stopPropagation();
+                this._cargarMas();
+                return;
+            }
             const opcion = e.target.closest('[data-subtema]');
             if (!opcion) return;
             e.preventDefault();
@@ -1962,18 +2080,19 @@ const SubtemasPicker = {
         }
     },
 
-    _renderOpciones(filtro) {
+    _renderOpciones(filtro, resetVisibles = true) {
         const cont = document.getElementById('subtemas-opciones');
         if (!cont) return;
+        if (resetVisibles) this._visibles = this.TAMANO_PAGINA;
         const texto = (filtro || '').trim().toLowerCase();
-        const filtrados = this._subtemas
-            .filter(s => s.toLowerCase().includes(texto))
-            .slice(0, 10);
+        const todos = this._subtemas.filter(s => s.toLowerCase().includes(texto));
+        const filtrados = todos.slice(0, this._visibles);
 
-        if (filtrados.length === 0) {
+        if (todos.length === 0) {
             cont.innerHTML = '<div class="px-3 py-2 text-muted small">Sin resultados</div>';
             return;
         }
+        const scrollAntes = cont.parentElement ? cont.parentElement.scrollTop : 0;
         cont.innerHTML = filtrados.map(s => {
             const sel = this._seleccionados.includes(s);
             return `<div class="subtemas-picker-opcion px-3 py-1 d-flex align-items-center gap-2${sel ? ' selected' : ''}"
@@ -1982,6 +2101,22 @@ const SubtemasPicker = {
                         <span>${s}</span>
                     </div>`;
         }).join('');
+        if (todos.length > this._visibles) {
+            const resto = todos.length - this._visibles;
+            cont.innerHTML += `<button type="button" class="btn btn-link btn-sm w-100 text-decoration-none"
+                data-cargar-mas-subtemas style="border-top:1px solid #eee;">
+                Cargar más (${resto} restantes)
+            </button>`;
+        }
+        if (!resetVisibles && cont.parentElement) {
+            cont.parentElement.scrollTop = scrollAntes;
+        }
+    },
+
+    _cargarMas() {
+        this._visibles += this.TAMANO_PAGINA;
+        const input = document.getElementById('subtemas-busqueda');
+        this._renderOpciones(input ? input.value : '', false);
     },
 
     _renderTags() {
@@ -2025,12 +2160,15 @@ const SubtemasPicker = {
 
 // ─── Selector de temática con búsqueda (selección única) ───────────────────
 const TematicaPicker = {
+    TAMANO_PAGINA: 10,
     _tematicas: [],
     _seleccionada: null,
+    _visibles: 10,
 
     init(tematicas, valorInicial = null) {
         this._tematicas = tematicas || [];
         this._seleccionada = valorInicial || null;
+        this._visibles = this.TAMANO_PAGINA;
         this._bindEvents();
         this._renderTag();
         this._renderOpciones('');
@@ -2044,6 +2182,7 @@ const TematicaPicker = {
     _bindEvents() {
         const input = document.getElementById('tematica-busqueda');
         const dropdown = document.getElementById('tematica-dropdown');
+        const opciones = document.getElementById('tematica-opciones');
         if (!input || !dropdown) return;
 
         input.oninput = () => {
@@ -2055,6 +2194,16 @@ const TematicaPicker = {
             dropdown.style.display = 'block';
         };
 
+        if (opciones) {
+            opciones.onmousedown = (e) => {
+                const cargarMas = e.target.closest('[data-cargar-mas-tematica]');
+                if (!cargarMas) return;
+                e.preventDefault();
+                e.stopPropagation();
+                this._cargarMas();
+            };
+        }
+
         document._tematicaPickerOutsideHandler && document.removeEventListener('mousedown', document._tematicaPickerOutsideHandler);
         document._tematicaPickerOutsideHandler = (e) => {
             if (!input.contains(e.target) && !dropdown.contains(e.target)) {
@@ -2064,18 +2213,19 @@ const TematicaPicker = {
         document.addEventListener('mousedown', document._tematicaPickerOutsideHandler);
     },
 
-    _renderOpciones(filtro) {
+    _renderOpciones(filtro, resetVisibles = true) {
         const cont = document.getElementById('tematica-opciones');
         if (!cont) return;
+        if (resetVisibles) this._visibles = this.TAMANO_PAGINA;
         const texto = (filtro || '').trim().toLowerCase();
-        const filtrados = this._tematicas
-            .filter(t => t.toLowerCase().includes(texto))
-            .slice(0, 10);
+        const todos = this._tematicas.filter(t => t.toLowerCase().includes(texto));
+        const filtrados = todos.slice(0, this._visibles);
 
-        if (filtrados.length === 0) {
+        if (todos.length === 0) {
             cont.innerHTML = '<div class="px-3 py-2 text-muted small">Sin resultados</div>';
             return;
         }
+        const scrollAntes = cont.parentElement ? cont.parentElement.scrollTop : 0;
         cont.innerHTML = filtrados.map(t => {
             const sel = this._seleccionada === t;
             const tEsc = t.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -2085,6 +2235,22 @@ const TematicaPicker = {
                         <span>${t}</span>
                     </div>`;
         }).join('');
+        if (todos.length > this._visibles) {
+            const resto = todos.length - this._visibles;
+            cont.innerHTML += `<button type="button" class="btn btn-link btn-sm w-100 text-decoration-none"
+                data-cargar-mas-tematica style="border-top:1px solid #eee;">
+                Cargar más (${resto} restantes)
+            </button>`;
+        }
+        if (!resetVisibles && cont.parentElement) {
+            cont.parentElement.scrollTop = scrollAntes;
+        }
+    },
+
+    _cargarMas() {
+        this._visibles += this.TAMANO_PAGINA;
+        const input = document.getElementById('tematica-busqueda');
+        this._renderOpciones(input ? input.value : '', false);
     },
 
     _renderTag() {

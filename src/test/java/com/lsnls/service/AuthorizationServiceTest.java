@@ -100,16 +100,18 @@ class AuthorizationServiceTest {
         assertFalse(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.para_aprobar));
         assertFalse(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.rechazada));
         assertFalse(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.aprobada));
-        assertFalse(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.usada));
+        assertTrue(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.usada));
 
         autenticar(RolUsuario.ROLE_VERIFICACION);
         assertTrue(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.verificada));
         assertFalse(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.para_aprobar));
+        assertTrue(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.usada));
 
         autenticar(RolUsuario.ROLE_DIRECCION);
         assertTrue(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.para_aprobar));
         assertTrue(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.rechazada));
         assertTrue(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.aprobada));
+        assertTrue(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.usada));
 
         autenticar(RolUsuario.ROLE_CONSULTA);
         assertFalse(authorizationService.canEditPregunta(Pregunta.EstadoPregunta.borrador));
@@ -139,6 +141,8 @@ class AuthorizationServiceTest {
                 Pregunta.EstadoPregunta.para_verificar, Pregunta.EstadoPregunta.verificada));
         assertTrue(authorizationService.canChangeEstadoPregunta(
                 Pregunta.EstadoPregunta.para_verificar, Pregunta.EstadoPregunta.revisar));
+        assertTrue(authorizationService.canChangeEstadoPregunta(
+                Pregunta.EstadoPregunta.para_verificar, Pregunta.EstadoPregunta.para_aprobar));
         assertTrue(authorizationService.canChangeEstadoPregunta(
                 Pregunta.EstadoPregunta.revisar, Pregunta.EstadoPregunta.para_verificar));
         assertTrue(authorizationService.canChangeEstadoPregunta(
@@ -171,6 +175,8 @@ class AuthorizationServiceTest {
                 Pregunta.EstadoPregunta.para_verificar, Pregunta.EstadoPregunta.verificada));
         assertTrue(authorizationService.canChangeEstadoPregunta(
                 Pregunta.EstadoPregunta.para_verificar, Pregunta.EstadoPregunta.revisar));
+        assertTrue(authorizationService.canChangeEstadoPregunta(
+                Pregunta.EstadoPregunta.para_verificar, Pregunta.EstadoPregunta.para_aprobar));
         assertTrue(authorizationService.canChangeEstadoPregunta(
                 Pregunta.EstadoPregunta.revisar, Pregunta.EstadoPregunta.para_verificar));
         assertTrue(authorizationService.canChangeEstadoPregunta(

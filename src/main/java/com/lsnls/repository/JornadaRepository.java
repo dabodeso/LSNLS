@@ -43,4 +43,12 @@ public interface JornadaRepository extends JpaRepository<Jornada, Long> {
             @Param("buscar") String buscar);
     
     boolean existsByNombre(String nombre);
+
+    @Query("SELECT j.id AS id, j.fechaJornada AS fechaJornada FROM Jornada j")
+    List<JornadaFechaVista> findIdYFecha();
+
+    interface JornadaFechaVista {
+        Long getId();
+        LocalDate getFechaJornada();
+    }
 } 

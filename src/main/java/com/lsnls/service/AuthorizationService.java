@@ -94,6 +94,13 @@ public class AuthorizationService {
                     case aprobada:
                         // Solo nivel 4 (DIRECCION)
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
+
+                    case usada:
+                        // Editable si el cuestionario/combo no está en jornada cerrada
+                        // (ese bloqueo lo aplica el controller con PreguntaService).
+                        return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
+                               usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
+                               usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
                         
                     default:
                         return false;
@@ -129,11 +136,12 @@ public class AuthorizationService {
                         break;
                         
                     case para_verificar:
-                        // Para Verificar -> Verificada o Revisar (por Guion, Verificación o Dirección)
-                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.verificada &&
-                                           (flujoPregunta || isDireccion)) ||
-                                          (nuevoEstado == Pregunta.EstadoPregunta.revisar &&
-                                           flujoPregunta);
+                        // Para Verificar -> Verificada, Revisar o Para Aprobar
+                        // (Guion o Verificación; Dirección ya sale arriba)
+                        transicionValida = (nuevoEstado == Pregunta.EstadoPregunta.verificada ||
+                                           nuevoEstado == Pregunta.EstadoPregunta.revisar ||
+                                           nuevoEstado == Pregunta.EstadoPregunta.para_aprobar) &&
+                                          flujoPregunta;
                         break;
                         
                     case revisar:

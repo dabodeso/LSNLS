@@ -340,6 +340,44 @@ line-height: 1.2;
             width: auto;
             overflow-wrap: anywhere;
         }
+        #modal-selector-cuestionario .modal-dialog,
+        #modal-selector-combo .modal-dialog {
+            width: 96vw;
+            max-width: 96vw;
+            margin: 1.5vh auto;
+        }
+        #modal-selector-cuestionario .modal-content,
+        #modal-selector-combo .modal-content {
+            max-height: 96vh;
+        }
+        #modal-selector-cuestionario .modal-body,
+        #modal-selector-combo .modal-body {
+            overflow: auto;
+        }
+        #modal-selector-cuestionario .table,
+        #modal-selector-combo .table {
+            table-layout: fixed;
+        }
+        #modal-selector-cuestionario td,
+        #modal-selector-combo td {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            vertical-align: top;
+        }
+        #modal-selector-cuestionario td.selector-accion,
+        #modal-selector-combo td.selector-accion {
+            white-space: nowrap;
+            width: 110px;
+        }
+        #modal-selector-combo .col-id { width: 64px; }
+        #modal-selector-combo .col-tematica { width: 108px; }
+        #modal-selector-combo .col-estado { width: 96px; }
+        #modal-selector-combo .col-fecha { width: 96px; }
+        #modal-selector-combo .col-jornada { width: 150px; }
+        #modal-selector-combo .col-accion { width: 110px; }
+        #modal-selector-combo td:nth-child(5) {
+            overflow-wrap: break-word;
+        }
 </style>
 </head>
 <body>
@@ -768,7 +806,7 @@ Otras jornadas
 
 <!-- Modal selector de cuestionario -->
 <div class="modal fade" id="modal-selector-cuestionario" tabindex="-1">
-<div class="modal-dialog modal-xl">
+<div class="modal-dialog modal-selector-ancho">
 <div class="modal-content">
 <div class="modal-header">
 <h5 class="modal-title" id="titulo-selector-cuestionario">Seleccionar Cuestionario</h5>
@@ -814,7 +852,7 @@ Otras jornadas
 
 <!-- Modal selector de combo -->
 <div class="modal fade" id="modal-selector-combo" tabindex="-1">
-<div class="modal-dialog modal-xl">
+<div class="modal-dialog modal-selector-ancho">
 <div class="modal-content">
 <div class="modal-header">
 <h5 class="modal-title" id="titulo-selector-combo">Seleccionar Combo (Preguntas Multiplicadoras)</h5>
@@ -835,13 +873,13 @@ Otras jornadas
 <table class="table table-sm table-hover">
 <thead class="table-dark sticky-top">
 <tr>
-<th>ID</th>
-<th>Temática</th>
-<th>Estado</th>
-<th>Fecha</th>
-<th>Preguntas Multiplicadoras</th>
-<th id="th-jornada-combo" style="display:none">Jornada origen</th>
-<th>Acción</th>
+<th class="col-id">ID</th>
+<th class="col-tematica">Temática</th>
+<th class="col-estado">Estado</th>
+<th class="col-fecha">Fecha</th>
+<th class="col-preguntas">Preguntas Multiplicadoras</th>
+<th id="th-jornada-combo" class="col-jornada" style="display:none">Jornada origen</th>
+<th class="col-accion">Acción</th>
 </tr>
 </thead>
 <tbody id="tabla-selector-combo"></tbody>
@@ -1106,7 +1144,7 @@ Borrar
     <script src="js/undo-manager.js?v=20261105-scroll-lugar"></script>
 <script src="js/editLockManager.js?v=20261123-guardar-fuera"></script>
 <script src="js/table-resizer.js?v=20260925-rrss-ocup"></script>
-    <script src="js/concursantes.js?v=20261123-solo-ver"></script>
+    <script src="js/concursantes.js?v=20261123-sin-combos"></script>
 <script>
 // Inicializar la página cuando se carga
 document.addEventListener('DOMContentLoaded', function() {

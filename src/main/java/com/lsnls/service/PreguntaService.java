@@ -1,10 +1,12 @@
 package com.lsnls.service;
 
+import com.lsnls.entity.Jornada;
 import com.lsnls.entity.Pregunta;
 import com.lsnls.entity.Pregunta.EstadoPregunta;
 import com.lsnls.entity.Pregunta.EstadoDisponibilidad;
 import com.lsnls.entity.Pregunta.NivelPregunta;
 import com.lsnls.entity.Usuario;
+import java.util.Arrays;
 import com.lsnls.repository.PreguntaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -828,6 +830,40 @@ public class PreguntaService {
             resultado.getTotalElements(), resultado.getTotalPages(), resultado.getContent().size());
         
         return resultado;
+    }
+
+    /**
+     * True si la pregunta está en un cuestionario o combo asignado a una jornada
+     * completada o archivada. En ese caso una pregunta "usada" no se edita
+     * (salvo admin). Si el cuestionario/combo no está en jornada, o la jornada
+     * sigue abierta, sí se puede editar.
+     */
+    public boolean estaEnJornadaCerrada(Long preguntaId) {
+        if (preguntaId == null) {
+            return false;
+        }
+        List<Jornada.EstadoJornada> cerrados = Arrays.asList(
+                Jornada.EstadoJornada.completada, Jornada.EstadoJornada.archivada);
+        Long enCuestionario = entityManager.createQuery(
+                "SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a, PreguntaCuestionario pc "
+                        + "WHERE pc.cuestionario = a.cuestionario AND pc.pregunta.id = :pid "
+                        + "AND a.jornada.estado IN :estados",
+                Long.class)
+                .setParameter("pid", preguntaId)
+                .setParameter("estados", cerrados)
+                .getSingleResult();
+        if (enCuestionario != null && enCuestionario > 0) {
+            return true;
+        }
+        Long enCombo = entityManager.createQuery(
+                "SELECT COUNT(a) FROM JornadaComboAsignacion a, PreguntaCombo pc "
+                        + "WHERE pc.combo = a.combo AND pc.pregunta.id = :pid "
+                        + "AND a.jornada.estado IN :estados",
+                Long.class)
+                .setParameter("pid", preguntaId)
+                .setParameter("estados", cerrados)
+                .getSingleResult();
+        return enCombo != null && enCombo > 0;
     }
 
     public void eliminarPorId(Long id) {

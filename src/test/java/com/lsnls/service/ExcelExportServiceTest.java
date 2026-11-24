@@ -1,6 +1,7 @@
 package com.lsnls.service;
 
 import com.lsnls.entity.Combo;
+import com.lsnls.entity.Concursante;
 import com.lsnls.entity.Cuestionario;
 import com.lsnls.entity.Jornada;
 import com.lsnls.entity.Pregunta;
@@ -8,6 +9,7 @@ import com.lsnls.entity.PreguntaCombo;
 import com.lsnls.entity.PreguntaCuestionario;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -20,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -71,31 +74,34 @@ class ExcelExportServiceTest {
         try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(bytes))) {
             Sheet hoja = wb.getSheetAt(0);
             assertEquals("CUEST", hoja.getRow(0).getCell(0).getStringCellValue());
-            assertEquals("Nº DE PREGUNTA", hoja.getRow(0).getCell(1).getStringCellValue());
-            assertEquals("REC", hoja.getRow(0).getCell(6).getStringCellValue());
+            assertEquals("NIVEL", hoja.getRow(0).getCell(1).getStringCellValue());
+            assertEquals("REC", hoja.getRow(0).getCell(5).getStringCellValue());
+            assertNull(hoja.getRow(0).getCell(6));
 
             // Cuatro preguntas ordenadas por nivel y quinta fila libre para la multiplicadora
-            assertEquals("1LS", hoja.getRow(1).getCell(2).getStringCellValue());
-            assertEquals("2NOLS", hoja.getRow(2).getCell(2).getStringCellValue());
-            assertEquals("3LS", hoja.getRow(3).getCell(2).getStringCellValue());
-            assertEquals("4NOLS", hoja.getRow(4).getCell(2).getStringCellValue());
+            assertEquals("1LS", hoja.getRow(1).getCell(1).getStringCellValue());
+            assertEquals("2NOLS", hoja.getRow(2).getCell(1).getStringCellValue());
+            assertEquals("3LS", hoja.getRow(3).getCell(1).getStringCellValue());
+            assertEquals("4NOLS", hoja.getRow(4).getCell(1).getStringCellValue());
             assertEquals("101", hoja.getRow(1).getCell(0).getStringCellValue());
-            assertEquals("", hoja.getRow(5).getCell(0).getStringCellValue());
-            assertEquals("", hoja.getRow(5).getCell(3).getStringCellValue());
+            assertEquals("", hoja.getRow(5).getCell(2).getStringCellValue());
 
             // Pie del bloque, vacío para rellenar en grabación
             assertEquals("CONCURSANTE", hoja.getRow(6).getCell(0).getStringCellValue());
             assertEquals("RESULTADO", hoja.getRow(7).getCell(0).getStringCellValue());
             assertEquals("GRABACIÓN", hoja.getRow(8).getCell(0).getStringCellValue());
             assertEquals("NOTAS GUION", hoja.getRow(9).getCell(0).getStringCellValue());
-            assertEquals("", hoja.getRow(6).getCell(3).getStringCellValue());
+            assertEquals("", hoja.getRow(6).getCell(2).getStringCellValue());
             assertNull(hoja.getRow(10));
 
-            // Etiqueta combinada en A:C y hueco en D:G
+            // A2 = nº cuest; A3–A6 fusionadas para valoración; pie etiqueta A:B y valor C:F
             assertTrue(hoja.getMergedRegions().stream()
-                    .anyMatch(r -> r.getFirstRow() == 6 && r.getFirstColumn() == 0 && r.getLastColumn() == 2));
+                    .anyMatch(r -> r.getFirstRow() == 2 && r.getLastRow() == 5
+                            && r.getFirstColumn() == 0 && r.getLastColumn() == 0));
             assertTrue(hoja.getMergedRegions().stream()
-                    .anyMatch(r -> r.getFirstRow() == 6 && r.getFirstColumn() == 3 && r.getLastColumn() == 6));
+                    .anyMatch(r -> r.getFirstRow() == 6 && r.getFirstColumn() == 0 && r.getLastColumn() == 1));
+            assertTrue(hoja.getMergedRegions().stream()
+                    .anyMatch(r -> r.getFirstRow() == 6 && r.getFirstColumn() == 2 && r.getLastColumn() == 5));
         }
     }
 
@@ -130,6 +136,113 @@ class ExcelExportServiceTest {
             assertTrue(hoja.getMergedRegions().stream()
                     .anyMatch(r -> r.getFirstRow() == 4 && r.getFirstColumn() == 5 && r.getLastColumn() == 8));
         }
+    }
+
+    @Test
+    void textoConcursantePie_incluyeNolosabelotodoSoloSiApareceEnMomentos() {
+        Concursante con = new Concursante();
+        con.setNumeroConcursante(1155);
+        con.setNombre("Carlos");
+        con.setEdad("34");
+        con.setLugar("Madrid");
+        con.setOcupacion("Médico");
+        con.setRedesSociales("@carlos");
+        assertEquals("1155, Carlos, 34, (Madrid) - Médico |@carlos|",
+                ExcelExportService.textoConcursantePie(con));
+
+        con.setMomentosDestacados("clip NoLoSabeLoTodo final");
+        assertEquals("1155, Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO",
+                ExcelExportService.textoConcursantePie(con));
+    }
+
+    @Test
+    void jornadaCompletada_unaPestanaPorConcursanteConMultiplicadoraUsada() throws Exception {
+        Jornada jornada = new Jornada();
+        jornada.setNombre("JORNADA 90");
+        Combo combo = comboConPreguntas(201L);
+        combo.setPreguntaUsadaId(2010L); // PM1
+        jornada.reemplazarCuestionariosPorSlot(Arrays.asList(
+                cuestionarioConPreguntas(101L), null, null, null, null, null));
+        jornada.reemplazarCombosPorSlot(Arrays.asList(
+                combo, null, null, null, null, null));
+
+        ExcelExportService.DatosPieBloque pieCuest = new ExcelExportService.DatosPieBloque(
+                "1155, Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO",
+                "8000",
+                "JORNADA 90",
+                "Notas de grabación del plató",
+                "1+",
+                "Carlos",
+                ExcelExportService.preguntaUsadaDelCombo(combo));
+        Map<String, Object> opciones = new HashMap<>();
+        opciones.put(ExcelExportService.OPCION_PIE_CUESTIONARIO,
+                Collections.singletonMap(101L, pieCuest));
+
+        byte[] bytes = excelExportService.exportarJornada(jornada, opciones);
+
+        try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(bytes))) {
+            assertEquals(1, wb.getNumberOfSheets());
+            assertEquals("Carlos", wb.getSheetAt(0).getSheetName());
+
+            Sheet hoja = wb.getSheetAt(0);
+            assertEquals("CUEST", hoja.getRow(0).getCell(0).getStringCellValue());
+            assertEquals("101", hoja.getRow(1).getCell(0).getStringCellValue());
+            assertEquals("1+", hoja.getRow(2).getCell(0).getStringCellValue());
+            assertEquals("Pregunta 4NLS del 101", hoja.getRow(4).getCell(2).getStringCellValue());
+            assertEquals("5LS", hoja.getRow(5).getCell(1).getStringCellValue());
+            assertEquals("Pregunta PM1 del 201", hoja.getRow(5).getCell(2).getStringCellValue());
+            assertEquals("R0", hoja.getRow(5).getCell(3).getStringCellValue());
+            assertEquals("1155, Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO",
+                    hoja.getRow(6).getCell(2).getStringCellValue());
+            assertEquals("8000", hoja.getRow(7).getCell(2).getStringCellValue());
+            assertEquals("JORNADA 90", hoja.getRow(8).getCell(2).getStringCellValue());
+            assertEquals("Notas de grabación del plató",
+                    hoja.getRow(9).getCell(2).getStringCellValue());
+            assertEquals(HorizontalAlignment.CENTER,
+                    hoja.getRow(6).getCell(2).getCellStyle().getAlignment());
+            assertEquals(HorizontalAlignment.CENTER,
+                    hoja.getRow(7).getCell(2).getCellStyle().getAlignment());
+            assertEquals(HorizontalAlignment.CENTER,
+                    hoja.getRow(8).getCell(2).getCellStyle().getAlignment());
+            assertTrue(hoja.getMergedRegions().stream()
+                    .anyMatch(r -> r.getFirstRow() == 2 && r.getLastRow() == 5
+                            && r.getFirstColumn() == 0 && r.getLastColumn() == 0));
+            assertNull(hoja.getRow(10));
+        }
+    }
+
+    @Test
+    void jornadaCompletada_sinPreguntaUsada_quintaFilaVacia() throws Exception {
+        Jornada jornada = new Jornada();
+        jornada.setNombre("JORNADA 91");
+        jornada.reemplazarCuestionariosPorSlot(Arrays.asList(
+                cuestionarioConPreguntas(101L), null, null, null, null, null));
+        jornada.reemplazarCombosPorSlot(Arrays.asList(
+                comboConPreguntas(201L), null, null, null, null, null));
+
+        ExcelExportService.DatosPieBloque pie = new ExcelExportService.DatosPieBloque(
+                "Ana", "0", "JORNADA 91", "", "Ana");
+        Map<String, Object> opciones = new HashMap<>();
+        opciones.put(ExcelExportService.OPCION_PIE_CUESTIONARIO,
+                Collections.singletonMap(101L, pie));
+
+        byte[] bytes = excelExportService.exportarJornada(jornada, opciones);
+
+        try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(bytes))) {
+            assertEquals(1, wb.getNumberOfSheets());
+            Sheet hoja = wb.getSheetAt(0);
+            assertEquals("", hoja.getRow(5).getCell(1).getStringCellValue());
+            assertEquals("", hoja.getRow(5).getCell(2).getStringCellValue());
+            assertEquals("Ana", hoja.getRow(6).getCell(2).getStringCellValue());
+        }
+    }
+
+    @Test
+    void nombrePestana_sanitizaYDesambigua() {
+        Set<String> usados = new LinkedHashSet<>();
+        assertEquals("Ana", ExcelExportService.nombrePestana("Ana", "x", usados));
+        assertEquals("Ana (2)", ExcelExportService.nombrePestana("Ana", "x", usados));
+        assertEquals("Maria Lisa", ExcelExportService.nombrePestana("Maria/Lisa?", "x", usados));
     }
 
     @Test

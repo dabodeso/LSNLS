@@ -241,6 +241,9 @@
                 <button class="btn btn-primary" onclick="mostrarFormularioPregunta()">
                     <i class="fas fa-plus"></i> Nueva Pregunta
                 </button>
+                <button class="btn btn-outline-secondary" type="button" onclick="mostrarColumnasPreguntas()">
+                    <i class="fas fa-cog"></i> Editar elementos tabla
+                </button>
             </div>
             <div class="d-flex align-items-center gap-1">
                 <button type="button"
@@ -379,7 +382,7 @@
                             <th class="sortable-header" data-column="notasVerificacion">Notas Verificación<span class="sort-indicator inactive"></span></th>
                             <th class="sortable-header" data-column="notasDireccion">Notas Dirección<span class="sort-indicator inactive"></span></th>
                             <th class="sortable-header" data-column="estado">Estado<span class="sort-indicator inactive"></span></th>
-                            <th>Acciones</th>
+                            <th data-column="acciones">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-preguntas">
@@ -406,6 +409,26 @@
                     <!-- Los botones de paginación se generarán dinámicamente -->
                 </ul>
             </nav>
+        </div>
+
+        <div class="modal fade" id="modal-columnas-preguntas" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Configurar columnas de la tabla</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">Elige qué columnas quieres ver. Se recuerdan en este navegador para tu usuario.</p>
+                        <div class="row" id="lista-columnas-preguntas"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" onclick="marcarTodasColumnasPreguntas(true)">Todas</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="marcarTodasColumnasPreguntas(false)">Ninguna</button>
+                        <button type="button" class="btn btn-primary" onclick="aplicarColumnasPreguntasDesdeModal()">Aplicar</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Modal para crear/editar pregunta -->
@@ -719,7 +742,7 @@
     <script src="js/undo-manager.js?v=20261105-scroll-lugar"></script>
     <script src="js/editLockManager.js?v=20261123-guardar-fuera"></script>
     <script src="js/syncMonitor.js?v=20261113-aviso-389"></script>
-    <script src="js/preguntas.js?v=20261123-solo-ver"></script>
+    <script src="js/preguntas.js?v=20261123-columnas"></script>
     <script src="js/table-resizer.js?v=20260914-resize"></script>
     <script>
     // Variables globales para ordenamiento de preguntas
@@ -868,6 +891,7 @@
         cloneTable.appendChild(cloneHead);
         floating.innerHTML = '';
         floating.appendChild(cloneTable);
+        if (typeof aplicarColumnasPreguntas === 'function') aplicarColumnasPreguntas();
 
         function getTopOffset() {
             const navbar = document.querySelector('.navbar');

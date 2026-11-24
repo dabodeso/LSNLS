@@ -119,6 +119,40 @@ class JornadaServiceTest {
         return u;
     }
 
+    private void stubAlrededor(Jornada... jornadas) {
+        Map<Long, Jornada> porId = new HashMap<>();
+        List<JornadaRepository.JornadaFechaVista> vistas = new java.util.ArrayList<>();
+        for (Jornada jornada : jornadas) {
+            porId.put(jornada.getId(), jornada);
+            final Long id = jornada.getId();
+            final LocalDate fecha = jornada.getFechaJornada();
+            vistas.add(new JornadaRepository.JornadaFechaVista() {
+                @Override public Long getId() { return id; }
+                @Override public LocalDate getFechaJornada() { return fecha; }
+            });
+        }
+        when(jornadaRepository.findIdYFecha()).thenReturn(vistas);
+        when(jornadaRepository.findAllById(any())).thenAnswer(inv -> {
+            Iterable<?> ids = inv.getArgument(0);
+            List<Jornada> encontradas = new java.util.ArrayList<>();
+            for (Object id : ids) {
+                Jornada jornada = porId.get(((Number) id).longValue());
+                if (jornada != null) {
+                    encontradas.add(jornada);
+                }
+            }
+            return encontradas;
+        });
+    }
+
+    private void ponerCuestionarioLibre(Jornada jornada, long id) {
+        Cuestionario cuestionario = new Cuestionario();
+        cuestionario.setId(id);
+        cuestionario.setEstado(Cuestionario.EstadoCuestionario.aprobado);
+        cuestionario.setTematica("TEMA");
+        jornada.reemplazarCuestionariosPorSlot(Arrays.asList(cuestionario, null, null, null, null, null));
+    }
+
     private Jornada jornadaBase() {
         Jornada j = new Jornada();
         j.setId(1L);
@@ -576,6 +610,72 @@ class JornadaServiceTest {
 
         assertEquals(3, bytes.length);
         verify(excelExportService).exportarJornada(eq(j), nullable(Map.class));
+        verify(concursanteRepository, never()).findByJornada_Id(any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void exportarExcel_completadaPasaPieDeConcursantes() throws Exception {
+        Jornada j = jornadaBase();
+        j.setEstado(Jornada.EstadoJornada.completada);
+        j.setNombre("JORNADA 115");
+
+        Cuestionario cuest = new Cuestionario();
+        cuest.setId(101L);
+        Combo combo = new Combo();
+        combo.setId(201L);
+        combo.setPreguntaUsadaId(40L);
+        Pregunta usada = new Pregunta();
+        usada.setId(40L);
+        usada.setPregunta("Multi usada");
+        usada.setRespuesta("R");
+        usada.setNivel(Pregunta.NivelPregunta._5LS);
+        PreguntaCombo pc = new PreguntaCombo();
+        PreguntaCombo.PreguntaComboId clave = new PreguntaCombo.PreguntaComboId();
+        clave.setComboId(201L);
+        clave.setPreguntaId(40L);
+        pc.setId(clave);
+        pc.setCombo(combo);
+        pc.setPregunta(usada);
+        combo.setPreguntas(Collections.singleton(pc));
+
+        Concursante c = new Concursante();
+        c.setNumeroConcursante(1155);
+        c.setNombre("Carlos");
+        c.setEdad("34");
+        c.setLugar("Madrid");
+        c.setOcupacion("Médico");
+        c.setRedesSociales("@carlos");
+        c.setMomentosDestacados("salió nolosabelotodo en plató");
+        c.setResultado(12000);
+        c.setValoracionGuionista("Muy bueno");
+        c.setNotasGrabacion("Notas de plató");
+        c.setCuestionario(cuest);
+        c.setCombo(combo);
+
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(j));
+        when(concursanteRepository.findByJornada_Id(1L)).thenReturn(Collections.singletonList(c));
+        when(excelExportService.exportarJornada(eq(j), any())).thenReturn(new byte[]{9});
+
+        jornadaService.exportarExcel(1L);
+
+        ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(excelExportService).exportarJornada(eq(j), captor.capture());
+        Map<String, Object> opciones = captor.getValue();
+        Map<Long, ExcelExportService.DatosPieBloque> pieCuest =
+                (Map<Long, ExcelExportService.DatosPieBloque>) opciones.get(ExcelExportService.OPCION_PIE_CUESTIONARIO);
+        assertEquals(1, pieCuest.size());
+        assertNull(opciones.get(ExcelExportService.OPCION_PIE_COMBO));
+        ExcelExportService.DatosPieBloque pie = pieCuest.get(101L);
+        assertEquals("1155, Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO", pie.concursante);
+        assertEquals("12000", pie.resultado);
+        assertEquals("JORNADA 115", pie.grabacion);
+        assertEquals("Notas de plató", pie.notasGuion);
+        assertEquals("Muy bueno", pie.valoracionGuionista);
+        assertEquals("Carlos", pie.nombreHoja);
+        assertNotNull(pie.preguntaMultiplicadora);
+        assertEquals(40L, pie.preguntaMultiplicadora.getId());
+        assertEquals("Multi usada", pie.preguntaMultiplicadora.getPregunta());
     }
 
     @Test
@@ -1245,6 +1345,63 @@ class JornadaServiceTest {
     }
 
     @Test
+    void elegirAlrededor_tomaDetrasDelanteYLaSiguienteMasCercana() {
+        List<Long> orden = Arrays.asList(10L, 11L, 12L, 13L, 14L, 15L, 16L);
+        assertEquals(Arrays.asList(12L, 11L, 10L, 14L, 15L, 16L), JornadaService.elegirAlrededor(orden, 13L, 3, 3));
+        assertEquals(Arrays.asList(11L, 12L, 13L), JornadaService.elegirAlrededor(orden, 10L, 3, 3));
+        assertEquals(Arrays.asList(15L, 14L, 13L), JornadaService.elegirAlrededor(orden, 16L, 3, 3));
+    }
+
+    @Test
+    void listarContenidoOtras_soloTresJornadasContiguas() {
+        Jornada[] jornadas = new Jornada[7];
+        for (int i = 0; i < jornadas.length; i++) {
+            Jornada jornada = jornadaBase();
+            jornada.setId(10L + i);
+            jornada.setFechaJornada(LocalDate.of(2026, 1, 1).plusDays(i));
+            jornada.setNombre("J" + jornada.getId());
+            jornadas[i] = jornada;
+        }
+        ponerCuestionarioLibre(jornadas[0], 100L);
+        ponerCuestionarioLibre(jornadas[2], 120L);
+        ponerCuestionarioLibre(jornadas[4], 140L);
+        ponerCuestionarioLibre(jornadas[6], 160L);
+        stubAlrededor(jornadas);
+
+        List<Long> ids = new java.util.ArrayList<>();
+        for (Map<String, Object> item : jornadaService.listarContenidoOtras(13L, "cuestionarios")) {
+            ids.add((Long) item.get("id"));
+        }
+        assertEquals(Arrays.asList(120L, 100L, 140L, 160L), ids);
+    }
+
+    @Test
+    void listarContenidoOtras_ignoraJornadasSinFecha() {
+        Jornada reciente = jornadaBase();
+        reciente.setId(841L);
+        reciente.setFechaJornada(LocalDate.of(2026, 10, 21));
+
+        Jornada sinFecha = jornadaBase();
+        sinFecha.setId(3L);
+        sinFecha.setFechaJornada(null);
+        sinFecha.setNombre("JORNADA 10");
+        ponerCuestionarioLibre(sinFecha, 999L);
+
+        Jornada anterior = jornadaBase();
+        anterior.setId(840L);
+        anterior.setFechaJornada(LocalDate.of(2026, 10, 20));
+        ponerCuestionarioLibre(anterior, 140L);
+
+        stubAlrededor(reciente, sinFecha, anterior);
+
+        List<Long> ids = new java.util.ArrayList<>();
+        for (Map<String, Object> item : jornadaService.listarContenidoOtras(841L, "cuestionarios")) {
+            ids.add((Long) item.get("id"));
+        }
+        assertEquals(Collections.singletonList(140L), ids);
+    }
+
+    @Test
     void listarContenidoOtras_soloSinAsignarAConcursante() {
         Jornada actual = jornadaBase();
         Jornada otra = jornadaBase();
@@ -1271,7 +1428,7 @@ class JornadaServiceTest {
         comboLibre.setEstado(Combo.EstadoCombo.adjudicado);
         otra.reemplazarCombosPorSlot(Arrays.asList(comboOcupado, comboLibre, null, null, null, null));
 
-        when(jornadaRepository.findAll()).thenReturn(Arrays.asList(actual, otra));
+        stubAlrededor(actual, otra);
         when(concursanteRepository.existsByCuestionario_Id(19L)).thenReturn(true);
         when(concursanteRepository.existsByCuestionario_Id(30L)).thenReturn(false);
         when(concursanteRepository.existsByCombo_Id(7L)).thenReturn(true);
@@ -1310,7 +1467,7 @@ class JornadaServiceTest {
         comboAprobado.setEstado(Combo.EstadoCombo.aprobado);
         otra.reemplazarCombosPorSlot(Arrays.asList(comboCorregir, comboAprobado, null, null, null, null));
 
-        when(jornadaRepository.findAll()).thenReturn(Arrays.asList(actual, otra));
+        stubAlrededor(actual, otra);
         when(concursanteRepository.existsByCuestionario_Id(32L)).thenReturn(false);
         when(concursanteRepository.existsByCombo_Id(42L)).thenReturn(false);
 
@@ -1332,7 +1489,7 @@ class JornadaServiceTest {
         Combo derivado = comboTresPreguntas(40L);
         derivado.setEstado(Combo.EstadoCombo.adjudicado);
         otra.reemplazarCombosPorSlot(Arrays.asList(derivado, null, null, null, null, null));
-        when(jornadaRepository.findAll()).thenReturn(Arrays.asList(actual, otra));
+        stubAlrededor(actual, otra);
         when(concursanteRepository.existsByCombo_Id(40L)).thenReturn(false);
         when(nativeQuery.getResultList()).thenReturn(Collections.singletonList(40L));
 
@@ -1351,7 +1508,7 @@ class JornadaServiceTest {
         derivado.setId(40L);
         derivado.setEstado(Combo.EstadoCombo.borrador);
         otra.reemplazarCombosPorSlot(Arrays.asList(derivado, null, null, null, null, null));
-        when(jornadaRepository.findAll()).thenReturn(Arrays.asList(actual, otra));
+        stubAlrededor(actual, otra);
         when(nativeQuery.getResultList()).thenReturn(Collections.singletonList(40L));
 
         List<Map<String, Object>> combos = jornadaService.listarContenidoOtras(1L, "combos");

@@ -915,6 +915,28 @@ td:has(textarea) {
 
 .modal-body .mb-4:last-child {
     margin-bottom: 1rem !important;
+}
+
+.modal-selector-ancho {
+    width: 96vw;
+    max-width: 96vw;
+}
+
+.selector-preguntas {
+    table-layout: fixed;
+}
+
+.selector-preguntas th,
+.selector-preguntas td {
+    text-align: left;
+    vertical-align: top;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.selector-preguntas .selector-notas {
+    white-space: pre-wrap;
+    text-indent: 0;
 } 
 
 /* Menú contextual */

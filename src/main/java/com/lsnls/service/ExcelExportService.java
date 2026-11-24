@@ -14,17 +14,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * Genera el Excel de una jornada calcando la plantilla de producción
- * "JORNADA nnn_LUGAR_fecha_REC.XLSX": una hoja de cuestionarios y otra de
- * combos, con un bloque imprimible por cada hueco ocupado.
+ * Genera el Excel de una jornada calcando la plantilla de producción.
  *
- * Las filas de CONCURSANTE, RESULTADO, GRABACIÓN y NOTAS GUION salen vacías a
- * propósito: el Excel se genera antes de grabar, cuando todavía no hay
- * concursante, y se rellenan a mano durante la jornada.
+ * Antes de completar: dos hojas (cuestionarios / combos) con los bloques
+ * uno detrás de otro y el pie vacío para rellenar en grabación.
+ *
+ * Completada (con datos de pie): una pestaña por concursante (cuestionario),
+ * pie relleno, y la pregunta usada del combo en la 5.ª fila (bajo el nivel 4)
+ * si existe; si no, esa fila queda vacía.
  */
 @Service
 public class ExcelExportService {
@@ -32,9 +36,59 @@ public class ExcelExportService {
     /** Clave de opciones con los combos de origen por combo derivado: id -> "312/216". */
     public static final String OPCION_ANCESTROS_COMBO = "ancestrosCombo";
 
+    /** Pie de cada cuestionario: id -> DatosPieBloque. */
+    public static final String OPCION_PIE_CUESTIONARIO = "pieCuestionario";
+
+    /** Pie de cada combo: id -> DatosPieBloque. (plantilla / compat; no crea pestañas en completada) */
+    public static final String OPCION_PIE_COMBO = "pieCombo";
+
+    /** Valores de las filas de cierre de un bloque. */
+    public static class DatosPieBloque {
+        public final String concursante;
+        public final String resultado;
+        public final String grabacion;
+        /** Contenido de NOTAS GUION: notas de grabación del concursante. */
+        public final String notasGuion;
+        /** Valoración del guionista (p. ej. 2, 1+); va en rojo en A3–A6 fusionadas. */
+        public final String valoracionGuionista;
+        /** Nombre corto para la pestaña Excel (nombre del concursante). */
+        public final String nombreHoja;
+        /** Pregunta del combo usada en grabación; va en la 5.ª fila bajo el nivel 4. */
+        public final Pregunta preguntaMultiplicadora;
+
+        public DatosPieBloque(String concursante, String resultado, String grabacion, String notasGuion) {
+            this(concursante, resultado, grabacion, notasGuion, null, null, null);
+        }
+
+        public DatosPieBloque(String concursante, String resultado, String grabacion,
+                              String notasGuion, String nombreHoja) {
+            this(concursante, resultado, grabacion, notasGuion, null, nombreHoja, null);
+        }
+
+        public DatosPieBloque(String concursante, String resultado, String grabacion,
+                              String notasGuion, String nombreHoja, Pregunta preguntaMultiplicadora) {
+            this(concursante, resultado, grabacion, notasGuion, null, nombreHoja, preguntaMultiplicadora);
+        }
+
+        public DatosPieBloque(String concursante, String resultado, String grabacion,
+                              String notasGuion, String valoracionGuionista,
+                              String nombreHoja, Pregunta preguntaMultiplicadora) {
+            this.concursante = concursante;
+            this.resultado = resultado;
+            this.grabacion = grabacion;
+            this.notasGuion = notasGuion;
+            this.valoracionGuionista = valoracionGuionista;
+            this.nombreHoja = nombreHoja;
+            this.preguntaMultiplicadora = preguntaMultiplicadora;
+        }
+    }
     private static final String[] CABECERA_CUESTIONARIOS =
-            {"CUEST", "Nº DE PREGUNTA", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
-    private static final double[] ANCHOS_CUESTIONARIOS = {6.9, 0.4, 6.7, 50.6, 19.6, 44.3, 8.4};
+            {"CUEST", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
+    private static final double[] ANCHOS_CUESTIONARIOS = {6.9, 6.7, 50.6, 19.6, 44.3, 8.4};
+    /** Última columna del bloque cuestionario (0-based): REC. */
+    private static final int ULTIMA_COL_CUEST = CABECERA_CUESTIONARIOS.length - 1;
+    /** Etiqueta del pie ocupa CUEST+NIVEL (A:B). */
+    private static final int ULTIMA_COL_ETIQUETA_PIE_CUEST = 1;
 
     private static final String[] CABECERA_COMBOS =
             {"COMBO", "", "TIPO", "FAC", "NIVEL", "PREGUNTA", "RESPUESTA", "DATOS EXTRA", "REC"};
@@ -64,29 +118,126 @@ public class ExcelExportService {
      * Exporta una jornada a Excel.
      *
      * @param jornada  La jornada a exportar
-     * @param opciones Opciones de configuración. Solo se usa
-     *                 {@link #OPCION_ANCESTROS_COMBO}, un mapa de id de combo a
-     *                 la cadena de combos de los que se recicló.
+     * @param opciones Opciones de configuración:
+     *                 {@link #OPCION_ANCESTROS_COMBO}, mapa id combo → orígenes;
+     *                 {@link #OPCION_PIE_CUESTIONARIO} / {@link #OPCION_PIE_COMBO},
+     *                 mapas id → {@link DatosPieBloque}.
      * @return Bytes del archivo Excel generado
      */
     public byte[] exportarJornada(Jornada jornada, Map<String, Object> opciones) throws IOException {
         Map<Long, String> ancestros = leerAncestros(opciones);
+        Map<Long, DatosPieBloque> pieCuestionarios = leerPies(opciones, OPCION_PIE_CUESTIONARIO);
+        Map<Long, DatosPieBloque> pieCombos = leerPies(opciones, OPCION_PIE_COMBO);
+        boolean porConcursante = !pieCuestionarios.isEmpty();
 
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             Estilos estilos = new Estilos(workbook);
 
-            Sheet hojaCuestionarios = workbook.createSheet("CUESTIONARIOS ADJUDICADOS");
-            configurarPagina(hojaCuestionarios, "Cuestionarios - " + jornada.getNombre(), jornada.getNombre());
-            crearHojaCuestionarios(hojaCuestionarios, jornada, estilos);
+            if (porConcursante) {
+                crearHojasPorConcursante(workbook, jornada, estilos, pieCuestionarios);
+            } else {
+                Sheet hojaCuestionarios = workbook.createSheet("CUESTIONARIOS ADJUDICADOS");
+                configurarPagina(hojaCuestionarios, "Cuestionarios - " + jornada.getNombre(), jornada.getNombre());
+                crearHojaCuestionarios(hojaCuestionarios, jornada, estilos, pieCuestionarios);
 
-            Sheet hojaCombos = workbook.createSheet("COMBOS ADJUDICADOS");
-            configurarPagina(hojaCombos, "Combos - " + jornada.getNombre(), jornada.getNombre());
-            crearHojaCombos(hojaCombos, jornada, estilos, ancestros);
+                Sheet hojaCombos = workbook.createSheet("COMBOS ADJUDICADOS");
+                configurarPagina(hojaCombos, "Combos - " + jornada.getNombre(), jornada.getNombre());
+                crearHojaCombos(hojaCombos, jornada, estilos, ancestros, pieCombos);
+            }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
             return outputStream.toByteArray();
         }
+    }
+
+    /**
+     * Una pestaña por concursante (cuestionario), nombrada con su nombre.
+     * La pregunta usada del combo del mismo slot va en la 5.ª fila si existe.
+     */
+    private void crearHojasPorConcursante(Workbook workbook, Jornada jornada, Estilos estilos,
+                                          Map<Long, DatosPieBloque> pieCuestionarios) {
+        Set<String> nombresUsados = new LinkedHashSet<>();
+        String nombreJornada = jornada.getNombre();
+        List<Cuestionario> cuestionarios = jornada.getCuestionariosPorSlot();
+        List<Combo> combos = jornada.getCombosPorSlot();
+
+        for (int slot = 0; slot < cuestionarios.size(); slot++) {
+            Cuestionario cuestionario = cuestionarios.get(slot);
+            if (cuestionario == null) {
+                continue;
+            }
+            DatosPieBloque pie = cuestionario.getId() != null ? pieCuestionarios.get(cuestionario.getId()) : null;
+            Pregunta multiplicadora = pie != null ? pie.preguntaMultiplicadora : null;
+            if (multiplicadora == null && slot < combos.size()) {
+                multiplicadora = preguntaUsadaDelCombo(combos.get(slot));
+            }
+            String titulo = nombrePestana(
+                    pie != null && pie.nombreHoja != null ? pie.nombreHoja : null,
+                    "Cuest " + (cuestionario.getId() != null ? cuestionario.getId() : ""),
+                    nombresUsados);
+            Sheet hoja = workbook.createSheet(titulo);
+            for (int i = 0; i < ANCHOS_CUESTIONARIOS.length; i++) {
+                hoja.setColumnWidth(i, excelWidth(ANCHOS_CUESTIONARIOS[i]));
+            }
+            configurarPagina(hoja, titulo + " - " + nombreJornada, nombreJornada);
+            crearBloqueCuestionario(hoja, cuestionario, 0, estilos, pie, multiplicadora);
+        }
+    }
+
+    /** Resuelve la pregunta marcada como usada en un combo, o null si no hay. */
+    static Pregunta preguntaUsadaDelCombo(Combo combo) {
+        if (combo == null || combo.getPreguntaUsadaId() == null || combo.getPreguntas() == null) {
+            return null;
+        }
+        Long usadaId = combo.getPreguntaUsadaId();
+        for (PreguntaCombo pc : combo.getPreguntas()) {
+            if (pc.getPregunta() != null && usadaId.equals(pc.getPregunta().getId())) {
+                return pc.getPregunta();
+            }
+        }
+        return null;
+    }
+
+    /** Excel limita el nombre de hoja a 31 caracteres y prohíbe \ / ? * [ ] : */
+    static String nombrePestana(String preferido, String respaldo, Set<String> usados) {
+        String base = sanitizarNombreHoja(preferido);
+        if (base.isEmpty()) {
+            base = sanitizarNombreHoja(respaldo);
+        }
+        if (base.isEmpty()) {
+            base = "Sin nombre";
+        }
+        String candidato = base;
+        int n = 2;
+        while (contieneIgnorandoMayusculas(usados, candidato)) {
+            String sufijo = " (" + n + ")";
+            int maxBase = Math.max(1, 31 - sufijo.length());
+            candidato = base.substring(0, Math.min(base.length(), maxBase)) + sufijo;
+            n++;
+        }
+        usados.add(candidato);
+        return candidato;
+    }
+
+    private static boolean contieneIgnorandoMayusculas(Set<String> usados, String candidato) {
+        for (String u : usados) {
+            if (u.equalsIgnoreCase(candidato)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String sanitizarNombreHoja(String bruto) {
+        if (bruto == null) {
+            return "";
+        }
+        String limpio = bruto.trim().replaceAll("[\\\\/?*\\[\\]:]", " ").replaceAll("\\s+", " ").trim();
+        if (limpio.length() > 31) {
+            limpio = limpio.substring(0, 31).trim();
+        }
+        return limpio;
     }
 
     @SuppressWarnings("unchecked")
@@ -98,9 +249,48 @@ public class ExcelExportService {
         return valor instanceof Map ? (Map<Long, String>) valor : Collections.emptyMap();
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<Long, DatosPieBloque> leerPies(Map<String, Object> opciones, String clave) {
+        if (opciones == null) {
+            return Collections.emptyMap();
+        }
+        Object valor = opciones.get(clave);
+        return valor instanceof Map ? (Map<Long, DatosPieBloque>) valor : Collections.emptyMap();
+    }
+
+    /**
+     * Texto de la fila CONCURSANTE:
+     * {@code numero, nombre, edad, (lugar) - profesion |Redes sociales| [NOLOSABELOTODO]}.
+     * NOLOSABELOTODO solo si aparece en momentos destacados (sin mirar mayúsculas).
+     */
+    public static String textoConcursantePie(Concursante c) {
+        if (c == null) {
+            return "";
+        }
+        String numero = c.getNumeroConcursante() != null ? String.valueOf(c.getNumeroConcursante()) : "";
+        String nombre = textoOVacio(c.getNombre());
+        String edad = textoOVacio(c.getEdad());
+        String lugar = textoOVacio(c.getLugar());
+        String profesion = textoOVacio(c.getOcupacion());
+        String redes = textoOVacio(c.getRedesSociales());
+        StringBuilder sb = new StringBuilder();
+        sb.append(numero).append(", ").append(nombre).append(", ").append(edad)
+                .append(", (").append(lugar).append(") - ").append(profesion)
+                .append(" |").append(redes).append("|");
+        String momentos = c.getMomentosDestacados();
+        if (momentos != null && momentos.toLowerCase(Locale.ROOT).contains("nolosabelotodo")) {
+            sb.append(" NOLOSABELOTODO");
+        }
+        return sb.toString();
+    }
+
+    private static String textoOVacio(String valor) {
+        return valor != null ? valor.trim() : "";
+    }
     // ---------------------------------------------------------------- CUESTIONARIOS
 
-    private void crearHojaCuestionarios(Sheet sheet, Jornada jornada, Estilos estilos) {
+    private void crearHojaCuestionarios(Sheet sheet, Jornada jornada, Estilos estilos,
+                                       Map<Long, DatosPieBloque> pies) {
         for (int i = 0; i < ANCHOS_CUESTIONARIOS.length; i++) {
             sheet.setColumnWidth(i, excelWidth(ANCHOS_CUESTIONARIOS[i]));
         }
@@ -110,37 +300,57 @@ public class ExcelExportService {
             if (cuestionario == null) {
                 continue;
             }
-            filaActual = crearBloqueCuestionario(sheet, cuestionario, filaActual, estilos);
+            DatosPieBloque pie = cuestionario.getId() != null ? pies.get(cuestionario.getId()) : null;
+            filaActual = crearBloqueCuestionario(sheet, cuestionario, filaActual, estilos, pie, null);
         }
     }
 
-    private int crearBloqueCuestionario(Sheet sheet, Cuestionario cuestionario, int filaInicial, Estilos estilos) {
+    private int crearBloqueCuestionario(Sheet sheet, Cuestionario cuestionario, int filaInicial,
+                                        Estilos estilos, DatosPieBloque pie, Pregunta multiplicadora) {
         int filaActual = crearCabecera(sheet, filaInicial, CABECERA_CUESTIONARIOS, estilos);
+        int filaInicioValoracion = filaActual + 1;
 
         List<PreguntaCuestionario> preguntas = preguntasOrdenadasPorNivel(cuestionario);
         String idCuestionario = cuestionario.getId() != null ? String.valueOf(cuestionario.getId()) : "";
+        String valoracion = pie != null ? textoOVacio(pie.valoracionGuionista) : "";
 
         for (int i = 0; i < FILAS_PREGUNTA_CUESTIONARIO; i++) {
             Row fila = sheet.createRow(filaActual++);
             fila.setHeightInPoints(ALTO_PREGUNTA_CUESTIONARIO);
-            // La quinta fila es la de la pregunta multiplicadora, que se rellena a mano.
+            // Filas 1–4: niveles del cuestionario. 5.ª: pregunta usada del combo (o vacía).
             PreguntaCuestionario pc = i < Math.min(PREGUNTAS_CUESTIONARIO, preguntas.size()) ? preguntas.get(i) : null;
-            Pregunta pregunta = pc != null ? pc.getPregunta() : null;
+            Pregunta pregunta = pc != null ? pc.getPregunta()
+                    : (i == PREGUNTAS_CUESTIONARIO ? multiplicadora : null);
 
-            escribir(fila, 0, pc != null ? idCuestionario : "", estilos.primeraColumna);
-            escribir(fila, 1, "", estilos.datoPlano);
-            escribir(fila, 2, nivelCorto(pregunta), estilos.datoPlano);
-            escribir(fila, 3, pregunta != null ? pregunta.getPregunta() : "", estilos.datoAjustado);
-            escribir(fila, 4, pregunta != null ? pregunta.getRespuesta() : "", estilos.datoAjustado);
-            escribir(fila, 5, pregunta != null && pregunta.getDatosExtra() != null ? pregunta.getDatosExtra() : "",
+            // A2 = nº cuestionario; A3–A6 fusionadas = valoración del guionista (rojo).
+            if (i == 0) {
+                escribir(fila, 0, idCuestionario, estilos.primeraColumnaCentrada);
+            } else if (i == 1) {
+                escribir(fila, 0, valoracion, estilos.valoracionGuionista);
+            } else {
+                escribir(fila, 0, "", estilos.valoracionGuionista);
+            }
+            escribir(fila, 1, nivelCorto(pregunta), estilos.datoPlano);
+            escribir(fila, 2, pregunta != null ? pregunta.getPregunta() : "", estilos.datoAjustado);
+            escribir(fila, 3, pregunta != null ? pregunta.getRespuesta() : "", estilos.datoAjustado);
+            escribir(fila, 4, pregunta != null && pregunta.getDatosExtra() != null ? pregunta.getDatosExtra() : "",
                     estilos.datoAjustado);
-            escribir(fila, 6, "", estilos.datoPlano);
+            escribir(fila, 5, "", estilos.datoPlano);
         }
+        combinarVerticalConBorde(sheet, filaInicioValoracion, filaActual - 1, 0);
 
-        filaActual = crearFilaPie(sheet, filaActual, "CONCURSANTE", 2, 6, ALTO_PIE_CUESTIONARIO, estilos);
-        filaActual = crearFilaPie(sheet, filaActual, "RESULTADO", 2, 6, ALTO_PIE_CUESTIONARIO, estilos);
-        filaActual = crearFilaPie(sheet, filaActual, "GRABACIÓN", 2, 6, ALTO_PIE_CUESTIONARIO, estilos);
-        filaActual = crearFilaPie(sheet, filaActual, "NOTAS GUION", 2, 6, ALTO_NOTAS_CUESTIONARIO, estilos);
+        filaActual = crearFilaPie(sheet, filaActual, "CONCURSANTE",
+                ULTIMA_COL_ETIQUETA_PIE_CUEST, ULTIMA_COL_CUEST, ALTO_PIE_CUESTIONARIO, estilos,
+                pie != null ? pie.concursante : null, true);
+        filaActual = crearFilaPie(sheet, filaActual, "RESULTADO",
+                ULTIMA_COL_ETIQUETA_PIE_CUEST, ULTIMA_COL_CUEST, ALTO_PIE_CUESTIONARIO, estilos,
+                pie != null ? pie.resultado : null, true);
+        filaActual = crearFilaPie(sheet, filaActual, "GRABACIÓN",
+                ULTIMA_COL_ETIQUETA_PIE_CUEST, ULTIMA_COL_CUEST, ALTO_PIE_CUESTIONARIO, estilos,
+                pie != null ? pie.grabacion : null, true);
+        filaActual = crearFilaPie(sheet, filaActual, "NOTAS GUION",
+                ULTIMA_COL_ETIQUETA_PIE_CUEST, ULTIMA_COL_CUEST, ALTO_NOTAS_CUESTIONARIO, estilos,
+                pie != null ? pie.notasGuion : null, false);
 
         sheet.setRowBreak(filaActual - 1);
         return filaActual;
@@ -165,7 +375,8 @@ public class ExcelExportService {
 
     // ---------------------------------------------------------------------- COMBOS
 
-    private void crearHojaCombos(Sheet sheet, Jornada jornada, Estilos estilos, Map<Long, String> ancestros) {
+    private void crearHojaCombos(Sheet sheet, Jornada jornada, Estilos estilos, Map<Long, String> ancestros,
+                                 Map<Long, DatosPieBloque> pies) {
         for (int i = 0; i < ANCHOS_COMBOS.length; i++) {
             sheet.setColumnWidth(i, excelWidth(ANCHOS_COMBOS[i]));
         }
@@ -175,12 +386,13 @@ public class ExcelExportService {
             if (combo == null) {
                 continue;
             }
-            filaActual = crearBloqueCombo(sheet, combo, filaActual, estilos, ancestros);
+            DatosPieBloque pie = combo.getId() != null ? pies.get(combo.getId()) : null;
+            filaActual = crearBloqueCombo(sheet, combo, filaActual, estilos, ancestros, pie);
         }
     }
 
     private int crearBloqueCombo(Sheet sheet, Combo combo, int filaInicial, Estilos estilos,
-                                 Map<Long, String> ancestros) {
+                                 Map<Long, String> ancestros, DatosPieBloque pie) {
         int filaActual = crearCabecera(sheet, filaInicial, CABECERA_COMBOS, estilos);
 
         String etiquetaCombo = etiquetaCombo(combo, ancestros);
@@ -203,10 +415,14 @@ public class ExcelExportService {
             escribir(fila, 8, "", estilos.datoPlano);
         }
 
-        filaActual = crearFilaPie(sheet, filaActual, "CONCURSANTE", 4, 8, ALTO_PIE_COMBO, estilos);
-        filaActual = crearFilaPie(sheet, filaActual, "RESULTADO", 4, 8, ALTO_PIE_COMBO, estilos);
-        filaActual = crearFilaPie(sheet, filaActual, "GRABACIÓN", 4, 8, ALTO_GRABACION_COMBO, estilos);
-        filaActual = crearFilaPie(sheet, filaActual, "NOTAS GUION", 4, 8, ALTO_NOTAS_COMBO, estilos);
+        filaActual = crearFilaPie(sheet, filaActual, "CONCURSANTE", 4, 8, ALTO_PIE_COMBO, estilos,
+                pie != null ? pie.concursante : null, true);
+        filaActual = crearFilaPie(sheet, filaActual, "RESULTADO", 4, 8, ALTO_PIE_COMBO, estilos,
+                pie != null ? pie.resultado : null, true);
+        filaActual = crearFilaPie(sheet, filaActual, "GRABACIÓN", 4, 8, ALTO_GRABACION_COMBO, estilos,
+                pie != null ? pie.grabacion : null, true);
+        filaActual = crearFilaPie(sheet, filaActual, "NOTAS GUION", 4, 8, ALTO_NOTAS_COMBO, estilos,
+                pie != null ? pie.notasGuion : null, false);
 
         sheet.setRowBreak(filaActual - 1);
         return filaActual;
@@ -252,9 +468,10 @@ public class ExcelExportService {
         return fila + 1;
     }
 
-    /** Fila de cierre: etiqueta combinada a la izquierda y hueco combinado a la derecha. */
+    /** Fila de cierre: etiqueta combinada a la izquierda y valor combinado a la derecha. */
     private int crearFilaPie(Sheet sheet, int fila, String etiqueta, int ultimaColumnaEtiqueta,
-                             int ultimaColumnaValor, float alto, Estilos estilos) {
+                             int ultimaColumnaValor, float alto, Estilos estilos, String valor,
+                             boolean centrarValor) {
         Row filaPie = sheet.createRow(fila);
         filaPie.setHeightInPoints(alto);
 
@@ -265,8 +482,10 @@ public class ExcelExportService {
         combinarConBorde(sheet, fila, 0, ultimaColumnaEtiqueta);
 
         int primeraColumnaValor = ultimaColumnaEtiqueta + 1;
-        for (int i = primeraColumnaValor; i <= ultimaColumnaValor; i++) {
-            escribir(filaPie, i, "", estilos.datoAjustado);
+        CellStyle estiloValor = centrarValor ? estilos.datoCentrado : estilos.datoAjustado;
+        escribir(filaPie, primeraColumnaValor, valor != null ? valor : "", estiloValor);
+        for (int i = primeraColumnaValor + 1; i <= ultimaColumnaValor; i++) {
+            escribir(filaPie, i, "", estiloValor);
         }
         combinarConBorde(sheet, fila, primeraColumnaValor, ultimaColumnaValor);
 
@@ -275,6 +494,18 @@ public class ExcelExportService {
 
     private void combinarConBorde(Sheet sheet, int fila, int primeraColumna, int ultimaColumna) {
         CellRangeAddress region = new CellRangeAddress(fila, fila, primeraColumna, ultimaColumna);
+        sheet.addMergedRegion(region);
+        RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
+        RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);
+    }
+
+    private void combinarVerticalConBorde(Sheet sheet, int primeraFila, int ultimaFila, int columna) {
+        if (ultimaFila <= primeraFila) {
+            return;
+        }
+        CellRangeAddress region = new CellRangeAddress(primeraFila, ultimaFila, columna, columna);
         sheet.addMergedRegion(region);
         RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
         RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
@@ -333,14 +564,20 @@ public class ExcelExportService {
     private static final class Estilos {
         private final CellStyle cabecera;
         private final CellStyle primeraColumna;
+        private final CellStyle primeraColumnaCentrada;
+        private final CellStyle valoracionGuionista;
         private final CellStyle datoPlano;
         private final CellStyle datoAjustado;
+        private final CellStyle datoCentrado;
 
         private Estilos(Workbook workbook) {
             this.cabecera = crearCabecera(workbook);
-            this.primeraColumna = crearPrimeraColumna(workbook);
-            this.datoPlano = crearDato(workbook, false);
-            this.datoAjustado = crearDato(workbook, true);
+            this.primeraColumna = crearPrimeraColumna(workbook, HorizontalAlignment.LEFT, IndexedColors.WHITE);
+            this.primeraColumnaCentrada = crearPrimeraColumna(workbook, HorizontalAlignment.CENTER, IndexedColors.WHITE);
+            this.valoracionGuionista = crearPrimeraColumna(workbook, HorizontalAlignment.CENTER, IndexedColors.RED);
+            this.datoPlano = crearDato(workbook, false, false);
+            this.datoAjustado = crearDato(workbook, true, false);
+            this.datoCentrado = crearDato(workbook, true, true);
         }
 
         private static CellStyle crearCabecera(Workbook workbook) {
@@ -358,13 +595,14 @@ public class ExcelExportService {
             return estilo;
         }
 
-        private static CellStyle crearPrimeraColumna(Workbook workbook) {
+        private static CellStyle crearPrimeraColumna(Workbook workbook, HorizontalAlignment alineacion,
+                                                     IndexedColors colorTexto) {
             CellStyle estilo = workbook.createCellStyle();
             Font fuente = workbook.createFont();
             fuente.setBold(true);
-            fuente.setColor(IndexedColors.WHITE.getIndex());
+            fuente.setColor(colorTexto.getIndex());
             estilo.setFont(fuente);
-            estilo.setAlignment(HorizontalAlignment.LEFT);
+            estilo.setAlignment(alineacion);
             estilo.setVerticalAlignment(VerticalAlignment.CENTER);
             estilo.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());
             estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -373,10 +611,10 @@ public class ExcelExportService {
             return estilo;
         }
 
-        private static CellStyle crearDato(Workbook workbook, boolean ajustar) {
+        private static CellStyle crearDato(Workbook workbook, boolean ajustar, boolean centrar) {
             CellStyle estilo = workbook.createCellStyle();
-            estilo.setAlignment(HorizontalAlignment.LEFT);
-            estilo.setVerticalAlignment(VerticalAlignment.TOP);
+            estilo.setAlignment(centrar ? HorizontalAlignment.CENTER : HorizontalAlignment.LEFT);
+            estilo.setVerticalAlignment(centrar ? VerticalAlignment.CENTER : VerticalAlignment.TOP);
             estilo.setWrapText(ajustar);
             aplicarBordes(estilo);
             return estilo;

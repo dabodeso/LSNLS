@@ -38,12 +38,13 @@ class DataTransformationServiceTest {
         assertFalse(service.esTextoValido("demasiado largo", 5));
         assertFalse(service.esTextoValido("linea\nbreak", 100));
         assertFalse(service.esTextoValido("linea\rbreak", 100));
-        assertFalse(service.esTextoValido("arroba@", 100));
     }
 
     @Test
     void esTextoValido_ok() {
         assertTrue(service.esTextoValido("Tema válido 1.", 100));
+        assertTrue(service.esTextoValido("C++ / C#", 100));
+        assertTrue(service.esTextoValido("correo@dominio.com", 100));
     }
 
     @Test
@@ -96,10 +97,12 @@ class DataTransformationServiceTest {
     }
 
     @Test
-    void validarPreguntaCompleta_preguntaCaracteresInvalidos() {
+    void validarPreguntaCompleta_permiteSimbolosComoMas() {
         DataTransformationService.ValidationResult result =
-                service.validarPreguntaCompleta("pregunta #rara", "ok", "TEMA");
-        assertEquals("La pregunta contiene caracteres no permitidos", result.getErrors().get("pregunta"));
+                service.validarPreguntaCompleta("¿Cuánto es 2+2?", "4", "MATEMATICAS");
+        assertTrue(result.isValid());
+        assertTrue(service.validarPreguntaCompleta("C++ o C#?", "C++", "INFORMATICA").isValid());
+        assertTrue(service.validarPreguntaCompleta("¿URL?", "https://a.com/x?y=1&z=2", "INTERNET").isValid());
     }
 
     @Test
@@ -114,10 +117,6 @@ class DataTransformationServiceTest {
         DataTransformationService.ValidationResult excesiva =
                 service.validarPreguntaCompleta("ok", larga.toString(), "TEMA");
         assertTrue(excesiva.getErrors().get("respuesta").contains("500"));
-
-        DataTransformationService.ValidationResult especial =
-                service.validarPreguntaCompleta("ok", "mal@", "TEMA");
-        assertEquals("La respuesta contiene caracteres no permitidos", especial.getErrors().get("respuesta"));
     }
 
     @Test

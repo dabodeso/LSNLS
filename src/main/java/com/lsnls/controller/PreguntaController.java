@@ -242,6 +242,14 @@ public class PreguntaController {
             
             Pregunta pregunta = preguntaExistente.get();
             log.info("[ACTUALIZAR] Estado actual: {}, Estado solicitado: {}", pregunta.getEstado(), dto.getEstado());
+
+            if (pregunta.getEstado() == Pregunta.EstadoPregunta.usada
+                    && !authService.isAdmin()
+                    && preguntaService.estaEnJornadaCerrada(id)) {
+                log.warn("[ACTUALIZAR] Pregunta usada bloqueada por jornada cerrada: {}", id);
+                return ResponseEntity.status(403).body(
+                        "No se puede editar esta pregunta: está en un cuestionario o combo de una jornada completada o archivada.");
+            }
             
             // Verificar permisos para editar según el estado
             if (!authService.canEditPregunta(pregunta.getEstado())) {

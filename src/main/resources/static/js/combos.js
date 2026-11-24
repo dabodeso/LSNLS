@@ -1519,9 +1519,28 @@ function inicializarBuscadorPreguntasModal() {
             });
         } catch {}
     };
+    const cargarSubtemas = async () => {
+        try {
+            const sel = document.getElementById('buscador-subtema-select');
+            if (!sel) return;
+            const resp = await fetch('/api/temas/subtemas', { headers: authManager.getAuthHeaders() });
+            if (!resp.ok) return;
+            const subtemas = await resp.json();
+            sel.innerHTML = '<option value="">Todos los subtemas</option>';
+            (Array.isArray(subtemas) ? subtemas : []).forEach(s => {
+                const nombre = typeof s === 'string' ? s : s?.nombre;
+                if (!nombre) return;
+                const opt = document.createElement('option');
+                opt.value = nombre;
+                opt.textContent = nombre;
+                sel.appendChild(opt);
+            });
+        } catch {}
+    };
     cargarTematicas();
+    cargarSubtemas();
 
-    const ids = ['buscador-id', 'buscador-texto', 'buscador-tematica-select', 'buscador-nivel-combo'];
+    const ids = ['buscador-id', 'buscador-texto', 'buscador-tematica-select', 'buscador-subtema-select', 'buscador-nivel-combo', 'buscador-estado'];
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -1555,6 +1574,8 @@ function abrirSelectorPregunta(nivel, factor = null) {
     if (textoInput) textoInput.value = '';
     const temaSelect = document.getElementById('buscador-tematica-select');
     if (temaSelect) temaSelect.value = '';
+    const subtemaSelect = document.getElementById('buscador-subtema-select');
+    if (subtemaSelect) subtemaSelect.value = '';
     const nivelSelect = document.getElementById('buscador-nivel-combo');
     if (nivelSelect && !Array.from(nivelSelect.options).some(o => o.value === nivelSelect.value)) {
         nivelSelect.value = '';
@@ -1572,6 +1593,7 @@ async function buscarPreguntasModal(page = 0) {
     const id = document.getElementById('buscador-id').value.trim();
     const texto = (document.getElementById('buscador-texto')?.value || '').trim();
     const tematica = document.getElementById('buscador-tematica-select')?.value || '';
+    const subtema = document.getElementById('buscador-subtema-select')?.value || '';
     let filtroNivel = document.getElementById('buscador-nivel-combo')?.value || '';
     const estadoSel = (document.getElementById('buscador-estado')?.value || 'todos').trim().toLowerCase();
 
@@ -1587,10 +1609,12 @@ async function buscarPreguntasModal(page = 0) {
             // id exacto -> usar /buscar
             params.set('id', id.trim());
             if (tematica) params.set('tematica', tematica);
+            if (subtema) params.set('subtema', subtema);
             url = `/api/preguntas/buscar?${params.toString()}`;
         } else {
             if (texto) params.set('texto', texto);
             if (tematica) params.set('tematica', tematica);
+            if (subtema) params.set('subtema', subtema);
             // Estado: por defecto 'todos' (aprobada + verificada). Si el usuario elige uno, aplicarlo.
             if (estadoSel === 'aprobada' || estadoSel === 'verificada') {
                 params.set('estado', estadoSel);
@@ -1626,7 +1650,12 @@ async function buscarPreguntasModal(page = 0) {
 
 // Función para renderizar las preguntas en el modal
 function textoNotasVerificacion(notas) {
-    const texto = (notas || '').trim();
+    const texto = String(notas || '')
+        .replace(/\r\n/g, '\n')
+        .split('\n')
+        .map(linea => linea.replace(/^[ \t\u00a0]+/, '').replace(/[ \t]+$/, ''))
+        .join('\n')
+        .trim();
     if (!texto) return '<span class="text-muted">Sin notas</span>';
     return Utils.escapeHtml(texto);
 }
@@ -1654,22 +1683,16 @@ function renderizarPreguntasModal(preguntas, totalPages, currentPage) {
         
         row.innerHTML = `
             <td>${pregunta.id}</td>
-            <td colspan="4">
-                <div class="pregunta-item">
-                    <div class="pregunta-texto fw-bold">${Utils.resaltarCoincidencias(pregunta.pregunta ?? '', terminoBusqueda)}${Utils.sufijoCaracteresPregunta(pregunta.pregunta)}</div>
-                    <div class="respuesta-texto"><strong>Respuesta:</strong> ${Utils.resaltarCoincidencias(pregunta.respuesta ?? '', terminoBusqueda)}</div>
-                    <div class="pregunta-meta">
-                        <small class="text-muted">
-                            Temática: ${pregunta.tematica || 'N/A'} | 
-                            Nivel: <span class="${nivelColor}">${Utils.formatearNivel(pregunta.nivel)}</span> | 
-                            Estado: ${pregunta.estado}
-                        </small>
-                    </div>
-                    <div class="notas-verificacion mt-1" style="white-space:pre-wrap;">
-                        <small><strong>Notas de verificación:</strong> ${textoNotasVerificacion(pregunta.notasVerificacion)}</small>
-                    </div>
-                </div>
+            <td>
+                <div class="fw-bold">${Utils.resaltarCoincidencias(pregunta.pregunta ?? '', terminoBusqueda)}${Utils.sufijoCaracteresPregunta(pregunta.pregunta)}</div>
+                <small class="text-muted">
+                    Temática: ${pregunta.tematica || 'N/A'} |
+                    Nivel: <span class="${nivelColor}">${Utils.formatearNivel(pregunta.nivel)}</span> |
+                    Estado: ${pregunta.estado}
+                </small>
             </td>
+            <td>${Utils.resaltarCoincidencias(pregunta.respuesta ?? '', terminoBusqueda)}</td>
+            <td class="selector-notas">${textoNotasVerificacion(pregunta.notasVerificacion)}</td>
         `;
         
         // Añadir evento de clic para seleccionar la pregunta
