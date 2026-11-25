@@ -85,9 +85,11 @@ public class ProgramaRepetidoService {
     private final Object asignacionCodigoLock = new Object();
 
     public List<ProgramaRepetidoDTO> findAll() {
-        return programaRepetidoRepository.findAllByOrderByFechaEmisionDescIdDesc().stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
+        List<ProgramaRepetido> todos = new ArrayList<>(programaRepetidoRepository.findAll());
+        todos.sort(Comparator
+                .comparing(ProgramaRepetido::getFechaEmision, Comparator.nullsFirst(Comparator.reverseOrder()))
+                .thenComparing(ProgramaRepetido::getId, Comparator.nullsLast(Comparator.reverseOrder())));
+        return todos.stream().map(this::toDto).collect(Collectors.toList());
     }
 
     public ProgramaRepetidoDTO findById(Long id) {

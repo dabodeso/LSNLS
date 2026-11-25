@@ -259,8 +259,13 @@ const JornadasManager = {
 
         await this.actualizarSlotsVisualAsync();
 
+        // Solo reabrir modalJornada si venimos del flujo de edición
+        // (p. ej. se ocultó para el selector). Añadir desde la card
+        // no debe abrir el menú/modal de edición.
         const modalEl = document.getElementById('modalJornada');
-        if (modalEl && !modalEl.classList.contains('show')) {
+        const debeReabrir = !!this.reabrirEditarTrasSeleccion;
+        this.reabrirEditarTrasSeleccion = false;
+        if (debeReabrir && modalEl && !modalEl.classList.contains('show')) {
             try {
                 await EditLockManager.tryAcquire('JORNADA', jid);
             } catch (error) {
@@ -276,7 +281,6 @@ const JornadasManager = {
                 onExpire: () => this.guardarJornada()
             });
         }
-        this.reabrirEditarTrasSeleccion = false;
     },
 
     encolarOperacionSlots(operacion) {
@@ -292,6 +296,9 @@ const JornadasManager = {
         if (!this.avisarSiNoPuedeEditar(this.jornadaEditando)) {
             return;
         }
+        // Desde la card: asignar al slot y refrescar lista, sin abrir modalJornada
+        this.reabrirEditarTrasSeleccion = false;
+        this.lastFocusJornadaId = jornadaId;
         this.slotDestinoCuestionario = Number.isInteger(slotIndex) ? slotIndex : 0;
         this.cuestionariosSeleccionados = this.normalizarSlots(this.jornadaEditando.cuestionarioIds);
         this.seleccionarCuestionarios();
@@ -302,6 +309,9 @@ const JornadasManager = {
         if (!this.avisarSiNoPuedeEditar(this.jornadaEditando)) {
             return;
         }
+        // Desde la card: asignar al slot y refrescar lista, sin abrir modalJornada
+        this.reabrirEditarTrasSeleccion = false;
+        this.lastFocusJornadaId = jornadaId;
         this.slotDestinoCombo = Number.isInteger(slotIndex) ? slotIndex : 0;
         this.combosSeleccionados = this.normalizarSlots(this.jornadaEditando.comboIds);
         this.seleccionarCombos();
@@ -609,9 +619,17 @@ const JornadasManager = {
             const c = cuestionarios[i];
             if (c && c.id) {
                 const esReutilizado = !!c.reutilizado;
-                const esGrabado = this.esCuestionarioGrabado(c);
+                const esAsignado = this.cuestionarioAsignadoAConcursante(c);
+                const estiloSlot = esAsignado
+                    ? 'asignado-concursante'
+                    : (esReutilizado ? 'bg-success bg-opacity-10' : '');
+                const estiloInline = esAsignado
+                    ? ''
+                    : (esReutilizado
+                        ? 'border-color:#28a745 !important;'
+                        : 'background-color:#ffffff; border-color:#e9ecef !important;');
                 cuestionariosHtml += `
-                    <div class="cuestionario-slot p-2 border rounded ${esReutilizado ? 'bg-success bg-opacity-10' : ''}" style="${esReutilizado ? 'border-color:#28a745 !important;' : 'background-color:#ffffff; border-color:#e9ecef !important;'}">
+                    <div class="cuestionario-slot p-2 border rounded ${estiloSlot}" style="${estiloInline}">
                         <div class="d-flex justify-content-between align-items-center">
                             <span style="font-weight: 500; color: #495057;">Cuestionario ${c.id}</span>
                             <div class="btn-group btn-group-sm">
@@ -625,7 +643,7 @@ const JornadasManager = {
                                 ${this.htmlBotonBorrarCuestionario(c, jornada)}
                             </div>
                         </div>
-                        <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${esReutilizado ? 'Reutilizado' : (c.tematica || 'Sin temática')}${esGrabado && !esReutilizado ? ' · Grabado' : ''}</small>
+                        <small style="${esAsignado ? 'color:#c2410c; font-weight:600;' : (esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;')}">${esAsignado ? 'Asignado a concursante' : (esReutilizado ? 'Reutilizado' : (c.tematica || 'Sin temática'))}</small>
                     </div>
                 `;
             } else {
@@ -657,13 +675,23 @@ const JornadasManager = {
             const c = combos[i];
             if (c && c.id) {
                 const esReutilizado = !!c.reutilizado;
-                // Obtener el nombre completo del tipo o usar el valor original
+                const esAsignado = this.comboAsignadoAConcursante(c);
                 const tipoNombre = tipoComboNombres[c.tipo] || c.tipo || 'Sin tipo';
-                const detalleCombo = [esReutilizado ? 'Reutilizado' : tipoNombre, c.tematica, c.multiplicadorMaximo]
-                    .filter(Boolean).join(' · ');
+                const detalleCombo = esAsignado
+                    ? 'Asignado a concursante'
+                    : [esReutilizado ? 'Reutilizado' : tipoNombre, c.tematica, c.multiplicadorMaximo]
+                        .filter(Boolean).join(' · ');
+                const estiloSlot = esAsignado
+                    ? 'asignado-concursante'
+                    : (esReutilizado ? 'bg-success bg-opacity-10' : '');
+                const estiloInline = esAsignado
+                    ? ''
+                    : (esReutilizado
+                        ? 'border-color:#28a745 !important;'
+                        : 'background-color:#ffffff; border-color:#e9ecef !important;');
                 
                 combosHtml += `
-                    <div class="combo-slot p-2 border rounded ${esReutilizado ? 'bg-success bg-opacity-10' : ''}" style="${esReutilizado ? 'border-color:#28a745 !important;' : 'background-color:#ffffff; border-color:#e9ecef !important;'}">
+                    <div class="combo-slot p-2 border rounded ${estiloSlot}" style="${estiloInline}">
                         <div class="d-flex justify-content-between align-items-center">
                             <span style="font-weight: 500; color: #495057;">Combo ${c.id}</span>
                             <div class="btn-group btn-group-sm">
@@ -673,19 +701,11 @@ const JornadasManager = {
                                 <button class="btn btn-outline-secondary btn-sm" onclick="JornadasManager.mostrarHistorialCombo(${c.id})" title="Ver historial">
                                     <i class="fas fa-history"></i>
                                 </button>
-                                ${JornadasManager.puedeEditar(jornada) ? (esReutilizado ? `
-                                    <button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.quitarReutilizacionCombo(${c.id}, ${jornada.id})" title="Quitar reutilización">
-                                        <i class="fas fa-undo"></i>
-                                    </button>
-                                ` : `
-                                    <button class="btn btn-outline-success btn-sm" onclick="JornadasManager.reutilizarCombo(${c.id}, ${jornada.id})" title="Reutilizar combo">
-                                        <i class="fas fa-recycle"></i>
-                                    </button>
-                                `) : ''}
+                                ${this.htmlBotonReciclarCombo(c, jornada)}
                                 ${this.htmlBotonBorrarCombo(c, jornada)}
                             </div>
                         </div>
-                        <small style="${esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;'}">${detalleCombo}</small>
+                        <small style="${esAsignado ? 'color:#c2410c; font-weight:600;' : (esReutilizado ? 'color:#198754; font-weight:600;' : 'color:#6c757d;')}">${detalleCombo}</small>
                         ${c.preguntaUsadaId ? `<div class="pregunta-combo-usada small mt-1">Pregunta usada #${c.preguntaUsadaId}</div>` : ''}
                     </div>
                 `;
@@ -1117,17 +1137,34 @@ const JornadasManager = {
         if (!this.puedeEditar(jornada) || !c || c.id == null) {
             return '';
         }
+        // Asignado a concursante: no se muestra reciclaje
+        if (this.cuestionarioAsignadoAConcursante(c)) {
+            return '';
+        }
         if (c.reutilizado) {
             return `<button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.quitarReutilizacionCuestionario(${c.id}, ${jornada.id})" title="Quitar reutilización">
                                         <i class="fas fa-undo"></i>
                                     </button>`;
         }
-        if (this.esCuestionarioGrabado(c)) {
-            return `<button type="button" class="btn btn-outline-success btn-sm" disabled aria-disabled="true" title="No se puede reciclar: el cuestionario está grabado (asignado a un concursante)">
+        return `<button class="btn btn-outline-success btn-sm" onclick="JornadasManager.reutilizarCuestionario(${c.id}, ${jornada.id})" title="Reutilizar cuestionario">
                                         <i class="fas fa-recycle"></i>
                                     </button>`;
+    },
+
+    htmlBotonReciclarCombo(c, jornada) {
+        if (!this.puedeEditar(jornada) || !c || c.id == null) {
+            return '';
         }
-        return `<button class="btn btn-outline-success btn-sm" onclick="JornadasManager.reutilizarCuestionario(${c.id}, ${jornada.id})" title="Reutilizar cuestionario">
+        // Asignado a concursante: no se muestra reciclaje
+        if (this.comboAsignadoAConcursante(c)) {
+            return '';
+        }
+        if (c.reutilizado) {
+            return `<button class="btn btn-outline-danger btn-sm" onclick="JornadasManager.quitarReutilizacionCombo(${c.id}, ${jornada.id})" title="Quitar reutilización">
+                                        <i class="fas fa-undo"></i>
+                                    </button>`;
+        }
+        return `<button class="btn btn-outline-success btn-sm" onclick="JornadasManager.reutilizarCombo(${c.id}, ${jornada.id})" title="Reutilizar combo">
                                         <i class="fas fa-recycle"></i>
                                     </button>`;
     },

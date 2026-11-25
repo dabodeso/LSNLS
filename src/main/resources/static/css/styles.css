@@ -359,6 +359,13 @@ td:has(textarea) {
 .combo-asignado_jornada { background-color: var(--warning-color); color: #000; }
 .combo-asignado_concursantes { background-color: #212529; }
 
+/* Slot de jornada asignado a concursante (usado) */
+.cuestionario-slot.asignado-concursante,
+.combo-slot.asignado-concursante {
+    background-color: #ffe8cc !important;
+    border-color: #ffc078 !important;
+}
+
 .btn-action {
     background: linear-gradient(135deg, var(--primary-color) 0%, #0b5ed7 100%);
     border: none;

@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -108,14 +109,76 @@ class ProgramaServiceTest {
 
     @Test
     void findAllPaginated() {
-        Page<Programa> page = new PageImpl<>(Collections.singletonList(programa), PageRequest.of(0, 10), 1);
-        when(programaRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
+        // Sin Sort → fechaEmision DESC en memoria (nulls first)
+        when(programaRepository.findAll()).thenReturn(Collections.singletonList(programa));
 
         Map<String, Object> response = service.findAllPaginated(PageRequest.of(0, 10));
         assertEquals(1, ((List<?>) response.get("programas")).size());
         assertEquals(0, response.get("currentPage"));
         assertEquals(1L, response.get("totalItems"));
         assertEquals(1, response.get("totalPages"));
+    }
+
+    @Test
+    void findAllPaginated_porFechaEmision_nullsFirstLuegoDesc() {
+        Programa sinFecha = new Programa();
+        sinFecha.setId(3L);
+        sinFecha.setCodigo("3");
+        sinFecha.setTemporada(1);
+        sinFecha.setFechaEmision(null);
+        Programa reciente = new Programa();
+        reciente.setId(2L);
+        reciente.setCodigo("2");
+        reciente.setTemporada(1);
+        reciente.setFechaEmision(java.time.LocalDate.of(2026, 11, 20));
+        Programa antiguo = new Programa();
+        antiguo.setId(1L);
+        antiguo.setCodigo("1");
+        antiguo.setTemporada(1);
+        antiguo.setFechaEmision(java.time.LocalDate.of(2026, 1, 10));
+        when(programaRepository.findAll()).thenReturn(Arrays.asList(antiguo, reciente, sinFecha));
+
+        Map<String, Object> response = service.findAllPaginated(
+                PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("fechaEmision").descending()));
+        @SuppressWarnings("unchecked")
+        List<ProgramaDTO> programas = (List<ProgramaDTO>) response.get("programas");
+        assertEquals(Arrays.asList(3L, 2L, 1L),
+                programas.stream().map(ProgramaDTO::getId).collect(java.util.stream.Collectors.toList()));
+    }
+
+    @Test
+    void findAllPaginated_porCodigoNumerico_ordenaNatural() {
+        Programa p10 = new Programa();
+        p10.setId(10L);
+        p10.setCodigo("10");
+        p10.setTemporada(1);
+        Programa p2 = new Programa();
+        p2.setId(2L);
+        p2.setCodigo("2");
+        p2.setTemporada(1);
+        Programa p463 = new Programa();
+        p463.setId(463L);
+        p463.setCodigo("463");
+        p463.setTemporada(7);
+        when(programaRepository.findAll()).thenReturn(Arrays.asList(p10, p463, p2));
+
+        Map<String, Object> response = service.findAllPaginated(
+                PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("codigo").ascending()));
+        @SuppressWarnings("unchecked")
+        List<ProgramaDTO> programas = (List<ProgramaDTO>) response.get("programas");
+        assertEquals(Arrays.asList("2", "10", "463"),
+                programas.stream().map(ProgramaDTO::getCodigo).collect(java.util.stream.Collectors.toList()));
+    }
+
+    @Test
+    void findAllPaginated_porId_usaPageableJpa() {
+        Page<Programa> page = new PageImpl<>(Collections.singletonList(programa), PageRequest.of(0, 10), 1);
+        when(programaRepository.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
+
+        Map<String, Object> response = service.findAllPaginated(
+                PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("id").descending()));
+        assertEquals(1, ((List<?>) response.get("programas")).size());
+        verify(programaRepository).findAll(any(org.springframework.data.domain.Pageable.class));
     }
 
     @Test

@@ -344,7 +344,7 @@ function mapRevertCampoPrograma(key, raw) {
     return raw ?? null;
 }
 
-async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden = 'desc') {
+async function cargarProgramasPaginados(pagina, ordenPor = 'fechaEmision', direccionOrden = 'desc') {
     if (cargandoProgramas) {
         return;
     }
@@ -357,7 +357,10 @@ async function cargarProgramasPaginados(pagina, ordenPor = 'id', direccionOrden 
             `/api/programas/pagina?page=${pagina}&size=${tamañoPagina}&sortBy=${ordenPor}&sortDir=${direccionOrden}`
         );
         
-        programas = response.programas;
+        programas = Array.isArray(response.programas) ? response.programas.slice() : [];
+        if (ordenPor === 'fechaEmision') {
+            programas.sort((a, b) => compararListadoPorFechaEmision(a, b, direccionOrden));
+        }
         paginaActual = response.currentPage;
         totalItems = response.totalItems;
         totalPaginas = response.totalPages;
@@ -1670,18 +1673,33 @@ function fechaIsoListado(fecha) {
     return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : '';
 }
 
-// En Repetidos la fecha manda: un id bajo de octubre o noviembre no puede quedar detrás de agosto.
-function compararListadoPorFechaEmisionDesc(a, b) {
+// Listado / filtros / conjunto / repetidos: sin fecha (null/undefined) primero.
+function compararListadoPorFechaEmision(a, b, direccion = 'desc') {
     const fechaA = fechaIsoListado(a && a.fechaEmision);
     const fechaB = fechaIsoListado(b && b.fechaEmision);
     if (fechaA !== fechaB) {
-        if (!fechaA) return 1;
-        if (!fechaB) return -1;
-        return fechaA < fechaB ? 1 : -1;
+        if (!fechaA) return -1;
+        if (!fechaB) return 1;
+        const asc = fechaA < fechaB ? -1 : 1;
+        return String(direccion).toLowerCase() === 'asc' ? asc : -asc;
     }
     const idA = Number(a && a.id);
     const idB = Number(b && b.id);
     return (Number.isFinite(idB) ? idB : 0) - (Number.isFinite(idA) ? idA : 0);
+}
+
+function compararListadoPorFechaEmisionDesc(a, b) {
+    return compararListadoPorFechaEmision(a, b, 'desc');
+}
+
+// Orden natural por código (1, 2, 10…463), no por id.
+function compararListadoPorCodigoNumerico(a, b) {
+    const numA = numeroOrdenPrograma(a);
+    const numB = numeroOrdenPrograma(b);
+    if (numA !== numB) return numA - numB;
+    const idA = Number(a && a.id);
+    const idB = Number(b && b.id);
+    return (Number.isFinite(idA) ? idA : 0) - (Number.isFinite(idB) ? idB : 0);
 }
 
 async function cargarProgramasFiltrados() {
@@ -1706,9 +1724,8 @@ async function cargarProgramasFiltrados() {
         }
 
         mostrarEstadoCargaProgramas('Aplicando filtros...', 30);
-        const porFecha = listado === 'conjunto' || vistaRepetidos;
         programasFiltrados = aplicarFiltros(todosLosProgramas)
-            .sort(porFecha ? compararListadoPorFechaEmisionDesc : (a, b) => b.id - a.id);
+            .sort(compararListadoPorFechaEmisionDesc);
         const paginas = Math.ceil(programasFiltrados.length / tamañoPagina) || 0;
         if (paginaActual >= paginas) {
             paginaActual = Math.max(0, paginas - 1);

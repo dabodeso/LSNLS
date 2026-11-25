@@ -65,7 +65,7 @@ class ProgramaControllerTest {
         Map<String, Object> page = Collections.singletonMap("total", 1);
         when(programaService.findAllPaginated(any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<Map<String, Object>> response = programaController.findAllPaginated(0, 10, "id", "desc");
+        ResponseEntity<Map<String, Object>> response = programaController.findAllPaginated(0, 10, "codigo", "desc");
 
         assertEquals(200, response.getStatusCodeValue());
         assertEquals(page, response.getBody());
@@ -75,7 +75,7 @@ class ProgramaControllerTest {
     void findAllPaginated_okAsc_devuelve200() {
         when(programaService.findAllPaginated(any(Pageable.class))).thenReturn(Collections.emptyMap());
 
-        ResponseEntity<Map<String, Object>> response = programaController.findAllPaginated(0, 10, "id", "asc");
+        ResponseEntity<Map<String, Object>> response = programaController.findAllPaginated(0, 10, "codigo", "asc");
 
         assertEquals(200, response.getStatusCodeValue());
     }

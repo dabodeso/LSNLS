@@ -12,14 +12,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import javax.persistence.EntityManager;
 
@@ -56,12 +61,22 @@ public class ProgramaService {
 
     public List<ProgramaDTO> findAllDTO() {
         return programaRepository.findAll().stream()
+                .sorted(COMPARADOR_FECHA_EMISION_DESC)
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
     
     public Map<String, Object> findAllPaginated(Pageable pageable) {
-        Page<Programa> page = programaRepository.findAll(pageable);
+        Pageable efectivo = pageableSeguro(pageable);
+        Page<Programa> page;
+        if (ordenaPorCodigo(efectivo)) {
+            page = paginarPorCodigoNumerico(efectivo);
+        } else if (ordenaPorFechaEmision(efectivo)) {
+            // MySQL pone NULL al final en DESC; nullsFirst() del dialecto no es fiable.
+            page = paginarPorFechaEmision(efectivo);
+        } else {
+            page = programaRepository.findAll(efectivo);
+        }
         
         List<ProgramaDTO> programas = page.getContent().stream()
                 .map(this::convertToDTO)
@@ -74,6 +89,134 @@ public class ProgramaService {
         response.put("totalPages", page.getTotalPages());
         
         return response;
+    }
+
+    private static final Set<String> CAMPOS_ORDENABLES = new HashSet<>(java.util.Arrays.asList(
+            "id", "codigo", "temporada", "fechaEmision", "estado", "totalConcursantes", "totalPremios", "gap"));
+
+    private static final Comparator<Programa> COMPARADOR_CODIGO_NUMERICO = (a, b) -> {
+        int cmp = compararCodigoNumerico(a != null ? a.getCodigo() : null, b != null ? b.getCodigo() : null);
+        if (cmp != 0) {
+            return cmp;
+        }
+        long idA = a != null && a.getId() != null ? a.getId() : 0L;
+        long idB = b != null && b.getId() != null ? b.getId() : 0L;
+        return Long.compare(idA, idB);
+    };
+
+    /** Sin fecha primero; resto fechaEmision DESC; empate por id DESC. */
+    private static final Comparator<Programa> COMPARADOR_FECHA_EMISION_DESC =
+            comparadorFechaEmision(Sort.Direction.DESC);
+
+    private static Comparator<Programa> comparadorFechaEmision(Sort.Direction direction) {
+        Sort.Direction dir = direction != null ? direction : Sort.Direction.DESC;
+        return (a, b) -> {
+            java.time.LocalDate fechaA = a != null ? a.getFechaEmision() : null;
+            java.time.LocalDate fechaB = b != null ? b.getFechaEmision() : null;
+            if (fechaA == null && fechaB != null) {
+                return -1;
+            }
+            if (fechaA != null && fechaB == null) {
+                return 1;
+            }
+            if (fechaA != null && fechaB != null) {
+                int cmp = dir == Sort.Direction.ASC
+                        ? fechaA.compareTo(fechaB)
+                        : fechaB.compareTo(fechaA);
+                if (cmp != 0) {
+                    return cmp;
+                }
+            }
+            long idA = a != null && a.getId() != null ? a.getId() : 0L;
+            long idB = b != null && b.getId() != null ? b.getId() : 0L;
+            return Long.compare(idB, idA);
+        };
+    }
+
+    private Pageable pageableSeguro(Pageable pageable) {
+        Sort sortFechaNullsFirst = Sort.by(new Sort.Order(Sort.Direction.DESC, "fechaEmision").nullsFirst());
+        if (pageable == null) {
+            return PageRequest.of(0, 10, sortFechaNullsFirst);
+        }
+        Sort sort = pageable.getSort();
+        if (sort == null || !sort.isSorted()) {
+            return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortFechaNullsFirst);
+        }
+        Sort.Order order = sort.iterator().next();
+        String propiedad = order.getProperty();
+        if (!CAMPOS_ORDENABLES.contains(propiedad)) {
+            return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortFechaNullsFirst);
+        }
+        if ("fechaEmision".equals(propiedad)) {
+            Sort.Order conNulls = new Sort.Order(order.getDirection(), "fechaEmision").nullsFirst();
+            return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(conNulls));
+        }
+        return pageable;
+    }
+
+    private static boolean ordenaPorCodigo(Pageable pageable) {
+        return pageable != null
+                && pageable.getSort() != null
+                && pageable.getSort().isSorted()
+                && pageable.getSort().getOrderFor("codigo") != null;
+    }
+
+    private static boolean ordenaPorFechaEmision(Pageable pageable) {
+        return pageable == null
+                || pageable.getSort() == null
+                || !pageable.getSort().isSorted()
+                || pageable.getSort().getOrderFor("fechaEmision") != null;
+    }
+
+    private Page<Programa> rebanarListaOrdenada(List<Programa> ordenados, Pageable pageable) {
+        int total = ordenados.size();
+        int size = Math.max(1, pageable.getPageSize());
+        int totalPages = total == 0 ? 0 : (int) Math.ceil(total / (double) size);
+        int pageNum = Math.max(0, pageable.getPageNumber());
+        if (totalPages > 0 && pageNum >= totalPages) {
+            pageNum = totalPages - 1;
+        }
+        int from = Math.min(pageNum * size, total);
+        int to = Math.min(from + size, total);
+        List<Programa> slice = ordenados.subList(from, to);
+        return new org.springframework.data.domain.PageImpl<>(slice,
+                PageRequest.of(pageNum, size, pageable.getSort()), total);
+    }
+
+    private Page<Programa> paginarPorCodigoNumerico(Pageable pageable) {
+        List<Programa> ordenados = new ArrayList<>(programaRepository.findAll());
+        ordenados.sort(COMPARADOR_CODIGO_NUMERICO);
+        Sort.Order order = pageable.getSort() != null ? pageable.getSort().getOrderFor("codigo") : null;
+        if (order != null && order.getDirection() == Sort.Direction.DESC) {
+            java.util.Collections.reverse(ordenados);
+        }
+        return rebanarListaOrdenada(ordenados, pageable);
+    }
+
+    private Page<Programa> paginarPorFechaEmision(Pageable pageable) {
+        List<Programa> ordenados = new ArrayList<>(programaRepository.findAll());
+        Sort.Order order = pageable.getSort() != null ? pageable.getSort().getOrderFor("fechaEmision") : null;
+        Sort.Direction direction = order != null ? order.getDirection() : Sort.Direction.DESC;
+        ordenados.sort(comparadorFechaEmision(direction));
+        return rebanarListaOrdenada(ordenados, pageable);
+    }
+
+    /** Comparación numérica ascendente: 1, 2, 10…463. Textos no numéricos al final. El listado usa DESC por defecto. */
+    static int compararCodigoNumerico(String codigoA, String codigoB) {
+        Long numA = codigoEntero(codigoA);
+        Long numB = codigoEntero(codigoB);
+        if (numA != null && numB != null) {
+            return Long.compare(numA, numB);
+        }
+        if (numA != null) {
+            return -1;
+        }
+        if (numB != null) {
+            return 1;
+        }
+        String a = codigoA == null ? "" : codigoA.trim();
+        String b = codigoB == null ? "" : codigoB.trim();
+        return a.compareToIgnoreCase(b);
     }
 
     public Optional<Programa> findById(Long id) {

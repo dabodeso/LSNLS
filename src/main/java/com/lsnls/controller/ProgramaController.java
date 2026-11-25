@@ -41,10 +41,11 @@ public class ProgramaController {
     public ResponseEntity<Map<String, Object>> findAllPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "fechaEmision") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         
         Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        // Por defecto: fechaEmision DESC; sin fecha primero (nulls first) en el servicio.
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
         
         return ResponseEntity.ok(programaService.findAllPaginated(pageable));
