@@ -50,6 +50,9 @@ public class CuestionarioService {
     @Autowired
     private UndoService undoService;
 
+    @Autowired
+    private AuthorizationService authorizationService;
+
     public boolean estaAsignadoAJornada(Long cuestionarioId) {
         Long count = entityManager.createQuery(
             "SELECT COUNT(a) FROM JornadaCuestionarioAsignacion a WHERE a.cuestionario.id = :id", Long.class)
@@ -366,11 +369,12 @@ public class CuestionarioService {
 
         Cuestionario cuestionario = cuestionarioOpt.get();
 
-        // Verificar dependencias - no se puede eliminar si está adjudicado o grabado
-        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
+        // Verificar dependencias - no se puede eliminar si está adjudicado o grabado (Admin sí puede)
+        boolean esAdmin = authorizationService != null && authorizationService.isAdmin();
+        if (!esAdmin && cuestionario.getEstado() == Cuestionario.EstadoCuestionario.adjudicado) {
             throw new IllegalArgumentException("No se puede eliminar el cuestionario porque está adjudicado a una jornada. Desasígnalo primero.");
         }
-        if (cuestionario.getEstado() == Cuestionario.EstadoCuestionario.grabado) {
+        if (!esAdmin && cuestionario.getEstado() == Cuestionario.EstadoCuestionario.grabado) {
             throw new IllegalArgumentException("No se puede eliminar el cuestionario porque está grabado (asignado a concursantes). Desasígnalo primero.");
         }
 

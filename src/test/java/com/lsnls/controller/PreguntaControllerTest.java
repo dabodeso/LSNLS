@@ -431,7 +431,7 @@ class PreguntaControllerTest {
         ResponseEntity<?> response = preguntaController.actualizar(1L, dto(1L));
 
         assertEquals(403, response.getStatusCodeValue());
-        assertTrue(response.getBody().toString().contains("jornada completada"));
+        assertTrue(response.getBody().toString().contains("jornada"));
     }
 
     @Test

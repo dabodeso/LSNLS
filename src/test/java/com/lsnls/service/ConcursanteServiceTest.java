@@ -11,6 +11,7 @@ import com.lsnls.repository.ComboRepository;
 import com.lsnls.repository.ConcursanteRepository;
 import com.lsnls.repository.CuestionarioRepository;
 import com.lsnls.repository.JornadaRepository;
+import com.lsnls.repository.ProgramaConcursanteRepository;
 import com.lsnls.repository.ProgramaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,7 @@ class ConcursanteServiceTest {
     @Mock private ComboRepository comboRepository;
     @Mock private JornadaRepository jornadaRepository;
     @Mock private ProgramaRepository programaRepository;
+    @Mock private ProgramaConcursanteRepository programaConcursanteRepository;
     @Mock private EntityManager entityManager;
     @Mock private CuestionarioService cuestionarioService;
     @Mock private ComboService comboService;
@@ -75,6 +77,8 @@ class ConcursanteServiceTest {
     void setUp() {
         when(authorizationService.canEditProgramacionConcursante()).thenReturn(true);
         when(authorizationService.canEditConcursante(any())).thenReturn(true);
+        when(programaConcursanteRepository.findByProgramaIdOrderByOrdenEscaletaAscIdAsc(any()))
+                .thenReturn(Collections.emptyList());
         when(entityManager.createQuery(anyString(), any(Class.class))).thenReturn((TypedQuery) typedQuery);
         when(entityManager.createQuery(anyString())).thenReturn(typedQuery);
         when(typedQuery.setParameter(anyString(), nullable(Object.class))).thenReturn(typedQuery);
@@ -378,6 +382,42 @@ class ConcursanteServiceTest {
     void asignarAPrograma_noEncontrado() {
         when(concursanteRepository.findById(1L)).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () -> concursanteService.asignarAPrograma(1L, 8L));
+    }
+
+    @Test
+    void moverPosicionEnPrograma_intercambiaConVecino() {
+        Concursante actual = concursanteBase();
+        actual.setId(1L);
+        actual.setNumeroPrograma(8);
+        actual.setOrdenEscaleta(1);
+        Concursante vecino = concursanteBase();
+        vecino.setId(2L);
+        vecino.setNumeroPrograma(8);
+        vecino.setOrdenEscaleta(2);
+        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(actual));
+        when(concursanteRepository.findById(2L)).thenReturn(Optional.of(vecino));
+        when(concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(8))
+                .thenReturn(Arrays.asList(actual, vecino));
+
+        ConcursanteDTO result = concursanteService.moverPosicionEnPrograma(1L, 8L, "down");
+
+        assertEquals(2, result.getOrdenEscaleta());
+        assertEquals(2, actual.getOrdenEscaleta());
+        assertEquals(1, vecino.getOrdenEscaleta());
+    }
+
+    @Test
+    void moverPosicionEnPrograma_fueraDeRango() {
+        Concursante actual = concursanteBase();
+        actual.setId(1L);
+        actual.setNumeroPrograma(8);
+        actual.setOrdenEscaleta(1);
+        when(concursanteRepository.findByNumeroProgramaOrderByNumeroConcursanteAsc(8))
+                .thenReturn(Collections.singletonList(actual));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> concursanteService.moverPosicionEnPrograma(1L, 8L, "up"));
+        assertTrue(ex.getMessage().contains("1-3"));
     }
 
     @Test

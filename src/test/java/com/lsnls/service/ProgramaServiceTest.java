@@ -365,9 +365,22 @@ class ProgramaServiceTest {
     void delete_emitido() {
         programa.setEstado(Programa.EstadoPrograma.emitido);
         when(programaRepository.findById(1L)).thenReturn(Optional.of(programa));
+        when(authorizationService.isAdmin()).thenReturn(false);
         mockConcursantesCount(0L);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> service.delete(1L));
         assertTrue(ex.getMessage().contains("emitido"));
+    }
+
+    @Test
+    void delete_emitidoLoPermiteAdmin() {
+        programa.setEstado(Programa.EstadoPrograma.emitido);
+        when(programaRepository.findById(1L)).thenReturn(Optional.of(programa));
+        when(authorizationService.isAdmin()).thenReturn(true);
+        mockConcursantesCount(0L);
+
+        service.delete(1L);
+
+        verify(programaRepository).deleteById(1L);
     }
 
     @Test

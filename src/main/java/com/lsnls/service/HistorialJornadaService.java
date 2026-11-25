@@ -18,6 +18,9 @@ import com.lsnls.dto.ReaprovecharComboDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -52,6 +55,9 @@ public class HistorialJornadaService {
 
     @Autowired
     private UndoService undoService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * Registrar asignación de cuestionario a jornada
@@ -213,13 +219,45 @@ public class HistorialJornadaService {
     }
 
     /**
-     * Obtener historial de un cuestionario
+     * Historial de un cuestionario: reciclajes + jornadas donde sigue asignado.
      */
     public List<HistorialJornadaDTO> obtenerHistorialCuestionario(Long cuestionarioId) {
-        List<HistorialJornada> historiales = historialRepository.findByCuestionarioId(cuestionarioId);
-        return historiales.stream()
+        List<HistorialJornadaDTO> resultado = historialRepository.findByCuestionarioId(cuestionarioId).stream()
             .map(this::convertirADTO)
-            .collect(Collectors.toList());
+            .collect(Collectors.toCollection(ArrayList::new));
+
+        Set<Long> jornadasYa = resultado.stream()
+            .map(HistorialJornadaDTO::getJornadaId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(HashSet::new));
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> asignaciones = entityManager.createQuery(
+                "SELECT a.jornada.id, a.jornada.nombre FROM JornadaCuestionarioAsignacion a "
+                    + "WHERE a.cuestionario.id = :cid ORDER BY a.jornada.id")
+            .setParameter("cid", cuestionarioId)
+            .getResultList();
+        for (Object[] fila : asignaciones) {
+            if (fila == null || fila.length < 2 || !(fila[0] instanceof Number)) {
+                continue;
+            }
+            Long jornadaId = ((Number) fila[0]).longValue();
+            if (!jornadasYa.add(jornadaId)) {
+                continue;
+            }
+            HistorialJornadaDTO dto = new HistorialJornadaDTO();
+            dto.setJornadaId(jornadaId);
+            dto.setJornadaNombre(fila[1] != null ? String.valueOf(fila[1]) : ("JORNADA " + jornadaId));
+            dto.setCuestionarioId(cuestionarioId);
+            dto.setTipoAsignacion(TipoAsignacion.CUESTIONARIO.name());
+            dto.setEstadoAsignacion(EstadoAsignacion.asignado.name());
+            resultado.add(dto);
+        }
+
+        resultado.sort(Comparator
+            .comparing(HistorialJornadaDTO::getJornadaId, Comparator.nullsLast(Long::compareTo))
+            .thenComparing(HistorialJornadaDTO::getFechaAsignacion, Comparator.nullsLast(Comparator.naturalOrder())));
+        return resultado;
     }
 
     /**

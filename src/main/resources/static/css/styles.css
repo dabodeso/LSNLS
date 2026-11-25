@@ -199,8 +199,9 @@ body {
 }
 .table-preguntas-combo th:nth-child(6),
 .table-preguntas-combo td:nth-child(6) {
-    width: 90px;
+    width: 150px;
     text-align: center;
+    white-space: nowrap;
 }
 
 /* Separación entre cuestionarios */

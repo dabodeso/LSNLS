@@ -23,6 +23,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -58,6 +62,9 @@ class HistorialJornadaServiceTest {
 
     @Mock
     private UndoService undoService;
+
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private HistorialJornadaService historialJornadaService;
@@ -252,6 +259,10 @@ class HistorialJornadaServiceTest {
     void obtenerHistorialCuestionario() {
         HistorialJornada historial = historialCompleto();
         when(historialRepository.findByCuestionarioId(10L)).thenReturn(Collections.singletonList(historial));
+        Query query = mock(Query.class);
+        when(entityManager.createQuery(anyString())).thenReturn(query);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.getResultList()).thenReturn(Collections.emptyList());
 
         List<HistorialJornadaDTO> dtos = historialJornadaService.obtenerHistorialCuestionario(10L);
 
@@ -261,6 +272,22 @@ class HistorialJornadaServiceTest {
         assertEquals(10L, dtos.get(0).getCuestionarioId());
         assertEquals(20L, dtos.get(0).getComboId());
         assertEquals("CUESTIONARIO", dtos.get(0).getTipoAsignacion());
+        assertEquals("asignado", dtos.get(0).getEstadoAsignacion());
+    }
+
+    @Test
+    void obtenerHistorialCuestionario_incluyeAsignacionesSinHistorial() {
+        when(historialRepository.findByCuestionarioId(10L)).thenReturn(Collections.emptyList());
+        Query query = mock(Query.class);
+        when(entityManager.createQuery(anyString())).thenReturn(query);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.getResultList()).thenReturn(Collections.singletonList(new Object[]{5L, "JORNADA 5"}));
+
+        List<HistorialJornadaDTO> dtos = historialJornadaService.obtenerHistorialCuestionario(10L);
+
+        assertEquals(1, dtos.size());
+        assertEquals(5L, dtos.get(0).getJornadaId());
+        assertEquals("JORNADA 5", dtos.get(0).getJornadaNombre());
         assertEquals("asignado", dtos.get(0).getEstadoAsignacion());
     }
 

@@ -241,8 +241,8 @@ public class CuestionarioController {
 
             Cuestionario cuestionario = cuestionarioExistente.get();
 
-            // Bloquear cambio si está asignado a una jornada
-            if (cuestionarioService.estaAsignadoAJornada(id)) {
+            // Bloquear cambio si está asignado a una jornada (Admin puede cambiarlo)
+            if (cuestionarioService.estaAsignadoAJornada(id) && !authorizationService.isAdmin()) {
                 return ResponseEntity.status(409).body("Este cuestionario está asignado a una jornada y su estado está bloqueado en 'adjudicado'.");
             }
 
@@ -314,8 +314,8 @@ public class CuestionarioController {
                 return ResponseEntity.status(403).body("No tienes permisos para agregar preguntas a cuestionarios. Solo usuarios con rol GUION o DIRECCION pueden agregar preguntas a cuestionarios.");
             }
 
-            // Bloquear si el cuestionario está asignado a una jornada
-            if (cuestionarioService.estaAsignadoAJornada(cuestionarioId)) {
+            // Bloquear si el cuestionario está asignado a una jornada (Admin puede modificar)
+            if (cuestionarioService.estaAsignadoAJornada(cuestionarioId) && !authorizationService.isAdmin()) {
                 return ResponseEntity.status(409).body("Este cuestionario está asignado a una jornada y no se puede modificar.");
             }
             
@@ -424,8 +424,8 @@ public class CuestionarioController {
                 return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de cuestionarios. Solo usuarios con rol GUION o DIRECCION pueden quitar preguntas de cuestionarios.");
             }
 
-            // Bloquear si el cuestionario está asignado a una jornada
-            if (cuestionarioService.estaAsignadoAJornada(cuestionarioId)) {
+            // Bloquear si el cuestionario está asignado a una jornada (Admin puede modificar)
+            if (cuestionarioService.estaAsignadoAJornada(cuestionarioId) && !authorizationService.isAdmin()) {
                 return ResponseEntity.status(409).body("Este cuestionario está asignado a una jornada y no se puede modificar.");
             }
             
@@ -453,8 +453,8 @@ public class CuestionarioController {
                 return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de cuestionarios. Solo usuarios con rol GUION o DIRECCION pueden quitar preguntas de cuestionarios.");
             }
 
-            // Bloquear si el cuestionario está asignado a una jornada
-            if (cuestionarioService.estaAsignadoAJornada(cuestionarioId)) {
+            // Bloquear si el cuestionario está asignado a una jornada (Admin puede modificar)
+            if (cuestionarioService.estaAsignadoAJornada(cuestionarioId) && !authorizationService.isAdmin()) {
                 return ResponseEntity.status(409).body("Este cuestionario está asignado a una jornada y no se puede modificar.");
             }
             

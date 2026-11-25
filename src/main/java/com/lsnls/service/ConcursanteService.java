@@ -681,6 +681,118 @@ public class ConcursanteService {
         return convertToDTO(concursante);
     }
 
+    /**
+     * Mueve un concursante una posición arriba/abajo dentro de un programa.
+     * Si hay otro concursante en el destino, intercambia el orden de escaleta.
+     */
+    @Transactional
+    public ConcursanteDTO moverPosicionEnPrograma(Long concursanteId, Long programaId, String direccion) {
+        exigirProgramacionDireccion("el orden de escaleta");
+        if (direccion == null) {
+            throw new IllegalArgumentException("La dirección es obligatoria (up o down)");
+        }
+        String dir = direccion.trim().toLowerCase();
+        if (!"up".equals(dir) && !"down".equals(dir)) {
+            throw new IllegalArgumentException("Dirección no válida. Usa up o down");
+        }
+
+        Programa programa = programaRepository.findById(programaId)
+                .orElseThrow(() -> new RuntimeException("Programa no encontrado"));
+        exigirProgramaNoEmitido(programa, "reordenar concursantes de");
+
+        Map<Long, Integer> ordenPorConcursante = mapaOrdenPrograma(programaId);
+        Integer posActual = ordenPorConcursante.get(concursanteId);
+        if (posActual == null) {
+            throw new RuntimeException("El concursante no está asignado a este programa");
+        }
+
+        int posDestino = "up".equals(dir) ? posActual - 1 : posActual + 1;
+        if (posDestino < 1 || posDestino > 3) {
+            throw new IllegalArgumentException("No se puede mover el concursante más allá de las posiciones 1-3");
+        }
+
+        Long vecinoId = null;
+        for (Map.Entry<Long, Integer> entrada : ordenPorConcursante.entrySet()) {
+            if (entrada.getValue() != null && entrada.getValue() == posDestino
+                    && !concursanteId.equals(entrada.getKey())) {
+                vecinoId = entrada.getKey();
+                break;
+            }
+        }
+
+        Concursante actual = concursanteRepository.findById(concursanteId)
+                .orElseThrow(() -> new RuntimeException("Concursante no encontrado"));
+        actualizarOrdenEnFichaSiCorresponde(actual, programaId, posDestino);
+
+        if (vecinoId != null) {
+            Concursante vecino = concursanteRepository.findById(vecinoId)
+                    .orElseThrow(() -> new RuntimeException("Concursante vecino no encontrado"));
+            actualizarOrdenEnFichaSiCorresponde(vecino, programaId, posActual);
+        }
+
+        intercambiarOrdenEnlacesPrograma(programaId, concursanteId, vecinoId, posActual, posDestino);
+
+        ConcursanteDTO dto = convertToDTO(actual);
+        dto.setNumeroPrograma(programaId.intValue());
+        dto.setOrdenEscaleta(posDestino);
+        return dto;
+    }
+
+    private Map<Long, Integer> mapaOrdenPrograma(Long programaId) {
+        Integer numeroPrograma = programaId.intValue();
+        Map<Long, Integer> ordenPorConcursante = new LinkedHashMap<>();
+        for (ProgramaConcursante enlace : programaConcursanteRepository
+                .findByProgramaIdOrderByOrdenEscaletaAscIdAsc(programaId)) {
+            ordenPorConcursante.put(enlace.getConcursanteId(), enlace.getOrdenEscaleta());
+        }
+        for (Concursante concursante : concursanteRepository
+                .findByNumeroProgramaOrderByNumeroConcursanteAsc(numeroPrograma)) {
+            ordenPorConcursante.putIfAbsent(concursante.getId(), concursante.getOrdenEscaleta());
+        }
+        return ordenPorConcursante;
+    }
+
+    private void actualizarOrdenEnFichaSiCorresponde(Concursante concursante, Long programaId, int nuevoOrden) {
+        if (concursante.getNumeroPrograma() != null
+                && concursante.getNumeroPrograma().intValue() == programaId.intValue()) {
+            concursante.setOrdenEscaleta(nuevoOrden);
+            concursanteRepository.save(concursante);
+        }
+    }
+
+    private void intercambiarOrdenEnlacesPrograma(
+            Long programaId, Long concursanteId, Long vecinoId, int posActual, int posDestino) {
+        List<ProgramaConcursante> enlaces = programaConcursanteRepository
+                .findByProgramaIdOrderByOrdenEscaletaAscIdAsc(programaId);
+        ProgramaConcursante enlaceActual = null;
+        ProgramaConcursante enlaceVecino = null;
+        for (ProgramaConcursante enlace : enlaces) {
+            if (concursanteId.equals(enlace.getConcursanteId())) {
+                enlaceActual = enlace;
+            } else if (vecinoId != null && vecinoId.equals(enlace.getConcursanteId())) {
+                enlaceVecino = enlace;
+            }
+        }
+        if (enlaceActual == null && enlaceVecino == null) {
+            return;
+        }
+        if (enlaceActual != null) {
+            enlaceActual.setOrdenEscaleta(0);
+            programaConcursanteRepository.save(enlaceActual);
+            entityManager.flush();
+        }
+        if (enlaceVecino != null) {
+            enlaceVecino.setOrdenEscaleta(posActual);
+            programaConcursanteRepository.save(enlaceVecino);
+            entityManager.flush();
+        }
+        if (enlaceActual != null) {
+            enlaceActual.setOrdenEscaleta(posDestino);
+            programaConcursanteRepository.save(enlaceActual);
+            entityManager.flush();
+        }
+    }
+
     @Transactional
     public ConcursanteDTO asignarAJornada(Long concursanteId, Long jornadaId) {
         Concursante concursante = concursanteRepository.findById(concursanteId)

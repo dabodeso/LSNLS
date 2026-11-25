@@ -477,12 +477,14 @@ function mostrarProgramas() {
         
         const estadoColor = estadoColores[programa.estado] || '#6c757d';
         const esEmitido = (programa.estado || '').toLowerCase() === 'emitido';
+        const esAdmin = rolUsuarioActual === 'ROLE_ADMIN';
+        const emitidoBloqueado = esEmitido && !programa.repetido && !esAdmin;
         const repetidoJs = programa.repetido ? 'true' : 'false';
-        const editConcCampos = editConc && !esEmitido;
-        const gestionConcCampos = gestionConc && (!esEmitido || programa.repetido);
+        const editConcCampos = editConc && !emitidoBloqueado;
+        const gestionConcCampos = gestionConc && !emitidoBloqueado;
         
         // Render por slots fijos 1..3 para mantener huecos al borrar
-        const puedeQuitarConc = gestionConc && editConc && (!esEmitido || programa.repetido);
+        const puedeQuitarConc = gestionConc && editConc && !emitidoBloqueado;
         const concursantePorSlot = { 1: null, 2: null, 3: null };
         const sinSlot = [];
         (concursantes || []).forEach(c => {
@@ -575,7 +577,7 @@ function mostrarProgramas() {
                         <div class="concursantes-table-header">
                             <table id="tabla-programa-${programa.id}-concursantes-header"
                                    class="table table-excel table-striped tabla-header"
-                                   data-resizer-key="programa-concursantes">
+                                   data-resizer-key="programa-concursantes-v4">
                                 <colgroup>
                                     <col class="col-numero">
                                     <col class="col-lugar">
@@ -616,7 +618,7 @@ function mostrarProgramas() {
                     <div class="concursantes-table-body-wrapper">
                         <table id="tabla-programa-${programa.id}-concursantes"
                                class="table table-excel table-striped"
-                               data-resizer-key="programa-concursantes">
+                               data-resizer-key="programa-concursantes-v4">
                             <colgroup>
                                 <col class="col-numero">
                                 <col class="col-lugar">
@@ -737,9 +739,15 @@ function mostrarProgramas() {
                                             </td>
                                             <td class="col-acciones">
                                                 ${puedeQuitarConc
-                                                    ? `<button class="btn btn-sm btn-danger" onclick="quitarConcursanteDePrograma(${concursante.id}, ${programa.id}, event, ${repetidoJs})" title="Quitar del programa">
-                                                           <i class="fas fa-times"></i>
-                                                       </button>`
+                                                    ? `<div class="acciones-concursante">
+                                                           <div class="acciones-orden">
+                                                               <button type="button" class="btn btn-sm btn-outline-secondary" ${slot === 1 ? 'disabled' : ''} title="Subir posición" onclick="moverConcursanteEnPrograma(${concursante.id}, ${programa.id}, 'up', event, ${repetidoJs})"><i class="fas fa-arrow-up"></i></button>
+                                                               <button type="button" class="btn btn-sm btn-outline-secondary" ${slot === 3 ? 'disabled' : ''} title="Bajar posición" onclick="moverConcursanteEnPrograma(${concursante.id}, ${programa.id}, 'down', event, ${repetidoJs})"><i class="fas fa-arrow-down"></i></button>
+                                                           </div>
+                                                           <button type="button" class="btn btn-sm btn-danger" onclick="quitarConcursanteDePrograma(${concursante.id}, ${programa.id}, event, ${repetidoJs})" title="Quitar del programa">
+                                                               <i class="fas fa-times"></i>
+                                                           </button>
+                                                       </div>`
                                                     : ''}
                                             </td>
                                         </tr>
@@ -2729,6 +2737,44 @@ async function asignarConcursanteAPrograma(concursanteId) {
     } catch (error) {
         posicionPreferidaPrograma = null;
         mostrarError(obtenerMensajeErrorProgramas(error, 'asignación de concursante'));
+    }
+}
+
+async function moverConcursanteEnPrograma(concursanteId, programaId, direccion, event, repetido = null) {
+    if (event) event.stopPropagation();
+    if (repetido != null) destinoRepetido = esFlagRepetido(repetido);
+    const sobreRepetido = operacionSobreRepetido();
+    if (!(puedeGestionarConcursantesPrograma() && puedeEditarCamposConcursante())) {
+        mostrarError(Utils.avisoPermiso('Solo Admin o Dirección pueden reordenar concursantes.'));
+        return;
+    }
+    if (esProgramaEmitido(programaId, repetido) && !sobreRepetido && rolUsuarioActual !== 'ROLE_ADMIN') {
+        mostrarError('No se pueden reordenar concursantes de un programa emitido.');
+        return;
+    }
+    try {
+        const endpoint = sobreRepetido
+            ? `/api/programas/repetidos/${programaId}/concursantes/${concursanteId}/posicion`
+            : `/api/concursantes/${concursanteId}/programa/${programaId}/posicion`;
+        const undoDir = direccion === 'up' ? 'down' : 'up';
+        const doMove = async () => {
+            await apiManager.put(endpoint, { direccion });
+            await refrescarVistaProgramas();
+        };
+        const undoMove = async () => {
+            await apiManager.put(endpoint, { direccion: undoDir });
+            await refrescarVistaProgramas();
+        };
+        await doMove();
+        if (window.UndoManager) {
+            window.UndoManager.record({
+                do: doMove,
+                undo: undoMove,
+                label: `Mover concursante ${concursanteId} en programa ${programaId}`
+            });
+        }
+    } catch (error) {
+        mostrarError(obtenerMensajeErrorProgramas(error, 'reordenado de concursante'));
     }
 }
 

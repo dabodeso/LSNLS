@@ -106,7 +106,7 @@
         .foto-concursante {
             display: block;
             width: 100%;
-            max-width: 240px;
+            height: auto;
             aspect-ratio: 16 / 9;
             object-fit: cover;
             border-radius: 4px;
@@ -114,7 +114,7 @@
         }
         .foto-concursante:hover {
             opacity: 0.8;
-            transform: scale(1.05);
+            transform: scale(1.03);
             transition: all 0.2s ease;
         }
         .campo-foto-vacio {
@@ -123,7 +123,6 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            max-width: 240px;
             aspect-ratio: 16 / 9;
             border: 2px dashed #ccc;
             border-radius: 4px;
@@ -221,12 +220,44 @@
         .concursantes-table .col-rrss { width: 100px; }
         .concursantes-table .col-resultado { width: 70px; }
         .concursantes-table .col-duracion { width: 70px; }
-        .concursantes-table .col-foto { width: 240px; }
+        .concursantes-table .col-foto {
+            width: 240px;
+            min-width: 80px;
+            vertical-align: middle;
+        }
+        .concursantes-table .table-excel tbody td.col-foto {
+            overflow: hidden !important;
+        }
         .concursantes-table .col-momentos { width: 260px; }
         .concursantes-table .col-xusoker { width: 110px; }
         .concursantes-table .col-factor-x { width: 50px; }
         .concursantes-table .col-valoracion { width: 70px; }
-        .concursantes-table .col-acciones { width: 50px; }
+        .concursantes-table .col-acciones {
+            width: 78px;
+            min-width: 78px;
+            white-space: nowrap;
+            overflow: visible !important;
+            vertical-align: middle;
+        }
+        .concursantes-table .acciones-concursante {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .concursantes-table .acciones-orden {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .concursantes-table .acciones-orden .btn {
+            padding: 0.05rem 0.35rem;
+            line-height: 1;
+            font-size: 0.7rem;
+        }
+        .concursantes-table .acciones-concursante > .btn-danger {
+            padding: 0.2rem 0.4rem;
+        }
         
         /* Cabecera fija sin barra de scroll: solo el cuerpo tiene scroll horizontal */
         .concursantes-table-header-wrapper {
@@ -273,8 +304,9 @@
         }
         .concursantes-table-header-wrapper .tabla-header,
         .concursantes-table-body-wrapper .table-excel {
-            width: 100%;
-            min-width: 1480px;
+            width: max-content;
+            min-width: max-content;
+            max-width: none;
         }
         
         /* Créditos y notas: recuadros a la derecha del GAP */
@@ -365,6 +397,9 @@
            dentro de cada celda. La tabla ya tiene su barra horizontal abajo. */
         .concursantes-table .table-excel tbody td {
             overflow: hidden !important;
+        }
+        .concursantes-table .table-excel tbody td.col-acciones {
+            overflow: visible !important;
         }
         .concursantes-table .table-excel td textarea.campo-editable {
             overflow: hidden !important;

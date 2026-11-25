@@ -284,13 +284,13 @@ public class ProgramaService {
                 " concursante(s) asignado(s). Desasigna los concursantes primero.");
         }
 
-        // Verificar estado del programa - no eliminar si está en grabación o finalizado
-        if (programa.getEstado() == Programa.EstadoPrograma.programado) {
+        // Verificar estado del programa - no eliminar si está en grabación o finalizado (Admin sí puede)
+        if (!esAdmin() && programa.getEstado() == Programa.EstadoPrograma.programado) {
             throw new IllegalArgumentException("No se puede eliminar un programa que ya está programado. " +
                 "Cambia su estado a 'borrador' primero.");
         }
         
-        if (programa.getEstado() == Programa.EstadoPrograma.emitido) {
+        if (!esAdmin() && programa.getEstado() == Programa.EstadoPrograma.emitido) {
             throw new IllegalArgumentException("No se puede eliminar un programa que ya ha sido emitido. " +
                 "Los programas emitidos no pueden ser eliminados.");
         }

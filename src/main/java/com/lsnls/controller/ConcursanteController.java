@@ -230,6 +230,36 @@ public class ConcursanteController {
         }
     }
 
+    @PutMapping("/{concursanteId}/programa/{programaId}/posicion")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> moverPosicionEnPrograma(
+            @PathVariable Long concursanteId,
+            @PathVariable Long programaId,
+            @RequestBody Map<String, Object> request) {
+        try {
+            Object dirObj = request != null ? request.get("direccion") : null;
+            if (dirObj == null) {
+                return ResponseEntity.badRequest().body("Error: Falta el parámetro direccion (up o down)");
+            }
+            ConcursanteDTO concursante = concursanteService.moverPosicionEnPrograma(
+                    concursanteId, programaId, dirObj.toString());
+            return ResponseEntity.ok(concursante);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(MensajesUsuario.sanitizar(e.getMessage()));
+        } catch (RuntimeException e) {
+            String mensaje = e.getMessage() == null ? "" : e.getMessage();
+            if (mensaje.contains("no encontrado")) {
+                return ResponseEntity.status(404).body(mensaje);
+            }
+            return ResponseEntity.badRequest().body("Error al mover concursante: " + MensajesUsuario.sanitizar(mensaje));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    "Error interno al mover concursante: " + MensajesUsuario.sanitizar(e.getMessage()));
+        }
+    }
+
     @PostMapping("/{concursanteId}/asignar-jornada/{jornadaId}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_GUION', 'ROLE_DIRECCION')")
     public ResponseEntity<?> asignarAJornada(@PathVariable Long concursanteId, @PathVariable Long jornadaId) {

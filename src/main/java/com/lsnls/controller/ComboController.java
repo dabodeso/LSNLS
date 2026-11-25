@@ -189,8 +189,8 @@ public class ComboController {
                 return ResponseEntity.status(403).body("No tienes permisos para agregar preguntas a combos. Solo usuarios con rol GUION o DIRECCION pueden agregar preguntas a combos.");
             }
             
-            // Bloquear si el combo está asignado a una jornada
-            if (comboService.estaAsignadoAJornada(comboId)) {
+            // Bloquear si el combo está asignado a una jornada (Admin puede modificar)
+            if (comboService.estaAsignadoAJornada(comboId) && !authService.isAdmin()) {
                 return ResponseEntity.status(409).body("Este combo está asignado a una jornada y no se puede modificar.");
             }
             
@@ -224,8 +224,8 @@ public class ComboController {
                 return ResponseEntity.status(403).body("No tienes permisos para quitar preguntas de combos. Solo usuarios con rol GUION o DIRECCION pueden quitar preguntas de combos.");
             }
             
-            // Bloquear si el combo está asignado a una jornada
-            if (comboService.estaAsignadoAJornada(comboId)) {
+            // Bloquear si el combo está asignado a una jornada (Admin puede modificar)
+            if (comboService.estaAsignadoAJornada(comboId) && !authService.isAdmin()) {
                 return ResponseEntity.status(409).body("Este combo está asignado a una jornada y no se puede modificar.");
             }
             
@@ -349,8 +349,8 @@ public class ComboController {
 
             Combo combo = comboOpt.get();
             
-            // Bloquear cambio si está asignado a una jornada
-            if (comboService.estaAsignadoAJornada(id)) {
+            // Bloquear cambio si está asignado a una jornada (Admin puede cambiarlo)
+            if (comboService.estaAsignadoAJornada(id) && !authService.isAdmin()) {
                 return ResponseEntity.status(409).body("Este combo está asignado a una jornada y su estado está bloqueado en 'adjudicado'.");
             }
 
@@ -514,6 +514,45 @@ public class ComboController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + MensajesUsuario.sanitizar(e.getMessage()));
         }
     }
+
+    @PutMapping("/{comboId}/preguntas/{preguntaId}/posicion")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> moverPosicionPregunta(
+            @PathVariable Long comboId,
+            @PathVariable Long preguntaId,
+            @RequestBody Map<String, Object> request) {
+        try {
+            if (!authService.canCreateCuestionario()) {
+                return ResponseEntity.status(403).body("No tienes permisos para reordenar preguntas de combos. Solo Admin o Dirección pueden hacerlo.");
+            }
+
+            if (comboService.estaAsignadoAJornada(comboId) && !authService.isAdmin()) {
+                return ResponseEntity.status(409).body("Este combo está asignado a una jornada y no se puede modificar.");
+            }
+
+            Object dirObj = request != null ? request.get("direccion") : null;
+            if (dirObj == null) {
+                return ResponseEntity.badRequest().body("Error: Falta el parámetro direccion (up o down)");
+            }
+            String direccion = dirObj.toString();
+
+            boolean exito = comboService.moverPosicionPregunta(comboId, preguntaId, direccion);
+            if (exito) {
+                return ResponseEntity.ok(Map.of(
+                        "message", "Posición actualizada exitosamente",
+                        "comboId", comboId,
+                        "preguntaId", preguntaId,
+                        "direccion", direccion));
+            }
+            return ResponseEntity.badRequest().body("Error al mover la pregunta: No se pudo completar la operación");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Error al mover la pregunta: " + MensajesUsuario.sanitizar(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error al mover pregunta {} en combo {}: {}", preguntaId, comboId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno del servidor: " + MensajesUsuario.sanitizar(e.getMessage()));
+        }
+    }
     
     @DeleteMapping("/{id}")
     @PreAuthorize("@authorizationService.canDelete()")
@@ -534,11 +573,11 @@ public class ComboController {
 
             Combo combo = comboOpt.get();
             
-            // Verificar estado del combo
-            if (combo.getEstado() == EstadoCombo.adjudicado) {
+            // Verificar estado del combo (Admin puede eliminar en ciclo final)
+            if (!authService.isAdmin() && combo.getEstado() == EstadoCombo.adjudicado) {
                 return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está adjudicado. Cámbialo a un estado anterior primero.");
             }
-            if (combo.getEstado() == EstadoCombo.grabado) {
+            if (!authService.isAdmin() && combo.getEstado() == EstadoCombo.grabado) {
                 return ResponseEntity.badRequest().body("No se puede eliminar el combo porque está grabado. Cámbialo a un estado anterior primero.");
             }
 

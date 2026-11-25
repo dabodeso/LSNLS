@@ -1,5 +1,7 @@
 package com.lsnls.service;
 
+import com.lsnls.entity.Combo;
+import com.lsnls.entity.HistorialJornada;
 import com.lsnls.entity.Jornada;
 import com.lsnls.entity.Pregunta;
 import com.lsnls.entity.Pregunta.EstadoPregunta;
@@ -833,10 +835,13 @@ public class PreguntaService {
     }
 
     /**
-     * True si la pregunta está en un cuestionario o combo asignado a una jornada
-     * completada o archivada. En ese caso una pregunta "usada" no se edita
-     * (salvo admin). Si el cuestionario/combo no está en jornada, o la jornada
-     * sigue abierta, sí se puede editar.
+     * True si una pregunta "usada" no se puede editar (salvo admin):
+     * <ul>
+     *   <li>cuestionario en jornada completada/archivada, o</li>
+     *   <li>combo en jornada en_grabacion que no ha sido reciclado</li>
+     * </ul>
+     * Sí se puede editar si el combo está reciclado, o no está en una jornada
+     * en grabación, o el usuario es admin (ese bypass lo aplica el controller).
      */
     public boolean estaEnJornadaCerrada(Long preguntaId) {
         if (preguntaId == null) {
@@ -855,15 +860,24 @@ public class PreguntaService {
         if (enCuestionario != null && enCuestionario > 0) {
             return true;
         }
-        Long enCombo = entityManager.createQuery(
+        // Combo: solo bloquea en_grabacion y si no está reciclado/reaprovechado
+        Long enComboGrabacion = entityManager.createQuery(
                 "SELECT COUNT(a) FROM JornadaComboAsignacion a, PreguntaCombo pc "
                         + "WHERE pc.combo = a.combo AND pc.pregunta.id = :pid "
-                        + "AND a.jornada.estado IN :estados",
+                        + "AND a.jornada.estado = :enGrabacion "
+                        + "AND a.combo.estado <> :reaprovechado "
+                        + "AND NOT EXISTS ("
+                        + "  SELECT h FROM HistorialJornada h "
+                        + "  WHERE h.combo = a.combo AND h.jornada = a.jornada "
+                        + "  AND h.estadoAsignacion = :histReciclado"
+                        + ")",
                 Long.class)
                 .setParameter("pid", preguntaId)
-                .setParameter("estados", cerrados)
+                .setParameter("enGrabacion", Jornada.EstadoJornada.en_grabacion)
+                .setParameter("reaprovechado", Combo.EstadoCombo.reaprovechado)
+                .setParameter("histReciclado", HistorialJornada.EstadoAsignacion.reaprovechado)
                 .getSingleResult();
-        return enCombo != null && enCombo > 0;
+        return enComboGrabacion != null && enComboGrabacion > 0;
     }
 
     public void eliminarPorId(Long id) {

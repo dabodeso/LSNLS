@@ -376,6 +376,25 @@ class ConcursanteControllerTest {
     }
 
     @Test
+    void moverPosicionEnPrograma_ok_devuelve200() {
+        ConcursanteDTO c = dto(1L, "Ana");
+        when(concursanteService.moverPosicionEnPrograma(1L, 2L, "up")).thenReturn(c);
+
+        ResponseEntity<?> response = concursanteController.moverPosicionEnPrograma(
+                1L, 2L, Collections.singletonMap("direccion", "up"));
+
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(c, response.getBody());
+    }
+
+    @Test
+    void moverPosicionEnPrograma_sinDireccion_devuelve400() {
+        ResponseEntity<?> response = concursanteController.moverPosicionEnPrograma(1L, 2L, Collections.emptyMap());
+
+        assertEquals(400, response.getStatusCodeValue());
+    }
+
+    @Test
     void desasignarDePrograma_ok_devuelve200() {
         ConcursanteDTO c = dto(1L, "Ana");
         when(concursanteService.desasignarDePrograma(1L)).thenReturn(c);

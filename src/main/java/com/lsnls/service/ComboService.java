@@ -52,6 +52,9 @@ public class ComboService {
     @Autowired
     private UndoService undoService;
 
+    @Autowired
+    private AuthorizationService authorizationService;
+
     public Combo crear(Combo combo) {
         combo.setFechaCreacion(LocalDateTime.now());
         combo.setEstado(EstadoCombo.borrador);
@@ -575,6 +578,76 @@ public class ComboService {
         }
     }
 
+    /**
+     * Mueve una pregunta del combo una posición arriba ("up") o abajo ("down").
+     * Si hay otra pregunta en la posición destino, intercambia ambas posiciones.
+     * Si el slot destino está vacío, solo actualiza la posición de la pregunta.
+     */
+    @Transactional
+    public boolean moverPosicionPregunta(Long comboId, Long preguntaId, String direccion) {
+        if (direccion == null) {
+            throw new IllegalArgumentException("La dirección es obligatoria (up o down)");
+        }
+        String dir = direccion.trim().toLowerCase();
+        if (!"up".equals(dir) && !"down".equals(dir)) {
+            throw new IllegalArgumentException("Dirección no válida. Usa up o down");
+        }
+
+        Optional<Combo> comboOpt = comboRepository.findById(comboId);
+        if (comboOpt.isEmpty()) {
+            return false;
+        }
+        Combo combo = comboOpt.get();
+        if (combo.getPreguntas() == null || combo.getPreguntas().isEmpty()) {
+            return false;
+        }
+
+        PreguntaCombo actual = null;
+        for (PreguntaCombo pc : combo.getPreguntas()) {
+            if (pc != null && pc.getPregunta() != null && preguntaId.equals(pc.getPregunta().getId())) {
+                actual = pc;
+                break;
+            }
+        }
+        if (actual == null) {
+            return false;
+        }
+
+        int posActual = resolverPosicion(actual);
+        int posDestino = "up".equals(dir) ? posActual - 1 : posActual + 1;
+        if (posDestino < 1 || posDestino > 3) {
+            throw new IllegalArgumentException("No se puede mover la pregunta más allá de las posiciones 1-3");
+        }
+
+        PreguntaCombo vecino = null;
+        for (PreguntaCombo pc : combo.getPreguntas()) {
+            if (pc == null || pc == actual || pc.getPregunta() == null) {
+                continue;
+            }
+            if (resolverPosicion(pc) == posDestino) {
+                vecino = pc;
+                break;
+            }
+        }
+
+        if (vecino != null) {
+            vecino.setPosicion(posActual);
+            preguntaComboRepository.save(vecino);
+        }
+        actual.setPosicion(posDestino);
+        preguntaComboRepository.save(actual);
+        entityManager.flush();
+        return true;
+    }
+
+    /** Posición persistida o, si falta (datos legacy), inferida por factor. */
+    private int resolverPosicion(PreguntaCombo pc) {
+        if (pc.getPosicion() != null && pc.getPosicion() >= 1 && pc.getPosicion() <= 3) {
+            return pc.getPosicion();
+        }
+        return posicionDesdeFactor(pc.getFactorMultiplicacion());
+    }
+
     public void eliminar(Long id) {
         // Verificar que el combo existe
         Optional<Combo> comboOpt = comboRepository.findById(id);
@@ -584,11 +657,12 @@ public class ComboService {
 
         Combo combo = comboOpt.get();
 
-        // Verificar dependencias - no se puede eliminar si est? adjudicado o grabado
-        if (combo.getEstado() == Combo.EstadoCombo.adjudicado) {
+        // Verificar dependencias - no se puede eliminar si est? adjudicado o grabado (Admin sí puede)
+        boolean esAdmin = authorizationService != null && authorizationService.isAdmin();
+        if (!esAdmin && combo.getEstado() == Combo.EstadoCombo.adjudicado) {
             throw new IllegalArgumentException("No se puede eliminar el combo porque est? adjudicado a una jornada. Desas?gnalo primero.");
         }
-        if (combo.getEstado() == Combo.EstadoCombo.grabado) {
+        if (!esAdmin && combo.getEstado() == Combo.EstadoCombo.grabado) {
             throw new IllegalArgumentException("No se puede eliminar el combo porque est? grabado (asignado a concursantes). Desas?gnalo primero.");
         }
 

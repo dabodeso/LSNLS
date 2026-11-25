@@ -556,7 +556,8 @@ const CuestionariosManager = {
             // Determinar si debe mostrar "Asignado a jornada X" o el selector de estado
             // Solo mostrar "Asignado/Grabado" si está en estado adjudicado o grabado
             const estadoActual = typeof c.estado === 'string' ? c.estado : c.estado?.name || 'borrador';
-            const estaReservado = c.jornadaAsignada && (estadoActual === 'adjudicado' || estadoActual === 'grabado');
+            const esAdminCuestLista = !!(authManager && authManager.hasRole && authManager.hasRole('ROLE_ADMIN'));
+            const estaReservado = c.jornadaAsignada && (estadoActual === 'adjudicado' || estadoActual === 'grabado') && !esAdminCuestLista;
             
             tr.innerHTML = `
                 <td class="celda-numero-cuestionario">${c.id ?? ''}</td>
@@ -569,10 +570,17 @@ const CuestionariosManager = {
                     ${estaReservado ? `<div class="text-muted">${(estadoActual === 'grabado') ? `Grabado en jornada ${c.jornadaAsignada}` : `Asignado a jornada ${c.jornadaAsignada}`}</div>` :
                     `<select class="form-select form-select-sm" onchange="cambiarEstadoCuestionario(${c.id}, this.value)">
                         ${getOpcionesEstadoCuestionario(estadoActual)}
-                    </select>${iconoReutilizado}`}
+                    </select>${iconoReutilizado}${esAdminCuestLista && c.jornadaAsignada ? `<div class="text-muted small">Jornada ${c.jornadaAsignada}</div>` : ''}`}
                 </td>
                 <td>${this.contarPreguntasAsignadas(c)}</td>
-                <td>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span>${c.fechaCreacion ? Utils.formatearFecha(String(c.fechaCreacion)) : ''}</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation(); CuestionariosManager.mostrarHistorialCuestionario(${c.id})" title="Ver historial de jornadas">
+                            <i class="fas fa-history"></i>
+                        </button>
+                    </div>
+                </td>
                 <td>
                     <button class="btn btn-sm btn-primary me-1" onclick="editarCuestionario(${c.id})" title="Editar cuestionario">
                         <i class="fas fa-edit"></i>
@@ -720,7 +728,7 @@ const CuestionariosManager = {
         tbody.innerHTML = '';
         if (!Array.isArray(cuestionarios) || cuestionarios.length === 0) {
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="5" class="text-center">No hay cuestionarios</td>';
+            tr.innerHTML = '<td colspan="6" class="text-center">No hay cuestionarios</td>';
             tbody.appendChild(tr);
             return;
         }
@@ -755,6 +763,78 @@ const CuestionariosManager = {
         if (['2NLS', '4NLS', '5NLS'].includes(n)) return 'text-danger fw-bold';
         if (['1LS', '3LS', '5LS'].includes(n)) return 'text-success fw-bold';
         return '';
+    },
+
+    getBadgeColorHistorial(estado) {
+        const colores = {
+            asignado: 'primary',
+            usado: 'success',
+            no_usado: 'warning',
+            reaprovechado: 'info'
+        };
+        return colores[estado] || 'secondary';
+    },
+
+    getEstadoClassHistorial(estado) {
+        const clases = {
+            asignado: 'asignado',
+            usado: 'usado',
+            no_usado: 'no-usado',
+            reaprovechado: 'reaprovechado'
+        };
+        return clases[estado] || '';
+    },
+
+    async mostrarHistorialCuestionario(cuestionarioId) {
+        try {
+            const response = await apiManager.get(`/api/historial-jornadas/cuestionario/${cuestionarioId}`);
+            const historial = response.datos || [];
+            const titulo = document.getElementById('modalHistorialCuestionarioTitulo');
+            if (titulo) {
+                titulo.innerHTML = `<i class="fas fa-history"></i> Historial del cuestionario #${cuestionarioId}`;
+            }
+            this.pintarHistorialCuestionario(historial);
+            const modalEl = document.getElementById('modalHistorialCuestionario');
+            if (!modalEl) throw new Error('No se encontró el modal de historial');
+            new bootstrap.Modal(modalEl).show();
+        } catch (error) {
+            console.error('Error al cargar historial del cuestionario:', error);
+            Toastify({
+                text: 'Error al cargar el historial de jornadas',
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+            }).showToast();
+        }
+    },
+
+    pintarHistorialCuestionario(historial) {
+        const container = document.getElementById('historialCuestionarioContainer');
+        if (!container) return;
+        if (!historial.length) {
+            container.innerHTML = '<div class="text-center py-3"><p class="text-muted mb-0">No hay historial de jornadas para este cuestionario</p></div>';
+            return;
+        }
+        container.innerHTML = historial.map(item => {
+            const estadoClass = this.getEstadoClassHistorial(item.estadoAsignacion);
+            const fechaAsignacion = item.fechaAsignacion ? new Date(item.fechaAsignacion).toLocaleString() : '';
+            const fechaUso = item.fechaUso ? new Date(item.fechaUso).toLocaleString() : '';
+            const notas = item.notas ? String(item.notas) : '';
+            const etiquetaEstado = item.estadoAsignacion === 'reaprovechado'
+                ? 'Reciclado'
+                : (item.estadoAsignacion || '');
+            return `
+                <div class="historial-item ${estadoClass}">
+                    <h6 class="mb-2">${item.jornadaNombre || 'Jornada'} ${item.jornadaId ? `#${item.jornadaId}` : ''}</h6>
+                    <p class="mb-1"><strong>Estado:</strong> <span class="badge bg-${this.getBadgeColorHistorial(item.estadoAsignacion)}">${etiquetaEstado}</span></p>
+                    ${fechaAsignacion ? `<p class="mb-1"><strong>Asignado:</strong> ${fechaAsignacion}</p>` : ''}
+                    ${fechaUso ? `<p class="mb-1"><strong>Usado:</strong> ${fechaUso}</p>` : ''}
+                    ${notas ? `<p class="mb-1"><strong>Notas:</strong> ${notas}</p>` : ''}
+                </div>
+            `;
+        }).join('');
     },
 };
 
@@ -1730,12 +1810,9 @@ window.editarCuestionario = async function(id) {
         const estadoElement = document.getElementById('cuestionario-estado');
         if (estadoElement) {
             const estadoActual = cuestionario.estado || 'borrador';
+            const esAdminModal = !!(authManager && authManager.hasRole && authManager.hasRole('ROLE_ADMIN'));
             estadoElement.innerHTML = getOpcionesEstadoCuestionario(estadoActual);
-            if (cuestionario.jornadaAsignada) {
-                estadoElement.disabled = true;
-            } else {
-                estadoElement.disabled = false;
-            }
+            estadoElement.disabled = !!cuestionario.jornadaAsignada && !esAdminModal;
         }
 
         // Mostrar info de jornada asignada en el modal

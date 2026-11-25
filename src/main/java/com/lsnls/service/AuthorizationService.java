@@ -96,8 +96,9 @@ public class AuthorizationService {
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;
 
                     case usada:
-                        // Editable si el cuestionario/combo no está en jornada cerrada
-                        // (ese bloqueo lo aplica el controller con PreguntaService).
+                        // Editable salvo bloqueo de asignación (combo en_grabacion
+                        // no reciclado, o cuestionario en jornada cerrada); Admin
+                        // siempre. El bloqueo lo aplica el controller.
                         return usuario.getRol() == Usuario.RolUsuario.ROLE_GUION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_VERIFICACION ||
                                usuario.getRol() == Usuario.RolUsuario.ROLE_DIRECCION;

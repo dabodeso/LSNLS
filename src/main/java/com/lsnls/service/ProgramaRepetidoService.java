@@ -22,6 +22,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -75,6 +77,9 @@ public class ProgramaRepetidoService {
 
     @Autowired
     private UndoService undoService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /** Cubre el cálculo del código y el insert para que dos altas no reciban el mismo número. */
     private final Object asignacionCodigoLock = new Object();
@@ -343,7 +348,8 @@ public class ProgramaRepetidoService {
     @Transactional
     public void delete(Long id) {
         ProgramaRepetido repetido = exigirRepetido(id);
-        if (repetido.getEstado() == Programa.EstadoPrograma.emitido) {
+        boolean esAdmin = authorizationService != null && authorizationService.isAdmin();
+        if (!esAdmin && repetido.getEstado() == Programa.EstadoPrograma.emitido) {
             throw new IllegalArgumentException(
                     "No se puede eliminar un programa repetido que ya ha sido emitido.");
         }
@@ -558,6 +564,70 @@ public class ProgramaRepetidoService {
         }
         enlaceRepository.deleteByProgramaRepetidoIdAndConcursanteId(repetidoId, concursanteId);
         actualizarTotal(repetidoId);
+    }
+
+    /**
+     * Mueve un concursante una posición arriba/abajo dentro de un repetido.
+     * Si hay otro concursante en el destino, intercambia el orden de escaleta.
+     */
+    @Transactional
+    public ConcursanteDTO moverPosicion(Long repetidoId, Long concursanteId, String direccion) {
+        exigirRepetido(repetidoId);
+        if (direccion == null) {
+            throw new IllegalArgumentException("La dirección es obligatoria (up o down)");
+        }
+        String dir = direccion.trim().toLowerCase(Locale.ROOT);
+        if (!"up".equals(dir) && !"down".equals(dir)) {
+            throw new IllegalArgumentException("Dirección no válida. Usa up o down");
+        }
+
+        List<ProgramaRepetidoConcursante> enlaces = enlaceRepository
+                .findByProgramaRepetidoIdOrderByOrdenEscaletaAsc(repetidoId);
+        ProgramaRepetidoConcursante actual = null;
+        for (ProgramaRepetidoConcursante enlace : enlaces) {
+            if (concursanteId.equals(enlace.getConcursanteId())) {
+                actual = enlace;
+                break;
+            }
+        }
+        if (actual == null) {
+            throw new IllegalArgumentException("Ese concursante no está en este repetido.");
+        }
+
+        int posActual = actual.getOrdenEscaleta() == null ? 0 : actual.getOrdenEscaleta();
+        int posDestino = "up".equals(dir) ? posActual - 1 : posActual + 1;
+        if (posDestino < 1 || posDestino > MAX_CONCURSANTES) {
+            throw new IllegalArgumentException("No se puede mover el concursante más allá de las posiciones 1-3");
+        }
+
+        ProgramaRepetidoConcursante vecino = null;
+        for (ProgramaRepetidoConcursante enlace : enlaces) {
+            if (enlace != actual && enlace.getOrdenEscaleta() != null
+                    && enlace.getOrdenEscaleta() == posDestino) {
+                vecino = enlace;
+                break;
+            }
+        }
+
+        actual.setOrdenEscaleta(0);
+        enlaceRepository.save(actual);
+        entityManager.flush();
+
+        if (vecino != null) {
+            vecino.setOrdenEscaleta(posActual);
+            enlaceRepository.save(vecino);
+            entityManager.flush();
+        }
+
+        actual.setOrdenEscaleta(posDestino);
+        enlaceRepository.save(actual);
+        entityManager.flush();
+
+        Concursante concursante = concursanteRepository.findById(concursanteId)
+                .orElseThrow(() -> new IllegalArgumentException("Concursante no encontrado"));
+        ConcursanteDTO respuesta = concursanteService.copiarDto(concursante);
+        respuesta.setOrdenEscaleta(posDestino);
+        return respuesta;
     }
 
     private List<SlotConcursante> slotsDesdePrograma(List<ConcursanteDTO> delPrograma) {

@@ -54,6 +54,7 @@ class ComboServiceTest {
     @Mock private TematicaRepository tematicaRepository;
     @Mock private EntityManager entityManager;
     @Mock private UndoService undoService;
+    @Mock private AuthorizationService authorizationService;
     @Mock private TypedQuery<Object> typedQuery;
     @Mock private Query nativeQuery;
 
@@ -250,6 +251,88 @@ class ComboServiceTest {
         assertTrue(comboService.agregarPregunta(1L, 5L, 2, 1));
         verify(preguntaComboRepository).save(any(PreguntaCombo.class));
         verify(nativeQuery, atLeastOnce()).executeUpdate();
+    }
+
+    @Test
+    void moverPosicionPregunta_intercambiaConVecino() {
+        Combo combo = comboBase();
+        Pregunta p1 = preguntaNivel5(10L);
+        Pregunta p2 = preguntaNivel5(20L);
+
+        PreguntaCombo pc1 = new PreguntaCombo();
+        PreguntaCombo.PreguntaComboId id1 = new PreguntaCombo.PreguntaComboId();
+        id1.setComboId(1L);
+        id1.setPreguntaId(10L);
+        pc1.setId(id1);
+        pc1.setPregunta(p1);
+        pc1.setCombo(combo);
+        pc1.setFactorMultiplicacion("2");
+        pc1.setPosicion(1);
+
+        PreguntaCombo pc2 = new PreguntaCombo();
+        PreguntaCombo.PreguntaComboId id2 = new PreguntaCombo.PreguntaComboId();
+        id2.setComboId(1L);
+        id2.setPreguntaId(20L);
+        pc2.setId(id2);
+        pc2.setPregunta(p2);
+        pc2.setCombo(combo);
+        pc2.setFactorMultiplicacion("3");
+        pc2.setPosicion(2);
+
+        combo.getPreguntas().add(pc1);
+        combo.getPreguntas().add(pc2);
+        when(comboRepository.findById(1L)).thenReturn(Optional.of(combo));
+        when(preguntaComboRepository.save(any(PreguntaCombo.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertTrue(comboService.moverPosicionPregunta(1L, 10L, "down"));
+        assertEquals(2, pc1.getPosicion());
+        assertEquals(1, pc2.getPosicion());
+    }
+
+    @Test
+    void moverPosicionPregunta_mueveASlotVacio() {
+        Combo combo = comboBase();
+        Pregunta p1 = preguntaNivel5(10L);
+
+        PreguntaCombo pc1 = new PreguntaCombo();
+        PreguntaCombo.PreguntaComboId id1 = new PreguntaCombo.PreguntaComboId();
+        id1.setComboId(1L);
+        id1.setPreguntaId(10L);
+        pc1.setId(id1);
+        pc1.setPregunta(p1);
+        pc1.setCombo(combo);
+        pc1.setFactorMultiplicacion("2");
+        pc1.setPosicion(1);
+
+        combo.getPreguntas().add(pc1);
+        when(comboRepository.findById(1L)).thenReturn(Optional.of(combo));
+        when(preguntaComboRepository.save(any(PreguntaCombo.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        assertTrue(comboService.moverPosicionPregunta(1L, 10L, "down"));
+        assertEquals(2, pc1.getPosicion());
+    }
+
+    @Test
+    void moverPosicionPregunta_fueraDeRango() {
+        Combo combo = comboBase();
+        Pregunta p1 = preguntaNivel5(10L);
+
+        PreguntaCombo pc1 = new PreguntaCombo();
+        PreguntaCombo.PreguntaComboId id1 = new PreguntaCombo.PreguntaComboId();
+        id1.setComboId(1L);
+        id1.setPreguntaId(10L);
+        pc1.setId(id1);
+        pc1.setPregunta(p1);
+        pc1.setCombo(combo);
+        pc1.setFactorMultiplicacion("2");
+        pc1.setPosicion(1);
+
+        combo.getPreguntas().add(pc1);
+        when(comboRepository.findById(1L)).thenReturn(Optional.of(combo));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> comboService.moverPosicionPregunta(1L, 10L, "up"));
+        assertTrue(ex.getMessage().contains("1-3"));
     }
 
     @Test

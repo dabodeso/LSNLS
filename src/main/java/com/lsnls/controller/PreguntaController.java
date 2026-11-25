@@ -246,9 +246,11 @@ public class PreguntaController {
             if (pregunta.getEstado() == Pregunta.EstadoPregunta.usada
                     && !authService.isAdmin()
                     && preguntaService.estaEnJornadaCerrada(id)) {
-                log.warn("[ACTUALIZAR] Pregunta usada bloqueada por jornada cerrada: {}", id);
+                log.warn("[ACTUALIZAR] Pregunta usada bloqueada por asignación en jornada: {}", id);
                 return ResponseEntity.status(403).body(
-                        "No se puede editar esta pregunta: está en un cuestionario o combo de una jornada completada o archivada.");
+                        "No se puede editar esta pregunta: está en un cuestionario de jornada completada/archivada, "
+                                + "o en un combo de una jornada en grabación que no ha sido reciclado. "
+                                + "Admin puede editarla en cualquier caso.");
             }
             
             // Verificar permisos para editar según el estado

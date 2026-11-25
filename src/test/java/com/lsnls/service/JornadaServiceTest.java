@@ -325,6 +325,33 @@ class JornadaServiceTest {
     }
 
     @Test
+    void actualizar_archivadaLaCorrigeAdmin() {
+        Jornada j = jornadaBase();
+        j.setEstado(Jornada.EstadoJornada.archivada);
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(j));
+        when(authorizationService.isAdmin()).thenReturn(true);
+        JornadaDTO dto = dtoMinimo();
+        dto.setNombre("Archivada corregida");
+
+        JornadaDTO result = jornadaService.actualizar(1L, dto);
+
+        assertEquals("Archivada corregida", result.getNombre());
+        verify(jornadaRepository).save(any(Jornada.class));
+    }
+
+    @Test
+    void eliminar_archivadaLaPermiteAdmin() {
+        Jornada j = jornadaBase();
+        j.setEstado(Jornada.EstadoJornada.archivada);
+        when(jornadaRepository.findById(1L)).thenReturn(Optional.of(j));
+        when(authorizationService.isAdmin()).thenReturn(true);
+
+        jornadaService.eliminar(1L);
+
+        verify(jornadaRepository).delete(j);
+    }
+
+    @Test
     void actualizar_ok() {
         when(jornadaRepository.findById(1L)).thenReturn(Optional.of(jornadaBase()));
         JornadaDTO dto = dtoMinimo();

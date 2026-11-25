@@ -1081,14 +1081,15 @@ const JornadasManager = {
     },
 
     puedeEditar(jornada) {
-        // Admin y Dirección. Archivada sigue cerrada. Completada solo la corrige Admin.
+        // Admin puede editar en cualquier estado. Dirección en todos salvo ciclo final.
+        if (this.esAdmin()) {
+            return true;
+        }
         if (!this.esAdminODireccion()) {
             return false;
         }
         const estado = (jornada?.estado || '').toLowerCase();
-        if (estado === 'archivada') return false;
-        if (estado === 'completada') return this.esAdmin();
-        return true;
+        return estado !== 'archivada' && estado !== 'completada';
     },
 
     avisarSiNoPuedeEditar(jornada) {
@@ -1169,11 +1170,15 @@ const JornadasManager = {
     },
 
     puedeEliminar(jornada) {
-        // Solo ADMIN / DIRECCION; bloqueado en completada / archivada (alineado con DELETE)
+        // Admin puede eliminar en cualquier estado. Dirección no en ciclo final.
+        if (this.esAdmin()) {
+            return true;
+        }
         if (!this.esAdminODireccion()) {
             return false;
         }
-        return jornada.estado !== 'completada' && jornada.estado !== 'archivada';
+        const estado = (jornada?.estado || '').toLowerCase();
+        return estado !== 'completada' && estado !== 'archivada';
     },
 
     puedeGestionarEstado(jornada) {

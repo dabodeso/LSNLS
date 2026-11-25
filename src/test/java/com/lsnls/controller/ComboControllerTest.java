@@ -331,11 +331,24 @@ class ComboControllerTest {
     @Test
     void agregarPregunta_asignadoAJornada_devuelve409() {
         when(authService.canCreateCuestionario()).thenReturn(true);
+        when(authService.isAdmin()).thenReturn(false);
         when(comboService.estaAsignadoAJornada(1L)).thenReturn(true);
 
         ResponseEntity<?> response = comboController.agregarPregunta(1L, Collections.singletonMap("preguntaId", 2));
 
         assertEquals(409, response.getStatusCodeValue());
+    }
+
+    @Test
+    void agregarPregunta_asignadoAJornadaAdmin_devuelve200() {
+        when(authService.canCreateCuestionario()).thenReturn(true);
+        when(authService.isAdmin()).thenReturn(true);
+        when(comboService.estaAsignadoAJornada(1L)).thenReturn(true);
+        when(comboService.agregarPregunta(1L, 2L, 1, null)).thenReturn(true);
+
+        ResponseEntity<?> response = comboController.agregarPregunta(1L, Collections.singletonMap("preguntaId", 2));
+
+        assertEquals(200, response.getStatusCodeValue());
     }
 
     @Test
@@ -376,6 +389,40 @@ class ComboControllerTest {
     }
 
     @Test
+    void moverPosicionPregunta_ok_devuelve200() {
+        when(authService.canCreateCuestionario()).thenReturn(true);
+        when(comboService.estaAsignadoAJornada(1L)).thenReturn(false);
+        when(comboService.moverPosicionPregunta(1L, 2L, "up")).thenReturn(true);
+
+        ResponseEntity<?> response = comboController.moverPosicionPregunta(
+                1L, 2L, Collections.singletonMap("direccion", "up"));
+
+        assertEquals(200, response.getStatusCodeValue());
+    }
+
+    @Test
+    void moverPosicionPregunta_asignadoAJornada_devuelve409() {
+        when(authService.canCreateCuestionario()).thenReturn(true);
+        when(authService.isAdmin()).thenReturn(false);
+        when(comboService.estaAsignadoAJornada(1L)).thenReturn(true);
+
+        ResponseEntity<?> response = comboController.moverPosicionPregunta(
+                1L, 2L, Collections.singletonMap("direccion", "down"));
+
+        assertEquals(409, response.getStatusCodeValue());
+    }
+
+    @Test
+    void moverPosicionPregunta_sinPermiso_devuelve403() {
+        when(authService.canCreateCuestionario()).thenReturn(false);
+
+        ResponseEntity<?> response = comboController.moverPosicionPregunta(
+                1L, 2L, Collections.singletonMap("direccion", "up"));
+
+        assertEquals(403, response.getStatusCodeValue());
+    }
+
+    @Test
     void quitarPregunta_sinPermiso_devuelve403() {
         when(authService.canCreateCuestionario()).thenReturn(false);
 
@@ -387,6 +434,7 @@ class ComboControllerTest {
     @Test
     void quitarPregunta_asignadoAJornada_devuelve409() {
         when(authService.canCreateCuestionario()).thenReturn(true);
+        when(authService.isAdmin()).thenReturn(false);
         when(comboService.estaAsignadoAJornada(1L)).thenReturn(true);
 
         ResponseEntity<?> response = comboController.quitarPregunta(1L, 2L);
@@ -561,6 +609,7 @@ class ComboControllerTest {
     @Test
     void cambiarEstado_asignadoAJornada_devuelve409() {
         when(comboRepository.findById(1L)).thenReturn(Optional.of(combo(1L, Combo.EstadoCombo.adjudicado)));
+        when(authService.isAdmin()).thenReturn(false);
         when(comboService.estaAsignadoAJornada(1L)).thenReturn(true);
 
         ResponseEntity<?> response = comboController.cambiarEstado(1L, Combo.EstadoCombo.aprobado);

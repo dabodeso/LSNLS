@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -196,6 +197,23 @@ public class ProgramaRepetidoController {
         try {
             programaRepetidoService.quitar(id, concursanteId);
             return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/concursantes/{concursanteId}/posicion")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECCION')")
+    public ResponseEntity<?> moverPosicion(
+            @PathVariable Long id,
+            @PathVariable Long concursanteId,
+            @RequestBody java.util.Map<String, Object> request) {
+        try {
+            Object dirObj = request != null ? request.get("direccion") : null;
+            if (dirObj == null) {
+                return ResponseEntity.badRequest().body("Error: Falta el parámetro direccion (up o down)");
+            }
+            return ResponseEntity.ok(programaRepetidoService.moverPosicion(id, concursanteId, dirObj.toString()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

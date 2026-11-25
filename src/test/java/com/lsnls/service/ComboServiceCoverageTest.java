@@ -57,6 +57,7 @@ class ComboServiceCoverageTest {
     @Mock private TematicaRepository tematicaRepository;
     @Mock private EntityManager entityManager;
     @Mock private UndoService undoService;
+    @Mock private AuthorizationService authorizationService;
     @Mock private TypedQuery<Object> typedQuery;
     @Mock private Query nativeQuery;
 

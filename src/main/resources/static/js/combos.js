@@ -524,7 +524,8 @@ const CombosManager = {
             // Determinar si debe mostrar "Asignado a jornada X" o el selector de estado
             // Solo mostrar "Asignado/Grabado" si está en estado adjudicado o grabado
             const estadoActual = typeof c.estado === 'string' ? c.estado : c.estado?.name || 'borrador';
-            const estaReservado = c.jornadaAsignada && (estadoActual === 'adjudicado' || estadoActual === 'grabado');
+            const esAdminComboLista = !!(authManager && authManager.hasRole && authManager.hasRole('ROLE_ADMIN'));
+            const estaReservado = c.jornadaAsignada && (estadoActual === 'adjudicado' || estadoActual === 'grabado') && !esAdminComboLista;
             
             const tr = document.createElement('tr');
             tr.setAttribute('data-id', c.id);
@@ -550,7 +551,7 @@ const CombosManager = {
                     ${estaReservado ? `<div class="text-muted">${(estadoActual === 'grabado') ? `Grabado en jornada ${c.jornadaAsignada}` : `Asignado a jornada ${c.jornadaAsignada}`}</div>` :
                     `<select class="form-select form-select-sm" onchange="cambiarEstadoCombo(${c.id}, this.value)">
                         ${getOpcionesEstadoCombo(estadoActual)}
-                    </select>${iconoReutilizadoCombo}`}
+                    </select>${iconoReutilizadoCombo}${esAdminComboLista && c.jornadaAsignada ? `<div class="text-muted small">Jornada ${c.jornadaAsignada}</div>` : ''}`}
                 </td>
                 <td>${(c.preguntas && c.preguntas.length) || 0}</td>
                 <td>
@@ -627,6 +628,14 @@ const CombosManager = {
             }
                     
                     const usada = Number(c.preguntaUsadaId) === Number(p.id);
+                    const puedeReordenar = !!(authManager && authManager.hasRole &&
+                        (authManager.hasRole('ROLE_ADMIN') || authManager.hasRole('ROLE_DIRECCION')));
+                    const deshabilitarSubir = slotNivel === 'PM1' ? 'disabled' : '';
+                    const deshabilitarBajar = slotNivel === 'PM3' ? 'disabled' : '';
+                    const botonesOrden = puedeReordenar
+                        ? `<button class="btn btn-sm btn-outline-secondary" ${deshabilitarSubir} title="Subir posición" onclick='event.stopPropagation();moverPreguntaCombo(${c.id}, ${p.id}, "up")'><i class="fas fa-arrow-up"></i></button>
+                                <button class="btn btn-sm btn-outline-secondary" ${deshabilitarBajar} title="Bajar posición" onclick='event.stopPropagation();moverPreguntaCombo(${c.id}, ${p.id}, "down")'><i class="fas fa-arrow-down"></i></button>`
+                        : '';
                     filasPreguntas += `<tr data-id="${p.id}" data-nivel="${slotNivel}" class="${usada ? 'pregunta-combo-usada-fila' : ''}" style="cursor:pointer;">
                         <td><span class='${CombosManager.getNivelColor ? CombosManager.getNivelColor(p.nivel) : ''}'>${nivelReal}</span></td>
                         <td>
@@ -639,7 +648,12 @@ const CombosManager = {
                         <td class="fw-bold">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${Utils.resaltarCoincidencias(p.pregunta ?? '', terminoBusqueda)}</span>${Utils.sufijoCaracteresPregunta(p.pregunta)}</td>
                         <td class="fw-bold">${Utils.resaltarCoincidencias(p.respuesta ?? '', terminoBusqueda)}</td>
                         <td class="fw-bold">${p.datosExtra ?? ''}</td>
-                        <td><button class='btn btn-sm btn-danger' onclick='event.stopPropagation();eliminarPreguntaDeCombo(${c.id}, "${slotNivel}")'><i class='fas fa-trash'></i></button></td>
+                        <td>
+                            <div class="d-flex gap-1 align-items-center flex-nowrap">
+                                ${botonesOrden}
+                                <button class="btn btn-sm btn-danger" onclick='event.stopPropagation();eliminarPreguntaDeCombo(${c.id}, "${slotNivel}")' title="Quitar pregunta"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
                     </tr>`;
                 } else {
                     // Fila vacía con botón añadir - mostrar slot con multiplicador
@@ -1398,8 +1412,9 @@ async function editarCombo(id) {
         const comboEstado = document.getElementById('combo-estado');
         if (comboEstado) {
             const estadoActual = combo.estado || 'borrador';
+            const esAdminModal = !!(authManager && authManager.hasRole && authManager.hasRole('ROLE_ADMIN'));
             comboEstado.innerHTML = getOpcionesEstadoCombo(estadoActual);
-            comboEstado.disabled = !!combo.jornadaAsignada;
+            comboEstado.disabled = !!combo.jornadaAsignada && !esAdminModal;
         }
         const asignadoDiv = document.getElementById('combo-jornada-asignada');
         if (asignadoDiv) {
@@ -2301,6 +2316,59 @@ window.eliminarCombo = async function(id) {
     } catch (e) {
         console.error('Error al eliminar combo:', e);
         Toastify({ text: Utils.mensajeErrorApi(e, 'eliminar combos'), duration: 5000, close: true, gravity: 'top', position: 'right', style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' } }).showToast();
+    }
+};
+
+window.moverPreguntaCombo = async function(comboId, preguntaId, direccion) {
+    if (!(authManager && authManager.hasRole &&
+        (authManager.hasRole('ROLE_ADMIN') || authManager.hasRole('ROLE_DIRECCION')))) {
+        Toastify({
+            text: 'Solo Admin o Dirección pueden reordenar preguntas de combos',
+            duration: 4000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
+        return;
+    }
+    try {
+        CombosManager.rememberScroll();
+        CombosManager.lastFocusComboId = comboId;
+        const doMove = async () => {
+            await apiManager.put(
+                `/api/combos/${comboId}/preguntas/${preguntaId}/posicion`,
+                { direccion }
+            );
+            await CombosManager.refrescarFila(comboId);
+        };
+        const undoDir = direccion === 'up' ? 'down' : 'up';
+        const undoMove = async () => {
+            await apiManager.put(
+                `/api/combos/${comboId}/preguntas/${preguntaId}/posicion`,
+                { direccion: undoDir }
+            );
+            await CombosManager.refrescarFila(comboId);
+        };
+        await doMove();
+        if (window.UndoManager) {
+            window.UndoManager.record({
+                do: doMove,
+                undo: undoMove,
+                label: `Mover pregunta ${preguntaId} en combo ${comboId}`
+            });
+        }
+        CombosManager.restoreScrollOrFocus();
+    } catch (e) {
+        console.error('Error al mover pregunta del combo:', e);
+        Toastify({
+            text: 'Error al mover la pregunta: ' + (e.message || e),
+            duration: 4000,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            style: { background: 'linear-gradient(to right, #ff0000, #cc0000)' }
+        }).showToast();
     }
 };
 

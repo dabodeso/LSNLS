@@ -52,6 +52,7 @@ class CuestionarioServiceTest {
     @Mock private PreguntaCuestionarioRepository preguntaCuestionarioRepository;
     @Mock private EntityManager entityManager;
     @Mock private UndoService undoService;
+    @Mock private AuthorizationService authorizationService;
     @Mock private TematicaService tematicaService;
     @Mock private TypedQuery<Object> typedQuery;
     @Mock private Query nativeQuery;

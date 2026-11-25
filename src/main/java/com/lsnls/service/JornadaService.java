@@ -191,13 +191,14 @@ public class JornadaService {
         return convertirADTO(jornada);
     }
 
-    /** Admin puede corregir una jornada completada. Archivada sigue cerrada para todos. */
+    /** Admin puede editar en cualquier estado, incluido completada/archivada. */
     private boolean sePuedeEditar(Jornada jornada) {
-        if (jornada.getEstado() == Jornada.EstadoJornada.archivada) {
-            return false;
+        if (authorizationService != null && authorizationService.isAdmin()) {
+            return true;
         }
-        if (jornada.getEstado() == Jornada.EstadoJornada.completada) {
-            return authorizationService != null && authorizationService.isAdmin();
+        if (jornada.getEstado() == Jornada.EstadoJornada.archivada
+                || jornada.getEstado() == Jornada.EstadoJornada.completada) {
+            return false;
         }
         return true;
     }
@@ -206,9 +207,10 @@ public class JornadaService {
         Jornada jornada = jornadaRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Jornada con ID " + id + " no encontrada"));
 
-        // Verificar estado de la jornada
-        if (jornada.getEstado() == Jornada.EstadoJornada.completada ||
-            jornada.getEstado() == Jornada.EstadoJornada.archivada) {
+        // Verificar estado de la jornada (Admin puede eliminar en ciclo final)
+        boolean esAdmin = authorizationService != null && authorizationService.isAdmin();
+        if (!esAdmin && (jornada.getEstado() == Jornada.EstadoJornada.completada ||
+            jornada.getEstado() == Jornada.EstadoJornada.archivada)) {
             throw new IllegalArgumentException("No se puede eliminar una jornada que ya está completada o archivada.");
         }
 
