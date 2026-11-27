@@ -81,6 +81,8 @@ public interface ConcursanteRepository extends JpaRepository<Concursante, Long>,
     @Query("SELECT MAX(c.numeroConcursante) FROM Concursante c")
     Integer findMaxNumeroConcursante();
 
+    List<Concursante> findByNumeroConcursanteIsNullOrderByIdAsc();
+
     Long countByNumeroConcursante(Integer numeroConcursante);
 
     boolean existsByCuestionario_Id(Long cuestionarioId);

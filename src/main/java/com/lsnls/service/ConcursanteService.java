@@ -176,12 +176,10 @@ public class ConcursanteService {
         concursante.setEstado(normalizarEstadoConcursante(concursante.getEstado()));
         aplicarRestriccionProgramacionAlCrear(concursante);
         validarDuracionesYEstado(concursante);
-        
-        // Generar número de concursante automáticamente
-        if (concursante.getNumeroConcursante() == null) {
-            Integer siguienteNumero = generarSiguienteNumeroConcursante();
-            concursante.setNumeroConcursante(siguienteNumero);
-        }
+
+        // Siempre el siguiente al máximo actual (no acepta número del cliente).
+        asegurarNumerosConcursanteFaltantes();
+        concursante.setNumeroConcursante(generarSiguienteNumeroConcursante());
         
         // Si se asignó un cuestionario, verificar si ya está asignado a otro concursante y desasignarlo
         if (concursante.getCuestionario() != null) {
@@ -261,12 +259,26 @@ public class ConcursanteService {
     }
 
     /**
-     * Genera el siguiente número de concursante automáticamente
-     * PROTEGIDO CONTRA RACE CONDITIONS con synchronized
+     * Siguiente número = MAX(numero_concursante) + 1.
+     * No rellena huecos de borrados; el id puede quedar desfasado y eso es esperado.
+     * Protegido con synchronized frente a creaciones concurrentes.
      */
     private synchronized Integer generarSiguienteNumeroConcursante() {
         Integer maxNumero = concursanteRepository.findMaxNumeroConcursante();
         return (maxNumero != null) ? maxNumero + 1 : 1;
+    }
+
+    /** Asigna número correlativo a concursantes que lo perdieron (p. ej. por un update antiguo). */
+    private synchronized void asegurarNumerosConcursanteFaltantes() {
+        List<Concursante> sinNumero = concursanteRepository.findByNumeroConcursanteIsNullOrderByIdAsc();
+        if (sinNumero.isEmpty()) {
+            return;
+        }
+        int siguiente = generarSiguienteNumeroConcursante();
+        for (Concursante c : sinNumero) {
+            c.setNumeroConcursante(siguiente++);
+            concursanteRepository.save(c);
+        }
     }
 
     @Transactional
@@ -277,6 +289,7 @@ public class ConcursanteService {
 
         Integer numeroProgramaOrig = concursante.getNumeroPrograma();
         Integer ordenEscaletaOrig = concursante.getOrdenEscaleta();
+        Integer numeroConcursanteOrig = concursante.getNumeroConcursante();
         String estadoOrig = concursante.getEstado();
         String bonicoOrig = concursante.getBonico();
         String duracionDireccionOrig = concursante.getDuracionDireccion();
@@ -290,10 +303,12 @@ public class ConcursanteService {
         // Obtener el combo anterior para comparar
         Combo comboAnterior = concursante.getCombo();
         
-        BeanUtils.copyProperties(concursanteDTO, concursante, "id", "version");
+        // El número solo se asigna al crear; aquí se conserva (el formulario no lo envía y lo borraba).
+        BeanUtils.copyProperties(concursanteDTO, concursante, "id", "version", "numeroConcursante");
         if (concursanteDTO.getVersion() != null) {
             concursante.setVersion(concursanteDTO.getVersion());
         }
+        concursante.setNumeroConcursante(numeroConcursanteOrig);
         restaurarProgramacionSiNoAutorizado(concursante, numeroProgramaOrig, ordenEscaletaOrig, estadoOrig, bonicoOrig,
                 duracionDireccionOrig, duracionFinalOrig, momentosDestacadosOrig, valoracionFinalOrig);
         if (concursanteDTO.getOrdenEscaleta() == null) {

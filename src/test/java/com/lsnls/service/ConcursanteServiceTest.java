@@ -158,6 +158,15 @@ class ConcursanteServiceTest {
     }
 
     @Test
+    void create_ignoraNumeroEnviadoYUsaMaxMasUno() {
+        when(concursanteRepository.findMaxNumeroConcursante()).thenReturn(10);
+        ConcursanteDTO dto = dtoMinimo();
+        dto.setNumeroConcursante(999);
+        ConcursanteDTO result = concursanteService.create(dto);
+        assertEquals(11, result.getNumeroConcursante());
+    }
+
+    @Test
     void create_sinEstadoOBorradorQuedaGrabado() {
         ConcursanteDTO dto = dtoMinimo();
         dto.setEstado(null);
@@ -209,7 +218,23 @@ class ConcursanteServiceTest {
         ConcursanteDTO result = concursanteService.update(1L, dto);
 
         assertEquals("grabado", result.getEstado());
+        assertEquals(7, result.getNumeroConcursante());
         verify(concursanteRepository).save(existente);
+    }
+
+    @Test
+    void update_preservaNumeroAunqueDtoLoTraigaNull() {
+        Concursante existente = concursanteBase();
+        existente.setNumeroConcursante(42);
+        when(concursanteRepository.findById(1L)).thenReturn(Optional.of(existente));
+        ConcursanteDTO dto = dtoMinimo();
+        dto.setNombre("Luis");
+        dto.setNumeroConcursante(null);
+
+        ConcursanteDTO result = concursanteService.update(1L, dto);
+
+        assertEquals(42, result.getNumeroConcursante());
+        assertEquals(42, existente.getNumeroConcursante());
     }
 
     @Test

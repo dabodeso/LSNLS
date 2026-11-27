@@ -1076,9 +1076,9 @@ const tbody = document.getElementById('tabla-concursantes');
 const puedeEditarFila = puedeEditarConcursanteSegunEstado(concursante.estado);
 const celdas = [];
 
-// ID
+// Nº concursante (no el id de BBDD)
 if (configuracionColumnas.columnasVisibles['numero-concur']) {
-celdas.push(`<td class="${claseColumna('numero-concur')}">${concursante.id || ''}</td>`);
+celdas.push(`<td class="${claseColumna('numero-concur')}">${concursante.numeroConcursante ?? ''}</td>`);
 }
 
 // JORNADA
@@ -2409,6 +2409,17 @@ function datosExtraPreguntaPreview(q) {
     return q.datosExtra || q.datos_extra || '';
 }
 
+function engancharClickPreguntaNuevaPestana(contenedor) {
+    if (!contenedor) return;
+    contenedor.querySelectorAll('tr[data-id]').forEach(fila => {
+        fila.addEventListener('click', (e) => {
+            if (e.target.closest('button, input, select, textarea, a')) return;
+            const pid = fila.getAttribute('data-id');
+            if (pid) Utils.abrirEnNuevaPestana(`preguntas.html?id=${pid}`);
+        });
+    });
+}
+
 async function verCuestionario(id, concursanteId) {
     try {
         if (concursanteId) concursanteParaReemplazo = concursanteId;
@@ -2427,7 +2438,8 @@ async function verCuestionario(id, concursanteId) {
                     const nivel = Utils.formatearNivel((q.nivel && typeof q.nivel === 'string') ? q.nivel : (q.nivel || ''));
                     const texto = q.pregunta;
                     const resp = (q.respuesta && typeof q.respuesta === 'string') ? q.respuesta : (q.respuesta || '');
-                    return `<tr><td class="col-nivel-preview">${nivel || ''}</td><td class="col-pregunta-preview">${texto}</td><td class="col-respuesta-preview">${resp || ''}</td><td class="col-datos-preview">${datosExtraPreguntaPreview(q)}</td></tr>`;
+                    const qid = q.id != null ? q.id : '';
+                    return `<tr data-id="${qid}" style="cursor:pointer;" title="Abrir pregunta #${qid} en pestaña nueva"><td class="col-nivel-preview">${nivel || ''}</td><td class="col-pregunta-preview">${texto}</td><td class="col-respuesta-preview">${resp || ''}</td><td class="col-datos-preview">${datosExtraPreguntaPreview(q)}</td></tr>`;
                 })
                 .join('');
             cont.innerHTML = `
@@ -2437,6 +2449,7 @@ async function verCuestionario(id, concursanteId) {
                     </thead>
                     <tbody>${filas}</tbody>
                 </table>`;
+            engancharClickPreguntaNuevaPestana(cont);
         }
         new bootstrap.Modal(document.getElementById('modal-preview-cuestionario')).show();
     } catch (e) {
@@ -2465,7 +2478,7 @@ async function verCombo(id, concursanteId) {
                 const factor = item.factorMultiplicacion || item.factor || '';
                 const qid = q.id != null ? q.id : item.preguntaId;
                 const usada = data.preguntaUsadaId != null && qid != null && Number(data.preguntaUsadaId) === Number(qid);
-                return `<tr class="${usada ? 'pregunta-combo-usada-fila' : ''}"><td class="col-nivel-preview">${nivel || ''}</td><td class="col-pregunta-preview">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${texto || ''}</span></td><td class="col-respuesta-preview">${resp || ''}</td><td class="col-factor-preview">${factor || ''}</td><td class="col-datos-preview">${datosExtraPreguntaPreview(q)}</td></tr>`;
+                return `<tr class="${usada ? 'pregunta-combo-usada-fila' : ''}" data-id="${qid || ''}" style="cursor:pointer;" title="Abrir pregunta #${qid || ''} en pestaña nueva"><td class="col-nivel-preview">${nivel || ''}</td><td class="col-pregunta-preview">${usada ? '<span class="badge me-1" style="background:#e57373;">Usada</span>' : ''}<span class="${usada ? 'pregunta-combo-usada' : ''}">${texto || ''}</span></td><td class="col-respuesta-preview">${resp || ''}</td><td class="col-factor-preview">${factor || ''}</td><td class="col-datos-preview">${datosExtraPreguntaPreview(q)}</td></tr>`;
             }).join('');
             cont.innerHTML = `
                 <table class="table table-sm table-striped tabla-preview-preguntas">
@@ -2474,6 +2487,7 @@ async function verCombo(id, concursanteId) {
                     </thead>
                     <tbody>${filas}</tbody>
                 </table>`;
+            engancharClickPreguntaNuevaPestana(cont);
         }
         const btnPreviewReciclar = document.getElementById('btn-reciclar-combo-preview');
         if (btnPreviewReciclar) {
