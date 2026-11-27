@@ -694,7 +694,7 @@ class JornadaServiceTest {
         assertEquals(1, pieCuest.size());
         assertNull(opciones.get(ExcelExportService.OPCION_PIE_COMBO));
         ExcelExportService.DatosPieBloque pie = pieCuest.get(101L);
-        assertEquals("1155, Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO", pie.concursante);
+        assertEquals("1155 Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO", pie.concursante);
         assertEquals("12000", pie.resultado);
         assertEquals("JORNADA 115", pie.grabacion);
         assertEquals("Notas de plató", pie.notasGuion);

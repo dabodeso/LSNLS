@@ -84,6 +84,7 @@ class ExcelExportServiceTest {
             assertEquals("3LS", hoja.getRow(3).getCell(1).getStringCellValue());
             assertEquals("4NOLS", hoja.getRow(4).getCell(1).getStringCellValue());
             assertEquals("101", hoja.getRow(1).getCell(0).getStringCellValue());
+            assertEquals("", hoja.getRow(5).getCell(0).getStringCellValue());
             assertEquals("", hoja.getRow(5).getCell(2).getStringCellValue());
 
             // Pie del bloque, vacío para rellenar en grabación
@@ -94,9 +95,9 @@ class ExcelExportServiceTest {
             assertEquals("", hoja.getRow(6).getCell(2).getStringCellValue());
             assertNull(hoja.getRow(10));
 
-            // A2 = nº cuest; A3–A6 fusionadas para valoración; pie etiqueta A:B y valor C:F
+            // A2 = nº cuest; A3–A5 fusionadas para valoración; A6 = nº combo; pie etiqueta A:B y valor C:F
             assertTrue(hoja.getMergedRegions().stream()
-                    .anyMatch(r -> r.getFirstRow() == 2 && r.getLastRow() == 5
+                    .anyMatch(r -> r.getFirstRow() == 2 && r.getLastRow() == 4
                             && r.getFirstColumn() == 0 && r.getLastColumn() == 0));
             assertTrue(hoja.getMergedRegions().stream()
                     .anyMatch(r -> r.getFirstRow() == 6 && r.getFirstColumn() == 0 && r.getLastColumn() == 1));
@@ -147,11 +148,11 @@ class ExcelExportServiceTest {
         con.setLugar("Madrid");
         con.setOcupacion("Médico");
         con.setRedesSociales("@carlos");
-        assertEquals("1155, Carlos, 34, (Madrid) - Médico |@carlos|",
+        assertEquals("1155 Carlos, 34, (Madrid) - Médico |@carlos|",
                 ExcelExportService.textoConcursantePie(con));
 
         con.setMomentosDestacados("clip NoLoSabeLoTodo final");
-        assertEquals("1155, Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO",
+        assertEquals("1155 Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO",
                 ExcelExportService.textoConcursantePie(con));
     }
 
@@ -167,7 +168,7 @@ class ExcelExportServiceTest {
                 combo, null, null, null, null, null));
 
         ExcelExportService.DatosPieBloque pieCuest = new ExcelExportService.DatosPieBloque(
-                "1155, Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO",
+                "1155 Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO",
                 "8000",
                 "JORNADA 90",
                 "Notas de grabación del plató",
@@ -188,11 +189,12 @@ class ExcelExportServiceTest {
             assertEquals("CUEST", hoja.getRow(0).getCell(0).getStringCellValue());
             assertEquals("101", hoja.getRow(1).getCell(0).getStringCellValue());
             assertEquals("1+", hoja.getRow(2).getCell(0).getStringCellValue());
+            assertEquals("201", hoja.getRow(5).getCell(0).getStringCellValue());
             assertEquals("Pregunta 4NLS del 101", hoja.getRow(4).getCell(2).getStringCellValue());
             assertEquals("5LS", hoja.getRow(5).getCell(1).getStringCellValue());
             assertEquals("Pregunta PM1 del 201", hoja.getRow(5).getCell(2).getStringCellValue());
             assertEquals("R0", hoja.getRow(5).getCell(3).getStringCellValue());
-            assertEquals("1155, Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO",
+            assertEquals("1155 Carlos, 34, (Madrid) - Médico |@carlos| NOLOSABELOTODO",
                     hoja.getRow(6).getCell(2).getStringCellValue());
             assertEquals("8000", hoja.getRow(7).getCell(2).getStringCellValue());
             assertEquals("JORNADA 90", hoja.getRow(8).getCell(2).getStringCellValue());
@@ -205,9 +207,34 @@ class ExcelExportServiceTest {
             assertEquals(HorizontalAlignment.CENTER,
                     hoja.getRow(8).getCell(2).getCellStyle().getAlignment());
             assertTrue(hoja.getMergedRegions().stream()
-                    .anyMatch(r -> r.getFirstRow() == 2 && r.getLastRow() == 5
+                    .anyMatch(r -> r.getFirstRow() == 2 && r.getLastRow() == 4
                             && r.getFirstColumn() == 0 && r.getLastColumn() == 0));
             assertNull(hoja.getRow(10));
+        }
+    }
+
+    @Test
+    void jornadaCompletada_omiteCuestionariosSinConcursante() throws Exception {
+        Jornada jornada = new Jornada();
+        jornada.setNombre("JORNADA 92");
+        jornada.reemplazarCuestionariosPorSlot(Arrays.asList(
+                cuestionarioConPreguntas(101L),
+                cuestionarioConPreguntas(102L),
+                null, null, null, null));
+        jornada.reemplazarCombosPorSlot(Arrays.asList(new Combo[6]));
+
+        ExcelExportService.DatosPieBloque pie = new ExcelExportService.DatosPieBloque(
+                "Ana", "0", "JORNADA 92", "", "Ana");
+        Map<String, Object> opciones = new HashMap<>();
+        opciones.put(ExcelExportService.OPCION_PIE_CUESTIONARIO,
+                Collections.singletonMap(101L, pie));
+
+        byte[] bytes = excelExportService.exportarJornada(jornada, opciones);
+
+        try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(bytes))) {
+            assertEquals(1, wb.getNumberOfSheets());
+            assertEquals("Ana", wb.getSheetAt(0).getSheetName());
+            assertEquals("101", wb.getSheetAt(0).getRow(1).getCell(0).getStringCellValue());
         }
     }
 

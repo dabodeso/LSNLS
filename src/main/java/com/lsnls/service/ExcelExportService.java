@@ -49,7 +49,7 @@ public class ExcelExportService {
         public final String grabacion;
         /** Contenido de NOTAS GUION: notas de grabación del concursante. */
         public final String notasGuion;
-        /** Valoración del guionista (p. ej. 2, 1+); va en rojo en A3–A6 fusionadas. */
+        /** Valoración del guionista (p. ej. 2, 1+); va en rojo en A3–A5 fusionadas. */
         public final String valoracionGuionista;
         /** Nombre corto para la pestaña Excel (nombre del concursante). */
         public final String nombreHoja;
@@ -153,6 +153,7 @@ public class ExcelExportService {
 
     /**
      * Una pestaña por concursante (cuestionario), nombrada con su nombre.
+     * Solo incluye cuestionarios con concursante asignado (entrada en pie).
      * La pregunta usada del combo del mismo slot va en la 5.ª fila si existe.
      */
     private void crearHojasPorConcursante(Workbook workbook, Jornada jornada, Estilos estilos,
@@ -164,14 +165,19 @@ public class ExcelExportService {
 
         for (int slot = 0; slot < cuestionarios.size(); slot++) {
             Cuestionario cuestionario = cuestionarios.get(slot);
-            if (cuestionario == null) {
+            if (cuestionario == null || cuestionario.getId() == null) {
                 continue;
             }
-            DatosPieBloque pie = cuestionario.getId() != null ? pieCuestionarios.get(cuestionario.getId()) : null;
-            Pregunta multiplicadora = pie != null ? pie.preguntaMultiplicadora : null;
-            if (multiplicadora == null && slot < combos.size()) {
-                multiplicadora = preguntaUsadaDelCombo(combos.get(slot));
+            DatosPieBloque pie = pieCuestionarios.get(cuestionario.getId());
+            if (pie == null) {
+                continue;
             }
+            Combo combo = slot < combos.size() ? combos.get(slot) : null;
+            Pregunta multiplicadora = pie != null ? pie.preguntaMultiplicadora : null;
+            if (multiplicadora == null) {
+                multiplicadora = preguntaUsadaDelCombo(combo);
+            }
+            Long idCombo = combo != null ? combo.getId() : null;
             String titulo = nombrePestana(
                     pie != null && pie.nombreHoja != null ? pie.nombreHoja : null,
                     "Cuest " + (cuestionario.getId() != null ? cuestionario.getId() : ""),
@@ -181,7 +187,7 @@ public class ExcelExportService {
                 hoja.setColumnWidth(i, excelWidth(ANCHOS_CUESTIONARIOS[i]));
             }
             configurarPagina(hoja, titulo + " - " + nombreJornada, nombreJornada);
-            crearBloqueCuestionario(hoja, cuestionario, 0, estilos, pie, multiplicadora);
+            crearBloqueCuestionario(hoja, cuestionario, 0, estilos, pie, multiplicadora, idCombo);
         }
     }
 
@@ -260,7 +266,7 @@ public class ExcelExportService {
 
     /**
      * Texto de la fila CONCURSANTE:
-     * {@code numero, nombre, edad, (lugar) - profesion |Redes sociales| [NOLOSABELOTODO]}.
+     * {@code numero nombre, edad, (lugar) - profesion |Redes sociales| [NOLOSABELOTODO]}.
      * NOLOSABELOTODO solo si aparece en momentos destacados (sin mirar mayúsculas).
      */
     public static String textoConcursantePie(Concursante c) {
@@ -274,7 +280,13 @@ public class ExcelExportService {
         String profesion = textoOVacio(c.getOcupacion());
         String redes = textoOVacio(c.getRedesSociales());
         StringBuilder sb = new StringBuilder();
-        sb.append(numero).append(", ").append(nombre).append(", ").append(edad)
+        if (!numero.isEmpty()) {
+            sb.append(numero);
+            if (!nombre.isEmpty()) {
+                sb.append(' ');
+            }
+        }
+        sb.append(nombre).append(", ").append(edad)
                 .append(", (").append(lugar).append(") - ").append(profesion)
                 .append(" |").append(redes).append("|");
         String momentos = c.getMomentosDestacados();
@@ -295,23 +307,30 @@ public class ExcelExportService {
             sheet.setColumnWidth(i, excelWidth(ANCHOS_CUESTIONARIOS[i]));
         }
 
+        List<Cuestionario> cuestionarios = jornada.getCuestionariosPorSlot();
+        List<Combo> combos = jornada.getCombosPorSlot();
         int filaActual = 0;
-        for (Cuestionario cuestionario : jornada.getCuestionariosPorSlot()) {
+        for (int slot = 0; slot < cuestionarios.size(); slot++) {
+            Cuestionario cuestionario = cuestionarios.get(slot);
             if (cuestionario == null) {
                 continue;
             }
             DatosPieBloque pie = cuestionario.getId() != null ? pies.get(cuestionario.getId()) : null;
-            filaActual = crearBloqueCuestionario(sheet, cuestionario, filaActual, estilos, pie, null);
+            Combo combo = slot < combos.size() ? combos.get(slot) : null;
+            Long idCombo = combo != null ? combo.getId() : null;
+            filaActual = crearBloqueCuestionario(sheet, cuestionario, filaActual, estilos, pie, null, idCombo);
         }
     }
 
     private int crearBloqueCuestionario(Sheet sheet, Cuestionario cuestionario, int filaInicial,
-                                        Estilos estilos, DatosPieBloque pie, Pregunta multiplicadora) {
+                                        Estilos estilos, DatosPieBloque pie, Pregunta multiplicadora,
+                                        Long idCombo) {
         int filaActual = crearCabecera(sheet, filaInicial, CABECERA_CUESTIONARIOS, estilos);
         int filaInicioValoracion = filaActual + 1;
 
         List<PreguntaCuestionario> preguntas = preguntasOrdenadasPorNivel(cuestionario);
         String idCuestionario = cuestionario.getId() != null ? String.valueOf(cuestionario.getId()) : "";
+        String idComboTexto = idCombo != null ? String.valueOf(idCombo) : "";
         String valoracion = pie != null ? textoOVacio(pie.valoracionGuionista) : "";
 
         for (int i = 0; i < FILAS_PREGUNTA_CUESTIONARIO; i++) {
@@ -322,13 +341,15 @@ public class ExcelExportService {
             Pregunta pregunta = pc != null ? pc.getPregunta()
                     : (i == PREGUNTAS_CUESTIONARIO ? multiplicadora : null);
 
-            // A2 = nº cuestionario; A3–A6 fusionadas = valoración del guionista (rojo).
+            // A2 = nº cuestionario; A3–A5 fusionadas = valoración del guionista (rojo); A6 = nº combo.
             if (i == 0) {
                 escribir(fila, 0, idCuestionario, estilos.primeraColumnaCentrada);
             } else if (i == 1) {
                 escribir(fila, 0, valoracion, estilos.valoracionGuionista);
-            } else {
+            } else if (i < PREGUNTAS_CUESTIONARIO) {
                 escribir(fila, 0, "", estilos.valoracionGuionista);
+            } else {
+                escribir(fila, 0, idComboTexto, estilos.primeraColumnaCentrada);
             }
             escribir(fila, 1, nivelCorto(pregunta), estilos.datoPlano);
             escribir(fila, 2, pregunta != null ? pregunta.getPregunta() : "", estilos.datoAjustado);
@@ -337,7 +358,8 @@ public class ExcelExportService {
                     estilos.datoAjustado);
             escribir(fila, 5, "", estilos.datoPlano);
         }
-        combinarVerticalConBorde(sheet, filaInicioValoracion, filaActual - 1, 0);
+        // Solo A3–A5 (i=1..3); A6 queda fuera con el nº de combo.
+        combinarVerticalConBorde(sheet, filaInicioValoracion, filaInicioValoracion + 2, 0);
 
         filaActual = crearFilaPie(sheet, filaActual, "CONCURSANTE",
                 ULTIMA_COL_ETIQUETA_PIE_CUEST, ULTIMA_COL_CUEST, ALTO_PIE_CUESTIONARIO, estilos,
